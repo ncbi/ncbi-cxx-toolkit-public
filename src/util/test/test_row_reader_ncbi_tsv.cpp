@@ -45,7 +45,7 @@ typedef CRowReader<CRowReaderStream_NCBI_TSV> TNCBITSVStream;
 BOOST_AUTO_TEST_CASE(NCBI_TSV_EMPTY_STREAM)
 {
     string                  data = "";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TNCBITSVStream          src_stream(&data_stream, "");
 
     for (auto &  row : src_stream) {
@@ -58,7 +58,7 @@ BOOST_AUTO_TEST_CASE(NCBI_TSV_EMPTY_STREAM)
 BOOST_AUTO_TEST_CASE(NCBI_TSV_HEADER_ONLY)
 {
     string                  data = "\n\n#Name\tAge\tAddress\n";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TNCBITSVStream          src_stream(&data_stream, "");
 
     for (auto &  row : src_stream) {
@@ -90,7 +90,7 @@ BOOST_AUTO_TEST_CASE(NCBI_TSV_DATA)
                                    "Paul\t23\t1115 W Franklin\n"
                                    "Bessy the Cow\t5\tBig Farm Way\n"
                                    "Zeke\t45\tW Main St";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TNCBITSVStream          src_stream(&data_stream, "");
 
     int     line_no = 1;
@@ -158,7 +158,7 @@ BOOST_AUTO_TEST_CASE(NCBI_TSV_VALIDATE_OK)
                                    "Paul\t23\t1115 W Franklin\n"
                                    "Bessy the Cow\t5\tBig Farm Way\n"
                                    "Zeke\t45\tW Main St";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TNCBITSVStream          src_stream(&data_stream, "");
 
     // No exception is expected
@@ -173,7 +173,7 @@ BOOST_AUTO_TEST_CASE(NCBI_TSV_VALIDATE_OK_VARIABLE_FIELD_CNT)
                                    "\n"
                                    "Bessy the Cow\t5\n"
                                    "Zeke\t45\tW Main St";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TNCBITSVStream          src_stream(&data_stream, "");
 
     // No exception is expected
@@ -188,7 +188,7 @@ BOOST_AUTO_TEST_CASE(NCBI_TSV_ITERATE_FAILURE)
                                    "\n"
                                    "Bessy the Cow\t5\n"
                                    "Zeke\t45\tW Main St";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TNCBITSVStream          src_stream(&data_stream, "");
 
     // No exception is expected
@@ -203,7 +203,7 @@ BOOST_AUTO_TEST_CASE(VALIDATION_EMPTY_FIELD_NAME)
 {
     string                  data = "#Name\t\tAddress\n"
                                    "Zeke\t45\tW Main St\n";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TNCBITSVStream          src_stream(&data_stream, "");
 
     // No exception is expected
@@ -215,7 +215,7 @@ BOOST_AUTO_TEST_CASE(VALIDATION_EMPTY_FIELD_VALUE)
 {
     string                  data = "#Name\tAge\tAddress\n"
                                    "Zeke\t\tW Main St\n";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TNCBITSVStream          src_stream(&data_stream, "");
 
     // No exception is expected
@@ -228,7 +228,7 @@ BOOST_AUTO_TEST_CASE(BASIC_TYPE_VALIDATION)
     string                  data = "#Integer\tDouble\tBool\n"
                                    "1\t2.2\tTrue\n"
                                    "3\t3.14\tFalse\n";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TNCBITSVStream          src_stream(&data_stream, "");
 
     src_stream.SetFieldType(0, eRR_Integer);
@@ -245,7 +245,7 @@ BOOST_AUTO_TEST_CASE(BASIC_TYPE_VALIDATION_FAIL)
                                    "1\t2.2\tTrue\n"
                                    "\n"
                                    "3\tExpectedDouble\tFalse\n";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TNCBITSVStream          src_stream(&data_stream, "");
 
     src_stream.SetFieldType(0, eRR_Integer);
@@ -270,7 +270,7 @@ BOOST_AUTO_TEST_CASE(BASIC_TYPE_VALIDATION_NO_FAIL)
     string                  data = "#Integer\tDouble\tBool\n"
                                    "1\t2.2\tTrue\n"
                                    "3\tExpectedDouble\tFalse\n";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TNCBITSVStream          src_stream(&data_stream, "");
 
     src_stream.SetFieldType(0, eRR_Integer);
@@ -288,7 +288,7 @@ BOOST_AUTO_TEST_CASE(CTIME_VALIDATION_DEFAULT_FORMAT)
                                    "01/02/1903 12:13:14\n"
                                    "\n\n\n"
                                    "02/03/1967 07:56:00\n";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TNCBITSVStream          src_stream(&data_stream, "");
 
     src_stream.SetFieldType(0, eRR_DateTime);
@@ -303,7 +303,7 @@ BOOST_AUTO_TEST_CASE(CTIME_VALIDATION_DEFAULT_FORMAT_FAIL)
     string                  data = "#DateTime\n"
                                    "12:13:14 04/04/1999\n"
                                    "02/03/1967 07:56:00\n";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TNCBITSVStream          src_stream(&data_stream, "");
 
     src_stream.SetFieldType(0, eRR_DateTime);
@@ -327,7 +327,7 @@ BOOST_AUTO_TEST_CASE(CTIME_VALIDATION_EXPLICIT_FORMAT)
                                    "1903 01 02 12:13:14\n"
                                    "##\n"
                                    "1967 02 03 07:56:00\n";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TNCBITSVStream          src_stream(&data_stream, "");
 
     src_stream.SetFieldType(0, CRR_FieldType<ERR_FieldType>(eRR_DateTime,
@@ -343,7 +343,7 @@ BOOST_AUTO_TEST_CASE(CTIME_VALIDATION_EXPLICIT_FORMAT_FAIL)
     string                  data = "#DateTime\n"
                                    "01 02 1903 12:13:14\n"
                                    "1967 02 03 07:56:00\n";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TNCBITSVStream          src_stream(&data_stream, "");
 
     src_stream.SetFieldType(0, CRR_FieldType<ERR_FieldType>(eRR_DateTime,
@@ -367,7 +367,7 @@ BOOST_AUTO_TEST_CASE(NULL_FIELD_VALIDATION)
     string                  data = "#Integer\tDouble\tBool\n"
                                    "na\t2.2\tTrue\n"
                                    "3\t3.14\tna\n";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TNCBITSVStream          src_stream(&data_stream, "");
 
     src_stream.SetFieldType(0, eRR_Integer);
@@ -384,7 +384,7 @@ BOOST_AUTO_TEST_CASE(EMPTY_FIELD_VALIDATION_FAIL)
                                    "1\t2.2\tTrue\n"
                                    "\n"
                                    "3\t-\tFalse\n";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TNCBITSVStream          src_stream(&data_stream, "");
 
     src_stream.SetFieldType(0, eRR_Integer);

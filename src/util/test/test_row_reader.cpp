@@ -52,7 +52,7 @@ const string kRRContextPattern = "Row reader context:";
 BOOST_AUTO_TEST_CASE(RR_EMPTY_STREAM)
 {
     string                  data = "";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TTabDelimitedStream     src_stream(&data_stream, "");
 
     for (auto &  row : src_stream) {
@@ -67,7 +67,7 @@ BOOST_AUTO_TEST_CASE(RR_EMPTY_LINES_STREAM)
     string          data = "\n"
                            "\n"
                            "\n";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TTabDelimitedStream     src_stream(&data_stream, "");
 
     TLineNo     line_no = 0;
@@ -91,7 +91,7 @@ BOOST_AUTO_TEST_CASE(RR_TAB_DATA_STREAM)
                                    "21\t22\t23\t\t\r\n"
                                    "31\t\r\n"
                                    "41\t\t\t";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TTabDelimitedStream     src_stream(&data_stream, "");
 
     int     line_no = 0;
@@ -144,7 +144,7 @@ BOOST_AUTO_TEST_CASE(RR_TAB_DATA_STREAM_VIA_ITERATOR)
                                    "21\t22\t23\t\t\r\n"
                                    "31\t\r\n"
                                    "41\t\t\t";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TTabDelimitedStream     src_stream(&data_stream, "");
 
     int     line_no = 0;
@@ -185,7 +185,7 @@ BOOST_AUTO_TEST_CASE(RR_TAB_DATA_WITH_OUTSIDE_COLUMN_NAMES)
     string                  data = "1\tone\t111\r\n"
                                    "2\ttwo\t222\n"
                                    "3\tthree\t333";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TTabDelimitedStream     src_stream(&data_stream, "");
 
     src_stream.SetFieldName(0, "index");
@@ -253,7 +253,7 @@ BOOST_AUTO_TEST_CASE(RR_TAB_DATA_ROW_COPYING)
     string                      data = "1\tone\t111\r\n"
                                        "2\ttwo\t222\n"
                                        "3\tthree\t333";
-    CNcbiIstrstream             data_stream(data.c_str());
+    CNcbiIstrstream             data_stream(data);
     TTabDelimitedStream         src_stream(&data_stream, "");
     TTabDelimitedStream::CRow   row1;
     TTabDelimitedStream::CRow   row2;
@@ -330,7 +330,7 @@ BOOST_AUTO_TEST_CASE(RR_TAB_DATA_WITH_COLUMN_NAMES)
                                    "1\tone\t111\r\n"
                                    "2\ttwo\t222\n"
                                    "3\tthree\t333";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TTabDelimitedStream     src_stream(&data_stream, "");
 
     int     line_no = 0;
@@ -389,7 +389,7 @@ BOOST_AUTO_TEST_CASE(RR_TAB_DATA_WITH_COLUMN_NAMES)
 BOOST_AUTO_TEST_CASE(RR_CONVERSIONS)
 {
     string                  data = "true\tfalse\t100\t100.25\t01/02/1903 12:13:14\t02/01/1903 12:13:14";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TTabDelimitedStream     src_stream(&data_stream, "");
 
     for (auto &  row : src_stream) {
@@ -452,7 +452,7 @@ BOOST_AUTO_TEST_CASE(RR_ROW_COPY_METADATA)
 {
     string                      data = "1\tone\t111\r\n"
                                        "2\ttwo\t222";
-    CNcbiIstrstream             data_stream(data.c_str());
+    CNcbiIstrstream             data_stream(data);
     TTabDelimitedStream         src_stream(&data_stream, "");
     TTabDelimitedStream::CRow   row1;
     TTabDelimitedStream::CRow   row2;
@@ -504,7 +504,7 @@ BOOST_AUTO_TEST_CASE(RR_TAB_DATA_WITH_OUTSIDE_COLUMN_TYPES)
     string                  data = "1\tone\t1.1\r\n"
                                    "2\ttwo\t2.2\n"
                                    "3\tthree\t3.3";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TTabDelimitedStream     src_stream(&data_stream, "");
 
     src_stream.SetFieldType(0, eRR_Integer);
@@ -545,7 +545,7 @@ BOOST_AUTO_TEST_CASE(RR_TAB_DATA_WITH_OUTSIDE_COLUMN_EXT_TYPES)
     string                  data = "1\tone\t1.1\r\n"
                                    "2\ttwo\t2.2\n"
                                    "3\tthree\t3.3";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TTabDelimitedStream     src_stream(&data_stream, "");
 
     src_stream.SetFieldTypeEx(0, eRR_Integer, eRR_String);
@@ -596,7 +596,7 @@ BOOST_AUTO_TEST_CASE(RR_TAB_DATA_WITH_OUTSIDE_COLUMN_EXT_TYPES)
 BOOST_AUTO_TEST_CASE(RR_CONVERSIONS_EXCEPTIONS)
 {
     string                  data = "1000000\tone\t1.1";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TTabDelimitedStream     src_stream(&data_stream, "");
 
     for (auto &  row : src_stream) {
@@ -642,7 +642,7 @@ BOOST_AUTO_TEST_CASE(RR_CONVERSIONS_EXCEPTIONS)
 BOOST_AUTO_TEST_CASE(RR_FIELD_ACCESS_BY_NAME_OUT_OF_RANGE)
 {
     string                  data = "1000000\tone\t1.1";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TTabDelimitedStream     src_stream(&data_stream, "");
 
     src_stream.SetFieldName(500, "lb");
@@ -673,7 +673,7 @@ BOOST_AUTO_TEST_CASE(RR_ROW_COPY_FIELD_RENAME)
     string                      data = "1\tone\t1.1\r\n"
                                        "2\ttwo\t2.2\n"
                                        "3\tthree\t3.3";
-    CNcbiIstrstream             data_stream(data.c_str());
+    CNcbiIstrstream             data_stream(data);
     TTabDelimitedStream         src_stream(&data_stream, "");
     TTabDelimitedStream::CRow   row1;
     TTabDelimitedStream::CRow   row2;
@@ -886,7 +886,7 @@ BOOST_AUTO_TEST_CASE(RR_NULL_FIELD_VALUE)
 {
     string                      data = "1,one,1.1\r\n"
                                        "null,two,null";
-    CNcbiIstrstream             data_stream(data.c_str());
+    CNcbiIstrstream             data_stream(data);
     TTestDelimitedStream        src_stream(&data_stream, "");
 
     src_stream.SetFieldTypeEx(2, eRR_Double,
@@ -945,7 +945,7 @@ BOOST_AUTO_TEST_CASE(RR_COMMENT_METADATA)
     string                      data = "1,one,1.1\n"
                                        "# comment\n"
                                        "= metadata";
-    CNcbiIstrstream             data_stream(data.c_str());
+    CNcbiIstrstream             data_stream(data);
     TTestDelimitedStream        src_stream(&data_stream, "");
 
     int     line_no = 0;
@@ -987,7 +987,7 @@ BOOST_AUTO_TEST_CASE(RR_SET_NON_EXISTING_FILE_STREAM)
     string                      data = "1,one,1.1\n"
                                        "# comment\n"
                                        "= metadata";
-    CNcbiIstrstream             data_stream(data.c_str());
+    CNcbiIstrstream             data_stream(data);
     TTestDelimitedStream        src_stream(&data_stream, "");
 
     for (auto &  row : src_stream) {
@@ -1066,7 +1066,7 @@ BOOST_AUTO_TEST_CASE(RR_TWO_STREAMS_FILE_STR)
     string                  data = "1\tone\t111\r\n"
                                    "2\ttwo\t222\n"
                                    "3\tthree\t333";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     src_stream.SetDataSource(&data_stream, "");
 
     src_stream.SetFieldName(0, "index");
@@ -1135,7 +1135,7 @@ BOOST_AUTO_TEST_CASE(RR_TWO_STREAMS_STR_FILE)
     string                  data = "1\tone\t111\r\n"
                                    "2\ttwo\t222\n"
                                    "3\tthree\t333";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TTabDelimitedStream     src_stream(&data_stream, "");
 
     for (auto &  row : src_stream) {
@@ -1194,7 +1194,7 @@ BOOST_AUTO_TEST_CASE(RR_VALIDATE)
     string                  data = "1\tone\t111\r\n"
                                    "2\ttwo\t222\n"
                                    "3\tthree\t333";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TTabDelimitedStream     src_stream(&data_stream, "");
 
     src_stream.Validate();
@@ -1209,7 +1209,7 @@ BOOST_AUTO_TEST_CASE(RR_SWITCH_STREAM_CONTINUE_ITERATE)
     string                  data = "1\tone\t111\r\n"
                                    "2\ttwo\t222\n"
                                    "3\tthree\t333";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TTabDelimitedStream     src_stream(&data_stream, "");
 
     auto it = src_stream.begin();
@@ -1279,7 +1279,7 @@ BOOST_AUTO_TEST_CASE(RR_ON_END_STREAM_EVENT)
     string                  data = "1\tone\t111\r\n"
                                    "2\ttwo\t222\n"
                                    "3\tthree\t333";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TTestDelimitedStream    src_stream(&data_stream, "");
 
     auto it = src_stream.begin();
@@ -1307,7 +1307,7 @@ BOOST_AUTO_TEST_CASE(RR_VALID_COUNT)
     string                  data = "1\tone\t111\r\n"
                                    "2\ttwo\t222\n"
                                    "3\tthree\t333";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TTestDelimitedStream    src_stream(&data_stream, "");
 
     auto it = src_stream.begin();
@@ -1331,7 +1331,7 @@ BOOST_AUTO_TEST_CASE(RR_VALID_COUNT2)
     string                  data = "1\tone\t111\r\n"
                                    "2\ttwo\t222\n"
                                    "3\tthree\t333";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TTestDelimitedStream    src_stream(kRRDataFileName);
 
     src_stream.Validate();
@@ -1356,7 +1356,7 @@ BOOST_AUTO_TEST_CASE(RR_COPY_ITERATORS)
                                    "21\t22\t23\t\t\r\n"
                                    "31\t\r\n"
                                    "41\t\t\t";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TTabDelimitedStream     src_stream(&data_stream, "");
     auto                    it1 = src_stream.begin();
     auto                    it2(it1);
@@ -1447,7 +1447,7 @@ BOOST_AUTO_TEST_CASE(RR_MULTI_SPACE_DATA_STREAM)
                                        "21\t22 23\v\t\r\n"
                                        "31\t\r\n"
                                        "41\t \v";
-    CNcbiIstrstream             data_stream(data.c_str());
+    CNcbiIstrstream             data_stream(data);
     TMultiSpaceDelimitedStream  src_stream(&data_stream, "");
 
     int     line_no = 0;
@@ -1498,7 +1498,7 @@ BOOST_AUTO_TEST_CASE(RR_THREE_STAR_DATA_STREAM)
     string                      data = "11***12***13***14\r\n"
                                        "21***22***23***\r\n"
                                        "31***";
-    CNcbiIstrstream             data_stream(data.c_str());
+    CNcbiIstrstream             data_stream(data);
     TThreeStarDelimitedStream   src_stream(&data_stream, "");
 
     int     line_no = 0;
@@ -1539,7 +1539,7 @@ BOOST_AUTO_TEST_CASE(RR_ROW_COPY_CONSTRUCTOR)
 {
     string                      data = "1\tone\t111\r\n"
                                        "2\ttwo\t222";
-    CNcbiIstrstream             data_stream(data.c_str());
+    CNcbiIstrstream             data_stream(data);
     TTabDelimitedStream         src_stream(&data_stream, "");
 
     vector<TTabDelimitedStream::CRow>   copies;
@@ -1591,7 +1591,7 @@ BOOST_AUTO_TEST_CASE(RR_ROW_COPY_CONSTRUCTOR)
 BOOST_AUTO_TEST_CASE(RR_FIELD_COPY_CONSTRUCTOR)
 {
     string                      data = "1\tone\t111";
-    CNcbiIstrstream             data_stream(data.c_str());
+    CNcbiIstrstream             data_stream(data);
     TTabDelimitedStream         src_stream(&data_stream, "");
 
     TTabDelimitedStream::CRow   row1;
@@ -1659,7 +1659,7 @@ BOOST_AUTO_TEST_CASE(RR_ON_BEGIN_EXCEPTION_STREAM_EVENT)
     string                  data = "1\tone\t111\r\n"
                                    "2\ttwo\t222\n"
                                    "3\tthree\t333";
-    CNcbiIstrstream                     data_stream(data.c_str());
+    CNcbiIstrstream                     data_stream(data);
     TBeginExceptionTestDelimitedStream  src_stream(&data_stream, "");
 
     try {
@@ -1709,7 +1709,7 @@ BOOST_AUTO_TEST_CASE(RR_ON_END_EXCEPTION_STREAM_EVENT)
     string                  data = "1\tone\t111\r\n"
                                    "2\ttwo\t222\n"
                                    "3\tthree\t333";
-    CNcbiIstrstream                     data_stream(data.c_str());
+    CNcbiIstrstream                     data_stream(data);
     TEndExceptionTestDelimitedStream    src_stream(&data_stream, "");
 
     try {
@@ -1742,7 +1742,7 @@ BOOST_AUTO_TEST_CASE(RR_DEFAULT_CONSTRUCT_AND_VALIDATE_OK)
     string                  data = "1\tone\t111\r\n"
                                    "2\ttwo\t222\n"
                                    "3\tthree\t333";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
 
     src_stream.SetDataSource(&data_stream, "");
     src_stream.Validate();
@@ -1774,7 +1774,7 @@ BOOST_AUTO_TEST_CASE(RR_DEFAULT_CONSTRUCT_AND_ITERATE_OK)
                                    "21\t22\t23\t\t\r\n"
                                    "31\t\r\n"
                                    "41\t\t\t";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
 
     src_stream.SetDataSource(&data_stream, "data");
 
@@ -1843,7 +1843,7 @@ BOOST_AUTO_TEST_CASE(RR_DEFAULT_CONSTRUCT_AND_ITERATE_FAILURE)
 BOOST_AUTO_TEST_CASE(RR_SET_NULL_DATA_SOURCE)
 {
     string                  data = "";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TTabDelimitedStream     src_stream(&data_stream, "");
 
     try {

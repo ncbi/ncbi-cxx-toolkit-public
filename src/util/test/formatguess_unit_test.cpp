@@ -509,7 +509,7 @@ BOOST_AUTO_TEST_CASE(TestRepeatMasker)
     {{
         // With header
         string with_header = string(kHeader_Rmo) + string(kData_Rmo);
-        CNcbiIstrstream str(with_header.c_str());
+        CNcbiIstrstream str(with_header);
         CFormatGuess guess(str);
         BOOST_CHECK_EQUAL(guess.GuessFormat(), CFormatGuess::eRmo);
     }}
@@ -795,7 +795,7 @@ BOOST_AUTO_TEST_CASE(TestBZip2)
 
 BOOST_AUTO_TEST_CASE(TestLzo)
 {
-    CNcbiIstrstream str(kData_Lzo, sizeof(kData_Lzo));
+    CNcbiIstrstream str(kData_Lzo);
     CFormatGuess guess(str);
     BOOST_CHECK_EQUAL(guess.GuessFormat(), CFormatGuess::eLzo);
 }
@@ -803,13 +803,12 @@ BOOST_AUTO_TEST_CASE(TestLzo)
 BOOST_AUTO_TEST_CASE(TestSra)
 {
     {{
-        CNcbiIstrstream str(kData_Sra_BigEndian, sizeof(kData_Sra_BigEndian));
+        CNcbiIstrstream str(kData_Sra_BigEndian);
         CFormatGuess guess(str);
         BOOST_CHECK_EQUAL(guess.GuessFormat(), CFormatGuess::eSra);
     }}
     {{
-        CNcbiIstrstream str(kData_Sra_LittleEndian,
-                            sizeof(kData_Sra_LittleEndian));
+        CNcbiIstrstream str(kData_Sra_LittleEndian);
         CFormatGuess guess(str);
         BOOST_CHECK_EQUAL(guess.GuessFormat(), CFormatGuess::eSra);
     }}

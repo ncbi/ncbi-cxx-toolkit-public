@@ -46,7 +46,7 @@ typedef CRowReader<CRowReaderStream_Excel_CSV> TExcelCSVStream;
 BOOST_AUTO_TEST_CASE(EXCEL_CSV_EMPTY_STREAM)
 {
     string                  data = "";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TExcelCSVStream         src_stream(&data_stream, "");
 
     for (auto &  row : src_stream) {
@@ -59,7 +59,7 @@ BOOST_AUTO_TEST_CASE(EXCEL_CSV_EMPTY_STREAM)
 BOOST_AUTO_TEST_CASE(EXCEL_CSV_BASIC_VALUES)
 {
     string                  data = "123,45.67,True,1988/09/25";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TExcelCSVStream         src_stream(&data_stream, "");
 
     for (const auto &  row : src_stream) {
@@ -94,7 +94,7 @@ BOOST_AUTO_TEST_CASE(EXCEL_CSV_COMMAS_QUOTES)
                                     "\"plus, commas and '\"\n"
                                     "\"and, maybe also \"\"\"\n"
                                     "\"plus, a double ''\"\n";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TExcelCSVStream         src_stream(&data_stream, "");
 
     int     line_no = 1;
@@ -159,7 +159,7 @@ BOOST_AUTO_TEST_CASE(EXCEL_CSV_COMMAS_QUOTES)
 BOOST_AUTO_TEST_CASE(EXCEL_CSV_EMPTY_FIELDS)
 {
     string                  data = ",,,";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TExcelCSVStream         src_stream(&data_stream, "");
 
     int                     line_no = 1;
@@ -176,7 +176,7 @@ BOOST_AUTO_TEST_CASE(EXCEL_CSV_EMPTY_FIELDS)
 BOOST_AUTO_TEST_CASE(EXCEL_CSV_QUOTED_EMPTY_FIELDS)
 {
     string                  data = "\"\",\"\",\"\",\"\"";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TExcelCSVStream         src_stream(&data_stream, "");
 
     int                     line_no = 1;
@@ -195,7 +195,7 @@ BOOST_AUTO_TEST_CASE(EXCEL_CSV_QUOTED_FIELDS)
     string                  data = "\"Paul\",23,1115 W Franklin\n"
                                    "Bessy the Cow,\"5\",Big Farm Way\n"
                                    "Zeke,45,\"W Main St\"";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TExcelCSVStream         src_stream(&data_stream, "");
 
     int     line_no = 1;
@@ -249,7 +249,7 @@ BOOST_AUTO_TEST_CASE(EXCEL_CSV_QUOTED_QUOTED_MULTILINE)
 {
     string                  data = "\"data1\r\ndata2\",\"data3\ndata4\"";
 
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TExcelCSVStream         src_stream(&data_stream, "");
 
     for (auto &  row : src_stream) {
@@ -267,7 +267,7 @@ BOOST_AUTO_TEST_CASE(EXCEL_CSV_QUOTED_QUOTED_MULTILINE)
 BOOST_AUTO_TEST_CASE(EXCEL_CSV_FIELDS_WITH_EQUALS)
 {
     string                  data = "=777,=888.999,=True,=1989/10/13\r\n";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TExcelCSVStream         src_stream(&data_stream, "");
 
     for (auto &  row : src_stream) {
@@ -296,7 +296,7 @@ BOOST_AUTO_TEST_CASE(EXCEL_CSV_FIELDS_WITH_EQUALS)
 BOOST_AUTO_TEST_CASE(EXCEL_CSV_FIELDS_QUOTED_WITH_EQUALS)
 {
     string                  data = "\"=\"\"44\"\"\",\"=\"\"22.11\"\"\",\"=\"\"True\"\"\",\"=\"\"1988/09/25\"\"\"";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TExcelCSVStream         src_stream(&data_stream, "");
 
     for (auto &  row : src_stream) {
@@ -325,7 +325,7 @@ BOOST_AUTO_TEST_CASE(EXCEL_CSV_FIELDS_QUOTED_WITH_EQUALS)
 BOOST_AUTO_TEST_CASE(EXCEL_CSV_FIELDS_QUOTED_WIERD)
 {
     string                  data = "\"123\"456,\"999.\"939,\"AA\" \"BB\",  \"CC\" \"DD\" \"EE\"";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TExcelCSVStream         src_stream(&data_stream, "");
 
     for (auto &  row : src_stream) {
@@ -352,7 +352,7 @@ BOOST_AUTO_TEST_CASE(EXCEL_CSV_FIELDS_QUOTED_WIERD)
 BOOST_AUTO_TEST_CASE(EXCEL_CSV_FIELD_SPACE_PRESERVED)
 {
     string                  data = "   123,456   ";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TExcelCSVStream         src_stream(&data_stream, "");
 
     for (auto &  row : src_stream) {
@@ -372,7 +372,7 @@ BOOST_AUTO_TEST_CASE(EXCEL_CSV_FIELD_SPACE_PRESERVED)
 BOOST_AUTO_TEST_CASE(EXCEL_CSV_FIELD_QUOTED_WIERD_2)
 {
     string                  data = "\"FFF\" \"GG,GG\",\"HHH\" \"KK\nLL\"";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TExcelCSVStream         src_stream(&data_stream, "");
 
     int     line_no = 1;
@@ -411,7 +411,7 @@ BOOST_AUTO_TEST_CASE(EXCEL_CSV_FIELD_QUOTED_WIERD_2)
 BOOST_AUTO_TEST_CASE(EXCEL_CSV_FIELD_QUOTED_MORE)
 {
     string                  data = "M\"\"MMM\"\",NNN\"\"\"\",\"=\"\"some\"\"one\",=\"MARCH1\"";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TExcelCSVStream         src_stream(&data_stream, "");
 
     for (auto &  row : src_stream) {
@@ -437,7 +437,7 @@ BOOST_AUTO_TEST_CASE(EXCEL_CSV_FIELD_QUOTED_MORE)
 BOOST_AUTO_TEST_CASE(EXCEL_CSV_FIELD_QUOTED_EVEN_MORE)
 {
     string                  data = "=MARCH1\",=\"MARCH1,=\"MAR\"\"CH1\",=\"MAR\"CH1,=MAR\"CH1";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TExcelCSVStream         src_stream(&data_stream, "");
 
     for (auto &  row : src_stream) {
@@ -466,7 +466,7 @@ BOOST_AUTO_TEST_CASE(EXCEL_CSV_FIELD_QUOTED_EVEN_MORE)
 BOOST_AUTO_TEST_CASE(EXCEL_CSV_EMPTY_LINE)
 {
     string                  data = "\n";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TExcelCSVStream         src_stream(&data_stream, "");
 
     int     line_no = 1;
@@ -483,7 +483,7 @@ BOOST_AUTO_TEST_CASE(EXCEL_CSV_EMPTY_LINE)
 BOOST_AUTO_TEST_CASE(EXCEL_CSV_UNBALANCED_DBL_QUOTE)
 {
     string                  data = "a,\"one\ntwo,\nthree";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TExcelCSVStream         src_stream(&data_stream, "");
 
     for (auto &  row : src_stream) {
@@ -507,7 +507,7 @@ BOOST_AUTO_TEST_CASE(EXCEL_CSV_VALIDATION_OK)
                                    "\"Paul\",23,1115 W Franklin\n"
                                    "Bessy the Cow,\"5\",Big Farm Way\n"
                                    "Zeke,45,\"W Main St\"";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TExcelCSVStream         src_stream(&data_stream, "");
 
     src_stream.Validate();
@@ -518,7 +518,7 @@ BOOST_AUTO_TEST_CASE(EXCEL_CSV_NONFIRST_QUOTE_VALIDATION)
 {
     string                  data = "abc\"\"def\n"
                                    "ghk";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TExcelCSVStream         src_stream(&data_stream, "");
 
     src_stream.Validate();
@@ -529,7 +529,7 @@ BOOST_AUTO_TEST_CASE(EXCEL_CSV_NONLAST_QUOTE_VALIDATE)
 {
     string                  data = "\"abc\"22,def\n"
                                    "333,444";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TExcelCSVStream         src_stream(&data_stream, "");
 
     src_stream.Validate();
@@ -541,7 +541,7 @@ BOOST_AUTO_TEST_CASE(EXCEL_CSV_NON_BALANCED_QUOTE_VALIDATING)
     string                  data = "\"abc,def\n"
                                    "111,222\n"
                                    "333,444";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TExcelCSVStream         src_stream(&data_stream, "");
 
     src_stream.Validate();
@@ -552,7 +552,7 @@ BOOST_AUTO_TEST_CASE(BASIC_TYPE_VALIDATION)
 {
     string                  data = "1,2.2,True\n"
                                    "3,3.14,False\n";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TExcelCSVStream         src_stream(&data_stream, "");
 
     src_stream.SetFieldType(0, eRR_Integer);
@@ -567,7 +567,7 @@ BOOST_AUTO_TEST_CASE(BASIC_TYPE_VALIDATION_FAIL)
 {
     string                  data = "1,2.2,True\n"
                                    "3,ExpectedDouble,False\n";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TExcelCSVStream         src_stream(&data_stream, "");
 
     src_stream.SetFieldType(0, eRR_Integer);
@@ -591,7 +591,7 @@ BOOST_AUTO_TEST_CASE(BASIC_TYPE_VALIDATION_NO_FAIL)
 {
     string                  data = "1,2.2,True\n"
                                    "3,ExpectedDouble,False\n";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TExcelCSVStream         src_stream(&data_stream, "");
 
     src_stream.SetFieldType(0, eRR_Integer);
@@ -607,7 +607,7 @@ BOOST_AUTO_TEST_CASE(CTIME_VALIDATION_DEFAULT_FORMAT)
 {
     string                  data = "01/02/1903 12:13:14\n"
                                    "02/03/1967 07:56:00\n";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TExcelCSVStream         src_stream(&data_stream, "");
 
     src_stream.SetFieldType(0, eRR_DateTime);
@@ -621,7 +621,7 @@ BOOST_AUTO_TEST_CASE(CTIME_VALIDATION_DEFAULT_FORMAT_FAIL)
 {
     string                  data = "12:13:14 04/04/1999\n"
                                    "02/03/1967 07:56:00\n";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TExcelCSVStream         src_stream(&data_stream, "");
 
     src_stream.SetFieldType(0, eRR_DateTime);
@@ -643,7 +643,7 @@ BOOST_AUTO_TEST_CASE(CTIME_VALIDATION_EXPLICIT_FORMAT)
 {
     string                  data = "1903 01 02 12:13:14\n"
                                    "1967 02 03 07:56:00\n";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TExcelCSVStream         src_stream(&data_stream, "");
 
     src_stream.SetFieldType(0, CRR_FieldType<ERR_FieldType>(eRR_DateTime,
@@ -658,7 +658,7 @@ BOOST_AUTO_TEST_CASE(CTIME_VALIDATION_EXPLICIT_FORMAT_FAIL)
 {
     string                  data = "01 02 1903 12:13:14\n"
                                    "1967 02 03 07:56:00\n";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TExcelCSVStream         src_stream(&data_stream, "");
 
     src_stream.SetFieldType(0, CRR_FieldType<ERR_FieldType>(eRR_DateTime,
@@ -681,7 +681,7 @@ BOOST_AUTO_TEST_CASE(BASIC_TYPE_VALIDATION_WITH_TRANSLATION)
 {
     string                  data = "\"1\",\"2.2\",\"True\"\n"
                                    "\"3\",\"3.14\",\"False\"\n";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TExcelCSVStream         src_stream(&data_stream, "");
 
     src_stream.SetFieldType(0, eRR_Integer);
@@ -696,7 +696,7 @@ BOOST_AUTO_TEST_CASE(BASIC_TYPE_VALIDATION_FAIL_WITH_TRANSLATION)
 {
     string                  data = "\"1\",\"2.2\",\"True\"\n"
                                    "\"3\",\"ExpectedDouble\",\"False\"\n";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TExcelCSVStream         src_stream(&data_stream, "");
 
     src_stream.SetFieldType(0, eRR_Integer);
@@ -719,7 +719,7 @@ BOOST_AUTO_TEST_CASE(BASIC_TYPE_VALIDATION_FAIL_WITH_TRANSLATION)
 BOOST_AUTO_TEST_CASE(TRANSLATION_TO_NULL)
 {
     string                  data = ",\"\",=\"\",a,,\"\"";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TExcelCSVStream         src_stream(&data_stream, "");
 
     for (auto &  row : src_stream) {

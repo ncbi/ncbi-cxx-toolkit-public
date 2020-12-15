@@ -46,7 +46,7 @@ typedef CRowReader<CRowReaderStream_IANA_CSV> TIANACSVStream;
 BOOST_AUTO_TEST_CASE(IANA_CSV_EMPTY_STREAM)
 {
     string                  data = "";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TIANACSVStream          src_stream(&data_stream, "");
 
     for (auto &  row : src_stream) {
@@ -58,7 +58,7 @@ BOOST_AUTO_TEST_CASE(IANA_CSV_EMPTY_STREAM)
 BOOST_AUTO_TEST_CASE(IANA_TSV_HEADER_ONLY)
 {
     string                  data = "Name,Age,Address";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TIANACSVStream          src_stream(&data_stream, "");
 
     for (auto &  row : src_stream) {
@@ -90,7 +90,7 @@ BOOST_AUTO_TEST_CASE(IANA_CSV_DATA)
                                    "Paul,23,1115 W Franklin\n"
                                    "Bessy the Cow,5,Big Farm Way\n"
                                    "Zeke,45,W Main St";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TIANACSVStream          src_stream(&data_stream, "");
 
     int     line_no = 1;
@@ -150,7 +150,7 @@ BOOST_AUTO_TEST_CASE(IANA_CSV_DATA)
 BOOST_AUTO_TEST_CASE(IANA_CSV_EMPTY_FIELDS)
 {
     string                  data = ",,,";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TIANACSVStream          src_stream(&data_stream, "");
 
     src_stream.GetTraits().SetHasHeader(false);
@@ -173,7 +173,7 @@ BOOST_AUTO_TEST_CASE(IANA_CSV_EMPTY_FIELDS)
 BOOST_AUTO_TEST_CASE(IANA_CSV_QUOTED_EMPTY_FIELDS)
 {
     string                  data = "\"\",\"\",\"\",\"\"";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TIANACSVStream          src_stream(&data_stream, "");
 
     src_stream.GetTraits().SetHasHeader(false);
@@ -199,7 +199,7 @@ BOOST_AUTO_TEST_CASE(IANA_CSV_QUOTED_FIELDS)
                                    "\"Paul\",23,1115 W Franklin\n"
                                    "Bessy the Cow,\"5\",Big Farm Way\n"
                                    "Zeke,45,\"W Main St\"";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TIANACSVStream          src_stream(&data_stream, "");
 
     int     line_no = 1;
@@ -268,7 +268,7 @@ BOOST_AUTO_TEST_CASE(IANA_CSV_QUOTED_FIELDS)
 BOOST_AUTO_TEST_CASE(IANA_TSV_QUOTED_HEADER)
 {
     string                  data = "\"Name\",Age,Address";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TIANACSVStream          src_stream(&data_stream, "");
 
     for (auto &  row : src_stream) {
@@ -293,7 +293,7 @@ BOOST_AUTO_TEST_CASE(IANA_TSV_QUOTED_HEADER)
     }
 
     data = "Name,\"Age\",Address";
-    CNcbiIstrstream         data_stream1(data.c_str());
+    CNcbiIstrstream         data_stream1(data);
     TIANACSVStream          src_stream1(&data_stream1, "");
 
     for (auto &  row : src_stream1) {
@@ -318,7 +318,7 @@ BOOST_AUTO_TEST_CASE(IANA_TSV_QUOTED_HEADER)
     }
 
     data = "Name,Age,\"Address\"";
-    CNcbiIstrstream         data_stream2(data.c_str());
+    CNcbiIstrstream         data_stream2(data);
     TIANACSVStream          src_stream2(&data_stream2, "");
 
     for (auto &  row : src_stream2) {
@@ -348,7 +348,7 @@ BOOST_AUTO_TEST_CASE(IANA_CSV_QUOTED_FIELDS_WITH_QUOTES)
 {
     string                  data = "\"Na\"\"me\",\"A\"\"ge\",\"Addr\"\"ess\"\r\n"
                                    "\"Pa\"\"ul\",\"2\"\"3\",\"1115 W \"\"Franklin\"";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TIANACSVStream          src_stream(&data_stream, "");
 
     int     line_no = 1;
@@ -395,7 +395,7 @@ BOOST_AUTO_TEST_CASE(IANA_CSV_QUOTED_QUOTED_MULTILINE)
     string                  data = "\"abc\r\ncde\",\"fgh\nklm\"\n"
                                    "\"data1\r\ndata2\",\"data3\ndata4\"";
 
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TIANACSVStream          src_stream(&data_stream, "");
 
     int     line_no = 1;
@@ -434,7 +434,7 @@ BOOST_AUTO_TEST_CASE(IANA_CSV_NONFIRST_QUOTE)
 {
     string                  data = "abc\"\"def\n"
                                    "ghk";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TIANACSVStream          src_stream(&data_stream, "");
 
     try {
@@ -456,7 +456,7 @@ BOOST_AUTO_TEST_CASE(IANA_CSV_NONLAST_QUOTE)
 {
     string                  data = "\"abc\"22,def\n"
                                    "333,444";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TIANACSVStream          src_stream(&data_stream, "");
 
     try {
@@ -479,7 +479,7 @@ BOOST_AUTO_TEST_CASE(IANA_CSV_NON_BALANCED_QUOTE)
     string                  data = "\"abc,def\n"
                                    "111,222\n"
                                    "333,444";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TIANACSVStream          src_stream(&data_stream, "");
 
     try {
@@ -503,7 +503,7 @@ BOOST_AUTO_TEST_CASE(IANA_CSV_VALIDATION_OK)
                                    "\"Paul\",23,1115 W Franklin\n"
                                    "Bessy the Cow,\"5\",Big Farm Way\n"
                                    "Zeke,45,\"W Main St\"";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TIANACSVStream          src_stream(&data_stream, "");
 
     // No exception is expected
@@ -515,7 +515,7 @@ BOOST_AUTO_TEST_CASE(IANA_CSV_NONFIRST_QUOTE_VALIDATION)
 {
     string                  data = "abc\"\"def\n"
                                    "ghk";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TIANACSVStream          src_stream(&data_stream, "");
 
     try {
@@ -533,7 +533,7 @@ BOOST_AUTO_TEST_CASE(IANA_CSV_NONLAST_QUOTE_VALIDATE)
 {
     string                  data = "\"abc\"22,def\n"
                                    "333,444";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TIANACSVStream          src_stream(&data_stream, "");
 
     try {
@@ -552,7 +552,7 @@ BOOST_AUTO_TEST_CASE(IANA_CSV_NON_BALANCED_QUOTE_VALIDATING)
     string                  data = "\"abc,def\n"
                                    "111,222\n"
                                    "333,444";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TIANACSVStream          src_stream(&data_stream, "");
 
     try {
@@ -571,7 +571,7 @@ BOOST_AUTO_TEST_CASE(BASIC_TYPE_VALIDATION)
     string                  data = "Integer,Double,Bool\n"
                                    "1,2.2,True\n"
                                    "3,3.14,False\n";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TIANACSVStream          src_stream(&data_stream, "");
 
     src_stream.SetFieldType(0, eRR_Integer);
@@ -587,7 +587,7 @@ BOOST_AUTO_TEST_CASE(BASIC_TYPE_VALIDATION_FAIL)
     string                  data = "Integer,Double,Bool\n"
                                    "1,2.2,True\n"
                                    "3,ExpectedDouble,False\n";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TIANACSVStream          src_stream(&data_stream, "");
 
     src_stream.SetFieldType(0, eRR_Integer);
@@ -612,7 +612,7 @@ BOOST_AUTO_TEST_CASE(BASIC_TYPE_VALIDATION_NO_FAIL)
     string                  data = "Integer,Double,Bool\n"
                                    "1,2.2,True\n"
                                    "3,ExpectedDouble,False\n";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TIANACSVStream          src_stream(&data_stream, "");
 
     src_stream.SetFieldType(0, eRR_Integer);
@@ -629,7 +629,7 @@ BOOST_AUTO_TEST_CASE(CTIME_VALIDATION_DEFAULT_FORMAT)
     string                  data = "DateTime\n"
                                    "01/02/1903 12:13:14\n"
                                    "02/03/1967 07:56:00\n";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TIANACSVStream          src_stream(&data_stream, "");
 
     src_stream.SetFieldType(0, eRR_DateTime);
@@ -644,7 +644,7 @@ BOOST_AUTO_TEST_CASE(CTIME_VALIDATION_DEFAULT_FORMAT_FAIL)
     string                  data = "DateTime\n"
                                    "12:13:14 04/04/1999\n"
                                    "02/03/1967 07:56:00\n";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TIANACSVStream          src_stream(&data_stream, "");
 
     src_stream.SetFieldType(0, eRR_DateTime);
@@ -667,7 +667,7 @@ BOOST_AUTO_TEST_CASE(CTIME_VALIDATION_EXPLICIT_FORMAT)
     string                  data = "DateTime\n"
                                    "1903 01 02 12:13:14\n"
                                    "1967 02 03 07:56:00\n";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TIANACSVStream          src_stream(&data_stream, "");
 
     src_stream.SetFieldType(0, CRR_FieldType<ERR_FieldType>(eRR_DateTime,
@@ -683,7 +683,7 @@ BOOST_AUTO_TEST_CASE(CTIME_VALIDATION_EXPLICIT_FORMAT_FAIL)
     string                  data = "DateTime\n"
                                    "01 02 1903 12:13:14\n"
                                    "1967 02 03 07:56:00\n";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TIANACSVStream          src_stream(&data_stream, "");
 
     src_stream.SetFieldType(0, CRR_FieldType<ERR_FieldType>(eRR_DateTime,
@@ -707,7 +707,7 @@ BOOST_AUTO_TEST_CASE(BASIC_TYPE_VALIDATION_WITH_TRANSLATION)
     string                  data = "Integer,Double,Bool\n"
                                    "\"1\",\"2.2\",\"True\"\n"
                                    "\"3\",\"3.14\",\"False\"\n";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TIANACSVStream          src_stream(&data_stream, "");
 
     src_stream.SetFieldType(0, eRR_Integer);
@@ -723,7 +723,7 @@ BOOST_AUTO_TEST_CASE(BASIC_TYPE_VALIDATION_FAIL_WITH_TRANSLATION)
     string                  data = "Integer,Double,Bool\n"
                                    "\"1\",\"2.2\",\"True\"\n"
                                    "\"3\",\"ExpectedDouble\",\"False\"\n";
-    CNcbiIstrstream         data_stream(data.c_str());
+    CNcbiIstrstream         data_stream(data);
     TIANACSVStream          src_stream(&data_stream, "");
 
     src_stream.SetFieldType(0, eRR_Integer);
