@@ -1924,7 +1924,7 @@ EEncodingForm GetCharsetEncodingForm(const string& charset,
 
 CStringUTF8 CCgiEntry::GetValueAsUTF8(EOnCharsetError on_error) const
 {
-    CNcbiIstrstream is(GetValue().c_str());
+    CNcbiIstrstream is(GetValue());
     EEncodingForm enc = GetCharsetEncodingForm(x_GetCharset(), on_error);
     CStringUTF8 utf_str;
     try {
