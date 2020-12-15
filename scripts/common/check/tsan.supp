@@ -92,6 +92,21 @@ race:^tds_socket_read$
 # satskyse CXX-11282
 
 # It has already been checked by the original developer long ago,
-# see the SVN revision 347572 (false positive)
+# see the SVN revision 347572 (false positive) CSyncQueue<...>
 race:>::x_GuardedUnlock() const$
+race:>::x_IsGuarded() const$
+
+# this is rather timing (CSyncQueue<...>)
+race:>::GetSize() const$
+
+# this is rather timing
+race:^ncbi::CThreadPool_Task::GetStatus() const$
+race:^ncbi::CThreadPool_Task::IsCancelRequested() const$
+race:^ncbi::CThreadPool_Task::IsFinished() const$
+race:^ncbi::CThreadPool_Task::x_RequestToCancel()$
+race:^ncbi::CThreadPool_ThreadImpl::RequestToFinish()$
+race:^ncbi::CThreadPool_ThreadImpl::CancelCurrentTask()$
+race:^ncbi::CThreadPool_ServiceThread::IsFinished()$
+race:^ncbi::CThreadPool_ServiceThread::RequestToFinish()$
+race:^ncbi::CThreadPool_Impl::x_NoNewTaskAllowed() const$
 

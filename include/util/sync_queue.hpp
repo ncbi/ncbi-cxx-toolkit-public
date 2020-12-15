@@ -1488,6 +1488,9 @@ inline
 typename CSyncQueue<Type, Container, Traits>::TSize
     CSyncQueue<Type, Container, Traits>::GetSize(void) const
 {
+    // GCC thread sanitizer says this is a data race. It was decided to
+    // consider it rather as timing for this particular case so the method is
+    // included into sanitizer suppressions
     return m_Size;
 }
 
