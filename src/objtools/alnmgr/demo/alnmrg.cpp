@@ -123,7 +123,7 @@ private:
 void CAlnMrgApp::Init(void)
 {
     // Create command-line argument descriptions class
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // Specify USAGE context
     arg_desc->SetUsageContext
@@ -394,7 +394,7 @@ void CAlnMrgApp::LoadSeqEntry(CNcbiIstream& is)
 {
     string se_asn_type;
     {{
-         auto_ptr<CObjectIStream> obj_is
+         unique_ptr<CObjectIStream> obj_is
              (CObjectIStream::Open(eSerial_AsnText, is));
          
          se_asn_type = obj_is->ReadFileHeader();
@@ -402,7 +402,7 @@ void CAlnMrgApp::LoadSeqEntry(CNcbiIstream& is)
          is.seekg(0);
     }}
         
-    auto_ptr<CObjectIStream> obj_is
+    unique_ptr<CObjectIStream> obj_is
         (CObjectIStream::Open(eSerial_AsnText, is));
     
     if (se_asn_type == "Seq-entry") {
@@ -447,7 +447,7 @@ void CAlnMrgApp::LoadBlastDb(const string& dbname)
 void CAlnMrgApp::PrintMergedAln(void)
 {
     const CArgs& args = GetArgs();
-    auto_ptr<CObjectOStream> asn_out 
+    unique_ptr<CObjectOStream> asn_out 
         (CObjectOStream::Open
          (args["bout"] && args["bout"].AsBoolean() ? 
           eSerial_AsnBinary : eSerial_AsnText,
@@ -514,7 +514,7 @@ void CAlnMrgApp::LoadInputAlns(void)
     // get the asn type of the top-level object
     string asn_type = args["b"].AsString();
     bool binary = !asn_type.empty();
-    auto_ptr<CObjectIStream> in
+    unique_ptr<CObjectIStream> in
         (CObjectIStream::Open(binary?eSerial_AsnBinary:eSerial_AsnText, sname));
     
     CAlnAsnReader reader(&GetScope());
