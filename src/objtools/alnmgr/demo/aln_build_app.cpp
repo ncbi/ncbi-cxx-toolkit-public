@@ -92,7 +92,7 @@ private:
 
 void CAlnBuildApp::Init(void)
 {
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     arg_desc->AddDefaultKey
         ("in", "input_file_name",
@@ -209,7 +209,7 @@ void CAlnBuildApp::LoadInputAlns(void)
     /// get the asn type of the top-level object
     string asn_type = args["b"].AsString();
     bool binary = !asn_type.empty();
-    auto_ptr<CObjectIStream> in
+    unique_ptr<CObjectIStream> in
         (CObjectIStream::Open(binary ? eSerial_AsnBinary : eSerial_AsnText,
                               args["in"].AsInputFile(binary ? CArgValue::fBinary : CArgValue::fText)));
     
@@ -262,7 +262,7 @@ void CAlnBuildApp::PrintAnchoredAln(const CAnchoredAln& anchored_aln)
                 // the above is impossible
             }
                 
-            auto_ptr<IAlnSegmentIterator> sparse_ci
+            unique_ptr<IAlnSegmentIterator> sparse_ci
                 (sparse_aln.CreateSegmentIterator(row,
                                                   sparse_aln.GetAlnRange(),
                                                   IAlnSegmentIterator::eSkipInserts/*eAllSegments*/));
@@ -446,7 +446,7 @@ int CAlnBuildApp::Run(void)
         CreateSeqAlignFromAnchoredAln(out_anchored_aln,
                                       CSeq_align::TSegs::e_Denseg);
     ReportTime("CreateSeqAlignFromAnchoredAln");
-    auto_ptr<CObjectOStream> asn_out
+    unique_ptr<CObjectOStream> asn_out
         (CObjectOStream::Open(eSerial_AsnText, 
                               GetArgs()["asnout"].AsString()));
     *asn_out << *sa;
