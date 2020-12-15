@@ -1,6 +1,5 @@
-#
-#
-#
+# $Id$
+
 add_executable(tds100_strtok_r-app
     strtok_r
 )

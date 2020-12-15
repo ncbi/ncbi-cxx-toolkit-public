@@ -1,6 +1,4 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_lib(ncbi_xdbapi_odbc SHARED)
   NCBI_sources(connection context cursor lang_cmd result rpc odbc_utils)

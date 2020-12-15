@@ -1,11 +1,9 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(odbc100_attributes)
   NCBI_sources(attributes  common)
   NCBI_add_definitions(NEED_FREETDS_SRCDIR)
   NCBI_set_test_assets(odbc.ini attributes.in)
-  NCBI_add_test(test-odbc100 odbc100_attributes )
+  NCBI_add_test(test-odbc100 odbc100_attributes)
 NCBI_end_app()
 

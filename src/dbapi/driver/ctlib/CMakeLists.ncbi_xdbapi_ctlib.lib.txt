@@ -1,6 +1,4 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_lib(ncbi_xdbapi_ctlib SHARED)
   NCBI_sources(bcp connection context cursor lang_cmd rpc result ctlib_utils)

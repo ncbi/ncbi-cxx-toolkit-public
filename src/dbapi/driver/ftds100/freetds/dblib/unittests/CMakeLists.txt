@@ -1,11 +1,8 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_project_tags(test)
 NCBI_add_definitions(HAVE_CONFIG_H=1 NEED_FREETDS_SRCDIR)
 NCBI_uses_toolkit_libraries(sybdb_ftds100)
-NCBI_project_watchers(ucko satskyse)
 NCBI_set_test_requires(in-house-resources)
 
 NCBI_add_app(
@@ -15,4 +12,4 @@ NCBI_add_app(
   timeout hang null null2 setnull numeric pending cancel spid bcp_getl
 )
 
-
+NCBI_project_watchers(ucko satskyse)

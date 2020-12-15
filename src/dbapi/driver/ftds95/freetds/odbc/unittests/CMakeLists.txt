@@ -1,11 +1,8 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_project_tags(test)
 NCBI_add_definitions(HAVE_CONFIG_H=1)
 NCBI_uses_toolkit_libraries(odbc_ftds95 tds_ftds95 odbc_ftds95)
-NCBI_project_watchers(ucko satskyse)
 NCBI_set_test_assets(odbc.ini)
 NCBI_set_test_requires(in-house-resources)
 
@@ -23,4 +20,4 @@ NCBI_add_app(
   describecol2 closestmt
 )
 
-
+NCBI_project_watchers(ucko satskyse)

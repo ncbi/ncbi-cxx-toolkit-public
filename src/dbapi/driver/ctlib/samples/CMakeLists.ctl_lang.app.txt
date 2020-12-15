@@ -1,19 +1,18 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(ctl_lang)
   NCBI_sources(ctl_lang dbapi_driver_sample_base_ctl)
   NCBI_optional_components(connext)
-  NCBI_project_watchers(ucko satskyse)
 
   NCBI_set_test_requires(in-house-resources)
-  NCBI_set_test_assets(ctl_lang.ini)
+  NCBI_set_test_assets(run_sybase_app.sh ctl_lang.ini)
   NCBI_begin_test(ctl_lang-SYB16-2K)
     NCBI_set_test_command(run_sybase_app.sh ctl_lang -S DBAPI_SYB160_TEST)
   NCBI_end_test()
   NCBI_begin_test(ctl_lang-SYB16-16K)
     NCBI_set_test_command(run_sybase_app.sh ctl_lang -S DBAPI_DEV16_16K)
   NCBI_end_test()
+
+  NCBI_project_watchers(ucko satskyse)
 NCBI_end_app()
 

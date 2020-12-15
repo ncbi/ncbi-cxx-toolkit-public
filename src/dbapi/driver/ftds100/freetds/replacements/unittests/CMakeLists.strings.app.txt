@@ -1,6 +1,5 @@
-#
-#
-#
+# $Id$
+
 add_executable(tds100_strings-app
     strings
 )

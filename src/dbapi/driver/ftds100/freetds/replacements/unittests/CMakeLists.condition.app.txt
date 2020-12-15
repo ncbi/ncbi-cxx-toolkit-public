@@ -1,6 +1,5 @@
-#
-#
-#
+# $Id$
+
 add_executable(tds100_condition-app
     condition
 )

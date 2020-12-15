@@ -1,11 +1,9 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_project_tags(test)
 NCBI_add_definitions(HAVE_CONFIG_H=1)
 NCBI_uses_toolkit_libraries(odbc_ftds100 tds_ftds100 odbc_ftds100)
-NCBI_project_watchers(ucko satskyse)
+
 NCBI_set_test_assets(odbc.ini)
 NCBI_set_test_requires(in-house-resources)
 
@@ -23,4 +21,4 @@ NCBI_add_app(
   describecol2 closestmt bcp oldpwd
 )
 
-
+NCBI_project_watchers(ucko satskyse)

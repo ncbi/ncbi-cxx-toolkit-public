@@ -1,11 +1,8 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_project_tags(test)
 NCBI_add_definitions(HAVE_CONFIG_H=1 NEED_FREETDS_SRCDIR)
 NCBI_uses_toolkit_libraries(sybdb_ftds95)
-NCBI_project_watchers(ucko satskyse)
 NCBI_set_test_requires(in-house-resources)
 
 NCBI_add_app(
@@ -14,3 +11,5 @@ NCBI_add_app(
   t0022 t0023 rpc dbmorecmds bcp thread text_buffer done_handling
   timeout hang null null2 setnull numeric pending cancel
 )
+
+NCBI_project_watchers(ucko satskyse)

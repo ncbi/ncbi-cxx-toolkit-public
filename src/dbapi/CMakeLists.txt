@@ -1,8 +1,5 @@
-#############################################################################
 # $Id$
-#############################################################################
-# 
-#
+
 if (APPLE AND NOT XCODE)
   #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wl,-framework,ApplicationServices -liconv")
   #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wl,-framework,ApplicationServices -liconv")

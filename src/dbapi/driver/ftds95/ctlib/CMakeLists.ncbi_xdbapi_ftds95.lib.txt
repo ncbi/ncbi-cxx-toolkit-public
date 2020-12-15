@@ -1,6 +1,4 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_lib(ncbi_xdbapi_ftds95 SHARED)
   NCBI_sources(bcp connection context cursor lang_cmd result rpc ftds95_ctlib_utils)
