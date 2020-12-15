@@ -1,6 +1,4 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_lib(xgridcgi)
   NCBI_sources(grid_cgiapp remote_cgiapp cgi2grid cgi_session_netcache)

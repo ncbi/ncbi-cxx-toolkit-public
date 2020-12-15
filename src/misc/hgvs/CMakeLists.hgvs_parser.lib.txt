@@ -1,6 +1,4 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_lib(hgvs)
   NCBI_sources(
@@ -13,7 +11,7 @@ NCBI_begin_lib(hgvs)
     xregexp
     seq variation objcoords
   )
-  NCBI_project_watchers(astashya)
   NCBI_project_tags(gbench)
+  NCBI_project_watchers(astashya)
 NCBI_end_lib()
 

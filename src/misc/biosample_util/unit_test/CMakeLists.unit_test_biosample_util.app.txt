@@ -1,12 +1,9 @@
-#############################################################################
 #  $Id$
-#############################################################################
 
 NCBI_begin_app(unit_test_biosample_util)
   NCBI_sources(unit_test_biosample_util)
   NCBI_uses_toolkit_libraries(
     xunittestutil xbiosample_util xvalidate macro test_boost ncbi_xloader_genbank
-   
   )
   NCBI_requires(Boost.Test.Included)
   NCBI_add_test()

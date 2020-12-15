@@ -1,6 +1,5 @@
-#
-#
-#
+# $Id$
+
 add_executable(test_jsonwrapp_old-app
     test_jsonwrapp_old
 )

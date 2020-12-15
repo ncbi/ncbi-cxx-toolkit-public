@@ -1,11 +1,9 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(test_ncbi_clog_mt)
   NCBI_sources(test_ncbi_clog_mt)
   NCBI_uses_toolkit_libraries(clog test_mt)
-  NCBI_project_watchers(ivanov)
   NCBI_add_test()
+  NCBI_project_watchers(ivanov)
 NCBI_end_app()
 

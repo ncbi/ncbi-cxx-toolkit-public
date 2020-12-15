@@ -1,7 +1,4 @@
-#############################################################################
 # $Id$
-#############################################################################
-
 
 NCBI_requires(Boost.Spirit)
 NCBI_add_definitions(BOOST_ERROR_CODE_HEADER_ONLY BOOST_SYSTEM_NO_DEPRECATED)

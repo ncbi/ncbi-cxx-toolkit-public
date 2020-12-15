@@ -1,15 +1,15 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(test_netstorage)
   NCBI_sources(test_netstorage)
   NCBI_requires(Boost.Test.Included)
   NCBI_uses_toolkit_libraries(netstorage test_boost)
-  NCBI_project_watchers(sadyrovr fukanchi)
+
   NCBI_set_test_requires(in-house-resources)
   NCBI_set_test_assets(test_netstorage.ini)
   NCBI_set_test_timeout(3000)
   NCBI_add_test()
+
+  NCBI_project_watchers(sadyrovr fukanchi)
 NCBI_end_app()
 

@@ -1,12 +1,10 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(unit_test_eutils)
   NCBI_sources(unit_test_eutils)
   NCBI_requires(Boost.Test.Included)
   NCBI_uses_toolkit_libraries(eutils_client test_boost)
-  NCBI_project_watchers(kotliaro)
   NCBI_add_test()
+  NCBI_project_watchers(kotliaro)
 NCBI_end_app()
 
