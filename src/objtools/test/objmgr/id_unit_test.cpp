@@ -70,6 +70,9 @@ NCBI_PARAM_DECL(Int8, GENBANK, GI_OFFSET);
 NCBI_PARAM_DEF_EX(Int8, GENBANK, GI_OFFSET, 0,
                   eParam_NoThread, GENBANK_GI_OFFSET);
 
+NCBI_PARAM_DECL(bool, ID_UNIT_TEST, PSG2_LOADER);
+NCBI_PARAM_DEF(bool, ID_UNIT_TEST, PSG2_LOADER, false);
+
 static
 TIntId GetGiOffset(void)
 {
@@ -82,6 +85,18 @@ TIntId GetGiOffset(void)
     return gi_offset;
 }
 
+static
+bool IsUsingPSG2Loader(void)
+{
+    return NCBI_PARAM_TYPE(ID_UNIT_TEST, PSG2_LOADER)::GetDefault();
+}
+
+static
+bool NeedsOtherLoaders()
+{
+    return CGBDataLoader::IsUsingPSGLoader() && !IsUsingPSG2Loader();
+}
+
 
 static CRef<CScope> s_InitScope(bool reset_loader = true)
 {
@@ -90,7 +105,7 @@ static CRef<CScope> s_InitScope(bool reset_loader = true)
         CDataLoader* loader =
             om->FindDataLoader(CGBDataLoader::GetLoaderNameFromArgs());
         if ( loader ) {
-            if (CGBDataLoader::IsUsingPSGLoader()) {
+            if ( NeedsOtherLoaders() ) {
                 om->RevokeAllDataLoaders();
             }
             else {
@@ -107,7 +122,7 @@ static CRef<CScope> s_InitScope(bool reset_loader = true)
 
     CRef<CScope> scope(new CScope(*om));
     scope->AddDefaults();
-    if (CGBDataLoader::IsUsingPSGLoader()) {
+    if ( NeedsOtherLoaders() ) {
         // Add SNP/CDD/WGS loaders.
         scope->AddDataLoader(om->RegisterDataLoader(0, "cdd")->GetName());
         scope->AddDataLoader(om->RegisterDataLoader(0, "snp")->GetName());
@@ -1126,6 +1141,92 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr)
     BOOST_CHECK_EQUAL(user_count.size(), 2u);
     BOOST_CHECK_EQUAL(user_count["StructuredComment"], 1);
     BOOST_CHECK_EQUAL(user_count["DBLink"], 1);
+}
+
+
+BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr2)
+{
+    LOG_POST("Checking WGS master sequence descriptors with duplicates");
+    CRef<CScope> scope = s_InitScope();
+    CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetHandle("NZ_JJPX01000174.1"));
+    BOOST_REQUIRE(bh);
+    int desc_mask = 0;
+    map<string, int> user_count;
+    int comment_count = 0;
+    int pub_count = 0;
+    for ( CSeqdesc_CI it(bh); it; ++it ) {
+        desc_mask |= 1<<it->Which();
+        switch ( it->Which() ) {
+        case CSeqdesc::e_Comment:
+            ++comment_count;
+            break;
+        case CSeqdesc::e_Pub:
+            ++pub_count;
+            break;
+        case CSeqdesc::e_User:
+            ++user_count[it->GetUser().GetType().GetStr()];
+            break;
+        default:
+            break;
+        }
+    }
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Source));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Molinfo));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Pub));
+    BOOST_CHECK_EQUAL(pub_count, 2);
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Comment));
+    BOOST_CHECK_EQUAL(comment_count, 1);
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Create_date));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Update_date));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_User));
+    BOOST_CHECK_EQUAL(user_count.size(), 4u);
+    BOOST_CHECK_EQUAL(user_count["StructuredComment"], 2);
+    BOOST_CHECK_EQUAL(user_count["DBLink"], 1);
+    BOOST_CHECK_EQUAL(user_count["RefGeneTracking"], 1);
+    BOOST_CHECK_EQUAL(user_count["FeatureFetchPolicy"], 1);
+}
+
+
+BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr3)
+{
+    LOG_POST("Checking WGS master sequence descriptors with duplicates");
+    CRef<CScope> scope = s_InitScope();
+    CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetHandle("NZ_JJPX01000091.1"));
+    BOOST_REQUIRE(bh);
+    int desc_mask = 0;
+    map<string, int> user_count;
+    int comment_count = 0;
+    int pub_count = 0;
+    for ( CSeqdesc_CI it(bh); it; ++it ) {
+        desc_mask |= 1<<it->Which();
+        switch ( it->Which() ) {
+        case CSeqdesc::e_Comment:
+            ++comment_count;
+            break;
+        case CSeqdesc::e_Pub:
+            ++pub_count;
+            break;
+        case CSeqdesc::e_User:
+            ++user_count[it->GetUser().GetType().GetStr()];
+            break;
+        default:
+            break;
+        }
+    }
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Source));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Molinfo));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Pub));
+    BOOST_CHECK_EQUAL(pub_count, 2);
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Comment));
+    BOOST_CHECK_EQUAL(comment_count, 2);
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Create_date));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Update_date));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_User));
+    BOOST_CHECK_EQUAL(user_count.size(), 4u);
+    BOOST_CHECK_EQUAL(user_count["StructuredComment"], 2);
+    BOOST_CHECK_EQUAL(user_count["DBLink"], 1);
+    BOOST_CHECK_EQUAL(user_count["RefGeneTracking"], 1);
+    BOOST_CHECK_EQUAL(user_count["FeatureFetchPolicy"], 1);
 }
 
 
