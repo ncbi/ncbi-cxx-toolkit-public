@@ -86,8 +86,8 @@ static int LoadASNFromIstream(CNcbiIstream& asnIstream,
     }
 
     // try to read the file as various ASN types (if it's not clear from the first ascii word).
-    auto_ptr<SeqEntryList> newSequences(new SeqEntryList());
-    auto_ptr<SeqAnnotList> newAlignments(new SeqAnnotList());
+    unique_ptr<SeqEntryList> newSequences(new SeqEntryList());
+    unique_ptr<SeqAnnotList> newAlignments(new SeqAnnotList());
     bool readOK = false;
     string err;
 
@@ -327,19 +327,19 @@ int CAV_DisplayMultiple(
     }
 
     // process asn data
-    auto_ptr<SequenceSet> sequenceSet(new SequenceSet(sequences));
+    unique_ptr<SequenceSet> sequenceSet(new SequenceSet(sequences));
     if (!sequenceSet.get() || sequenceSet->Status() != CAV_SUCCESS) {
         ERR_POST_X(22, Critical << "Error processing sequence data");
         return sequenceSet->Status();
     }
-    auto_ptr<AlignmentSet> alignmentSet(new AlignmentSet(sequenceSet.get(), alignments, (options & CAV_IGNORE_BAD_ALN)));
+    unique_ptr<AlignmentSet> alignmentSet(new AlignmentSet(sequenceSet.get(), alignments, (options & CAV_IGNORE_BAD_ALN)));
     if (!alignmentSet.get() || alignmentSet->Status() != CAV_SUCCESS) {
         ERR_POST_X(23, Critical << "Error processing alignment data");
         return alignmentSet->Status();
     }
 
     // create the alignment display structure
-    auto_ptr<AlignmentDisplay> display(new AlignmentDisplay(sequenceSet.get(), alignmentSet.get()));
+    unique_ptr<AlignmentDisplay> display(new AlignmentDisplay(sequenceSet.get(), alignmentSet.get()));
     if (!display.get() || display->Status() != CAV_SUCCESS) {
         ERR_POST_X(24, Critical << "Error creating alignment display");
         return display->Status();
@@ -411,8 +411,8 @@ int CAV_DisplayMultiple(
     }
 
     // make sure these get freed
-    auto_ptr<const SeqEntryList> sequences(seqs);
-    auto_ptr<const SeqAnnotList> alignments(alns);
+    unique_ptr<const SeqEntryList> sequences(seqs);
+    unique_ptr<const SeqAnnotList> alignments(alns);
 
     return CAV_DisplayMultiple(*seqs, *alns, options, paragraphWidth, conservationThreshhold,
         title, nFeatures, alnFeatures, outputStream, diagnosticStream);
