@@ -266,7 +266,7 @@ void CBam2GraphApp::ProcessFile(const string& file)
         if ( !NStr::StartsWith(s, "Delta-ext") ) {
             s = "Delta-ext ::= "+s;
         }
-        CNcbiIstrstream in(s.data(), s.size());
+        CNcbiIstrstream in(s);
         in >> MSerial_AsnText >> *delta;
     }
     else if ( args["delta_file"] ) {
