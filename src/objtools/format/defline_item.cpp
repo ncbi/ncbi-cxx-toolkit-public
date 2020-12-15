@@ -85,7 +85,7 @@ void CDeflineItem::x_GatherInfo(CBioseqContext& ctx)
     CConstRef<CBioseq> bioseq = ctx.GetHandle().GetBioseqCore();
     CScope& scope = ctx.GetScope();
     sequence::CDeflineGenerator::TUserFlags flags = 0;
-    if ( ctx.Config().UseAutoDef() ) {
+    if ( ! ctx.Config().DoNotUseAutoDef() ) {
         flags |= sequence::CDeflineGenerator::fUseAutoDef;
     }
     if ( ctx.Config().IgnoreExistingTitle() ) {
