@@ -200,7 +200,7 @@ private:
 void CTestApp::Init(void)
 {
     // Prepare command line descriptions
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     arg_desc->AddDefaultKey("entries", "SeqEntriesFile",
                             "Seq-entries for the test",
@@ -358,7 +358,7 @@ int CTestApp::Run(void)
 
     LoadEntries();
     
-    auto_ptr<CConfig::TParamTree>
+    unique_ptr<CConfig::TParamTree>
         app_params(CConfig::ConvertRegToTree(GetConfig()));
     _ASSERT( app_params.get() );
     const TParamTree* tests = app_params->FindNode(kTestsSection);
