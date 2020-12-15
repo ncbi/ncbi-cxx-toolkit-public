@@ -135,7 +135,7 @@ AlignmentSet::AlignmentSet(SequenceSet *sequenceSet, const SeqAnnotList& seqAnno
     SeqAlignList::const_iterator s, se = seqaligns.end();
     int i = 1;
     for (s=seqaligns.begin(); s!=se; ++s, ++i) {
-        auto_ptr < const MasterSlaveAlignment > alignment(
+        unique_ptr < const MasterSlaveAlignment > alignment(
             new MasterSlaveAlignment(sequenceSet, master, **s));
         if (!alignment.get() || alignment->Status() != CAV_SUCCESS) {
             if (alignment.get() && ignoreBadPairwiseAlignments) {
