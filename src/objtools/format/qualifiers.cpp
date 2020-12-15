@@ -1168,7 +1168,7 @@ void s_HtmlizeLatLon( string &subname ) {
     string east_or_west;
 
     // extract the pieces
-    CNcbiIstrstream lat_lon_stream( subname.c_str() );
+    CNcbiIstrstream lat_lon_stream( subname );
     lat_lon_stream >> lat;
     lat_lon_stream >> north_or_south;
     lat_lon_stream >> lon;

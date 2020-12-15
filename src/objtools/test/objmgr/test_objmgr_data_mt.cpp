@@ -210,7 +210,7 @@ void CTestOM::SetValue(TFeatMap& vm, const TMapKey& key, const TFeats& value)
     if ( *old_str != new_str ) {
         TFeats old_value;
         {{
-            CNcbiIstrstream str(old_str->data(), old_str->size());
+            CNcbiIstrstream str(*old_str);
             CObjectIStreamAsnBinary in(str);
             while ( in.HaveMoreData() ) {
                 CRef<CSeq_feat> feat(new CSeq_feat);

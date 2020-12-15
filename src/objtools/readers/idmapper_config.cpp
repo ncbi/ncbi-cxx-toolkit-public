@@ -74,7 +74,7 @@ void CIdMapperConfig::Initialize(CNcbiIstream& istr)
 
     CMemoryRegistry reg;
     try {
-        CNcbiIstrstream is(buffer.data(), buffer.size());
+        CNcbiIstrstream is(buffer);
         reg.Read(is);
     }
     catch (CException& e) {
@@ -86,7 +86,7 @@ void CIdMapperConfig::Initialize(CNcbiIstream& istr)
         // older config file support
         // consider dropping this
         //
-        CNcbiIstrstream is(buffer.data(), buffer.size());
+        CNcbiIstrstream is(buffer);
 
         string strLine( "" );
         string strCurrentContext( m_strContext );

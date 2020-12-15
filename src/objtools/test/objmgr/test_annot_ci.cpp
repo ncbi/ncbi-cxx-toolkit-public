@@ -386,7 +386,7 @@ int CTestApp::Run(void)
         CSeq_loc loc;
         {{
             string loc_str = x_GetStringParam(param, kLocation);
-            CNcbiIstrstream in(loc_str.c_str());
+            CNcbiIstrstream in(loc_str);
             in >> MSerial_AsnText >> loc;
         }}
         SAnnotSelector sel = x_InitSelector(param);
