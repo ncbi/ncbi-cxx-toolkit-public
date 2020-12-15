@@ -91,7 +91,7 @@ void CTestApp::Init(void)
     //
 
     // Create
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // GI to fetch
     arg_desc->AddDefaultKey("gi", "SeqEntryID",
