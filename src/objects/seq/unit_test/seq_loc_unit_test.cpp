@@ -54,7 +54,7 @@ CRef<CSeq_loc> MakeLoc(const char* text)
     if ( input.find("::=") == NPOS ) {
         input = "Seq-loc::="+input;
     }
-    CNcbiIstrstream str(input.c_str());
+    CNcbiIstrstream str(input);
     CRef<CSeq_loc> loc(new CSeq_loc);
     str >> MSerial_AsnText >> *loc;
     return loc;

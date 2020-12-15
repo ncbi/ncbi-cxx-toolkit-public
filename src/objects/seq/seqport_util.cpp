@@ -1302,7 +1302,7 @@ CRef<CSeq_code_set> CSeqportUtil_implementation::Init()
     }
 
     // Create an in memory stream on sm_StrAsnData
-    CNcbiIstrstream is(str.c_str(), str.length());
+    CNcbiIstrstream is(str);
 
     unique_ptr<CObjectIStream>
         asn_codes_in(CObjectIStream::Open(eSerial_AsnText, is));

@@ -414,7 +414,7 @@ CLocalTaxon::TNodeRef CLocalTaxon::x_Cache(TTaxid taxid, bool including_org_ref)
         stmt.Step();
         string org_ref_asn = stmt.GetString(0);
         if (!org_ref_asn.empty()) {
-            CNcbiIstrstream istr(org_ref_asn.c_str());
+            CNcbiIstrstream istr(org_ref_asn);
             CRef<COrg_ref> org_ref(new COrg_ref);
             istr >> MSerial_AsnText >> *org_ref;
             it->second.org_ref = org_ref;

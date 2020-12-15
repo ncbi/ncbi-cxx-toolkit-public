@@ -448,7 +448,7 @@ CGen_code_table_imp::CGen_code_table_imp(void)
     }
 
     // create an in memory stream on sm_GenCodeTblMemStr
-    CNcbiIstrstream is(str.c_str(), str.length());
+    CNcbiIstrstream is(str);
     unique_ptr<CObjectIStream>
         asn_codes_in(CObjectIStream::Open(eSerial_AsnText, is));
 

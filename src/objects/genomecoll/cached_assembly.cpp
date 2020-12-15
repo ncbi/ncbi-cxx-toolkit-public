@@ -47,7 +47,7 @@ static
 CRef<CGC_Assembly> UncomressAndCreate(const string& blob, CCompressStream::EMethod method) {
     CStopWatch sw(CStopWatch::eStart);
 
-    CNcbiIstrstream in(blob.data(), blob.size());
+    CNcbiIstrstream in(blob);
     CDecompressIStream decompress(in, method);
 
     CRef<CGC_Assembly> m_assembly(new CGC_Assembly);

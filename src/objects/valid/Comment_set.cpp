@@ -132,7 +132,7 @@ static void s_InitializeStructuredCommentRules(void)
         for (size_t i = 0; i < num_lines; i++) {
             all_rules += s_Defaultvalidrules[i];
         }
-        CNcbiIstrstream istr(all_rules.c_str());
+        CNcbiIstrstream istr(all_rules);
         istr >> MSerial_AsnText >> *s_CommentRules;
     }
     if (s_CommentRules->IsSet()) {

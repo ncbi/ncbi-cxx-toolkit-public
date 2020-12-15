@@ -60,13 +60,13 @@ static void s_GetObject(const string& gene_id, CEntrezgene& eg_obj)
     try {
         SleepMilliSec(333); // per e-utils guidelines
         req.Read(&eg_str);
-        CNcbiIstrstream istr(eg_str.c_str(), eg_str.size());
+        CNcbiIstrstream istr(eg_str);
         istr >> MSerial_AsnText >> eg_obj;
     } catch(...) {
         // simple retry, only retry once
         SleepMilliSec(5000); // maybe enough time, maybe not
         req.Read(&eg_str);
-        CNcbiIstrstream istr(eg_str.c_str(), eg_str.size());
+        CNcbiIstrstream istr(eg_str);
         istr >> MSerial_AsnText >> eg_obj;
     }
 }
