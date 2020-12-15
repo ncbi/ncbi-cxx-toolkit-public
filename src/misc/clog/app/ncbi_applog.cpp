@@ -1437,7 +1437,7 @@ int CNcbiApplogApp::Cmd_Health()
     }
 
     // Add received CGI info
-    CNcbiIstrstream is(output.c_str());
+    CNcbiIstrstream is(output);
     try {
         reg.Read(is);
     }

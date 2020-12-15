@@ -684,7 +684,7 @@ static void s_InitializeOrganelleProductRules(const string& name)
         for (size_t i = 0; i < num_lines; i++) {
             all_rules += s_Defaultorganelleproducts[i];
         }
-        CNcbiIstrstream istr(all_rules.c_str());
+        CNcbiIstrstream istr(all_rules);
         istr >> MSerial_AsnText >> *s_OrganelleProductRules;
         s_OrganelleProductRules->SetPrecompiledData(s_Defaultorganelleproducts_emit, &s_Defaultorganelleproducts_hits, s_Defaultorganelleproducts_states);
     }
@@ -729,7 +729,7 @@ static void s_InitializeProductRules(const string& name)
         for (size_t i = 0; i < num_lines; i++) {
             all_rules += s_Defaultproductrules[i];
         }
-        CNcbiIstrstream istr(all_rules.c_str());
+        CNcbiIstrstream istr(all_rules);
         istr >> MSerial_AsnText >> *s_ProductRules;
         s_ProductRules->SetPrecompiledData(s_Defaultproductrules_emit, &s_Defaultproductrules_hits, s_Defaultproductrules_states);
     }
