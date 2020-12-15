@@ -102,7 +102,7 @@ private:
     x_FormatAltSeq(const T& item, const string& name, IFlatTextOStream& text_os);
 
     CRef<CGBSeq> m_GBSeq;
-    auto_ptr<CObjectOStream> m_Out;
+    unique_ptr<CObjectOStream> m_Out;
     CNcbiOstrstream m_StrStream;
     bool m_IsInsd;
     bool m_DidFeatStart;
