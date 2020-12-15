@@ -105,7 +105,7 @@ private:
 void CAlnVwrApp::Init(void)
 {
     // Create command-line argument descriptions class
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // Specify USAGE context
     arg_desc->SetUsageContext
@@ -208,7 +208,7 @@ void CAlnVwrApp::LoadDenseg(void)
     // get the asn type of the top-level object
     string asn_type = args["b"].AsString();
     bool binary = !asn_type.empty();
-    auto_ptr<CObjectIStream> in
+    unique_ptr<CObjectIStream> in
         (CObjectIStream::Open(binary?eSerial_AsnBinary:eSerial_AsnText, sname));
     
     CAlnAsnReader reader(m_Scope);
@@ -223,7 +223,7 @@ void CAlnVwrApp::LoadDenseg(void)
     
         string se_asn_type;
         {{
-            auto_ptr<CObjectIStream> se_in
+            unique_ptr<CObjectIStream> se_in
                 (CObjectIStream::Open(eSerial_AsnText, se_is));
             
             se_asn_type = se_in->ReadFileHeader();
@@ -231,7 +231,7 @@ void CAlnVwrApp::LoadDenseg(void)
             se_is.seekg(0);
         }}
         
-        auto_ptr<CObjectIStream> se_in
+        unique_ptr<CObjectIStream> se_in
             (CObjectIStream::Open(eSerial_AsnText, se_is));
         
         if (se_asn_type == "Seq-entry") {
