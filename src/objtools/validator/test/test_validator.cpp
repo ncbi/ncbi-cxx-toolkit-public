@@ -113,7 +113,7 @@ private:
     void PrintBatchItem(const CValidErrItem& item, CNcbiOstream& os, bool printAcc = false);
 
     CRef<CObjectManager> m_ObjMgr;
-    auto_ptr<CObjectIStream> m_In;
+    unique_ptr<CObjectIStream> m_In;
     unsigned int m_Options;
     bool m_Continue;
     bool m_OnlyAnnots;
@@ -124,7 +124,7 @@ private:
 
 
 CTest_validatorApplication::CTest_validatorApplication(void) :
-    m_ObjMgr(0), m_In(0), m_Options(0), m_Continue(false),
+    m_ObjMgr(0), m_Options(0), m_Continue(false),
     m_OnlyAnnots(false), m_Level(0), m_Reported(0)
 {
 }
@@ -135,7 +135,7 @@ void CTest_validatorApplication::Init(void)
     // Prepare command line descriptions
 
     // Create
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     arg_desc->AddDefaultKey
         ("i", "ASNFile", "Seq-entry/Seq_submit ASN.1 text file",
