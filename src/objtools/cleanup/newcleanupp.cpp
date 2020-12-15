@@ -1184,7 +1184,7 @@ typename TMapType::const_iterator s_FindInMapAsPrefix( const string &str_arg, co
 
     // use this to delete strings created in this function, if any.
     // we don't read from it directly
-    auto_ptr<string> temp_str;
+    unique_ptr<string> temp_str;
 
     // chop off characters that can't be in the map, so they don't count
     SIZE_TYPE first_bad_char = 0;
