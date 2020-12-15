@@ -360,7 +360,7 @@ bool NcbiStreamCompareText(CNcbiIstream& is1, CNcbiIstream& is2,
 bool NcbiStreamCompareText(CNcbiIstream& is, const string& str,
                            ECompareTextMode mode, size_t buf_size)
 {
-    CNcbiIstrstream istr(str.data(), str.size());
+    CNcbiIstrstream istr(str);
     return NcbiStreamCompareText(is, istr, mode, buf_size);
 }
 

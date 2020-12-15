@@ -305,8 +305,7 @@ void CDiagParserApp::x_CheckMessage(void)
     string result;
     unique_ptr<SDiagMessage> msg;
     CTime post_time(CTime::eCurrent);
-    char buffer[4096] = "";
-    CNcbiOstrstream str(NCBI_STRSTREAM_INIT(buffer, 4096));
+    CNcbiOstrstream str;
     try {
         SetDiagStream(&str);
         info = DIAG_COMPILE_INFO;

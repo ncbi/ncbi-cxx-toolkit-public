@@ -619,7 +619,7 @@ IRWRegistry* IRWRegistry::Read(CNcbiIstream& is, TFlags flags,
     if (ef == eEncodingForm_Utf16Native  ||  ef == eEncodingForm_Utf16Foreign) {
         CStringUTF8 s;
         ReadIntoUtf8(is, &s, ef);
-        CNcbiIstrstream iss(s.c_str());
+        CNcbiIstrstream iss(s);
         return x_Read(iss, flags, path);
     } else {
         return x_Read(is, flags, path);

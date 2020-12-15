@@ -474,7 +474,7 @@ bool CTestDiagApp::TestApp_Exit(void)
             continue;
 
         string          full_msg = i->substr(beg + 2, end - beg - 2);
-        CNcbiIstrstream in( full_msg.c_str() );
+        CNcbiIstrstream in( full_msg );
         TCase           ncase;
         int             thread;
         string          msg;
