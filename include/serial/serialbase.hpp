@@ -718,7 +718,7 @@ istream& operator>>(istream& in, CRef<T>& obj)
 inline
 const char* operator>>(const char* s, CSerialObject& obj)
 {
-    CNcbiIstrstream in(s, strlen(s));
+    CNcbiIstrstream in(s);
     in >> MSerial_AsnText >> obj;
     return s + in.tellg();
 }
@@ -727,7 +727,7 @@ const char* operator>>(const char* s, CSerialObject& obj)
 inline
 string operator>>(const string& s, CSerialObject& obj)
 {
-    CNcbiIstrstream in(s.c_str());
+    CNcbiIstrstream in(s);
     in >> MSerial_AsnText >> obj;
     return s.substr(in.tellg());
 }

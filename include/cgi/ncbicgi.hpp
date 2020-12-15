@@ -1134,7 +1134,7 @@ CNcbiIstream* CCgiEntry::GetValueStream()
         return new CRStream(m_Data->m_Reader.release(), 0, 0,
                             CRWStreambuf::fOwnReader);
     } else {
-        return new CNcbiIstrstream(GetValue().data(), GetValue().size());
+        return new CNcbiIstrstream(GetValue());
     }
 }
 

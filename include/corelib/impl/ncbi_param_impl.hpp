@@ -230,7 +230,7 @@ typename CParamParser<TDescription, TParam>::TValueType
 CParamParser<TDescription, TParam>::StringToValue(const string& str,
                                                   const TParamDesc&)
 {
-    CNcbiIstrstream in(str.c_str());
+    CNcbiIstrstream in(str);
     TValueType val;
     in >> val;
 
