@@ -1226,7 +1226,7 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr3)
     BOOST_CHECK_EQUAL(user_count["StructuredComment"], 2);
     BOOST_CHECK_EQUAL(user_count["DBLink"], 1);
     BOOST_CHECK_EQUAL(user_count["RefGeneTracking"], 1);
-    BOOST_CHECK_EQUAL(user_count["FeatureFetchPolicy"], 1);
+    //BOOST_CHECK_EQUAL(user_count["FeatureFetchPolicy"], 1);
 }
 
 
