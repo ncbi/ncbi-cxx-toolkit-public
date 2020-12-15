@@ -282,7 +282,7 @@ using CNcbiOstrstream = CNcbistrstream_Base<IO_PREFIX::ostrstream, IOS_BASE::out
 using CNcbiStrstream  = CNcbistrstream_Base<IO_PREFIX::strstream,  IOS_BASE::in | IOS_BASE::out>;
 
 #else
-#if 0
+#if 1
 //typedef IO_PREFIX::stringbuf      CNcbiStrstreambuf;
 typedef IO_PREFIX::istringstream  CNcbiIstrstream;
 typedef IO_PREFIX::ostringstream  CNcbiOstrstream;
