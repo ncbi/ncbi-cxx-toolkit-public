@@ -43,20 +43,18 @@ class CTSE_Chunk_Info;
 class NCBI_XREADER_EXPORT CWGSMasterSupport
 {
 public:
-    static const int kForceDescrMask = ((1<<CSeqdesc::e_Pub) |
-                                        (1<<CSeqdesc::e_Comment) |
-                                        (1<<CSeqdesc::e_User));
-    static const int kOptionalDescrMask = ((1<<CSeqdesc::e_Source) |
-                                           (1<<CSeqdesc::e_Molinfo) |
-                                           (1<<CSeqdesc::e_Create_date) |
-                                           (1<<CSeqdesc::e_Update_date) |
-                                           (1<<CSeqdesc::e_Genbank) |
-                                           (1<<CSeqdesc::e_Embl));
-    static const int kGoodDescrMask = kForceDescrMask | kOptionalDescrMask;
+    enum EDescrType {
+        eDescrTypeDefault,
+        eDescrTypeRefSeq
+    };
     
     static CSeq_id_Handle GetWGSMasterSeq_id(const CSeq_id_Handle& idh);
     static bool HasMasterId(const CBioseq_Info& seq, const CSeq_id_Handle& master_idh);
-    static void AddMasterDescr(CBioseq_Info& seq, const CSeq_descr& src);
+    
+    static EDescrType GetDescrType(const CSeq_id_Handle& master_seq_idh);
+    static int GetForceDescrMask(EDescrType type);
+    static int GetOptionalDescrMask(EDescrType type);
+    static void AddMasterDescr(CBioseq_Info& seq, const CSeq_descr& src, EDescrType descr_type);
     static CRef<CSeq_descr> GetWGSMasterDescr(CDataLoader* loader,
                                               const CSeq_id_Handle& master_idh,
                                               int mask, TUserObjectTypesSet& uo_types);
@@ -73,8 +71,11 @@ public:
     CWGSBioseqUpdater_Base(const CSeq_id_Handle& master_idh);
     virtual ~CWGSBioseqUpdater_Base();
 
+    const CSeq_id_Handle& GetMasterId() const {
+        return m_MasterId;
+    }
     bool HasMasterId(const CBioseq_Info& seq) const {
-        return CWGSMasterSupport::HasMasterId(seq, m_MasterId);
+        return CWGSMasterSupport::HasMasterId(seq, GetMasterId());
     }
     
 private:

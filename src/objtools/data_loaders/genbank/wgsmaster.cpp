@@ -81,9 +81,10 @@ bool s_GoodDigits(CTempString s) {
 
 
 
-static const int kForceDescrMask = ((1<<CSeqdesc::e_Pub) |
-                                    (1<<CSeqdesc::e_Comment) |
-                                    (1<<CSeqdesc::e_User));
+static const int kForceDescrMask = ((1<<CSeqdesc::e_User));
+
+static const int kRefSeqOptionalDescrMask = ((1<<CSeqdesc::e_Pub) |
+                                             (1<<CSeqdesc::e_Comment));
 
 static const int kOptionalDescrMask = ((1<<CSeqdesc::e_Source) |
                                        (1<<CSeqdesc::e_Molinfo) |
@@ -92,7 +93,7 @@ static const int kOptionalDescrMask = ((1<<CSeqdesc::e_Source) |
                                        (1<<CSeqdesc::e_Genbank) |
                                        (1<<CSeqdesc::e_Embl));
 
-static const int kGoodDescrMask = kForceDescrMask | kOptionalDescrMask;
+static const int kGoodDescrMask = kForceDescrMask | kRefSeqOptionalDescrMask | kOptionalDescrMask;
 
 
 static
@@ -244,7 +245,36 @@ CSeq_id_Handle CWGSMasterSupport::GetWGSMasterSeq_id(const CSeq_id_Handle& idh)
 }
 
 
-void CWGSMasterSupport::AddMasterDescr(CBioseq_Info& seq, const CSeq_descr& src)
+CWGSMasterSupport::EDescrType
+CWGSMasterSupport::GetDescrType(const CSeq_id_Handle& master_seq_idh)
+{
+    return master_seq_idh.Which() == CSeq_id::e_Other? eDescrTypeRefSeq: eDescrTypeDefault;
+}
+
+
+int CWGSMasterSupport::GetForceDescrMask(EDescrType type)
+{
+    int force_mask = kForceDescrMask;
+    if ( type != eDescrTypeRefSeq ) {
+        force_mask |= kRefSeqOptionalDescrMask;
+    }
+    return force_mask;
+}
+
+
+int CWGSMasterSupport::GetOptionalDescrMask(EDescrType type)
+{
+    int optional_mask = kForceDescrMask;
+    if ( type == eDescrTypeRefSeq ) {
+        optional_mask |= kRefSeqOptionalDescrMask;
+    }
+    return optional_mask;
+}
+
+
+void CWGSMasterSupport::AddMasterDescr(CBioseq_Info& seq,
+                                       const CSeq_descr& src,
+                                       EDescrType type)
 {
     int existing_mask = 0;
     CSeq_descr::Tdata& dst = seq.x_SetDescr().Set();
@@ -252,14 +282,16 @@ void CWGSMasterSupport::AddMasterDescr(CBioseq_Info& seq, const CSeq_descr& src)
         const CSeqdesc& desc = **it;
         existing_mask |= 1 << desc.Which();
     }
+    int force_mask = GetForceDescrMask(type);
+    int optional_mask = GetOptionalDescrMask(type);
     ITERATE ( CSeq_descr::Tdata, it, src.Get() ) {
         int mask = 1 << (*it)->Which();
-        if ( mask & kOptionalDescrMask ) {
+        if ( mask & optional_mask ) {
             if ( mask & existing_mask ) {
                 continue;
             }
         }
-        else if ( !(mask & kForceDescrMask) ) {
+        else if ( !(mask & force_mask) ) {
             continue;
         }
         dst.push_back(*it);
@@ -270,12 +302,12 @@ void CWGSMasterSupport::AddMasterDescr(CBioseq_Info& seq, const CSeq_descr& src)
 bool CWGSMasterSupport::HasMasterId(const CBioseq_Info& seq, const CSeq_id_Handle& master_idh)
 {
     if ( master_idh ) {
-            const CBioseq_Info::TId& ids = seq.GetId();
-            ITERATE ( CBioseq_Info::TId, it, ids ) {
-                if ( GetWGSMasterSeq_id(*it) == master_idh ) {
-                    return true;
-                }
+        const CBioseq_Info::TId& ids = seq.GetId();
+        ITERATE ( CBioseq_Info::TId, it, ids ) {
+            if ( GetWGSMasterSeq_id(*it) == master_idh ) {
+                return true;
             }
+        }
     }
     return false;
 }
@@ -343,11 +375,12 @@ void CWGSMasterSupport::AddWGSMaster(CTSE_LoadLock& lock)
             TUserObjectTypesSet existing_uo_types;
             if ( kAddMasterDescrToTSE ) {
                 // exclude existing descr types except forced ones (User, Pub, Comment)
-                mask &= ~lock->x_GetBaseInfo().x_GetExistingDescrMask() | kForceDescrMask;
+                int force_descr = GetForceDescrMask(GetDescrType(id));
+                mask &= ~lock->x_GetBaseInfo().x_GetExistingDescrMask() | force_descr;
                 lock->x_GetBaseInfo().x_AddExistingUserObjectTypes(existing_uo_types);
                 if ( lock->IsSet() ) {
                     if ( auto first_entry = lock->GetSet().GetFirstEntry() ) {
-                        mask &= ~first_entry->x_GetBaseInfo().x_GetExistingDescrMask() | kForceDescrMask;
+                        mask &= ~first_entry->x_GetBaseInfo().x_GetExistingDescrMask() | force_descr;
                         first_entry->x_GetBaseInfo().x_AddExistingUserObjectTypes(existing_uo_types);
                     }
                 }
@@ -431,7 +464,7 @@ void CWGSBioseqUpdaterDescr::Update(CBioseq_Info& seq)
     if ( m_Descr &&
          seq.x_NeedUpdate(seq.fNeedUpdate_descr) &&
          HasMasterId(seq) ) {
-        AddMasterDescr(seq, *m_Descr);
+        AddMasterDescr(seq, *m_Descr, GetDescrType(GetMasterId()));
     }
 }
 
