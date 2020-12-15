@@ -63,7 +63,7 @@ public:
 
 int main(int argc, char** argv)
 {
-    char asn[] = "Date-std ::= { year 1998, month 1, day 2, season \"winter\" }";
+    const char asn[] = "Date-std ::= { year 1998, month 1, day 2, season \"winter\" }";
     CNcbiIstrstream iss(asn);
     unique_ptr<CObjectIStream> in(CObjectIStream::Open(eSerial_AsnText, iss));
 

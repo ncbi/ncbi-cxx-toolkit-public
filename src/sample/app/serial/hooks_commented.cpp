@@ -134,7 +134,7 @@ public:
 int main(int argc, char** argv)
 {
     // Create some ASN.1 data that can be parsed by this code sample.
-    char asn[] = "Date-std ::= { year 1998, month 1, day 2, season \"winter\" }";
+    const char asn[] = "Date-std ::= { year 1998, month 1, day 2, season \"winter\" }";
 
     // Setup an input stream, based on the sample ASN.1.
     CNcbiIstrstream iss(asn);

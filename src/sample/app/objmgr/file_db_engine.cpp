@@ -51,7 +51,7 @@ class CContElemConverter<objects::CSeq_id_Handle>
 public:
     static objects::CSeq_id_Handle FromString(const string& str)  
     {
-        CNcbiIstrstream is_str(str.c_str());
+        CNcbiIstrstream is_str(str);
         unique_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_AsnText,is_str));
         CRef<objects::CSeq_id> seqid(new objects::CSeq_id);
         *is >> *seqid;

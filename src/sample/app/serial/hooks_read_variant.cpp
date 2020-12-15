@@ -57,7 +57,7 @@ public:
 
 int main(int argc, char** argv)
 {
-    char asn[] = "Date ::= str \"late-spring\"";
+    const char asn[] = "Date ::= str \"late-spring\"";
     CNcbiIstrstream iss(asn);
     unique_ptr<CObjectIStream> in(CObjectIStream::Open(eSerial_AsnText, iss));
 
