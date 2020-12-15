@@ -52,7 +52,6 @@ CEUtils_ConnContext::CEUtils_ConnContext(void)
 CEUtils_Request::CEUtils_Request(CRef<CEUtils_ConnContext>& ctx,
                                  const string& script_name)
     : m_Context(ctx),
-      m_Stream(0),
       m_ScriptName(script_name),
       m_Method(eHttp_Post)
 {

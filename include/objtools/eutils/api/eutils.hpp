@@ -195,7 +195,7 @@ private:
     typedef map<string, string> TRequestArgs;
 
     mutable CRef<CEUtils_ConnContext> m_Context;
-    auto_ptr<CConn_HttpStream>        m_Stream;
+    unique_ptr<CConn_HttpStream>        m_Stream;
 
     string           m_ScriptName;
     string           m_QueryKey; // empty = use value from ConnContext
