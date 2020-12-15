@@ -151,7 +151,7 @@ Seq-align ::= { \
 } ";
 
     CNcbiIstrstream istrs(buf.c_str());
-    auto_ptr<CObjectIStream> istr(CObjectIStream::Open(eSerial_AsnText, istrs));
+    unique_ptr<CObjectIStream> istr(CObjectIStream::Open(eSerial_AsnText, istrs));
     CSeq_align align;
     *istr >> align;
     BOOST_CHECK_NO_THROW(align.Validate(true));
