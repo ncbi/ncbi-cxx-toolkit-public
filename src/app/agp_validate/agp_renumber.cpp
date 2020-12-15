@@ -305,7 +305,7 @@ int ProcessStream(istream &in, ostream& out)
       buf_lines=0;
 
       s = CNcbiOstrstreamToString(*buf);
-      CNcbiIstrstream is(s.data(), s.size());
+      CNcbiIstrstream is(s);
       code=renum.ReadStream(is, CAgpReader::eFinalize_No);
       if(code) break;
 
@@ -318,7 +318,7 @@ int ProcessStream(istream &in, ostream& out)
 
   if(buf_lines) {
     s = CNcbiOstrstreamToString(*buf);
-    CNcbiIstrstream is(s.data(), s.size());
+    CNcbiIstrstream is(s);
     code=renum.ReadStream(is, CAgpReader::eFinalize_No);
   }
 

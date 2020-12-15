@@ -171,7 +171,7 @@ int CId1FetchApp::Run(void)
             text = "ID1server-request ::= " + text;
         }
         CRef<CID1server_request> req(new CID1server_request);
-        CNcbiIstrstream in(text.data(), text.size());
+        CNcbiIstrstream in(text);
         in >> MSerial_AsnText >> *req;
         reqs.push_back(req);
     }

@@ -982,7 +982,7 @@ int CId2FetchApp::Run(void)
         if ( text.find("::=") == NPOS ) {
             text = "ID2-Request ::= " + text;
         }
-        CNcbiIstrstream in(text.data(), text.size());
+        CNcbiIstrstream in(text);
         in >> MSerial_AsnText >> *req;
     }
     else if ( args["packet"] ) {
@@ -994,7 +994,7 @@ int CId2FetchApp::Run(void)
             text = "ID2-Request-Packet ::= " + text;
         }
         CID2_Request_Packet id2_packet;
-        CNcbiIstrstream in(text.data(), text.size());
+        CNcbiIstrstream in(text);
         in >> MSerial_AsnText >> *packet;
     }
     else if ( args["in"] ) {

@@ -1406,7 +1406,7 @@ int CDemoApp::Run(void)
         range_strand = eNa_strand_unknown;
     }
     if ( args["range_loc"] ) {
-        CNcbiIstrstream in(args["range_loc"].AsString().c_str());
+        CNcbiIstrstream in(args["range_loc"].AsString());
         in >> MSerial_AsnText >> *range_loc;
     }
     SAnnotSelector::EOverlapType overlap = SAnnotSelector::eOverlap_TotalRange;
