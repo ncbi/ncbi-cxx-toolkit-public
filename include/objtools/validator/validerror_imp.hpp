@@ -596,7 +596,7 @@ private:
 
     // source qulalifiers prefixes
     static const string sm_SourceQualPrefixes[];
-    static auto_ptr<CTextFsa> m_SourceQualTags;
+    static unique_ptr<CTextFsa> m_SourceQualTags;
 
     CValidator::TProgressCallback m_PrgCallback;
     CValidator::CProgressInfo     m_PrgInfo;
