@@ -52,7 +52,7 @@ BEGIN_NCBI_SCOPE
 template < class ASNClass >
 bool ReadASNFromIstream(CNcbiIstream& inStream, ASNClass& ASNobject, bool isBinary, string& err)
 {
-    auto_ptr<CObjectIStream> inObject;
+    unique_ptr<CObjectIStream> inObject;
     if (isBinary) {
         // Associate ASN.1 binary serialization methods with the input
         inObject.reset(new CObjectIStreamAsnBinary(inStream));
@@ -78,14 +78,14 @@ template < class ASNClass >
 bool WriteASNToFile(const char *filename, ASNClass& mime, bool isBinary, string& err)
 {
     // initialize a binary output stream
-    auto_ptr<CNcbiOstream> outStream;
+    unique_ptr<CNcbiOstream> outStream;
     outStream.reset(new CNcbiOfstream(filename, IOS_BASE::out | IOS_BASE::binary));
     if (!(*outStream)) {
         err = "Cannot open file for writing";
         return false;
     }
 
-    auto_ptr<CObjectOStream> outObject;
+    unique_ptr<CObjectOStream> outObject;
     if (isBinary) {
         // Associate ASN.1 binary serialization methods with the input
         outObject.reset(new CObjectOStreamAsnBinary(*outStream));
