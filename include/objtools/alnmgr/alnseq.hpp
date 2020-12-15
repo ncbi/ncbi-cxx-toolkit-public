@@ -213,7 +213,7 @@ public:
 private:
     CRef<CSeqVector> m_PlusStrandSeqVector;
     CRef<CSeqVector> m_MinusStrandSeqVector;
-    auto_ptr<CAlnMixStarts> m_Starts;
+    unique_ptr<CAlnMixStarts> m_Starts;
 
     /// forbidden
     CAlnMixSeq(const CAlnMixSeq&);
