@@ -66,7 +66,7 @@ using namespace sequence;
 
 const string kInvalidReplyMsg = "Taxonomy service returned invalid reply";
 
-auto_ptr<CTextFsa> CValidError_imp::m_SourceQualTags;
+unique_ptr<CTextFsa> CValidError_imp::m_SourceQualTags;
 
 
 static bool s_UnbalancedParentheses(string str)
