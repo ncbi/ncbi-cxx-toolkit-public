@@ -1570,7 +1570,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "DBEV\ts\tUniversity of Antananarivo\t\t\t",
 "DBFFEUCS\ts\tDepartamento de Biologia de la Faculdad de Filosofia y Educacion de la Universidad de Chile\t\t\t",
 "DBG\ts\tSam Mitchel Herbarium of Fungi, Denver Botanic Gardens\t\t\t",
-"DBKKU1\tc\tDepartment of Biology, Faculty of Science\t\t\t",
+"DBKKU\tc\tDepartment of Biology, Faculty of Science\t\t\t",
 "DBM\tc\tDepartment of Biochemistry and Microbiology\t\t\t",
 "DBMU\tc\tBoonchird lab, Department of Biotechnology, Mahidol University\t\t\t",
 "DBMU2\tc\tPanbangred lab, Department of Biotechnology, Mahidol University\t\t\t",

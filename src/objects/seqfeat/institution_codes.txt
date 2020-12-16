@@ -1537,7 +1537,7 @@ DBCUCH	s	Universidad de Chile, Departamento de Biologia Celular y Genetica
 DBEV	s	University of Antananarivo			
 DBFFEUCS	s	Departamento de Biologia de la Faculdad de Filosofia y Educacion de la Universidad de Chile			
 DBG	s	Sam Mitchel Herbarium of Fungi, Denver Botanic Gardens			
-DBKKU1	c	Department of Biology, Faculty of Science			
+DBKKU	c	Department of Biology, Faculty of Science			
 DBM	c	Department of Biochemistry and Microbiology			
 DBMU	c	Boonchird lab, Department of Biotechnology, Mahidol University			
 DBMU2	c	Panbangred lab, Department of Biotechnology, Mahidol University			
