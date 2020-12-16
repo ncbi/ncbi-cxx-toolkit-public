@@ -59,7 +59,7 @@ void CTest::Init()
     SetDiagPostLevel(eDiag_Warning);
     SetDiagPostFlag(eDPF_All);
     
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "Simple test for 'ctransition' library");
     SetupArgDescriptions(arg_desc.release());
