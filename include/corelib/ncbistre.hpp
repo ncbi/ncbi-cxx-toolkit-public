@@ -280,6 +280,10 @@ public:
 };
 using CNcbiOstrstream = CNcbistrstream_Base<IO_PREFIX::ostrstream, IOS_BASE::out>;
 using CNcbiStrstream  = CNcbistrstream_Base<IO_PREFIX::strstream,  IOS_BASE::in | IOS_BASE::out>;
+#if defined(NCBI_COMPILER_MSVC)
+template class NCBI_XNCBI_EXPORT CNcbistrstream_Base<IO_PREFIX::ostrstream, IOS_BASE::out>;
+template class NCBI_XNCBI_EXPORT CNcbistrstream_Base<IO_PREFIX::strstream,  IOS_BASE::in | IOS_BASE::out>;
+#endif
 
 #else
 #if 1
@@ -344,6 +348,11 @@ public:
 using CNcbiIstrstream = CNcbistrstream_Base<IO_PREFIX::istringstream, IOS_BASE::in>;
 using CNcbiOstrstream = CNcbistrstream_Base<IO_PREFIX::ostringstream, IOS_BASE::out>;
 using CNcbiStrstream  = CNcbistrstream_Base<IO_PREFIX::stringstream,  IOS_BASE::in | IOS_BASE::out>;
+#if defined(NCBI_COMPILER_MSVC)
+template class NCBI_XNCBI_EXPORT CNcbistrstream_Base<IO_PREFIX::istringstream, IOS_BASE::in>;
+template class NCBI_XNCBI_EXPORT CNcbistrstream_Base<IO_PREFIX::ostringstream, IOS_BASE::out>;
+template class NCBI_XNCBI_EXPORT CNcbistrstream_Base<IO_PREFIX::stringstream,  IOS_BASE::in | IOS_BASE::out>;
+#endif
 #endif
 #endif
 
