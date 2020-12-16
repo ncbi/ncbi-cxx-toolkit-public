@@ -119,9 +119,10 @@ public:
     class NCBI_VALIDATOR_EXPORT CCache : public CObject {
     public:
         CCache(void);
+        ~CCache(void);
 
         // the containing CCache object owns the m_impl
-        unique_ptr<CCacheImpl> m_impl;
+        CCacheImpl* m_impl;
     };
     static CRef<CCache> MakeEmptyCache(void);
 

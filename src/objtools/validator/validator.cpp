@@ -676,7 +676,12 @@ CValidator::TDbxrefValidFlags CValidator::IsValidDbxref(const CDbtag& xref, bool
 //code is not used
 CCache::CCache(void)
 {
-    m_impl.reset(new CCacheImpl);
+    m_impl = new CCacheImpl;
+}
+
+CCache::~CCache(void)
+{
+    delete m_impl;
 }
 
 CRef<CCache>
