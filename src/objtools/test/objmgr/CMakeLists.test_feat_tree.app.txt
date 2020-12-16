@@ -1,12 +1,13 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(test_feat_tree)
   NCBI_sources(test_feat_tree)
   NCBI_uses_toolkit_libraries(xobjutil)
-  NCBI_project_watchers(vasilche)
+
   NCBI_set_test_requires(unix in-house-resources)
   NCBI_add_test(test_feat_tree.sh)
+
+  NCBI_project_watchers(vasilche)
+
 NCBI_end_app()
 

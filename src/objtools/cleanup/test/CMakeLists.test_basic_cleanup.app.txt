@@ -1,6 +1,5 @@
-#
-#
-#
+# $Id$
+
 add_executable(test_basic_cleanup-app
     test_basic_cleanup
 )

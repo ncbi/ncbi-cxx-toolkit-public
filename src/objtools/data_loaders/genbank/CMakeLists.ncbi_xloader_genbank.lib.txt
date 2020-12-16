@@ -1,6 +1,4 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_lib(ncbi_xloader_genbank SHARED)
   NCBI_sources(gbloader gbnative gbload_util psg_loader psg_loader_impl)

@@ -1,12 +1,10 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(unit_test_mol_wt)
   NCBI_sources(unit_test_mol_wt)
   NCBI_requires(Boost.Test.Included)
   NCBI_uses_toolkit_libraries(test_boost xobjutil)
-  NCBI_project_watchers(ucko dicuccio)
   NCBI_add_test()
+  NCBI_project_watchers(ucko dicuccio)
 NCBI_end_app()
 

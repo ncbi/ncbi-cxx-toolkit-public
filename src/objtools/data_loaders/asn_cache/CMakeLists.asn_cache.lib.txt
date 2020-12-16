@@ -1,6 +1,5 @@
-#
-#
-#
+# $Id$
+
 add_library(asn_cache
     dump_asn_index asn_index asn_cache chunk_file seq_id_chunk_file
     asn_cache_store

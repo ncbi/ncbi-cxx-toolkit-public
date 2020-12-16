@@ -1,6 +1,4 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_lib(xobjimport)
   NCBI_sources(
@@ -16,4 +14,5 @@ NCBI_begin_lib(xobjimport)
     annot_import_data
   )
   NCBI_uses_toolkit_libraries(xobjutil)
+  NCBI_project_watchers(ludwigf)
 NCBI_end_lib()

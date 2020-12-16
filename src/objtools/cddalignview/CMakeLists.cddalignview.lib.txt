@@ -1,6 +1,4 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_lib(xcddalignview)
   NCBI_sources(cav_alignset cav_alndisplay cav_function cav_seqset)

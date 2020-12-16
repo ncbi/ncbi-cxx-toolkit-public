@@ -1,12 +1,10 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(unit_test_feature_table_reader)
   NCBI_sources(unit_test_feature_table_reader)
   NCBI_requires(Boost.Test.Included)
   NCBI_uses_toolkit_libraries(xobjread genome_collection)
-  NCBI_project_watchers(bollin gotvyans)
   NCBI_add_test()
+  NCBI_project_watchers(bollin gotvyans)
 NCBI_end_app()
 

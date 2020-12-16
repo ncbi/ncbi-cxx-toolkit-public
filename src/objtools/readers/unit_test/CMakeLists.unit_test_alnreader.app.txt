@@ -1,12 +1,10 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(unit_test_alnreader)
   NCBI_sources(unit_test_alnreader)
   NCBI_requires(Boost.Test.Included)
   NCBI_uses_toolkit_libraries(xobjread xunittestutil)
-  NCBI_project_watchers(foleyjp)
   NCBI_set_test_assets( alnreader_test_cases )
   NCBI_add_test()
+  NCBI_project_watchers(foleyjp)
 NCBI_end_app()

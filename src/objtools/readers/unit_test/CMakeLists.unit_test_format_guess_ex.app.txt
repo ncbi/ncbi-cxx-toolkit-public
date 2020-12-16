@@ -1,12 +1,10 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(unit_test_format_guess_ex)
   NCBI_sources(unit_test_format_guess_ex)
   NCBI_requires(Boost.Test.Included)
   NCBI_uses_toolkit_libraries(xobjread)
-  NCBI_project_watchers(dicuccio gotvyans)
   NCBI_add_test()
+  NCBI_project_watchers(dicuccio gotvyans)
 NCBI_end_app()
 

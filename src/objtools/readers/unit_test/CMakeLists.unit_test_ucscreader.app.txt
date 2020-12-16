@@ -1,13 +1,11 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(unit_test_ucscreader)
   NCBI_sources(unit_test_ucscreader)
   NCBI_requires(Boost.Test.Included)
   NCBI_uses_toolkit_libraries(xobjread)
-  NCBI_project_watchers(gotvyans)
-  NCBI_set_test_assets( ucscreader_test_cases )
+  NCBI_set_test_assets(ucscreader_test_cases)
   NCBI_add_test()
+  NCBI_project_watchers(gotvyans)
 NCBI_end_app()
 

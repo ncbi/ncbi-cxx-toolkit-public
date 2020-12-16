@@ -1,12 +1,10 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(unit_test_bioseqgaps_ci)
   NCBI_sources(unit_test_bioseqgaps_ci)
   NCBI_requires(Boost.Test.Included)
   NCBI_uses_toolkit_libraries(test_boost xobjutil)
-  NCBI_project_watchers(vasilche dicuccio bollin)
   NCBI_add_test()
+  NCBI_project_watchers(vasilche dicuccio bollin)
 NCBI_end_app()
 

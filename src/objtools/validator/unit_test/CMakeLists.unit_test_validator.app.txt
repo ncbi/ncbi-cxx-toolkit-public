@@ -1,15 +1,15 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(unit_test_validator)
   NCBI_sources(unit_test_validator wrong_qual)
   NCBI_requires(Boost.Test.Included)
   NCBI_uses_toolkit_libraries(ncbi_xloader_genbank xunittestutil xvalidate)
-  NCBI_project_watchers(bollin kans foleyjp asztalos gotvyans)
 
   NCBI_set_test_assets(unit_test_validator.ini)
   NCBI_set_test_timeout(3000)
   NCBI_add_test()
+
+  NCBI_project_watchers(bollin kans foleyjp asztalos gotvyans)
+
 NCBI_end_app()
 

@@ -1,11 +1,8 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(test_bulkinfo_mt)
   NCBI_sources(test_bulkinfo_mt bulkinfo_tester)
   NCBI_uses_toolkit_libraries(ncbi_xdbapi_ftds ncbi_xloader_genbank ncbi_xreader_pubseqos ncbi_xreader_pubseqos2 test_mt xobjutil)
-  NCBI_project_watchers(vasilche)
 
   NCBI_set_test_assets(bad_len.ids wgs.ids all_readers.sh ref)
   NCBI_set_test_timeout(800)
@@ -35,7 +32,6 @@ NCBI_begin_app(test_bulkinfo_mt)
     NCBI_set_test_command(all_readers.sh test_bulkinfo_mt -type hash -no-recalc -reference ref/0.hash.txt)
   NCBI_end_test()
 
-
   NCBI_begin_test(test_bulkinfo_mt_wgs_gi)
     NCBI_set_test_command(all_readers.sh test_bulkinfo_mt -type gi -idlist wgs.ids -reference ref/wgs.gi.txt)
   NCBI_end_test()
@@ -64,7 +60,6 @@ NCBI_begin_app(test_bulkinfo_mt)
     NCBI_set_test_command(all_readers.sh test_bulkinfo_mt -type hash -idlist wgs.ids -no-recalc -reference ref/wgs.hash.txt)
   NCBI_end_test()
 
-
   NCBI_begin_test(test_bulkinfo_mt_bad_gi)
     NCBI_set_test_command(all_readers.sh test_bulkinfo_mt -type gi -idlist bad_len.ids -reference ref/bad_len.gi.txt)
   NCBI_end_test()
@@ -92,5 +87,8 @@ NCBI_begin_app(test_bulkinfo_mt)
   NCBI_begin_test(test_bulkinfo_mt_bad_hash)
     NCBI_set_test_command(all_readers.sh test_bulkinfo_mt -type hash -idlist bad_len.ids -reference ref/bad_len.hash.txt)
   NCBI_end_test()
+
+  NCBI_project_watchers(vasilche)
+
 NCBI_end_app()
 

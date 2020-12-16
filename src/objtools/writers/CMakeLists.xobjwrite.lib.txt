@@ -1,6 +1,4 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_lib(xobjwrite)
   NCBI_sources(
@@ -19,8 +17,8 @@ NCBI_begin_lib(xobjwrite)
     src_writer
     fasta_writer
     aln_writer
-	psl_record psl_formatter psl_writer
-	genbank_id_resolve
+    psl_record psl_formatter psl_writer
+    genbank_id_resolve
   )
   NCBI_uses_toolkit_libraries(variation_utils xformat xobjread)
   NCBI_project_watchers(ludwigf boukn gotvyans foleyjp)

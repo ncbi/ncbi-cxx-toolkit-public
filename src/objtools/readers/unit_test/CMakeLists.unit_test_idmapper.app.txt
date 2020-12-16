@@ -1,12 +1,10 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(unit_test_idmapper)
   NCBI_sources(unit_test_idmapper)
   NCBI_requires(Boost.Test.Included)
   NCBI_uses_toolkit_libraries(xobjreadex)
-  NCBI_project_watchers(dicuccio)
   NCBI_add_test()
+  NCBI_project_watchers(dicuccio)
 NCBI_end_app()
 

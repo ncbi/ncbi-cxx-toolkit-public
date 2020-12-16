@@ -1,6 +1,4 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(psg_cache_unit)
   NCBI_sources(
@@ -8,6 +6,6 @@ NCBI_begin_app(psg_cache_unit)
     unit/psg_cache_blobprop unit/psg_pack_unpack
   )
   NCBI_uses_toolkit_libraries(psg_protobuf psg_cache)
-  NCBI_project_watchers(saprykin)
   NCBI_requires(PROTOBUF GMOCK)
+  NCBI_project_watchers(saprykin)
 NCBI_end_app()

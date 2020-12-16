@@ -1,14 +1,14 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(alnmrg)
   NCBI_sources(alnmrg)
   NCBI_uses_toolkit_libraries(ncbi_xloader_blastdb ncbi_xloader_genbank xalnmgr xobjread)
-  NCBI_project_watchers(grichenk)
-  NCBI_set_test_assets(alnmrg.sh data)
+
   NCBI_begin_test(alnmrg.sh)
     NCBI_set_test_command(run_sybase_app.sh -run-script alnmrg.sh)
+    NCBI_set_test_assets(alnmrg.sh data)
   NCBI_end_test()
+
+  NCBI_project_watchers(grichenk)
 NCBI_end_app()
 

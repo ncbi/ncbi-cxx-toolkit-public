@@ -14,7 +14,7 @@ LIBS = $(GENBANK_THIRD_PARTY_LIBS) $(FTDS_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(
 
 CHECK_COPY = all_readers.sh id_unit_test.ini
 
-CHECK_CMD = all_readers.sh id_unit_test
+CHECK_CMD = all_readers.sh id_unit_test /CHECK_NAME=id_unit_test
 CHECK_TIMEOUT = 800
 
 WATCHERS = vasilche

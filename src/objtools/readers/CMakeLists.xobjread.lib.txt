@@ -1,6 +1,4 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_lib(xobjread)
   NCBI_sources(
@@ -8,7 +6,7 @@ NCBI_begin_lib(xobjread)
     read_util format_guess_ex seqid_validate
     acc_pattern agp_read agp_seq_entry agp_util agp_validate_reader 
     aln_scanner aln_scanner_clustal aln_scanner_nexus aln_scanner_phylip 
-      aln_scanner_sequin aln_scanner_fastagap aln_scanner_multalign
+    aln_scanner_sequin aln_scanner_fastagap aln_scanner_multalign
     aln_reader aln_errors aln_error_reporter aln_formatguess aln_util 
     aln_formats alnread
     bed_reader bed_autosql bed_autosql_standard bed_autosql_custom bed_column_data

@@ -1,12 +1,10 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(unit_test_gff3flybasewriter)
   NCBI_sources(unit_test_gff3flybasewriter)
   NCBI_requires(Boost.Test.Included MT)
   NCBI_uses_toolkit_libraries(ncbi_xloader_genbank xobjwrite)
-  NCBI_project_watchers(foleyjp)
-  NCBI_set_test_assets( gff3flybasewriter_test_cases )
+  NCBI_set_test_assets(gff3flybasewriter_test_cases)
   NCBI_add_test()
+  NCBI_project_watchers(foleyjp)
 NCBI_end_app()

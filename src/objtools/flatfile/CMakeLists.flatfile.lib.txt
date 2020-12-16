@@ -1,6 +1,4 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_lib(xflatfile)
   NCBI_sources(
@@ -51,6 +49,7 @@ NCBI_begin_lib(xflatfile)
     flatfile_message
     flatfile_message_reporter
   )
+
   NCBI_uses_toolkit_libraries(
     xcleanup
     xlogging
@@ -61,4 +60,7 @@ NCBI_begin_lib(xflatfile)
     ncbi_xdbapi_ftds
     taxon1
   )
+
+  NCBI_project_watchers(foleyjp)
+
 NCBI_end_lib()

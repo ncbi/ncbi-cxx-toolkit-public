@@ -6,9 +6,11 @@ NCBI_begin_app(unit_test_gap_trim)
   NCBI_sources(unit_test_gap_trim)
   NCBI_requires(Boost.Test.Included)
   NCBI_uses_toolkit_libraries(xobjedit xunittestutil)
-  NCBI_project_watchers(bollin kans)
 
   NCBI_set_test_timeout(1200)
   NCBI_add_test()
+
+  NCBI_project_watchers(bollin kans)
+
 NCBI_end_app()
 

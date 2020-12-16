@@ -1,14 +1,14 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(test_validator)
   NCBI_sources(test_validator)
   NCBI_requires(-Cygwin)
   NCBI_uses_toolkit_libraries(ncbi_xloader_genbank xvalidate)
-  NCBI_project_watchers(bollin kans foleyjp asztalos gotvyans)
 
   NCBI_set_test_assets(current.prt)
   NCBI_add_test(test_validator.sh)
+
+  NCBI_project_watchers(bollin kans foleyjp asztalos gotvyans)
+
 NCBI_end_app()
 

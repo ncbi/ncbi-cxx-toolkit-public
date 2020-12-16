@@ -1,13 +1,12 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(test_objmgr_gbloader)
   NCBI_sources(test_objmgr_gbloader)
   NCBI_uses_toolkit_libraries(ncbi_xdbapi_ftds ncbi_xloader_genbank ncbi_xreader_pubseqos ncbi_xreader_pubseqos2)
-  NCBI_project_watchers(vasilche)
   NCBI_begin_test(test_objmgr_gbloader)
     NCBI_set_test_command(all_readers.sh test_objmgr_gbloader)
+    NCBI_set_test_assets(all_readers.sh)
   NCBI_end_test()
+  NCBI_project_watchers(vasilche)
 NCBI_end_app()
 

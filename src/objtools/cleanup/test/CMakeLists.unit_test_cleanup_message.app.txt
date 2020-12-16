@@ -1,12 +1,10 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(unit_test_cleanup_message)
   NCBI_sources(unit_test_cleanup_message)
   NCBI_requires(Boost.Test.Included)
   NCBI_uses_toolkit_libraries(xcleanup xunittestutil xlogging)
-  NCBI_project_watchers(foleyjp)
   NCBI_add_test()
+  NCBI_project_watchers(foleyjp)
 NCBI_end_app()
 

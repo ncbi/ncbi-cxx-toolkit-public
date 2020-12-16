@@ -1,13 +1,13 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(test_objmgr_sv)
   NCBI_sources(test_objmgr_sv)
   NCBI_uses_toolkit_libraries(xobjmgr)
-  NCBI_project_watchers(vasilche)
+
   NCBI_begin_test(test_objmgr_sv)
     NCBI_set_test_command(test_objmgr_sv -seed 1 -checksum de21b79e1b948b6620333a8d1c6eaa87)
   NCBI_end_test()
+
+  NCBI_project_watchers(vasilche)
 NCBI_end_app()
 

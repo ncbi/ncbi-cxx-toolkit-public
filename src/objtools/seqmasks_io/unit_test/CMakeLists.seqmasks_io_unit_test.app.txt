@@ -1,13 +1,11 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(seqmasks_io_unit_test)
   NCBI_sources(seqmasks_out_unit_test)
   NCBI_requires(Boost.Test.Included)
   NCBI_uses_toolkit_libraries(seqmasks_io)
-  NCBI_project_watchers(morgulis camacho)
   NCBI_set_test_assets(data)
   NCBI_add_test()
+  NCBI_project_watchers(morgulis camacho)
 NCBI_end_app()
 

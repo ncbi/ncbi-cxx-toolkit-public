@@ -1,13 +1,11 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(seq_entry_reassign_ids)
   NCBI_sources(seq_entry_reassign_ids)
   NCBI_requires(Boost.Test.Included)
   NCBI_uses_toolkit_libraries(seqset)
-  NCBI_project_watchers(vasilche)
   NCBI_set_test_assets(test_cases)
   NCBI_add_test()
+  NCBI_project_watchers(vasilche)
 NCBI_end_app()
 

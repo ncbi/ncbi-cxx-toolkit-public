@@ -1,13 +1,11 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(test_objmgr_data)
   NCBI_sources(test_objmgr_data)
   NCBI_requires(FreeTDS)
   NCBI_uses_toolkit_libraries(ncbi_xloader_genbank ncbi_xreader_pubseqos ncbi_xreader_pubseqos2)
-  NCBI_project_watchers(vasilche)
-  NCBI_set_test_assets(test_objmgr_data.id1 test_objmgr_data.id2 test_objmgr_data.id_wgs1 test_objmgr_data.id_wgs2)
+
+  NCBI_set_test_assets(test_objmgr_data_ids.sh test_objmgr_data.id1 test_objmgr_data.id2 test_objmgr_data.id_wgs1 test_objmgr_data.id_wgs2)
   NCBI_set_test_timeout(800)
 
   NCBI_add_test(test_objmgr_data_ids.sh id2 test_objmgr_data)
@@ -21,5 +19,8 @@ NCBI_begin_app(test_objmgr_data)
     NCBI_set_test_command(test_objmgr_data.sh pubseqos)
   NCBI_end_test()
   NCBI_add_test(test_objmgr_data -prefetch)
+
+  NCBI_project_watchers(vasilche)
+
 NCBI_end_app()
 

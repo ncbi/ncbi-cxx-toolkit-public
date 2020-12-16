@@ -1,6 +1,4 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_lib(psg_cache)
   NCBI_sources(psg_cache psg_cache_base psg_cache_bioseq_info psg_cache_si2csi psg_cache_blob_prop)

@@ -1,12 +1,12 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(blast_dataloader_unit_test)
   NCBI_sources(local_dataloader_test rmt_dataloader_test)
   NCBI_uses_toolkit_libraries(ncbi_xloader_blastdb_rmt)
-  NCBI_project_watchers(madden camacho fongah2)
+
   NCBI_set_test_requires(in-house-resources)
   NCBI_add_test()
+
+  NCBI_project_watchers(madden camacho fongah2)
 NCBI_end_app()
 

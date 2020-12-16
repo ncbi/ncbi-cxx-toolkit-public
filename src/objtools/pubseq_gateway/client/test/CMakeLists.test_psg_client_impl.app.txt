@@ -1,12 +1,13 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(test_psg_client_impl)
   NCBI_sources(test_psg_client_impl)
   NCBI_uses_toolkit_libraries(psg_client)
   NCBI_requires(Boost.Test.Included UV NGHTTP2)
-  NCBI_project_watchers(sadyrovr)
+
   NCBI_set_test_requires(in-house-resources)
   NCBI_add_test()
+
+  NCBI_project_watchers(sadyrovr)
+
 NCBI_end_app()

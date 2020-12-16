@@ -1,13 +1,17 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(id_unit_test_bad)
   NCBI_sources(id_unit_test_bad)
   NCBI_requires(FreeTDS Boost.Test.Included)
   NCBI_uses_toolkit_libraries(ncbi_xloader_genbank ncbi_xreader_pubseqos ncbi_xreader_pubseqos2)
+
+  NCBI_begin_test(id_unit_test_bad)
+    NCBI_set_test_command(all_readers.sh id_unit_test_bad)
+    NCBI_set_test_timeout(400)
+    NCBI_set_test_assets(all_readers.sh)
+  NCBI_end_test()
+
   NCBI_project_watchers(vasilche)
-  NCBI_set_test_timeout(400)
-  NCBI_add_test(all_readers.sh id_unit_test_bad)
+
 NCBI_end_app()
 

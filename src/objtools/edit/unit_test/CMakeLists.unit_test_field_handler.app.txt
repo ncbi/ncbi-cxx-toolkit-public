@@ -1,14 +1,14 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(unit_test_field_handler)
   NCBI_sources(unit_test_field_handler)
   NCBI_requires(Boost.Test.Included)
   NCBI_uses_toolkit_libraries(xobjedit xunittestutil)
-  NCBI_project_watchers(bollin)
 
   NCBI_set_test_assets(entry_edit_test_cases)
   NCBI_set_test_timeout(3000)
   NCBI_add_test()
+
+  NCBI_project_watchers(bollin)
+
 NCBI_end_app()

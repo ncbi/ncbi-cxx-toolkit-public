@@ -1,12 +1,10 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(unit_test_seq)
   NCBI_sources(unit_test_seq)
   NCBI_requires(Boost.Test.Included)
   NCBI_uses_toolkit_libraries(ncbi_xloader_genbank xobjutil)
-  NCBI_project_watchers(vasilche)
   NCBI_add_test()
+  NCBI_project_watchers(vasilche)
 NCBI_end_app()
 

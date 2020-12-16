@@ -1,6 +1,4 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_lib(eutils)
   NCBI_sources(eutils efetch einfo esearch egquery epost elink esummary espell ehistory)

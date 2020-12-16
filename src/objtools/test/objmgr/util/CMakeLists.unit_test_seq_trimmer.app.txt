@@ -1,13 +1,11 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(unit_test_seq_trimmer)
   NCBI_sources(unit_test_seq_trimmer)
   NCBI_requires(Boost.Test.Included)
   NCBI_uses_toolkit_libraries(xobjread xobjutil)
-  NCBI_project_watchers(vasilche dicuccio bollin foleyjp)
   NCBI_set_test_assets(test_data)
   NCBI_add_test()
+  NCBI_project_watchers(vasilche dicuccio bollin foleyjp)
 NCBI_end_app()
 

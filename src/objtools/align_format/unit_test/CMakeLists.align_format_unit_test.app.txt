@@ -1,6 +1,4 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(align_format_unit_test)
   NCBI_sources(
@@ -8,9 +6,11 @@ NCBI_begin_app(align_format_unit_test)
     vectorscreen_unit_test tabularinof_unit_test aln_printer_unit_test
   )
   NCBI_uses_toolkit_libraries(align_format ncbi_xloader_blastdb_rmt)
-  NCBI_project_watchers(zaretska jianye madden camacho boratyng fongah2)
+
   NCBI_set_test_requires(in-house-resources)
   NCBI_set_test_assets(data align_format_unit_test.ini)
   NCBI_add_test()
+
+  NCBI_project_watchers(zaretska jianye madden camacho boratyng fongah2)
 NCBI_end_app()
 

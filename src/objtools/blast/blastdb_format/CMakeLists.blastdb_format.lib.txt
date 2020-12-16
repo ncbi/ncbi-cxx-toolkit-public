@@ -1,6 +1,4 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_lib(blastdb_format)
   NCBI_sources(seq_writer blastdb_dataextract blastdb_formatter seq_formatter)

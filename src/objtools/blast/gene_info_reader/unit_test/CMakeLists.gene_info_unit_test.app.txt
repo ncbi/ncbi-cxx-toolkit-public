@@ -1,13 +1,13 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(gene_info_unit_test)
   NCBI_sources(gene_info_test)
   NCBI_uses_toolkit_libraries(gene_info)
-  NCBI_project_watchers(madden camacho)
+
   NCBI_set_test_assets(data)
   NCBI_set_test_requires(Linux)
   NCBI_add_test()
+
+  NCBI_project_watchers(madden camacho)
 NCBI_end_app()
 
