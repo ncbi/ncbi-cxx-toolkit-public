@@ -2241,8 +2241,8 @@ BOOST_AUTO_TEST_CASE(Scaffold2Fasta)
     CScope scope(*om);
     scope.AddDefaults();
 
-    auto_ptr<CNcbiOstream> out;
-    auto_ptr<CFastaOstream> fasta;
+    unique_ptr<CNcbiOstream> out;
+    unique_ptr<CFastaOstream> fasta;
 
     if ( s_MakeFasta ) {
         string outfile_name = "out.fsa";
@@ -2328,8 +2328,8 @@ BOOST_AUTO_TEST_CASE(Scaffold2Fasta2)
     CScope scope(*om);
     scope.AddDefaults();
 
-    auto_ptr<CNcbiOstream> out;
-    auto_ptr<CFastaOstream> fasta;
+    unique_ptr<CNcbiOstream> out;
+    unique_ptr<CFastaOstream> fasta;
 
     if ( s_MakeFasta ) {
         string outfile_name = "out.fsa";
