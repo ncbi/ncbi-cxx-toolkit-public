@@ -1,13 +1,11 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(test_chainer)
   NCBI_sources(test_chainer)
   NCBI_requires(Boost.Test.Included)
   NCBI_uses_toolkit_libraries(xalgognomon)
-  NCBI_project_watchers(chetvern)
   NCBI_set_test_assets(test_chainer.ini)
   NCBI_add_test()
+  NCBI_project_watchers(chetvern)
 NCBI_end_app()
 

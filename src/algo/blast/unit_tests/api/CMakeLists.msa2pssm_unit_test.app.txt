@@ -1,12 +1,10 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(msa2pssm_unit_test)
   NCBI_sources(msa2pssm_unit_test)
   NCBI_uses_toolkit_libraries(xblast)
-  NCBI_project_watchers(boratyng madden camacho)
   NCBI_set_test_assets(msa2pssm_unit_test.ini data)
   NCBI_add_test()
+  NCBI_project_watchers(boratyng madden camacho)
 NCBI_end_app()
 

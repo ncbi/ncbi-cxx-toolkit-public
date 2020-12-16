@@ -1,6 +1,4 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_lib(cobalt)
   NCBI_sources(
@@ -8,6 +6,6 @@ NCBI_begin_lib(cobalt)
     traceback tree kmercounts clusterer patterns options links
   )
   NCBI_uses_toolkit_libraries(xalgoalignnw xalgophytree xblast)
-  NCBI_project_watchers(boratyng dicuccio )
+  NCBI_project_watchers(boratyng dicuccio)
 NCBI_end_lib()
 

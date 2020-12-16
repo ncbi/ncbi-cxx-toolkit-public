@@ -1,12 +1,13 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(score_builder_unit_test)
   NCBI_sources(score_builder_unit_test)
   NCBI_uses_toolkit_libraries(ncbi_xloader_genbank xalgoalignutil)
-  NCBI_project_watchers(dicuccio mozese2)
+
   NCBI_set_test_assets(data)
   NCBI_add_test(score_builder_unit_test -data-in data/seqalign.asn)
+
+  NCBI_project_watchers(dicuccio mozese2)
+
 NCBI_end_app()
 

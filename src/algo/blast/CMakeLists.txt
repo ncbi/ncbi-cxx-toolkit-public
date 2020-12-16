@@ -1,6 +1,4 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 set(SRC_BLAST_C_CORE
     ../core/aa_ungapped
@@ -63,10 +61,9 @@ set(SRC_BLAST_C_CORE
     ../core/spliced_hits
 )
 
-
-NCBI_project_watchers(camacho madden)
 NCBI_add_subdirectory(
   composition_adjustment core dbindex dbindex_search api proteinkmer
   format blastinput blast_sra_input igblast gumbel_params unit_tests
 )
 
+NCBI_project_watchers(camacho madden)

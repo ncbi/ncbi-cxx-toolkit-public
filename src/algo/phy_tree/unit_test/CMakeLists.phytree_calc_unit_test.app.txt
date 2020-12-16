@@ -1,12 +1,10 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(phytree_calc_unit_test)
   NCBI_sources(phytree_calc_unit_test)
   NCBI_uses_toolkit_libraries(xalgophytree xobjread)
-  NCBI_project_watchers(blastsoft)
   NCBI_set_test_assets(data)
   NCBI_add_test()
+  NCBI_project_watchers(blastsoft)
 NCBI_end_app()
 

@@ -1,6 +1,4 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_lib(xcd_utils)
   NCBI_sources(
@@ -22,6 +20,6 @@ NCBI_begin_lib(xcd_utils)
     ncbimime taxon1 xblast
     xregexp
   )
-  NCBI_project_watchers(lanczyck cliu )
+  NCBI_project_watchers(lanczyck cliu)
 NCBI_end_lib()
 

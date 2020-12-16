@@ -1,6 +1,4 @@
-#############################################################################
 #  $Id$
-#############################################################################
 
 NCBI_begin_app(rmblast_traceback_unit_test)
   NCBI_sources(rmblast_traceback_unit_test)
@@ -9,7 +7,5 @@ NCBI_begin_app(rmblast_traceback_unit_test)
   NCBI_uses_toolkit_libraries(blast_unit_test_util test_boost xblast xobjsimple)
   NCBI_set_test_assets(data)
   NCBI_add_test(rmblast_traceback_unit_test)
-  NCBI_project_watchers(
-    boratyng madden camacho fongah2
-  )
+  NCBI_project_watchers(boratyng madden camacho fongah2)
 NCBI_end_app()

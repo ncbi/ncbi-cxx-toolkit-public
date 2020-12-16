@@ -1,15 +1,16 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(bdbloader_unit_test)
   NCBI_sources(bdbloader_unit_test)
   NCBI_add_definitions(NCBI_MODULE=BLASTDB)
   NCBI_uses_toolkit_libraries(ncbi_xloader_blastdb_rmt test_boost xobjutil)
-  NCBI_project_watchers(madden camacho)
+
   NCBI_set_test_requires(in-house-resources)
   NCBI_set_test_assets(data)
   NCBI_set_test_timeout(600)
   NCBI_add_test()
+
+  NCBI_project_watchers(madden camacho)
+
 NCBI_end_app()
 

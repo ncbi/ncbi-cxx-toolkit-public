@@ -1,6 +1,4 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_lib(xalgophytree)
   NCBI_sources(bio_tree phy_node dist_methods lex.newick newick.tab tree_to_dist_mat phytree_calc bio_tree_format_label)

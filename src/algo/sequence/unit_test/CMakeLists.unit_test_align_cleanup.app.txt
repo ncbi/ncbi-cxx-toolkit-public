@@ -1,12 +1,10 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(unit_test_align_cleanup)
   NCBI_sources(unit_test_align_cleanup)
   NCBI_requires(Boost.Test.Included)
   NCBI_uses_toolkit_libraries(ncbi_xloader_genbank xalgoseq)
-  NCBI_project_watchers(chetvern)
   NCBI_add_test()
+  NCBI_project_watchers(chetvern)
 NCBI_end_app()
 

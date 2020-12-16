@@ -1,6 +1,4 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_add_subdirectory(
   dustmask winmask sequence blast segmask align structure ms gnomon

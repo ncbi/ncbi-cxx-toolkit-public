@@ -1,6 +1,4 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_lib(fastme)
   NCBI_sources(NNI bNNI bme fastme gme graph heap inputs newickstring traverse)
