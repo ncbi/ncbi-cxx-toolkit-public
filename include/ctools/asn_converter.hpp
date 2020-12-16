@@ -112,7 +112,7 @@ TCpp* CAsnConverter<TCpp, TC>::FromC(const TC* c_obj, TCpp* cpp_obj,
     AsnIoFlush(aip);
 
     CRef<TCpp> cpp_ref(cpp_obj ? cpp_obj : new TCpp);
-    auto_ptr<CObjectIStream> ois(CObjectIStream::Open
+    unique_ptr<CObjectIStream> ois(CObjectIStream::Open
                                  (MapAcfToSdf(format), conn_stream));
     *ois >> *cpp_ref;
     return cpp_ref.Release();
@@ -125,7 +125,7 @@ TC* CAsnConverter<TCpp, TC>::ToC(const TCpp& cpp_obj, EAsnConn_Format format)
 {
     CConn_MemoryStream conn_stream;
 
-    auto_ptr<CObjectOStream> oos(CObjectOStream::Open
+    unique_ptr<CObjectOStream> oos(CObjectOStream::Open
                                  (MapAcfToSdf(format), conn_stream));
     CObjectOStreamAsnBinary* bin_stream
         = dynamic_cast<CObjectOStreamAsnBinary*>(oos.get());
