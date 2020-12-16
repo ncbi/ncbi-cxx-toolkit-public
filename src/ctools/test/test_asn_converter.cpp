@@ -61,7 +61,7 @@ public:
 
 void CTestAsnConverterApp::Init()
 {
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     arg_desc->SetUsageContext
         (GetArguments().GetProgramBasename(),
@@ -103,7 +103,7 @@ static ESerialDataFormat s_GetFormat(const string& name)
 int CTestAsnConverterApp::Run()
 {
     const CArgs& args = GetArgs();
-    auto_ptr<CObjectIStream> in;
+    unique_ptr<CObjectIStream> in;
     if (args["type"].AsString() != "Score") {
         in.reset(CObjectIStream::Open
                  (s_GetFormat(args["infmt"].AsString()),
