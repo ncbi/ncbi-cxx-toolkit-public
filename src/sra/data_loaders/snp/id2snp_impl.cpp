@@ -351,7 +351,7 @@ CID2SNPContext::CID2SNPContext(void)
 CID2SNPProcessor_Impl::CID2SNPProcessor_Impl(const CConfig::TParamTree* params,
                                              const string& driver_name)
 {
-    auto_ptr<CConfig::TParamTree> app_params;
+    unique_ptr<CConfig::TParamTree> app_params;
     if ( !params ) {
         if ( CNcbiApplicationGuard app = CNcbiApplication::InstanceGuard() ) {
             app_params.reset(CConfig::ConvertRegToTree(app->GetConfig()));
