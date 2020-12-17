@@ -489,7 +489,7 @@ void CAlignCleanup::x_Cleanup_AlignVec(const TConstAligns& aligns_in,
                 continue;
             }
             try {
-                auto_ptr<CAlnMix> mix_ptr( m_Scope ? new CAlnMix(*m_Scope) : new CAlnMix() );
+                unique_ptr<CAlnMix> mix_ptr( m_Scope ? new CAlnMix(*m_Scope) : new CAlnMix() );
                 CAlnMix& mix = *mix_ptr;
                 CAlnMix::TAddFlags flags = 0;
                 if (iter->first.size() == 1  ||  m_PreserveRows) {
