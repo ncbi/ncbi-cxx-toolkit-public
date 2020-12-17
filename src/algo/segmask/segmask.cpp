@@ -81,7 +81,7 @@ CSegMasker::operator()(const objects::CSeqVector & data)
         throw runtime_error("SEG internal error (check that input is protein) " + NStr::IntToString(status));
     }
 
-    auto_ptr<TMaskList> retval(new TMaskList);
+    unique_ptr<TMaskList> retval(new TMaskList);
     for (BlastSeqLoc* itr = seq_locs; itr; itr = itr->next) {
         retval->push_back
             (TMaskList::value_type(itr->ssr->left, itr->ssr->right));
