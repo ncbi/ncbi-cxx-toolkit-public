@@ -364,7 +364,7 @@ private:
     string fmt_encoding;    /**<\internal Encoding of the stats file from which the data was read. */
 
     /** Format version of the statistics file from which the data was read. */
-    std::auto_ptr< CComponentVersionInfo > fmt_version;
+    std::unique_ptr< CComponentVersionInfo > fmt_version;
 
     CSeqMaskerWindow::TUnit ambig_unit; /**<\internal Unit value to represent ambiguities. */
 
