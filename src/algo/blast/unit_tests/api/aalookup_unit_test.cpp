@@ -96,7 +96,7 @@ struct AalookupTestFixture {
   // to create a sequence with given gid
   void GetSeqBlk(string gid){
     CSeq_id id(gid);
-    auto_ptr<SSeqLoc> ssl(CTestObjMgr::Instance().CreateSSeqLoc(id, eNa_strand_unknown));
+    unique_ptr<SSeqLoc> ssl(CTestObjMgr::Instance().CreateSSeqLoc(id, eNa_strand_unknown));
     SBlastSequence sequence =
               GetSequence(*ssl->seqloc,
 			    eBlastEncodingProtein,
