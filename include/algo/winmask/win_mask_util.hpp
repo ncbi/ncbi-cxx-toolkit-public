@@ -185,8 +185,8 @@ class NCBI_XALGOWINMASK_EXPORT CWinMaskUtil
         const objects::CBioseq_Handle* operator-> (void) const { return &m_CurrentBioseq; }
 
     private:
-        auto_ptr< CNcbiIstream > m_InputFile; // input file
-        auto_ptr< CMaskReader > m_Reader;      // reader used for fasta and bdb formats
+        unique_ptr< CNcbiIstream > m_InputFile; // input file
+        unique_ptr< CMaskReader > m_Reader;      // reader used for fasta and bdb formats
         CRef<objects::CScope> m_Scope;
         objects::CBioseq_Handle      m_CurrentBioseq; // current found Bioseq
 
