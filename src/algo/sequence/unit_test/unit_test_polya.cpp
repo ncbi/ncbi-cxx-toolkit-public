@@ -73,7 +73,7 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
     const CArgs& args = CNcbiApplication::Instance()->GetArgs();
     CNcbiIstream& istr = args["data-in"].AsInputFile();
 
-    auto_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_AsnText, istr));
+    unique_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_AsnText, istr));
 
     for (int count = 1; istr; ++count) {
 
