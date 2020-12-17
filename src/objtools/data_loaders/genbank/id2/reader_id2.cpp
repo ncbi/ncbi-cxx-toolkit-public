@@ -31,7 +31,6 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbi_param.hpp>
 #include <corelib/ncbi_config.hpp>
-#include <corelib/ncbi_system.hpp> // for SleepSec
 
 #include <objtools/data_loaders/genbank/id2/reader_id2.hpp>
 #include <objtools/data_loaders/genbank/id2/reader_id2_entry.hpp>
