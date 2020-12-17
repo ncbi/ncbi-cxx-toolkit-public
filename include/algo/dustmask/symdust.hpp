@@ -156,7 +156,7 @@ class NCBI_XALGODUSTMASK_EXPORT CSymDustMasker
             \param seq a sequence to mask
             \return list of masked intervals
          */
-        std::auto_ptr< TMaskList > operator()( const sequence_type & seq );
+        std::unique_ptr< TMaskList > operator()( const sequence_type & seq );
 
         /**
             \brief Mask a part of the sequence.
@@ -165,7 +165,7 @@ class NCBI_XALGODUSTMASK_EXPORT CSymDustMasker
             \param stop ending position of the subsequence to mask
             \return list of masked intervals
          */
-        std::auto_ptr< TMaskList > operator()( const sequence_type & seq,
+        std::unique_ptr< TMaskList > operator()( const sequence_type & seq,
                                                size_type start, size_type stop );
 
         /**
