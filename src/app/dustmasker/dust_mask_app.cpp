@@ -80,7 +80,7 @@ const char * const CDustMaskApplication::USAGE_LINE
 void CDustMaskApplication::Init(void)
 {
     HideStdArgs(fHideLogfile | fHideConffile | fHideVersion | fHideDryRun);
-    auto_ptr< CArgDescriptions > arg_desc( new CArgDescriptions );
+    unique_ptr< CArgDescriptions > arg_desc( new CArgDescriptions );
     arg_desc->SetUsageContext( GetArguments().GetProgramBasename(),
                                USAGE_LINE );
     arg_desc->AddDefaultKey( kInput, "input_file_name",
@@ -218,7 +218,7 @@ void s_InsertMerge(CSymDustMasker::TMaskList & list, CSymDustMasker::TMaskedInte
 	list.push_back(new_mask);
 }
 
-std::auto_ptr< CSymDustMasker::TMaskList >
+std::unique_ptr< CSymDustMasker::TMaskList >
 GetDustMasks_SkipNs(objects::CSeqVector & seq, Uint4 level, Uint4 window, Uint4 linker)
 {
     CSymDustMasker duster(level, window, linker);
@@ -227,7 +227,7 @@ GetDustMasks_SkipNs(objects::CSeqVector & seq, Uint4 level, Uint4 window, Uint4 
     if(NsRange.empty()){
         return duster(seq);
     }
-    std::auto_ptr< CSymDustMasker::TMaskList > rv(new CSymDustMasker::TMaskList);
+    std::unique_ptr< CSymDustMasker::TMaskList > rv(new CSymDustMasker::TMaskList);
     TSeqPos seq_start =0;
     NON_CONST_ITERATE(CSymDustMasker::TMaskList, itr, NsRange) {
     	if(itr->first == 0) {
@@ -236,7 +236,7 @@ GetDustMasks_SkipNs(objects::CSeqVector & seq, Uint4 level, Uint4 window, Uint4 
     		continue;
     	}
     	else {
-    		std::auto_ptr< CSymDustMasker::TMaskList > s_mask = duster(seq, seq_start, itr->first -1);
+    		std::unique_ptr< CSymDustMasker::TMaskList > s_mask = duster(seq, seq_start, itr->first -1);
     		if(s_mask->size() > 0) {
     			s_InsertMerge(*rv, s_mask->front(), linker);
     			if( s_mask->size() > 1) {
@@ -251,7 +251,7 @@ GetDustMasks_SkipNs(objects::CSeqVector & seq, Uint4 level, Uint4 window, Uint4 
     	}
     }
     if(seq_start < seq.size()){
-   		std::auto_ptr< CSymDustMasker::TMaskList > s_mask = duster(seq, seq_start, seq.size() -1);
+   		std::unique_ptr< CSymDustMasker::TMaskList > s_mask = duster(seq, seq_start, seq.size() -1);
    		if(s_mask->size() > 0) {
    			s_InsertMerge(*rv, s_mask->front(), linker);
    			if( s_mask->size() > 1) {
@@ -279,7 +279,7 @@ int CDustMaskApplication::Run (void)
 
     // Now process each input sequence in a loop.
     CRef< CSeq_entry > aSeqEntry( 0 );
-    auto_ptr<CMaskWriter> writer(x_GetWriter());
+    unique_ptr<CMaskWriter> writer(x_GetWriter());
     CMaskReader * reader = x_GetReader();
 
     while( (aSeqEntry = reader->GetNextSequence()).NotEmpty() )
@@ -298,7 +298,7 @@ int CDustMaskApplication::Run (void)
 
             CSeqVector data 
                 = bsh.GetSeqVector( CBioseq_Handle::eCoding_Iupac );
-            std::auto_ptr< duster_type::TMaskList > res = GetDustMasks_SkipNs(data, level, window, linker);
+            std::unique_ptr< duster_type::TMaskList > res = GetDustMasks_SkipNs(data, level, window, linker);
             if (res.get()) {
                 writer->Print(bsh, *res, GetArgs()["parse_seqids"] );
             }
