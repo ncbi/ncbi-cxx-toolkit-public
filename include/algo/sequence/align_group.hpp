@@ -134,7 +134,7 @@ public:
 
 private:
 
-    auto_ptr<objects::CTaxon1> m_Taxon1;
+    unique_ptr<objects::CTaxon1> m_Taxon1;
     TTaxIdMap   m_TaxIds;
     TTaxInfoMap m_TaxInfo;
 
