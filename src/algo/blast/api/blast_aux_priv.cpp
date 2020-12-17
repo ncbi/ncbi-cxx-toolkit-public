@@ -164,7 +164,7 @@ BlastSetupPreliminarySearchEx(CRef<IQueryFactory> qf,
     }
 
     // 3. Create the options memento
-    auto_ptr<const CBlastOptionsMemento> opts_memento
+    unique_ptr<const CBlastOptionsMemento> opts_memento
         (options->CreateSnapshot());
 
     // 4. Create the BlastScoreBlk
