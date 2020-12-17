@@ -133,7 +133,7 @@ void PsiBlastSetupScoreBlock(BlastScoreBlk* score_blk,
     // Get the scores
     bool missing_scores = false;
     try {
-        auto_ptr< CNcbiMatrix<int> > scores
+        unique_ptr< CNcbiMatrix<int> > scores
             (CScorematPssmConverter::GetScores(*pssm));
         _ASSERT(score_blk->psi_matrix->pssm->ncols == scores->GetCols());
         _ASSERT(score_blk->psi_matrix->pssm->nrows == scores->GetRows());
@@ -153,7 +153,7 @@ void PsiBlastSetupScoreBlock(BlastScoreBlk* score_blk,
     bool freq_ratios_all_zeros = true;
 
     try {
-        auto_ptr< CNcbiMatrix<double> > freq_ratios
+        unique_ptr< CNcbiMatrix<double> > freq_ratios
             (CScorematPssmConverter::GetFreqRatios(*pssm));
         _ASSERT(score_blk->psi_matrix->pssm->ncols == 
                freq_ratios->GetCols());
@@ -249,7 +249,7 @@ CScorematPssmConverter::GetScores(const objects::CPssmWithParameters& pssm_asn)
     _ASSERT((size_t)pssm.GetFinalData().GetScores().size() ==
            (size_t)pssm.GetNumRows()*pssm_asn.GetPssm().GetNumColumns());
 
-    auto_ptr< CNcbiMatrix<int> > retval
+    unique_ptr< CNcbiMatrix<int> > retval
         (new CNcbiMatrix<int>(BLASTAA_SIZE,
                               pssm.GetNumColumns(), 
                               BLAST_SCORE_MIN));
@@ -274,7 +274,7 @@ CScorematPssmConverter::GetFreqRatios(const objects::CPssmWithParameters&
     _ASSERT((size_t)pssm.GetIntermediateData().GetFreqRatios().size() ==
            (size_t)pssm.GetNumRows()*pssm_asn.GetPssm().GetNumColumns());
 
-    auto_ptr< CNcbiMatrix<double> > retval
+    unique_ptr< CNcbiMatrix<double> > retval
         (new CNcbiMatrix<double>(BLASTAA_SIZE, pssm.GetNumColumns(), 0.0));
 
     Convert2Matrix(pssm.GetIntermediateData().GetFreqRatios(),
@@ -298,7 +298,7 @@ CScorematPssmConverter::GetResidueFrequencies
     _ASSERT((size_t)pssm.GetIntermediateData().GetResFreqsPerPos().size() ==
            (size_t)pssm.GetNumRows()*pssm_asn.GetPssm().GetNumColumns());
 
-    auto_ptr< CNcbiMatrix<int> > retval
+    unique_ptr< CNcbiMatrix<int> > retval
         (new CNcbiMatrix<int>(BLASTAA_SIZE, pssm.GetNumColumns(), 0));
 
     Convert2Matrix(pssm.GetIntermediateData().GetResFreqsPerPos(),
@@ -324,7 +324,7 @@ CScorematPssmConverter::GetWeightedResidueFrequencies
                 GetWeightedResFreqsPerPos().size() ==
            (size_t)pssm.GetNumRows()*pssm_asn.GetPssm().GetNumColumns());
 
-    auto_ptr< CNcbiMatrix<double> > retval
+    unique_ptr< CNcbiMatrix<double> > retval
         (new CNcbiMatrix<double>(BLASTAA_SIZE, pssm.GetNumColumns(), 0.0));
 
     Convert2Matrix(pssm.GetIntermediateData().GetWeightedResFreqsPerPos(),
@@ -474,7 +474,7 @@ void PsiBlastComputePssmScores(CRef<objects::CPssmWithParameters> pssm,
     _ASSERT(query_data->GetSeqLength(0) == (size_t)seqblk->length);
     _ASSERT(query_data->GetSeqLength(0) == 
             (size_t)pssm->GetPssm().GetNumColumns());
-    auto_ptr< CNcbiMatrix<double> > freq_ratios
+    unique_ptr< CNcbiMatrix<double> > freq_ratios
         (CScorematPssmConverter::GetFreqRatios(*pssm));
 
     CPsiBlastInputFreqRatios pssm_engine_input(seqblk->sequence, 
