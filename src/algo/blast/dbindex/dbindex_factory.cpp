@@ -1406,7 +1406,7 @@ void COffsetData_Factory::Save( CNcbiOstream & os )
     }
 
     bool stat = !options_.stat_file_name.empty();
-    std::auto_ptr< CNcbiOfstream > stats;
+    std::unique_ptr< CNcbiOfstream > stats;
 
     if( stat ) {
         stats.reset( 
@@ -1662,7 +1662,7 @@ void CDbIndex_Factory::do_create_1_2(
     typedef CSubjectMap_Factory TSubjectMap;
     typedef COffsetData_Factory TOffsetData;
 
-    std::auto_ptr< COffsetList::CDataPool > pool( 
+    std::unique_ptr< COffsetList::CDataPool > pool( 
             new COffsetList::CDataPool );
 
     TSubjectMap subject_map( options );
