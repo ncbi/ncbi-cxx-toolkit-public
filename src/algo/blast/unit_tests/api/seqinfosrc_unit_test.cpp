@@ -67,7 +67,7 @@ BOOST_AUTO_TEST_CASE(testSeqVecSeqInfoSrc)
 
     for (index = 0; index < kNumSeqs; ++index) {
         CSeq_id seqid(kIdPrefix + NStr::IntToString(kGiList[index]));
-        auto_ptr<SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(seqid));
+        unique_ptr<SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(seqid));
         seqv.push_back(*sl);
     }
     CSeqVecSeqInfoSrc seqinfo_src(seqv);
@@ -88,7 +88,7 @@ BOOST_AUTO_TEST_CASE(testSeqVecIndexOutOfRange)
     const int kIndex = 2;
     TSeqLocVector seqv;
     CSeq_id seqid("gi|555");
-    auto_ptr<SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(seqid));
+    unique_ptr<SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(seqid));
     seqv.push_back(*sl);
     CSeqVecSeqInfoSrc seqinfo_src(seqv);
     Uint4 length;
