@@ -258,7 +258,7 @@ BOOST_AUTO_TEST_CASE(TestMultipleQueries) {
     for (size_t i = 0; i < sizeof(gis)/sizeof(*gis); i++) {
         CRef<CSeq_id> seqid(new CSeq_id(CSeq_id::e_Gi, gis[i]));
         TSeqRange range(0U, 50U);
-        auto_ptr<SSeqLoc> sl(CTestObjMgr::Instance().
+        unique_ptr<SSeqLoc> sl(CTestObjMgr::Instance().
                           CreateSSeqLoc(*seqid, range));
         queries.push_back(*sl);
     }
@@ -273,7 +273,7 @@ BOOST_AUTO_TEST_CASE(TestQueryIsNucleotide) {
     TSeqLocVector queries;
     CRef<CSeq_id> seqid(new CSeq_id(CSeq_id::e_Gi, 555));
     TSeqRange range(0U, 500U);
-    auto_ptr<SSeqLoc> sl(CTestObjMgr::Instance().
+    unique_ptr<SSeqLoc> sl(CTestObjMgr::Instance().
                      CreateSSeqLoc(*seqid, range));
     queries.push_back(*sl);
     CRef<IQueryFactory> query(new CObjMgr_QueryFactory(queries));
@@ -288,7 +288,7 @@ BOOST_AUTO_TEST_CASE(TestSubjectIsNucleotide) {
     TSeqLocVector sequences;
     CRef<CSeq_id> seqid(new CSeq_id(CSeq_id::e_Gi, 555));
     TSeqRange range(0U, 500U);
-    auto_ptr<SSeqLoc> sl(CTestObjMgr::Instance().
+    unique_ptr<SSeqLoc> sl(CTestObjMgr::Instance().
                      CreateSSeqLoc(*seqid, range));
     sequences.push_back(*sl);
     m_Subject.Reset(new CObjMgr_QueryFactory(sequences));
