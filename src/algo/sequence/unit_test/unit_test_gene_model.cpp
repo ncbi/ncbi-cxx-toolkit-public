@@ -284,37 +284,37 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
     CNcbiIstream& combined_annot_istr = args["combined-data-expected"].AsInputFile();
     CNcbiIstream& combined_annot_with_omission_istr = args["combined-with-omission-expected"].AsInputFile();
 
-    auto_ptr<CObjectIStream> align_is(CObjectIStream::Open(eSerial_AsnText,
+    unique_ptr<CObjectIStream> align_is(CObjectIStream::Open(eSerial_AsnText,
                                                            align_istr));
-    auto_ptr<CObjectIStream> annot_is(CObjectIStream::Open(eSerial_AsnText,
+    unique_ptr<CObjectIStream> annot_is(CObjectIStream::Open(eSerial_AsnText,
                                                            annot_istr));
-    auto_ptr<CObjectIStream> combined_annot_is(CObjectIStream::Open(eSerial_AsnText,
+    unique_ptr<CObjectIStream> combined_annot_is(CObjectIStream::Open(eSerial_AsnText,
                                                            combined_annot_istr));
-    auto_ptr<CObjectIStream> combined_annot_with_omission_is(
+    unique_ptr<CObjectIStream> combined_annot_with_omission_is(
                                    CObjectIStream::Open(eSerial_AsnText,
                                    combined_annot_with_omission_istr));
-    auto_ptr<CObjectOStream> annot_os;
+    unique_ptr<CObjectOStream> annot_os;
     if (args["data-out"]) {
         CNcbiOstream& annot_ostr = args["data-out"].AsOutputFile();
         annot_os.reset(CObjectOStream::Open(eSerial_AsnText,
                                             annot_ostr));
     }
-    auto_ptr<CObjectOStream> combined_annot_os;
+    unique_ptr<CObjectOStream> combined_annot_os;
     if (args["combined-data-out"]) {
         CNcbiOstream& combined_annot_ostr = args["combined-data-out"].AsOutputFile();
         combined_annot_os.reset(CObjectOStream::Open(eSerial_AsnText,
                                             combined_annot_ostr));
     }
-    auto_ptr<CObjectOStream> combined_annot_with_omission_os;
+    unique_ptr<CObjectOStream> combined_annot_with_omission_os;
     if (args["combined-with-omission-out"]) {
         CNcbiOstream& combined_annot_with_omission_ostr = args["combined-with-omission-out"].AsOutputFile();
         combined_annot_with_omission_os.reset(CObjectOStream::Open(eSerial_AsnText,
                                             combined_annot_with_omission_ostr));
     }
     output_test_stream seqdata_test_stream( args["seqdata-expected"].AsString(), true );
-    auto_ptr<CObjectOStream> seqdata_test_os(CObjectOStream::Open(eSerial_AsnText,
+    unique_ptr<CObjectOStream> seqdata_test_os(CObjectOStream::Open(eSerial_AsnText,
                                                                   seqdata_test_stream));
-    auto_ptr<CObjectOStream> seqdata_os;
+    unique_ptr<CObjectOStream> seqdata_os;
     if (args["seqdata-out"]) {
         CNcbiOstream& seqdata_ostr = args["seqdata-out"].AsOutputFile();
         seqdata_os.reset(CObjectOStream::Open(eSerial_AsnText,
