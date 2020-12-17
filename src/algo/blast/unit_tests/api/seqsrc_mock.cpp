@@ -146,7 +146,7 @@ CRandomlyFailMockBlastSeqSrc::x_PopulateBLAST_SequenceBlk(BlastSeqSrcGetSeqArg*
     pair<TSeqPos, TSeqPos> sequence_range(0, kDefaultInt4);
 
     objects::CSeq_id seqid(seqid_string);
-    auto_ptr<blast::SSeqLoc> sl
+    unique_ptr<blast::SSeqLoc> sl
         (CTestObjMgr::Instance().CreateSSeqLoc(seqid, sequence_range));
 
     blast::SBlastSequence seq = 
