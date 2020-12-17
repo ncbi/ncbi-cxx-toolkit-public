@@ -54,7 +54,7 @@ BOOST_AUTO_TEST_SUITE(QueryInfo)
 BOOST_AUTO_TEST_CASE(ProteinGetQueryInfo) {
     const int kNumQueries=1;
     CSeq_id id("gi|3091");
-    auto_ptr<SSeqLoc> qsl(CTestObjMgr::Instance().CreateSSeqLoc(id));
+    unique_ptr<SSeqLoc> qsl(CTestObjMgr::Instance().CreateSSeqLoc(id));
     TSeqLocVector query_v;
     query_v.push_back(*qsl);
     CBlastQueryInfo query_info;
@@ -77,7 +77,7 @@ BOOST_AUTO_TEST_CASE(EmptyBlastxGetQueryInfo) {
     const int kNumQueries=1;
     CSeq_id id("gi|3090");
     pair<TSeqPos, TSeqPos> range(11, 10);
-    auto_ptr<SSeqLoc> qsl(
+    unique_ptr<SSeqLoc> qsl(
         CTestObjMgr::Instance().CreateSSeqLoc(id, range, eNa_strand_both));
         
     TSeqLocVector query_v;
@@ -101,8 +101,8 @@ BOOST_AUTO_TEST_CASE(BlastnGetQueryInfo) {
     const int kNumQueries=2;
     CSeq_id id1("gi|3090");
     CSeq_id id2("gi|555");
-    auto_ptr<SSeqLoc> qsl1(CTestObjMgr::Instance().CreateSSeqLoc(id1));
-    auto_ptr<SSeqLoc> qsl2(CTestObjMgr::Instance().CreateSSeqLoc(id2));
+    unique_ptr<SSeqLoc> qsl1(CTestObjMgr::Instance().CreateSSeqLoc(id1));
+    unique_ptr<SSeqLoc> qsl2(CTestObjMgr::Instance().CreateSSeqLoc(id2));
     TSeqLocVector query_v;
     query_v.push_back(*qsl1);
     query_v.push_back(*qsl2);
@@ -125,8 +125,8 @@ BOOST_AUTO_TEST_CASE(BlastnGetQueryInfo) {
 BOOST_AUTO_TEST_CASE(BlastnGetQueryIndex) {
     CSeq_id id1("gi|3090");
     CSeq_id id2("gi|555");
-    auto_ptr<SSeqLoc> qsl1(CTestObjMgr::Instance().CreateSSeqLoc(id1));
-    auto_ptr<SSeqLoc> qsl2(CTestObjMgr::Instance().CreateSSeqLoc(id2));
+    unique_ptr<SSeqLoc> qsl1(CTestObjMgr::Instance().CreateSSeqLoc(id1));
+    unique_ptr<SSeqLoc> qsl2(CTestObjMgr::Instance().CreateSSeqLoc(id2));
     TSeqLocVector query_v;
     query_v.push_back(*qsl1);
     query_v.push_back(*qsl2);
@@ -149,8 +149,8 @@ BOOST_AUTO_TEST_CASE(BlastnSearchContextInfo)
 {
     CSeq_id id1("gi|3090");
     CSeq_id id2("gi|555");
-    auto_ptr<SSeqLoc> qsl1(CTestObjMgr::Instance().CreateSSeqLoc(id1));
-    auto_ptr<SSeqLoc> qsl2(CTestObjMgr::Instance().CreateSSeqLoc(id2));
+    unique_ptr<SSeqLoc> qsl1(CTestObjMgr::Instance().CreateSSeqLoc(id1));
+    unique_ptr<SSeqLoc> qsl2(CTestObjMgr::Instance().CreateSSeqLoc(id2));
     TSeqLocVector query_v;
     query_v.push_back(*qsl1);
     query_v.push_back(*qsl2);
@@ -185,9 +185,9 @@ BOOST_AUTO_TEST_CASE(BlastnSearchContextInfoSingleStrand)
     CSeq_id id1("gi|555");
     CSeq_id id2("gi|3090");
     // only plus strand for the first sequence
-    auto_ptr<SSeqLoc> qsl1(CTestObjMgr::Instance().CreateSSeqLoc(id1,
+    unique_ptr<SSeqLoc> qsl1(CTestObjMgr::Instance().CreateSSeqLoc(id1,
                                                            eNa_strand_plus));
-    auto_ptr<SSeqLoc> qsl2(CTestObjMgr::Instance().CreateSSeqLoc(id2));
+    unique_ptr<SSeqLoc> qsl2(CTestObjMgr::Instance().CreateSSeqLoc(id2));
     TSeqLocVector query_v;
     query_v.push_back(*qsl1);
     query_v.push_back(*qsl2);
