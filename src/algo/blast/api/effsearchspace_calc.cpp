@@ -93,7 +93,7 @@ CEffectiveSearchSpaceCalculator::CEffectiveSearchSpaceCalculator
         m_QueryFactory->MakeLocalQueryData(&options);
     m_QueryInfo = local_data->GetQueryInfo();
 
-    auto_ptr<CBlastOptionsMemento> opts_memento
+    unique_ptr<CBlastOptionsMemento> opts_memento
         (const_cast<CBlastOptionsMemento*>(options.CreateSnapshot()));
     {{
         TSearchMessages messages;
