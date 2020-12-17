@@ -411,7 +411,7 @@ private:
     IOS_BASE::iostate m_OrigExceptionMask;
 
     /// Pointer to the SAM formatting object
-    auto_ptr<CBlast_SAM_Formatter> m_SamFormatter;
+    unique_ptr<CBlast_SAM_Formatter> m_SamFormatter;
 
     string m_Cmdline;
 
