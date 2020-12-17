@@ -331,10 +331,10 @@ BOOST_AUTO_TEST_CASE( testCalcLinkHSPCutoffs )
     const Int4 kSpecificSubjectLength = 186;
     const Int8 kDbLength = 703698559;
     CSeq_id qid("gi|129295");
-    auto_ptr<SSeqLoc> qsl(
+    unique_ptr<SSeqLoc> qsl(
         CTestObjMgr::Instance().CreateSSeqLoc(qid, eNa_strand_both));
     CSeq_id sid("gi|129296");
-    auto_ptr<SSeqLoc> ssl(
+    unique_ptr<SSeqLoc> ssl(
         CTestObjMgr::Instance().CreateSSeqLoc(sid, eNa_strand_both));
 
     CBl2Seq blaster(*qsl, *ssl, eBlastp);
@@ -500,10 +500,10 @@ BOOST_AUTO_TEST_CASE( testCalcLinkHSPCutoffsSmallDB )
     const Int4 kSpecificSubjectLength = 21;
     const Int8 kDbLength = 1358990;
     CSeq_id qid("gi|129295");
-    auto_ptr<SSeqLoc> qsl(
+    unique_ptr<SSeqLoc> qsl(
         CTestObjMgr::Instance().CreateSSeqLoc(qid, eNa_strand_both));
     CSeq_id sid("gi|129296");
-    auto_ptr<SSeqLoc> ssl(
+    unique_ptr<SSeqLoc> ssl(
         CTestObjMgr::Instance().CreateSSeqLoc(sid, eNa_strand_both));
 
     CBl2Seq blaster(*qsl, *ssl, eBlastp);
@@ -588,10 +588,10 @@ BOOST_AUTO_TEST_CASE( testCalcLinkHSPResetGapProb )
     const Int4 kSpecificSubjectLength = 186;
     const Int8 kDbLength = 703698559;
     CSeq_id qid("gi|129295");
-    auto_ptr<SSeqLoc> qsl(
+    unique_ptr<SSeqLoc> qsl(
         CTestObjMgr::Instance().CreateSSeqLoc(qid, eNa_strand_both));
     CSeq_id sid("gi|129296");
-    auto_ptr<SSeqLoc> ssl(
+    unique_ptr<SSeqLoc> ssl(
         CTestObjMgr::Instance().CreateSSeqLoc(sid, eNa_strand_both));
 
     CBl2Seq blaster(*qsl, *ssl, eBlastp);
@@ -852,13 +852,13 @@ BOOST_AUTO_TEST_CASE( testHitSavingParamNewSomeInvalidKbp )
 {
     const EBlastProgramType kBlastProgram = eBlastTypeBlastn;
     CSeq_id qid1("gi|555");
-    auto_ptr<SSeqLoc> qsl1(
+    unique_ptr<SSeqLoc> qsl1(
         CTestObjMgr::Instance().CreateSSeqLoc(qid1, eNa_strand_both));
     CSeq_id qid2("gi|556");
-    auto_ptr<SSeqLoc> qsl2(
+    unique_ptr<SSeqLoc> qsl2(
         CTestObjMgr::Instance().CreateSSeqLoc(qid2, eNa_strand_both));
     CSeq_id qid3("gi|557");
-    auto_ptr<SSeqLoc> qsl3(
+    unique_ptr<SSeqLoc> qsl3(
         CTestObjMgr::Instance().CreateSSeqLoc(qid3, eNa_strand_both));
 
     TSeqLocVector query_v;
@@ -938,7 +938,7 @@ BOOST_AUTO_TEST_CASE( testHitSavingParamNewGappedTblastnLargeSubjectSequence )
 {
     const EBlastProgramType kBlastProgram = eBlastTypeTblastn;
     CSeq_id qid1("gi|3091");
-    auto_ptr<SSeqLoc> qsl1(
+    unique_ptr<SSeqLoc> qsl1(
         CTestObjMgr::Instance().CreateSSeqLoc(qid1, eNa_strand_both));
 
     TSeqLocVector query_v;
@@ -1009,7 +1009,7 @@ BOOST_AUTO_TEST_CASE( testHitSavingParamNewGappedTblastnMidsizeSubjectSequence )
 {
     const EBlastProgramType kBlastProgram = eBlastTypeTblastn;
     CSeq_id qid1("gi|3091");
-    auto_ptr<SSeqLoc> qsl1(
+    unique_ptr<SSeqLoc> qsl1(
         CTestObjMgr::Instance().CreateSSeqLoc(qid1, eNa_strand_both));
 
     TSeqLocVector query_v;
@@ -1077,7 +1077,7 @@ BOOST_AUTO_TEST_CASE( testHitSavingParamUpdateMultipleCalls )
 {
     const EBlastProgramType kBlastProgram = eBlastTypeTblastn;
     CSeq_id qid1("gi|3091");
-    auto_ptr<SSeqLoc> qsl1(
+    unique_ptr<SSeqLoc> qsl1(
         CTestObjMgr::Instance().CreateSSeqLoc(qid1, eNa_strand_both));
 
     TSeqLocVector query_v;
@@ -1165,7 +1165,7 @@ BOOST_AUTO_TEST_CASE( testHitSavingParamNewGappedTblastnSmallSubjectSequence )
 {
     const EBlastProgramType kBlastProgram = eBlastTypeTblastn;
     CSeq_id qid1("gi|17532675");
-    auto_ptr<SSeqLoc> qsl1(
+    unique_ptr<SSeqLoc> qsl1(
         CTestObjMgr::Instance().CreateSSeqLoc(qid1, eNa_strand_both));
 
     TSeqLocVector query_v;
@@ -1234,13 +1234,13 @@ BOOST_AUTO_TEST_CASE( testInitialWordParamNewSomeInvalidKbp )
     const EBlastProgramType kBlastProgram = eBlastTypeBlastn;
     const Uint4 k_subject_length=10000;
     CSeq_id qid1("gi|555");
-    auto_ptr<SSeqLoc> qsl1(
+    unique_ptr<SSeqLoc> qsl1(
         CTestObjMgr::Instance().CreateSSeqLoc(qid1, eNa_strand_both));
     CSeq_id qid2("gi|556");
-    auto_ptr<SSeqLoc> qsl2(
+    unique_ptr<SSeqLoc> qsl2(
         CTestObjMgr::Instance().CreateSSeqLoc(qid2, eNa_strand_both));
     CSeq_id qid3("gi|557");
-    auto_ptr<SSeqLoc> qsl3(
+    unique_ptr<SSeqLoc> qsl3(
         CTestObjMgr::Instance().CreateSSeqLoc(qid3, eNa_strand_both));
 
     TSeqLocVector query_v;
