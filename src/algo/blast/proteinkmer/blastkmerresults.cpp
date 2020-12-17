@@ -72,7 +72,7 @@ CBlastKmerResults::GetTSL(TSeqLocVector& tsl, CRef<CScope> scope) const
         {
 		  CRef<CSeq_loc> seqloc(new CSeq_loc);
     		  seqloc->SetWhole().Assign(*((*iter).first));
-		  auto_ptr<SSeqLoc> ssl(new SSeqLoc(*seqloc, *scope));
+		  unique_ptr<SSeqLoc> ssl(new SSeqLoc(*seqloc, *scope));
 		  tsl.push_back(*ssl);
         }
 	return;
