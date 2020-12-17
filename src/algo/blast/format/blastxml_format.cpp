@@ -498,7 +498,7 @@ s_SeqAlignSetToXMLHits(list <CRef<CHit> >& hits, const CSeq_align_set& alnset,
 	    else
 	    {
 		CNcbiOstrstream  one_hit_os;
-		auto_ptr<CObjectOStreamXml> xml_one_hit_os (new CObjectOStreamXml (one_hit_os,false));
+		unique_ptr<CObjectOStreamXml> xml_one_hit_os (new CObjectOStreamXml (one_hit_os,false));
 		xml_one_hit_os->SetEncoding(eEncoding_Ascii);
 		xml_one_hit_os->SetReferenceDTD(false);
 		xml_one_hit_os->Write( &(*new_hit), new_hit->GetThisTypeInfo() ); 
@@ -716,7 +716,7 @@ BlastXML_FormatReport(CBlastOutput& bxmlout, const IBlastXMLReportData* data, CN
 
     s_SetBlastXMLParameters(bxmlout, data);
 
-    auto_ptr< CBlastFormattingMatrix > matrix(data->GetMatrix());
+    unique_ptr< CBlastFormattingMatrix > matrix(data->GetMatrix());
 
     vector<CRef<CStatistics> > stat_vec;
     s_BlastXMLGetStatistics(stat_vec, data);
@@ -782,7 +782,7 @@ static bool s_SerializeAndSplitBy(const CSerialObject &object,
     end_part="</NOT SET>";
     CNcbiOstrstream one_iter_ss_os;
     {
-	auto_ptr<CObjectOStreamXml> xml_one_iter_os(new CObjectOStreamXml (one_iter_ss_os,false));
+	unique_ptr<CObjectOStreamXml> xml_one_iter_os(new CObjectOStreamXml (one_iter_ss_os,false));
 	xml_one_iter_os->SetEncoding(eEncoding_Ascii);
 	xml_one_iter_os->SetVerifyData( eSerialVerifyData_No );
 	xml_one_iter_os->SetReferenceDTD(add_reference_dtd);
