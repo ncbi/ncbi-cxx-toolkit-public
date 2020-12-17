@@ -84,11 +84,11 @@ BOOST_AUTO_TEST_CASE(AllZerosFreqRatios)
     { 15,  9, 10,  4, 11, 11, 19, 17, 17, 17 };
     CNcbiMatrix<double> freq_ratios(BLASTAA_SIZE, kQueryLength);
 
-    auto_ptr<IPssmInputFreqRatios> pssm_input;
+    unique_ptr<IPssmInputFreqRatios> pssm_input;
     pssm_input.reset(new CPsiBlastInputFreqRatios
                         (kQuery, kQueryLength, freq_ratios));
     CPssmEngine pssm_engine(pssm_input.get());
-    auto_ptr< CNcbiMatrix<int> > pssm
+    unique_ptr< CNcbiMatrix<int> > pssm
         (CScorematPssmConverter::GetScores(*pssm_engine.Run()));
 
     const SNCBIPackedScoreMatrix* score_matrix = &NCBISM_Blosum62;
