@@ -78,7 +78,7 @@ private:
 
 void CAdapterSearchApplication::Init(void)
 {
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "Discover or lowercase-mask adapter sequences in a set of reads");
@@ -306,7 +306,7 @@ void CAdapterSearchApplication::x_DetectAdapter(const CArgs& args)
 {
     bool paired_end_mode = args["paired_end"];
 
-    auto_ptr<NAdapterSearch::IAdapterDetector> detector;
+    unique_ptr<NAdapterSearch::IAdapterDetector> detector;
     if(paired_end_mode) {
         detector.reset(new NAdapterSearch::CPairedEndAdapterDetector());
     } else {
