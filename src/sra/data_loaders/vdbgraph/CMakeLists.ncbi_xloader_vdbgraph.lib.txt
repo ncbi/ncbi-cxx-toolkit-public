@@ -1,6 +1,4 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_lib(ncbi_xloader_vdbgraph SHARED)
   NCBI_sources(vdbgraphloader vdbgraphloader_impl)

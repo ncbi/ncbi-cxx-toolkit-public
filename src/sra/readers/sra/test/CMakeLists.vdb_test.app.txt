@@ -1,11 +1,8 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(vdb_test)
   NCBI_sources(vdb_test)
   NCBI_uses_toolkit_libraries(sraread)
-  NCBI_project_watchers(vasilche ucko)
 
   NCBI_set_test_requires(in-house-resources -MSWin)
   NCBI_begin_test(vdb_test_SRA)
@@ -20,5 +17,8 @@ NCBI_begin_app(vdb_test)
   NCBI_begin_test(vdb_test_none)
     NCBI_set_test_command(vdb_test -acc SRR000000 -no_acc)
   NCBI_end_test()
+
+  NCBI_project_watchers(vasilche ucko)
+
 NCBI_end_app()
 
