@@ -333,8 +333,8 @@ void CMsvcConfigure::WriteBuildVer(CMsvcSite& site, const string& root_dir, cons
     string tc_build_id;
     string tc_prj   = GetApp().GetEnvironment().Get("TEAMCITY_PROJECT_NAME");
     string tc_conf  = GetApp().GetEnvironment().Get("TEAMCITY_BUILDCONF_NAME");
-    string sc_ver;
-    string sc_rev;
+    string svn_rev  = GetApp().GetEnvironment().Get("SVNREV");
+    string sc_ver   = GetApp().GetEnvironment().Get("SCVER");
 
     // Get content of the Teamcity property file, if any
     string prop_file_name = GetApp().GetEnvironment().Get("TEAMCITY_BUILD_PROPERTIES_FILE");
@@ -357,42 +357,55 @@ void CMsvcConfigure::WriteBuildVer(CMsvcSite& site, const string& root_dir, cons
     if (!tree_root.empty()) {
         // Get SVN info
         string tmp_file = CFile::GetTmpName();
-        string cmd = "svn info " + CDir::ConcatPath(tree_root, "compilers") + " >> " + tmp_file;
 
+        string cmd = "svn info " + tree_root + " > " + tmp_file;
         TExitCode ret = CExec::System(cmd.c_str());
         if (ret == 0) {
             // SVN client present, parse results
             string info;
-            CNcbiIfstream is(tmp_file.c_str(), IOS_BASE::in);
-            NcbiStreamToString(&info, is);
-            CFile(tmp_file).Remove();
-            if (!info.empty()) {
-                CRegexp re("Revision: (\\d+)");
-                sc_rev = re.GetMatch(info, 0, 1);
-                re.Set("/production/components/[^/]*/(\\d+)");
-                sc_ver = re.GetMatch(info, 0, 1);
+            {
+                CNcbiIfstream is(tmp_file.c_str(), IOS_BASE::in);
+                NcbiStreamToString(&info, is);
+                CFile(tmp_file).Remove();
+                if (!info.empty()) {
+                    CRegexp re("Revision: (\\d+)");
+                    svn_rev = re.GetMatch(info, 0, 1);
+                }
+            }
+            cmd = "svn info " + CDir::ConcatPath(tree_root, "src\\build-system") + " > " + tmp_file;
+            ret = CExec::System(cmd.c_str());
+            if (ret == 0) {
+                CNcbiIfstream is(tmp_file.c_str(), IOS_BASE::in);
+                NcbiStreamToString(&info, is);
+                CFile(tmp_file).Remove();
+                if (!info.empty()) {
+                    CRegexp re("/production/components/[^/]*/(\\d+)");
+                    sc_ver = re.GetMatch(info, 0, 1);
+                }
             }
         }
         else {
             // Fallback
-            sc_ver = GetApp().GetEnvironment().Get("NCBI_SC_VERSION");
+            if (sc_ver.empty()) {
+                sc_ver = GetApp().GetEnvironment().Get("NCBI_SC_VERSION");
+            }
             // try to get revision bumber from teamcity property file
-            if (!prop_file_info.empty()) {
+            if (svn_rev.empty() && !prop_file_info.empty()) {
                 CRegexp re("build.vcs.number=(\\d+)");
-                sc_rev = re.GetMatch(prop_file_info, 0, 1);
+                svn_rev = re.GetMatch(prop_file_info, 0, 1);
             }
         }
     }
     if (tc_build.empty()) {tc_build = "0";}
     if (sc_ver.empty())   {sc_ver = "0";}
-    if (sc_rev.empty())   {sc_rev = "0";}
+    if (svn_rev.empty())  {svn_rev = "0";}
 
     map<string,string> build_vars;
     build_vars["NCBI_TEAMCITY_BUILD_NUMBER"] = tc_build;
     build_vars["NCBI_TEAMCITY_BUILD_ID"] = tc_build_id;
     build_vars["NCBI_TEAMCITY_PROJECT_NAME"] = tc_prj;
     build_vars["NCBI_TEAMCITY_BUILDCONF_NAME"] = tc_conf;
-    build_vars["NCBI_SUBVERSION_REVISION"] = sc_rev;
+    build_vars["NCBI_SUBVERSION_REVISION"] = svn_rev;
     build_vars["NCBI_SC_VERSION"] = sc_ver;
 
     auto converter = [](const string& file_in, const string& file_out, const map<string,string>& vocabulary) {
