@@ -85,7 +85,7 @@ static TSeqLocVector s_getSequences()
     for (index = 0; index < kNumSeqs; ++index) {
         sprintf(id_buffer, "gi|%d", kGiList[index]);
         CSeq_id id(id_buffer);
-        auto_ptr<SSeqLoc> sl(
+        unique_ptr<SSeqLoc> sl(
                              CTestObjMgr::Instance().
                              CreateSSeqLoc(id, eNa_strand_both));
         retval.push_back(*sl);
