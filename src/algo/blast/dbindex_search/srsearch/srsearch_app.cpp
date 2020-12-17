@@ -303,7 +303,7 @@ const char * const CSRSearchApplication::USAGE_LINE =
 //------------------------------------------------------------------------------
 void CSRSearchApplication::Init()
 {
-    auto_ptr< CArgDescriptions > arg_desc( new CArgDescriptions );
+    unique_ptr< CArgDescriptions > arg_desc( new CArgDescriptions );
     arg_desc->SetUsageContext( 
             GetArguments().GetProgramBasename(), USAGE_LINE );
     arg_desc->AddKey( 
