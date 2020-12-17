@@ -102,7 +102,7 @@ struct AascanTestFixture {
         // load the query
         CSeq_id id("gi|18652417");
         
-        auto_ptr<SSeqLoc> ssl
+        unique_ptr<SSeqLoc> ssl
             (CTestObjMgr::Instance().CreateSSeqLoc(id, eNa_strand_unknown));
 
         SBlastSequence query_sequence = 
@@ -137,7 +137,7 @@ struct AascanTestFixture {
         // load the subject
         CSeq_id subject_id("gi|7481886");
         
-        auto_ptr<SSeqLoc> subject_ssl
+        unique_ptr<SSeqLoc> subject_ssl
             (CTestObjMgr::Instance().CreateSSeqLoc(subject_id,
                                                    eNa_strand_unknown));
 
