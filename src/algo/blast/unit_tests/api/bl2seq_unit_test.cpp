@@ -581,7 +581,7 @@ BOOST_AUTO_TEST_CASE(ProteinBlastSelfHit)
 {
     //const int kSeqLength = 232;
     CSeq_id id("gi|129295");
-    auto_ptr<SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(id));
+    unique_ptr<SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(id));
 
     CBl2Seq blaster(*sl, *sl, eBlastp);
     TSeqAlignVector sav(blaster.Run());
@@ -624,10 +624,10 @@ BOOST_AUTO_TEST_CASE(ProteinBlastSelfHit)
 BOOST_AUTO_TEST_CASE(TBlastn2Seqs)
 {
     CSeq_id qid("gi|129295");
-    auto_ptr<SSeqLoc> query(CTestObjMgr::Instance().CreateSSeqLoc(qid));
+    unique_ptr<SSeqLoc> query(CTestObjMgr::Instance().CreateSSeqLoc(qid));
 
     CSeq_id sid("gi|555");
-    auto_ptr<SSeqLoc> subj(
+    unique_ptr<SSeqLoc> subj(
         CTestObjMgr::Instance().CreateSSeqLoc(sid, eNa_strand_both));
 
     CBl2Seq blaster(*query, *subj, eTblastn);
@@ -663,11 +663,11 @@ BOOST_AUTO_TEST_CASE(TBlastn2Seqs)
 BOOST_AUTO_TEST_CASE(TBlastn2SeqsRevStrand1)
 {
     CSeq_id qid("gi|1945390");
-    auto_ptr<SSeqLoc> query(CTestObjMgr::Instance().CreateSSeqLoc(qid));
+    unique_ptr<SSeqLoc> query(CTestObjMgr::Instance().CreateSSeqLoc(qid));
 
     pair<TSeqPos, TSeqPos> range(150000, 170000);
     CSeq_id sid("gi|4755212");
-    auto_ptr<SSeqLoc> subj(CTestObjMgr::Instance().CreateSSeqLoc(sid, range, eNa_strand_minus));
+    unique_ptr<SSeqLoc> subj(CTestObjMgr::Instance().CreateSSeqLoc(sid, range, eNa_strand_minus));
 
     CBl2Seq blaster(*query, *subj, eTblastn);
     TSeqAlignVector sav(blaster.Run());
@@ -691,10 +691,10 @@ o.close();
 BOOST_AUTO_TEST_CASE(TBlastn2SeqsRevStrand2)
 {
     CSeq_id qid("gi|1945390");
-    auto_ptr<SSeqLoc> query(CTestObjMgr::Instance().CreateSSeqLoc(qid));
+    unique_ptr<SSeqLoc> query(CTestObjMgr::Instance().CreateSSeqLoc(qid));
 
     CSeq_id sid("gi|1945388");
-    auto_ptr<SSeqLoc> subj(CTestObjMgr::Instance().CreateSSeqLoc(sid, eNa_strand_minus));
+    unique_ptr<SSeqLoc> subj(CTestObjMgr::Instance().CreateSSeqLoc(sid, eNa_strand_minus));
 
     CBl2Seq blaster(*query, *subj, eTblastn);
     TSeqAlignVector sav(blaster.Run());
@@ -717,10 +717,10 @@ o.close();
 BOOST_AUTO_TEST_CASE(TBlastn2SeqsCompBasedStats)
 {
     CSeq_id qid("gi|68737"); // "pir|A01243|DXCH"
-    auto_ptr<SSeqLoc> query(CTestObjMgr::Instance().CreateSSeqLoc(qid));
+    unique_ptr<SSeqLoc> query(CTestObjMgr::Instance().CreateSSeqLoc(qid));
 
     CSeq_id sid("gi|118086484");
-    auto_ptr<SSeqLoc> subj(
+    unique_ptr<SSeqLoc> subj(
         CTestObjMgr::Instance().CreateSSeqLoc(sid, eNa_strand_both));
 
     CRef<CBlastOptionsHandle> opts(CBlastOptionsFactory::Create(eTblastn));
@@ -752,10 +752,10 @@ o.close();
 BOOST_AUTO_TEST_CASE(TBlastn2SeqsLargeWord)
 {
     CSeq_id qid("gi|129295");
-    auto_ptr<SSeqLoc> query(CTestObjMgr::Instance().CreateSSeqLoc(qid));
+    unique_ptr<SSeqLoc> query(CTestObjMgr::Instance().CreateSSeqLoc(qid));
 
     CSeq_id sid("gi|555");
-    auto_ptr<SSeqLoc> subj(
+    unique_ptr<SSeqLoc> subj(
         CTestObjMgr::Instance().CreateSSeqLoc(sid, eNa_strand_both));
 
     CRef<CBlastOptionsHandle> opts(CBlastOptionsFactory::Create(eTblastn));
@@ -786,9 +786,9 @@ BOOST_AUTO_TEST_CASE(IdenticalProteins)
 {
     //const int kSeqLength = 377;
     CSeq_id qid("gi|34810917");
-    auto_ptr<SSeqLoc> query(CTestObjMgr::Instance().CreateSSeqLoc(qid));
+    unique_ptr<SSeqLoc> query(CTestObjMgr::Instance().CreateSSeqLoc(qid));
     CSeq_id sid("gi|34810916");
-    auto_ptr<SSeqLoc> subj(CTestObjMgr::Instance().CreateSSeqLoc(sid));
+    unique_ptr<SSeqLoc> subj(CTestObjMgr::Instance().CreateSSeqLoc(sid));
 
     CBl2Seq blaster(*query, *subj, eBlastp);
     TSeqAlignVector sav(blaster.Run());
@@ -832,9 +832,9 @@ BOOST_AUTO_TEST_CASE(PositiveMismatchOption) {
     CSeq_id qid("gi|408478");  // zebrafish sequence U02544
     CSeq_id sid("gi|1546012"); // mouse sequence U61969
 
-    auto_ptr<SSeqLoc> query(
+    unique_ptr<SSeqLoc> query(
         CTestObjMgr::Instance().CreateSSeqLoc(qid, eNa_strand_both));
-    auto_ptr<SSeqLoc> subj(CTestObjMgr::Instance().CreateSSeqLoc(sid));
+    unique_ptr<SSeqLoc> subj(CTestObjMgr::Instance().CreateSSeqLoc(sid));
 
     const int kMatch = 2;
     const int kMismatch = 5;  // Positive mismatch not allowed.
@@ -857,13 +857,13 @@ BOOST_AUTO_TEST_CASE(PositiveMismatchOption) {
 BOOST_AUTO_TEST_CASE(FullyMaskedSequence) {
     CSeq_id qid("ref|NT_024524.13");
     pair<TSeqPos, TSeqPos> range(27886902, 27886932);
-    auto_ptr<SSeqLoc> query(
+    unique_ptr<SSeqLoc> query(
         CTestObjMgr::Instance().CreateSSeqLoc(qid, range, 
                                                eNa_strand_plus));
     range.first = 2052;
     range.second = 2082;
     CSeq_id sid("emb|BX641126.1");
-    auto_ptr<SSeqLoc> subj(
+    unique_ptr<SSeqLoc> subj(
         CTestObjMgr::Instance().CreateSSeqLoc(sid, range,
                                                eNa_strand_minus));
     CRef<CBlastNucleotideOptionsHandle> options(new CBlastNucleotideOptionsHandle);
@@ -897,7 +897,7 @@ BOOST_AUTO_TEST_CASE(MultipleQueries1FullyMasked) {
     for (int env = 0; env < 2; env++) {
 
         CRef<IQueryFactory> queries(new CObjMgr_QueryFactory(query_vec));
-        auto_ptr<CAutoEnvironmentVariable> envvar1, envvar2;
+        unique_ptr<CAutoEnvironmentVariable> envvar1, envvar2;
         if (env) {
             envvar1.reset(new CAutoEnvironmentVariable("OVERLAP_CHUNK_SIZE", NStr::SizetToString(10)));
             envvar2.reset(new CAutoEnvironmentVariable("CHUNK_SIZE", NStr::SizetToString(100)));
@@ -935,7 +935,7 @@ BOOST_AUTO_TEST_CASE(MultipleQueries1FullyMasked) {
 
 BOOST_AUTO_TEST_CASE(testInterruptBlastpExitImmediately) {
     CSeq_id id("gi|129295");
-    auto_ptr<SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(id));
+    unique_ptr<SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(id));
 
     CBl2Seq blaster(*sl, *sl, eBlastp);
     TInterruptFnPtr fnptr =
@@ -954,13 +954,13 @@ BOOST_AUTO_TEST_CASE(Tblastn2Seqs_PlusStrandOnly) {
     // We expect only 1 hit between these two sequences in the plus strand
     TSeqLocVector query_vec, subj_vec;
     CSeq_id qid(CSeq_id::e_Gi, 7019569);
-    auto_ptr<SSeqLoc> ql(CTestObjMgr::Instance().CreateSSeqLoc(qid));
+    unique_ptr<SSeqLoc> ql(CTestObjMgr::Instance().CreateSSeqLoc(qid));
     query_vec.push_back(*ql);
     CRef<IQueryFactory> queries(new CObjMgr_QueryFactory(query_vec));
 
     const ENa_strand target_strand = eNa_strand_plus;
     CSeq_id sid(CSeq_id::e_Gi, 17865806);
-    auto_ptr<SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(sid,
+    unique_ptr<SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(sid,
                                                                target_strand));
     subj_vec.push_back(*sl);
     CRef<IQueryFactory> subjects(new CObjMgr_QueryFactory(subj_vec));
@@ -995,7 +995,7 @@ BOOST_AUTO_TEST_CASE(Tblastn2Seqs_PlusStrandOnly) {
 BOOST_AUTO_TEST_CASE_TIMEOUT(testInterruptBlastSetup, 3);
 BOOST_AUTO_TEST_CASE(testInterruptBlastSetup) {
     CSeq_id id("NC_000002.11");
-    auto_ptr<SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(id));
+    unique_ptr<SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(id));
 
     CBl2Seq blaster(*sl, *sl, eBlastn);
     TInterruptFnPtr fnptr =
@@ -1011,7 +1011,7 @@ BOOST_AUTO_TEST_CASE(testInterruptBlastSetup) {
 
 BOOST_AUTO_TEST_CASE(testInterruptBlastnExitImmediately) {
     CSeq_id id("gi|555");
-    auto_ptr<SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(id));
+    unique_ptr<SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(id));
 
     CBl2Seq blaster(*sl, *sl, eBlastn);
     TInterruptFnPtr fnptr =
@@ -1027,9 +1027,9 @@ BOOST_AUTO_TEST_CASE(testInterruptBlastnExitImmediately) {
 
 BOOST_AUTO_TEST_CASE(testInterruptBlastxExitImmediately) {
     CSeq_id query_id("gi|555");
-    auto_ptr<SSeqLoc> slq(CTestObjMgr::Instance().CreateSSeqLoc(query_id));
+    unique_ptr<SSeqLoc> slq(CTestObjMgr::Instance().CreateSSeqLoc(query_id));
     CSeq_id subj_id("gi|129295");
-    auto_ptr<SSeqLoc> sls(CTestObjMgr::Instance().CreateSSeqLoc(subj_id));
+    unique_ptr<SSeqLoc> sls(CTestObjMgr::Instance().CreateSSeqLoc(subj_id));
 
     CBl2Seq blaster(*slq, *sls, eBlastx);
     TInterruptFnPtr fnptr =
@@ -1045,9 +1045,9 @@ BOOST_AUTO_TEST_CASE(testInterruptBlastxExitImmediately) {
 
 BOOST_AUTO_TEST_CASE(testInterruptTblastxExitImmediately) {
     CSeq_id query_id("gi|555");
-    auto_ptr<SSeqLoc> slq(CTestObjMgr::Instance().CreateSSeqLoc(query_id));
+    unique_ptr<SSeqLoc> slq(CTestObjMgr::Instance().CreateSSeqLoc(query_id));
     CSeq_id subj_id("gi|555");
-    auto_ptr<SSeqLoc> sls(CTestObjMgr::Instance().CreateSSeqLoc(subj_id));
+    unique_ptr<SSeqLoc> sls(CTestObjMgr::Instance().CreateSSeqLoc(subj_id));
 
     CBl2Seq blaster(*slq, *sls, eTblastx);
     TInterruptFnPtr fnptr =
@@ -1063,9 +1063,9 @@ BOOST_AUTO_TEST_CASE(testInterruptTblastxExitImmediately) {
 
 BOOST_AUTO_TEST_CASE(testInterruptTblastnExitImmediately) {
     CSeq_id query_id("gi|129295");
-    auto_ptr<SSeqLoc> slq(CTestObjMgr::Instance().CreateSSeqLoc(query_id));
+    unique_ptr<SSeqLoc> slq(CTestObjMgr::Instance().CreateSSeqLoc(query_id));
     CSeq_id subj_id("gi|555");
-    auto_ptr<SSeqLoc> sls(CTestObjMgr::Instance().CreateSSeqLoc(subj_id));
+    unique_ptr<SSeqLoc> sls(CTestObjMgr::Instance().CreateSSeqLoc(subj_id));
 
     CBl2Seq blaster(*slq, *sls, eTblastn);
     TInterruptFnPtr fnptr =
@@ -1273,7 +1273,7 @@ BOOST_AUTO_TEST_CASE(testInterruptTblastxExitAtRandom) {
 
 BOOST_AUTO_TEST_CASE(testInterruptBlastpExitAfter3Callbacks) {
     CSeq_id id("gi|129295");
-    auto_ptr<SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(id));
+    unique_ptr<SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(id));
 
     CBl2Seq blaster(*sl, *sl, eBlastp);
     TInterruptFnPtr fnptr =
@@ -1423,9 +1423,9 @@ BOOST_AUTO_TEST_CASE(ProteinBlastMultipleQueriesWithBadQuery) {
 
 BOOST_AUTO_TEST_CASE(NucleotideBlastMultipleQueriesWithInvalidSeqId) {
     CRef<CSeq_id> id1(new CSeq_id(CSeq_id::e_Gi, 555));
-    auto_ptr<SSeqLoc> sl1(CTestObjMgr::Instance().CreateSSeqLoc(*id1));
+    unique_ptr<SSeqLoc> sl1(CTestObjMgr::Instance().CreateSSeqLoc(*id1));
     CRef<CSeq_id> id2(new CSeq_id(CSeq_id::e_Gi, 556));
-    auto_ptr<SSeqLoc> sl2(CTestObjMgr::Instance().CreateSSeqLoc(*id2));
+    unique_ptr<SSeqLoc> sl2(CTestObjMgr::Instance().CreateSSeqLoc(*id2));
 
     const TSeqPos kFakeBioseqLength = 12;
     const char byte(0);   // string of 4 A's in ncbi2na
@@ -1443,7 +1443,7 @@ BOOST_AUTO_TEST_CASE(NucleotideBlastMultipleQueriesWithInvalidSeqId) {
 
     CRef<CScope> scope(CSimpleOM::NewScope(false));
     scope->AddBioseq(*fake_bioseq);
-    auto_ptr<SSeqLoc> sl_bad(new SSeqLoc(*fake_loc, *scope));
+    unique_ptr<SSeqLoc> sl_bad(new SSeqLoc(*fake_loc, *scope));
 
     TSeqPos len = sequence::GetLength(*sl_bad->seqloc, sl_bad->scope);
     BOOST_REQUIRE_EQUAL(kFakeBioseqLength, len);
@@ -1455,7 +1455,7 @@ BOOST_AUTO_TEST_CASE(NucleotideBlastMultipleQueriesWithInvalidSeqId) {
 
     // All subjects have matches against this gi
     CRef<CSeq_id> subj_id(new CSeq_id(CSeq_id::e_Gi, 555));
-    auto_ptr<SSeqLoc> subj_loc
+    unique_ptr<SSeqLoc> subj_loc
         (CTestObjMgr::Instance().CreateSSeqLoc(*subj_id));
     TSeqLocVector subject;
     subject.push_back(*subj_loc);;
@@ -1617,7 +1617,7 @@ BOOST_AUTO_TEST_CASE(ProteinCompBasedStats) {
     SSeqLoc ss1(seqloc1, scope);
 
     CSeq_id id("gi|4503637");
-    auto_ptr<SSeqLoc> ss2(CTestObjMgr::Instance().CreateSSeqLoc(id));
+    unique_ptr<SSeqLoc> ss2(CTestObjMgr::Instance().CreateSSeqLoc(id));
 
     CRef<CBlastProteinOptionsHandle> opts_handle (new CBlastProteinOptionsHandle);
     opts_handle->SetWordSize(2);
@@ -1637,12 +1637,12 @@ BOOST_AUTO_TEST_CASE(ProteinCompBasedStats) {
 
 BOOST_AUTO_TEST_CASE(Blastx2Seqs_QueryBothStrands) {
     CSeq_id qid("gi|555");
-    auto_ptr<SSeqLoc> query(
+    unique_ptr<SSeqLoc> query(
         CTestObjMgr::Instance().CreateSSeqLoc(qid, eNa_strand_both));
     query->genetic_code_id = 1;
 
     CSeq_id sid("gi|129295");
-    auto_ptr<SSeqLoc> subj(CTestObjMgr::Instance().CreateSSeqLoc(sid));
+    unique_ptr<SSeqLoc> subj(CTestObjMgr::Instance().CreateSSeqLoc(sid));
 
     CBl2Seq blaster(*query, *subj, eBlastx);
     TSeqAlignVector sav(blaster.Run());
@@ -1669,7 +1669,7 @@ BOOST_AUTO_TEST_CASE(NucleotideSelfHitWithSubjectMask) {
     subj_mask->SetPacked_int(*masks);
     CRef<CScope> scope(CSimpleOM::NewScope());
     SSeqLoc query(qsl, scope);
-    auto_ptr<SSeqLoc> subject(new SSeqLoc(ssl, scope, subj_mask));
+    unique_ptr<SSeqLoc> subject(new SSeqLoc(ssl, scope, subj_mask));
     {
         CBl2Seq bl2seq(query, *subject, eBlastn);
         TSeqAlignVector sav(bl2seq.Run());
@@ -1687,7 +1687,7 @@ BOOST_AUTO_TEST_CASE(NucleotideSelfHitWithSubjectMask) {
 
 BOOST_AUTO_TEST_CASE(NucleotideBlastSelfHit) {
     CSeq_id id("gi|555");
-    auto_ptr<SSeqLoc> sl(
+    unique_ptr<SSeqLoc> sl(
         CTestObjMgr::Instance().CreateSSeqLoc(id, eNa_strand_both));
 
     // Traditional blastn search
@@ -1721,12 +1721,12 @@ BOOST_AUTO_TEST_CASE(NucleotideBlastSelfHit) {
 
 BOOST_AUTO_TEST_CASE(MegablastGreedyTraceback) {
     CSeq_id query_id("gi|2655203");
-    auto_ptr<SSeqLoc> ql(
+    unique_ptr<SSeqLoc> ql(
         CTestObjMgr::Instance().CreateSSeqLoc(query_id, 
                                               eNa_strand_plus));
 
     CSeq_id subject_id("gi|200811");
-    auto_ptr<SSeqLoc> sl(
+    unique_ptr<SSeqLoc> sl(
         CTestObjMgr::Instance().CreateSSeqLoc(subject_id, 
                                               eNa_strand_minus));
 
@@ -1841,12 +1841,12 @@ BOOST_AUTO_TEST_CASE(MegablastGreedyTracebackSelfHits) {
     // the following tests are for JIRA SB-1041, where the greedy
     // traceback may stop prematurely.
     CSeq_id query_id("gi|56384585");
-    auto_ptr<SSeqLoc> ql(
+    unique_ptr<SSeqLoc> ql(
         CTestObjMgr::Instance().CreateSSeqLoc(query_id, 
                                               eNa_strand_plus));
 
     CSeq_id subject_id("gi|56384585");
-    auto_ptr<SSeqLoc> sl(
+    unique_ptr<SSeqLoc> sl(
         CTestObjMgr::Instance().CreateSSeqLoc(subject_id, 
                                               eNa_strand_plus));
 
@@ -1875,11 +1875,11 @@ BOOST_AUTO_TEST_CASE(MegablastGreedyTracebackSelfHits) {
 
 BOOST_AUTO_TEST_CASE(Blastx2Seqs_QueryPlusStrand) {
     CSeq_id qid("gi|555");
-    auto_ptr<SSeqLoc> query(
+    unique_ptr<SSeqLoc> query(
         CTestObjMgr::Instance().CreateSSeqLoc(qid, eNa_strand_plus));
 
     CSeq_id sid("gi|129295");
-    auto_ptr<SSeqLoc> subj(CTestObjMgr::Instance().CreateSSeqLoc(sid));
+    unique_ptr<SSeqLoc> subj(CTestObjMgr::Instance().CreateSSeqLoc(sid));
 
     CBl2Seq blaster(*query, *subj, eBlastx);
     TSeqAlignVector sav(blaster.Run());
@@ -1889,11 +1889,11 @@ BOOST_AUTO_TEST_CASE(Blastx2Seqs_QueryPlusStrand) {
 
 BOOST_AUTO_TEST_CASE(Blastx2Seqs_QueryMinusStrand) {
     CSeq_id qid("gi|555");
-    auto_ptr<SSeqLoc> query(
+    unique_ptr<SSeqLoc> query(
         CTestObjMgr::Instance().CreateSSeqLoc(qid, eNa_strand_minus));
 
     CSeq_id sid("gi|129295");
-    auto_ptr<SSeqLoc> subj(CTestObjMgr::Instance().CreateSSeqLoc(sid));
+    unique_ptr<SSeqLoc> subj(CTestObjMgr::Instance().CreateSSeqLoc(sid));
 
     CBl2Seq blaster(*query, *subj, eBlastx);
     TSeqAlignVector sav(blaster.Run());
@@ -1904,7 +1904,7 @@ BOOST_AUTO_TEST_CASE(Blastx2Seqs_QueryMinusStrand) {
 
 BOOST_AUTO_TEST_CASE(TBlastx2Seqs_QueryBothStrands) {
     CSeq_id id("gi|555");
-    auto_ptr<SSeqLoc> sl(
+    unique_ptr<SSeqLoc> sl(
         CTestObjMgr::Instance().CreateSSeqLoc(id, eNa_strand_both));
 
     CBl2Seq blaster(*sl, *sl, eTblastx);
@@ -1917,7 +1917,7 @@ BOOST_AUTO_TEST_CASE(TBlastx2Seqs_QueryBothStrands) {
 
 BOOST_AUTO_TEST_CASE(TBlastx2Seqs_QueryPlusStrand) {
     CSeq_id id("gi|555");
-    auto_ptr<SSeqLoc> sl(
+    unique_ptr<SSeqLoc> sl(
         CTestObjMgr::Instance().CreateSSeqLoc(id, eNa_strand_plus));
 
     CBl2Seq blaster(*sl, *sl, eTblastx);
@@ -1928,7 +1928,7 @@ BOOST_AUTO_TEST_CASE(TBlastx2Seqs_QueryPlusStrand) {
 
 BOOST_AUTO_TEST_CASE(TBlastx2Seqs_QueryMinusStrand) {
     CSeq_id id("gi|555");
-    auto_ptr<SSeqLoc> sl(
+    unique_ptr<SSeqLoc> sl(
         CTestObjMgr::Instance().CreateSSeqLoc(id, eNa_strand_minus));
 
     CBl2Seq blaster(*sl, *sl, eTblastx);
@@ -1946,11 +1946,11 @@ BOOST_AUTO_TEST_CASE(TblastxManyHits) {
     const int sum_n_array[num_hsps_to_check] = 
         { 2, 2, 2, 2, 3, 3, 3, 0};
     CSeq_id qid("gi|24719404");
-    auto_ptr<SSeqLoc> qsl(
+    unique_ptr<SSeqLoc> qsl(
         CTestObjMgr::Instance().CreateSSeqLoc(qid, eNa_strand_both));
     CSeq_id sid("gi|29807292");
     pair<TSeqPos, TSeqPos> range(15185000, 15195000);
-    auto_ptr<SSeqLoc> ssl(
+    unique_ptr<SSeqLoc> ssl(
         CTestObjMgr::Instance().CreateSSeqLoc(sid, range, eNa_strand_both));
     CBl2Seq blaster(*qsl, *ssl, eTblastx);
     blaster.SetOptionsHandle().SetMaxNumHspPerSequence(total_num_hsps);
@@ -1983,10 +1983,10 @@ BOOST_AUTO_TEST_CASE(TblastxManyHits) {
 
 BOOST_AUTO_TEST_CASE(ProteinBlast2Seqs) {
     CSeq_id id("gi|129295");
-    auto_ptr<SSeqLoc> query(CTestObjMgr::Instance().CreateSSeqLoc(id));
+    unique_ptr<SSeqLoc> query(CTestObjMgr::Instance().CreateSSeqLoc(id));
 
     id.SetGi(GI_CONST(7662354));
-    auto_ptr<SSeqLoc> subj(CTestObjMgr::Instance().CreateSSeqLoc(id));
+    unique_ptr<SSeqLoc> subj(CTestObjMgr::Instance().CreateSSeqLoc(id));
 
     CBl2Seq blaster(*query, *subj, eBlastp);
     TSeqAlignVector sav(blaster.Run());
@@ -1998,7 +1998,7 @@ BOOST_AUTO_TEST_CASE(ProteinBlast2Seqs) {
 
 BOOST_AUTO_TEST_CASE(BlastnWithRepeatFiltering_InvalidDB) {
     CSeq_id qid("gi|555");
-    auto_ptr<SSeqLoc> query(
+    unique_ptr<SSeqLoc> query(
         CTestObjMgr::Instance().CreateSSeqLoc(qid));
 
     CBlastNucleotideOptionsHandle opts;
@@ -2019,7 +2019,7 @@ BOOST_AUTO_TEST_CASE(BlastnWithRepeatFiltering_InvalidDB) {
 
 BOOST_AUTO_TEST_CASE(BlastnWithRepeatFiltering) {
     CSeq_id qid("gi|555");
-    auto_ptr<SSeqLoc> query(
+    unique_ptr<SSeqLoc> query(
         CTestObjMgr::Instance().CreateSSeqLoc(qid));
 
     CRef<CBlastNucleotideOptionsHandle> opts(new CBlastNucleotideOptionsHandle);
@@ -2049,7 +2049,7 @@ BOOST_AUTO_TEST_CASE(BlastnWithRepeatFiltering) {
 
 BOOST_AUTO_TEST_CASE(BlastnWithWindowMasker_Db) {
     CSeq_id qid("gi|555");
-    auto_ptr<SSeqLoc> query(
+    unique_ptr<SSeqLoc> query(
         CTestObjMgr::Instance().CreateSSeqLoc(qid));
 
     CRef<CBlastNucleotideOptionsHandle> opts(new CBlastNucleotideOptionsHandle);
@@ -2069,7 +2069,7 @@ BOOST_AUTO_TEST_CASE(BlastnWithWindowMasker_Db) {
 
 BOOST_AUTO_TEST_CASE(BlastnWithWindowMasker_Taxid) {
     CSeq_id qid("gi|555");
-    auto_ptr<SSeqLoc> query(
+    unique_ptr<SSeqLoc> query(
         CTestObjMgr::Instance().CreateSSeqLoc(qid));
 
     CRef<CBlastNucleotideOptionsHandle> opts(new CBlastNucleotideOptionsHandle);
@@ -2084,7 +2084,7 @@ BOOST_AUTO_TEST_CASE(BlastnWithWindowMasker_Taxid) {
 
 BOOST_AUTO_TEST_CASE(BlastnWithWindowMasker_InvalidDb) {
     CSeq_id qid("gi|555");
-    auto_ptr<SSeqLoc> query(
+    unique_ptr<SSeqLoc> query(
         CTestObjMgr::Instance().CreateSSeqLoc(qid));
 
     CBlastNucleotideOptionsHandle opts;
@@ -2101,7 +2101,7 @@ BOOST_AUTO_TEST_CASE(BlastnWithWindowMasker_InvalidDb) {
 
 BOOST_AUTO_TEST_CASE(BlastnWithWindowMasker_InvalidTaxid) {
     CSeq_id qid("gi|555");
-    auto_ptr<SSeqLoc> query(
+    unique_ptr<SSeqLoc> query(
         CTestObjMgr::Instance().CreateSSeqLoc(qid));
 
     CBlastNucleotideOptionsHandle opts;
@@ -2129,7 +2129,7 @@ BOOST_AUTO_TEST_CASE(WindowMaskerPathInitValid) {
 
 BOOST_AUTO_TEST_CASE(BlastnWithWindowMasker_DbAndTaxid) {
     CSeq_id qid("gi|555");
-    auto_ptr<SSeqLoc> query(
+    unique_ptr<SSeqLoc> query(
         CTestObjMgr::Instance().CreateSSeqLoc(qid));
 
     CRef<CBlastNucleotideOptionsHandle> opts(new CBlastNucleotideOptionsHandle);
@@ -2155,12 +2155,12 @@ BOOST_AUTO_TEST_CASE(ConvertTaxIdToWindowMaskerDb) {
 BOOST_AUTO_TEST_CASE(Alex) {
     CSeq_id qid("NG_007092.2");
     TSeqRange qr(0, 2311633);
-    auto_ptr<SSeqLoc> query(
+    unique_ptr<SSeqLoc> query(
         CTestObjMgr::Instance().CreateSSeqLoc(qid, qr, eNa_strand_plus));
 
     CSeq_id sid("NT_007914.14");
     TSeqRange sr(5233652, 9849919);
-    auto_ptr<SSeqLoc> subj(
+    unique_ptr<SSeqLoc> subj(
         CTestObjMgr::Instance().CreateSSeqLoc(sid, sr));
 
     CRef<CBlastNucleotideOptionsHandle> opts(new CBlastNucleotideOptionsHandle);
@@ -2175,11 +2175,11 @@ BOOST_AUTO_TEST_CASE(Alex) {
 
 BOOST_AUTO_TEST_CASE(NucleotideBlast2Seqs) {
     CSeq_id qid("gi|555");
-    auto_ptr<SSeqLoc> query(
+    unique_ptr<SSeqLoc> query(
         CTestObjMgr::Instance().CreateSSeqLoc(qid, eNa_strand_both));
 
     CSeq_id sid("gi|3090");
-    auto_ptr<SSeqLoc> subj(
+    unique_ptr<SSeqLoc> subj(
         CTestObjMgr::Instance().CreateSSeqLoc(sid, eNa_strand_both));
 
     CRef<CBlastNucleotideOptionsHandle> opts(new CBlastNucleotideOptionsHandle);
@@ -2194,10 +2194,10 @@ BOOST_AUTO_TEST_CASE(NucleotideBlast2Seqs) {
 
 BOOST_AUTO_TEST_CASE(ProteinBlastChangeQuery) {
     CSeq_id id("gi|129295");
-    auto_ptr<SSeqLoc> query(CTestObjMgr::Instance().CreateSSeqLoc(id));
+    unique_ptr<SSeqLoc> query(CTestObjMgr::Instance().CreateSSeqLoc(id));
 
     id.SetGi(GI_CONST(7662354));
-    auto_ptr<SSeqLoc> subj(CTestObjMgr::Instance().CreateSSeqLoc(id));
+    unique_ptr<SSeqLoc> subj(CTestObjMgr::Instance().CreateSSeqLoc(id));
 
     // Run self hit first
     CBl2Seq blaster(*subj, *subj, eBlastp);
@@ -2214,10 +2214,10 @@ BOOST_AUTO_TEST_CASE(ProteinBlastChangeQuery) {
 
 BOOST_AUTO_TEST_CASE(ProteinBlastChangeSubject) {
     CSeq_id qid("gi|129295");
-    auto_ptr<SSeqLoc> query(CTestObjMgr::Instance().CreateSSeqLoc(qid));
+    unique_ptr<SSeqLoc> query(CTestObjMgr::Instance().CreateSSeqLoc(qid));
 
     CSeq_id sid("gi|7662354");
-    auto_ptr<SSeqLoc> subj(CTestObjMgr::Instance().CreateSSeqLoc(sid));
+    unique_ptr<SSeqLoc> subj(CTestObjMgr::Instance().CreateSSeqLoc(sid));
 
     // Run self hit first
     CBl2Seq blaster(*query, *query, eBlastp);
@@ -2235,11 +2235,11 @@ BOOST_AUTO_TEST_CASE(ProteinBlastChangeSubject) {
 
 BOOST_AUTO_TEST_CASE(NucleotideBlastChangeQuery) {
     CSeq_id qid("gi|555");
-    auto_ptr<SSeqLoc> query(
+    unique_ptr<SSeqLoc> query(
         CTestObjMgr::Instance().CreateSSeqLoc(qid, eNa_strand_both));
 
     CSeq_id sid("gi|3090");
-    auto_ptr<SSeqLoc> subj(
+    unique_ptr<SSeqLoc> subj(
         CTestObjMgr::Instance().CreateSSeqLoc(sid, eNa_strand_both));
 
     // Run self hit first
@@ -2260,11 +2260,11 @@ BOOST_AUTO_TEST_CASE(NucleotideBlastChangeQuery) {
 
 BOOST_AUTO_TEST_CASE(NucleotideBlastChangeSubject) {
     CSeq_id qid("gi|555");
-    auto_ptr<SSeqLoc> query(
+    unique_ptr<SSeqLoc> query(
         CTestObjMgr::Instance().CreateSSeqLoc(qid, eNa_strand_both));
 
     CSeq_id sid("gi|3090");
-    auto_ptr<SSeqLoc> subj(
+    unique_ptr<SSeqLoc> subj(
         CTestObjMgr::Instance().CreateSSeqLoc(sid, eNa_strand_both));
 
     // Run self hit first
@@ -2287,11 +2287,11 @@ BOOST_AUTO_TEST_CASE(ProteinBlastMultipleQueries) {
     TSeqLocVector sequences;
 
     CSeq_id qid("gi|129295");
-    auto_ptr<SSeqLoc> sl1(CTestObjMgr::Instance().CreateSSeqLoc(qid));
+    unique_ptr<SSeqLoc> sl1(CTestObjMgr::Instance().CreateSSeqLoc(qid));
     sequences.push_back(*sl1);
 
     CSeq_id sid("gi|7662354");
-    auto_ptr<SSeqLoc> sl2(CTestObjMgr::Instance().CreateSSeqLoc(sid));
+    unique_ptr<SSeqLoc> sl2(CTestObjMgr::Instance().CreateSSeqLoc(sid));
     sequences.push_back(*sl2);
 
     CBl2Seq blaster(sequences, sequences, eBlastp);
@@ -2341,13 +2341,13 @@ BOOST_AUTO_TEST_CASE(NucleotideBlastMultipleQueries) {
     TSeqLocVector sequences;
 
     CSeq_id qid("gi|555");
-    auto_ptr<SSeqLoc> sl1(
+    unique_ptr<SSeqLoc> sl1(
         CTestObjMgr::Instance().CreateSSeqLoc(qid, eNa_strand_both));
     sequences.push_back(*sl1);
     BOOST_REQUIRE(sl1->mask.Empty());
 
     CSeq_id sid("gi|3090");
-    auto_ptr<SSeqLoc> sl2(
+    unique_ptr<SSeqLoc> sl2(
         CTestObjMgr::Instance().CreateSSeqLoc(sid, eNa_strand_both));
     sequences.push_back(*sl2);
     BOOST_REQUIRE(sl2->mask.Empty());
@@ -2466,8 +2466,8 @@ BOOST_AUTO_TEST_CASE(TblastnOutOfFrame) {
     CSeq_id qid("NP_647642.2"); // Protein sequence
     CSeq_id sid("BC042576.1");  // DNA sequence
 
-    auto_ptr<SSeqLoc> query(CTestObjMgr::Instance().CreateSSeqLoc(qid));
-    auto_ptr<SSeqLoc> subj(CTestObjMgr::Instance().CreateSSeqLoc(sid));
+    unique_ptr<SSeqLoc> query(CTestObjMgr::Instance().CreateSSeqLoc(qid));
+    unique_ptr<SSeqLoc> subj(CTestObjMgr::Instance().CreateSSeqLoc(sid));
 
     // Set the options
     CRef<CTBlastnOptionsHandle> opts(new CTBlastnOptionsHandle);
@@ -2491,8 +2491,8 @@ BOOST_AUTO_TEST_CASE(TblastnOutOfFrame2) {
     CSeq_id qid("gi|38111923"); // Protein sequence
     CSeq_id sid("gi|6648925");  // DNA sequence
 
-    auto_ptr<SSeqLoc> query(CTestObjMgr::Instance().CreateSSeqLoc(qid));
-    auto_ptr<SSeqLoc> subj(CTestObjMgr::Instance().CreateSSeqLoc(sid));
+    unique_ptr<SSeqLoc> query(CTestObjMgr::Instance().CreateSSeqLoc(qid));
+    unique_ptr<SSeqLoc> subj(CTestObjMgr::Instance().CreateSSeqLoc(sid));
 
     // Set the options
     CRef<CTBlastnOptionsHandle> opts(new CTBlastnOptionsHandle);
@@ -2523,9 +2523,9 @@ BOOST_AUTO_TEST_CASE(BlastxOutOfFrame) {
     CSeq_id qid("BC042576.1");  // DNA sequence
     CSeq_id sid("NP_647642.2"); // Protein sequence
 
-    auto_ptr<SSeqLoc> query(
+    unique_ptr<SSeqLoc> query(
         CTestObjMgr::Instance().CreateSSeqLoc(qid, eNa_strand_both));
-    auto_ptr<SSeqLoc> subj(CTestObjMgr::Instance().CreateSSeqLoc(sid));
+    unique_ptr<SSeqLoc> subj(CTestObjMgr::Instance().CreateSSeqLoc(sid));
 
     // Set the options
     CRef<CBlastxOptionsHandle> opts(new CBlastxOptionsHandle);
@@ -2549,9 +2549,9 @@ BOOST_AUTO_TEST_CASE(BlastxOutOfFrame_DifferentFrames) {
     CSeq_id qid("gi|27486285");  // DNA sequence
     CSeq_id sid("gi|7331210"); // Protein sequence
 
-    auto_ptr<SSeqLoc> query(
+    unique_ptr<SSeqLoc> query(
         CTestObjMgr::Instance().CreateSSeqLoc(qid, eNa_strand_both));
-    auto_ptr<SSeqLoc> subj(CTestObjMgr::Instance().CreateSSeqLoc(sid));
+    unique_ptr<SSeqLoc> subj(CTestObjMgr::Instance().CreateSSeqLoc(sid));
 
     // Set the options
     CRef<CBlastxOptionsHandle> opts(new CBlastxOptionsHandle);
@@ -2707,14 +2707,14 @@ BOOST_AUTO_TEST_CASE(Blastn_QueryBothStrands_SubjBothStrands) {
     // Alignment in these sequences is from plus/minus strands
     CSeq_id qid("NT_004487.15");
     pair<TSeqPos, TSeqPos> range(7685545, 7686027);
-    auto_ptr<SSeqLoc> query(
+    unique_ptr<SSeqLoc> query(
         CTestObjMgr::Instance().CreateSSeqLoc(qid, range, 
                                                eNa_strand_both));
 
     CSeq_id sid("AA441981.1");
     range.first = 10;
     range.second = 480;
-    auto_ptr<SSeqLoc> subj(
+    unique_ptr<SSeqLoc> subj(
         CTestObjMgr::Instance().CreateSSeqLoc(sid, range,
                                                eNa_strand_both));
 
@@ -2730,14 +2730,14 @@ BOOST_AUTO_TEST_CASE(Blastn_QueryBothStrands_SubjPlusStrand) {
     // Alignment in these sequences is from plus/minus strands
     CSeq_id qid("NT_004487.15");
     pair<TSeqPos, TSeqPos> range(7685545, 7686027);
-    auto_ptr<SSeqLoc> query(
+    unique_ptr<SSeqLoc> query(
         CTestObjMgr::Instance().CreateSSeqLoc(qid, range, 
                                                eNa_strand_both));
 
     CSeq_id sid("AA441981.1");
     range.first = 10;
     range.second = 480;
-    auto_ptr<SSeqLoc> subj(
+    unique_ptr<SSeqLoc> subj(
         CTestObjMgr::Instance().CreateSSeqLoc(sid, range,
                                                eNa_strand_plus));
 
@@ -2753,14 +2753,14 @@ BOOST_AUTO_TEST_CASE(Blastn_QueryBothStrands_SubjMinusStrand) {
     // Alignment in these sequences is from plus/minus strands
     CSeq_id qid("NT_004487.15");
     pair<TSeqPos, TSeqPos> range(7685545, 7686027);
-    auto_ptr<SSeqLoc> query(
+    unique_ptr<SSeqLoc> query(
         CTestObjMgr::Instance().CreateSSeqLoc(qid, range, 
                                                eNa_strand_both));
 
     CSeq_id sid("AA441981.1");
     range.first = 10;
     range.second = 480;
-    auto_ptr<SSeqLoc> subj(
+    unique_ptr<SSeqLoc> subj(
         CTestObjMgr::Instance().CreateSSeqLoc(sid, range,
                                                eNa_strand_minus));
 
@@ -2776,14 +2776,14 @@ BOOST_AUTO_TEST_CASE(Blastn_QueryPlusStrand_SubjPlusStrand) {
     // Alignment in these sequences is from plus/minus strands
     CSeq_id qid("NT_004487.15");
     pair<TSeqPos, TSeqPos> range(7685545, 7686027);
-    auto_ptr<SSeqLoc> query(
+    unique_ptr<SSeqLoc> query(
         CTestObjMgr::Instance().CreateSSeqLoc(qid, range, 
                                                eNa_strand_plus));
 
     CSeq_id sid("AA441981.1");
     range.first = 10;
     range.second = 480;
-    auto_ptr<SSeqLoc> subj(
+    unique_ptr<SSeqLoc> subj(
         CTestObjMgr::Instance().CreateSSeqLoc(sid, range,
                                                eNa_strand_plus));
 
@@ -2799,14 +2799,14 @@ BOOST_AUTO_TEST_CASE(Blastn_QueryPlusStrand_SubjMinusStrand) {
     // Alignment in these sequences is from plus/minus strands
     CSeq_id qid("NT_004487.15");
     pair<TSeqPos, TSeqPos> range(7685545, 7686027);
-    auto_ptr<SSeqLoc> query(
+    unique_ptr<SSeqLoc> query(
         CTestObjMgr::Instance().CreateSSeqLoc(qid, range, 
                                                eNa_strand_plus));
 
     CSeq_id sid("AA441981.1");
     range.first = 10;
     range.second = 480;
-    auto_ptr<SSeqLoc> subj(
+    unique_ptr<SSeqLoc> subj(
         CTestObjMgr::Instance().CreateSSeqLoc(sid, range,
                                                eNa_strand_minus));
 
@@ -2823,14 +2823,14 @@ BOOST_AUTO_TEST_CASE(Blastn_QueryPlusStrand_SubjBothStrands) {
     // Alignment in these sequences is from plus/minus strands
     CSeq_id qid("NT_004487.15");
     pair<TSeqPos, TSeqPos> range(7685545, 7686027);
-    auto_ptr<SSeqLoc> query(
+    unique_ptr<SSeqLoc> query(
         CTestObjMgr::Instance().CreateSSeqLoc(qid, range, 
                                                eNa_strand_plus));
 
     CSeq_id sid("AA441981.1");
     range.first = 10;
     range.second = 480;
-    auto_ptr<SSeqLoc> subj(
+    unique_ptr<SSeqLoc> subj(
         CTestObjMgr::Instance().CreateSSeqLoc(sid, range,
                                                eNa_strand_both));
 
@@ -2846,14 +2846,14 @@ BOOST_AUTO_TEST_CASE(Blastn_QueryMinusStrand_SubjMinusStrand) {
     // Alignment in these sequences is from plus/minus strands
     CSeq_id qid("NT_004487.15");
     pair<TSeqPos, TSeqPos> range(7685545, 7686027);
-    auto_ptr<SSeqLoc> query(
+    unique_ptr<SSeqLoc> query(
         CTestObjMgr::Instance().CreateSSeqLoc(qid, range, 
                                                eNa_strand_minus));
 
     CSeq_id sid("AA441981.1");
     range.first = 10;
     range.second = 480;
-    auto_ptr<SSeqLoc> subj(
+    unique_ptr<SSeqLoc> subj(
         CTestObjMgr::Instance().CreateSSeqLoc(sid, range,
                                                eNa_strand_minus));
 
@@ -2869,14 +2869,14 @@ BOOST_AUTO_TEST_CASE(Blastn_QueryMinusStrand_SubjPlusStrand) {
     // Alignment in these sequences is from plus/minus strands
     CSeq_id qid("NT_004487.15");
     pair<TSeqPos, TSeqPos> range(7685545, 7686027);
-    auto_ptr<SSeqLoc> query(
+    unique_ptr<SSeqLoc> query(
         CTestObjMgr::Instance().CreateSSeqLoc(qid, range, 
                                                eNa_strand_minus));
 
     CSeq_id sid("AA441981.1");
     range.first = 10;
     range.second = 480;
-    auto_ptr<SSeqLoc> subj(
+    unique_ptr<SSeqLoc> subj(
         CTestObjMgr::Instance().CreateSSeqLoc(sid, range,
                                                eNa_strand_plus));
 
@@ -2892,14 +2892,14 @@ BOOST_AUTO_TEST_CASE(Blastn_QueryMinusStrand_SubjBothStrands) {
     // Alignment in these sequences is from plus/minus strands
     CSeq_id qid("NT_004487.15");
     pair<TSeqPos, TSeqPos> range(7685545, 7686027);
-    auto_ptr<SSeqLoc> query(
+    unique_ptr<SSeqLoc> query(
         CTestObjMgr::Instance().CreateSSeqLoc(qid, range, 
                                                eNa_strand_minus));
 
     CSeq_id sid("AA441981.1");
     range.first = 10;
     range.second = 480;
-    auto_ptr<SSeqLoc> subj(
+    unique_ptr<SSeqLoc> subj(
         CTestObjMgr::Instance().CreateSSeqLoc(sid, range,
                                                eNa_strand_both));
 
@@ -2914,11 +2914,11 @@ BOOST_AUTO_TEST_CASE(Blastn_QueryMinusStrand_SubjBothStrands) {
 BOOST_AUTO_TEST_CASE(Blastn_QueryWhole_SubjInterval)
 {
     CRef<CSeq_id> qid(new CSeq_id("AA441981.1"));
-    auto_ptr<SSeqLoc> query(CTestObjMgr::Instance().CreateWholeSSeqLoc(*qid));
+    unique_ptr<SSeqLoc> query(CTestObjMgr::Instance().CreateWholeSSeqLoc(*qid));
 
     CRef<CSeq_id> sid(new CSeq_id("NT_004487.15"));
     pair<TSeqPos, TSeqPos> range(7685545, 7686027);
-    auto_ptr<SSeqLoc> subj(
+    unique_ptr<SSeqLoc> subj(
         CTestObjMgr::Instance().CreateSSeqLoc(*sid, range, 
                                                eNa_strand_both));
 
@@ -2933,12 +2933,12 @@ BOOST_AUTO_TEST_CASE(Blastn_QueryInterval_SubjWhole)
 {
     CRef<CSeq_id> qid(new CSeq_id("NT_004487.15"));
     pair<TSeqPos, TSeqPos> range(7685545, 7686027);
-    auto_ptr<SSeqLoc> query(
+    unique_ptr<SSeqLoc> query(
         CTestObjMgr::Instance().CreateSSeqLoc(*qid, range, 
                                                eNa_strand_both));
 
     CRef<CSeq_id> sid(new CSeq_id("AA441981.1"));
-    auto_ptr<SSeqLoc> subj(CTestObjMgr::Instance().CreateWholeSSeqLoc(*sid));
+    unique_ptr<SSeqLoc> subj(CTestObjMgr::Instance().CreateWholeSSeqLoc(*sid));
 
     CRef<CBlastNucleotideOptionsHandle> opts(new CBlastNucleotideOptionsHandle);
     opts->SetTraditionalBlastnDefaults();
@@ -3228,7 +3228,7 @@ BOOST_AUTO_TEST_CASE(Blastp_MultipleSubjs_SearchAsSet) {
 
 BOOST_AUTO_TEST_CASE(BlastOptionsEquality) {
     // Create options object through factory
-    auto_ptr<CBlastOptionsHandle> megablast_options_handle(
+    unique_ptr<CBlastOptionsHandle> megablast_options_handle(
         CBlastOptionsFactory::Create(eMegablast));
     CBlastNucleotideOptionsHandle nucl_options_handle;
     BOOST_REQUIRE(megablast_options_handle->GetOptions() == 
@@ -3242,7 +3242,7 @@ BOOST_AUTO_TEST_CASE(BlastOptionsInequality) {
                    nucl_options_handle.GetOptions());
 
     // Blastn and Megablast are different
-    auto_ptr<CBlastOptionsHandle> blastn_options_handle(
+    unique_ptr<CBlastOptionsHandle> blastn_options_handle(
         CBlastOptionsFactory::Create(eBlastn));
     BOOST_REQUIRE(blastn_options_handle->GetOptions() != 
                    nucl_options_handle.GetOptions());
@@ -3257,9 +3257,9 @@ BOOST_AUTO_TEST_CASE(BlastOptionsInequality) {
 BOOST_AUTO_TEST_CASE(DiscontiguousMB) {
     CSeq_id qid("gi|408478");  // zebrafish sequence U02544
     CSeq_id sid("gi|1546012"); // mouse sequence U61969
-    auto_ptr<SSeqLoc> query(
+    unique_ptr<SSeqLoc> query(
         CTestObjMgr::Instance().CreateSSeqLoc(qid, eNa_strand_both));
-    auto_ptr<SSeqLoc> subj(CTestObjMgr::Instance().CreateSSeqLoc(sid));
+    unique_ptr<SSeqLoc> subj(CTestObjMgr::Instance().CreateSSeqLoc(sid));
 
     CBl2Seq blaster(*query, *subj, eDiscMegablast);
     TSeqAlignVector sav(blaster.Run());
@@ -3276,10 +3276,10 @@ BOOST_AUTO_TEST_CASE(BlastnHumanChrom_MRNA) {
     CSeq_id sid("AA621478.1");
     pair<TSeqPos, TSeqPos> qrange(7868209-1, 7868602-1);
     pair<TSeqPos, TSeqPos> srange(2-1, 397-1);
-    auto_ptr<SSeqLoc> query(
+    unique_ptr<SSeqLoc> query(
         CTestObjMgr::Instance().CreateSSeqLoc(qid, 
                                                qrange, eNa_strand_plus));
-    auto_ptr<SSeqLoc> subj(
+    unique_ptr<SSeqLoc> subj(
         CTestObjMgr::Instance().CreateSSeqLoc(sid, 
                                                srange, eNa_strand_plus));
 
@@ -3304,7 +3304,7 @@ BOOST_AUTO_TEST_CASE(testOneSubjectResults2CSeqAlign)
     const int query_gi = 7274302;
     const int gi_diff = 28;
     CRef<CSeq_id> id(new CSeq_id(CSeq_id::e_Gi, query_gi));
-    auto_ptr<SSeqLoc> sl(
+    unique_ptr<SSeqLoc> sl(
         CTestObjMgr::Instance().CreateSSeqLoc(*id, eNa_strand_both));
     TSeqLocVector query;
     query.push_back(*sl);
@@ -3343,7 +3343,7 @@ BOOST_AUTO_TEST_CASE(testMultiSeqSearchSymmetry)
     size_t index;
     for (index = 0; index < num_seqs; ++index) {
         CRef<CSeq_id> id(new CSeq_id(CSeq_id::e_Gi, gi_list[index]));
-        auto_ptr<SSeqLoc> sl(
+        unique_ptr<SSeqLoc> sl(
             CTestObjMgr::Instance().CreateSSeqLoc(*id, eNa_strand_both));
         seq_vec.push_back(*sl);
     }
@@ -3511,7 +3511,7 @@ BOOST_AUTO_TEST_CASE(testMultiSeqSearchSymmetry)
 
 BOOST_AUTO_TEST_CASE(testInterruptCallbackWithNull) {
     CSeq_id id("gi|129295");
-    auto_ptr<SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(id));
+    unique_ptr<SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(id));
 
     CBl2Seq blaster(*sl, *sl, eBlastp);
     TInterruptFnPtr null_fnptr = 0;
@@ -3539,7 +3539,7 @@ BOOST_AUTO_TEST_CASE(testInterruptCallbackWithNull) {
 
 BOOST_AUTO_TEST_CASE(testInterruptCallbackDoNotInterrupt) {
     CSeq_id id("gi|129295");
-    auto_ptr<SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(id));
+    unique_ptr<SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(id));
 
     CBl2Seq blaster(*sl, *sl, eBlastp);
     TInterruptFnPtr fnptr = blaster.SetInterruptCallback(do_not_interrupt);
@@ -3577,11 +3577,11 @@ BOOST_AUTO_TEST_CASE(MultiIntervalLoc) {
     CRef<CScope> scope(new CScope(CTestObjMgr::Instance().GetObjMgr()));
     scope->AddDefaults();
 
-    auto_ptr<SSeqLoc> query(new SSeqLoc(qloc, scope));
+    unique_ptr<SSeqLoc> query(new SSeqLoc(qloc, scope));
 
     CSeq_id sid("gi|51511732");
     pair<TSeqPos, TSeqPos> range(15595732, 15705419);
-    auto_ptr<SSeqLoc> subject(
+    unique_ptr<SSeqLoc> subject(
         CTestObjMgr::Instance().CreateSSeqLoc(sid, range, eNa_strand_both));
     CBl2Seq blaster(*query, *subject, eBlastn);
     TSeqAlignVector sav(blaster.Run());
@@ -3599,8 +3599,8 @@ BOOST_AUTO_TEST_CASE(QueryMaskIgnoredInMiniExtension) {
     CRef<CScope> scope(new CScope(CTestObjMgr::Instance().GetObjMgr()));
     scope->AddDefaults();
 
-    auto_ptr<SSeqLoc> query(new SSeqLoc(qloc, scope));
-    auto_ptr<SSeqLoc> subject(
+    unique_ptr<SSeqLoc> query(new SSeqLoc(qloc, scope));
+    unique_ptr<SSeqLoc> subject(
         CTestObjMgr::Instance().CreateSSeqLoc(sid, range, eNa_strand_both));
 
     CBl2Seq blaster(*query, *subject, eMegablast);
