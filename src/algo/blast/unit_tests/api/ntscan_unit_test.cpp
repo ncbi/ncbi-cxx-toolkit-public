@@ -124,7 +124,7 @@ struct TestFixture {
         sprintf(buf, "gi|%d", query_gi);
         CSeq_id id(buf);
         
-        auto_ptr<SSeqLoc> ssl(CTestObjMgr::Instance().CreateSSeqLoc(id,strand));
+        unique_ptr<SSeqLoc> ssl(CTestObjMgr::Instance().CreateSSeqLoc(id,strand));
 
         SBlastSequence sequence(
                     GetSequence(*ssl->seqloc,
@@ -194,7 +194,7 @@ struct TestFixture {
         sprintf(buf, "gi|%d", subject_gi);
         CSeq_id subject_id(buf);
         
-        auto_ptr<SSeqLoc>
+        unique_ptr<SSeqLoc>
             subject_ssl(CTestObjMgr::Instance().CreateSSeqLoc(subject_id,
                                                               eNa_strand_plus));
 
