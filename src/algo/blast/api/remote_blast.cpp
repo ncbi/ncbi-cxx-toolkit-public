@@ -2270,7 +2270,7 @@ ExtractBlast4Request(CNcbiIstream& in)
 
         case CFormatGuess::eXml:
             {
-                auto_ptr<CObjectIStream> is(
+                unique_ptr<CObjectIStream> is(
                     CObjectIStream::Open(eSerial_Xml, in));
                 dynamic_cast<CObjectIStreamXml*>
                     (is.get())->SetEnforcedStdXml(true);
@@ -2308,7 +2308,7 @@ ExtractBlast4Request(CNcbiIstream& in)
 
     case CFormatGuess::eXml:
         {
-            auto_ptr<CObjectIStream> is(
+            unique_ptr<CObjectIStream> is(
                 CObjectIStream::Open(eSerial_Xml, in));
             dynamic_cast<CObjectIStreamXml*>
                 (is.get())->SetEnforcedStdXml(true);
@@ -2505,7 +2505,7 @@ CRemoteBlast::x_GetSearchResultsHTTP(void)
     int  l_total_bytes=0, n_read;
 	bool l_cached_ok = true;
 
-    auto_ptr<fstream> tmp_stream( CDirEntry::CreateTmpFile() );
+    unique_ptr<fstream> tmp_stream( CDirEntry::CreateTmpFile() );
     do{
 		n_read = CStreamUtils::Readsome(ios,incoming_buffer, read_max);
 		if( n_read > 0 ){
@@ -2543,7 +2543,7 @@ CRemoteBlast::x_GetSearchResultsHTTP(void)
     // read cached answer
 	swatch.Restart();
     try {
-		auto_ptr<CObjectIStream> 
+		unique_ptr<CObjectIStream> 
 	    in_stream( CObjectIStream::Open(eSerial_AsnBinary,  *tmp_stream) );
 		in_stream->Read(ObjectInfo(*one_reply), CObjectIStream::eNoFileHeader);
 
