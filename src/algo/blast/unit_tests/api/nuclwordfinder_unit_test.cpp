@@ -123,7 +123,7 @@ struct NuclWordFinderTextFixture
     void setupSequences()
     {
         CSeq_id qid("gi|3090");
-        auto_ptr<SSeqLoc> qsl(
+        unique_ptr<SSeqLoc> qsl(
             CTestObjMgr::Instance().CreateSSeqLoc(qid, eNa_strand_plus));
         SBlastSequence sequence(
              GetSequence(*qsl->seqloc, eBlastEncodingNucleotide, qsl->scope, 
@@ -138,7 +138,7 @@ struct NuclWordFinderTextFixture
         BlastSeqBlkSetSequence(m_pQuery, buf, sequence.length - 2);
        
         CSeq_id sid("gi|33383640");
-        auto_ptr<SSeqLoc> ssl(
+        unique_ptr<SSeqLoc> ssl(
             CTestObjMgr::Instance().CreateSSeqLoc(sid, eNa_strand_plus));
         SBlastSequence compressed_sequence(
               GetSequence(*ssl->seqloc, eBlastEncodingNcbi2na, ssl->scope,
@@ -178,7 +178,7 @@ struct NuclWordFinderTextFixture
         m_Offsets = 
             (BlastOffsetPair*) calloc(kOffsetArraySize, sizeof(BlastOffsetPair));
 
-        auto_ptr<CNcbiIstream> in(new ifstream(datafile.c_str()));
+        unique_ptr<CNcbiIstream> in(new ifstream(datafile.c_str()));
         string line;
         m_NumHits = 0;
 
@@ -484,7 +484,7 @@ BOOST_AUTO_TEST_CASE(testHitAtEndOfSubject)
                       // incorrectly freed in tearDown.
 
     CSeq_id qid("gi|516843");
-    auto_ptr<SSeqLoc> qsl(
+    unique_ptr<SSeqLoc> qsl(
         CTestObjMgr::Instance().CreateSSeqLoc(qid, eNa_strand_both));
     SBlastSequence sequence(
          GetSequence(*qsl->seqloc, eBlastEncodingNucleotide, qsl->scope, 
@@ -499,7 +499,7 @@ BOOST_AUTO_TEST_CASE(testHitAtEndOfSubject)
     BlastSeqBlkSetSequence(m_pQuery, buf, sequence.length - 2);
    
     CSeq_id sid("gi|6569");
-    auto_ptr<SSeqLoc> ssl(
+    unique_ptr<SSeqLoc> ssl(
         CTestObjMgr::Instance().CreateSSeqLoc(sid, eNa_strand_plus));
     SBlastSequence compressed_sequence(
           GetSequence(*ssl->seqloc, eBlastEncodingNcbi2na, ssl->scope,
