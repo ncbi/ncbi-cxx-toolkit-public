@@ -69,7 +69,7 @@ BOOST_AUTO_TEST_CASE(CreateScoreBlockBadReward)
 
      CRef<ILocalQueryData> query_data(qf->MakeLocalQueryData(&opts));
 
-     auto_ptr<const CBlastOptionsMemento> opts_memento (opts.CreateSnapshot());
+     unique_ptr<const CBlastOptionsMemento> opts_memento (opts.CreateSnapshot());
      
      BlastSeqLoc* blast_seq_loc = NULL;
      TSearchMessages search_messages;
@@ -85,7 +85,7 @@ BOOST_AUTO_TEST_CASE(CreateScoreBlockMaskedSequence)
      CRef<CSeq_id> qid(new CSeq_id("gi|53690285"));
      TSeqRange range(60, 120);
 
-     auto_ptr<SSeqLoc> ssloc(
+     unique_ptr<SSeqLoc> ssloc(
           CTestObjMgr::Instance().CreateSSeqLoc(*qid, range, eNa_strand_unknown));
 
      TSeqLocVector tslv;
@@ -98,7 +98,7 @@ BOOST_AUTO_TEST_CASE(CreateScoreBlockMaskedSequence)
 
      CRef<ILocalQueryData> query_data(qf->MakeLocalQueryData(&opts));
 
-     auto_ptr<const CBlastOptionsMemento> opts_memento (opts.CreateSnapshot());
+     unique_ptr<const CBlastOptionsMemento> opts_memento (opts.CreateSnapshot());
      
      BlastSeqLoc* blast_seq_loc = NULL;
      TSearchMessages search_messages;
@@ -119,7 +119,7 @@ BOOST_AUTO_TEST_CASE(CreateScoreBlockOK)
 {
      CRef<CSeq_id> qid(new CSeq_id("gi|129295"));
 
-     auto_ptr<SSeqLoc> ssloc(
+     unique_ptr<SSeqLoc> ssloc(
           CTestObjMgr::Instance().CreateSSeqLoc(*qid, eNa_strand_unknown));
 
      TSeqLocVector tslv;
@@ -132,7 +132,7 @@ BOOST_AUTO_TEST_CASE(CreateScoreBlockOK)
 
      CRef<ILocalQueryData> query_data(qf->MakeLocalQueryData(&opts));
 
-     auto_ptr<const CBlastOptionsMemento> opts_memento (opts.CreateSnapshot());
+     unique_ptr<const CBlastOptionsMemento> opts_memento (opts.CreateSnapshot());
      
      BlastSeqLoc* blast_seq_loc = NULL;
      TSearchMessages search_messages;
