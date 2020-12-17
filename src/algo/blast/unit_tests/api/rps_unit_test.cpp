@@ -193,7 +193,7 @@ struct RpsTestFixture {
         opts->SetFilterString("F");
 
         CSeq_id id("gi|19572546");
-        auto_ptr<SSeqLoc> query(
+        unique_ptr<SSeqLoc> query(
             CTestObjMgr::Instance().CreateSSeqLoc(id, strand));
         TSeqLocVector query_v;
         query_v.push_back(*query);
@@ -214,7 +214,7 @@ BOOST_FIXTURE_TEST_SUITE(rps, RpsTestFixture)
 BOOST_AUTO_TEST_CASE(WholeSequenceMatch) {
 
     CSeq_id id("gi|38092615");      /* query = first DB sequence */
-    auto_ptr<SSeqLoc> query(
+    unique_ptr<SSeqLoc> query(
         CTestObjMgr::Instance().CreateSSeqLoc(id, eNa_strand_unknown));
     TSeqLocVector query_v;
     query_v.push_back(*query);
@@ -314,7 +314,7 @@ BOOST_AUTO_TEST_CASE(TestCBSFreqsNotFound)
               opts.GetNonNullPointer()))->SetCompositionBasedStats(true);
 
     CSeq_id id("gi|129295");
-    auto_ptr<SSeqLoc> query(CTestObjMgr::Instance().CreateSSeqLoc(id));
+    unique_ptr<SSeqLoc> query(CTestObjMgr::Instance().CreateSSeqLoc(id));
     TSeqLocVector query_v;
     query_v.push_back(*query);
 
