@@ -96,7 +96,7 @@ struct NtlookupTestFixture {
         sprintf(buf, "gi|%d", query_gi);
         CSeq_id id(buf);
         
-        auto_ptr<SSeqLoc> ssl(CTestObjMgr::Instance().CreateSSeqLoc(
+        unique_ptr<SSeqLoc> ssl(CTestObjMgr::Instance().CreateSSeqLoc(
                                                    id, eNa_strand_both));
     
         SBlastSequence sequence(
