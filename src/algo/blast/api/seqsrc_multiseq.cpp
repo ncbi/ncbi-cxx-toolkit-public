@@ -559,7 +559,7 @@ MultiSeqBlastSeqSrcInit(TSeqLocVector& seq_vector,
     BlastSeqSrc* seq_src = NULL;
     BlastSeqSrcNewInfo bssn_info;
 
-    auto_ptr<SMultiSeqSrcNewArgs> args
+    unique_ptr<SMultiSeqSrcNewArgs> args
         (new SMultiSeqSrcNewArgs(const_cast<TSeqLocVector&>(seq_vector),
                                  program, dbscan_mode));
 
