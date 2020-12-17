@@ -571,14 +571,14 @@ BOOST_FIXTURE_TEST_SUITE(pssmcreate, CPssmCreateTestFixture)
 BOOST_AUTO_TEST_CASE(testFullPssmEngineRunWithDiagnosticsRequest) {
 
         const string seqalign("data/nr-129295.new.asn.short");
-        auto_ptr<CObjectIStream> in
+        unique_ptr<CObjectIStream> in
             (CObjectIStream::Open(seqalign, eSerial_AsnText));
 
         CRef<CSeq_align_set> sas(new CSeq_align_set());
         *in >> *sas;
 
         CSeq_id qid("gi|129295"), sid("gi|6");
-        auto_ptr<SSeqLoc> q(CTestObjMgr::Instance().CreateSSeqLoc(qid));
+        unique_ptr<SSeqLoc> q(CTestObjMgr::Instance().CreateSSeqLoc(qid));
         SBlastSequence seq(GetSequence(*q->seqloc, eBlastEncodingProtein, q->scope));
 
         CPSIBlastOptions opts;
@@ -649,8 +649,8 @@ BOOST_AUTO_TEST_CASE(testSeqAlignToPsiBlastMultipleSequenceAlignment) {
         
         /*** Setup code ***/
         CSeq_id qid("gi|129295"), sid("gi|6");
-        auto_ptr<SSeqLoc> q(CTestObjMgr::Instance().CreateSSeqLoc(qid));
-        auto_ptr<SSeqLoc> s(CTestObjMgr::Instance().CreateSSeqLoc(sid));
+        unique_ptr<SSeqLoc> q(CTestObjMgr::Instance().CreateSSeqLoc(qid));
+        unique_ptr<SSeqLoc> s(CTestObjMgr::Instance().CreateSSeqLoc(sid));
         CBl2Seq blaster(*q, *s, eBlastp);
         TSeqAlignVector sasv = blaster.Run();
         BOOST_REQUIRE(sasv.size() != 0);
@@ -665,7 +665,7 @@ BOOST_AUTO_TEST_CASE(testSeqAlignToPsiBlastMultipleSequenceAlignment) {
         SBlastSequence seq(GetSequence(*q->seqloc, eBlastEncodingProtein, q->scope));
 
         try {
-            auto_ptr<CPsiBlastInputData> pssm_input(
+            unique_ptr<CPsiBlastInputData> pssm_input(
                 new CPsiBlastInputData(seq.data.get()+1,
                                        seq.length-2,
                                        sasv[0], q->scope, *opts));
@@ -760,7 +760,7 @@ BOOST_AUTO_TEST_CASE(testPurgeSequencesWithNull) {
 }
 
 BOOST_AUTO_TEST_CASE(testPurgeSelfHit) {
-        auto_ptr<IPssmInputData> pssm_input
+        unique_ptr<IPssmInputData> pssm_input
             (new CPssmInputTestData(CPssmInputTestData::eSelfHit));
         pssm_input->Process();  // standard calling convention
         AutoPtr<_PSIPackedMsa> msa(_PSIPackedMsaNew(pssm_input->GetData()));
@@ -772,7 +772,7 @@ BOOST_AUTO_TEST_CASE(testPurgeSelfHit) {
 }
 
 BOOST_AUTO_TEST_CASE(testPurgeDuplicateHit) {
-        auto_ptr<IPssmInputData> pssm_input
+        unique_ptr<IPssmInputData> pssm_input
             (new CPssmInputTestData(CPssmInputTestData::eDuplicateHit));
         pssm_input->Process();  // standard calling convention
         AutoPtr<_PSIPackedMsa> msa(_PSIPackedMsaNew(pssm_input->GetData()));
@@ -785,7 +785,7 @@ BOOST_AUTO_TEST_CASE(testPurgeDuplicateHit) {
 }
 
 BOOST_AUTO_TEST_CASE(testPurgeNearIdenticalHits) {
-        auto_ptr<IPssmInputData> pssm_input
+        unique_ptr<IPssmInputData> pssm_input
             (new CPssmInputTestData(CPssmInputTestData::eNearIdenticalHits));
         pssm_input->Process();  // standard calling convention
         AutoPtr<_PSIPackedMsa> msa(_PSIPackedMsaNew(pssm_input->GetData()));
@@ -799,7 +799,7 @@ BOOST_AUTO_TEST_CASE(testPurgeNearIdenticalHits) {
 }
 
 BOOST_AUTO_TEST_CASE(testQueryAlignedWithInternalGaps) {
-        auto_ptr<IPssmInputData> pssm_input
+        unique_ptr<IPssmInputData> pssm_input
             (new CPssmInputTestData
              (CPssmInputTestData::eQueryAlignedWithInternalGaps));
         BOOST_REQUIRE_EQUAL(string("BLOSUM62"),
@@ -807,7 +807,7 @@ BOOST_AUTO_TEST_CASE(testQueryAlignedWithInternalGaps) {
         CPssmEngine pssm_engine(pssm_input.get());
         CRef<CPssmWithParameters> pssm_asn = pssm_engine.Run();
 
-        auto_ptr< CNcbiMatrix<int> > pssm
+        unique_ptr< CNcbiMatrix<int> > pssm
             (CScorematPssmConverter::GetScores(*pssm_asn));
 
         /* Make sure that the resulting PSSM's scores are based on the scores
@@ -865,7 +865,7 @@ BOOST_AUTO_TEST_CASE(testQueryAlignedWithInternalGaps) {
 }
     
 BOOST_AUTO_TEST_CASE(testMultiSeqAlignmentHasRegionsUnalignedToQuery) {
-        auto_ptr<IPssmInputData> pssm_input
+        unique_ptr<IPssmInputData> pssm_input
             (new
              CPssmInputTestData(CPssmInputTestData::eMsaHasUnalignedRegion));
         pssm_input->Process();  // standard calling convention
@@ -1064,7 +1064,7 @@ BOOST_AUTO_TEST_CASE(testMultiSeqAlignmentHasRegionsUnalignedToQuery) {
 /// aligned sequence in the multiple sequence alignment.
 /// The scores in the PSSM should be based on the underlying scoring matrix
 BOOST_AUTO_TEST_CASE(testQueryIsOnlyAlignedSequenceInMsa) {
-        auto_ptr<IPssmInputData> pssm_input
+        unique_ptr<IPssmInputData> pssm_input
             (new CPssmInputTestData(CPssmInputTestData::eSelfHit));
         pssm_input->Process();  // standard calling convention
         BOOST_REQUIRE_EQUAL(string("BLOSUM62"),
@@ -1194,19 +1194,19 @@ BOOST_AUTO_TEST_CASE(testQueryIsOnlyAlignedSequenceInMsa) {
 }
 
 BOOST_AUTO_TEST_CASE(testRejectFlankingGaps) {
-        auto_ptr<IPssmInputData> bad_pssm_data(new CPssmInputFlankingGaps());
+        unique_ptr<IPssmInputData> bad_pssm_data(new CPssmInputFlankingGaps());
         CPssmEngine pssm_engine(bad_pssm_data.get());
         BOOST_REQUIRE_THROW(pssm_engine.Run(), CBlastException);
 }
 
 BOOST_AUTO_TEST_CASE(testRejectGapInQuery) {
-        auto_ptr<IPssmInputData> bad_pssm_data(new CPssmInputGapsInQuery());
+        unique_ptr<IPssmInputData> bad_pssm_data(new CPssmInputGapsInQuery());
         CPssmEngine pssm_engine(bad_pssm_data.get());
         BOOST_REQUIRE_THROW(pssm_engine.Run(), CBlastException);
 }
 
 BOOST_AUTO_TEST_CASE(testRejectQueryLength0) {
-        auto_ptr<IPssmInputData> bad_pssm_data(new CPssmInputQueryLength0());
+        unique_ptr<IPssmInputData> bad_pssm_data(new CPssmInputQueryLength0());
         BOOST_REQUIRE_THROW(CPssmEngine pssm_engine(bad_pssm_data.get()), CPssmEngineException);
 }
 
@@ -1216,12 +1216,12 @@ BOOST_AUTO_TEST_CASE(testRejectNullPssmInputData) {
 }
 
 BOOST_AUTO_TEST_CASE(testRejectNullsReturnedByPssmInput) {
-        auto_ptr<IPssmInputData> bad_pssm_data(new CNullPssmInput());
+        unique_ptr<IPssmInputData> bad_pssm_data(new CNullPssmInput());
          BOOST_REQUIRE_THROW(CPssmEngine pssm_engine(bad_pssm_data.get()), CBlastException);
 }
 
 BOOST_AUTO_TEST_CASE(testRejectUnsupportedMatrix) {
-        auto_ptr<IPssmInputData> bad_pssm_data(new
+        unique_ptr<IPssmInputData> bad_pssm_data(new
                                                CPssmInputUnsupportedMatrix());
         BOOST_REQUIRE_THROW(CPssmEngine pssm_engine(bad_pssm_data.get()), CBlastException);
 }
