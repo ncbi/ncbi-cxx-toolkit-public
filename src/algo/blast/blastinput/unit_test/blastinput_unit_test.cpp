@@ -1666,7 +1666,7 @@ s_FileContents2String(const char* file_name)
 {
     CNcbiIfstream file(file_name);
     char buffer[2048] = { '\0' };
-    auto_ptr<string> retval(new string);
+    unique_ptr<string> retval(new string);
 
     while (file.getline(buffer, sizeof(buffer))) {
         (*retval) += string(buffer) + "\n";
@@ -1678,7 +1678,7 @@ s_FileContents2String(const char* file_name)
 BOOST_AUTO_TEST_CASE(ReadAccessionNucleotideIntoBuffer_Single)
 {
     const char* fname("data/accession.txt");
-    auto_ptr<string> user_input(s_FileContents2String(fname));
+    unique_ptr<string> user_input(s_FileContents2String(fname));
 
     CRef<CObjectManager> om(CObjectManager::GetInstance());
     CBlastInputSourceConfig iconfig(false);
@@ -1732,7 +1732,7 @@ BOOST_AUTO_TEST_CASE(ReadAccessionNucleotideIntoBuffer_Single)
 BOOST_AUTO_TEST_CASE(ReadGiNuclWithFlankingSpacesIntoBuffer_Single)
 {
     // N.B.: the extra newline causes the CFastaReader to throw an EOF exception
-    auto_ptr<string> user_input(new string("    1945386  \n "));
+    unique_ptr<string> user_input(new string("    1945386  \n "));
 
     CRef<CObjectManager> om(CObjectManager::GetInstance());
     CBlastInputSourceConfig iconfig(false);
@@ -1805,7 +1805,7 @@ BOOST_AUTO_TEST_CASE(ReadGiNuclWithFlankingSpacesIntoBuffer_Single)
 
 BOOST_AUTO_TEST_CASE(ReadAccessionNuclWithFlankingSpacesIntoBuffer_Single)
 {
-    auto_ptr<string> user_input(new string("  X65215.1   "));
+    unique_ptr<string> user_input(new string("  X65215.1   "));
 
     CRef<CObjectManager> om(CObjectManager::GetInstance());
     CBlastInputSourceConfig iconfig(false);
@@ -1879,7 +1879,7 @@ BOOST_AUTO_TEST_CASE(ReadAccessionNuclWithFlankingSpacesIntoBuffer_Single)
 BOOST_AUTO_TEST_CASE(ReadFastaWithDeflineProteinIntoBuffer_Single)
 {
     const char* fname("data/aa.129295");
-    auto_ptr<string> user_input(s_FileContents2String(fname));
+    unique_ptr<string> user_input(s_FileContents2String(fname));
 
     CRef<CObjectManager> om(CObjectManager::GetInstance());
     CBlastInputSourceConfig iconfig(true);
@@ -3224,7 +3224,7 @@ public:
     }
 
     CArgs* CreateCArgs(CBlastAppArgs& args) const {
-        auto_ptr<CArgDescriptions> arg_desc(args.SetCommandLine());
+        unique_ptr<CArgDescriptions> arg_desc(args.SetCommandLine());
         CNcbiArguments ncbi_args(m_Argc, m_Argv);
         return arg_desc->CreateArgs(ncbi_args);
     }
@@ -3286,7 +3286,7 @@ BOOST_AUTO_TEST_CASE(PsiBlastAppTestMatrix)
 {
     CPsiBlastAppArgs psiblast_args;
     CString2Args s2a("-matrix BLOSUM80 -db ecoli ");
-    auto_ptr<CArgs> args(s2a.CreateCArgs(psiblast_args));
+    unique_ptr<CArgs> args(s2a.CreateCArgs(psiblast_args));
 
     CRef<CBlastOptionsHandle> opts = psiblast_args.SetOptions(*args);
 
@@ -3297,7 +3297,7 @@ BOOST_AUTO_TEST_CASE(RpsBlastCBS)
 {
 	CRPSBlastAppArgs rpsblast_args;
     	CString2Args s2a("-db ecoli ");
-    	auto_ptr<CArgs> args(s2a.CreateCArgs(rpsblast_args));
+    	unique_ptr<CArgs> args(s2a.CreateCArgs(rpsblast_args));
 	CRef<CBlastOptionsHandle> opts = rpsblast_args.SetOptions(*args);
     	BOOST_REQUIRE_EQUAL(opts->GetOptions().GetCompositionBasedStats(), 1);
     	BOOST_REQUIRE(opts->GetOptions().GetSegFiltering() == false);
@@ -3317,14 +3317,14 @@ BOOST_AUTO_TEST_CASE(CheckMutuallyExclusiveOptions)
     arg_classes.push_back(CRef<CBlastAppArgs>(new CTblastxAppArgs));
 
     NON_CONST_ITERATE(TArgClasses, itr, arg_classes) {
-        auto_ptr<CArgs> args;
+        unique_ptr<CArgs> args;
         BOOST_REQUIRE_THROW(args.reset(s2a.CreateCArgs(**itr)), 
                           CArgException);
     }
 }
 
 BOOST_AUTO_TEST_CASE(CheckDiscoMegablast) {
-    auto_ptr<CArgs> args;
+    unique_ptr<CArgs> args;
     CBlastnAppArgs blastn_args;
 
     // missing required template_length argument
@@ -3348,7 +3348,7 @@ BOOST_AUTO_TEST_CASE(CheckDiscoMegablast) {
 }
 
 BOOST_AUTO_TEST_CASE(CheckPercentIdentity) {
-    auto_ptr<CArgs> args;
+    unique_ptr<CArgs> args;
     CBlastnAppArgs blast_args;
 
     // invalid value
@@ -3362,7 +3362,7 @@ BOOST_AUTO_TEST_CASE(CheckPercentIdentity) {
 }
 
 BOOST_AUTO_TEST_CASE(CheckNoGreedyExtension) {
-    auto_ptr<CArgs> args;
+    unique_ptr<CArgs> args;
     CBlastnAppArgs blast_args;
 
     CString2Args s2a("-db ecoli -no_greedy");
@@ -3384,7 +3384,7 @@ BOOST_AUTO_TEST_CASE(CheckCulling) {
     arg_classes.push_back(CRef<CBlastAppArgs>(new CTblastxAppArgs));
 
     NON_CONST_ITERATE(TArgClasses, itr, arg_classes) {
-        auto_ptr<CArgs> args;
+        unique_ptr<CArgs> args;
         // invalid value
         CString2Args s2a("-db ecoli -culling_limit -4");
         BOOST_REQUIRE_THROW(args.reset(s2a.CreateCArgs(**itr)), 
@@ -3412,7 +3412,7 @@ BOOST_AUTO_TEST_CASE(CheckTaskArgs) {
 }
 
 BOOST_AUTO_TEST_CASE(CheckQueryCoveragePercent) {
-    auto_ptr<CArgs> args;
+    unique_ptr<CArgs> args;
     CBlastxAppArgs blast_args;
 
     // invalid value
@@ -3426,7 +3426,7 @@ BOOST_AUTO_TEST_CASE(CheckQueryCoveragePercent) {
 }
 
 BOOST_AUTO_TEST_CASE(CheckMaxHspsPerSubject) {
-    auto_ptr<CArgs> args;
+    unique_ptr<CArgs> args;
     CBlastxAppArgs blast_args;
 
     // invalid value
