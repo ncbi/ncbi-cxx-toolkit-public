@@ -62,7 +62,7 @@ void CBlastKmerBuildIndexApplication::Init(void)
 {
 	HideStdArgs(fHideConffile | fHideFullVersion | fHideXmlHelp | fHideVersion | fHideDryRun);
 	
-	auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+	unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
 	arg_desc->AddKey("db", "database_name", 
 					 "BLAST database to read and create",
