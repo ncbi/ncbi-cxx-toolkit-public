@@ -341,7 +341,7 @@ CQuerySplitter::x_ComputeQueryContextsForChunks()
     const EBlastProgramType kProgram = m_Options->GetProgramType();
     const unsigned int kNumContexts = GetNumberOfContexts(kProgram);
     const ENa_strand kStrandOption = m_Options->GetStrandOption();
-    auto_ptr<CQueryDataPerChunk> qdpc;
+    unique_ptr<CQueryDataPerChunk> qdpc;
     
     if (Blast_QueryIsTranslated(kProgram)) {
         qdpc.reset(new CQueryDataPerChunk(*m_SplitBlk, kProgram, 
