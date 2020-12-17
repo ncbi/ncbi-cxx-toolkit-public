@@ -232,7 +232,7 @@ CRef<CSeq_loc> s_GetMaskLoc(const CSeq_id& Id,
                             CSeqMasker* SeqMasker,
                             CScope& Scope)
 {
-    auto_ptr<CSeqMasker::TMaskList> Masks, DustMasks;
+    unique_ptr<CSeqMasker::TMaskList> Masks, DustMasks;
     CBioseq_Handle Handle;
     CSeqVector Vector;
 
