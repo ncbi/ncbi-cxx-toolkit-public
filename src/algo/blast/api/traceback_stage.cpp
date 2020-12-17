@@ -223,7 +223,7 @@ CBlastTracebackSearch::Run()
         SBlastHitsParametersFree(bhp);
     }
     
-    auto_ptr<CAutoEnvironmentVariable> omp_env;
+    unique_ptr<CAutoEnvironmentVariable> omp_env;
     if (m_NumThreads > kMinNumThreads) {
         omp_env.reset(new CAutoEnvironmentVariable("OMP_WAIT_POLICY", "passive"));
     }
@@ -326,7 +326,7 @@ CBlastTracebackSearch::RunSimple()
         SBlastHitsParametersFree(bhp);
     }
     
-    auto_ptr<CAutoEnvironmentVariable> omp_env;
+    unique_ptr<CAutoEnvironmentVariable> omp_env;
     if (m_NumThreads > kMinNumThreads) {
         omp_env.reset(new CAutoEnvironmentVariable("OMP_WAIT_POLICY", "passive"));
     }
