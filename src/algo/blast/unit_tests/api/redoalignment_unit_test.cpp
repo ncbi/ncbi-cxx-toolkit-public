@@ -207,8 +207,8 @@ void CRedoAlignmentTestFixture::
                                     int hit_list_size)
 {
     
-    auto_ptr<SSeqLoc> qsl(CTestObjMgr::Instance().CreateSSeqLoc(qid));
-    auto_ptr<SSeqLoc> ssl(CTestObjMgr::Instance().CreateSSeqLoc(sid));
+    unique_ptr<SSeqLoc> qsl(CTestObjMgr::Instance().CreateSSeqLoc(qid));
+    unique_ptr<SSeqLoc> ssl(CTestObjMgr::Instance().CreateSSeqLoc(sid));
 
     runRedoAlignmentCoreUnitTest(program, *qsl, *ssl, init_hsp_list,
             ending_hsp_list, effective_searchsp, compositonBasedStatsMode,
@@ -633,7 +633,7 @@ BOOST_AUTO_TEST_CASE(testRedoAlignmentWithCompBasedStatsBadlyBiasedSequence) {
     const int k_num_hsps_end = 5;
     // CSeq_id query_id("gi|129295");
     CSeq_id subj_id("gb|AAA22059|");
-    auto_ptr<SSeqLoc> ssl(CTestObjMgr::Instance().CreateSSeqLoc(subj_id));
+    unique_ptr<SSeqLoc> ssl(CTestObjMgr::Instance().CreateSSeqLoc(subj_id));
 
     CNcbiIfstream infile("data/biased.fsa");
     const bool is_protein(true);
