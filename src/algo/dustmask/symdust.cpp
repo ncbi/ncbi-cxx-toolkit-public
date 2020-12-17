@@ -211,11 +211,11 @@ inline void CSymDustMasker::save_masked_regions(
 }
 
 //------------------------------------------------------------------------------
-std::auto_ptr< CSymDustMasker::TMaskList > 
+std::unique_ptr< CSymDustMasker::TMaskList > 
 CSymDustMasker::operator()( const sequence_type & seq, 
                             size_type start, size_type stop )
 {
-    std::auto_ptr< TMaskList > res( new TMaskList );
+    std::unique_ptr< TMaskList > res( new TMaskList );
 
     if( seq.empty() )
         return res;
@@ -285,7 +285,7 @@ CSymDustMasker::operator()( const sequence_type & seq,
 }
 
 //------------------------------------------------------------------------------
-std::auto_ptr< CSymDustMasker::TMaskList > 
+std::unique_ptr< CSymDustMasker::TMaskList > 
 CSymDustMasker::operator()( const sequence_type & seq )
 { return (*this)( seq, 0, seq.size() - 1 ); }
 
@@ -296,7 +296,7 @@ void CSymDustMasker::GetMaskedLocs(
     std::vector< CConstRef< objects::CSeq_loc > > & locs )
 {
     // typedef std::vector< CConstRef< objects::CSeq_loc > > locs_type;
-    std::auto_ptr< TMaskList > res = (*this)( seq );
+    std::unique_ptr< TMaskList > res = (*this)( seq );
     locs.clear();
     locs.reserve( res->size() );
 
@@ -310,7 +310,7 @@ CRef< objects::CPacked_seqint > CSymDustMasker::GetMaskedInts(
         objects::CSeq_id & seq_id, const sequence_type & seq )
 {
     CRef< objects::CPacked_seqint > result( new objects::CPacked_seqint );
-    std::auto_ptr< TMaskList > res = (*this)( seq );
+    std::unique_ptr< TMaskList > res = (*this)( seq );
 
     for( TMaskList::const_iterator it = res->begin(); it != res->end(); ++it )
         result->AddInterval( seq_id, it->first, it->second );
