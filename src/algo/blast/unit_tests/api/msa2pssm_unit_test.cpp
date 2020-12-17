@@ -52,7 +52,7 @@ BOOST_AUTO_TEST_CASE(QueryNotFoundInMsa)
 
     CPSIBlastOptions opts;
     PSIBlastOptionsNew(&opts);
-    auto_ptr<CPsiBlastInputClustalW> pssm_input;
+    unique_ptr<CPsiBlastInputClustalW> pssm_input;
     BOOST_REQUIRE_THROW(pssm_input.reset(new CPsiBlastInputClustalW(in, *opts,
                                                                     0, 0,
                                                                     kQuery,
