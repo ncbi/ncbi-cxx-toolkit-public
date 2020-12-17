@@ -64,7 +64,7 @@ BOOST_AUTO_TEST_SUITE(scoreblk)
 BOOST_AUTO_TEST_CASE(GetScoreBlockNucl) {
     const EBlastProgramType kProgram = eBlastTypeBlastn;
     CSeq_id id("gi|1945388");
-    auto_ptr<SSeqLoc> qsl(CTestObjMgr::Instance().CreateSSeqLoc(id, eNa_strand_both));
+    unique_ptr<SSeqLoc> qsl(CTestObjMgr::Instance().CreateSSeqLoc(id, eNa_strand_both));
     TSeqLocVector query_v;
     query_v.push_back(*qsl);
     CBlastQueryInfo query_info;
@@ -109,7 +109,7 @@ BOOST_AUTO_TEST_CASE(GetScoreBlockNucl) {
 BOOST_AUTO_TEST_CASE(GetScoreBlockProtein) {
     const EBlastProgramType kProgram = eBlastTypeBlastp;
     CSeq_id id("gi|3091");
-    auto_ptr<SSeqLoc> qsl(CTestObjMgr::Instance().CreateSSeqLoc(id));
+    unique_ptr<SSeqLoc> qsl(CTestObjMgr::Instance().CreateSSeqLoc(id));
     TSeqLocVector query_v;
     query_v.push_back(*qsl);
     CBlastQueryInfo query_info;
@@ -160,7 +160,7 @@ BOOST_AUTO_TEST_CASE(GetScoreBlockPHI) {
     const double kPhiK = 0.040;
 
     CSeq_id id("gi|3091");
-    auto_ptr<SSeqLoc> qsl(CTestObjMgr::Instance().CreateSSeqLoc(id));
+    unique_ptr<SSeqLoc> qsl(CTestObjMgr::Instance().CreateSSeqLoc(id));
     TSeqLocVector query_v;
     query_v.push_back(*qsl);
     CBlastQueryInfo query_info;
@@ -237,7 +237,7 @@ BOOST_AUTO_TEST_CASE(GetScoreBlockForFullyMaskedProtein) {
     const int start = 0;
     const int stop = 27;
     pair<TSeqPos, TSeqPos> range(start, stop);
-    auto_ptr<SSeqLoc> qsl(CTestObjMgr::Instance().CreateSSeqLoc(id, range));
+    unique_ptr<SSeqLoc> qsl(CTestObjMgr::Instance().CreateSSeqLoc(id, range));
     TSeqLocVector query_v;
     query_v.push_back(*qsl);
     CBlastQueryInfo query_info;
