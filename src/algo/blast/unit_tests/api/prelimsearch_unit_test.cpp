@@ -141,7 +141,7 @@ BOOST_AUTO_TEST_CASE(SplitNucleotideQuery) {
     CSeq_id q_id(CSeq_id::e_Gi, 224384753);
     const TSeqRange kRange(0, 5000000);
     const ENa_strand kStrand(eNa_strand_plus);
-    auto_ptr<SSeqLoc> q_ssl(CTestObjMgr::Instance().CreateSSeqLoc(q_id, kRange, kStrand));
+    unique_ptr<SSeqLoc> q_ssl(CTestObjMgr::Instance().CreateSSeqLoc(q_id, kRange, kStrand));
     TSeqLocVector q_tsl;
     q_tsl.push_back(*q_ssl);
     CRef<IQueryFactory> query_factory(new CObjMgr_QueryFactory(q_tsl));
@@ -170,7 +170,7 @@ BOOST_AUTO_TEST_CASE(BuildCStd_seg_blastn) {
     CSeq_id q_id(CSeq_id::e_Gi, 41646578);
     const TSeqRange kRange(54, 560);
     const ENa_strand kStrand(eNa_strand_plus);
-    auto_ptr<SSeqLoc> q_ssl(CTestObjMgr::Instance().CreateSSeqLoc(q_id, kRange, kStrand));
+    unique_ptr<SSeqLoc> q_ssl(CTestObjMgr::Instance().CreateSSeqLoc(q_id, kRange, kStrand));
     TSeqLocVector q_tsl;
     q_tsl.push_back(*q_ssl);
     CRef<IQueryFactory> query_factory(new CObjMgr_QueryFactory(q_tsl));
@@ -207,7 +207,7 @@ BOOST_AUTO_TEST_CASE(BuildCStd_seg_tblastx) {
     CSeq_id q_id(CSeq_id::e_Gi, 41646578);
     const TSeqRange kRange(54, 560);
     const ENa_strand kStrand(eNa_strand_plus);
-    auto_ptr<SSeqLoc> q_ssl(CTestObjMgr::Instance().CreateSSeqLoc(q_id, kRange, kStrand));
+    unique_ptr<SSeqLoc> q_ssl(CTestObjMgr::Instance().CreateSSeqLoc(q_id, kRange, kStrand));
     TSeqLocVector q_tsl;
     q_tsl.push_back(*q_ssl);
     CRef<IQueryFactory> query_factory(new CObjMgr_QueryFactory(q_tsl));
