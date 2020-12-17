@@ -52,8 +52,7 @@ public:
     /// @param use_version if true, new files will be saved with versions
     /// added to the file name
     CAutoOutputFileReset(const string& file_name, bool use_versions = false)
-        : m_FileName(file_name), m_FileStream(0),
-          m_Version(use_versions ? 1 : 0) {}
+        : m_FileName(file_name), m_Version(use_versions ? 1 : 0) {}
 
     /// Retrieve the newly opened stream, caller doesn't own the return value
     CNcbiOstream* GetStream();
@@ -62,7 +61,7 @@ private:
     /// The file's name
     string m_FileName;
     /// The output stream
-    auto_ptr<CNcbiOstream> m_FileStream;
+    unique_ptr<CNcbiOstream> m_FileStream;
 
     /// File version if larger than zero
     int m_Version;
