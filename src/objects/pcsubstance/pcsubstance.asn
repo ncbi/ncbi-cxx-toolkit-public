@@ -146,7 +146,6 @@ PC-XRefData ::= CHOICE {
         geogsm           INTEGER,                 -- Gene Expression Omnibus Sample Accession (GEO GSM) ID
                                                   --   Note: Must be greater than "0" or, if invalid, "0"
         patent           VisibleString,           -- Patent Identifier (e.g., USPTO, EPO, WPO, JPO, CPO)
-        accession        VisibleString,           -- GenBank Accession
         protein-accession        VisibleString,   -- GenBank Accession for a Protein
         nucleotide-accession     VisibleString,   -- GenBank Accession for a Nucleotide
         doi                      VisibleString,   -- digital object identifier (DOI)
