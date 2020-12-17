@@ -858,7 +858,7 @@ CCompositionBasedStatsArgs::ExtractAlgorithmOptions(const CArgs& args,
                                                     CBlastOptions& opt)
 {
     if (args[kArgCompBasedStats]) {
-        auto_ptr<bool> ungapped(args.Exist(kArgUngapped)
+        unique_ptr<bool> ungapped(args.Exist(kArgUngapped)
             ? new bool(args[kArgUngapped]) : 0);
         s_SetCompositionBasedStats(opt,
                                    args[kArgCompBasedStats].AsString(),
@@ -2423,7 +2423,7 @@ CBlastDatabaseArgs::ExtractAlgorithmOptions(const CArgs& args,
     } else if (args.Exist(kArgSubject) && args[kArgSubject]) {
 
         CNcbiIstream* subj_input_stream = NULL;
-        auto_ptr<CDecompressIStream> decompress_stream;
+        unique_ptr<CDecompressIStream> decompress_stream;
         if (m_IsMapper &&
             NStr::EndsWith(args[kArgSubject].AsString(), ".gz", NStr::eNocase)) {
             decompress_stream.reset(
@@ -3487,7 +3487,7 @@ void CBlastAppArgs::SetTask(const string& task)
 CArgDescriptions*
 SetUpCommandLineArguments(TBlastCmdLineArgs& args)
 {
-    auto_ptr<CArgDescriptions> retval(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> retval(new CArgDescriptions);
 
     // Create the groups so that the ordering is established
     retval->SetCurrentGroup("Input query options");
