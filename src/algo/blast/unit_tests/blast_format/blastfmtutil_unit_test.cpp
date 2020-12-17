@@ -167,7 +167,7 @@ BOOST_AUTO_TEST_CASE(GetAlnScoresAndGetScoreString)
 {
 
     CNcbiIfstream is("data/blastfmtutil-cppunit.aln");
-    auto_ptr<CObjectIStream> in(CObjectIStream::Open(eSerial_AsnText, is));
+    unique_ptr<CObjectIStream> in(CObjectIStream::Open(eSerial_AsnText, is));
     CRef<CSeq_annot> san(new CSeq_annot);
     *in >> *san;
     const CSeq_annot::TData& data = san->GetData();
@@ -200,7 +200,7 @@ BOOST_AUTO_TEST_CASE(GetSubjectQueryCoverageScore)
 {
 
     CNcbiIfstream is("data/blastfmtutil-querycoverage.aln");
-    auto_ptr<CObjectIStream> in(CObjectIStream::Open(eSerial_AsnText, is));
+    unique_ptr<CObjectIStream> in(CObjectIStream::Open(eSerial_AsnText, is));
     CSeq_align_set align_set;
     *in>> align_set;
     const list<CRef<CSeq_align> > & align = align_set.Get();
