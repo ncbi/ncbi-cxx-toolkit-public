@@ -186,7 +186,7 @@ public:
         }
 
         CSeq_id id("gi|1945388");
-        auto_ptr<SSeqLoc> qsl(
+        unique_ptr<SSeqLoc> qsl(
             CTestObjMgr::Instance().CreateSSeqLoc(id, eNa_strand_both));
         // Fill the lower case mask into the SSeqLoc
         CSeq_loc* seqloc = new CSeq_loc();
@@ -330,7 +330,7 @@ static void x_TestGetFilteredQueryRegions(ENa_strand strand) {
     size_t index(0);
 
     CSeq_id id("gi|1945388");
-    auto_ptr<SSeqLoc> qsl(
+    unique_ptr<SSeqLoc> qsl(
                           CTestObjMgr::Instance().CreateSSeqLoc(id, strand));
     TSeqLocVector query_reference(kNumQueries, *qsl);
     TSeqLocVector query_test(kNumQueries, *qsl);
@@ -470,7 +470,7 @@ BOOST_AUTO_TEST_CASE(SegFilter) {
     const int kSegStarts[kNumLocs] = { 15, 55, 495 };
     const int kSegEnds[kNumLocs] = { 27, 68, 513 };
     CSeq_id id("gi|3091");
-    auto_ptr<SSeqLoc> qsl(CTestObjMgr::Instance().CreateSSeqLoc(id));
+    unique_ptr<SSeqLoc> qsl(CTestObjMgr::Instance().CreateSSeqLoc(id));
     TSeqLocVector query_v;
     query_v.push_back(*qsl);
     CBlastQueryInfo query_info;
@@ -510,7 +510,7 @@ BOOST_AUTO_TEST_CASE(RepeatsFilter) {
     const TSeqPos kRepeatStarts[kNumLocs] = { 0, 380, 2851, 3113 };
     const TSeqPos kRepeatEnds[kNumLocs] = { 212, 1297, 2953, 3764 };
     CSeq_id id("gi|1945388");
-    auto_ptr<SSeqLoc> qsl(
+    unique_ptr<SSeqLoc> qsl(
                           CTestObjMgr::Instance().CreateSSeqLoc(id, eNa_strand_both));
     TSeqLocVector query_v;
     query_v.push_back(*qsl);
@@ -572,7 +572,7 @@ BOOST_AUTO_TEST_CASE(WindowMasker)
     BOOST_REQUIRE(0 == (sizeof(intervals) % pair_size));
     
     CSeq_id id("gi|1945388");
-    auto_ptr<SSeqLoc>
+    unique_ptr<SSeqLoc>
         qsl(CTestObjMgr::Instance().CreateSSeqLoc(id, eNa_strand_both));
     
     TSeqLocVector query_v;
@@ -622,7 +622,7 @@ BOOST_AUTO_TEST_CASE(RepeatsFilter_OnSeqInterval) {
     masked_regions.push_back(TSeqRange(94435, 94545));
 
     CSeq_id id("gi|20196551");
-    auto_ptr<SSeqLoc> qsl(
+    unique_ptr<SSeqLoc> qsl(
                           CTestObjMgr::Instance().CreateSSeqLoc(id, 
                                                                 make_pair<TSeqPos, TSeqPos>(84999, 94637),
                                                                 eNa_strand_both));
@@ -704,12 +704,12 @@ BOOST_AUTO_TEST_CASE(CombineDustAndLowerCaseMasking_WithBlastQueryVector) {
 BOOST_AUTO_TEST_CASE(RepeatsAndDustFilter) {
 
     CSeq_id id1("gi|197333738");
-    auto_ptr<SSeqLoc> qsl1(CTestObjMgr::Instance().CreateSSeqLoc(id1)); 
+    unique_ptr<SSeqLoc> qsl1(CTestObjMgr::Instance().CreateSSeqLoc(id1)); 
     TSeqLocVector query_v1;
     query_v1.push_back(*qsl1);
 
     CSeq_id id2("gi|197333738");
-    auto_ptr<SSeqLoc> qsl2(CTestObjMgr::Instance().CreateSSeqLoc(id2)); 
+    unique_ptr<SSeqLoc> qsl2(CTestObjMgr::Instance().CreateSSeqLoc(id2)); 
     TSeqLocVector query_v2;
     query_v2.push_back(*qsl2);
 
@@ -731,12 +731,12 @@ BOOST_AUTO_TEST_CASE(RepeatsAndDustFilter) {
 BOOST_AUTO_TEST_CASE(WindowMaskerAndDustFilter) {
 
     CSeq_id id1("gi|197333738");
-    auto_ptr<SSeqLoc> qsl1(CTestObjMgr::Instance().CreateSSeqLoc(id1)); 
+    unique_ptr<SSeqLoc> qsl1(CTestObjMgr::Instance().CreateSSeqLoc(id1)); 
     TSeqLocVector query_v1;
     query_v1.push_back(*qsl1);
 
     CSeq_id id2("gi|197333738");
-    auto_ptr<SSeqLoc> qsl2(CTestObjMgr::Instance().CreateSSeqLoc(id2)); 
+    unique_ptr<SSeqLoc> qsl2(CTestObjMgr::Instance().CreateSSeqLoc(id2)); 
     TSeqLocVector query_v2;
     query_v2.push_back(*qsl2);
 
@@ -769,7 +769,7 @@ BOOST_AUTO_TEST_CASE(WindowMasker_OnSeqInterval)
     masked_regions.push_back(TSeqRange(85725, 85745));
     
     CSeq_id id("gi|20196551");
-    auto_ptr<SSeqLoc>
+    unique_ptr<SSeqLoc>
         qsl(CTestObjMgr::Instance().CreateSSeqLoc
             (id, make_pair<TSeqPos, TSeqPos>(85000, 86200), eNa_strand_both));
     
@@ -804,7 +804,7 @@ BOOST_AUTO_TEST_CASE(WindowMasker_OnSeqInterval)
 
 BOOST_AUTO_TEST_CASE(RepeatsFilter_NoHitsFound) {
     CSeq_id id("gi|33079743");
-    auto_ptr<SSeqLoc> qsl(
+    unique_ptr<SSeqLoc> qsl(
                           CTestObjMgr::Instance().CreateSSeqLoc(id, eNa_strand_both));
     TSeqLocVector query_v;
     query_v.push_back(*qsl);
@@ -819,7 +819,7 @@ BOOST_AUTO_TEST_CASE(RepeatsFilter_NoHitsFound) {
 
 BOOST_AUTO_TEST_CASE(WindowMasker_NoHitsFound) {
     CSeq_id id("gi|33079743");
-    auto_ptr<SSeqLoc> qsl
+    unique_ptr<SSeqLoc> qsl
         (CTestObjMgr::Instance().CreateSSeqLoc(id, eNa_strand_both));
     
     TSeqLocVector query_v;
@@ -835,7 +835,7 @@ BOOST_AUTO_TEST_CASE(WindowMasker_NoHitsFound) {
 
 BOOST_AUTO_TEST_CASE(RepeatsFilterWithMissingParameter) {
     CSeq_id id("gi|1945388");
-    auto_ptr<SSeqLoc> qsl(CTestObjMgr::Instance().CreateSSeqLoc(id));
+    unique_ptr<SSeqLoc> qsl(CTestObjMgr::Instance().CreateSSeqLoc(id));
     TSeqLocVector query_v;
     query_v.push_back(*qsl);
 
@@ -848,7 +848,7 @@ BOOST_AUTO_TEST_CASE(RepeatsFilterWithMissingParameter) {
 
 BOOST_AUTO_TEST_CASE(WindowMaskerWithMissingParameter) {
     CSeq_id id("gi|1945388");
-    auto_ptr<SSeqLoc> qsl(CTestObjMgr::Instance().CreateSSeqLoc(id));
+    unique_ptr<SSeqLoc> qsl(CTestObjMgr::Instance().CreateSSeqLoc(id));
     TSeqLocVector query_v;
     query_v.push_back(*qsl);
 
@@ -1132,7 +1132,7 @@ BOOST_AUTO_TEST_CASE(CombineRepeatAndLowerCaseMask) {
     const int kStarts[kNumLocs] = { 0, 217, 380, 2817, 3084, 3782 };
     const int kEnds[kNumLocs] = { 212, 316, 1298, 2953, 3764, 3916 };
     CSeq_id id("gi|1945388");
-    auto_ptr<SSeqLoc> qsl(
+    unique_ptr<SSeqLoc> qsl(
                           CTestObjMgr::Instance().CreateSSeqLoc(id, eNa_strand_both));
 
     // Fill the lower case mask into the SSeqLoc
@@ -1175,7 +1175,7 @@ BOOST_AUTO_TEST_CASE(CombineRepeatAndDustFilter) {
         { 212, 305, 1297, 1479, 2953, 3764, 4710, 6373, 6573, 7672, 
           7772, 8880, 9179};
     CSeq_id id("gi|1945388");
-    auto_ptr<SSeqLoc> qsl(
+    unique_ptr<SSeqLoc> qsl(
                           CTestObjMgr::Instance().CreateSSeqLoc(id, eNa_strand_both));
     TSeqLocVector query_v;
     query_v.push_back(*qsl);
@@ -1209,7 +1209,7 @@ BOOST_AUTO_TEST_CASE(FilterLocNuclBoth) {
           6573, 7672, 7772, 8880 , 9179}; 
 
     CSeq_id id("gi|1945388");
-    auto_ptr<SSeqLoc> qsl(
+    unique_ptr<SSeqLoc> qsl(
                           CTestObjMgr::Instance().CreateSSeqLoc(id, eNa_strand_both));
     TSeqLocVector query_v;
     query_v.push_back(*qsl);
@@ -1239,7 +1239,7 @@ BOOST_AUTO_TEST_CASE(FilterLocNuclPlus) {
           6573, 7672, 7772, 8880 , 9179}; 
 
     CSeq_id id("gi|1945388");
-    auto_ptr<SSeqLoc> qsl(
+    unique_ptr<SSeqLoc> qsl(
                           CTestObjMgr::Instance().CreateSSeqLoc(id, eNa_strand_plus));
     TSeqLocVector query_v;
     query_v.push_back(*qsl);
@@ -1269,7 +1269,7 @@ BOOST_AUTO_TEST_CASE(FilterLocNuclMinus) {
           6573, 7672, 7772, 8880 , 9179}; 
 
     CSeq_id id("gi|1945388");
-    auto_ptr<SSeqLoc> qsl(
+    unique_ptr<SSeqLoc> qsl(
                           CTestObjMgr::Instance().CreateSSeqLoc(id, eNa_strand_minus));
     TSeqLocVector query_v;
     query_v.push_back(*qsl);
@@ -1302,7 +1302,7 @@ BOOST_AUTO_TEST_CASE(FilterLocProtein) {
     const int kSegStarts[kNumLocs] = { 15, 55, 495 };
     const int kSegEnds[kNumLocs] = { 27, 68, 513 };
     CSeq_id id("gi|3091");
-    auto_ptr<SSeqLoc> qsl(CTestObjMgr::Instance().CreateSSeqLoc(id));
+    unique_ptr<SSeqLoc> qsl(CTestObjMgr::Instance().CreateSSeqLoc(id));
     TSeqLocVector query_v;
     query_v.push_back(*qsl);
     CBlastQueryInfo query_info;
@@ -1346,7 +1346,7 @@ BOOST_AUTO_TEST_CASE(MaskProteinSequence) {
     const int kSegStarts[kNumLocs] = { 15, 55, 495 };
     const int kSegEnds[kNumLocs] = { 27, 68, 513 };
     CSeq_id id("gi|3091");
-    auto_ptr<SSeqLoc> qsl(CTestObjMgr::Instance().CreateSSeqLoc(id));
+    unique_ptr<SSeqLoc> qsl(CTestObjMgr::Instance().CreateSSeqLoc(id));
     TSeqLocVector query_v;
     query_v.push_back(*qsl);
     CRef<CBlastOptionsHandle> opts(CBlastOptionsFactory::Create(eBlastp));
@@ -1396,7 +1396,7 @@ BOOST_AUTO_TEST_CASE(MaskNucleotideBothStrands) {
           6573, 7772, 8880, 9179 }; 
         
     CSeq_id id("gi|1945388");
-    auto_ptr<SSeqLoc> qsl(CTestObjMgr::Instance().CreateSSeqLoc(id, 
+    unique_ptr<SSeqLoc> qsl(CTestObjMgr::Instance().CreateSSeqLoc(id, 
                                                                 eNa_strand_both));
     TSeqLocVector query_v;
     query_v.push_back(*qsl);
@@ -1481,13 +1481,13 @@ BOOST_AUTO_TEST_CASE(FilterMultipleQueriesLocNuclPlus) {
     start_end_v.push_back(pair2);
         
     CSeq_id qid1("gi|1945388");
-    auto_ptr<SSeqLoc> qsl1(
+    unique_ptr<SSeqLoc> qsl1(
                            CTestObjMgr::Instance().CreateSSeqLoc(qid1, eNa_strand_both));
     CSeq_id qid2("gi|2655203");
-    auto_ptr<SSeqLoc> qsl2(
+    unique_ptr<SSeqLoc> qsl2(
                            CTestObjMgr::Instance().CreateSSeqLoc(qid2, eNa_strand_both));
     CSeq_id qid3("gi|557");
-    auto_ptr<SSeqLoc> qsl3(
+    unique_ptr<SSeqLoc> qsl3(
                            CTestObjMgr::Instance().CreateSSeqLoc(qid3, eNa_strand_both));
 
     TSeqLocVector query_v;
@@ -2052,7 +2052,7 @@ BOOST_AUTO_TEST_CASE(GetSeqLocInfoVector_AllPrograms) {
         CRef<CScope> scope(new CScope(CTestObjMgr::Instance().GetObjMgr()));
         scope->AddDefaults();
 
-        auto_ptr<SSeqLoc> query(new SSeqLoc(qloc, scope));
+        unique_ptr<SSeqLoc> query(new SSeqLoc(qloc, scope));
         TSeqLocVector query_v;
         query_v.push_back(*query);
 
