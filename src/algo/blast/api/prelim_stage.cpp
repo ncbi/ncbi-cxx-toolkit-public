@@ -114,7 +114,7 @@ CBlastPrelimSearch::SetNumberOfThreads(size_t nthreads)
 
         CRef<ILocalQueryData> query_data
             (m_QueryFactory->MakeLocalQueryData(&*m_Options));
-        auto_ptr<const CBlastOptionsMemento> opts_memento
+        unique_ptr<const CBlastOptionsMemento> opts_memento
             (m_Options->CreateSnapshot());
         if (IsMultiThreaded())
             BlastHSPStreamRegisterMTLock(m_InternalData->m_HspStream->GetPointer(),
@@ -144,7 +144,7 @@ CBlastPrelimSearch::x_LaunchMultiThreadedSearch(SInternalData& internal_data)
     typedef vector< CRef<CPrelimSearchThread> > TBlastThreads;
     TBlastThreads the_threads(GetNumberOfThreads());
 
-    auto_ptr<const CBlastOptionsMemento> opts_memento
+    unique_ptr<const CBlastOptionsMemento> opts_memento
         (m_Options->CreateSnapshot());
     _TRACE("Launching BLAST with " << GetNumberOfThreads() << " threads");
 
@@ -213,7 +213,7 @@ CBlastPrelimSearch::Run()
                                        m_InternalData);
     int retval = 0;
 
-    auto_ptr<const CBlastOptionsMemento> opts_memento
+    unique_ptr<const CBlastOptionsMemento> opts_memento
         (m_Options->CreateSnapshot());
     BLAST_SequenceBlk* queries = m_InternalData->m_Queries;
     LookupTableOptions * lut_options = opts_memento->m_LutOpts;
@@ -326,7 +326,7 @@ CBlastPrelimSearch::ComputeBlastHSPResults(BlastHSPStream* stream,
 					   vector<bool> *rm_hsps_info) const
 {
     bool any_query_hsp_limited = false;
-    auto_ptr<const CBlastOptionsMemento> opts_memento
+    unique_ptr<const CBlastOptionsMemento> opts_memento
         (m_Options->CreateSnapshot());
 
     _ASSERT(m_InternalData->m_QueryInfo->num_queries > 0);
