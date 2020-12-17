@@ -1,13 +1,15 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(objmgr_sample)
+
   NCBI_sources(objmgr_sample)
   NCBI_uses_toolkit_libraries(ncbi_xloader_genbank xobjutil)
-  NCBI_project_watchers(vasilche)
+
   NCBI_add_test(objmgr_sample -gi 178614)
   NCBI_add_test(objmgr_sample -gi 18565551)
   NCBI_add_test(objmgr_sample -gi 19550966)
   NCBI_add_test(objmgr_sample -gi 455025)
+
+  NCBI_project_watchers(vasilche)
+
 NCBI_end_app()

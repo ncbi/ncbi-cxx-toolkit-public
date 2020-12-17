@@ -1,8 +1,5 @@
-#############################################################################
 # $Id$
-#############################################################################
 
-NCBI_project_watchers(ucko)
 NCBI_add_app(
   asn_assign asnwalk_read asnwalk_type asnwalk_write bss_info
   hooks_commented hooks_highest_se_objs
@@ -12,3 +9,4 @@ NCBI_add_app(
   hooks_write_member hooks_write_object hooks_write_variant
   seqannot_splicer
 )
+NCBI_project_watchers(ucko)

@@ -1,11 +1,9 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(sample_cgi_test)
   NCBI_sources(sample_cgi_test)
   NCBI_uses_toolkit_libraries(xcgi xhtml)
   NCBI_requires(Boost.Test.Included)
-  NCBI_project_watchers(fukanchi)
   NCBI_add_test()
+  NCBI_project_watchers(fukanchi)
 NCBI_end_app()
