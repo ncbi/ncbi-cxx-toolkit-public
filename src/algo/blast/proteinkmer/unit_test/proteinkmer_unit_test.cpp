@@ -287,7 +287,7 @@ BOOST_AUTO_TEST_CASE(SearchWithBadQuery)
 {
 	CBioseq bioseq;
 	CNcbiIfstream i_file("data/bad.asn");
-	auto_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_AsnText, i_file));
+	unique_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_AsnText, i_file));
 	
 	*is >> bioseq;
 	CRef<CScope> scope(CSimpleOM::NewScope(false));
@@ -295,7 +295,7 @@ BOOST_AUTO_TEST_CASE(SearchWithBadQuery)
 	CRef<CSeq_loc> loc(new CSeq_loc);
     	loc->SetWhole().Assign(*(bioseq.GetId().front()));
 
-	auto_ptr<SSeqLoc> ssl(new SSeqLoc(*loc, *scope));
+	unique_ptr<SSeqLoc> ssl(new SSeqLoc(*loc, *scope));
 	TSeqLocVector query_vector;
 	query_vector.push_back(*ssl);
 	CRef<CSeqDB> db(new CSeqDB("data/nr_test", CSeqDB::eProtein));
@@ -312,7 +312,7 @@ BOOST_AUTO_TEST_CASE(SearchWithAllXQuery)
 {
 	CBioseq bioseq;
 	CNcbiIfstream i_file("data/allX.asn");
-	auto_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_AsnText, i_file));
+	unique_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_AsnText, i_file));
 	
 	*is >> bioseq;
 	CRef<CScope> scope(CSimpleOM::NewScope(false));
@@ -320,7 +320,7 @@ BOOST_AUTO_TEST_CASE(SearchWithAllXQuery)
 	CRef<CSeq_loc> loc(new CSeq_loc);
     	loc->SetWhole().Assign(*(bioseq.GetId().front()));
 
-	auto_ptr<SSeqLoc> ssl(new SSeqLoc(*loc, *scope));
+	unique_ptr<SSeqLoc> ssl(new SSeqLoc(*loc, *scope));
 	TSeqLocVector query_vector;
 	query_vector.push_back(*ssl);
 	CRef<CSeqDB> db(new CSeqDB("data/nr_test", CSeqDB::eProtein));
@@ -339,7 +339,7 @@ BOOST_AUTO_TEST_CASE(SearchWithBadDatabase)
 {
 	CBioseq bioseq;
 	CNcbiIfstream i_file("data/129295.stdaa");
-	auto_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_AsnText, i_file));
+	unique_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_AsnText, i_file));
 	
 	*is >> bioseq;
 	CRef<CScope> scope(CSimpleOM::NewScope(false));
@@ -359,7 +359,7 @@ BOOST_AUTO_TEST_CASE(SearchWithSSeqLocQuery)
 {
 	CBioseq bioseq;
 	CNcbiIfstream i_file("data/129295.stdaa");
-	auto_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_AsnText, i_file));
+	unique_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_AsnText, i_file));
 	
 	*is >> bioseq;
 	CRef<CScope> scope(CSimpleOM::NewScope(false));
@@ -382,7 +382,7 @@ BOOST_AUTO_TEST_CASE(NcbieaaSearch)
 {
 	CBioseq bioseq;
 	CNcbiIfstream i_file("data/129295.ncbieaa");
-	auto_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_AsnText, i_file));
+	unique_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_AsnText, i_file));
 	
 	*is >> bioseq;
 	CRef<CScope> scope(CSimpleOM::NewScope(false));
@@ -390,7 +390,7 @@ BOOST_AUTO_TEST_CASE(NcbieaaSearch)
 	CRef<CSeq_loc> loc(new CSeq_loc);
     	loc->SetWhole().Assign(*((bioseq).GetId().front()));
 
-	auto_ptr<SSeqLoc> ssl(new SSeqLoc(*loc, *scope));
+	unique_ptr<SSeqLoc> ssl(new SSeqLoc(*loc, *scope));
 	TSeqLocVector query_vector;
 	query_vector.push_back(*ssl);
 	CRef<CSeqDB> db(new CSeqDB("data/nr_test", CSeqDB::eProtein));
@@ -411,7 +411,7 @@ BOOST_AUTO_TEST_CASE(MultipleQuerySearch)
 {
 	CRef<CBioseq> bioseq(new CBioseq);
 	CNcbiIfstream i_file("data/129295.ncbieaa");
-	auto_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_AsnText, i_file));
+	unique_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_AsnText, i_file));
 	
 	*is >> *bioseq;
 	CRef<CScope> scope(CSimpleOM::NewScope(false));
@@ -419,12 +419,12 @@ BOOST_AUTO_TEST_CASE(MultipleQuerySearch)
 	CRef<CSeq_loc> loc(new CSeq_loc);
     	loc->SetWhole().Assign(*((*bioseq).GetId().front()));
 
-	auto_ptr<SSeqLoc> ssl(new SSeqLoc(*loc, *scope));
+	unique_ptr<SSeqLoc> ssl(new SSeqLoc(*loc, *scope));
 	TSeqLocVector query_vector;
 	query_vector.push_back(*ssl);
 
 	CNcbiIfstream i_file2("data/129296.ncbieaa");
-	auto_ptr<CObjectIStream> is2(CObjectIStream::Open(eSerial_AsnText, i_file2));
+	unique_ptr<CObjectIStream> is2(CObjectIStream::Open(eSerial_AsnText, i_file2));
 	
 	CRef<CBioseq> bioseq2(new CBioseq);
 	*is2 >> *bioseq2;
@@ -433,7 +433,7 @@ BOOST_AUTO_TEST_CASE(MultipleQuerySearch)
 	CRef<CSeq_loc> loc2(new CSeq_loc);
     	loc2->SetWhole().Assign(*((*bioseq2).GetId().front()));
 
-	auto_ptr<SSeqLoc> ssl2(new SSeqLoc(*loc2, *scope2));
+	unique_ptr<SSeqLoc> ssl2(new SSeqLoc(*loc2, *scope2));
 	query_vector.push_back(*ssl2);
 
 	CRef<CSeqDB> db(new CSeqDB("data/nr_test", CSeqDB::eProtein));
@@ -464,7 +464,7 @@ BOOST_AUTO_TEST_CASE(IupacaaSearch)
 {
 	CBioseq bioseq;
 	CNcbiIfstream i_file("data/129295.iupacaa");
-	auto_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_AsnText, i_file));
+	unique_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_AsnText, i_file));
 	
 	*is >> bioseq;
 	CRef<CScope> scope(CSimpleOM::NewScope(false));
@@ -472,7 +472,7 @@ BOOST_AUTO_TEST_CASE(IupacaaSearch)
 	CRef<CSeq_loc> loc(new CSeq_loc);
     	loc->SetWhole().Assign(*(bioseq.GetId().front()));
 
-	auto_ptr<SSeqLoc> ssl(new SSeqLoc(*loc, *scope));
+	unique_ptr<SSeqLoc> ssl(new SSeqLoc(*loc, *scope));
 	TSeqLocVector query_vector;
 	query_vector.push_back(*ssl);
 	CRef<CSeqDB> db(new CSeqDB("data/nr_test", CSeqDB::eProtein));
@@ -489,7 +489,7 @@ BOOST_AUTO_TEST_CASE(GIListLimitSearch)
 {
 	CBioseq bioseq;
 	CNcbiIfstream i_file("data/129295.iupacaa");
-	auto_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_AsnText, i_file));
+	unique_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_AsnText, i_file));
 	
 	*is >> bioseq;
 	CRef<CScope> scope(CSimpleOM::NewScope(false));
@@ -497,7 +497,7 @@ BOOST_AUTO_TEST_CASE(GIListLimitSearch)
 	CRef<CSeq_loc> loc(new CSeq_loc);
     	loc->SetWhole().Assign(*(bioseq.GetId().front()));
 
-	auto_ptr<SSeqLoc> ssl(new SSeqLoc(*loc, *scope));
+	unique_ptr<SSeqLoc> ssl(new SSeqLoc(*loc, *scope));
 	TSeqLocVector query_vector;
 	query_vector.push_back(*ssl);
 	CRef<CSeqDB> db(new CSeqDB("data/nr_test", CSeqDB::eProtein));
@@ -520,7 +520,7 @@ BOOST_AUTO_TEST_CASE(NegativeGIListLimitSearch)
 {
 	CBioseq bioseq;
 	CNcbiIfstream i_file("data/129295.iupacaa");
-	auto_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_AsnText, i_file));
+	unique_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_AsnText, i_file));
 	
 	*is >> bioseq;
 	CRef<CScope> scope(CSimpleOM::NewScope(false));
@@ -528,7 +528,7 @@ BOOST_AUTO_TEST_CASE(NegativeGIListLimitSearch)
 	CRef<CSeq_loc> loc(new CSeq_loc);
     	loc->SetWhole().Assign(*(bioseq.GetId().front()));
 
-	auto_ptr<SSeqLoc> ssl(new SSeqLoc(*loc, *scope));
+	unique_ptr<SSeqLoc> ssl(new SSeqLoc(*loc, *scope));
 	TSeqLocVector query_vector;
 	query_vector.push_back(*ssl);
 	CRef<CSeqDB> db(new CSeqDB("data/nr_test", CSeqDB::eProtein));
@@ -552,7 +552,7 @@ BOOST_AUTO_TEST_CASE(GIListLimitSearch_NoMatches)
 {
 	CBioseq bioseq;
 	CNcbiIfstream i_file("data/129295.iupacaa");
-	auto_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_AsnText, i_file));
+	unique_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_AsnText, i_file));
 	
 	*is >> bioseq;
 	CRef<CScope> scope(CSimpleOM::NewScope(false));
@@ -560,7 +560,7 @@ BOOST_AUTO_TEST_CASE(GIListLimitSearch_NoMatches)
 	CRef<CSeq_loc> loc(new CSeq_loc);
     	loc->SetWhole().Assign(*(bioseq.GetId().front()));
 
-	auto_ptr<SSeqLoc> ssl(new SSeqLoc(*loc, *scope));
+	unique_ptr<SSeqLoc> ssl(new SSeqLoc(*loc, *scope));
 	TSeqLocVector query_vector;
 	query_vector.push_back(*ssl);
 	CRef<CSeqDB> db(new CSeqDB("data/nr_test", CSeqDB::eProtein));
@@ -585,7 +585,7 @@ BOOST_AUTO_TEST_CASE(NoMatches)
 	CRef<CSeq_loc> loc(new CSeq_loc());
     	loc->SetWhole(*id);
 
-	auto_ptr<SSeqLoc> ssl(new SSeqLoc(loc, scope));
+	unique_ptr<SSeqLoc> ssl(new SSeqLoc(loc, scope));
 	TSeqLocVector query_vector;
 	query_vector.push_back(*ssl);
 
@@ -961,7 +961,7 @@ BOOST_AUTO_TEST_CASE(CheckNoIndex)
 {
 	CBioseq bioseq;
 	CNcbiIfstream i_file("data/129295.ncbieaa");
-	auto_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_AsnText, i_file));
+	unique_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_AsnText, i_file));
 	
 	*is >> bioseq;
 	CRef<CScope> scope(CSimpleOM::NewScope(false));
@@ -969,7 +969,7 @@ BOOST_AUTO_TEST_CASE(CheckNoIndex)
 	CRef<CSeq_loc> loc(new CSeq_loc);
     	loc->SetWhole().Assign(*(bioseq.GetId().front()));
 
-	auto_ptr<SSeqLoc> ssl(new SSeqLoc(*loc, *scope));
+	unique_ptr<SSeqLoc> ssl(new SSeqLoc(*loc, *scope));
 	TSeqLocVector query_vector;
 	query_vector.push_back(*ssl);
         CRef<CSeqDB> seqdb(new CSeqDB("data/XP_001468867", CSeqDB::eProtein));
@@ -1011,7 +1011,7 @@ BOOST_AUTO_TEST_CASE(BadOptionsThrow)
 {
 	CBioseq bioseq;
 	CNcbiIfstream i_file("data/129295.stdaa");
-	auto_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_AsnText, i_file));
+	unique_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_AsnText, i_file));
 	
 	*is >> bioseq;
 	CRef<CScope> scope(CSimpleOM::NewScope(false));
@@ -1019,7 +1019,7 @@ BOOST_AUTO_TEST_CASE(BadOptionsThrow)
 	CRef<CSeq_loc> loc(new CSeq_loc);
     	loc->SetWhole().Assign(*(bioseq.GetId().front()));
 
-	auto_ptr<SSeqLoc> ssl(new SSeqLoc(*loc, *scope));
+	unique_ptr<SSeqLoc> ssl(new SSeqLoc(*loc, *scope));
 	TSeqLocVector query_vector;
 	query_vector.push_back(*ssl);
 	CRef<CSeqDB> db(new CSeqDB("data/nr_test", CSeqDB::eProtein));
@@ -1032,14 +1032,14 @@ BOOST_AUTO_TEST_CASE(BlastKmerSearch)
 {
 	CBioseq bioseq;
 	CNcbiIfstream i_file("data/129295.stdaa");
-	auto_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_AsnText, i_file));
+	unique_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_AsnText, i_file));
 	
 	*is >> bioseq;
 	CRef<CScope> scope(CSimpleOM::NewScope(false));
 	scope->AddBioseq(bioseq);
 	CRef<CSeq_loc> loc(new CSeq_loc);
     	loc->SetWhole().Assign(*(bioseq.GetId().front()));
-	auto_ptr<SSeqLoc> ssl(new SSeqLoc(*loc, *scope));
+	unique_ptr<SSeqLoc> ssl(new SSeqLoc(*loc, *scope));
 	TSeqLocVector query_vector;
 	query_vector.push_back(*ssl);
 	CRef<IQueryFactory> qf(new CObjMgr_QueryFactory(query_vector));
@@ -1061,33 +1061,33 @@ BOOST_AUTO_TEST_CASE(BlastKmerMultipleQuerySearch)
 	TSeqLocVector query_vector;
 
 	CNcbiIfstream i_file("data/allX.asn");
-	auto_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_AsnText, i_file));
+	unique_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_AsnText, i_file));
 	CRef<CBioseq> bioseq(new CBioseq);
 	*is >> *bioseq;
 	scope->AddBioseq(*bioseq);
 	CRef<CSeq_loc> loc(new CSeq_loc);
     	loc->SetWhole().Assign(*((*bioseq).GetId().front()));
-	auto_ptr<SSeqLoc> ssl(new SSeqLoc(*loc, *scope));
+	unique_ptr<SSeqLoc> ssl(new SSeqLoc(*loc, *scope));
 	query_vector.push_back(*ssl);
 
 	CNcbiIfstream i_file2("data/129296.ncbieaa");
-	auto_ptr<CObjectIStream> is2(CObjectIStream::Open(eSerial_AsnText, i_file2));
+	unique_ptr<CObjectIStream> is2(CObjectIStream::Open(eSerial_AsnText, i_file2));
 	CRef<CBioseq> bioseq2(new CBioseq);
 	*is2 >> *bioseq2;
 	scope->AddBioseq(*bioseq2);
 	CRef<CSeq_loc> loc2(new CSeq_loc);
     	loc2->SetWhole().Assign(*((*bioseq2).GetId().front()));
-	auto_ptr<SSeqLoc> ssl2(new SSeqLoc(*loc2, *scope));
+	unique_ptr<SSeqLoc> ssl2(new SSeqLoc(*loc2, *scope));
 	query_vector.push_back(*ssl2);
 
 	CNcbiIfstream i_file3("data/129295.ncbieaa");
-	auto_ptr<CObjectIStream> is3(CObjectIStream::Open(eSerial_AsnText, i_file3));
+	unique_ptr<CObjectIStream> is3(CObjectIStream::Open(eSerial_AsnText, i_file3));
 	CRef<CBioseq> bioseq3(new CBioseq);
 	*is3 >> *bioseq3;
 	scope->AddBioseq(*bioseq3);
 	CRef<CSeq_loc> loc3(new CSeq_loc);
     	loc3->SetWhole().Assign(*((*bioseq3).GetId().front()));
-	auto_ptr<SSeqLoc> ssl3(new SSeqLoc(*loc3, *scope));
+	unique_ptr<SSeqLoc> ssl3(new SSeqLoc(*loc3, *scope));
 	query_vector.push_back(*ssl3);
 	CRef<IQueryFactory> qf(new CObjMgr_QueryFactory(query_vector));
 
@@ -1109,25 +1109,25 @@ BOOST_AUTO_TEST_CASE(BlastKmerNoQueryCtor)
 
 	TSeqLocVector query_vector1;
 	CNcbiIfstream i_file1("data/129296.ncbieaa");
-	auto_ptr<CObjectIStream> is1(CObjectIStream::Open(eSerial_AsnText, i_file1));
+	unique_ptr<CObjectIStream> is1(CObjectIStream::Open(eSerial_AsnText, i_file1));
 	CRef<CBioseq> bioseq1(new CBioseq);
 	*is1 >> *bioseq1;
 	scope->AddBioseq(*bioseq1);
 	CRef<CSeq_loc> loc1(new CSeq_loc);
     	loc1->SetWhole().Assign(*((*bioseq1).GetId().front()));
-	auto_ptr<SSeqLoc> ssl1(new SSeqLoc(*loc1, *scope));
+	unique_ptr<SSeqLoc> ssl1(new SSeqLoc(*loc1, *scope));
 	query_vector1.push_back(*ssl1);
 	CRef<IQueryFactory> qf1(new CObjMgr_QueryFactory(query_vector1));
 
 	TSeqLocVector query_vector2;
 	CNcbiIfstream i_file2("data/129295.ncbieaa");
-	auto_ptr<CObjectIStream> is2(CObjectIStream::Open(eSerial_AsnText, i_file2));
+	unique_ptr<CObjectIStream> is2(CObjectIStream::Open(eSerial_AsnText, i_file2));
 	CRef<CBioseq> bioseq2(new CBioseq);
 	*is2 >> *bioseq2;
 	scope->AddBioseq(*bioseq2);
 	CRef<CSeq_loc> loc2(new CSeq_loc);
     	loc2->SetWhole().Assign(*((*bioseq2).GetId().front()));
-	auto_ptr<SSeqLoc> ssl2(new SSeqLoc(*loc2, *scope));
+	unique_ptr<SSeqLoc> ssl2(new SSeqLoc(*loc2, *scope));
 	query_vector2.push_back(*ssl2);
 	CRef<IQueryFactory> qf2(new CObjMgr_QueryFactory(query_vector2));
 
