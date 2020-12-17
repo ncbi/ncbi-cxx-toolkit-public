@@ -175,10 +175,10 @@ private:
     void FetchData();
 
    void  x_GetProgramOptionIntegerList(EBlastOptIdx idx, list<int> & list);
-    auto_ptr<CImportStrategyData> m_Data;
+    unique_ptr<CImportStrategyData> m_Data;
     CRef<objects::CBlast4_request> m_Request;
     string m_Service;
-    auto_ptr<CBlastOptionsBuilder> m_OptionsBuilder;
+    unique_ptr<CBlastOptionsBuilder> m_OptionsBuilder;
     /// ignore unsupported options when creating blast options builder object
     bool m_IgnoreUnsupportedOptions;
 
