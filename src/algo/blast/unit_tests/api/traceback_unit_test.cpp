@@ -208,10 +208,10 @@ BOOST_AUTO_TEST_CASE(testBLASTNTraceBack) {
      const int k_num_hsps_end = 7;
 
      CSeq_id qid("gi|1945388");
-     auto_ptr<SSeqLoc> qsl(
+     unique_ptr<SSeqLoc> qsl(
          CTestObjMgr::Instance().CreateSSeqLoc(qid, eNa_strand_both));
      CSeq_id sid("gi|1732684");
-     auto_ptr<SSeqLoc> ssl(
+     unique_ptr<SSeqLoc> ssl(
          CTestObjMgr::Instance().CreateSSeqLoc(sid, eNa_strand_both));
 
      CBl2Seq blaster(*qsl, *ssl, eBlastn);
@@ -338,10 +338,10 @@ BOOST_AUTO_TEST_CASE(testBLASTNTraceBackLargeXDrop) {
      const int k_num_hsps_end = 1;
 
      CSeq_id qid("gi|42254502");
-     auto_ptr<SSeqLoc> qsl(
+     unique_ptr<SSeqLoc> qsl(
          CTestObjMgr::Instance().CreateSSeqLoc(qid, eNa_strand_both));
      CSeq_id sid("gi|34787366");
-     auto_ptr<SSeqLoc> ssl(
+     unique_ptr<SSeqLoc> ssl(
          CTestObjMgr::Instance().CreateSSeqLoc(sid, eNa_strand_both));
 
      CBlastNucleotideOptionsHandle opts_handle;
@@ -476,9 +476,9 @@ BOOST_AUTO_TEST_CASE(testBLASTPTraceBack) {
      CSeq_id qid("gi|42734333");
      CSeq_id sid("gi|30176631");
      
-     auto_ptr<SSeqLoc> qsl(
+     unique_ptr<SSeqLoc> qsl(
          CTestObjMgr::Instance().CreateSSeqLoc(qid, eNa_strand_unknown));
-     auto_ptr<SSeqLoc> ssl(
+     unique_ptr<SSeqLoc> ssl(
          CTestObjMgr::Instance().CreateSSeqLoc(sid, eNa_strand_unknown));
 
      CBlastProteinOptionsHandle opts_handle;
@@ -600,9 +600,9 @@ BOOST_AUTO_TEST_CASE(testTBLASTNTraceBack) {
      CSeq_id qid("gi|42734333");
      CSeq_id sid("gi|27902043");
      
-     auto_ptr<SSeqLoc> qsl(
+     unique_ptr<SSeqLoc> qsl(
          CTestObjMgr::Instance().CreateSSeqLoc(qid, eNa_strand_unknown));
-     auto_ptr<SSeqLoc> ssl(
+     unique_ptr<SSeqLoc> ssl(
          CTestObjMgr::Instance().CreateSSeqLoc(sid, eNa_strand_both));
 
      CTBlastnOptionsHandle opts_handle;
@@ -846,9 +846,9 @@ BOOST_AUTO_TEST_CASE(testFilterBlastResults_QueryCov) {
     CSeq_id qid("gi|42734333");
     CSeq_id sid("gi|30176631");
 
-    auto_ptr<SSeqLoc> qsl(
+    unique_ptr<SSeqLoc> qsl(
         CTestObjMgr::Instance().CreateSSeqLoc(qid, eNa_strand_unknown));
-    auto_ptr<SSeqLoc> ssl(
+    unique_ptr<SSeqLoc> ssl(
         CTestObjMgr::Instance().CreateSSeqLoc(sid, eNa_strand_unknown));
 
     CBlastProteinOptionsHandle opts_handle;
@@ -949,10 +949,10 @@ BOOST_AUTO_TEST_CASE(testFilterBlastResults_MaxHsps) {
      const int k_num_hsps_filtered = 4;
 
      CSeq_id qid("gi|1945388");
-     auto_ptr<SSeqLoc> qsl(
+     unique_ptr<SSeqLoc> qsl(
          CTestObjMgr::Instance().CreateSSeqLoc(qid, eNa_strand_both));
      CSeq_id sid("gi|1732684");
-     auto_ptr<SSeqLoc> ssl(
+     unique_ptr<SSeqLoc> ssl(
          CTestObjMgr::Instance().CreateSSeqLoc(sid, eNa_strand_both));
 
      CBl2Seq blaster(*qsl, *ssl, eBlastn);
