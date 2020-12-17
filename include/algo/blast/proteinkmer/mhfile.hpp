@@ -172,10 +172,10 @@ private:
     unsigned char* x_GetMinHits8(int oid, int& subjectOid) const;
 
     // pointer to memory mapped index file.
-    auto_ptr<CMemoryFile> m_MmappedIndex;
+    unique_ptr<CMemoryFile> m_MmappedIndex;
 
     // pointer to memory mapped data file.
-    auto_ptr<CMemoryFile> m_MmappedData;
+    unique_ptr<CMemoryFile> m_MmappedData;
 
     MinHashIndexHeader* m_Data;
 
