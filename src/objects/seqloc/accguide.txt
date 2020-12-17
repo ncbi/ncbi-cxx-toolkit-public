@@ -1259,6 +1259,9 @@ version  1 # of file format
 2+6  MW  gb_dirsub
 2+8  MW  gb_other_nuc
 2+10 MW  gb_other_nuc
+2+6  MX  gb_patent
+2+8  MX  gb_other_nuc
+2+10 MX  gb_other_nuc
 2+6  M?  gb_other_nuc
 2+8  M?  gb_other_nuc
 2+10 M?  gb_other_nuc
