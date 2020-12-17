@@ -517,7 +517,7 @@ struct CQueryDataTestFixture
         TSeqLocVector queries;
         ITERATE(vector<TGi>, itr, gis) {
             CSeq_id qid(CSeq_id::e_Gi, *itr);
-            auto_ptr<SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(qid));
+            unique_ptr<SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(qid));
             queries.push_back(*sl);
         }
 
@@ -631,7 +631,7 @@ BOOST_AUTO_TEST_CASE(ObjMgr_QueryFactory_RemoteData_SingleBioseqFromTSeqLocVecto
     const int kGi = 129295;
     TSeqLocVector queries;
     CSeq_id qid(CSeq_id::e_Gi, kGi);
-    auto_ptr<SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(qid));
+    unique_ptr<SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(qid));
     queries.push_back(*sl);
     CRef<IQueryFactory> query_factory(new CObjMgr_QueryFactory(queries));
     CSequenceDataTester(query_factory, GI_CONST(kGi))();
