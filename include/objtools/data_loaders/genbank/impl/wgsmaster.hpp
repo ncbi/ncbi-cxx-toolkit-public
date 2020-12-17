@@ -25,7 +25,8 @@
 *
 *  Author:  Eugene Vasilchenko
 *
-*  File Description: various blob stream processors
+*  File Description:
+*    Helper classes to propagate master WGS descriptors
 *
 */
 
@@ -40,9 +41,29 @@ class CSeq_entry;
 class CBioseq_Info;
 class CTSE_Chunk_Info;
 
+
+// API for WGS descriptors propagation
+
 class NCBI_XREADER_EXPORT CWGSMasterSupport
 {
 public:
+
+    // The AddWGSMaster() method should be called on loaded entry that is suspected
+    // to be a WGS entry - by means of its blob id or something like that.
+    // The library will check if Seq-ids of sequences in the entry match WGS pattern
+    // and attach artificial split chunk with special id kMasterWGS_ChunkId (== kMax_Int-1).
+    // The TSE should be assigned with Seq-entry but not marked in OM as loaded yet.
+    static void AddWGSMaster(CTSE_LoadLock& lock);
+
+    // The LoadWGSMaster() method should be called when OM requests to load
+    // the artificial chunk with id kMasterWGS_ChunkId.
+    // The loader argument will be used to retrieve master WGS entry using method
+    // GetRecordsNoBlobState() (default CDataLoader implementation calls GetRecords()).
+    static void LoadWGSMaster(CDataLoader* loader,
+                              CRef<CTSE_Chunk_Info> chunk);
+
+protected:
+    // Implementation methods, not to be called by API users
     enum EDescrType {
         eDescrTypeDefault,
         eDescrTypeRefSeq
@@ -58,9 +79,6 @@ public:
     static CRef<CSeq_descr> GetWGSMasterDescr(CDataLoader* loader,
                                               const CSeq_id_Handle& master_idh,
                                               int mask, TUserObjectTypesSet& uo_types);
-    static void LoadWGSMaster(CDataLoader* loader,
-                              CRef<CTSE_Chunk_Info> chunk);
-    static void AddWGSMaster(CTSE_LoadLock& lock);
 };
 
 
