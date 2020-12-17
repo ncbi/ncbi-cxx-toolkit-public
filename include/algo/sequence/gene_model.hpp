@@ -219,7 +219,7 @@ public:
 
 private:
     struct SImplementation;
-    auto_ptr<SImplementation> m_impl;
+    unique_ptr<SImplementation> m_impl;
 
     // adjust the selector to use a given annotation if not empty
     static void x_SetAnnotName(objects::SAnnotSelector& sel, const string& annot_name);
