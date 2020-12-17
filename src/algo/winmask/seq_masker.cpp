@@ -163,12 +163,12 @@ CSeqMasker::DoMask(
     const CSeqVector& data, TSeqPos begin, TSeqPos stop ) const
 {
     ustat->total_ = 0;
-    auto_ptr<TMaskList> mask(new TMaskList);
+    unique_ptr<TMaskList> mask(new TMaskList);
     Uint4 cutoff_score = ustat->get_threshold();
     Uint4 textend = ustat->get_textend();
     Uint1 nbits = discontig ? CSeqMaskerUtil::BitCount( pattern ) : 0;
     Uint4 unit_size = ustat->UnitSize() + nbits;
-    auto_ptr<CSeqMaskerWindow> window_ptr
+    unique_ptr<CSeqMaskerWindow> window_ptr
         (discontig ? new CSeqMaskerWindowPattern( data, unit_size, 
                                                   window_size, window_step, 
                                                   pattern, unit_step )
