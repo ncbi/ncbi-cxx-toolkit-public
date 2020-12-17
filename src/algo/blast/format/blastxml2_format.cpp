@@ -717,7 +717,7 @@ static void
 s_WriteXML2ObjectNoHeader(blastxml2::CBlastOutput2 & bxmlout, CNcbiOstream *out_stream)
 {
     TTypeInfo typeInfo = bxmlout.GetThisTypeInfo();
-    auto_ptr<CBlastOStreamXml> xml_out(new CBlastOStreamXml (*out_stream, eNoOwnership));
+    unique_ptr<CBlastOStreamXml> xml_out(new CBlastOStreamXml (*out_stream, eNoOwnership));
     xml_out->SetEncoding(eEncoding_Ascii);
     xml_out->SetVerifyData( eSerialVerifyData_No );
     xml_out->SetEnforcedStdXml();
@@ -729,7 +729,7 @@ static void
 s_WriteXML2Object(blastxml2::CBlastOutput2 & bxmlout, CNcbiOstream *out_stream)
 {
     TTypeInfo typeInfo = bxmlout.GetThisTypeInfo();
-    auto_ptr<CObjectOStreamXml> xml_out(new CObjectOStreamXml (*out_stream, eNoOwnership));
+    unique_ptr<CObjectOStreamXml> xml_out(new CObjectOStreamXml (*out_stream, eNoOwnership));
     xml_out->SetEncoding(eEncoding_Ascii);
     xml_out->SetVerifyData( eSerialVerifyData_No );
     //xml_out->SetReferenceDTD();
@@ -781,7 +781,7 @@ void
 BlastXML2_PrintHeader(CNcbiOstream *out_stream)
 {
 	CNcbiOstrstream ostr;
-	auto_ptr<CObjectOStreamXml> xml_out(new CObjectOStreamXml (ostr, eNoOwnership));
+	unique_ptr<CObjectOStreamXml> xml_out(new CObjectOStreamXml (ostr, eNoOwnership));
 	xml_out->SetEncoding(eEncoding_Ascii);
 	xml_out->SetVerifyData( eSerialVerifyData_No );
 	xml_out->SetReferenceSchema();
@@ -840,7 +840,7 @@ static void
 s_WriteJSONObjectNoHeader(blastxml2::CBlastOutput2 & bxmlout, CNcbiOstream *out_stream)
 {
     TTypeInfo typeInfo = bxmlout.GetThisTypeInfo();
-    auto_ptr<CObjectOStreamJson> json_out(new CBlastOStreamJson (*out_stream, eNoOwnership));
+    unique_ptr<CObjectOStreamJson> json_out(new CBlastOStreamJson (*out_stream, eNoOwnership));
     json_out->SetDefaultStringEncoding(eEncoding_Ascii);
     //json_out.SetUseIndentation(true);
     //json_out.SetUseEol(true);
@@ -852,7 +852,7 @@ static void
 s_WriteJSONObject(blastxml2::CBlastOutput2 & bxmlout, CNcbiOstream *out_stream)
 {
     TTypeInfo typeInfo = bxmlout.GetThisTypeInfo();
-    auto_ptr<CObjectOStreamJson> json_out(new CObjectOStreamJson (*out_stream, eNoOwnership));
+    unique_ptr<CObjectOStreamJson> json_out(new CObjectOStreamJson (*out_stream, eNoOwnership));
     json_out->SetDefaultStringEncoding(eEncoding_Ascii);
     //json_out.SetUseIndentation(true);
     //json_out.SetUseEol(true);
