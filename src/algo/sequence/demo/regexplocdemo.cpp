@@ -59,7 +59,7 @@ public:
 
 void CRegexpLocApp::Init(void)
 {
-    auto_ptr<CArgDescriptions> argDescr(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> argDescr(new CArgDescriptions);
     argDescr->AddKey("a", "accession",
                      "GENBANK accession", CArgDescriptions::eString);
 
@@ -75,7 +75,7 @@ void CRegexpLocApp::Init(void)
 // Display CSeq_loc
 CNcbiOstream& operator<< (CNcbiOstream& os, const CSeq_loc &loc)
 {
-    auto_ptr<CObjectOStream> los(CObjectOStream::Open(eSerial_AsnText, os));
+    unique_ptr<CObjectOStream> los(CObjectOStream::Open(eSerial_AsnText, os));
     *los << loc;
     return os;
 };
