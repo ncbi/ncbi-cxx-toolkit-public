@@ -282,7 +282,7 @@ BOOST_AUTO_TEST_CASE(LoadPhiBlastSearchStrategy)
 // RequiredEnd and RequiredStart fields are sent over the network
 BOOST_AUTO_TEST_CASE(ExportStrategy_FullQuery) {
     CRef<CSeq_id> id(new CSeq_id(CSeq_id::e_Gi, 555));
-    auto_ptr<blast::SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(*id));
+    unique_ptr<blast::SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(*id));
     TSeqLocVector queries(1, *sl.get());
     CRef<IQueryFactory> qf(new CObjMgr_QueryFactory(queries));
     const string kDbName("nt");
@@ -344,7 +344,7 @@ BOOST_AUTO_TEST_CASE(ExportStrategy_FullQuery) {
 BOOST_AUTO_TEST_CASE(ExportStrategy_QueryWithRange) {
     CRef<CSeq_id> id(new CSeq_id(CSeq_id::e_Gi, 555));
     TSeqRange query_range(1,200);
-    auto_ptr<blast::SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(*id,
+    unique_ptr<blast::SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(*id,
                                 query_range));
     TSeqLocVector queries(1, *sl.get());
     CRef<IQueryFactory> qf(new CObjMgr_QueryFactory(queries));
@@ -550,7 +550,7 @@ BOOST_AUTO_TEST_CASE(LoadHardMaskDBSearchStrategy)
 // RequiredEnd and RequiredStart fields are sent over the network
 BOOST_AUTO_TEST_CASE(ExportStrategy_DBSoftMask) {
     CRef<CSeq_id> id(new CSeq_id(CSeq_id::e_Gi, 555));
-    auto_ptr<blast::SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(*id));
+    unique_ptr<blast::SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(*id));
     TSeqLocVector queries(1, *sl.get());
     CRef<IQueryFactory> qf(new CObjMgr_QueryFactory(queries));
     const string kDbName("data/nt.41646578");
