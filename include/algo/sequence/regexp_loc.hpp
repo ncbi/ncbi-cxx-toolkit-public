@@ -90,7 +90,7 @@ private:
     void operator= (const CRegexp_loc &);
 
     /// PCRE used to match against char* sequence passed as argument to GetLoc
-    auto_ptr<CRegexp> m_regexp;
+    unique_ptr<CRegexp> m_regexp;
 };
 
 
