@@ -256,10 +256,10 @@ BOOST_AUTO_TEST_CASE(testGapAlignment) {
 
     CSeq_id qid("gi|2655203");
     pair<TSeqPos, TSeqPos> range(20000, 35000);
-    auto_ptr<SSeqLoc> qsl(
+    unique_ptr<SSeqLoc> qsl(
         CTestObjMgr::Instance().CreateSSeqLoc(qid, range, eNa_strand_both));
     CSeq_id sid("gi|2516238");
-    auto_ptr<SSeqLoc> ssl(
+    unique_ptr<SSeqLoc> ssl(
         CTestObjMgr::Instance().CreateSSeqLoc(sid, eNa_strand_both));
 
     CBlastNucleotideOptionsHandle opts_handle;
@@ -342,10 +342,10 @@ BOOST_AUTO_TEST_CASE(testGreedyAlignment) {
 
     CSeq_id qid("gi|2655203");
     pair<TSeqPos, TSeqPos> range(20000, 35000);
-    auto_ptr<SSeqLoc> qsl(
+    unique_ptr<SSeqLoc> qsl(
         CTestObjMgr::Instance().CreateSSeqLoc(qid, range, eNa_strand_both));
     CSeq_id sid("gi|2516238");
-    auto_ptr<SSeqLoc> ssl(
+    unique_ptr<SSeqLoc> ssl(
         CTestObjMgr::Instance().CreateSSeqLoc(sid, eNa_strand_both));
 
     CBlastNucleotideOptionsHandle opts_handle;
@@ -454,11 +454,11 @@ BOOST_AUTO_TEST_CASE(testGreedyAlignmentWithBadStart) {
     ungapped.score = 42;
 
     CSeq_id qid("gi|156523973");
-    auto_ptr<SSeqLoc> qsl(
+    unique_ptr<SSeqLoc> qsl(
         CTestObjMgr::Instance().CreateSSeqLoc(qid, eNa_strand_both));
     CSeq_id sid("gi|224514626");
     pair<TSeqPos, TSeqPos> range(1896999, 1897550);
-    auto_ptr<SSeqLoc> ssl(
+    unique_ptr<SSeqLoc> ssl(
         CTestObjMgr::Instance().CreateSSeqLoc(sid, range, eNa_strand_both));
 
     CBlastNucleotideOptionsHandle opts_handle;
