@@ -90,7 +90,7 @@ string mkdata( const CSeq_entry & entry )
     {
         TSeqPos len( bioseq.GetInst().GetLength() );
         const CSeq_data & seqdata( bioseq.GetInst().GetSeq_data() );
-        auto_ptr< CSeq_data > dest( new CSeq_data );
+        unique_ptr< CSeq_data > dest( new CSeq_data );
         CSeqportUtil::Convert( seqdata, dest.get(), CSeq_data::e_Iupacna, 
                                0, len );
         return dest->GetIupacna().Get();
