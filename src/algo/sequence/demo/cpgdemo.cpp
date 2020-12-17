@@ -56,7 +56,7 @@ public:
 
 void CCpGDemoApp::Init(void)
 {
-    auto_ptr<CArgDescriptions> argDescr(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> argDescr(new CArgDescriptions);
     argDescr->AddDefaultKey("gc", "gcContent", "calibrated organism %GC "
                             "content (ie. human: 50, rat: 48)",
                             CArgDescriptions::eInteger, "50");
