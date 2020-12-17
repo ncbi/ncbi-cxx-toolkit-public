@@ -88,8 +88,8 @@ private:
     /// Read the next sequence, add it to scope and return Seq-loc object
     CRef<CSeq_loc> x_GetNextSeq_loc(CScope& scope);
 
-    auto_ptr<CCSraDb> m_SraDb;
-    auto_ptr<CCSraShortReadIterator> m_It;
+    unique_ptr<CCSraDb> m_SraDb;
+    unique_ptr<CCSraShortReadIterator> m_It;
 
     vector<string> m_Accessions;
     vector<string>::iterator m_ItAcc;
