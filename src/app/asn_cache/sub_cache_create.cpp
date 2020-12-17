@@ -237,6 +237,14 @@ void ExtractExtraIds(CBioseq_Handle         bsh,
     /// extract products
     ///
     if (extract_products) {
+        SAnnotSelector sel;
+        sel.SetResolveDepth(kMax_Int)
+           .SetExactDepth(false)
+           .SetAdaptiveDepth(true)
+           .SetResolveAll()
+           .ExcludeNamedAnnots("SNP")
+           .ExcludeNamedAnnots("STS")
+           .ExcludeNamedAnnots("CDD");
         for (CFeat_CI feat_iter(bsh); feat_iter; ++feat_iter) {
             if (feat_iter->IsSetProduct()) {
                 CTypeConstIterator<CSeq_id> id_iter
