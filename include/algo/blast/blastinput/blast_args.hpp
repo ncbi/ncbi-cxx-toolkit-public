@@ -153,8 +153,8 @@ public:
 private:
     CNcbiIstream* m_InputStream;    ///< Application's input stream
     CNcbiOstream* m_OutputStream;   ///< Application's output stream
-    auto_ptr<CDecompressIStream> m_DecompressIStream;
-    auto_ptr<CCompressOStream> m_CompressOStream;
+    unique_ptr<CDecompressIStream> m_DecompressIStream;
+    unique_ptr<CCompressOStream> m_CompressOStream;
 
     /// ASN.1 specification of query sequences when read from a saved search
     /// strategy
@@ -872,7 +872,7 @@ private:
     vector<string> m_SraAccessions;
 
     CNcbiIstream* m_MateInputStream;
-    auto_ptr<CDecompressIStream> m_DecompressIStream;
+    unique_ptr<CDecompressIStream> m_DecompressIStream;
 
     bool m_EnableSraCache;
 };
