@@ -113,7 +113,7 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
 {
     CAutomaticGenCodeSingleton instance;
     CSeq_id sid("CU856286");  // DNA sequence
-    auto_ptr<SSeqLoc> subj(CTestObjMgr::Instance().CreateSSeqLoc(sid));
+    unique_ptr<SSeqLoc> subj(CTestObjMgr::Instance().CreateSSeqLoc(sid));
 
     Int2 status = 0;
     SBlastSequence subj_sequence(
