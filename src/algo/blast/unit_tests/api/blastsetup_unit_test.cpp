@@ -482,12 +482,12 @@ BOOST_AUTO_TEST_CASE(Context2Frame_Error) {
 
 BOOST_AUTO_TEST_CASE(SetupSubjectsProt) {
     CSeq_id id("gi|129295");
-    auto_ptr<SSeqLoc> sseqloc(CTestObjMgr::Instance().CreateSSeqLoc(id));
+    unique_ptr<SSeqLoc> sseqloc(CTestObjMgr::Instance().CreateSSeqLoc(id));
 
     TSeqLocVector seqloc_v;
     seqloc_v.push_back(*sseqloc);
 
-    auto_ptr<CBlastOptionsHandle>
+    unique_ptr<CBlastOptionsHandle>
         opts_handle(CBlastOptionsFactory::Create(eBlastp));
     vector<BLAST_SequenceBlk*> seqblk_v;
     unsigned int maxlen = 0;
@@ -513,13 +513,13 @@ BOOST_AUTO_TEST_CASE(SetupSubjectsProt) {
 BOOST_AUTO_TEST_CASE(SetupSubjectsProtRange) {
     CSeq_id id("gi|129295");
     pair<TSeqPos, TSeqPos> range(50, 157);
-    auto_ptr<SSeqLoc> sseqloc(
+    unique_ptr<SSeqLoc> sseqloc(
         CTestObjMgr::Instance().CreateSSeqLoc(id, range));
 
     TSeqLocVector seqloc_v;
     seqloc_v.push_back(*sseqloc);
 
-    auto_ptr<CBlastOptionsHandle>
+    unique_ptr<CBlastOptionsHandle>
         opts_handle(CBlastOptionsFactory::Create(eBlastp));
     vector<BLAST_SequenceBlk*> seqblk_v;
     unsigned int maxlen = 0;
@@ -546,7 +546,7 @@ BOOST_AUTO_TEST_CASE(SetupSubjectsNuclPlusStrandFiltered) {
     CSeq_id id(CSeq_id::e_Gi, 1945388);
     const TSeqRange kRange(0, 480);
     const ENa_strand kStrand(eNa_strand_plus);
-    auto_ptr<SSeqLoc> sl(m_Om->CreateSSeqLoc(id, kRange, kStrand));
+    unique_ptr<SSeqLoc> sl(m_Om->CreateSSeqLoc(id, kRange, kStrand));
     TSeqLocVector seqloc_v(1, *sl);
     CBlastNucleotideOptionsHandle opts_handle;
     Blast_FindDustFilterLoc(seqloc_v, &opts_handle);
@@ -573,7 +573,7 @@ BOOST_AUTO_TEST_CASE(SetupSubjectsNuclMinusStrandFiltered) {
     CSeq_id id(CSeq_id::e_Gi, 1945388);
     const TSeqRange kRange(0, 480);
     const ENa_strand kStrand(eNa_strand_minus);
-    auto_ptr<SSeqLoc> sl(m_Om->CreateSSeqLoc(id, kRange, kStrand));
+    unique_ptr<SSeqLoc> sl(m_Om->CreateSSeqLoc(id, kRange, kStrand));
     TSeqLocVector seqloc_v(1, *sl);
     CBlastNucleotideOptionsHandle opts_handle;
     Blast_FindDustFilterLoc(seqloc_v, &opts_handle);
@@ -600,7 +600,7 @@ BOOST_AUTO_TEST_CASE(SetupSubjectsNuclBothStrandFiltered) {
     CSeq_id id(CSeq_id::e_Gi, 1945388);
     const TSeqRange kRange(0, 480);
     const ENa_strand kStrand(eNa_strand_both);
-    auto_ptr<SSeqLoc> sl(m_Om->CreateSSeqLoc(id, kRange, kStrand));
+    unique_ptr<SSeqLoc> sl(m_Om->CreateSSeqLoc(id, kRange, kStrand));
     TSeqLocVector seqloc_v(1, *sl);
     CBlastNucleotideOptionsHandle opts_handle;
     Blast_FindDustFilterLoc(seqloc_v, &opts_handle);
@@ -629,10 +629,10 @@ BOOST_AUTO_TEST_CASE(SetupSubjectsNuclPlusStrand) {
     CSeq_id id("NT_004487.15");
     TSeqRange range(0, 480);
     const ENa_strand kStrand(eNa_strand_plus);
-    auto_ptr<SSeqLoc> sl(m_Om->CreateSSeqLoc(id, range, kStrand));
+    unique_ptr<SSeqLoc> sl(m_Om->CreateSSeqLoc(id, range, kStrand));
     TSeqLocVector seqloc_v(1, *sl);
 
-    auto_ptr<CBlastOptionsHandle>
+    unique_ptr<CBlastOptionsHandle>
         opts_handle(CBlastOptionsFactory::Create(eBlastn));
     vector<BLAST_SequenceBlk*> seqblk_v;
     unsigned int maxlen = 0;
@@ -656,9 +656,9 @@ BOOST_AUTO_TEST_CASE(SetupSubjectsNuclMinusStrand) {
     CSeq_id id("NT_004487.15");
     const TSeqRange range(0, 480);
     const ENa_strand kStrand(eNa_strand_minus);
-    auto_ptr<SSeqLoc> sl(m_Om->CreateSSeqLoc(id, range, kStrand));
+    unique_ptr<SSeqLoc> sl(m_Om->CreateSSeqLoc(id, range, kStrand));
     TSeqLocVector seqloc_v(1, *sl);
-    auto_ptr<CBlastOptionsHandle>
+    unique_ptr<CBlastOptionsHandle>
         opts_handle(CBlastOptionsFactory::Create(eBlastn));
     vector<BLAST_SequenceBlk*> seqblk_v;
     unsigned int maxlen = 0;
@@ -682,10 +682,10 @@ BOOST_AUTO_TEST_CASE(SetupSubjectsNuclBothStrand) {
     CSeq_id id("NT_004487.15");
     const TSeqRange range(0, 480);
     const ENa_strand kStrand(eNa_strand_both);
-    auto_ptr<SSeqLoc> sl(m_Om->CreateSSeqLoc(id, range, kStrand));
+    unique_ptr<SSeqLoc> sl(m_Om->CreateSSeqLoc(id, range, kStrand));
     TSeqLocVector seqloc_v(1, *sl);
 
-    auto_ptr<CBlastOptionsHandle>
+    unique_ptr<CBlastOptionsHandle>
         opts_handle(CBlastOptionsFactory::Create(eBlastn));
     vector<BLAST_SequenceBlk*> seqblk_v;
     unsigned int maxlen = 0;
@@ -755,7 +755,7 @@ BOOST_AUTO_TEST_CASE(GetSequenceProteinWithSelenocysteine) {
 BOOST_AUTO_TEST_CASE(GetSequenceNCBI4NA_NoSentinels) {
     CSeq_id qid("NT_004487.16");
     pair<TSeqPos, TSeqPos> range(0, 19);
-    auto_ptr<SSeqLoc> sl(
+    unique_ptr<SSeqLoc> sl(
         CTestObjMgr::Instance().CreateSSeqLoc(qid, range, 
                                                 eNa_strand_plus));
 
@@ -770,7 +770,7 @@ BOOST_AUTO_TEST_CASE(GetSequenceNCBI4NA_NoSentinels) {
 BOOST_AUTO_TEST_CASE(GetSequenceNCBI2NA) {
     CSeq_id qid("NT_004487.16");
     pair<TSeqPos, TSeqPos> range(0, 19);
-    auto_ptr<SSeqLoc> sl(
+    unique_ptr<SSeqLoc> sl(
         CTestObjMgr::Instance().CreateSSeqLoc(qid, range, 
                                                 eNa_strand_plus));
 
@@ -785,7 +785,7 @@ BOOST_AUTO_TEST_CASE(GetSequenceNCBI2NA) {
 BOOST_AUTO_TEST_CASE(GetGapOnlySequenceNCBI2NA) {
     CSeq_id sid("gi|28487070");
     pair<TSeqPos, TSeqPos> range(63999900,64000000);
-    auto_ptr<SSeqLoc> sl(
+    unique_ptr<SSeqLoc> sl(
         CTestObjMgr::Instance().CreateSSeqLoc(sid, range, 
                                                 eNa_strand_plus));
 
@@ -808,7 +808,7 @@ BOOST_AUTO_TEST_CASE(GetGapOnlySequenceNCBI2NA) {
 BOOST_AUTO_TEST_CASE(GetGapInSequenceNCBI2NA) {
     CSeq_id sid("NT_081921.1");
     pair<TSeqPos, TSeqPos> range(3471240, 3686557);
-    auto_ptr<SSeqLoc> sl(
+    unique_ptr<SSeqLoc> sl(
         CTestObjMgr::Instance().CreateSSeqLoc(sid, range, 
                                                 eNa_strand_plus));
 
@@ -949,12 +949,12 @@ BOOST_AUTO_TEST_CASE(testCalcEffLengths)
 
 BOOST_AUTO_TEST_CASE(testEffSearchSpaceCalculator_Ungapped) {
     CSeq_id id("gi|130912");
-    auto_ptr<SSeqLoc> sseqloc(CTestObjMgr::Instance().CreateSSeqLoc(id));
+    unique_ptr<SSeqLoc> sseqloc(CTestObjMgr::Instance().CreateSSeqLoc(id));
 
     TSeqLocVector query_v;
     query_v.push_back(*sseqloc);
 
-    auto_ptr<CBlastOptionsHandle>
+    unique_ptr<CBlastOptionsHandle>
         opts_handle(CBlastOptionsFactory::Create(eBlastp));
     opts_handle->SetOptions().SetGappedMode(false);
 
@@ -975,12 +975,12 @@ BOOST_AUTO_TEST_CASE(testEffSearchSpaceCalculator_Ungapped) {
 
 BOOST_AUTO_TEST_CASE(testEffSearchSpaceCalculatorNoSideEffects) {
     CSeq_id id("gi|130912");
-    auto_ptr<SSeqLoc> sseqloc(CTestObjMgr::Instance().CreateSSeqLoc(id));
+    unique_ptr<SSeqLoc> sseqloc(CTestObjMgr::Instance().CreateSSeqLoc(id));
 
     TSeqLocVector query_v;
     query_v.push_back(*sseqloc);
 
-    auto_ptr<CBlastOptionsHandle>
+    unique_ptr<CBlastOptionsHandle>
         opts_handle(CBlastOptionsFactory::Create(eBlastp));
 
     CRef<IQueryFactory> qf(new CObjMgr_QueryFactory(query_v));
@@ -1043,7 +1043,7 @@ BOOST_AUTO_TEST_CASE(testMitochondrialGeneticCode) {
     const EBlastProgramType kProgram = eBlastTypeBlastx;
     const ENa_strand kStrand = eNa_strand_both;
 
-    auto_ptr<SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(id,
+    unique_ptr<SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(id,
                                                     kStrand));
     TSeqLocVector query_v;
     query_v.push_back(*sl);
@@ -1068,7 +1068,7 @@ BOOST_AUTO_TEST_CASE(testMainSetup)
     const EBlastProgramType kProgram = eBlastTypeBlastn;
     const ENa_strand kStrand = eNa_strand_both;
 
-    auto_ptr<SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(id,
+    unique_ptr<SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(id,
                                                     kStrand));
     TSeqLocVector query_v;
     query_v.push_back(*sl);
@@ -1234,9 +1234,9 @@ BOOST_AUTO_TEST_CASE(testSetupWithZeroLengthSequence)
     const EBlastProgramType kProgram = eBlastTypeBlastn;
     const ENa_strand kStrand = eNa_strand_both;
 
-    auto_ptr<SSeqLoc> ssl1(CTestObjMgr::Instance().CreateSSeqLoc(id1, kStrand));
-    auto_ptr<SSeqLoc> ssl2(CTestObjMgr::Instance().CreateEmptySSeqLoc(id2));
-    auto_ptr<SSeqLoc> ssl3(CTestObjMgr::Instance().CreateSSeqLoc(id3, kStrand));
+    unique_ptr<SSeqLoc> ssl1(CTestObjMgr::Instance().CreateSSeqLoc(id1, kStrand));
+    unique_ptr<SSeqLoc> ssl2(CTestObjMgr::Instance().CreateEmptySSeqLoc(id2));
+    unique_ptr<SSeqLoc> ssl3(CTestObjMgr::Instance().CreateSSeqLoc(id3, kStrand));
 
     CSeq_loc* mask_seqloc = new CSeq_loc(id3, 10, 20, kStrand);
     ssl3->mask.Reset(mask_seqloc);
@@ -1278,7 +1278,7 @@ BOOST_AUTO_TEST_CASE(GetSubjectTranslations)
     CSeq_id id("gi|6648925");
     const EBlastEncoding kEncoding = eBlastEncodingNcbi4na;
 
-    auto_ptr<SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(id, 
+    unique_ptr<SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(id, 
                                                     eNa_strand_both));
 
     string warnings;
@@ -1320,7 +1320,7 @@ BOOST_AUTO_TEST_CASE(GetMixedFrameQuery)
     CSeq_id id("gi|6648925");
     const EProgram kProgram = eBlastx;
 
-    auto_ptr<SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(id,
+    unique_ptr<SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(id,
                                                     eNa_strand_both));
     TSeqLocVector query_v;
     query_v.push_back(*sl);
@@ -1359,7 +1359,7 @@ BOOST_AUTO_TEST_CASE(GetMixedFrameQueryOnOneStrand)
     CSeq_id id("gi|6648925");
     const EProgram kProgram = eBlastx;
 
-    auto_ptr<SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(id,
+    unique_ptr<SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(id,
                                                     eNa_strand_plus));
     TSeqLocVector query_v;
     query_v.push_back(*sl);
