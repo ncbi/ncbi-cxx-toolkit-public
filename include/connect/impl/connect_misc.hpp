@@ -140,7 +140,7 @@ private:
     TType m_Object;
 };
 
-class NCBI_XCONNECT_EXPORT CLogLatencies : public unordered_map<string, chrono::microseconds>
+class NCBI_XCONNECT_EXPORT CLogLatencies
 {
 public:
     template <size_t SIZE1, size_t SIZE2>
@@ -151,7 +151,8 @@ public:
 
     void SetDebug(bool debug) { m_Debug = debug; }
 
-    friend istream& operator>>(istream& is, CLogLatencies& latencies);
+    using TResult = unordered_map<string, chrono::microseconds>;
+    TResult Parse(istream& is);
 
 private:
     regex m_Start;

@@ -184,7 +184,7 @@ CServiceDiscovery::TServers CServiceDiscovery::DiscoverImpl(const string& servic
     return rv;
 }
 
-istream& operator>>(istream& is, CLogLatencies& latencies)
+CLogLatencies::TResult CLogLatencies::Parse(istream& is)
 {
     using namespace chrono;
 
@@ -198,6 +198,7 @@ istream& operator>>(istream& is, CLogLatencies& latencies)
     using TServer = pair<size_t, array<system_clock::time_point, eBoth>>;
     unordered_map<string, TServer> servers;
     TServer* current = nullptr;
+    TResult latencies;
 
     for (;;) {
         if (!is.getline(line.data(), line.size())) {
@@ -211,11 +212,11 @@ istream& operator>>(istream& is, CLogLatencies& latencies)
 
         size_t matched = fNothing;
 
-        if (regex_match(line.data(), m, latencies.m_Start)) {
+        if (regex_match(line.data(), m, m_Start)) {
             matched = fStart;
             current = &servers[m[eServer].str()];
 
-        } else if (regex_match(line.data(), m, latencies.m_Stop)) {
+        } else if (regex_match(line.data(), m, m_Stop)) {
             matched = fStop;
 
             // If there is a server specified
@@ -233,7 +234,7 @@ istream& operator>>(istream& is, CLogLatencies& latencies)
             current->second[matched] = tp;
         }
 
-        if (latencies.m_Debug) {
+        if (m_Debug) {
             cerr << prefixes[matched] << line.data() << endl;
         }
     }
@@ -249,7 +250,7 @@ istream& operator>>(istream& is, CLogLatencies& latencies)
         }
     }
 
-    return is;
+    return latencies;
 }
 
 CLogLatencyReport::~CLogLatencyReport()
@@ -261,9 +262,9 @@ CLogLatencyReport::~CLogLatencyReport()
 
     cerr.rdbuf(m_CerrBuf);
     m_CerrOutput.seekg(0);
-    m_CerrOutput >> *this;
+    const auto latencies = Parse(m_CerrOutput);
 
-    for (const auto& server : *this) {
+    for (const auto& server : latencies) {
         const auto& server_name = server.first;
         const auto& server_latency = server.second;
         cerr << "server=" << server_name << "&latency=" << server_latency.count() << endl;
