@@ -181,10 +181,10 @@ BOOST_AUTO_TEST_CASE(testRMBlastTraceBack) {
      CAutoEnvironmentVariable a("BLASTMAT", "data");
 
      CSeq_id qid("gi|1945388");
-     auto_ptr<SSeqLoc> qsl(
+     unique_ptr<SSeqLoc> qsl(
          CTestObjMgr::Instance().CreateSSeqLoc(qid, eNa_strand_both));
      CSeq_id sid("gi|1732684");
-     auto_ptr<SSeqLoc> ssl(
+     unique_ptr<SSeqLoc> ssl(
          CTestObjMgr::Instance().CreateSSeqLoc(sid, eNa_strand_both));
 
     CRef<CBlastNucleotideOptionsHandle> opts(new CBlastNucleotideOptionsHandle);
