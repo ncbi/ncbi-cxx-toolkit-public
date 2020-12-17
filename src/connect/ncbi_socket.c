@@ -1238,8 +1238,11 @@ static unsigned int s_gethostbyname_(const char* hostname,
             if (he)
                 error = EINVAL;
             host = 0;
-        } else
-            memcpy(&host, self ? x_ChooseIP(he->h_addr_list) : he->h_addr, sizeof(host));
+        } else {
+            memcpy(&host,
+                   self ? x_ChooseIP(he->h_addr_list) : he->h_addr,
+                   sizeof(host));
+        }
 
 #  ifndef HAVE_GETHOSTBYNAME_R
 #    ifndef SOCK_GHBX_MT_SAFE
@@ -1313,7 +1316,7 @@ static unsigned int s_gethostbyname(const char* hostname,
 
     if (hostname &&  !*hostname)
         hostname = 0;
-    if (!(retval = s_gethostbyname_(hostname, not_ip, 0, log))) {
+    if (!(retval = s_gethostbyname_(hostname, not_ip, 0/*any*/, log))) {
         if (s_ErrHook) {
             SSOCK_ErrInfo info;
             memset(&info, 0, sizeof(info));
