@@ -100,7 +100,7 @@ CSDustMasker::TMaskList * CSDustMasker::operator()(
         Uint4 stop_offset = end_it - start_it;
 
         // Now dust.
-        std::auto_ptr< TMaskList > result = duster_( 
+        std::unique_ptr< TMaskList > result = duster_( 
             data, start_offset, stop_offset );
 
         res->insert( res->end(), result->begin(), result->end() );
