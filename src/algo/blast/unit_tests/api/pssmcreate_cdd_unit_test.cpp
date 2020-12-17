@@ -508,10 +508,10 @@ BOOST_AUTO_TEST_CASE(TestConvertSeqalignToCdMsa)
         
         /*** Setup code ***/
         CRef<CSeq_id> qid(new CSeq_id("gi|129295"));
-        auto_ptr<SSeqLoc> q(CTestObjMgr::Instance().CreateSSeqLoc(*qid));
+        unique_ptr<SSeqLoc> q(CTestObjMgr::Instance().CreateSSeqLoc(*qid));
 
         // read alignments
-        auto_ptr<CObjectIStream> in
+        unique_ptr<CObjectIStream> in
             (CObjectIStream::Open(seqalign, eSerial_AsnText));
 
         CRef<CSeq_align_set> sas(new CSeq_align_set());
@@ -770,7 +770,7 @@ BOOST_AUTO_TEST_CASE(TestFullPssmEngineRunWithDiagnosticsRequest) {
         const string seqalign("data/cdd-129295.asn");
         const string rpsdb("data/deltatest");
 
-        auto_ptr<CObjectIStream> in
+        unique_ptr<CObjectIStream> in
             (CObjectIStream::Open(seqalign, eSerial_AsnText));
 
         CRef<CSeq_align_set> sas(new CSeq_align_set());
@@ -778,7 +778,7 @@ BOOST_AUTO_TEST_CASE(TestFullPssmEngineRunWithDiagnosticsRequest) {
 
         CRef<CSeq_id> qid(new CSeq_id("gi|129295"));
 
-        auto_ptr<SSeqLoc> q(CTestObjMgr::Instance().CreateSSeqLoc(*qid));
+        unique_ptr<SSeqLoc> q(CTestObjMgr::Instance().CreateSSeqLoc(*qid));
         SBlastSequence seq(GetSequence(*q->seqloc, eBlastEncodingProtein, q->scope));
 
         CPSIBlastOptions opts;
@@ -911,7 +911,7 @@ BOOST_AUTO_TEST_CASE(TestInternalGapsInSubject) {
     CRef<CSeq_align_set> seq_align_set(new CSeq_align_set());
     seq_align_set->Set().push_back(seq_align);
 
-    auto_ptr<SSeqLoc> q(CTestObjMgr::Instance().CreateSSeqLoc(*query_id));
+    unique_ptr<SSeqLoc> q(CTestObjMgr::Instance().CreateSSeqLoc(*query_id));
     CRef<CScope> scope = q->scope;
 
     // create PSSM engine strategy
@@ -930,7 +930,7 @@ BOOST_AUTO_TEST_CASE(TestInternalGapsInSubject) {
     CPssmEngine pssm_engine(pssm_input);
     CRef<CPssmWithParameters> pssm = pssm_engine.Run();
                                                      
-    auto_ptr< CNcbiMatrix<int> > pssm_scores(
+    unique_ptr< CNcbiMatrix<int> > pssm_scores(
                CScorematPssmConverter::GetScores(*pssm));
 
     const SNCBIPackedScoreMatrix* score_matrix = &NCBISM_Blosum62;
@@ -992,7 +992,7 @@ BOOST_AUTO_TEST_CASE(TestNoDomainHits)
     // Create empty Seq-align-set
     CRef<CSeq_align_set> seq_align_set(new CSeq_align_set());
 
-    auto_ptr<SSeqLoc> q(CTestObjMgr::Instance().CreateSSeqLoc(*query_id));
+    unique_ptr<SSeqLoc> q(CTestObjMgr::Instance().CreateSSeqLoc(*query_id));
     CRef<CScope> scope = q->scope;
 
     // create PSSM engine strategy
@@ -1011,7 +1011,7 @@ BOOST_AUTO_TEST_CASE(TestNoDomainHits)
     CPssmEngine pssm_engine(pssm_input);
     CRef<CPssmWithParameters> pssm = pssm_engine.Run();
 
-    auto_ptr< CNcbiMatrix<int> > pssm_scores(
+    unique_ptr< CNcbiMatrix<int> > pssm_scores(
                CScorematPssmConverter::GetScores(*pssm));
 
     // Get BLOSUM62 scoring matrix
@@ -1144,7 +1144,7 @@ CRef<CCddInputData> CPssmCddInputTest::CreatePssmInput(EType type)
         break;
     }
 
-    auto_ptr<SSeqLoc> q(CTestObjMgr::Instance().CreateSSeqLoc(*query_id));
+    unique_ptr<SSeqLoc> q(CTestObjMgr::Instance().CreateSSeqLoc(*query_id));
     CRef<CScope> scope = q->scope;
 
     // create PSSM engine strategy
