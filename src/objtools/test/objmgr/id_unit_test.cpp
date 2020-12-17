@@ -1180,8 +1180,9 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr2)
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Update_date));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_User));
     BOOST_CHECK_EQUAL(user_count.size(), 4u);
-    // TODO: ID1 returns 1 StructuredComment
-    //BOOST_CHECK_EQUAL(user_count["StructuredComment"], 2);
+    if ( !s_HaveID1() ) { // TODO: ID1 returns 1 StructuredComment
+        BOOST_CHECK_EQUAL(user_count["StructuredComment"], 2);
+    }
     BOOST_CHECK_EQUAL(user_count["DBLink"], 1);
     BOOST_CHECK_EQUAL(user_count["RefGeneTracking"], 1);
     BOOST_CHECK_EQUAL(user_count["FeatureFetchPolicy"], 1);
@@ -1227,8 +1228,9 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr3)
     BOOST_CHECK_EQUAL(user_count["StructuredComment"], 2);
     BOOST_CHECK_EQUAL(user_count["DBLink"], 1);
     BOOST_CHECK_EQUAL(user_count["RefGeneTracking"], 1);
-    // TODO: ID1 returns 2 FeatureFetchPolicy
-    //BOOST_CHECK_EQUAL(user_count["FeatureFetchPolicy"], 1);
+    if ( !s_HaveID1() ) { // TODO: ID1 returns 2 FeatureFetchPolicy
+        BOOST_CHECK_EQUAL(user_count["FeatureFetchPolicy"], 1);
+    }
 }
 
 
