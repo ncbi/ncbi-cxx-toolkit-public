@@ -266,7 +266,7 @@ public:
         }
         
         CSeq_id query("NP_056193");
-        auto_ptr<SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(query));
+        unique_ptr<SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(query));
         TSeqLocVector qv;
         qv.push_back(*sl);
         CRef<IQueryFactory> qf(new CObjMgr_QueryFactory(qv));
@@ -328,7 +328,7 @@ BOOST_AUTO_TEST_CASE(SimpleTraceback)
         subject_seqdb = query_seqdb;
         
         CSeq_id query("NP_056193");
-        auto_ptr<SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(query));
+        unique_ptr<SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(query));
         TSeqLocVector qv;
         qv.push_back(*sl);
         CRef<IQueryFactory> qf(new CObjMgr_QueryFactory(qv));
@@ -372,7 +372,7 @@ BOOST_AUTO_TEST_CASE(TracebackWithPssm_AndWarning) {
     CRef<CSeqDB> subject_seqdb(new CSeqDB("nr", CSeqDB::eProtein));
 
     CSeq_id query("P01013");
-    auto_ptr<SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(query));
+    unique_ptr<SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(query));
     TSeqLocVector qv;
     qv.push_back(*sl);
     CRef<IQueryFactory> qf(new CObjMgr_QueryFactory(qv));
