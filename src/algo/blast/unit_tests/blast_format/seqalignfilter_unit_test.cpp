@@ -238,7 +238,7 @@ static void s_DoEquivalenceCheck(CRef<CSeq_align> sa_new, CRef<CSeqDB> db)
 
 static void s_LoadSeqAlignsFromFile(CSeq_align_set& aln_all, const string& fname)
 {
-    auto_ptr<CObjectIStream> asn_in(CObjectIStream::Open(fname, eSerial_AsnText));
+    unique_ptr<CObjectIStream> asn_in(CObjectIStream::Open(fname, eSerial_AsnText));
     *asn_in >> aln_all;
 }
 
