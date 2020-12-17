@@ -740,7 +740,7 @@ private:
     bool m_ReadFile;
 
     /// Use to ready CBlast4_archive
-    auto_ptr<CObjectIStream> m_ObjectStream;
+    unique_ptr<CObjectIStream> m_ObjectStream;
 
     /// Type of object CBlast4_archive as determined by CFormatGuess
     CFormatGuess::EFormat m_ObjectType;
