@@ -249,7 +249,7 @@ public:
     CRpsMmappedFile(const string& filename);
 protected:
     /// The data structure this class manages
-    auto_ptr<CMemoryFile> m_MmappedFile;
+    unique_ptr<CMemoryFile> m_MmappedFile;
 };
 
 CRpsMmappedFile::CRpsMmappedFile(const string& filename)
@@ -529,7 +529,7 @@ void CBlastRPSInfo::x_Init(const string& rps_dbname, int flags)
     }
     _ASSERT(!path.empty());
 
-    auto_ptr<BlastRPSInfo> rps_info;
+    unique_ptr<BlastRPSInfo> rps_info;
 
     // Allocate the core data structure
     try { m_RpsInfo.reset(new BlastRPSInfo); }
