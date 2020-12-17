@@ -232,12 +232,12 @@ struct LinkHspTestFixture {
         TSeqLocVector query_v;
 
         if (m_ProgramType == eBlastTypeBlastx) {
-            auto_ptr<SSeqLoc> qsl(
+            unique_ptr<SSeqLoc> qsl(
                 CTestObjMgr::Instance().CreateSSeqLoc(query_id, 
                                                       eNa_strand_both));
             query_v.push_back(*qsl);
         } else {
-            auto_ptr<SSeqLoc> qsl(
+            unique_ptr<SSeqLoc> qsl(
                 CTestObjMgr::Instance().CreateSSeqLoc(query_id));
             query_v.push_back(*qsl);
         }
@@ -388,7 +388,7 @@ struct LinkHspTestFixture {
         CSeq_id seqid("gi|24638835");
         pair<TSeqPos, TSeqPos> range(26993,32411);
 
-        auto_ptr<SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(seqid, range));
+        unique_ptr<SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(seqid, range));
 
         SBlastSequence sequence(
             GetSequence(*sl->seqloc, eBlastEncodingNucleotide,
@@ -430,12 +430,12 @@ struct LinkHspTestFixture {
         if (m_ProgramType == eBlastTypeBlastn || m_ProgramType == eBlastTypeBlastx || 
             m_ProgramType == eBlastTypeTblastx) {
             qid.Reset(new CSeq_id("gi|555"));
-            auto_ptr<SSeqLoc> qsl(CTestObjMgr::Instance().CreateSSeqLoc(*qid, 
+            unique_ptr<SSeqLoc> qsl(CTestObjMgr::Instance().CreateSSeqLoc(*qid, 
                                                              eNa_strand_both));
             qv.push_back(*qsl);
         } else {
             qid.Reset(new CSeq_id("gi|129295"));
-            auto_ptr<SSeqLoc> qsl(CTestObjMgr::Instance().CreateSSeqLoc(*qid));
+            unique_ptr<SSeqLoc> qsl(CTestObjMgr::Instance().CreateSSeqLoc(*qid));
             qv.push_back(*qsl);
         }
 
