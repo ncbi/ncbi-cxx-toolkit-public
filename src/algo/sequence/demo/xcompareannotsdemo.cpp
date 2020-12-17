@@ -583,9 +583,9 @@ void AddDefaultSentinelFeats(CScope& scope, const CSeq_loc& loc)
 
 }
 
-auto_ptr<CObjectIStream> GetIStream(string path, ESerialDataFormat serial_format)
+unique_ptr<CObjectIStream> GetIStream(string path, ESerialDataFormat serial_format)
 {
-    auto_ptr<CObjectIStream> obj_istr;
+    unique_ptr<CObjectIStream> obj_istr;
     if ( NStr::EndsWith(path, ".gz")) {
         obj_istr.reset(CObjectIStream::Open(
             serial_format,
@@ -629,7 +629,7 @@ TLoadScopeMethod LoadScope(string arg_path, CScope& scope, ESerialDataFormat ser
 
         _TRACE("loading " + path);
         try {
-            auto_ptr<CObjectIStream> obj_istr = GetIStream(path, serial_format);
+            unique_ptr<CObjectIStream> obj_istr = GetIStream(path, serial_format);
             if (!obj_istr->InGoodState()) {
                 ERR_POST(Error << "Could not open file " << *it);
                 return eLoadScope_Failed;
@@ -648,7 +648,7 @@ TLoadScopeMethod LoadScope(string arg_path, CScope& scope, ESerialDataFormat ser
         } catch(CException&) {};
 
         try {
-            auto_ptr<CObjectIStream> obj_istr = GetIStream(path, serial_format);
+            unique_ptr<CObjectIStream> obj_istr = GetIStream(path, serial_format);
             if (!obj_istr->InGoodState()) {
                 ERR_POST(Error << "Could not open file " << *it);
                 return false;
@@ -667,7 +667,7 @@ TLoadScopeMethod LoadScope(string arg_path, CScope& scope, ESerialDataFormat ser
         } catch(CException&) {};
 
         try {
-            auto_ptr<CObjectIStream> obj_istr = GetIStream(path, serial_format);
+            unique_ptr<CObjectIStream> obj_istr = GetIStream(path, serial_format);
             if (!obj_istr->InGoodState()) {
                 ERR_POST(Error << "Could not open file " << *it);
                 return eLoadScope_Failed;;
@@ -739,7 +739,7 @@ private:
 
 void CXcompareAnnotsApplication::Init(void)
 {
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
 
     arg_desc->AddOptionalKey("q",
