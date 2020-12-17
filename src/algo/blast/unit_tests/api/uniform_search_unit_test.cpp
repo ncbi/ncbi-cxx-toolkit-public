@@ -84,10 +84,10 @@ struct TQueryMessagesComparator
         // Set up the queries
         TSeqLocVector queries;
         CSeq_id query_id0(CSeq_id::e_Gi, 129295);
-        auto_ptr<SSeqLoc> sl0(CTestObjMgr::Instance().CreateSSeqLoc(query_id0));
+        unique_ptr<SSeqLoc> sl0(CTestObjMgr::Instance().CreateSSeqLoc(query_id0));
         queries.push_back(*sl0);
         CSeq_id query_id1(CSeq_id::e_Gi, 129296);
-        auto_ptr<SSeqLoc> sl1(CTestObjMgr::Instance().CreateSSeqLoc(query_id1));
+        unique_ptr<SSeqLoc> sl1(CTestObjMgr::Instance().CreateSSeqLoc(query_id1));
         queries.push_back(*sl1);
         CRef<IQueryFactory> query_factory(new CObjMgr_QueryFactory(queries));
 
