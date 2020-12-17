@@ -60,7 +60,7 @@ public:
 
 void CGeneModelDemoApp::Init(void)
 {
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     arg_desc->AddDefaultKey("i", "InputFile",
                             "File containing seq-align to use",
