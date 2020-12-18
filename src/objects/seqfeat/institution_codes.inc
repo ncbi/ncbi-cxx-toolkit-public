@@ -3362,7 +3362,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "JM\ts\tJura Museum, Eichstatt\t\t\t",
 "JME\ts\tJura-Museum Eichstatt\t\t\t",
 "JMH\ts\tLos Alamos Nature Center (Pajarito Environmental Education Center)\t\t\t",
-"JMM\ts\tEarlham College, Joseph Moore Museum\t\t\t",
+"JMM\ts\tEarlham College, Joseph Moore Museum\tJMMNH\t\t",
 "JMRC\tc\tJena Microbial Resource Collection\t\thttp://www.jmrc.uni-jena.de/data.php?fsu=\t",
 "JMRC:SF\tc\tJena Microbial Resource Collection, Subcollection Fungi\t\t",
 "JMSMC\ts\tJiamusi Medical College, Department of Pharmacy\t\t\t",

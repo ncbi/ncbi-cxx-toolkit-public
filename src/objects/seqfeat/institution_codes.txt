@@ -3329,7 +3329,7 @@ JLMP	s	Jilin Academy of Traditional Chinese Medicine and Materia Medica
 JM	s	Jura Museum, Eichstatt			
 JME	s	Jura-Museum Eichstatt			
 JMH	s	Los Alamos Nature Center (Pajarito Environmental Education Center)			
-JMM	s	Earlham College, Joseph Moore Museum			
+JMM	s	Earlham College, Joseph Moore Museum	JMMNH		
 JMRC	c	Jena Microbial Resource Collection		http://www.jmrc.uni-jena.de/data.php?fsu=	
 JMRC:SF	c	Jena Microbial Resource Collection, Subcollection Fungi		
 JMSMC	s	Jiamusi Medical College, Department of Pharmacy			
