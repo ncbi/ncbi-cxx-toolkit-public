@@ -96,6 +96,10 @@ race:^tds_socket_read$
 race:>::x_GuardedUnlock() const$
 race:>::x_IsGuarded() const$
 
+# It has already been checked by the original developer long ago,
+# see the SVN revision 347572 (false positives) CThreadPool...
+race:^ncbi::CThreadPool_Task::x_SetStatus(ncbi::CThreadPool_Task::EStatus)$
+
 # this is rather timing (CSyncQueue<...>)
 race:>::GetSize() const$
 
@@ -109,4 +113,23 @@ race:^ncbi::CThreadPool_ThreadImpl::CancelCurrentTask()$
 race:^ncbi::CThreadPool_ServiceThread::IsFinished()$
 race:^ncbi::CThreadPool_ServiceThread::RequestToFinish()$
 race:^ncbi::CThreadPool_Impl::x_NoNewTaskAllowed() const$
+race:^ncbi::CThreadPool_Impl::RequestSuspend(unsigned int)$
+race:^ncbi::CThreadPool_Impl::ResumeWork()$
+
+# The complain is for the case when a task is cancelled. The cancelling is done
+# via CThreadPool_Impl::CancelTask(), i.e. the pool exists and m_Pool is set.
+race:^ncbi::CThreadPool_Task::GetPool() const$
+
+# False positive: a CRef<> task is used from different threads and the
+# destruction logic in CRef<> does not use anything like mutex but an atomic
+# counter.
+race:^CTerminator_Task::~CTerminator_Task()$
+race:^CSentinelThreadPool_Task::~CSentinelThreadPool_Task()$
+
+# CRefs are set to NULL so GCC thread sanitizer does not like it
+race:^ncbi::CThreadPool_Impl::DestroyReference()$
+
+# The test works with tasks consequently moving from one state to another so
+# the CRef to the task are good and may not be in conflict
+race:^CThreadPoolTester::Thread_Run(int)$
 
