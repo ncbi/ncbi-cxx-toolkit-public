@@ -366,6 +366,7 @@ version 4.8.1, CXX-11163
 Added possibility of disabling components using environment.
 Fixed problem with missing (generated) source files in XCode builds.
 
-
-
-
+December 18, 2020
+version 4.9.0, CXX-11626
+Corrected generation of flat makefile on Unix.
+Corrected getting SVN revision and SC version.
