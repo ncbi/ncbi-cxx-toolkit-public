@@ -798,7 +798,17 @@ inline void
 CThreadPool_Impl::ThreadStateChanged(void)
 {
     if (m_Aborted) {
-        if (x_HasNoThreads()) {
+
+        // This lock is actually to protect access to the threads containers.
+        // It was decided that this lock must not be inside x_HasNoThreads()
+        // but to be outside.
+        bool    has_no_threads = false;
+        {{
+            CThreadPool_Guard guard(this);
+            has_no_threads = x_HasNoThreads();
+        }}
+
+        if (has_no_threads) {
             m_AbortWait.Post();
         }
     }
@@ -1052,6 +1062,10 @@ CThreadPool_Task::RequestToCancel(void)
 CThreadPool*
 CThreadPool_Task::GetPool(void) const
 {
+    // GCC thread sanitizer complains on GetPool() when a task is cancelled in
+    // a thread pool. This is however a false positive. The CancelTask() may
+    // happened only when the thread pool exists so there m_Pool set properly.
+
     // Protect from possible reseting of the pool variable during execution
     CThreadPool_Impl* pool_impl = m_Pool;
     return pool_impl? pool_impl->GetPoolInterface(): NULL;
