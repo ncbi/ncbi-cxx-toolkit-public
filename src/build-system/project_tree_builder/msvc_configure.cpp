@@ -372,7 +372,7 @@ void CMsvcConfigure::WriteBuildVer(CMsvcSite& site, const string& root_dir, cons
                     svn_rev = re.GetMatch(info, 0, 1);
                 }
             }
-            cmd = "svn info " + CDir::ConcatPath(tree_root, "src\\build-system") + " > " + tmp_file;
+            cmd = "svn info " + CDir::ConcatPath(tree_root, "src/build-system") + " > " + tmp_file;
             ret = CExec::System(cmd.c_str());
             if (ret == 0) {
                 CNcbiIfstream is(tmp_file.c_str(), IOS_BASE::in);
