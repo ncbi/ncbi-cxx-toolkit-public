@@ -580,7 +580,7 @@ BOOST_AUTO_TEST_CASE(TestPrintTreeNewick)
     CRef<CPhyTreeFormatter> tree(new CPhyTreeFormatter(btc,
                                                CPhyTreeFormatter::eSeqTitle));
 
-    auto_ptr<CNcbiOstrstream> ostr(new CNcbiOstrstream);
+    unique_ptr<CNcbiOstrstream> ostr(new CNcbiOstrstream);
 
     tree->PrintNewickTree(*ostr);
     string output = CNcbiOstrstreamToString(*ostr);
@@ -632,7 +632,7 @@ BOOST_AUTO_TEST_CASE(TestPrintTreeNexus)
     CRef<CPhyTreeFormatter> tree(new CPhyTreeFormatter(btc,
                                               CPhyTreeFormatter::eSeqTitle));
 
-    auto_ptr<CNcbiOstrstream> ostr(new CNcbiOstrstream);
+    unique_ptr<CNcbiOstrstream> ostr(new CNcbiOstrstream);
 
     tree->PrintNexusTree(*ostr);
     string output = CNcbiOstrstreamToString(*ostr);
