@@ -2838,7 +2838,12 @@ CFastaOstream::x_GetTitleFlags(void) const
     if ((m_Flags & fShowModifiers) != 0) {
         title_flags |= sequence::CDeflineGenerator::fShowModifiers;
     }
+    /*
     if ((m_Flags & fUseAutoDef) != 0) {
+        title_flags |= sequence::CDeflineGenerator::fUseAutoDef;
+    }
+    */
+    if ((m_Flags & fDoNotUseAutoDef) == 0) {
         title_flags |= sequence::CDeflineGenerator::fUseAutoDef;
     }
     return title_flags;

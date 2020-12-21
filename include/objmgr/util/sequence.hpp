@@ -766,7 +766,8 @@ public:
         eAssembleParts   = fAssembleParts,
         eInstantiateGaps = fInstantiateGaps,
         fUseAutoDef         = 1 << 17,  ///< Disregard original ID when constructing defline
-        fBaseFirstUnused    = 1 << 18  ///< first avalailabe for derived classes
+        fBaseFirstUnused    = 1 << 18, ///< first avalailabe for derived classes
+        fDoNotUseAutoDef    = 1 << 19
     };
     typedef long TFlags; ///< binary OR of EFlags
 
