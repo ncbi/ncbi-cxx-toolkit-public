@@ -151,7 +151,7 @@ protected:
 
     bool m_masking;
     CRef<CHMMParameters> m_hmm_params;
-    auto_ptr<CGnomonEngine> m_gnomon;
+    unique_ptr<CGnomonEngine> m_gnomon;
     CAlignMap m_edited_contig_map;
     TInDels m_editing_indels;           // in original coordinates (include corrections, ggaps and Ns)
     TInDels m_reversed_corrections;     // corrections from edited genome back to original (without gggaps or ns)
@@ -212,7 +212,7 @@ private:
     CChainer& operator= (const CChainer& value);
 
     class CChainerImpl;
-    auto_ptr<CChainerImpl> m_data;
+    unique_ptr<CChainerImpl> m_data;
 
     friend class CChainerArgUtil;
 };
