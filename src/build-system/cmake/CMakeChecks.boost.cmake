@@ -9,35 +9,28 @@ else()
 endif()
 set(Boost_USE_MULTITHREADED     ON)
 
-#Hints for FindBoost
-
-set(_foo_CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH})
-
-set(_boost_version "boost-1.62.0-ncbi1")
-
-if(WIN32)
-    set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${BOOST_ROOT})
-#	set(WINDOWS_BOOST_DIR "${WIN32_PACKAGE_ROOT}/boost_1_57_0")
-#	set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${WINDOWS_BOOST_DIR})
-#	set(BOOST_ROOT "${WINDOWS_BOOST_DIR}")
-#	set(BOOST_LIBRARYDIR "${BOOST_ROOT}/stage/lib")
-else()
-    # preferentially set a specific NCBI version of Boost
-    set(BOOST_ROOT ${NCBI_TOOLS_ROOT}/${_boost_version})
-    if ("${CMAKE_BUILD_TYPE}" STREQUAL "Release" AND
-        EXISTS /opt/ncbi/64/${_boost_version}/lib/ )
-        set(BOOST_LIBRARYDIR /opt/ncbi/64/${_boost_version}/lib)
-    else()
-        set(BOOST_LIBRARYDIR ${NCBI_TOOLS_ROOT}/${_boost_version}/lib)
-    endif()
+if(EXISTS "${NCBI_ThirdParty_Boost}")
+    set(BOOST_ROOT ${NCBI_ThirdParty_Boost})
+#    set(BOOST_LIBRARYDIR ${NCBI_ThirdParty_Boost}/lib)
+    set(_foo_CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH})
+    find_package(Boost OPTIONAL_COMPONENTS
+        unit_test_framework system thread filesystem iostreams
+#        coroutine program_options prg_exec_monitor test_exec_monitor
+        context chrono date_time regex serialization
+    )
+    set(CMAKE_PREFIX_PATH ${_foo_CMAKE_PREFIX_PATH})
+endif()
+if(NOT Boost_FOUND)
+    unset(Boost_USE_STATIC_LIBS)
+    unset(Boost_USE_STATIC_RUNTIME)
+    unset(BOOST_ROOT)
+    find_package(Boost OPTIONAL_COMPONENTS
+        unit_test_framework system thread filesystem iostreams
+#        coroutine program_options prg_exec_monitor test_exec_monitor
+        context chrono date_time regex serialization
+    )
 endif()
 
-#set(Boost_DEBUG ON)
-find_package(Boost
-    COMPONENTS chrono context coroutine date_time filesystem
-               iostreams regex serialization system thread
-            )
-set(CMAKE_PREFIX_PATH ${_foo_CMAKE_PREFIX_PATH})
 if(Boost_FOUND)
     add_definitions(-DBOOST_LOG_DYN_LINK)
 
