@@ -131,10 +131,12 @@ protected:
         const CMappedFeat& );
     virtual bool xWriteFeatureTranscript(
         CGffFeatureContext&,
-        const CMappedFeat& );
+        const CMappedFeat&,
+        const string& ="" );
     virtual bool xWriteFeatureExons(
         CGffFeatureContext&,
-        const CMappedFeat& );
+        const CMappedFeat&,
+        const string& ="" );
     virtual bool xWriteFeatureCds(
         CGffFeatureContext&,
         const CMappedFeat& );

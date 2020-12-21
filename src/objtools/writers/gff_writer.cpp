@@ -1337,7 +1337,6 @@ bool CGff2Writer::HasAccaptableTranscriptParent(
 //  ----------------------------------------------------------------------------
 {
     CMappedFeat parent = context.FeatTree().GetParent(mf);
-    CMappedFeat altParent = feature::GetParentFeature(mf);
     if (!parent) {
         return false;
     }

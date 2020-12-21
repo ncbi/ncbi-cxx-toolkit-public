@@ -231,6 +231,10 @@ bool CGtfWriter::xWriteFeature(
 //  ----------------------------------------------------------------------------
 {
     auto subtype = mf.GetFeatSubtype();
+    //if (subtype == CSeqFeatData::eSubtype_cdregion) {
+    //    const auto& range = mf.GetLocation().GetTotalRange();
+    //    cerr << "";
+    //}
     const auto& feat = mf.GetMappedFeature();
     switch(subtype) {
         default:
@@ -274,10 +278,14 @@ bool CGtfWriter::xWriteFeatureGene(
 //  ----------------------------------------------------------------------------
 bool CGtfWriter::xWriteFeatureTranscript(
     CGffFeatureContext& context,
-    const CMappedFeat& mf )
+    const CMappedFeat& mf,
+    const string& transcriptId )
 //  ----------------------------------------------------------------------------
 {
     CRef<CGtfRecord> pTranscript(new CGtfRecord(context));
+    if (!transcriptId.empty()) {
+        pTranscript->SetTranscriptId(transcriptId);
+    }
     if (!xAssignFeature(*pTranscript, context, mf)) {
         return false;
     }
@@ -286,16 +294,20 @@ bool CGtfWriter::xWriteFeatureTranscript(
         "gbkey", CSeqFeatData::SubtypeValueToName(
             mf.GetFeatSubtype()));
     xWriteRecord(pTranscript);
-    return xWriteFeatureExons(context, mf);
+    return xWriteFeatureExons(context, mf, transcriptId);
 }
 
 //  ----------------------------------------------------------------------------
 bool CGtfWriter::xWriteFeatureExons(
     CGffFeatureContext& context,
-    const CMappedFeat& mf )
+    const CMappedFeat& mf,
+    const string& transcriptId)
 //  ----------------------------------------------------------------------------
 {
     CRef<CGtfRecord> pMrna( new CGtfRecord( context ) );
+    if (!transcriptId.empty()) {
+        pMrna->SetTranscriptId(transcriptId);
+    }
     if (!xAssignFeature(*pMrna, context, mf)) {
         return false;
     }
@@ -330,12 +342,19 @@ bool CGtfWriter::xWriteFeatureCds(
 //  ----------------------------------------------------------------------------
 {
     CMappedFeat tf = xGenerateMissingTranscript(context, mf);
-    if (tf  &&  !xWriteFeatureTranscript(context, tf)) {
-        return false;
+    string transcriptId;
+    if (tf) {
+        transcriptId = CGtfIdGenerator::NextId("unassigned_transcript");
+        if (!xWriteFeatureTranscript(context, tf, transcriptId)) {
+            return false;
+        }
     }
 
     CRef<CGtfRecord> pParent( 
         new CGtfRecord( context, (m_uFlags & fNoExonNumbers) ) );
+    if (!transcriptId.empty()) {
+        pParent->SetTranscriptId(transcriptId);
+    }
     if (!xAssignFeature(*pParent, context, mf)) {
         return false;
     }
@@ -742,6 +761,9 @@ bool CGtfWriter::xAssignFeatureAttributeTranscriptId(
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
+    if (!record.TranscriptId().empty()) {
+        return true; //special case hence already assigned
+    }
     CMappedFeat mrnaFeat;
     auto featSubtype = mf.GetFeatSubtype();
     switch(featSubtype) {
