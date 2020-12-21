@@ -112,7 +112,7 @@ void CIdMapperTestApp::Init()
 {
     // Create CGI argument descriptions class
     //  (For CGI applications only keys can be used)
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
