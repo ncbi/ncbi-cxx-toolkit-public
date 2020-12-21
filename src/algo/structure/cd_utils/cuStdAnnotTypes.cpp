@@ -56,7 +56,7 @@ bool CStdAnnotTypes::LoadTypes(const string& iniFile)
 
     //  Use CMemoryRegistry simply to leverage registry file format parser.
     CMemoryRegistry dummyRegistry;
-    auto_ptr<CNcbiIfstream> iniIn(new CNcbiIfstream(iniFile.c_str(), IOS_BASE::in | IOS_BASE::binary));
+    unique_ptr<CNcbiIfstream> iniIn(new CNcbiIfstream(iniFile.c_str(), IOS_BASE::in | IOS_BASE::binary));
     if (*iniIn) {
 
         result = true;
