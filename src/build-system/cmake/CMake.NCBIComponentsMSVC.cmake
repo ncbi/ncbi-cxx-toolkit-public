@@ -161,6 +161,9 @@ endif()
 #############################################################################
 # PCRE
 NCBI_define_Wcomponent(PCRE libpcre.lib)
+if(NCBI_COMPONENT_PCRE_FOUND)
+    set(NCBI_COMPONENT_PCRE_DEFINES PCRE_STATIC NOPOSIX)
+endif()
 if(NOT NCBI_COMPONENT_PCRE_FOUND)
     set(NCBI_COMPONENT_PCRE_FOUND ${NCBI_COMPONENT_LocalPCRE_FOUND})
     set(NCBI_COMPONENT_PCRE_INCLUDE ${NCBI_COMPONENT_LocalPCRE_INCLUDE})
