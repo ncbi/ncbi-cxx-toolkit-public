@@ -55,7 +55,7 @@ const unsigned int CAlignmentRefiner::N_MAX_ROWS   = 2000;
 static bool ReadCD(const string& filename, CCdd *cdd)
 {
     // try to decide if it's binary or ascii
-    auto_ptr<CNcbiIstream> inStream(new CNcbiIfstream(filename.c_str(), IOS_BASE::in | IOS_BASE::binary));
+    unique_ptr<CNcbiIstream> inStream(new CNcbiIfstream(filename.c_str(), IOS_BASE::in | IOS_BASE::binary));
     if (!(*inStream)) {
         ERROR_MESSAGE_CL("Cannot open file '" << filename << "' for reading");
         return false;
@@ -95,7 +95,7 @@ string RefinerRowSelectorCodeToStr(const RefinerRowSelectorCode& code) {
 void CAlignmentRefiner::Init(void)
 {
     // Create command-line argument descriptions class
-    auto_ptr<CArgDescriptions> argDescr(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> argDescr(new CArgDescriptions);
 
     // Specify USAGE context
     argDescr->SetUsageContext(GetArguments().GetProgramBasename(),
