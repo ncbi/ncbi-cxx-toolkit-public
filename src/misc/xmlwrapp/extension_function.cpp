@@ -190,7 +190,7 @@ namespace xslt {
 
         xsltTransformContextPtr     xslt_ctxt =
                         xsltXPathGetTransformContext(pimpl_->xpath_parser_ctxt);
-        xsltTransformError(xslt_ctxt, xslt_ctxt->style, NULL, error);
+        xsltTransformError(xslt_ctxt, xslt_ctxt->style, NULL, "%s", error);
         return;
     }
 

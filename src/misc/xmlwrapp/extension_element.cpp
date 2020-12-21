@@ -144,7 +144,7 @@ namespace xslt {
                                   "when there is no XSLT instruction node.");
 
         xsltTransformError(pimpl_->xslt_ctxt, pimpl_->xslt_ctxt->style,
-                           pimpl_->instruction_node, error);
+                           pimpl_->instruction_node, "%s", error);
     }
 
     xpath_object extension_element::evaluate (const char *  xpath_expression,
