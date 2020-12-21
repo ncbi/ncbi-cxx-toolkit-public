@@ -137,7 +137,7 @@ private:
     TGeneMap genes;
     IEvidence& evidence;
 
-    auto_ptr<CFeatureGenerator> feature_generator;
+    unique_ptr<CFeatureGenerator> feature_generator;
     CRef<CScope> scope;
 
     friend class CAnnotationASN1;
@@ -433,7 +433,7 @@ void CAnnotationASN1::CImplementationData::DumpEvidence(const SModelData& md)
         } else {
             const CAlignModel* m = evidence.GetModel(id);
             if (m != NULL && (m->Type()&CGeneModel::eChain)) { //output supporting chains (gnomon)
-                auto_ptr<SModelData> smd;
+                unique_ptr<SModelData> smd;
                 smd.reset( new SModelData(*m, contig_seq, shift) );
                 AddInternalFeature(*smd);
                 CreateModelProducts(*smd);
@@ -1211,7 +1211,7 @@ void ExtractSupportModels(Int8 model_id,
         if(!cds_handle)
             cds_handle = feat_handle;
 
-        auto_ptr<CAlignModel> model( RestoreModel(feat_handle, cds_handle, seq_align) );
+        unique_ptr<CAlignModel> model( RestoreModel(feat_handle, cds_handle, seq_align) );
         evidence_models.push_back(*model);
 
         ExtractSupportModels(id, evidence_models, evidence_alignments, seq_entry_handle, seq_annot_map, processed_ids);
@@ -1275,7 +1275,7 @@ string CAnnotationASN1::ExtractModels(objects::CSeq_entry& seq_entry,
 
     set<Int8> processed_ids;
     for (; feat_ci; ++feat_ci) {
-        auto_ptr<CAlignModel> model( RestoreModelFromPublicMrnaFeature(feat_ci->GetSeq_feat_Handle()) );
+        unique_ptr<CAlignModel> model( RestoreModelFromPublicMrnaFeature(feat_ci->GetSeq_feat_Handle()) );
         model_list.push_back(*model);
         processed_ids.insert(model->ID());
         ExtractSupportModels(model->ID(), evidence_models, evidence_alignments, seq_entry_handle, seq_annot_map, processed_ids);
@@ -1287,7 +1287,7 @@ string CAnnotationASN1::ExtractModels(objects::CSeq_entry& seq_entry,
         Int8 id = CIdHandler::GetId(internal_feat_ci->GetOriginalFeature().GetIds().front()->GetLocal());
         if (processed_ids.find(id) != processed_ids.end()) // already there
             continue;
-        auto_ptr<CAlignModel> model( RestoreModelFromInternalGnomonFeature(internal_feat_ci->GetSeq_feat_Handle()) );
+        unique_ptr<CAlignModel> model( RestoreModelFromInternalGnomonFeature(internal_feat_ci->GetSeq_feat_Handle()) );
         if (model.get() == NULL)
             continue;
         evidence_models.push_back(*model);
