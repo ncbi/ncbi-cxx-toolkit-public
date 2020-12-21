@@ -20,7 +20,7 @@ LIBS = $(PCRE_LIBS) $(H2O_STATIC_LIBS) $(CASSANDRA_STATIC_LIBS) $(LIBUV_STATIC_L
 CPPFLAGS = $(CASSANDRA_INCLUDE) $(H2O_INCLUDE) $(LMDB_INCLUDE) $(PROTOBUF_INCLUDE) $(ORIG_CPPFLAGS)
 LIB = id2 seqsplit seqset $(SEQ_LIBS) xregexp $(PCRE_LIB) pub medline biblio general xser psg_cassandra psg_protobuf psg_cache connext xconnserv xconnect xutil xncbi
 
-REQUIRES = CASSANDRA MT Linux H2O LMDB LIBUV PROTOBUF GCC
+REQUIRES = CASSANDRA MT Linux H2O LMDB LIBUV PROTOBUF -ICC
 
 WATCHERS = satskyse
 
