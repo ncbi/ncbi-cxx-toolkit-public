@@ -707,7 +707,7 @@ CHMMParameters::CHMMParameters(const CGnomon_params& hmm_params_asn) : m_details
 
 CHMMParameters::CHMMParameters(CNcbiIstream& hmm_params_istr, ESerialDataFormat format)
 {
-    auto_ptr<CObjectIStream> inp(CObjectIStream::Open(format,hmm_params_istr));
+    unique_ptr<CObjectIStream> inp(CObjectIStream::Open(format,hmm_params_istr));
     CRef<CGnomon_params> params_asn(new CGnomon_params);
     *inp >> *params_asn;
     m_details.Reset( new SDetails(*params_asn) );
