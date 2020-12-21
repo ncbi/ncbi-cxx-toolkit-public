@@ -481,7 +481,7 @@ protected:
 protected:
     CBioTreeFeatureDictionary  m_FeatureDict;
     TBioTreeNodeId             m_NodeIdCounter;
-    auto_ptr<TBioTreeNode>     m_TreeNode;      ///< Top level node
+    unique_ptr<TBioTreeNode>     m_TreeNode;      ///< Top level node
 };
 
 
