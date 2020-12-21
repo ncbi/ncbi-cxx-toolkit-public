@@ -61,7 +61,7 @@ private:
 
 void CDemoSeqQaApp::Init()
 {
-    auto_ptr<CArgDescriptions> arg_descr(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_descr(new CArgDescriptions);
     arg_descr->SetUsageContext(GetArguments().GetProgramName(),
                                "Demo application testing xalgoseqqa library");
 
