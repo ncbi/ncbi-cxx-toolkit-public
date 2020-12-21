@@ -990,7 +990,7 @@ int CGeneModel::isCompatible(const CGeneModel& a) const
     int commonspl = 0;
     int firstcommonpoint = -1;
 
-    auto_ptr<CAlignMap> pmapa(0), pmapb(0);
+    unique_ptr<CAlignMap> pmapa, pmapb;
 
     while(left <= intersect.GetTo())
     {
