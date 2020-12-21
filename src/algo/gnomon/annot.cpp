@@ -340,7 +340,7 @@ bool s_AlignSeqOrder(const CGeneModel& ap, const CGeneModel& bp)
 
 typedef map<int,CGeneModel> TNestedGenes;
 
-void SaveWallModel(auto_ptr<CGeneModel>& wall_model, TNestedGenes& nested_genes, TGeneModelList& aligns)
+void SaveWallModel(unique_ptr<CGeneModel>& wall_model, TNestedGenes& nested_genes, TGeneModelList& aligns)
 {
     if (wall_model.get() != 0 && wall_model->Type() == CGeneModel::eWall+CGeneModel::eGnomon) {
         aligns.push_back(*wall_model);
@@ -354,7 +354,7 @@ void SaveWallModel(auto_ptr<CGeneModel>& wall_model, TNestedGenes& nested_genes,
 void FindPartials(TGeneModelList& models, TGeneModelList& aligns, EStrand strand)
 {
     TSignedSeqPos right = -1;
-    auto_ptr<CGeneModel> wall_model;
+    unique_ptr<CGeneModel> wall_model;
     TNestedGenes nested_genes;
 
     for (TGeneModelList::iterator loop_it = models.begin(); loop_it != models.end();) {
