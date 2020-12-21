@@ -1092,6 +1092,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CHAP\ts\tUniversidad Autonoma Chapingo\t\t\t",
 "CHAPA\ts\tColegio de Postgraduados, Botanica, IRENAT\t\t\t",
 "CHARL\ts\tCharleston Museum\t\t\t",
+"CHAX\ts\tUNIVERSIDAD NACIONAL TORIBIO RODRIGUEZ DE MENDOZA DE AMAZONAS\t\t\t",
 "CHBG\ts\tChristchurch Botanic Gardens\t\t\t",
 "CHBY\ts\tMuseum d'Histoire Naturelle de Chambery\t\t\t",
 "CHE\ts\tSociete Nationale des Sciences Naturelles et Mathematiques de Cherbourg\t\t\t",

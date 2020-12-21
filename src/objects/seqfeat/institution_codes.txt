@@ -1059,6 +1059,7 @@ CHAM	s	I.N.T.A., E.E.A. La Rioja
 CHAP	s	Universidad Autonoma Chapingo			
 CHAPA	s	Colegio de Postgraduados, Botanica, IRENAT			
 CHARL	s	Charleston Museum			
+CHAX	s	UNIVERSIDAD NACIONAL TORIBIO RODRIGUEZ DE MENDOZA DE AMAZONAS			
 CHBG	s	Christchurch Botanic Gardens			
 CHBY	s	Museum d'Histoire Naturelle de Chambery			
 CHE	s	Societe Nationale des Sciences Naturelles et Mathematiques de Cherbourg			
