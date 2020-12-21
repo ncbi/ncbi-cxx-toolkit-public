@@ -80,8 +80,8 @@ private:
     objects::CCdd initialAlignment;
     unsigned int nBlocks, nRows;
     vector < string > rowTitles;
-    auto_ptr < BMARefinerOptions > options;
-    auto_ptr < align_refine::CBMARefinerEngine > m_refinerEngine;
+    unique_ptr < BMARefinerOptions > options;
+    unique_ptr < align_refine::CBMARefinerEngine > m_refinerEngine;
 };
 
 struct GeneralRefinerParams {
