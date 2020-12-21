@@ -366,24 +366,27 @@ bool CGtfWriter::xWriteFeatureCds(
         return false;
     }
 
-	feature::CFeatTree& featTree = context.FeatTree();
-	CMappedFeat mRNA = feature::GetBestMrnaForCds(mf, &featTree);
+    CMappedFeat mRna = tf;
+    if (!mRna) {
+	    feature::CFeatTree& featTree = context.FeatTree();
+	    mRna = feature::GetBestMrnaForCds(mf, &featTree);
+    }
 
     if (pLocCode) {
         pParent->CorrectType("CDS");
-        if (!xWriteFeatureCdsFragments(*pParent, *pLocCode, mRNA)) {
+        if (!xWriteFeatureCdsFragments(*pParent, *pLocCode, mRna)) {
             return false;
         }
     }
     if (pLocStartCodon) {
         pParent->CorrectType("start_codon");
-        if (!xWriteFeatureCdsFragments(*pParent, *pLocStartCodon, mRNA)) {
+        if (!xWriteFeatureCdsFragments(*pParent, *pLocStartCodon, mRna)) {
             return false;
         }
     }
     if (pLocStopCodon) {
         pParent->CorrectType("stop_codon");
-        if (!xWriteFeatureCdsFragments(*pParent, *pLocStopCodon, mRNA)) {
+        if (!xWriteFeatureCdsFragments(*pParent, *pLocStopCodon, mRna)) {
             return false;
         }
     }
