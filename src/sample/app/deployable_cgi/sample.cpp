@@ -43,7 +43,6 @@
 #include <cgi/cgiapp.hpp>
 #include <cgi/cgictx.hpp>
 #include <html/html.hpp>
-#include <html/page.hpp>
 
 #include "deployable_cgi.hpp"
 
