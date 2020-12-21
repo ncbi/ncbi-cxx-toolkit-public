@@ -73,7 +73,7 @@ public:
                                 map<Int8, CRef<CUser_object> >& model_evidence_uo);
 private:
     class CImplementationData;
-    auto_ptr<CImplementationData> m_data;
+    unique_ptr<CImplementationData> m_data;
 };
 
 END_SCOPE(gnomon)
