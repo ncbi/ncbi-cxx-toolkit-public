@@ -112,7 +112,7 @@ private:
     void CheckRange();
 
     struct SGnomonEngineImplData;
-    auto_ptr<SGnomonEngineImplData> m_data;
+    unique_ptr<SGnomonEngineImplData> m_data;
 };
 
 class NCBI_XALGOGNOMON_EXPORT CCodingPropensity {
