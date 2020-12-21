@@ -75,8 +75,8 @@ struct CGnomonEngine::SGnomonEngineImplData {
     const CExonParameters*        m_exon_params;
 
 
-    auto_ptr<CSeqScores>       m_ss;
-    auto_ptr<CParse>           m_parse;
+    unique_ptr<CSeqScores>       m_ss;
+    unique_ptr<CParse>           m_parse;
 };
 
 END_SCOPE(gnomon)
