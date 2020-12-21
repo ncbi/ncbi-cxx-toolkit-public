@@ -62,7 +62,7 @@ private:
 
 typedef multiset<DeltaBlock> DeltaBlockModel;
 string DeltaBlockModelToString(const DeltaBlockModel& dbm);
-//typedef auto_ptr<DeltaBlockModel> DeltaBlockModelPtr;
+//typedef unique_ptr<DeltaBlockModel> DeltaBlockModelPtr;
 
 class NCBI_CDUTILS_EXPORT BlockModel
 {
