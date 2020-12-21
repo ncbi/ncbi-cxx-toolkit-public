@@ -60,7 +60,7 @@ CPSGS_Dispatcher::DispatchRequest(shared_ptr<CPSGS_Request> request,
         if (p) {
             ret.push_back(p);
 
-            while (m_GroupsLock.exchange(true)) {}      // acquire lock
+            m_GroupsLock.lock();
 
             auto    it = m_ProcessorGroups.find(request_id);
             auto    new_proc = SProcessorData(p, ePSGS_Up,
@@ -75,7 +75,7 @@ CPSGS_Dispatcher::DispatchRequest(shared_ptr<CPSGS_Request> request,
                 it->second.emplace_back(new_proc);
             }
 
-            m_GroupsLock = false;                       // release lock
+            m_GroupsLock.unlock();
 
             if (request->NeedTrace()) {
                 reply->SendTrace("Processor " + proc->GetName() +
@@ -118,7 +118,7 @@ CPSGS_Dispatcher::SignalStartProcessing(IPSGS_Processor *  processor)
                                                     // under the lock
 
 
-    while (m_GroupsLock.exchange(true)) {}      // acquire lock
+    m_GroupsLock.lock();
 
     if (processor->GetRequest()->NeedTrace()) {
         // Trace sending is under a lock intentionally: to avoid changes in the
@@ -135,7 +135,7 @@ CPSGS_Dispatcher::SignalStartProcessing(IPSGS_Processor *  processor)
     auto    procs = m_ProcessorGroups.find(request_id);
     if (procs == m_ProcessorGroups.end()) {
         // The processors group does not exist anymore
-        m_GroupsLock = false;                   // release lock
+        m_GroupsLock.unlock();
         return IPSGS_Processor::ePSGS_Cancel;
     }
 
@@ -144,7 +144,7 @@ CPSGS_Dispatcher::SignalStartProcessing(IPSGS_Processor *  processor)
         if (proc.m_Processor == processor) {
             if (proc.m_DispatchStatus == ePSGS_Cancelled) {
                 // The other processor has already called Cancel() for this one
-                m_GroupsLock = false;           // release lock
+                m_GroupsLock.unlock();
                 return IPSGS_Processor::ePSGS_Cancel;
             }
             if (proc.m_DispatchStatus != ePSGS_Up) {
@@ -166,7 +166,7 @@ CPSGS_Dispatcher::SignalStartProcessing(IPSGS_Processor *  processor)
         }
     }
 
-    m_GroupsLock = false;                       // release lock
+    m_GroupsLock.unlock();
 
     // Call the other processor's Cancel() out of the lock
     for (auto & proc: to_be_cancelled) {
@@ -195,7 +195,7 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor)
     size_t                          request_id = processor->GetRequest()->GetRequestId();
     IPSGS_Processor::EPSGS_Status   best_status = processor->GetStatus();
 
-    while (m_GroupsLock.exchange(true)) {}      // acquire lock
+    m_GroupsLock.lock();
 
     if (processor->GetRequest()->NeedTrace()) {
         // Trace sending is under a lock intentionally: to avoid changes in the
@@ -213,7 +213,7 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor)
     auto    procs = m_ProcessorGroups.find(request_id);
     if (procs == m_ProcessorGroups.end()) {
         // The processors group does not exist any more
-        m_GroupsLock = false;                   // release lock
+        m_GroupsLock.unlock();
         return;
     }
 
@@ -279,7 +279,7 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor)
         }
     }
 
-    m_GroupsLock = false;                   // release lock
+    m_GroupsLock.unlock();
 }
 
 
@@ -291,12 +291,12 @@ void CPSGS_Dispatcher::SignalConnectionCancelled(IPSGS_Processor *  processor)
     auto        request = processor->GetRequest();
     size_t      request_id = request->GetRequestId();
 
-    while (m_GroupsLock.exchange(true)) {}      // acquire lock
+    m_GroupsLock.lock();
 
     auto    procs = m_ProcessorGroups.find(request_id);
     if (procs == m_ProcessorGroups.end()) {
         // The processors group does not exist any more
-        m_GroupsLock = false;                   // release lock
+        m_GroupsLock.unlock();
         return;
     }
 
@@ -308,7 +308,7 @@ void CPSGS_Dispatcher::SignalConnectionCancelled(IPSGS_Processor *  processor)
 
     x_PrintRequestStop(processor->GetRequest(), CRequestStatus::e200_Ok);
     m_ProcessorGroups.erase(procs);
-    m_GroupsLock = false;                   // release lock
+    m_GroupsLock.unlock();
 }
 
 

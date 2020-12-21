@@ -33,6 +33,7 @@
  */
 
 #include <list>
+#include <mutex>
 #include "ipsgs_processor.hpp"
 
 
@@ -43,8 +44,7 @@
 class CPSGS_Dispatcher
 {
 public:
-    CPSGS_Dispatcher() :
-        m_GroupsLock(false)
+    CPSGS_Dispatcher()
     {}
 
     /// Register processor (one to serve as a processor factory)
@@ -109,7 +109,7 @@ private:
     // constructor) and a list of processors with their properties.
     map<size_t,
         list<SProcessorData>>       m_ProcessorGroups;
-    atomic<bool>                    m_GroupsLock;
+    mutex                           m_GroupsLock;
 };
 
 
