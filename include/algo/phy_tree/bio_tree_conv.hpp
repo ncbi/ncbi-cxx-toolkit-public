@@ -68,7 +68,7 @@ public:
                int                     delta_level)
     {
         if (m_TreeStack.size() == 0) {
-            auto_ptr<TDstTreeNodeType> pnode(MakeNewTreeNode(node));
+            unique_ptr<TDstTreeNodeType> pnode(MakeNewTreeNode(node));
 
             m_TreeStack.push_back(pnode.get());
             m_DstTree = pnode.release();
@@ -108,7 +108,7 @@ protected:
 
     TDstTreeNodeType* MakeNewTreeNode(const TSrcTreeNodeType& src_node)
     {
-        auto_ptr<TDstTreeNodeType> pnode(new TDstTreeNodeType());
+        unique_ptr<TDstTreeNodeType> pnode(new TDstTreeNodeType());
         unsigned int uid = src_node.GetValue().GetId();
         pnode->GetValue().SetId(uid);
 
