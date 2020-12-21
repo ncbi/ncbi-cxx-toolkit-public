@@ -42,6 +42,7 @@
 #include "active_handler.hpp"
 #include "nc_storage.hpp"
 #include "nc_stat.hpp"
+#include <random>
 
 
 BEGIN_NCBI_SCOPE
@@ -62,7 +63,9 @@ static FILE* s_LogFile = NULL;
 template <typename Type> void
 s_ShuffleList( vector<Type>& lst)
 {
-    random_shuffle(lst.begin(), lst.end());
+    random_device rd;
+    mt19937 mt(rd());
+    shuffle(lst.begin(), lst.end(), mt);
 }
 
 static void

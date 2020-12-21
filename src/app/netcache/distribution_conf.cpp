@@ -41,7 +41,7 @@
 #include "netcached.hpp"
 #include "distribution_conf.hpp"
 #include "peer_control.hpp"
-
+#include <random>
 
 BEGIN_NCBI_SCOPE
 
@@ -597,7 +597,9 @@ void
 CNCDistributionConf::GetServersForSlot(Uint2 slot, TServersList& lst)
 {
     TSrvGroupsList srvs = s_MirrorConf->s_Slot2Servers[slot];
-    random_shuffle(srvs.begin(), srvs.end());
+    random_device rd;
+    mt19937 mt(rd());
+    shuffle(srvs.begin(), srvs.end(), mt);
     lst.clear();
     for (size_t i = 0; i < srvs.size(); ++i) {
         if (srvs[i].grp == s_SelfGroup)
