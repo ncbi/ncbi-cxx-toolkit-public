@@ -57,7 +57,7 @@ public:
 void CLocalFinderApp::Init(void)
 {
     // Prepare command line descriptions
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     arg_desc->AddKey("input", "FastaFile",
                      "File containing FASTA-format sequence",
@@ -163,7 +163,7 @@ int CLocalFinderApp::Run(void)
 
     // dump the annotation
     CRef<CSeq_annot> annot = gnomon.GetAnnot(*cntg);
-    auto_ptr<CObjectOStream> os(CObjectOStream::Open(eSerial_AsnText, cout));
+    unique_ptr<CObjectOStream> os(CObjectOStream::Open(eSerial_AsnText, cout));
     *os << *annot;
 
     return 0;
