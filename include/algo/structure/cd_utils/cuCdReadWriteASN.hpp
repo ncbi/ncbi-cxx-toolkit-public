@@ -53,7 +53,7 @@ template < class ASNClass >
 static ASNClass * CopyASNObject(const ASNClass& originalObject, std::string *err)
 {
     err->erase();
-    auto_ptr<ASNClass> newObject;
+    unique_ptr<ASNClass> newObject;
     try {
         // create output stream and load object into it
         ncbi::CNcbiStrstream asnIOstream;
@@ -84,13 +84,13 @@ static bool ReadASNFromFile(const char *filename, ASNClass *ASNobject, bool isBi
     err->erase();
     // initialize the binary input stream
     ncbi::CNcbiIfstream inStream(filename, IOS_BASE::in | IOS_BASE::binary);
-//    auto_ptr<ncbi::CNcbiIstream> inStream;
+//    unique_ptr<ncbi::CNcbiIstream> inStream;
 //    inStream.reset(new ncbi::CNcbiIfstream(filename, IOS_BASE::in | IOS_BASE::binary));
     if (!inStream) {
         *err = "Cannot open file for reading";
         return false;
     }
-    auto_ptr<ncbi::CObjectIStream> inObject;
+    unique_ptr<ncbi::CObjectIStream> inObject;
     if (isBinary) {
         // Associate ASN.1 binary serialization methods with the input
         inObject.reset(new ncbi::CObjectIStreamAsnBinary(inStream));
@@ -119,7 +119,7 @@ static bool ReadASNFromStream(ncbi::CNcbiIstream& is, ASNClass *ASNobject, bool 
         *err = "Input stream is bad.";
         return false;
     }
-    auto_ptr<ncbi::CObjectIStream> inObject;
+    unique_ptr<ncbi::CObjectIStream> inObject;
     if (isBinary) {
         // Associate ASN.1 binary serialization methods with the input
         inObject.reset(new ncbi::CObjectIStreamAsnBinary(is));
@@ -148,13 +148,13 @@ static bool WriteASNToFile(const char *filename, const ASNClass& ASNobject, bool
     err->erase();
     // initialize a binary output stream
     ncbi::CNcbiOfstream outStream(filename, IOS_BASE::out | IOS_BASE::binary);
-//    auto_ptr<ncbi::CNcbiOstream> outStream;
+//    unique_ptr<ncbi::CNcbiOstream> outStream;
 //    outStream.reset(new ncbi::CNcbiOfstream(filename, IOS_BASE::out | IOS_BASE::binary));
     if (!outStream) {
         *err = "Cannot open file for writing";
         return false;
     }
-    auto_ptr<ncbi::CObjectOStream> outObject;
+    unique_ptr<ncbi::CObjectOStream> outObject;
     if (isBinary) {
         // Associate ASN.1 binary serialization methods with the input
         outObject.reset(new ncbi::CObjectOStreamAsnBinary(outStream, fixNonPrint));
@@ -184,7 +184,7 @@ static bool WriteASNToStream(ncbi::CNcbiOstream& os, const ASNClass& ASNobject, 
         *err = "Stream for writing is bad";
         return false;
     }
-    auto_ptr<ncbi::CObjectOStream> outObject;
+    unique_ptr<ncbi::CObjectOStream> outObject;
     if (isBinary) {
         // Associate ASN.1 binary serialization methods with the input
         outObject.reset(new ncbi::CObjectOStreamAsnBinary(os, fixNonPrint));
@@ -206,7 +206,7 @@ template < class ASNContainerClass >
 class NCBI_CDUTILS_EXPORT CObjectIStreamHelper
 {
 private:
-    auto_ptr<CObjectIStream> inStream;
+    unique_ptr<CObjectIStream> inStream;
 
 public:
     CObjectIStreamHelper(const string& filename, bool isBinary)
