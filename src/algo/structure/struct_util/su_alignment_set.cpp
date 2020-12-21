@@ -182,7 +182,7 @@ AlignmentSet * AlignmentSet::CreateFromMultiple(
     } else
         sa->Reset(CreatePairwiseSeqAlignFromMultipleRow(multiple, blocks, 0));
 
-    auto_ptr<AlignmentSet> newAlignmentSet;
+    unique_ptr<AlignmentSet> newAlignmentSet;
     try {
         newAlignmentSet.reset(new AlignmentSet(newSeqAnnots, sequenceSet));
     } catch (CException& e) {
