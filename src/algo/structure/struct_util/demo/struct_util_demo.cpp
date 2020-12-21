@@ -72,7 +72,7 @@ bool ReadASNFromFile(const char *filename, ASNClass *ASNobject, bool isBinary, s
         return false;
     }
 
-    auto_ptr<CObjectIStream> inObject;
+    unique_ptr<CObjectIStream> inObject;
     if (isBinary) {
         // Associate ASN.1 binary serialization methods with the input
         inObject.reset(new CObjectIStreamAsnBinary(inStream));
@@ -111,7 +111,7 @@ bool WriteASNToFile(const char *filename, const ASNClass& ASNobject, bool isBina
         return false;
     }
 
-    auto_ptr<CObjectOStream> outObject;
+    unique_ptr<CObjectOStream> outObject;
     if (isBinary) {
         // Associate ASN.1 binary serialization methods with the input
         outObject.reset(new CObjectOStreamAsnBinary(outStream, fixNonPrint));
@@ -170,7 +170,7 @@ void SUApp::Init(void)
 static bool ReadCD(const string& filename, CCdd *cdd)
 {
     // try to decide if it's binary or ascii
-    auto_ptr<CNcbiIstream> inStream(new CNcbiIfstream(filename.c_str(), IOS_BASE::in | IOS_BASE::binary));
+    unique_ptr<CNcbiIstream> inStream(new CNcbiIfstream(filename.c_str(), IOS_BASE::in | IOS_BASE::binary));
     if (!(*inStream)) {
         ERROR_MESSAGE("Cannot open file '" << filename << "' for reading");
         return false;
