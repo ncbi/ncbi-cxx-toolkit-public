@@ -145,7 +145,7 @@ string CProjectStorage::SaveProject(const IGBProject& project,
 
     string nc_key = key;
     CNetStorageObject nso;
-    auto_ptr<CObjectOStream> ostr(x_GetObjectOStream(data_fmt, nso, nc_key,
+    unique_ptr<CObjectOStream> ostr(x_GetObjectOStream(data_fmt, nso, nc_key,
                                                      compression_fmt,
                                                      time_to_live,
                                                      default_flags));
@@ -175,7 +175,7 @@ string CProjectStorage::SaveObject(const CSerialObject& obj,
 {
     string nc_key = key;
     CNetStorageObject nso;
-    auto_ptr<CObjectOStream> ostr(x_GetObjectOStream(data_fmt, nso, nc_key,
+    unique_ptr<CObjectOStream> ostr(x_GetObjectOStream(data_fmt, nso, nc_key,
                                                      compression_fmt,
                                                      time_to_live,
                                                      default_flags));
@@ -205,7 +205,7 @@ string CProjectStorage::SaveString(const string& str,
     m_Magic = kNC_StringMagic;
     string nc_key = key;
     CNetStorageObject nso;
-    auto_ptr<CNcbiOstream> ostr = x_GetOutputStream(nc_key, time_to_live, default_flags, nso);
+    unique_ptr<CNcbiOstream> ostr = x_GetOutputStream(nc_key, time_to_live, default_flags, nso);
     *ostr << str;
     ostr.reset(0);
     if (nso) {
@@ -230,7 +230,7 @@ string CProjectStorage::SaveStream(CNcbiIstream& istream,
     
     string nc_key = key;
     CNetStorageObject nso;
-    auto_ptr<CNcbiOstream> ostr = x_GetOutputStream(nc_key, time_to_live, default_flags, nso);
+    unique_ptr<CNcbiOstream> ostr = x_GetOutputStream(nc_key, time_to_live, default_flags, nso);
     NcbiStreamCopy(*ostr, istream);
     ostr.reset(0);
     if (nso) {
@@ -266,7 +266,7 @@ CObjectOStream* CProjectStorage::x_GetObjectOStream(TDataFormat data_fmt,
     m_DataFmt = data_fmt;
     m_CmprsFmt = compression_fmt;
     m_Magic = kNC_ProjectMagic;
-    auto_ptr<CNcbiOstream> ostr = x_GetOutputStream(key, time_to_live, default_flags, nso);
+    unique_ptr<CNcbiOstream> ostr = x_GetOutputStream(key, time_to_live, default_flags, nso);
     return CObjectOStream::Open(m_DataFmt, *ostr.release(), eTakeOwnership);
 }
 
@@ -362,7 +362,7 @@ string CProjectStorage::Clone(const string& key, unsigned int time_to_live, TNet
 
 CIRef<IGBProject> CProjectStorage::GetProject(const string& key)
 {
-    auto_ptr<CObjectIStream> obj_istr = GetObjectIstream(key);
+    unique_ptr<CObjectIStream> obj_istr = GetObjectIstream(key);
     CRef<CGBProject_ver2> real_project(new CGBProject_ver2);
     CIRef<IGBProject> proj(real_project.GetPointer());
 
@@ -404,7 +404,7 @@ CRef<CSerialObject> CProjectStorage::GetObject(const string& key)
 {
     CRef<CSerialObject> obj;
     {
-        auto_ptr<CObjectIStream> obj_istr = GetObjectIstream(key);
+        unique_ptr<CObjectIStream> obj_istr = GetObjectIstream(key);
         
         try  {
             CRef<CGBProject_ver2> real_project(new CGBProject_ver2);
@@ -425,7 +425,7 @@ CRef<CSerialObject> CProjectStorage::GetObject(const string& key)
     // reinitialize the input stream
     // try it with seq-annot
 
-    auto_ptr<CObjectIStream> obj_istr = GetObjectIstream(key);
+    unique_ptr<CObjectIStream> obj_istr = GetObjectIstream(key);
     try {
         CRef<CSeq_annot> annot(new CSeq_annot);
         *obj_istr >> *annot;
@@ -450,7 +450,7 @@ CRef<CSerialObject> CProjectStorage::GetObject(const string& key)
 
 void CProjectStorage::GetString(const string& key, string& str)
 {
-    auto_ptr<CNcbiIstream> istr = GetIstream(key);
+    unique_ptr<CNcbiIstream> istr = GetIstream(key);
 
     CConn_MemoryStream mem_str;
     NcbiStreamCopy(mem_str, *istr);
@@ -460,18 +460,18 @@ void CProjectStorage::GetString(const string& key, string& str)
 
 void CProjectStorage::GetVector(const string& key, vector<char>& vec)
 {
-    auto_ptr<CNcbiIstream> istr = GetIstream(key);
+    unique_ptr<CNcbiIstream> istr = GetIstream(key);
     CConn_MemoryStream mem_str;
     NcbiStreamCopy(mem_str, *istr);
     mem_str.flush();
     mem_str.ToVector(&vec);
 }
 
-auto_ptr<CNcbiIstream> CProjectStorage::GetIstream(const string& key, bool raw)
+unique_ptr<CNcbiIstream> CProjectStorage::GetIstream(const string& key, bool raw)
 {
     if (!Exists(key)) 
         NCBI_THROW(CPrjStorageException, eInvalidKey, kKeyError);
-    auto_ptr<CNcbiIstream> strm;
+    unique_ptr<CNcbiIstream> strm;
     CNetStorageObject nso;
     if (m_HasNetStorage) {
           nso = m_NS.Open(key);
@@ -516,13 +516,13 @@ auto_ptr<CNcbiIstream> CProjectStorage::GetIstream(const string& key, bool raw)
 #endif // HAVE_LIBLZO
                     }
                     //                    if (m_HasNetStorages) {
-                    //                        auto_ptr<CNcbiIstream> zip_str(new CCompressionIStream(*(strm.release()), proc, 
+                    //                        unique_ptr<CNcbiIstream> zip_str(new CCompressionIStream(*(strm.release()), proc, 
                     //                                                                               CCompressionStream::fOwnStream));
             //                        strm = zip_str;
             //                    } else {
-                    auto_ptr<CNcbiIstream> zip_str(new CCompressionIStream(*(strm.release()), proc, 
+                    unique_ptr<CNcbiIstream> zip_str(new CCompressionIStream(*(strm.release()), proc, 
                                                                    CCompressionStream::fOwnAll));
-                    strm = zip_str;
+                    strm.reset(zip_str.release());
                         //        }
                 }
             }
@@ -531,7 +531,7 @@ auto_ptr<CNcbiIstream> CProjectStorage::GetIstream(const string& key, bool raw)
         if ( !valid_header ) {
             // Reinitialize the input stream
             if (m_HasNetStorage) {
-                strm.reset(0);
+                strm.reset();
                 nso = m_NS.Open(key);
                 strm.reset(nso.GetRWStream());
             } else {
@@ -554,10 +554,10 @@ auto_ptr<CNcbiIstream> CProjectStorage::GetIstream(const string& key, bool raw)
 }
 
 
-auto_ptr<CObjectIStream> CProjectStorage::GetObjectIstream(const string& key)
+unique_ptr<CObjectIStream> CProjectStorage::GetObjectIstream(const string& key)
 {
-    auto_ptr<CNcbiIstream> istr = GetIstream(key);
-    auto_ptr<CObjectIStream> obj_istr(CObjectIStream::Open(m_DataFmt,
+    unique_ptr<CNcbiIstream> istr = GetIstream(key);
+    unique_ptr<CObjectIStream> obj_istr(CObjectIStream::Open(m_DataFmt,
                                                            *istr.release(),
                                                            eTakeOwnership));
     return obj_istr;
@@ -608,7 +608,7 @@ bool CProjectStorage::Exists(const string& key)
 }
 
 
-auto_ptr<CNcbiOstream> CProjectStorage::x_GetOutputStream(string& key, unsigned int time_to_live, TNetStorageFlags default_flags, CNetStorageObject& nso)
+unique_ptr<CNcbiOstream> CProjectStorage::x_GetOutputStream(string& key, unsigned int time_to_live, TNetStorageFlags default_flags, CNetStorageObject& nso)
 {
 #if !defined(HAVE_LIBLZO)
     if (m_CmprsFmt == eNC_LzoCompressed) {
@@ -616,7 +616,7 @@ auto_ptr<CNcbiOstream> CProjectStorage::x_GetOutputStream(string& key, unsigned 
                    "The client code doesn't support lzo compression.");
     }
 #endif // HAVE_LIBLZO
-    auto_ptr<CNcbiOstream> ostr;
+    unique_ptr<CNcbiOstream> ostr;
 
     if (m_NC) {
         ostr.reset(m_NC->CreateOStream(key, (nc_blob_ttl=time_to_live, nc_blob_password=m_Password)));
@@ -631,7 +631,7 @@ auto_ptr<CNcbiOstream> CProjectStorage::x_GetOutputStream(string& key, unsigned 
     ostr->write((char*)(&m_DataFmt), sizeof(m_DataFmt));
 
     if (m_CmprsFmt != eNC_Uncompressed) {
-        auto_ptr<CCompressionStreamProcessor> compressor;
+        unique_ptr<CCompressionStreamProcessor> compressor;
 
         if (m_CmprsFmt == eNC_ZlibCompressed) {
             compressor.reset(new CZipStreamCompressor(kCompressionLevel,
@@ -648,7 +648,7 @@ auto_ptr<CNcbiOstream> CProjectStorage::x_GetOutputStream(string& key, unsigned 
 #endif // HAVE_LIBLZO
         }
 
-        auto_ptr<CNcbiOstream> zip_ostr(
+        unique_ptr<CNcbiOstream> zip_ostr(
             new CCompressionOStream(*ostr.release(), compressor.release(),
                                     CCompressionStream::fOwnAll));
 

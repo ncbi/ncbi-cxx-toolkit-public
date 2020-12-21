@@ -318,7 +318,7 @@ BOOST_AUTO_TEST_CASE(RawDataTest)
     
     // test string blob retrieval
     string ret_str;
-    auto_ptr<CNcbiIstream> istr = nc_tool.GetIstream(nc_key, true);
+    unique_ptr<CNcbiIstream> istr = nc_tool.GetIstream(nc_key, true);
     string line;
     while (!istr->eof()) {
         getline(*istr, line);
@@ -341,7 +341,7 @@ static const string kSeqAnnotAsnFile = "test_align_annot.asn";
 
 static CRef<CSeq_annot> s_ReadTestSeqAnnot()
 {
-    auto_ptr<CObjectIStream>
+    unique_ptr<CObjectIStream>
         istr(CObjectIStream::Open(kSeqAnnotAsnFile, eSerial_AsnText));
     CRef<CSeq_annot> annot(new CSeq_annot);
     if (istr.get()  &&  istr->InGoodState()) {
@@ -390,7 +390,7 @@ static void s_TestSeqAnnotAsn(ESerialDataFormat serial_fmt,
         cout << MSerial_AsnText << *annot << endl;
     }
 
-    auto_ptr<CObjectOStream> ostr(
+    unique_ptr<CObjectOStream> ostr(
         CObjectOStream::Open(eSerial_AsnText,
                              tmp_file.AsOutputFile(
                                  CTmpFile::eIfExists_ReturnCurrent)));
@@ -509,7 +509,7 @@ BOOST_AUTO_TEST_CASE(SeqAnnotRawDataTest)
         cout << MSerial_AsnText << ret_annot << endl;
     }
 
-    auto_ptr<CObjectOStream> ostr(
+    unique_ptr<CObjectOStream> ostr(
         CObjectOStream::Open(eSerial_AsnText,
                              tmp_file.AsOutputFile(
                                  CTmpFile::eIfExists_ReturnCurrent)));
@@ -531,7 +531,7 @@ static const string kGBProjectFile = "test_gbproject.gbp";
 
 static CRef<CGBProject_ver2> s_ReadGBProject()
 {
-    auto_ptr<CObjectIStream>
+    unique_ptr<CObjectIStream>
         istr(CObjectIStream::Open(kGBProjectFile, eSerial_AsnBinary));
     CRef<CGBProject_ver2> project(new CGBProject_ver2);
     if (istr.get()  &&  istr->InGoodState()) {

@@ -240,12 +240,12 @@ public:
     ///   5) Return a NcbiIstream
     /// If raw is true, it does not check header, just returns
     /// the input stream to the blob.
-    auto_ptr<CNcbiIstream> GetIstream(const string& key, bool raw=false);
+    unique_ptr<CNcbiIstream> GetIstream(const string& key, bool raw=false);
 
     /// Create a CObjectIStream.
     /// It is caller's reponsibility to make sure the saved
     /// data indeed are in ASN format.
-    auto_ptr<CObjectIStream> GetObjectIstream(const string& key);
+    unique_ptr<CObjectIStream> GetObjectIstream(const string& key);
 
     /// Download the data as a string from NetCache with a key
     void GetString(const string& key, string& str);
@@ -269,7 +269,7 @@ public:
  
 private:
     /// Create an output stream.
-    auto_ptr<CNcbiOstream> x_GetOutputStream(string& key,
+    unique_ptr<CNcbiOstream> x_GetOutputStream(string& key,
                                              unsigned int time_to_live, 
                                              TNetStorageFlags default_flags,
                                              CNetStorageObject& nso);

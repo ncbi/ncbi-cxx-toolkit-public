@@ -58,7 +58,7 @@ public:
 void
 CFetchGBProjectApp::Init(void)
 {
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions());
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions());
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "UUDUtil FetchGBProject"
                              );
@@ -94,7 +94,7 @@ CFetchGBProjectApp::Run(void)
         NcbiCout << MSerial_AsnText << *prjstorage.GetObject(nckey);
     }
     else if (args["s"].AsBoolean()) {
-        auto_ptr<CObjectIStream> istr = prjstorage.GetObjectIstream(nckey);
+        unique_ptr<CObjectIStream> istr = prjstorage.GetObjectIstream(nckey);
         CRef<objects::CTMgr_DatasetItem> stats_item(new objects::CTMgr_DatasetItem());
         *istr >> *stats_item;
         NcbiCout << MSerial_AsnText << *stats_item;
