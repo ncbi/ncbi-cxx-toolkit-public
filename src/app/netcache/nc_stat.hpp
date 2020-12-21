@@ -176,7 +176,7 @@ private:
     CSrvStatTerm<size_t> m_WBMemSize;
     CSrvStatTerm<size_t> m_WBReleasable;
     CSrvStatTerm<size_t> m_WBReleasing;
-    auto_ptr<CSrvStat> m_SrvStat;
+    unique_ptr<CSrvStat> m_SrvStat;
 };
 
 

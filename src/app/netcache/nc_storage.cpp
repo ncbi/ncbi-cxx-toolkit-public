@@ -225,12 +225,12 @@ static string s_GuardName;
 /// It will hold exclusive lock all the time while NetCache is
 /// working, so that other instance of NetCache on the same database will
 /// be unable to start.
-static auto_ptr<CFileLock> s_GuardLock;
+static unique_ptr<CFileLock> s_GuardLock;
 
 /// manages access to s_IndexDB
 static CMiniMutex s_IndexLock;
 /// Index database file
-static auto_ptr<CNCDBIndexFile> s_IndexDB;
+static unique_ptr<CNCDBIndexFile> s_IndexDB;
 
 /// Read-write lock to work with s_DBFiles
 static CMiniMutex s_DBFilesLock;
@@ -346,7 +346,7 @@ string CNCBlobStorage::FindBlob(Uint2 bucket, const string& mask, Uint8 cr_time_
 }
 
 void
-CNCBlobStorage::GetBList(const string& mask, auto_ptr<TNCBufferType>& buffer, SNCBlobFilter* filters, const string& sep)
+CNCBlobStorage::GetBList(const string& mask, unique_ptr<TNCBufferType>& buffer, SNCBlobFilter* filters, const string& sep)
 {
     if (mask.empty()) {
         return;

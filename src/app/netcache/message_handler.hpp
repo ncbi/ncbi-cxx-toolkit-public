@@ -356,7 +356,7 @@ private:
     Uint2                     m_Slot;
     Uint8                     m_LocalRecNo;
     Uint8                     m_RemoteRecNo;
-    auto_ptr<TNCBufferType>   m_SendBuff;
+    unique_ptr<TNCBufferType>   m_SendBuff;
     size_t                    m_SendPos;
     string                    m_RawBlobPass;
     Uint8                     m_SyncId;
