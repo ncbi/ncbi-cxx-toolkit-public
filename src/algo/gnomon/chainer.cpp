@@ -78,7 +78,7 @@ class CGene;
 class CChainer::CChainerImpl {
 
 private:
-    CChainerImpl(CRef<CHMMParameters>& hmm_params, auto_ptr<CGnomonEngine>& gnomon);
+    CChainerImpl(CRef<CHMMParameters>& hmm_params, unique_ptr<CGnomonEngine>& gnomon);
     void SetGenomicRange(const TAlignModelList& alignments);
     void SetConfirmedStartStopForProteinAlignments(TAlignModelList& alignments);
 
@@ -124,7 +124,7 @@ private:
 
 
     CRef<CHMMParameters>& m_hmm_params;
-    auto_ptr<CGnomonEngine>& m_gnomon;
+    unique_ptr<CGnomonEngine>& m_gnomon;
 
 
     SMinScor minscor;
@@ -182,7 +182,7 @@ CChainer::~CChainer()
 {
 }
 
-CChainer::CChainerImpl::CChainerImpl(CRef<CHMMParameters>& hmm_params, auto_ptr<CGnomonEngine>& gnomon)
+CChainer::CChainerImpl::CChainerImpl(CRef<CHMMParameters>& hmm_params, unique_ptr<CGnomonEngine>& gnomon)
     :m_hmm_params(hmm_params), m_gnomon(gnomon), m_idnext(1), m_idinc(1)
 {
 }
