@@ -164,7 +164,7 @@ private:
     string                      m_CommandLine;
     CCompoundIDPool             m_CompoundIDPool;
     CNSTAlerts                  m_Alerts;
-    auto_ptr<CNSTDatabase>      m_Db;   // Access to NST attributes DB
+    unique_ptr<CNSTDatabase>    m_Db;   // Access to NST attributes DB
 
     static CNetStorageServer *  sm_netstorage_server;
 
