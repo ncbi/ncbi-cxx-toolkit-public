@@ -100,7 +100,7 @@ CWinMaskApplication::CWinMaskApplication() {
 void CWinMaskApplication::Init(void)
 {
     HideStdArgs(fHideLogfile | fHideConffile | fHideVersion | fHideDryRun);
-    auto_ptr< CArgDescriptions > arg_desc( new CArgDescriptions );
+    unique_ptr< CArgDescriptions > arg_desc( new CArgDescriptions );
 
     // Set the program description
     arg_desc->SetUsageContext( GetArguments().GetProgramBasename(),
@@ -249,12 +249,12 @@ int CWinMaskApplication::Run (void)
                 _TRACE( "Sequence length " << len );
                 CSeqVector data =
                     bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
-                auto_ptr< CSeqMasker::TMaskList > mask_info( theMasker( data ) );
+                unique_ptr< CSeqMasker::TMaskList > mask_info( theMasker( data ) );
                 CSeqMasker::TMaskList dummy;
 
                 if( duster != 0 ) // Dust and merge with mask_info
                 {
-                    auto_ptr< CSeqMasker::TMaskList > dust_info( 
+                    unique_ptr< CSeqMasker::TMaskList > dust_info( 
                         (*duster)( data, *mask_info.get() ) );
                     CSeqMasker::MergeMaskInfo( mask_info.get(), dust_info.get() );
                 }
