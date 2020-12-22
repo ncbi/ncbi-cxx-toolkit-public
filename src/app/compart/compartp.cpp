@@ -37,7 +37,7 @@ private:
 void CCompartApplication::Init(void)
 {
     // Create command-line argument descriptions class
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
@@ -74,7 +74,7 @@ void DoCompartments(const CSplign::THitRefs& one_query_subj_pair_hitrefs,
                     const CCompartOptions& compart_options,
                     bool hits, int& last_id, const string& query, const string& subj)
 {
-    auto_ptr<CCompartmentAccessor<THit> > comps_ptr =
+    unique_ptr<CCompartmentAccessor<THit> > comps_ptr =
         CreateCompartmentAccessor(one_query_subj_pair_hitrefs, compart_options);
     if (comps_ptr.get() == NULL)
         return;
