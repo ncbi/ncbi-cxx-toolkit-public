@@ -183,7 +183,7 @@ void CSplitDataLoader::x_LoadData(CTSE_LoadLock& load_lock)
     m_NextChunkId = 0;
     {{
         // Load the seq-entry
-        auto_ptr<CObjectIStream> is(CObjectIStream::Open(m_DataFile,
+        unique_ptr<CObjectIStream> is(CObjectIStream::Open(m_DataFile,
             eSerial_AsnText));
         *is >> *m_TSE;
     }}
