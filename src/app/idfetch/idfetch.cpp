@@ -89,7 +89,7 @@ public:
     }
 
 private:
-    auto_ptr<CObjectOStream> m_Os;
+    unique_ptr<CObjectOStream> m_Os;
 
 };
 
@@ -110,7 +110,7 @@ public:
     }
 
 private:
-    auto_ptr<CFastaOstream> m_Os;
+    unique_ptr<CFastaOstream> m_Os;
 
 };
 
@@ -155,7 +155,7 @@ void CIdfetchApplication::Init(void)
     // SetDiagPostLevel(eDiag_Info);
 
     // Create command-line argument descriptions class
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
@@ -248,7 +248,7 @@ int CIdfetchApplication::Run(void)
     scope->AddDefaults();
 
     // generate a formatter class
-    auto_ptr<IOutputFormatter> formatter(x_GetFormatter(ostr, args));
+    unique_ptr<IOutputFormatter> formatter(x_GetFormatter(ostr, args));
 
 
     if (args["g"]  ||  args["s"]) {
