@@ -72,7 +72,7 @@ protected:
 
 private:
     CWorkerNodeJobContext* m_JobContext;
-    auto_ptr<CGridWorkerNode> m_AppImpl;
+    unique_ptr<CGridWorkerNode> m_AppImpl;
     friend class CCgiWorkerNodeJob;
     int RunJob(CNcbiIstream& is, CNcbiOstream& os, CWorkerNodeJobContext&);
 };
