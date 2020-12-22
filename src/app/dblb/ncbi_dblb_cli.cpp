@@ -93,11 +93,11 @@ private:
 
 void CDBLBClientApp::Init(void)
 {
-    auto_ptr<CCommandArgDescriptions> cmd_desc(new CCommandArgDescriptions);
+    unique_ptr<CCommandArgDescriptions> cmd_desc(new CCommandArgDescriptions);
     cmd_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "Simple database-centric load-balancer client");
 
-    auto_ptr<CArgDescriptions> arg_desc;
+    unique_ptr<CArgDescriptions> arg_desc;
 
     arg_desc.reset(new CArgDescriptions);
     x_InitLookup(*arg_desc);
@@ -308,7 +308,7 @@ void CDBLBClientApp::x_InitWhereIs(CArgDescriptions& arg_desc)
     arg_desc.AddDefaultKey
         ("type", "Type", "Service type (case-insensitive)",
          CArgDescriptions::eString, "DBLB");
-    auto_ptr<CArgAllow_Strings> type_strings
+    unique_ptr<CArgAllow_Strings> type_strings
         (&(*new CArgAllow_Strings(NStr::eNocase), "ANY", "DBLB", "HTTP"));
     for (TSERV_Type t = 1;  t <= fSERV_All;  t <<= 1) {
         const char* name = SERV_TypeStr(static_cast<ESERV_Type>(t));
