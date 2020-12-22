@@ -47,7 +47,7 @@ void CAppNWA::Init()
 {
     HideStdArgs(fHideLogfile | fHideConffile | fHideVersion);
 
-    auto_ptr<CArgDescriptions> argdescr(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> argdescr(new CArgDescriptions);
     argdescr->SetUsageContext(GetArguments().GetProgramName(),
                               "Demo application using xalgoalign library");
 
@@ -157,9 +157,9 @@ int CAppNWA::Run()
 }
 
 
-auto_ptr<ofstream> open_ofstream (const string& filename) {
+unique_ptr<ofstream> open_ofstream (const string& filename) {
 
-    auto_ptr<ofstream> pofs0 ( new ofstream (filename.c_str()) );
+    unique_ptr<ofstream> pofs0 ( new ofstream (filename.c_str()) );
     if(*pofs0) {
         return pofs0;
     }
@@ -236,7 +236,7 @@ void CAppNWA::x_RunOnPair() const
         pnwaligner = ba;
     }
 
-    auto_ptr<CNWAligner> aligner (pnwaligner);
+    unique_ptr<CNWAligner> aligner (pnwaligner);
 
     if(psm == NULL) {
         aligner->SetWm  (args["Wm"]. AsInteger());
@@ -254,10 +254,10 @@ void CAppNWA::x_RunOnPair() const
         pmma -> EnableMultipleThreads();
     }
     
-    auto_ptr<ofstream> pofs1 (0);
-    auto_ptr<ofstream> pofs2 (0);
-    auto_ptr<ofstream> pofsAsn (0);
-    auto_ptr<ofstream> pofsFastA (0);
+    unique_ptr<ofstream> pofs1;
+    unique_ptr<ofstream> pofs2;
+    unique_ptr<ofstream> pofsAsn;
+    unique_ptr<ofstream> pofsFastA;
 
     if(output_type1) {
         pofs1.reset(open_ofstream (args["o1"].AsString()).release());
