@@ -165,7 +165,7 @@ LoadBioSampleFromFile(
     const string& fileName)
 //  ----------------------------------------------------------------------------
 {
-    auto_ptr<CNcbiIfstream> pInStr(new CNcbiIfstream(fileName.c_str(), ios::binary));
+    unique_ptr<CNcbiIfstream> pInStr(new CNcbiIfstream(fileName.c_str(), ios::binary));
     CObjectIStream* pI = CObjectIStream::Open(
         eSerial_AsnText, *pInStr, eTakeOwnership);    
     CRef<CSeq_descr> pDescrs(new CSeq_descr);
@@ -234,7 +234,7 @@ LoadBioSource(
     const string& inFile)
 //  ----------------------------------------------------------------------------
 {
-    auto_ptr<CNcbiIfstream> pInStr(new CNcbiIfstream(inFile.c_str(), ios::binary));
+    unique_ptr<CNcbiIfstream> pInStr(new CNcbiIfstream(inFile.c_str(), ios::binary));
     CObjectIStream* pI = CObjectIStream::Open(
         eSerial_AsnText, *pInStr, eTakeOwnership);    
     CRef<CSeq_descr> pDescrs(new CSeq_descr);
@@ -300,7 +300,7 @@ CBsDiffApp::CBsDiffApp(void)
 void CBsDiffApp::Init()
 //  ----------------------------------------------------------------------------
 {
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     arg_desc->AddDefaultKey(
         "biosource", 
