@@ -1842,7 +1842,7 @@ int CDemoApp::Run(void)
         base_sel.SetByProduct(by_product);
 
         typedef int TTableField;
-        auto_ptr< CTableFieldHandle<TTableField> > table_field;
+        unique_ptr< CTableFieldHandle<TTableField> > table_field;
         if ( table_field_id >= 0 ) {
             table_field.reset(new CTableFieldHandle<TTableField>(CSeqTable_column_info::EField_id(table_field_id)));
         }
