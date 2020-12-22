@@ -98,7 +98,7 @@ void CSplignApp::Init()
                 fHideVersion | fHideFullVersion | fHideDryRun  |
                 fHideXmlHelp | fHideFullHelp);
 
-    auto_ptr<CArgDescriptions> argdescr(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> argdescr(new CArgDescriptions);
     argdescr->SetUsageContext(GetArguments().GetProgramName(), m_AppName);
     
     argdescr->AddOptionalKey
