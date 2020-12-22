@@ -121,7 +121,7 @@ private:
 void CMytestApplication::Init(void)
 {
     // Create command-line argument descriptions class
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // Specify USAGE context
     arg_desc->SetUsageContext
@@ -474,7 +474,7 @@ void CMytestApplication::GetSeqEntry(
     CRef<CSeq_entry>& se )
 {
     string asntype = GetArgs()["a"].AsString();
-    auto_ptr<CObjectIStream> is (CObjectIStream::Open (eSerial_AsnText, ip));
+    unique_ptr<CObjectIStream> is (CObjectIStream::Open (eSerial_AsnText, ip));
     is->SetStreamPos( 0 );
 
     if ( asntype == "a" || asntype == "m" ) {
@@ -692,7 +692,7 @@ int CMytestApplication::Run(void)
     // write ASN.1
     /*
     if (NStr::Equal (fm, "a")) {
-        auto_ptr<CObjectOStream> os (CObjectOStream::Open (eSerial_AsnText, op));
+        unique_ptr<CObjectOStream> os (CObjectOStream::Open (eSerial_AsnText, op));
         *os << *se;
         t2.SetCurrent();
         tx = t2.DiffSecond (t1);
