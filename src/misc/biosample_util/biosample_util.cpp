@@ -111,7 +111,7 @@ GetBiosampleData(const string& accession, bool use_dev_server, TBioSamples *cach
     
     string args = "accession=" + accession + "&format=asn1raw";
     CConn_HttpStream http_stream(PrepareUrl(use_dev_server, args));
-    auto_ptr<CObjectIStream> in_stream;
+    unique_ptr<CObjectIStream> in_stream;
     in_stream.reset(new CObjectIStreamAsn(http_stream));
  
 	CRef< CSeq_descr > response(new CSeq_descr());
