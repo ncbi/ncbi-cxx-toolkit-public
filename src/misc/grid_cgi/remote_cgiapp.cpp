@@ -130,7 +130,7 @@ void CRemoteCgiApp::Init(void)
 {
     CCgiApplication::Init();
 
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "Worker Node");
@@ -172,7 +172,7 @@ string CRemoteCgiApp::GetJobVersion() const
 int CRemoteCgiApp::RunJob(CNcbiIstream& is, CNcbiOstream& os,
                               CWorkerNodeJobContext& job_context)
 {
-    auto_ptr<CCgiContext> cgi_context( 
+    unique_ptr<CCgiContext> cgi_context( 
                          new CCgiContext(*this, &is, &os,
                          m_RequestFlags | CCgiRequest::fSetDiagProperties) );
 
