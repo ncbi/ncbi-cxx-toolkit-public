@@ -90,7 +90,7 @@ private:
 
 void CConversionApp::Init(void)
 {
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "Convert biological sequences between formats",
                               false);
@@ -288,7 +288,7 @@ CRef<CSeq_entry> CConversionApp::Read(const CArgs& args)
         return entry;
     } else {
         CRef<CSeq_entry> entry(new CSeq_entry);
-        auto_ptr<CObjectIStream> in
+        unique_ptr<CObjectIStream> in
             (CObjectIStream::Open(GetSerialFormat(infmt),
                                   args["in"].AsString(),
                                   eSerial_StdWhenDash));
@@ -354,7 +354,7 @@ void CConversionApp::Write(const CSeq_entry& entry, const CArgs& args)
             out.Write(m_Scope->GetSeq_entryHandle(entry));
         }
 	} else {
-        auto_ptr<CObjectOStream> out
+        unique_ptr<CObjectOStream> out
             (CObjectOStream::Open(GetSerialFormat(outfmt),
                                   args["out"].AsString(),
                                   eSerial_StdWhenDash));
