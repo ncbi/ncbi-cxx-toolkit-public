@@ -273,7 +273,7 @@ private:
 void CPrimeCacheApplication::Init(void)
 {
     // Create command-line argument descriptions class
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
@@ -702,7 +702,7 @@ void CPrimeCacheApplication::x_SplitAndCacheSeqEntry(CNcbiIstream& istr,
                                                      ESerialDataFormat serial_fmt)
 {
     CPrimeCacheApplication::CCacheBioseq cache_bioseq(this, &ostr_seqids);
-    auto_ptr<CObjectIStream> is(CObjectIStream::Open(serial_fmt, istr));
+    unique_ptr<CObjectIStream> is(CObjectIStream::Open(serial_fmt, istr));
  
     CObjectTypeInfo(CType<CBioseq>())
         .SetLocalSkipHook(*is, new CObjectEnum<CBioseq, CPrimeCacheApplication::CCacheBioseq>(cache_bioseq));
@@ -729,7 +729,7 @@ void CPrimeCacheApplication::x_CacheSeqEntry(CNcbiIstream& istr,
     CStopWatch sw;
     sw.Start();
 
-    auto_ptr<CObjectIStream> is(CObjectIStream::Open(serial_fmt, istr));
+    unique_ptr<CObjectIStream> is(CObjectIStream::Open(serial_fmt, istr));
     while ( !is->EndOfData() ) {
 
         if (CSignal::IsSignaled()) {
@@ -1030,7 +1030,7 @@ int CPrimeCacheApplication::Run(void)
     if (args["submit-block-template"]) {
         CRef<CSubmit_block> submit_block;
         CNcbiIstream& istr_manifest = args["submit-block-template"].AsInputFile();
-        auto_ptr<CObjectIStream> is
+        unique_ptr<CObjectIStream> is
             (CObjectIStream::Open(eSerial_AsnText, istr_manifest));
         while ( !is->EndOfData() ) {
             if ( !submit_block ) {
