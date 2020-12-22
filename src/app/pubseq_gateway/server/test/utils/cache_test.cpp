@@ -46,7 +46,7 @@ class CCacheTestApplication : public CNcbiApplication
 
 void CCacheTestApplication::Init(void)
 {
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     arg_desc->AddPositional("users", "number of users", CArgDescriptions::eInteger);
     arg_desc->AddPositional("threads_per_user", "number of threads per user", CArgDescriptions::eInteger);
     arg_desc->AddPositional("count", "number of cache.add() per thread", CArgDescriptions::eInteger);
