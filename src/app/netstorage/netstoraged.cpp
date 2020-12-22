@@ -109,7 +109,7 @@ void CNetStorageDApp::Init(void)
 
 
     // Create command-line argument descriptions class
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
@@ -159,7 +159,7 @@ int CNetStorageDApp::Run(void)
     // The server should be created before the parameters are read because an
     // alert could be generated during reading parameters.
     SOCK_SetIOWaitSysAPI(eSOCK_IOWaitSysAPIPoll);
-    auto_ptr<CNetStorageServer>     server(new CNetStorageServer());
+    unique_ptr<CNetStorageServer>     server(new CNetStorageServer());
 
     // [server] section
     SNetStorageServerParameters     params;
