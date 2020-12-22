@@ -169,7 +169,7 @@ private:
     CRef<CProSplign>              m_ProSplign;
     CRef<CProSplignScoring>       m_ProSplignScoring;
     CRef<CProSplignOutputOptions> m_ProSplignOutputOptions;
-    auto_ptr<prosplign::CCompartOptions>     m_CompartOptions;
+    unique_ptr<prosplign::CCompartOptions>     m_CompartOptions;
     map<objects::CSeq_id_Handle, vector<pair<TSeqPos, TSeqPos> > > m_seq_gaps;
     bool m_ProsplignGaps;
     bool m_ProsplignUnknownGaps;
