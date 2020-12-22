@@ -683,9 +683,9 @@ protected:
 };
 
 
-auto_ptr<CObjectIStream> OpenUncompressedStream(const string& fname, bool& compressed) // One more copy!!!
+unique_ptr<CObjectIStream> OpenUncompressedStream(const string& fname, bool& compressed) // One more copy!!!
 {
-    auto_ptr<CNcbiIstream> InputStream(new CNcbiIfstream(fname.c_str(), ios::binary));
+    unique_ptr<CNcbiIstream> InputStream(new CNcbiIfstream(fname.c_str(), ios::binary));
     CCompressStream::EMethod method;
 
     CFormatGuess::EFormat format = CFormatGuess::Format(*InputStream);
@@ -701,7 +701,7 @@ auto_ptr<CObjectIStream> OpenUncompressedStream(const string& fname, bool& compr
         format = CFormatGuess::Format(*InputStream);
     }
 
-    auto_ptr<CObjectIStream> objectStream;
+    unique_ptr<CObjectIStream> objectStream;
     switch (format)
     {
         case CFormatGuess::eBinaryASN:
@@ -770,7 +770,7 @@ void CDiscrepancyContext::AutofixFile(vector<CDiscrepancyObject*>&fixes, const s
         }
     }
     bool compressed = false;
-    auto_ptr<CObjectIStream> in = OpenUncompressedStream(path, compressed);
+    unique_ptr<CObjectIStream> in = OpenUncompressedStream(path, compressed);
 cout << "Autofixing " << path << "\n";
 
     int dot = path.find_last_of('.');
@@ -779,7 +779,7 @@ cout << "Autofixing " << path << "\n";
 
     string header = in->ReadFileHeader();
     in = OpenUncompressedStream(path, compressed);
-    auto_ptr<CObjectOStream> out(CObjectOStream::Open(eSerial_AsnText, fixed_path));
+    unique_ptr<CObjectOStream> out(CObjectOStream::Open(eSerial_AsnText, fixed_path));
     CObjectStreamCopier copier(*in, *out);
 
     m_Fixes = &fixes;
