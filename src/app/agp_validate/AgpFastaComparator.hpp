@@ -93,11 +93,11 @@ private:
 
     // where we write detailed loading logs
     // This is unset if we're not writing anywhere
-    auto_ptr<CNcbiOfstream> m_pLoadLogFile;
+    unique_ptr<CNcbiOfstream> m_pLoadLogFile;
 
     // where we output AGP in FASTA format (unset if we're not
     // supposed to write it)
-    auto_ptr<CNcbiOfstream> m_pAgpAsFastaFile;
+    unique_ptr<CNcbiOfstream> m_pAgpAsFastaFile;
 
     // TKey pair is: MD5 checksum and sequence length
     typedef pair<string, TSeqPos> TKey;

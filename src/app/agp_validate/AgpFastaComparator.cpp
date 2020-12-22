@@ -218,7 +218,7 @@ CAgpFastaComparator::EResult CAgpFastaComparator::Run(
 
     // load local component FASTA sequences and Genbank into 
     // local scope for lookups using local data storage
-    auto_ptr<CTmpFile> ldsdb_file;
+    unique_ptr<CTmpFile> ldsdb_file;
     CRef<CLDS2_Manager> lds_mgr;
     ldsdb_file.reset( new CTmpFile ); // file deleted on object destruction
     lds_mgr.Reset(new CLDS2_Manager( ldsdb_file->GetFileName() ));
@@ -297,7 +297,7 @@ CAgpFastaComparator::EResult CAgpFastaComparator::Run(
 
     // temporary dir to hold outputs so we can diff.
     // this is only used if we're showing diffs
-    auto_ptr<CTmpSeqVecStorage> temp_dir;
+    unique_ptr<CTmpSeqVecStorage> temp_dir;
     if( diffs_to_find > 0 ) {
         temp_dir.reset( new CTmpSeqVecStorage );
     }
