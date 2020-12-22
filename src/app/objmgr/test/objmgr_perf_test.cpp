@@ -140,7 +140,7 @@ void CPerfTestApp::Init(void)
 {
     CONNECT_Init(&GetConfig());
 
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // Input: list of ids or range of GIs.
     arg_desc->AddOptionalKey("ids", "IdsFile",
