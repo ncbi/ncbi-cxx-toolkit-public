@@ -66,7 +66,7 @@ private:
 void CSubfuseApp::Init(void)
 {
     // Prepare command line descriptions
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(), "Submissions integration");
 
     arg_desc->AddKey("p", "InDir", "Path to Files", CArgDescriptions::eDirectory);
