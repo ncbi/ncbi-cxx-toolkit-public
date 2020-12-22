@@ -93,7 +93,7 @@ string CFormatGuessApp::guess_object_type(CObjectIStream & obj_istrm)
 void CFormatGuessApp::Init(void)
 //  ============================================================================
 {
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     arg_desc->SetUsageContext
         (GetArguments().GetProgramBasename(),
