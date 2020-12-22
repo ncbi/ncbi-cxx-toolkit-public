@@ -24,7 +24,7 @@ class CSampleObjectsApplication : public CNcbiApplication
 
 void CSampleObjectsApplication::Init(void)
 {
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     arg_desc->AddPositional("sec_seq_id", "Secondary seq_id", CArgDescriptions::eString);
     arg_desc->AddPositional("sec_seq_id_type", "Secondary seq_id_type", CArgDescriptions::eInteger);
 
