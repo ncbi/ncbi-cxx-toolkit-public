@@ -179,7 +179,7 @@ CHgvsReader::ReadSeqAnnot(
 
                     const string& code = 
                         CVariationException::GetTypeInfo_enum_ECode()->FindName(except.GetCode(), true);
-                    auto_ptr<CObjReaderLineException> err(
+                    unique_ptr<CObjReaderLineException> err(
                         CObjReaderLineException::Create(
                             eDiag_Warning,
                             m_uLineNumber,
@@ -192,7 +192,7 @@ CHgvsReader::ReadSeqAnnot(
             varUtil.AsVariation_feats(*var, annot->SetData().SetFtable());
         }
         catch (const variation::CHgvsParser::CHgvsParserException& e) {
-            auto_ptr<CObjReaderLineException> err(
+            unique_ptr<CObjReaderLineException> err(
                 CObjReaderLineException::Create(
                     eDiag_Error,
                     0,
