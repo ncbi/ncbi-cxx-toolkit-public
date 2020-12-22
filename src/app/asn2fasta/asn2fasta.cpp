@@ -144,7 +144,7 @@ private:
 // constructor
 CAsn2FastaApp::CAsn2FastaApp (void)
 {
-    SetVersion(CVersionInfo(1, 0, 0));
+    SetVersion(CVersionInfo(1, 0, 1));
 }
 
 // destructor
@@ -277,9 +277,12 @@ void CAsn2FastaApp::Init(void)
         arg_desc->SetDependency("og_tail", CArgDescriptions::eExcludes, "on");
         arg_desc->SetDependency("og_tail", CArgDescriptions::eExcludes, "og");
 
-        arg_desc->AddDefaultKey("x", "GenomeFileMaxSize",
-                                "Maximum size of each genomic fasta file in Mb",
-                                CArgDescriptions::eInteger, "1000");
+        arg_desc->AddOptionalKey("og_maxsize", "GenomeFileMaxSize",
+            "Maximum size of each genomic fasta file in Mb",
+            CArgDescriptions::eInteger);
+        arg_desc->AddOptionalKey("x", "deprecated",
+            "Use -og_maxsize instead",
+            CArgDescriptions::eString);
 
         arg_desc->AddOptionalKey("or", "RNAOutputFile",
             "RNA output file name", CArgDescriptions::eOutputFile);
@@ -515,10 +518,23 @@ void CAsn2FastaApp::x_InitOStreams(const CArgs& args)
     m_OgIndex = 0;
     m_OgMax = 0;
     m_OgCurrLen = 0;
-    if (args["og_head"] && args["og_tail"] && args["x"]) {
+    if (args["og_head"] && args["og_tail"]) {
+        if (args["x"]) {
+            WARNING_POST("-x is deprecated. Use -og_maxsize instead.");
+        }
+        int og_maxsize = 1000;
+        if (args["og_maxsize"]) {
+            og_maxsize = args["og_maxsize"].AsInteger();
+        } else {
+            // old behavior
+            if (args["x"]) {
+                const string& s = args["x"].AsString();
+                og_maxsize = NStr::StringToInt(s);
+            }
+        }
         m_OgHead = args["og_head"].AsString();
         m_OgTail = args["og_tail"].AsString();
-        m_OgMax = TSeqPos (args["x"].AsInteger() * 1000000);
+        m_OgMax = TSeqPos(og_maxsize * 1000000);
     }
 
     if (! m_OgHead.empty() && ! m_OgTail.empty()) {
