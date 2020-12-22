@@ -99,7 +99,7 @@ private:
 
 void CTestShiftApp::Init(void)
 {
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
         "Test shifting in Variation objects");
     arg_desc->AddDefaultKey("i", "input", "Input file",
