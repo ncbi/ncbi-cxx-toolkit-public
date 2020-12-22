@@ -187,7 +187,7 @@ private:
     bool m_bXmlMessages;
     bool m_showingProgress;
 
-    auto_ptr<CIdMapper> m_pMapper;
+    unique_ptr<CIdMapper> m_pMapper;
     //unique_ptr<CMessageListenerBase> m_pErrors;
     unique_ptr<CMessageListenerBase> m_pErrors;
     unique_ptr<CObjtoolsListener> m_pEditErrors;
@@ -301,7 +301,7 @@ CMultiReaderMessageListener newStyleMessageListener;
 void CMultiReaderApp::Init(void)
 //  ----------------------------------------------------------------------------
 {
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     arg_desc->SetUsageContext
         (GetArguments().GetProgramBasename(),
@@ -1105,7 +1105,7 @@ void CMultiReaderApp::xProcessNewick(
 //  ----------------------------------------------------------------------------
 {
     while (!istr.eof()) {
-        auto_ptr<TPhyTreeNode>  pTree(ReadNewickTree(istr));
+        unique_ptr<TPhyTreeNode>  pTree(ReadNewickTree(istr));
         CRef<CBioTreeContainer> btc = MakeDistanceSensitiveBioTreeContainer(
             pTree.get());
         xWriteObject(args, *btc, ostr);
@@ -1529,7 +1529,7 @@ void CMultiReaderApp::xWriteObject(
         return;
     }
     const string out_format = args["out-format"].AsString();
-    auto_ptr<MSerial_Format> pOutFormat;
+    unique_ptr<MSerial_Format> pOutFormat;
     if( out_format == "asn_text" ) {
         pOutFormat.reset( new MSerial_Format_AsnText );
     } else if( out_format == "asn_binary" ) {
