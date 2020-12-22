@@ -61,7 +61,7 @@ private:
 
 void CNcbiEncryptApp::Init(void)
 {
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     string prog_description = "NCBI encryption utility\n";
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
