@@ -26,7 +26,7 @@ class CINSDCSI2CSIFilter : public CNcbiApplication
 
 void CINSDCSI2CSIFilter::Init(void)
 {
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     arg_desc->AddPositional("dump_file", "Dump file", CArgDescriptions::eString);
 
     SetupArgDescriptions(arg_desc.release());
