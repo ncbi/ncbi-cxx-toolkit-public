@@ -553,7 +553,7 @@ cout << "key_id = " << key_id << endl;
         Uint8 orig_size = size;
         size_t last_pos = 0;
         {
-            auto_ptr<IEmbeddedStreamWriter> writer(m_NC.PutData(&key));
+            unique_ptr<IEmbeddedStreamWriter> writer(m_NC.PutData(&key));
             while (size > sizeof(m_InBuf)) {
                 writer->Write(m_InBuf, sizeof(m_InBuf));
                 size -= sizeof(m_InBuf);
@@ -637,7 +637,7 @@ CReplayThread::x_GetBlob(Uint8 key_id)
         Uint8 start_time = Uint8(ts.tv_sec) * 1000000 + ts.tv_nsec / 1000;
 #endif
 
-        auto_ptr<IReader> reader(m_NC.GetData(key_info->key, &blob_size));
+        unique_ptr<IReader> reader(m_NC.GetData(key_info->key, &blob_size));
         if (!reader.get()) {
             if (!key_info->md5.empty()  &&  key_info->size != Uint8(-1)) {
                 ERR_POST(Warning << "Blob " << key_info->key <<
@@ -851,7 +851,7 @@ CLogsReplayApp::Init(void)
     signal(SIGHUP, s_ProcessHUP);
 #endif
 
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "Replay NetCache logs for testing");
