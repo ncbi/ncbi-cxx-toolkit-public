@@ -118,7 +118,7 @@ string& CDiscRepArgDescriptions::PrintUsage(string& str, bool detailed) const
 void CDiscRepApp::Init(void)
 {
     // Prepare command line descriptions
-    auto_ptr<CArgDescriptions> arg_desc(new CDiscRepArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CDiscRepArgDescriptions);
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(), "Discrepancy Report");
 
     arg_desc->AddOptionalKey("i", "InFile", "Single Input File", CArgDescriptions::eInputFile);
@@ -175,9 +175,9 @@ string CDiscRepApp::x_ConstructOutputName(const string& input) // LCOV_EXCL_STAR
 } // LCOV_EXCL_STOP
 
 
-static auto_ptr<CObjectIStream> OpenUncompressedStream(const string& fname, bool& compressed)
+static unique_ptr<CObjectIStream> OpenUncompressedStream(const string& fname, bool& compressed)
 {
-    auto_ptr<CNcbiIstream> InputStream(new CNcbiIfstream (fname.c_str(), ios::binary));
+    unique_ptr<CNcbiIstream> InputStream(new CNcbiIfstream (fname.c_str(), ios::binary));
     CCompressStream::EMethod method;
     
     CFormatGuess::EFormat format = CFormatGuess::Format(*InputStream);
@@ -193,7 +193,7 @@ static auto_ptr<CObjectIStream> OpenUncompressedStream(const string& fname, bool
         format = CFormatGuess::Format(*InputStream);
     }
 
-    auto_ptr<CObjectIStream> objectStream;
+    unique_ptr<CObjectIStream> objectStream;
     switch (format)
     {
         case CFormatGuess::eBinaryASN:
@@ -223,7 +223,7 @@ string CDiscRepApp::x_DefaultHeader()
 void CDiscRepApp::x_ProcessFile(const string& fname, CDiscrepancySet& tests)
 {
     bool compressed = false;
-    auto_ptr<CObjectIStream> in = OpenUncompressedStream(fname, compressed);
+    unique_ptr<CObjectIStream> in = OpenUncompressedStream(fname, compressed);
     tests.ParseStream(*in, fname, !compressed, x_DefaultHeader());
 }
 
