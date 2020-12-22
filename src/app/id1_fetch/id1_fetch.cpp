@@ -123,7 +123,7 @@ void CId1FetchApp::Init(void)
     //
 
     // Create
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // GI
     arg_desc->AddOptionalKey
@@ -651,7 +651,7 @@ bool CId1FetchApp::LookUpGI(TGi gi)
     }
 
     if (reply_object.NotEmpty()  &&  format != eSerial_None) {
-        auto_ptr<CObjectOStream> asn_output
+        unique_ptr<CObjectOStream> asn_output
             (CObjectOStream::Open(format, *m_OutputFile));
         // *asn_output << *reply_object;
         asn_output->Write(reply_object, reply_object->GetThisTypeInfo());
