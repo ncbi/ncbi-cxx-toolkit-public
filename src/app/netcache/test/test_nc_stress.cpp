@@ -272,8 +272,8 @@ void CTestNetCacheStress::StressTestPut(size_t           blob_size,
             if (rand() % 2) {
                 ti.key = m_API.PutData(buf, blob_size);
             } else {
-                auto_ptr<IWriter> writer(m_API.PutData(&ti.key));
-                auto_ptr<CWStream> os(new CWStream(writer.release(), 0,0,
+                unique_ptr<IWriter> writer(m_API.PutData(&ti.key));
+                unique_ptr<CWStream> os(new CWStream(writer.release(), 0,0,
                                                    CRWStreambuf::fOwnWriter));
                 os->write((char*)buf, blob_size);
             }
@@ -436,7 +436,7 @@ public:
         return NULL;
     }
 private:
-    auto_ptr<CTestNetCacheStress> m_Test;
+    unique_ptr<CTestNetCacheStress> m_Test;
 };
 
 class CTestNetCacheStressApp : public CNcbiApplication
@@ -455,7 +455,7 @@ void CTestNetCacheStressApp::Init(void)
     // Setup command line arguments and parameters
 
     // Create command-line argument descriptions class
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
@@ -522,7 +522,7 @@ int CTestNetCacheStressApp::Run(void)
     nc.SetCommunicationTimeout(to);
 
     if (threads < 2) {
-       auto_ptr<CTestNetCacheStress> test(new CTestNetCacheStress(nc, cout, 0));
+       unique_ptr<CTestNetCacheStress> test(new CTestNetCacheStress(nc, cout, 0));
        return test->Run();
     }
 
