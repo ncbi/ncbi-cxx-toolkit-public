@@ -107,13 +107,13 @@ public:
 
     
     bool ObtainSeqEntryFromSeqEntry( 
-        auto_ptr<CObjectIStream>& is, 
+        unique_ptr<CObjectIStream>& is, 
         CRef<CSeq_entry>& se );
     bool ObtainSeqEntryFromBioseq( 
-        auto_ptr<CObjectIStream>& is, 
+        unique_ptr<CObjectIStream>& is, 
         CRef<CSeq_entry>& se );
     bool ObtainSeqEntryFromBioseqSet( 
-        auto_ptr<CObjectIStream>& is, 
+        unique_ptr<CObjectIStream>& is, 
         CRef<CSeq_entry>& se );
   
 private:
@@ -122,9 +122,9 @@ private:
     CObjectIStream* x_OpenIStream(const CArgs& args, const string& filename);
     void x_OpenOStream(const string& filename, const string& dir = kEmptyStr, bool remove_orig_dir = true);
     void x_CloseOStream();
-    bool x_ProcessSeqSubmit(auto_ptr<CObjectIStream>& is);
-    bool x_ProcessBigFile(auto_ptr<CObjectIStream>& is, const string& asn_type);
-    void x_ProcessOneFile(auto_ptr<CObjectIStream> is, EProcessingMode mode, const string& asn_type, bool first_only);
+    bool x_ProcessSeqSubmit(unique_ptr<CObjectIStream>& is);
+    bool x_ProcessBigFile(unique_ptr<CObjectIStream>& is, const string& asn_type);
+    void x_ProcessOneFile(unique_ptr<CObjectIStream>& is, EProcessingMode mode, const string& asn_type, bool first_only);
     void x_ProcessOneFile(const string& filename);
     void x_ProcessOneDirectory(const string& dirname, const string& suffix);
 
@@ -152,7 +152,7 @@ private:
     CRef<CObjectManager>        m_Objmgr;       // Object Manager
     CRef<CScope>                m_Scope;
     CRef<CFlatFileGenerator>    m_FFGenerator;  // Flat-file generator
-    auto_ptr<CObjectOStream>    m_Out;          // output
+    unique_ptr<CObjectOStream>  m_Out;          // output
 };
 
 
@@ -163,7 +163,7 @@ CCleanupApp::CCleanupApp()
 
 void CCleanupApp::Init(void)
 {
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     arg_desc->SetUsageContext(
         GetArguments().GetProgramBasename(),
         "Perform ExtendedCleanup on an ASN.1 Seq-entry into a flat report",
@@ -365,7 +365,7 @@ static CObjectOStream* CreateTmpOStream(const std::string& outFileName, const st
 }
 
 
-static auto_ptr<CObjectTypeInfo> GetEntryTypeInfo()
+static unique_ptr<CObjectTypeInfo> GetEntryTypeInfo()
 {
     // 'data' member of CSeq_submit ...
     CObjectTypeInfo submitTypeInfo = CType<CSeq_submit>();
@@ -378,7 +378,7 @@ static auto_ptr<CObjectTypeInfo> GetEntryTypeInfo()
     // that is a list of pointers to 'CSeq_entry' (we process only that case)
     const CItemInfo* entries = dataChoiceType->GetItemInfo("entrys");
 
-    return auto_ptr<CObjectTypeInfo>(new CObjectTypeInfo(entries->GetTypeInfo()));
+    return unique_ptr<CObjectTypeInfo>(new CObjectTypeInfo(entries->GetTypeInfo()));
 }
 
 
@@ -413,7 +413,7 @@ static std::string GetOutputFileName(const CArgs& args)
 }
 
 // returns false if fails to read object of expected type, throws for all other errors
-bool CCleanupApp::x_ProcessSeqSubmit(auto_ptr<CObjectIStream>& is)
+bool CCleanupApp::x_ProcessSeqSubmit(unique_ptr<CObjectIStream>& is)
 {
     CRef<CSeq_submit> sub(new CSeq_submit);
     if (sub.Empty()) {
@@ -423,12 +423,12 @@ bool CCleanupApp::x_ProcessSeqSubmit(auto_ptr<CObjectIStream>& is)
     try {
 
         //CTmpFile tmpFile;
-        //auto_ptr<CObjectOStream> out(CreateTmpOStream(outFileName, tmpFile.GetFileName()));
+        //unique_ptr<CObjectOStream> out(CreateTmpOStream(outFileName, tmpFile.GetFileName()));
 
         CObjectTypeInfoMI submitBlockObj = GetSubmitBlockTypeInfo();
         submitBlockObj.SetLocalReadHook(*is, new CReadSubmitBlockHook(*this, *m_Out));
 
-        auto_ptr<CObjectTypeInfo> entryObj = GetEntryTypeInfo();
+        unique_ptr<CObjectTypeInfo> entryObj = GetEntryTypeInfo();
         entryObj->SetLocalReadHook(*is, new CReadEntryHook(*this, *m_Out));
 
         *is >> *sub;
@@ -456,7 +456,7 @@ bool CCleanupApp::x_ProcessSeqSubmit(auto_ptr<CObjectIStream>& is)
     return true;
 }
 
-bool CCleanupApp::x_ProcessBigFile(auto_ptr<CObjectIStream>& is, const string& asn_type)
+bool CCleanupApp::x_ProcessBigFile(unique_ptr<CObjectIStream>& is, const string& asn_type)
 {
     _ASSERT(asn_type != "bioseq" && asn_type != "any");
 
@@ -479,7 +479,7 @@ bool CCleanupApp::x_ProcessBigFile(auto_ptr<CObjectIStream>& is, const string& a
     return ret;
 }
 
-void CCleanupApp::x_ProcessOneFile(auto_ptr<CObjectIStream> is, EProcessingMode mode, const string& asn_type, bool first_only)
+void CCleanupApp::x_ProcessOneFile(unique_ptr<CObjectIStream>& is, EProcessingMode mode, const string& asn_type, bool first_only)
 {
     if (mode == eModeBatch) {
         CGBReleaseFile in(*is.release());
@@ -580,7 +580,7 @@ void CCleanupApp::x_ProcessOneFile(const string& filename)
 {
     const CArgs&   args = GetArgs();
 
-    auto_ptr<CObjectIStream> is;
+    unique_ptr<CObjectIStream> is;
 
     // open file
     is.reset(x_OpenIStream(args, filename));
@@ -738,7 +738,7 @@ int CCleanupApp::Run(void)
 }
 
 bool CCleanupApp::ObtainSeqEntryFromSeqEntry( 
-    auto_ptr<CObjectIStream>& is, 
+    unique_ptr<CObjectIStream>& is, 
     CRef<CSeq_entry>& se )
 {
     try {
@@ -758,7 +758,7 @@ bool CCleanupApp::ObtainSeqEntryFromSeqEntry(
 }
 
 bool CCleanupApp::ObtainSeqEntryFromBioseq( 
-    auto_ptr<CObjectIStream>& is, 
+    unique_ptr<CObjectIStream>& is, 
     CRef<CSeq_entry>& se )
 {
     try {
@@ -782,7 +782,7 @@ bool CCleanupApp::ObtainSeqEntryFromBioseq(
 }
 
 bool CCleanupApp::ObtainSeqEntryFromBioseqSet( 
-    auto_ptr<CObjectIStream>& is, 
+    unique_ptr<CObjectIStream>& is, 
     CRef<CSeq_entry>& se )
 {
     try {
@@ -1122,7 +1122,7 @@ bool CCleanupApp::HandleSeqEntry(CSeq_entry_Handle entry)
     ESerialDataFormat outFormat = eSerial_AsnText;
 
     if (args["debug"]) {
-        auto_ptr<CObjectOStream> debug_out(CObjectOStream::Open(outFormat, "before.sqn",
+        unique_ptr<CObjectOStream> debug_out(CObjectOStream::Open(outFormat, "before.sqn",
             eSerial_StdWhenAny));
 
         *debug_out << *(entry.GetCompleteSeq_entry());
