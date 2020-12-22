@@ -138,7 +138,7 @@ private:
     mutable CRef<CSeq_loc_Mapper> m_SLMapper;
 
     typedef CCache<string, CSeq_id_Handle> TLocCache;
-    auto_ptr<TLocCache> m_loccache;
+    unique_ptr<TLocCache> m_loccache;
 
 };
 
