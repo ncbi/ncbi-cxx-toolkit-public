@@ -123,7 +123,7 @@ CTAbleValApp::CTAbleValApp(void):
 void CTAbleValApp::Init(void)
 {
 
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // Prepare command line descriptions, inherit them from tbl2asn legacy application
 
@@ -363,7 +363,7 @@ void CTAbleValApp::ProcessOneFile(const string& current_file)
     }
 
     CNcbiOstream* output = 0;
-    auto_ptr<CNcbiOfstream> local_output(0);
+    unique_ptr<CNcbiOfstream> local_output;
     CFile local_file;
     try
     {
@@ -402,7 +402,7 @@ void CTAbleValApp::ProcessOneFile(const string& current_file)
 bool CTAbleValApp::ProcessOneDirectory(const CDir& directory, const CMask& mask, bool recurse)
 {
     CDir::TEntries* e = directory.GetEntriesPtr("*", CDir::fCreateObjects | CDir::fIgnoreRecursive);
-    auto_ptr<CDir::TEntries> entries(e);
+    unique_ptr<CDir::TEntries> entries(e);
 
     for (CDir::TEntries::const_iterator it = e->begin(); it != e->end(); it++)
     {
