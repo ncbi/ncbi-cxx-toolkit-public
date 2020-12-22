@@ -354,7 +354,7 @@ private:
     CNcbiOstream*               m_Ou;           // unknown output stream
 
     CRef<CFlatFileGenerator>    m_FFGenerator;  // Flat-file generator
-    auto_ptr<ICanceled>         m_pCanceledCallback;
+    unique_ptr<ICanceled>         m_pCanceledCallback;
     bool                        m_do_cleanup;
     bool                        m_Exception;
     bool                        m_FetchFail;
@@ -382,7 +382,7 @@ CAsn2FlatApp::~CAsn2FlatApp (void)
 
 void CAsn2FlatApp::Init(void)
 {
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     arg_desc->SetUsageContext(
         GetArguments().GetProgramBasename(),
         "Convert an ASN.1 Seq-entry into a flat report",
@@ -592,7 +592,7 @@ int CAsn2FlatApp::Run(void)
         m_FFGenerator->SetAnnotSelector().SetMaxSearchTime(float(args["max_search_time"].AsDouble()));
     }
 
-    auto_ptr<CObjectIStream> is;
+    unique_ptr<CObjectIStream> is;
     is.reset( x_OpenIStream( args ) );
     if (is.get() == NULL) {
         string msg = args["i"]? "Unable to open input file" + args["i"].AsString() :
