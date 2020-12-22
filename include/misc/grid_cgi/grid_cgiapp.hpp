@@ -272,7 +272,7 @@ private:
 
     CNetScheduleAPI m_NSClient;
     CNetCacheAPI m_NetCacheAPI;
-    auto_ptr<CGridClient> m_GridClient;
+    unique_ptr<CGridClient> m_GridClient;
     CCgiResponse* m_Response;
 
     virtual bool IsCachingNeeded(const CCgiRequest& request) const;
