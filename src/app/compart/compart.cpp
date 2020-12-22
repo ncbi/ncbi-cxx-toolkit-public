@@ -46,7 +46,7 @@ void CCompartApp::Init()
 {
     HideStdArgs(fHideLogfile | fHideConffile | fHideVersion);
 
-    auto_ptr<CArgDescriptions> argdescr(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> argdescr(new CArgDescriptions);
     argdescr->SetUsageContext(GetArguments().GetProgramName(),
                               "Compart v.1.35. Unless -qdb and -sdb are specified, "
                               "the tool expects tabular blast hits at stdin collated "
