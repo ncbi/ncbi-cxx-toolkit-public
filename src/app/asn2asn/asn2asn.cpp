@@ -360,7 +360,7 @@ CAsn2Asn::CAsn2Asn()
 *****************************************************************************/
 void CAsn2Asn::Init(void)
 {
-    auto_ptr<CArgDescriptions> d(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> d(new CArgDescriptions);
 
     d->SetUsageContext("asn2asn", "convert Seq-entry or Bioseq-set data");
 
@@ -709,7 +709,7 @@ void MergeAnnot(CObjectIStream& in, CObjectOStream& out, TGi gi,
 void MergeFromFile(CObjectIStream& in, CObjectOStream& out, TGi gi,
                    const string& in_file)
 {
-    auto_ptr<CObjectIStream> annot_in(CObjectIStream::Open(eSerial_AsnBinary,
+    unique_ptr<CObjectIStream> annot_in(CObjectIStream::Open(eSerial_AsnBinary,
                                                            in_file));
     MergeAnnot(in, out, gi, *annot_in);
 }
@@ -854,14 +854,14 @@ void MergeExternal(CObjectIStream& in, CObjectOStream& out, TGi gi,
         CZipStreamDecompressor decompressor;
         CCompressionIStream unzip(stream, &decompressor);
         // Open object stream for external annotations.
-        auto_ptr<CObjectIStream> annot_in
+        unique_ptr<CObjectIStream> annot_in
             (CObjectIStream::Open(eSerial_AsnBinary, unzip));
         // Do the merging.
         MergeAnnot(in, out, gi, *annot_in);
     }
     else {
         // Open object stream for external annotations.
-        auto_ptr<CObjectIStream> annot_in
+        unique_ptr<CObjectIStream> annot_in
             (CObjectIStream::Open(eSerial_AsnBinary, stream));
         // Do the merging.
         MergeAnnot(in, out, gi, *annot_in);
@@ -938,12 +938,12 @@ void CAsn2Asn::RunAsn2Asn(const string& outFileSuffix)
         bool displayMessages = count != 1 && !quiet;
         if ( displayMessages )
             NcbiCerr << "Step " << i << ':' << NcbiEndl;
-        auto_ptr<CObjectIStream> in(CObjectIStream::Open(inFormat, inFile,
+        unique_ptr<CObjectIStream> in(CObjectIStream::Open(inFormat, inFile,
                                                          eSerial_StdWhenAny));
         if ( usePool ) {
             in->UseMemoryPool();
         }
-        auto_ptr<CObjectOStream> out(!haveOutput? 0:
+        unique_ptr<CObjectOStream> out(!haveOutput? 0:
                                      CObjectOStream::Open(outFormat, outFile,
                                                           eSerial_StdWhenAny));
 
