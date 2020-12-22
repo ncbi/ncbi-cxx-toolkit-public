@@ -73,7 +73,7 @@ private:
 void CObjExtractApp::Init(void)
 {
     // Create command-line argument descriptions class
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
@@ -241,8 +241,8 @@ int CObjExtractApp::Run(void)
     ///
     /// now, process!
     ///
-    auto_ptr<CObjectIStream> obj_istr(CObjectIStream::Open(ifmt, istr));
-    auto_ptr<CObjectOStream> obj_ostr(CObjectOStream::Open(ofmt, ostr));
+    unique_ptr<CObjectIStream> obj_istr(CObjectIStream::Open(ifmt, istr));
+    unique_ptr<CObjectOStream> obj_ostr(CObjectOStream::Open(ofmt, ostr));
 
 
     LOG_POST(Error
