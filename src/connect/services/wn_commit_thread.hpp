@@ -105,6 +105,7 @@ private:
     TCommitJobTimeline m_ImmediateActions, m_Timeline, m_JobContextPool;
     CFastMutex m_TimelineMutex;
     const string m_ThreadName;
+    bool m_IsShuttingDown = false;
 
     typedef CGuard<CFastMutex, SSimpleUnlock<CFastMutex>,
             SSimpleLock<CFastMutex> > TFastMutexUnlockGuard;

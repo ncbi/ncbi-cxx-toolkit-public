@@ -105,6 +105,7 @@ void CJobCommitterThread::Stop()
 {
     TFastMutexGuard mutex_lock(m_TimelineMutex);
 
+    m_IsShuttingDown = true;
     WakeUp();
 }
 
@@ -150,7 +151,10 @@ void* CJobCommitterThread::Main()
 
             m_ImmediateActions.pop_front();
         }
-    } while (!CGridGlobals::GetInstance().IsShuttingDown());
+
+    // Cannot use CGridGlobals::GetInstance().IsShuttingDown()) below,
+    // this thread could exit before committing all pending jobs otherwise.
+    } while (!m_IsShuttingDown);
 
     return NULL;
 }
