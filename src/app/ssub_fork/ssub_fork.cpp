@@ -117,7 +117,7 @@ private:
 
 void CSeqSubSplitter::Init()
 {
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     arg_desc->SetUsageContext(
             GetArguments().GetProgramBasename(),
             "Split a single large instance of Seq-submit into smaller instances",
@@ -243,7 +243,7 @@ int CSeqSubSplitter::Run()
     }
 
     int output_index = 0;
-    auto_ptr<CObjectOStream> ostr;
+    unique_ptr<CObjectOStream> ostr;
     bool binary = args["s"].AsBoolean();
 
     const TSeqPos pad_width = static_cast<TSeqPos>(log10(output_array.size())) + 1;
@@ -338,7 +338,7 @@ CRef<CSerialObject> CSeqSubSplitter::xGetInputObject() const
 
 bool CSeqSubSplitter::xTryReadInputFile(CRef<CSerialObject>& obj) const
 {
-    auto_ptr<CObjectIStream> istr;
+    unique_ptr<CObjectIStream> istr;
     istr.reset(xInitInputStream());
     
     CRef<CSerialObject> input_obj = xGetInputObject();
