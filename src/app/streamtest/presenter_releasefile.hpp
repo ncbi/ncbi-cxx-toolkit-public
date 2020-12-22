@@ -100,7 +100,7 @@ public:
     };
 
 protected:       
-    auto_ptr<CObjectIStream> m_is;
+    unique_ptr<CObjectIStream> m_is;
 };
 
 #endif
