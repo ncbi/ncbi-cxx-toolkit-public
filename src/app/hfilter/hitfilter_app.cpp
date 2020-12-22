@@ -72,7 +72,7 @@ void CAppHitFilter::Init()
 {
     HideStdArgs(fHideLogfile | fHideConffile | fHideVersion);
 
-    auto_ptr<CArgDescriptions> argdescr(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> argdescr(new CArgDescriptions);
     argdescr->SetUsageContext(GetArguments().GetProgramName(),
                               "HitFilter v.2.0.2");
 
@@ -281,7 +281,7 @@ void CAppHitFilter::x_ReadInputHits(THitRefs* phitrefs, bool one_pair)
 
         CObjectIStream* in_ptr =  CObjectIStream::Open(fmt_in == g_AsnTxt? 
                                   eSerial_AsnText: eSerial_AsnBinary, istr);
-        auto_ptr<CObjectIStream> in (in_ptr);
+        unique_ptr<CObjectIStream> in (in_ptr);
 
         const bool assume_sas (args["sas"]);
 
