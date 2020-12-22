@@ -665,7 +665,7 @@ private:
                                 vector<CSequence>& query_data,
                                 const vector<TRange>& gaps);
 
-    auto_ptr< vector<int> > x_AlignClusterQueries(const TPhyTreeNode* node);
+    unique_ptr< vector<int> > x_AlignClusterQueries(const TPhyTreeNode* node);
 
     void x_ComputeProfileRangeAlignment(
                                 vector<CTree::STreeLeaf>& node_list1,

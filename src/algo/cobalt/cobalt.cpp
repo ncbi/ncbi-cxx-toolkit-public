@@ -757,7 +757,7 @@ CMultiAligner::x_FindQueryClusters()
     // cluster representatives
 
     // distance matrix is need for fining cluster representatives
-    auto_ptr<CClusterer::TDistMatrix> dmat
+    shared_ptr<CClusterer::TDistMatrix> dmat
         = TKMethods::ComputeDistMatrix(kmer_counts,
                                        m_Options->GetKmerDistMeasure());
 

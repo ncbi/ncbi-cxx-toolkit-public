@@ -60,7 +60,7 @@ CClusterer::CClusterer(const CClusterer::TDistMatrix& dmat)
     x_Init();
 }
 
-CClusterer::CClusterer(auto_ptr<CClusterer::TDistMatrix>& dmat)
+CClusterer::CClusterer(shared_ptr<CClusterer::TDistMatrix>& dmat)
     : m_DistMatrix(dmat)
 {
     s_CheckDistMatrix(*m_DistMatrix);
@@ -103,7 +103,7 @@ void CClusterer::SetDistMatrix(const TDistMatrix& dmat)
     copy(dmat.begin(), dmat.end(), m_DistMatrix->begin());
 }
 
-void CClusterer::SetDistMatrix(auto_ptr<TDistMatrix>& dmat)
+void CClusterer::SetDistMatrix(shared_ptr<TDistMatrix>& dmat)
 {
     s_CheckDistMatrix(*dmat);
 

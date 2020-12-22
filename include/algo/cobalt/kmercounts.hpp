@@ -622,11 +622,11 @@ public:
     /// @param dist_method Distance measure [in]
     /// @return Distance matrix
     ///
-    static auto_ptr<TDistMatrix> ComputeDistMatrix(
+    static unique_ptr<TDistMatrix> ComputeDistMatrix(
                                           const vector<TKmerCounts>& counts,
                                           EDistMeasures dist_method)
     {
-        auto_ptr<TDistMatrix> dmat(new TDistMatrix(counts.size(), 
+        unique_ptr<TDistMatrix> dmat(new TDistMatrix(counts.size(), 
                                                    counts.size(), 0));
         ComputeDistMatrix(counts, dist_method, *dmat.get());
         return dmat;

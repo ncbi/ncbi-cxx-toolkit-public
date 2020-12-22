@@ -505,7 +505,7 @@ BOOST_AUTO_TEST_CASE(TestIncremental)
     links->AddLink(5, 6, 0.0);
 
     // run first clustering
-    auto_ptr<CClusterer> clusterer(new CClusterer(links));
+    unique_ptr<CClusterer> clusterer(new CClusterer(links));
     clusterer->SetReportSingletons(false);
     clusterer->Run();
 

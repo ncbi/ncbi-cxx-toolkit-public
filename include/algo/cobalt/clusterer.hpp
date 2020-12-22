@@ -173,7 +173,7 @@ public:
     /// Create clusterer
     /// @param dmat Pointer to distance matrix 
     ///
-    CClusterer(auto_ptr<TDistMatrix>& dmat);
+    CClusterer(shared_ptr<TDistMatrix>& dmat);
 
     /// Create clusterer
     /// @param links Graph of distances between elements
@@ -192,7 +192,7 @@ public:
     /// Set new distance matrix without copying
     /// @param dmat Distance matrix
     ///
-    void SetDistMatrix(auto_ptr<TDistMatrix>& dmat);
+    void SetDistMatrix(shared_ptr<TDistMatrix>& dmat);
 
     /// Set distance links
     /// @param links Distance links
@@ -375,7 +375,7 @@ protected:
 
 
 protected:
-    auto_ptr<TDistMatrix> m_DistMatrix;
+    shared_ptr<TDistMatrix> m_DistMatrix;
     TClusters m_Clusters;
     vector<TPhyTreeNode*> m_Trees;
     double m_MaxDiameter;

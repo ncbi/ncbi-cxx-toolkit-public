@@ -356,14 +356,14 @@ CMultiAligner::x_FindLocalHits(const TSeqLocVector& queries,
 
 
 
-auto_ptr< vector<int> > CMultiAligner::x_AlignClusterQueries(
+unique_ptr< vector<int> > CMultiAligner::x_AlignClusterQueries(
                                                      const TPhyTreeNode* node)
 {
     // Traverse cluster tree
 
     // if leaf node, then create one-element list of node id
     if (node->IsLeaf()) {
-        auto_ptr< vector<int> > result(new vector<int>());
+        unique_ptr< vector<int> > result(new vector<int>());
         result->push_back(node->GetValue().GetId());
         return result;
     }
@@ -371,11 +371,11 @@ auto_ptr< vector<int> > CMultiAligner::x_AlignClusterQueries(
     // Traverse left and right subtree and gather node ids in the subtrees
     TPhyTreeNode::TNodeList_CI child(node->SubNodeBegin());
     
-    auto_ptr< vector<int> > left_inds = x_AlignClusterQueries(*child);
+    unique_ptr< vector<int> > left_inds = x_AlignClusterQueries(*child);
     child++;
 
     _ASSERT(*child);
-    auto_ptr< vector<int> > right_inds = x_AlignClusterQueries(*child);
+    unique_ptr< vector<int> > right_inds = x_AlignClusterQueries(*child);
     child++;
     _ASSERT(child == node->SubNodeEnd());
 
