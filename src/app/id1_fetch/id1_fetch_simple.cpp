@@ -80,7 +80,7 @@ void CId1FetchApp::Init(void)
     //
 
     // Create
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // GI
     arg_desc->AddOptionalKey
@@ -176,7 +176,7 @@ int CId1FetchApp::Run(void)
         reqs.push_back(req);
     }
     else if ( args["in"] ) {
-        auto_ptr<CObjectIStream> req_input
+        unique_ptr<CObjectIStream> req_input
             (CObjectIStream::Open(eSerial_AsnText, args["in"].AsInputFile()));
         while ( !req_input->EndOfData() ) {
             CRef<CID1server_request> req(new CID1server_request);
@@ -195,7 +195,7 @@ int CId1FetchApp::Run(void)
     CNcbiOstream* datafile =
         args["fmt"].AsString() == "none"? 0: &args["out"].AsOutputFile();
     ESerialDataFormat format = eSerial_None;
-    auto_ptr<CObjectOStream> id1_client_output;
+    unique_ptr<CObjectOStream> id1_client_output;
     if ( datafile ) {
         string fmt = args["fmt"].AsString();
         if        (fmt == "asn") {
