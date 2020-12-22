@@ -116,7 +116,7 @@ private: //member functions
 void CAsnCacheTestApplication::Init(void)
 {
     // Create command-line argument descriptions class
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
@@ -196,7 +196,7 @@ int CAsnCacheTestApplication::Run(void)
     vector< CDataLoader::TIds > id_sets;
     vector< CSeq_id_Handle > ids;
 
-    auto_ptr<CObjectOStream> os;
+    unique_ptr<CObjectOStream> os;
 
     string line;
     while (NcbiGetlineEOL(istr, line)) {
@@ -380,7 +380,7 @@ int CAsnCacheTestApplication::Run(void)
                                 }
                                 cout << *id_it << "\t" 
                                     << idh << endl;
-                                //auto_ptr<CBestPigMapper> m_mapper
+                                //unique_ptr<CBestPigMapper> m_mapper
                             }
                         }
                     }
