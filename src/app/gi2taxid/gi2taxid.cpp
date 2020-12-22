@@ -55,7 +55,7 @@ public:
 void CGi2TaxIdApp::Init()
 {
     // Prepare command line descriptions
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     arg_desc->AddDefaultKey("gi", "GI",
                             "gi to test",
