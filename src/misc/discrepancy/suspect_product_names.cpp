@@ -671,7 +671,7 @@ static void s_InitializeOrganelleProductRules(const string& name)
 
     if (!name.empty()) {
         LOG_POST("Reading from " + name + " for organelle products");
-        auto_ptr<CObjectIStream> in;
+        unique_ptr<CObjectIStream> in;
         in.reset(CObjectIStream::Open(name, eSerial_AsnText));
         string header = in->ReadFileHeader();
         in->Read(ObjectInfo(*s_OrganelleProductRules), CObjectIStream::eNoFileHeader);
@@ -716,7 +716,7 @@ static void s_InitializeProductRules(const string& name)
 
     if (!name.empty()) {
         LOG_POST("Reading from " + name + " for suspect product rules");
-        auto_ptr<CObjectIStream> in;
+        unique_ptr<CObjectIStream> in;
         in.reset(CObjectIStream::Open(name, eSerial_AsnText));
         string header = in->ReadFileHeader();
         in->Read(ObjectInfo(*s_ProductRules), CObjectIStream::eNoFileHeader);
