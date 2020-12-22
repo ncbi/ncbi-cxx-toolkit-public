@@ -209,7 +209,7 @@ public:
 
 void CAgpValidateApplication::Init(void)
 {
-  auto_ptr<CArgDesc_agp_validate> arg_desc(new CArgDesc_agp_validate);
+  unique_ptr<CArgDesc_agp_validate> arg_desc(new CArgDesc_agp_validate);
 
   arg_desc->SetUsageContext(
     GetArguments().GetProgramBasename(),
