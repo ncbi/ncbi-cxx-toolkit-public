@@ -67,7 +67,7 @@ CNcbiOstream& CGI2GRID_ComposeHtmlPage(CCgiApplication&    app,
                                        const string&       project_name,
                                        const string&       return_url)
 {
-    auto_ptr<CGridClient> grid_client;
+    unique_ptr<CGridClient> grid_client;
 
     CNetScheduleAPI ns_client(app.GetConfig());
     ns_client.SetProgramVersion("Cgi_Tunnel2Grid ver 1.0.0");
