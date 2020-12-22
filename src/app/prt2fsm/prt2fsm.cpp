@@ -56,7 +56,7 @@ CPrt2FsmApp::CPrt2FsmApp(void) {}
 void CPrt2FsmApp::Init(void)
 {
     // Prepare command line descriptions
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(), "Suspect Product Rules to FSM");
     arg_desc->AddOptionalKey("i", "InFile", "Input File", CArgDescriptions::eInputFile);
     SetupArgDescriptions(arg_desc.release());  // call CreateArgs
@@ -98,7 +98,7 @@ int CPrt2FsmApp::Run(void)
     LOG_POST("Reading from " + fname);
 
     objects::CSuspect_rule_set ProductRules;
-    auto_ptr<CObjectIStream> in;
+    unique_ptr<CObjectIStream> in;
     in.reset(CObjectIStream::Open(fname, eSerial_AsnText));
     string header = in->ReadFileHeader();
     in->Read(ObjectInfo(ProductRules), CObjectIStream::eNoFileHeader);
