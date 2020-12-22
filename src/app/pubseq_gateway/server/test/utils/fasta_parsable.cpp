@@ -28,7 +28,7 @@ class CFastaParsableApp : public CNcbiApplication
 
 void CFastaParsableApp::Init(void)
 {
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     arg_desc->AddPositional("dump_file", "Dump file", CArgDescriptions::eString);
     arg_desc->AddFlag("check_minus_one", "Include checking Which() for seq_id_type -1. Default: false", true);
 
