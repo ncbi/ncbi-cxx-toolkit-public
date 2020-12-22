@@ -92,7 +92,7 @@ const char * TLS_APP_VER = "1.0";
 class CTLSHandler
 {
 public:
-    CTLSHandler() : m_ObjMgr(0), m_In(0)
+    CTLSHandler() : m_ObjMgr(0)
     { m_ObjMgr = CObjectManager::GetInstance(); }
 
     virtual ~CTLSHandler() { }
@@ -115,8 +115,8 @@ public:
 
 protected:
     CRef<CObjectManager> m_ObjMgr;
-    auto_ptr<CObjectIStream> m_In;
-    auto_ptr<CObjectOStream> m_Out;
+    unique_ptr<CObjectIStream> m_In;
+    unique_ptr<CObjectOStream> m_Out;
 
     CRef<CScope> BuildScope(void);
 
@@ -335,7 +335,7 @@ void CTLSApp::Init(void)
     // Prepare command line descriptions
 
     // Create
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     arg_desc->AddKey("master", "MasterRecord", "File with master record",
         CArgDescriptions::eInputFile);
