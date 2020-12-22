@@ -175,7 +175,7 @@ void CAgpconvertApplication::Init(void)
     HideStdArgs(fHideLogfile | fHideConffile | fHideVersion);
 
     // Create command-line argument descriptions class
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
@@ -592,7 +592,7 @@ void CAgpconvertApplication::x_LoadTemplate(
         istrm.seekg(0);
     }}
 
-    auto_ptr<CObjectIStream> pObjIstrm( 
+    unique_ptr<CObjectIStream> pObjIstrm( 
         CObjectIStream::Open(eSerialDataFormat, istrm, eNoOwnership) );
 
     // guess object type
