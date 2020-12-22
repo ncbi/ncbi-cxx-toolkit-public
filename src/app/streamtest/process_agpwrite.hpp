@@ -123,7 +123,7 @@ public:
 
 protected:
     CNcbiOstream* m_out;
-    auto_ptr<CTestCompIdMapper> comp_id_mapper;
+    unique_ptr<CTestCompIdMapper> comp_id_mapper;
 };
 
 #endif
