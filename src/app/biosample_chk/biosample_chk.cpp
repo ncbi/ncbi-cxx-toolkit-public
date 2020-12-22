@@ -207,8 +207,8 @@ private:
 
     void Setup(const CArgs& args);
 
-    auto_ptr<CObjectIStream> OpenFile(const CArgs& args);
-    auto_ptr<CObjectIStream> OpenFile(const string &fname);
+    unique_ptr<CObjectIStream> OpenFile(const CArgs& args);
+    unique_ptr<CObjectIStream> OpenFile(const string &fname);
     void SaveFile(const string &fname, bool useBinaryOutputFormat);
 
     void GetBioseqDiffs(CBioseq_Handle bh);
@@ -244,7 +244,7 @@ private:
     vector<CRef<CSeqdesc> > GetBiosampleDescriptorsFromSeqEntry(const CSeq_entry& se);
 
     CRef<CObjectManager> m_ObjMgr;
-    auto_ptr<CObjectIStream> m_In;
+    unique_ptr<CObjectIStream> m_In;
     bool m_Continue;
 
     size_t m_Level;
@@ -302,7 +302,7 @@ private:
 
 
 CBiosampleChkApp::CBiosampleChkApp(void) :
-    m_ObjMgr(0), m_In(0), m_Continue(false),
+    m_ObjMgr(0), m_Continue(false),
     m_Level(0), m_ReportStream(0), m_NeedReportHeader(true), m_AsnOut(0), 
     m_LogStream(0), m_Mode(e_report_diffs), m_ReturnCode(0),
     m_StructuredCommentPrefix(""), m_CompareStructuredComments(true), 
@@ -319,7 +319,7 @@ void CBiosampleChkApp::Init(void)
     // Prepare command line descriptions
 
     // Create
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     arg_desc->AddOptionalKey
         ("p", "Directory", "Path to ASN.1 Files",
@@ -1427,17 +1427,17 @@ void CBiosampleChkApp::Setup(const CArgs& args)
 }
 
 
-auto_ptr<CObjectIStream> CBiosampleChkApp::OpenFile(const CArgs& args)
+unique_ptr<CObjectIStream> CBiosampleChkApp::OpenFile(const CArgs& args)
 {
     string fname = args["i"].AsString();
     return CBiosampleChkApp::OpenFile(fname);
 }
 
-auto_ptr<CObjectIStream> CBiosampleChkApp::OpenFile(const string &fname)
+unique_ptr<CObjectIStream> CBiosampleChkApp::OpenFile(const string &fname)
 {
     ESerialDataFormat format = eSerial_AsnText;
     
-    auto_ptr<CNcbiIstream> hold_stream(new CNcbiIfstream (fname.c_str(), ios::binary));
+    unique_ptr<CNcbiIstream> hold_stream(new CNcbiIfstream (fname.c_str(), ios::binary));
     CNcbiIstream* InputStream = hold_stream.get();
 
     CFormatGuess::EFormat formatGuess = CFormatGuess::Format(*InputStream);
@@ -1459,7 +1459,7 @@ auto_ptr<CObjectIStream> CBiosampleChkApp::OpenFile(const string &fname)
         formatGuess = CFormatGuess::Format(*InputStream);
     }
     
-    auto_ptr<CObjectIStream> objectStream;
+    unique_ptr<CObjectIStream> objectStream;
     switch (formatGuess)
     {
         case CFormatGuess::eBinaryASN:
