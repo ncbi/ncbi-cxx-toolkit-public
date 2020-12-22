@@ -117,7 +117,7 @@ private:
     void Setup(const CArgs& args);
     void x_AliasLogFile();
 
-    auto_ptr<CObjectIStream> OpenFile(const string& fname);
+    unique_ptr<CObjectIStream> OpenFile(const string& fname);
 
     CConstRef<CValidError> ProcessCatenated(void);
     CConstRef<CValidError> ProcessSeqEntry(CSeq_entry& se);
@@ -166,7 +166,7 @@ private:
     void PrintValidErrItem(const CValidErrItem& item);
 
     CRef<CObjectManager> m_ObjMgr;
-    auto_ptr<CObjectIStream> m_In;
+    unique_ptr<CObjectIStream> m_In;
     unsigned int m_Options;
     bool m_Continue;
     bool m_OnlyAnnots;
@@ -192,7 +192,7 @@ private:
 
     CNcbiOstream* m_ValidErrorStream;
 #ifdef USE_XMLWRAPP_LIBS
-    auto_ptr<CValXMLStream> m_ostr_xml;
+    unique_ptr<CValXMLStream> m_ostr_xml;
 #endif
 };
 
@@ -206,7 +206,7 @@ public:
 
 // constructor
 CAsnvalApp::CAsnvalApp(void) :
-    m_ObjMgr(0), m_In(0), m_Options(0), m_Continue(false), m_OnlyAnnots(false),
+    m_ObjMgr(0), m_Options(0), m_Continue(false), m_OnlyAnnots(false),
     m_Quiet(false), m_Longest(0), m_CurrentId(""), m_LongestId(""), m_NumFiles(0),
     m_NumRecords(0), m_Level(0), m_Reported(0), m_verbosity(eVerbosity_min),
     m_ValidErrorStream(0)
@@ -247,7 +247,7 @@ void CAsnvalApp::Init(void)
     // Prepare command line descriptions
 
     // Create
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     arg_desc->AddOptionalKey
         ("p", "Directory", "Path to ASN.1 Files",
@@ -421,7 +421,7 @@ void CAsnvalApp::ValidateOneFile(const string& fname)
     if (! args["quiet"] ) {
         LOG_POST_XX(Corelib_App, 1, fname);
     }
-    auto_ptr<CNcbiOfstream> local_stream;
+    unique_ptr<CNcbiOfstream> local_stream;
 
     bool close_error_stream = false;
 
@@ -1154,11 +1154,11 @@ void CAsnvalApp::Setup(const CArgs& args)
 }
 
 
-auto_ptr<CObjectIStream> OpenUncompressedStream(const string& fname)
+unique_ptr<CObjectIStream> OpenUncompressedStream(const string& fname)
 {
     ENcbiOwnership own = fname.empty() ? eNoOwnership :eTakeOwnership;
 
-    auto_ptr<CNcbiIstream> hold_stream(
+    unique_ptr<CNcbiIstream> hold_stream(
          fname.empty()? 0: new CNcbiIfstream (fname.c_str(), ios::binary));
 
     CNcbiIstream* InputStream = fname.empty() ? &cin : hold_stream.get();
@@ -1183,7 +1183,7 @@ auto_ptr<CObjectIStream> OpenUncompressedStream(const string& fname)
         format = CFormatGuess::Format(*InputStream);
     }
 
-    auto_ptr<CObjectIStream> objectStream;
+    unique_ptr<CObjectIStream> objectStream;
     switch (format)
     {
         case CFormatGuess::eBinaryASN:
@@ -1198,7 +1198,7 @@ auto_ptr<CObjectIStream> OpenUncompressedStream(const string& fname)
 }
 
 
-auto_ptr<CObjectIStream> CAsnvalApp::OpenFile(const string& fname)
+unique_ptr<CObjectIStream> CAsnvalApp::OpenFile(const string& fname)
 {
     return OpenUncompressedStream(fname);
 }
