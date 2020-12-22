@@ -197,7 +197,7 @@ void CSplitCacheApp::Init(void)
     //
 
     // Create
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // set of entries to process
     arg_desc->AddOptionalKey("gi", "Gi",
