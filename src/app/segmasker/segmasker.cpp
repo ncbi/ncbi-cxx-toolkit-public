@@ -101,7 +101,7 @@ void SegMaskerApplication::Init(void)
     HideStdArgs(fHideLogfile | fHideConffile | fHideVersion | fHideDryRun);
 
     // Create command-line argument descriptions class
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
@@ -222,8 +222,8 @@ int SegMaskerApplication::Run(void)
                           args["hicut"].AsDouble());
 
         CRef<CSeq_entry> seq_entry;
-        auto_ptr<CMaskReader> reader(x_GetReader());
-        auto_ptr<CMaskWriter> writer(x_GetWriter());
+        unique_ptr<CMaskReader> reader(x_GetReader());
+        unique_ptr<CMaskWriter> writer(x_GetWriter());
 
         while ( (seq_entry = reader->GetNextSequence()).NotEmpty() ) {
 
@@ -236,7 +236,7 @@ int SegMaskerApplication::Run(void)
             CBioseq_Handle bioseq_handle = seh.GetSeq();
             CSeqVector sequence_data = 
                 bioseq_handle.GetSeqVector(CBioseq_Handle::eCoding_Ncbi);
-            auto_ptr<CSegMasker::TMaskList> masks(masker(sequence_data));
+            unique_ptr<CSegMasker::TMaskList> masks(masker(sequence_data));
             writer->Print(bioseq_handle, *masks, GetArgs()["parse_seqids"]);
             // writer->Print(bioseq_handle, *masks);
 
