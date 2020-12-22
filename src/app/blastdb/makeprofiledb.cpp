@@ -365,7 +365,7 @@ void CMakeProfileDBApp::x_SetupArgDescriptions(void)
 {
     HideStdArgs(fHideConffile | fHideFullVersion | fHideXmlHelp | fHideDryRun);
 
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
@@ -844,7 +844,7 @@ void CMakeProfileDBApp::x_RPSUpdateStatistics(CPssmWithParameters & seq, Int4 se
     for(unsigned int i = 0; i < query_v.size(); i++)
     	query[i] = query_v[i];
 
-    auto_ptr<CNcbiMatrix <double> > freq_list (CScorematPssmConverter::GetFreqRatios(seq));
+    unique_ptr<CNcbiMatrix <double> > freq_list (CScorematPssmConverter::GetFreqRatios(seq));
 
     CPsiBlastInputFreqRatios pssm_freq_ratio(query.get(), seq_size, *freq_list,
     										 matrix_name.c_str(), m_RpsDbInfo.gap_open,
@@ -1024,7 +1024,7 @@ void CMakeProfileDBApp::x_UpdateFreqRatios(const CPssmWithParameters & pssm_p, I
 	    }
     }
     else {
-    	auto_ptr<CNcbiMatrix<double> > matrix (CScorematPssmConverter::GetFreqRatios(pssm_p));
+    	unique_ptr<CNcbiMatrix<double> > matrix (CScorematPssmConverter::GetFreqRatios(pssm_p));
 
 	    for (i = 0; i < seq_size; i++) {
 	        for (j = 0; j < BLASTAA_SIZE; j++) {
