@@ -225,7 +225,7 @@ int CGridCgiApplication::ProcessRequest(CCgiContext& ctx)
 
 
     // Create a HTML page (using template HTML file "grid_cgi_sample.html")
-    auto_ptr<CHTMLPage> page;
+    unique_ptr<CHTMLPage> page;
     try {
         page.reset(new CHTMLPage(GetPageTitle(), GetPageTemplate()));
         CHTMLText* stat_view = new CHTMLText(kGridCgiForm);
