@@ -73,7 +73,7 @@ void CDemoApp::Init(void)
     //
 
     // Create
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // GI to fetch
     arg_desc->AddKey("id", "SeqEntryID",
