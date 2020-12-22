@@ -145,7 +145,7 @@ void CConvert2BlastMaskApplication::Init(void) {
     HideStdArgs(fHideLogfile | fHideConffile | fHideFullVersion | fHideXmlHelp | fHideDryRun);
 
     // Create command-line argument descriptions class
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
@@ -220,8 +220,8 @@ int CConvert2BlastMaskApplication::Run(void) {
     int retval = 0;
 
     try {
-        auto_ptr<CMaskFromFasta> reader(x_GetReader());
-        auto_ptr<CMaskWriterBlastDbMaskInfo> writer(x_GetWriter());
+        unique_ptr<CMaskFromFasta> reader(x_GetReader());
+        unique_ptr<CMaskWriterBlastDbMaskInfo> writer(x_GetWriter());
 
         while (reader->GetNextSequence()) {
             if(reader->HasMask()) writer->Print(reader->GetBestID(), reader->GetMask());
