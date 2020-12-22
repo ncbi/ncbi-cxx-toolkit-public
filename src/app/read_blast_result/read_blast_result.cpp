@@ -39,7 +39,7 @@
 void CReadBlastApp::Init(void)
 {
     // Create command-line argument descriptions class
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // Specify USAGE context
     arg_desc->SetUsageContext
@@ -250,7 +250,7 @@ int CReadBlastApp::Run(void)
     // Read original annotation
     {{
         m_coreDataType = getCoreDataType(args["in"].AsInputFile());
-        auto_ptr<CObjectIStream> in
+        unique_ptr<CObjectIStream> in
             (CObjectIStream::Open(s_GetFormat(args["infmt"].AsString()),
                                    args["in"].AsInputFile()));
         if(IsSubmit())
@@ -298,7 +298,7 @@ int CReadBlastApp::Run(void)
     // Write the entry
     if( args["out"].HasValue() && false)
     {  {
-        auto_ptr<CObjectOStream> out
+        unique_ptr<CObjectOStream> out
             (CObjectOStream::Open(s_GetFormat(args["outfmt"].AsString()),
                                   args["out"].AsOutputFile()));
         if(IsSubmit())
@@ -604,7 +604,7 @@ int CReadBlastApp::Run(void)
     if( args["out"].HasValue() )
     {{
         args["out"].AsOutputFile().seekp(0);
-        auto_ptr<CObjectOStream> out
+        unique_ptr<CObjectOStream> out
             (CObjectOStream::Open(s_GetFormat(args["outfmt"].AsString()),
                                   args["out"].AsOutputFile()));
         if(IsSubmit())
