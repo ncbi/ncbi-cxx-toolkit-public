@@ -163,7 +163,7 @@ public:
 
 void CBDBEnvKeeperApp::Init(void)
 {
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
         "BDB Environment Keeper");
@@ -213,7 +213,7 @@ int CBDBEnvKeeperApp::Run(void)
 #endif
 
 
-    auto_ptr<CBDB_Env> env(BDB_CreateEnv(reg, "bdb"));
+    unique_ptr<CBDB_Env> env(BDB_CreateEnv(reg, "bdb"));
 
 //    const CArgs& args = GetArgs();
 
