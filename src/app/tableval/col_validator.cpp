@@ -38,7 +38,7 @@ bool CAutoColValidator##name::DoValidate(const CTempString& value, string& error
 USING_SCOPE(objects);
 namespace
 {
-    auto_ptr<objects::CTaxon1> m_taxClient;
+    unique_ptr<objects::CTaxon1> m_taxClient;
 }
 
 CColumnValidator::CColumnValidator()
