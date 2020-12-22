@@ -225,7 +225,7 @@ private:
 void CAnnotWriterApp::Init()
 //  ----------------------------------------------------------------------------
 {
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     arg_desc->SetUsageContext(
         GetArguments().GetProgramBasename(),
         "Convert ASN.1 to alternative file formats",
@@ -501,7 +501,7 @@ bool CAnnotWriterApp::xTryProcessInputFile(
     const CArgs& args)
 //  -----------------------------------------------------------------------------
 {
-    auto_ptr<CObjectIStream> pIs;
+    unique_ptr<CObjectIStream> pIs;
 
     if(args["id"]) {
         return false;
