@@ -116,7 +116,7 @@ void CBlastdbConvertApp::Init()
 {
     HideStdArgs(fHideConffile | fHideFullVersion | fHideXmlHelp | fHideDryRun);
 
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
