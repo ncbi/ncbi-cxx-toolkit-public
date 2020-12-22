@@ -226,7 +226,7 @@ private:
 
 void CFlat2AsnApp::Init()
 {
-    std::auto_ptr<ncbi::CArgDescriptions> arg_descrs(new ncbi::CArgDescriptions);
+    std::unique_ptr<ncbi::CArgDescriptions> arg_descrs(new ncbi::CArgDescriptions);
     arg_descrs->Delete("h");
 
     arg_descrs->AddDefaultKey("i", "InputFlatfile", "Input flatfile to parse", ncbi::CArgDescriptions::eString, "stdin");
