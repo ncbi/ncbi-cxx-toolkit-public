@@ -149,6 +149,17 @@ void CPSGS_OSGGetBlobBase::x_SetBlobState(CBlobRecord& blob_props,
 }
 
 
+void CPSGS_OSGGetBlobBase::SendExcludedBlob(const string& psg_blob_id)
+{
+    size_t item_id = GetReply()->GetItemId();
+    if ( GetDebugLevel() >= eDebug_exchange ) {
+        LOG_POST(GetDiagSeverity() << "OSG: "
+                 "Sending blob excluded: "<<psg_blob_id);
+    }
+    GetReply()->PrepareBlobExcluded(item_id, GetName(), psg_blob_id, ePSGS_BlobExcluded);
+}
+
+
 void CPSGS_OSGGetBlobBase::x_SendBlobProps(const string& psg_blob_id,
                                            CBlobRecord& blob_props)
 {

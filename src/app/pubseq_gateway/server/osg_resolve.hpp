@@ -85,6 +85,8 @@ public:
     
     virtual void CreateRequests() override;
     virtual void ProcessReplies() override;
+
+    bool BlobIsExcluded(const string& psg_blob_id);
 };
 
 

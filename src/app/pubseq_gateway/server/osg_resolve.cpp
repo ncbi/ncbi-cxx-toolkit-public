@@ -127,9 +127,17 @@ void CPSGS_OSGResolve::ProcessReplies()
                 break;
             case CID2_Reply::TReply::e_Get_seq_id:
                 ProcessResolveReply(*r);
+                if ( m_BioseqInfoFlags != 0 ) {
+                    // resolved to OSG sequence
+                    SignalStartProcessing();
+                }
                 break;
             case CID2_Reply::TReply::e_Get_blob_id:
                 ProcessResolveReply(*r);
+                if ( m_BioseqInfoFlags & SPSGS_ResolveRequest::fPSGS_BlobId ) {
+                    // resolved to OSG sequence
+                    SignalStartProcessing();
+                }
                 break;
             default:
                 ERR_POST(GetName()<<": "
@@ -193,6 +201,14 @@ void CPSGS_OSGGetBlobBySeqId::CreateRequests()
 }
 
 
+bool CPSGS_OSGGetBlobBySeqId::BlobIsExcluded(const string& psg_blob_id)
+{
+    auto& psg_req = GetRequest()->GetRequest<SPSGS_BlobBySeqIdRequest>();
+    return find(psg_req.m_ExcludeBlobs.begin(), psg_req.m_ExcludeBlobs.end(), psg_blob_id) !=
+        psg_req.m_ExcludeBlobs.end();
+}
+
+
 void CPSGS_OSGGetBlobBySeqId::ProcessReplies()
 {
     for ( auto& f : GetFetches() ) {
@@ -207,6 +223,10 @@ void CPSGS_OSGGetBlobBySeqId::ProcessReplies()
                 break;
             case CID2_Reply::TReply::e_Get_blob_id:
                 ProcessResolveReply(*r);
+                if ( m_BioseqInfoFlags & SPSGS_ResolveRequest::fPSGS_BlobId ) {
+                    // resolved to OSG sequence
+                    SignalStartProcessing();
+                }
                 break;
             case CID2_Reply::TReply::e_Get_blob:
                 ProcessBlobReply(*r);
@@ -221,13 +241,22 @@ void CPSGS_OSGGetBlobBySeqId::ProcessReplies()
             }
         }
     }
-    if ( m_BioseqInfoFlags == 0 || !HasBlob() ) {
+    if ( !(m_BioseqInfoFlags & SPSGS_ResolveRequest::fPSGS_BlobId) ) {
         FinalizeResult(ePSGS_NotFound);
     }
-    else {
+    else if ( HasBlob() ) {
         SendBioseqInfo(SPSGS_ResolveRequest::ePSGS_UnknownFormat);
         SendBlob();
         FinalizeResult(ePSGS_Found);
+    }
+    else if ( BlobIsExcluded(m_BlobId) ) {
+        SendBioseqInfo(SPSGS_ResolveRequest::ePSGS_UnknownFormat);
+        SendExcludedBlob(m_BlobId);
+        FinalizeResult(ePSGS_Found);
+    }
+    else {
+        ERR_POST(GetName()<<": Unexpected missing blob");
+        FinalizeResult(ePSGS_NotFound);
     }
 }
 

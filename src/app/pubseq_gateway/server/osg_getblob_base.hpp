@@ -80,6 +80,7 @@ public:
 protected:
     void ProcessBlobReply(const CID2_Reply& reply);
     bool HasBlob() const;
+    void SendExcludedBlob(const string& psg_blob_id);
     void SendBlob();
     
     static string x_GetSplitInfoPSGBlobId(const string& main_blob_id);
