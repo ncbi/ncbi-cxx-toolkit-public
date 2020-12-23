@@ -144,12 +144,11 @@ private:
 // constructor
 CAsn2FastaApp::CAsn2FastaApp (void)
 {
-    SetVersion(CVersionInfo(1, 0, 1));
+    SetVersion(CVersionInfo(1, 0, 2));
 }
 
 // destructor
 CAsn2FastaApp::~CAsn2FastaApp (void)
-
 {
 }
 
@@ -174,14 +173,16 @@ void CAsn2FastaApp::Init(void)
             CArgDescriptions::eString);
         arg_desc->SetConstraint("serial", &(*new CArgAllow_Strings,
             "text", "binary", "XML"));
+
         // id
         arg_desc->AddOptionalKey("id", "ID",
             "Specific ID to display", CArgDescriptions::eString);
+        arg_desc->SetDependency("id", CArgDescriptions::eExcludes, "i");
 
-        
         arg_desc->AddOptionalKey("ids", "IDFile",
-                                 "FIle of IDs to display, one per line",
-                                 CArgDescriptions::eInputFile);
+            "FIle of IDs to display, one per line", CArgDescriptions::eInputFile);
+        arg_desc->SetDependency("ids", CArgDescriptions::eExcludes, "i");
+        arg_desc->SetDependency("ids", CArgDescriptions::eExcludes, "id");
 
         // input type:
         arg_desc->AddDefaultKey( "type", "AsnType", "ASN.1 object type",
@@ -196,8 +197,8 @@ void CAsn2FastaApp::Init(void)
         arg_desc->AddFlag("batch", "Process NCBI release file");
         // compression
         arg_desc->AddFlag("c", "Compressed file");
-        // propogate top descriptors
-        arg_desc->AddFlag("p", "Propogate top descriptors");
+        // propagate top descriptors
+        arg_desc->AddFlag("p", "Propagate top descriptors");
 
         arg_desc->AddFlag("defline-only",
                           "Only output the defline");
@@ -448,7 +449,7 @@ int CAsn2FastaApp::Run(void)
         if ( args["id"] ) {
             x_InitOStreams(args);
             //
-            //  Implies gbload; otherwise this feature would be pretty  
+            //  Implies gbload; otherwise this feature would be pretty
             //  useless...
             //
             m_Scope->AddDefaults();
