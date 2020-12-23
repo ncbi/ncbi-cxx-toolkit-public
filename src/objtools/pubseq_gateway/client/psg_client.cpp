@@ -195,21 +195,28 @@ string CPSG_BlobId::Repr() const
 
 unique_ptr<CPSG_DataId> s_GetDataId(const SPSG_Args& args)
 {
-    const auto& blob_id = args.GetValue("blob_id");
+    try {
+        const auto& blob_id = args.GetValue("blob_id");
 
-    if (blob_id.empty()) {
-        auto id2_chunk = NStr::StringToNumeric<Uint8>(args.GetValue("id2_chunk"));
-        return unique_ptr<CPSG_DataId>(new CPSG_ChunkId(id2_chunk, args.GetValue("id2_info")));
+        if (blob_id.empty()) {
+            auto id2_chunk = NStr::StringToNumeric<Uint8>(args.GetValue("id2_chunk"));
+            return unique_ptr<CPSG_DataId>(new CPSG_ChunkId(id2_chunk, args.GetValue("id2_info")));
+        }
+
+        CPSG_BlobId::TLastModified last_modified;
+        const auto& last_modified_str = args.GetValue("last_modified");
+
+        if (!last_modified_str.empty()) {
+            last_modified = NStr::StringToNumeric<Int8>(last_modified_str);
+        }
+
+        return unique_ptr<CPSG_DataId>(new CPSG_BlobId(blob_id, move(last_modified)));
     }
-
-    CPSG_BlobId::TLastModified last_modified;
-    const auto& last_modified_str = args.GetValue("last_modified");
-
-    if (!last_modified_str.empty()) {
-        last_modified = NStr::StringToNumeric<Int8>(last_modified_str);
+    catch (...) {
+        NCBI_THROW_FMT(CPSG_Exception, eServerError,
+                "Both blob_id[+last_modified] and id2_chunk+id2_info pairs are missing/corrupted in server response: " <<
+                args.GetQueryString(CUrlArgs::eAmp_Char));
     }
-
-    return unique_ptr<CPSG_DataId>(new CPSG_BlobId(blob_id, move(last_modified)));
 }
 
 CPSG_BlobId s_GetBlobId(const CJsonNode& data)
