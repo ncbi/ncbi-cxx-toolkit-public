@@ -240,11 +240,11 @@ static size_t s_Api_DBAPI_Check(const string& service, size_t api_id)
 
     string key("12345");
     string sql(string("SELECT '") + key + "'");
-    auto_ptr<IStatement> stmt(s_Dbapi_Conn->CreateStatement());
+    unique_ptr<IStatement> stmt(s_Dbapi_Conn->CreateStatement());
     stmt->Execute(sql);
 
     while (stmt->HasMoreResults()) {
-        auto_ptr<IResultSet> rs(stmt->GetResultSet());
+        unique_ptr<IResultSet> rs(stmt->GetResultSet());
         if ( ! stmt->HasRows() ) {
             continue;
         }
@@ -1284,7 +1284,7 @@ bool CTestNcbiDblbSvcResApp::Test(STest& test)
 
 void CTestNcbiDblbSvcResApp::Init(void)
 {
-    auto_ptr<CArgDescriptions> args(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> args(new CArgDescriptions);
     args->SetUsageContext(GetArguments().GetProgramBasename(),
                           "Test service resolution via DBAPI, SDBAPI, and DBLB.");
 

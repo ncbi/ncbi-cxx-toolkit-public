@@ -257,7 +257,7 @@ public:
     virtual const IResultSetMetaData& GetMetaData(void) const;
 
 private:
-    // Lifetime of m_RS shouldn't be managed by auto_ptr or any other smart pointer
+    // Lifetime of m_RS shouldn't be managed by unique_ptr or any other smart pointer
     IResultSet* m_RS;
 };
 

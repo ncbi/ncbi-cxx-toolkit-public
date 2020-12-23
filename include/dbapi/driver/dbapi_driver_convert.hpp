@@ -875,7 +875,7 @@ class CConvertTO
 public:
     typedef TO TValue;
 
-    static void Convert(const auto_ptr<CDB_Result>& rs, TValue& value)
+    static void Convert(const shared_ptr<CDB_Result>& rs, TValue& value)
     {
         if (rs->Fetch()) {
             value = CMakeObject<CP, TValue, CDB_Result>::Make(*rs);
@@ -891,7 +891,7 @@ class CConvertTO<CP, vector<T> >
 public:
     typedef vector<T> TValue;
 
-    static void Convert(const auto_ptr<CDB_Result>& rs, TValue& value)
+    static void Convert(const shared_ptr<CDB_Result>& rs, TValue& value)
     {
         while (rs->Fetch()) {
             value.push_back(CMakeObject<CP, T, CDB_Result>::Make(*rs));
@@ -905,7 +905,7 @@ class CConvertTO<CP, deque<T> >
 public:
     typedef deque<T> TValue;
 
-    static void Convert(const auto_ptr<CDB_Result>& rs, TValue& value)
+    static void Convert(const shared_ptr<CDB_Result>& rs, TValue& value)
     {
         while (rs->Fetch()) {
             value.push_back(CMakeObject<CP, T, CDB_Result>::Make(*rs));
@@ -919,7 +919,7 @@ class CConvertTO<CP, set<T> >
 public:
     typedef set<T> TValue;
 
-    static void Convert(const auto_ptr<CDB_Result>& rs, TValue& value)
+    static void Convert(const shared_ptr<CDB_Result>& rs, TValue& value)
     {
         while (rs->Fetch()) {
             value.insert(CMakeObject<CP, T, CDB_Result>::Make(*rs));
@@ -933,7 +933,7 @@ class CConvertTO<CP, stack<T> >
 public:
     typedef stack<T> TValue;
 
-    static void Convert(const auto_ptr<CDB_Result>& rs, TValue& value)
+    static void Convert(const shared_ptr<CDB_Result>& rs, TValue& value)
     {
         while (rs->Fetch()) {
             value.push(CMakeObject<CP, T, CDB_Result>::Make(*rs));
@@ -947,7 +947,7 @@ class CConvertTO<CP, map<K, V> >
 public:
     typedef map<K, V> TValue;
 
-    static void Convert(const auto_ptr<CDB_Result>& rs, TValue& value)
+    static void Convert(const shared_ptr<CDB_Result>& rs, TValue& value)
     {
         while (rs->Fetch()) {
             K k = CMakeObject<CP, K, CDB_Result>::Make(*rs);
@@ -995,7 +995,7 @@ public:
         TO result;
 
         while (m_Stmt->HasMoreResults()) {
-            auto_ptr<CDB_Result> rs(m_Stmt->Result());
+            shared_ptr<CDB_Result> rs(m_Stmt->Result());
 
             if (rs.get() == NULL) {
                 continue;
@@ -1050,7 +1050,7 @@ public:
         TO result;
 
         while (m_Stmt->HasMoreResults()) {
-            auto_ptr<CDB_Result> rs(m_Stmt->Result());
+            shared_ptr<CDB_Result> rs(m_Stmt->Result());
 
             if (rs.get() == NULL) {
                 continue;
@@ -1066,7 +1066,7 @@ public:
     }
 
 private:
-    mutable auto_ptr<TObj> m_Stmt;
+    mutable shared_ptr<TObj> m_Stmt;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1106,7 +1106,7 @@ public:
         TO result;
 
         while (m_Stmt->HasMoreResults()) {
-            auto_ptr<CDB_Result> rs(m_Stmt->Result());
+            shared_ptr<CDB_Result> rs(m_Stmt->Result());
 
             if (rs.get() == NULL) {
                 continue;
@@ -1161,7 +1161,7 @@ public:
         TO result;
 
         while (m_Stmt->HasMoreResults()) {
-            auto_ptr<CDB_Result> rs(m_Stmt->Result());
+            shared_ptr<CDB_Result> rs(m_Stmt->Result());
 
             if (rs.get() == NULL) {
                 continue;
@@ -1177,7 +1177,7 @@ public:
     }
 
 private:
-    mutable auto_ptr<TObj> m_Stmt;
+    mutable shared_ptr<TObj> m_Stmt;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1217,7 +1217,7 @@ public:
 
 private:
     TObj* m_Stmt;
-    mutable auto_ptr<CDB_Result> m_RS;
+    mutable shared_ptr<CDB_Result> m_RS;
 };
 
 template <typename CP>
@@ -1255,8 +1255,8 @@ public:
     }
 
 private:
-    mutable auto_ptr<TObj> m_Stmt;
-    mutable auto_ptr<CDB_Result> m_RS;
+    mutable shared_ptr<TObj> m_Stmt;
+    mutable shared_ptr<CDB_Result> m_RS;
 };
 
 } // namespace value_slice

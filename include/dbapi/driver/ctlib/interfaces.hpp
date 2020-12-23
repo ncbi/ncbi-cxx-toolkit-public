@@ -810,7 +810,7 @@ class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_LangCmd : public CTL_LRCmd
     friend class CTL_Connection;
     friend class CTL_CursorCmdExpl;
     friend class CTL_CursorResultExpl;
-    friend class auto_ptr<CTL_LangCmd>;
+    friend class default_delete<CTL_LangCmd>;
 
 protected:
     CTL_LangCmd(CTL_Connection& conn,
@@ -861,7 +861,7 @@ private:
     bool x_AssignParams(void);
     void x_Close(void);
 
-    auto_ptr<CDBParams> m_InParams;
+    unique_ptr<CDBParams> m_InParams;
 };
 
 
@@ -952,8 +952,8 @@ private:
     bool x_AssignParams(void);
     I_BlobDescriptor* x_GetBlobDescriptor(unsigned int item_num);
 
-    auto_ptr<CTL_LangCmd>          m_LCmd;
-    auto_ptr<CTL_CursorResultExpl> m_Res;
+    unique_ptr<CTL_LangCmd>          m_LCmd;
+    unique_ptr<CTL_CursorResultExpl> m_Res;
     string                         m_CombinedQuery;
     unsigned int                   m_FetchSize;
 };
@@ -1290,7 +1290,7 @@ private:
 class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_CursorResultExpl : public CTL_CursorResult
 {
     friend class CTL_CursorCmdExpl;
-    friend class auto_ptr<CTL_CursorResultExpl>;
+    friend class default_delete<CTL_CursorResultExpl>;
 
 protected:
     CTL_CursorResultExpl(CTL_LangCmd* cmd, const string& cursor_name);
@@ -1623,7 +1623,7 @@ protected:
 
     CS_IODESC               m_Desc;
     /// Set only when m_Desc lacks a valid textptr
-    auto_ptr<CDB_Exception> m_Context;
+    unique_ptr<CDB_Exception> m_Context;
 };
 
 class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_CursorBlobDescriptor
