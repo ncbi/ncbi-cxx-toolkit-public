@@ -231,11 +231,15 @@ bool CGtfWriter::xWriteFeature(
 //  ----------------------------------------------------------------------------
 {
     auto subtype = mf.GetFeatSubtype();
-    //if (subtype == CSeqFeatData::eSubtype_cdregion) {
-    //    const auto& range = mf.GetLocation().GetTotalRange();
-    //    cerr << "";
-    //}
     const auto& feat = mf.GetMappedFeature();
+
+    //if (subtype == CSeqFeatData::eSubtype_gene) {
+    //    auto from = feat.GetLocation().GetStart(ESeqLocExtremes::eExtreme_Biological);
+    //    if (from == 2991447) {
+    //        cerr << "";
+    //    }
+    //}
+
     switch(subtype) {
         default:
             if (mf.GetFeatType() == CSeqFeatData::e_Rna) {
@@ -473,17 +477,17 @@ bool CGtfWriter::xSplitCdsLocation(
 
     for ( size_t u = 0; u < 3; ++u ) {
 
-        TSeqPos uLowest = pLocCode2->GetTotalRange().GetFrom();
-        interval.SetInt().SetFrom( uLowest );
-        interval.SetInt().SetTo( uLowest );
+        auto lowest = pLocCode2->GetStart(eExtreme_Positional);
+        interval.SetInt().SetFrom(lowest);
+        interval.SetInt().SetTo(lowest);
         pLocStartCodon = pLocStartCodon->Add( 
             interval, CSeq_loc::fSortAndMerge_All, 0 );
         pLocCode2 = pLocCode2->Subtract( 
             interval, CSeq_loc::fMerge_Contained, 0, 0 );    
 
-        TSeqPos uHighest = pLocCode->GetTotalRange().GetTo();
-        interval.SetInt().SetFrom( uHighest );
-        interval.SetInt().SetTo( uHighest );
+        auto highest = pLocCode->GetStop(eExtreme_Positional);
+        interval.SetInt().SetFrom(highest);
+        interval.SetInt().SetTo(highest);
         pLocStopCodon = pLocStopCodon->Add( 
             interval, CSeq_loc::fSortAndMerge_All, 0 );
         pLocCode = pLocCode->Subtract( 
