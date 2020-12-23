@@ -469,6 +469,7 @@ void CDeflineGenerator::x_SetFlagsIdx (
     m_PatentSequence = bsx->GetPatentSequence();
 
     m_PDBChain = bsx->GetPDBChain();
+    m_PDBChainID = bsx->GetPDBChainID();
 
     m_MIBiomol = bsx->GetBiomol();
     m_MITech = bsx->GetTech();
@@ -1751,6 +1752,20 @@ void CDeflineGenerator::x_SetTitleFromPDB (void)
             }
         }
         joiner.Join(&m_MainTitle);
+    } else if (! m_PDBChainID.empty()) {
+      string chain(m_PDBChainID);
+      CTextJoiner<4, CTempString> joiner;
+      if (m_UsePDBCompoundForDefline) {
+          joiner.Add("Chain ").Add(chain).Add(", ").Add(m_PDBCompound);
+      } else {
+          std::size_t found = m_Comment.find_first_not_of("0123456789");
+          if (found != std::string::npos && found < m_Comment.length() && m_Comment[found] == ' ') {
+              joiner.Add("Chain ").Add(chain).Add(", ").Add(m_Comment.substr (found));
+          } else {
+              joiner.Add("Chain ").Add(chain).Add(", ").Add(m_Comment);
+          }
+      }
+      joiner.Join(&m_MainTitle);
     } else {
         m_MainTitle = m_PDBCompound;
     }

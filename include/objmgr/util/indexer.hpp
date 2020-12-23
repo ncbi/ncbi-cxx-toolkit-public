@@ -499,6 +499,7 @@ public:
     int GetPatentSequence (void) const { return m_PatentSequence; }
 
     int GetPDBChain (void) const { return m_PDBChain; }
+    string GetPDBChainID (void) const { return m_PDBChainID; }
 
     // Most important descriptor fields
 
@@ -677,6 +678,7 @@ private:
     int m_PatentSequence;
 
     int m_PDBChain;
+    string m_PDBChainID;
 
     // Instantiated title
     string m_Title;

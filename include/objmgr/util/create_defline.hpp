@@ -273,6 +273,7 @@ private:
     int m_PatentSequence;
 
     int m_PDBChain;
+    string m_PDBChainID;
 
     /// molinfo fields
     CMolInfo::TBiomol m_MIBiomol;

@@ -846,6 +846,7 @@ CBioseqIndex::CBioseqIndex (CBioseq_Handle bsh,
     m_PatentSequence = 0;
 
     m_PDBChain = 0;
+    m_PDBChainID.clear();
 
     m_HTGTech = false;
     m_HTGSUnfinished = false;
@@ -1038,6 +1039,8 @@ CBioseqIndex::CBioseqIndex (CBioseq_Handle bsh,
                 const CPDB_seq_id& pdb_id = id->GetPdb ();
                 if (pdb_id.IsSetChain()) {
                     m_PDBChain = pdb_id.GetChain();
+                } else if (pdb_id.IsSetChain_id()) {
+                    m_PDBChainID = pdb_id.GetChain_id();
                 }
                 break;
             }
