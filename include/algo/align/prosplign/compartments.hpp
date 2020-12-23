@@ -115,7 +115,7 @@ typedef vector<SCompartment> TCompartmentStructs;
 /// Pass precalculated non-bridgeable gaps to prohibit compartment to go over it
 
 NCBI_XALGOALIGN_EXPORT
-auto_ptr<CCompartmentAccessor<THit> > CreateCompartmentAccessor(const THitRefs& orig_hitrefs,
+unique_ptr<CCompartmentAccessor<THit> > CreateCompartmentAccessor(const THitRefs& orig_hitrefs,
                                                                 CCompartOptions compart_options,
                                                                 const vector<pair<THit::TCoord, THit::TCoord> > *gaps = NULL);
 

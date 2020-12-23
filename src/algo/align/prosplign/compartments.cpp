@@ -234,11 +234,11 @@ CRef<CSeq_annot> MakeCompartment(THitRefs& hitrefs)
     return result;
 }
 
-auto_ptr<CCompartmentAccessor<THit> > CreateCompartmentAccessor(const THitRefs& orig_hitrefs,
+unique_ptr<CCompartmentAccessor<THit> > CreateCompartmentAccessor(const THitRefs& orig_hitrefs,
                                                                 CCompartOptions compart_options,
                                                                 const vector<pair<THit::TCoord, THit::TCoord> > *gaps)
 {
-    auto_ptr<CCompartmentAccessor<THit> > comps_ptr;
+    unique_ptr<CCompartmentAccessor<THit> > comps_ptr;
     if (orig_hitrefs.empty())
         return comps_ptr;
 
@@ -303,7 +303,7 @@ auto_ptr<CCompartmentAccessor<THit> > CreateCompartmentAccessor(const THitRefs& 
 TCompartments SelectCompartmentsHits(const THitRefs& orig_hitrefs, CCompartOptions compart_options,
                                                                 const vector<pair<THit::TCoord, THit::TCoord> > *gaps)
 {
-    auto_ptr<CCompartmentAccessor<THit> >  comps_ptr =
+    unique_ptr<CCompartmentAccessor<THit> >  comps_ptr =
         CreateCompartmentAccessor( orig_hitrefs, compart_options, gaps);
 
     TCompartments results = FormatAsAsn(comps_ptr.get(), compart_options, gaps);

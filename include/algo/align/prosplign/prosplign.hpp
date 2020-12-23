@@ -365,7 +365,7 @@ public:
 public:
     class CImplementation;
 private:
-    auto_ptr<CImplementation> m_implementation;
+    unique_ptr<CImplementation> m_implementation;
     
 private:
     /// forbidden

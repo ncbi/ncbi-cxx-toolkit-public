@@ -826,8 +826,8 @@ protected:
     CScope* m_scope;
     const CSeq_id* m_protein;
     CRef<CSeq_loc> m_genomic;
-    auto_ptr<CPSeq> m_protseq;
-    auto_ptr<CNSeq> m_cnseq;
+    shared_ptr<CPSeq> m_protseq;
+    shared_ptr<CNSeq> m_cnseq;
 
     CProSplignInterrupt m_Interrupt;
     
@@ -1140,7 +1140,7 @@ CRef<CSeq_align> CProSplign::FindGlobalAlignment(CScope& scope, const CSeq_id& p
     case eNa_strand_both_rev:
         // do both
         {
-            auto_ptr<CImplementation> plus_data(m_implementation->clone());
+            unique_ptr<CImplementation> plus_data(m_implementation->clone());
             genomic->SetStrand(eNa_strand_plus);
             int plus_score = plus_data->FindGlobalAlignment_stage1(scope, protein, *genomic);
 
@@ -1148,7 +1148,7 @@ CRef<CSeq_align> CProSplign::FindGlobalAlignment(CScope& scope, const CSeq_id& p
             int minus_score = m_implementation->FindGlobalAlignment_stage1(scope, protein, *genomic);
             
             if (minus_score <= plus_score)
-                m_implementation = plus_data;
+                m_implementation = move(plus_data);
         }
 
         result = m_implementation->FindGlobalAlignment_stage2();
