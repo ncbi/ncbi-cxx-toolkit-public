@@ -135,6 +135,7 @@ protected:
     CRef<CScope> CreateScope(void);
 
     CRef<CObjectManager> m_om;
+    vector<string> m_Loaders;
     CRef<CPrefetchManager> m_prefetch_manager;
     CRef<CScope> m_single_scope;
 
@@ -249,7 +250,28 @@ void CTestOM::InitOM(void)
     GenBankReaders_Register_Pubseq();
     GenBankReaders_Register_Pubseq2();
 #endif
-    CGBDataLoader::RegisterInObjectManager(*om);
+    const CArgs& args = GetArgs();
+    if ( !args["loaders"] ) {
+        CGBDataLoader::RegisterInObjectManager(*om);
+    }
+    else {
+        vector<string> names;
+        NStr::Split(args["loaders"].AsString(), ",", names);
+        for ( auto name : names ) {
+            if ( name == "blastdb_p" || name == "blastdb_n" ) {
+                auto const kDbName_param = "DbName";
+                auto const kDbType_param = "DbType";
+                auto dbname = "nr";
+                auto dbtype = (name == "blastdb_p"? "protein": "nucleotide");
+                name = "blastdb";
+                GetConfig().Set(name, kDbName_param, dbname);
+                GetConfig().Set(name, kDbType_param, dbtype);
+            }
+            AutoPtr<CConfig::TParamTree> params(CConfig::ConvertRegToTree(GetConfig()));
+            m_Loaders.push_back(om->RegisterDataLoader(params->FindSubNode(name), name)->GetName());
+        }
+    }
+    
     m_om = om;
 }
 
@@ -257,7 +279,14 @@ void CTestOM::InitOM(void)
 CRef<CScope> CTestOM::CreateScope(void)
 {
     CRef<CScope> scope(new CScope(*m_om));
-    scope->AddDefaults();
+    if ( m_Loaders.empty() ) {
+        scope->AddDefaults();
+    }
+    else {
+        for ( auto& name : m_Loaders ) {
+            scope->AddDataLoader(name);
+        }
+    }
     return scope;
 }
 
@@ -292,6 +321,9 @@ bool CTestOM::Thread_Run(int idx)
     }
     else if ( m_no_snp ) {
         sel.ExcludeNamedAnnots("SNP");
+    }
+    else {
+        sel.IncludeNamedAnnotAccession("SNP");
     }
     if ( !m_named_acc.empty() ) {
         sel.IncludeNamedAnnotAccession(m_named_acc);
@@ -577,6 +609,10 @@ bool CTestOM::Thread_Run(int idx)
 bool CTestOM::TestApp_Args( CArgDescriptions& args)
 {
     args.AddOptionalKey
+        ("loaders", "Loaders",
+         "Comma separated list of additional data loaders",
+         CArgDescriptions::eString);
+    args.AddOptionalKey
         ("fromgi", "FromGi",
          "Process sequences in the interval FROM this Gi",
          CArgDescriptions::eInteger);
@@ -729,7 +765,14 @@ bool CTestOM::TestApp_Exit(void)
 {
     NcbiCout << "Closing" << NcbiEndl;
     m_single_scope = null;
-    CObjectManager::GetInstance()->RevokeDataLoader("GBLOADER");
+    if ( m_Loaders.empty() ) {
+        CObjectManager::GetInstance()->RevokeDataLoader("GBLOADER");
+    }
+    else {
+        for ( auto& l : m_Loaders ) {
+            CObjectManager::GetInstance()->RevokeDataLoader(l);
+        }
+    }
     if ( failed ) {
         NcbiCout << " Failed" << NcbiEndl << NcbiEndl;
         return false;

@@ -106,6 +106,7 @@ protected:
 
     CRef<CObjectManager> m_ObjMgr;
 
+    vector<string> m_Loaders;
     TIntMap     m_DescMap;
     TFeatMap    m_Feat0Map;
     TFeatMap    m_Feat1Map;
@@ -286,7 +287,14 @@ bool CTestOM::Thread_Run(int idx)
 {
     // initialize scope
     CScope scope(*m_ObjMgr);
-    scope.AddDefaults();
+    if ( m_Loaders.empty() ) {
+        scope.AddDefaults();
+    }
+    else {
+        for ( auto& name : m_Loaders ) {
+            scope.AddDataLoader(name);
+        }
+    }
 
     vector<CSeq_id_Handle> ids = m_Ids;
     
@@ -733,6 +741,10 @@ bool CTestOM::Thread_Run(int idx)
 bool CTestOM::TestApp_Args( CArgDescriptions& args)
 {
     args.AddOptionalKey
+        ("loaders", "Loaders",
+         "Comma separated list of additional data loaders",
+         CArgDescriptions::eString);
+    args.AddOptionalKey
         ("fromgi", "FromGi",
          "Process sequences in the interval FROM this Gi",
          CArgDescriptions::eInteger);
@@ -886,7 +898,26 @@ bool CTestOM::TestApp_Init(void)
     GenBankReaders_Register_Pubseq();
     GenBankReaders_Register_Pubseq2();
 #endif
-    CGBDataLoader::RegisterInObjectManager(*m_ObjMgr);
+    if ( !args["loaders"] ) {
+        CGBDataLoader::RegisterInObjectManager(*m_ObjMgr);
+    }
+    else {
+        vector<string> names;
+        NStr::Split(args["loaders"].AsString(), ",", names);
+        for ( auto name : names ) {
+            if ( name == "blastdb_p" || name == "blastdb_n" ) {
+                auto const kDbName_param = "DbName";
+                auto const kDbType_param = "DbType";
+                auto dbname = "nr";
+                auto dbtype = (name == "blastdb_p"? "protein": "nucleotide");
+                name = "blastdb";
+                GetConfig().Set(name, kDbName_param, dbname);
+                GetConfig().Set(name, kDbType_param, dbtype);
+            }
+            AutoPtr<CConfig::TParamTree> params(CConfig::ConvertRegToTree(GetConfig()));
+            m_Loaders.push_back(m_ObjMgr->RegisterDataLoader(params->FindSubNode(name), name)->GetName());
+        }
+    }
 
     return true;
 }
