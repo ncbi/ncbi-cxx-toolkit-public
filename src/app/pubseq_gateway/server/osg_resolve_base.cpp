@@ -80,6 +80,7 @@ void CPSGS_OSGResolveBase::ProcessResolveReply(const CID2_Reply& reply)
     if ( reply.GetReply().IsGet_seq_id() ) {
         auto& reply_ids = reply.GetReply().GetGet_seq_id();
         auto& req_id = reply_ids.GetRequest();
+        TGi gi = ZERO_GI;
         for ( auto& id : reply_ids.GetSeq_id() ) {
             if ( id->IsGeneral() ) {
                 const CDbtag& dbtag = id->GetGeneral();
@@ -111,22 +112,45 @@ void CPSGS_OSGResolveBase::ProcessResolveReply(const CID2_Reply& reply)
                 }
             }
             else if ( id->IsGi() ) {
-                m_BioseqInfo.SetGI(GI_TO(CBioseqInfoRecord::TGI,id->GetGi()));
+                gi = id->GetGi();
+                m_BioseqInfo.SetGI(GI_TO(CBioseqInfoRecord::TGI,gi));
                 m_BioseqInfoFlags |= SPSGS_ResolveRequest::fPSGS_Gi;
                 continue;
             }
             else if ( auto text_id = id->GetTextseq_Id() ) {
-                if ( text_id->IsSetAccession() && text_id->IsSetVersion() ) {
+                // only versioned accession goes to canonical id
+                if ( !(m_BioseqInfoFlags & SPSGS_ResolveRequest::fPSGS_CanonicalId) &&
+                     text_id->IsSetAccession() && text_id->IsSetVersion() ) {
                     m_BioseqInfo.SetSeqIdType(id->Which());
                     m_BioseqInfo.SetAccession(text_id->GetAccession());
                     m_BioseqInfo.SetVersion(text_id->GetVersion());
+                    if ( text_id->IsSetName() ) {
+                        m_BioseqInfo.SetName(text_id->GetName());
+                    }
                     m_BioseqInfoFlags |= SPSGS_ResolveRequest::fPSGS_CanonicalId;
                     continue;
                 }
             }
             string content;
             id->GetLabel(&content, CSeq_id::eFastaContent);
-            seq_ids.insert(make_tuple(id->Which(), content));
+            seq_ids.insert(make_tuple(id->Which(), move(content)));
+        }
+        if ( gi != ZERO_GI ) {
+            // gi goes either to canonical id or to other ids
+            CSeq_id gi_id(CSeq_id::e_Gi, gi);
+            string content;
+            gi_id.GetLabel(&content, CSeq_id::eFastaContent);
+            if ( !(m_BioseqInfoFlags & SPSGS_ResolveRequest::fPSGS_CanonicalId) ) {
+                // set canonical id from gi
+                m_BioseqInfo.SetAccession(content);
+                m_BioseqInfo.SetVersion(0);
+                m_BioseqInfo.SetSeqIdType(gi_id.Which());
+                m_BioseqInfoFlags |= SPSGS_ResolveRequest::fPSGS_CanonicalId;
+            }
+            else {
+                // to other ids
+                seq_ids.insert(make_tuple(gi_id.Which(), move(content)));
+            }
         }
         if ( (req_id.GetSeq_id_type() & req_id.eSeq_id_type_all) == req_id.eSeq_id_type_all &&
              !seq_ids.empty() ) {
