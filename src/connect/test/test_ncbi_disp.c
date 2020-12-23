@@ -220,7 +220,7 @@ int main(int argc, const char* argv[])
         free((void*) value);
 
     CORE_LOGF(eLOG_Note, ("Looking for service `%s'", service));
-    net_info = ConnNetInfo_Create(service);
+    verify((net_info = ConnNetInfo_Create(service)));
     CORE_LOG(eLOG_Trace, "Opening service mapper");
     if (x_gettimeofday(&start) != 0)
         memset(&start, 0, sizeof(start));
@@ -355,7 +355,7 @@ int main(int argc, const char* argv[])
 #if 0
     {{
         SConnNetInfo* net_info;
-        net_info = ConnNetInfo_Create(service);
+        verify((net_info = ConnNetInfo_Create(service)));
         iter = SERV_Open(service, fSERV_Http, SERV_LOCALHOST, net_info);
         ConnNetInfo_Destroy(net_info);
     }}

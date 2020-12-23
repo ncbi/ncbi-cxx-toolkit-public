@@ -91,6 +91,18 @@ static int/*bool*/ x_tr(char* str, char a, char b, size_t len)
 }
 
 
+static int/*bool*/ x_HasSpace(const char* s, size_t n)
+{
+    while (n) {
+        /* NB: do not use "n" post-decrement here: isspace() can be a macro */
+        if (isspace((unsigned char) s[n]))
+            return 1/*true*/;
+        --n;
+    }
+    return 0/*false*/;
+}
+
+
 static char* x_ServiceName(unsigned int depth,
                            const char* service, const char* svc,
                            int/*bool*/ ismask, int/*bool*/ isfast)
@@ -101,7 +113,8 @@ static char* x_ServiceName(unsigned int depth,
     assert(!svc == !service);
     assert(sizeof(buf) > sizeof(CONN_SERVICE_NAME));
     if (!svc  ||  (!ismask  &&  (!*svc  ||  strpbrk(svc, "?*[")))
-        ||  (len = strlen(svc)) >= sizeof(buf)-sizeof(CONN_SERVICE_NAME)) {
+        ||  (len = strlen(svc)) >= sizeof(buf)-sizeof(CONN_SERVICE_NAME)
+        ||  x_HasSpace(svc, len)) {
         if (!service  ||  strcasecmp(service, svc) == 0)
             service = "";
         CORE_LOGF_X(7, eLOG_Error,
