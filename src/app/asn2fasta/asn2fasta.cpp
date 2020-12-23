@@ -310,7 +310,7 @@ void CAsn2FastaApp::Init(void)
          // cleanup
          arg_desc->AddFlag("cleanup",
                            "Do internal data cleanup prior to formatting");
-     }}
+    }}
 
     CDataLoadersUtil::AddArgumentDescriptions(*arg_desc);
 
@@ -429,14 +429,6 @@ int CAsn2FastaApp::Run(void)
         m_OnlyNucs = args["nucs-only"];
         m_OnlyProts = args["prots-only"];
 
-        x_InitOStreams(args);
-        unique_ptr<CObjectIStream> is(x_OpenIStream(args));
-        if (!is) {
-            string msg = args["i"]? "Unable to open input file" + args["i"].AsString() :
-                        "Unable to read data from stdin";
-            NCBI_THROW(CException, eUnknown, msg);
-        }
-
         m_DeflineOnly = args["defline-only"];
         // Default is not to look at features
         m_AllFeats = m_CDS 
@@ -453,11 +445,8 @@ int CAsn2FastaApp::Run(void)
 
         m_ResolveAll = args["resolve-all"];
 
-        int ret_value=0;
-        if ( args["batch"] ) {
-            x_BatchProcess(*is.release());
-        }
-        else if ( args["id"] ) {
+        if ( args["id"] ) {
+            x_InitOStreams(args);
             //
             //  Implies gbload; otherwise this feature would be pretty  
             //  useless...
@@ -465,13 +454,16 @@ int CAsn2FastaApp::Run(void)
             m_Scope->AddDefaults();
             string seqID = args["id"].AsString();
             HandleSeqID( seqID );
+            return 0;
         }
         else if ( args["ids"] ) {
             CNcbiIstream& istr = args["ids"].AsInputFile();
             string id_str;
+            int ret_value = 0;
+            x_InitOStreams(args);
             while (NcbiGetlineEOL(istr, id_str)) {
                 id_str = NStr::TruncateSpaces(id_str);
-                if (id_str.empty()  ||  id_str[0] == '#') {
+                if (id_str.empty() || id_str[0] == '#') {
                     continue;
                 }
 
@@ -481,14 +473,27 @@ int CAsn2FastaApp::Run(void)
                 catch (CException& e) {
                     ERR_POST(Error << e);
                     ret_value = 1;
-                }       
+                }
             }
+            return ret_value;
+        }
+
+        unique_ptr<CObjectIStream> is(x_OpenIStream(args));
+        if (!is) {
+            string msg = args["i"] ? "Unable to open input file" + args["i"].AsString() :
+                "Unable to read data from stdin";
+            NCBI_THROW(CException, eUnknown, msg);
+        }
+        x_InitOStreams(args);
+
+        if ( args["batch"] ) {
+            x_BatchProcess(*is.release());
         }
         else {
             string asn_type = args["type"].AsString();
             x_ProcessIStream(asn_type, *is);
         }
-        return ret_value;
+        return 0;
     }
     catch (CException& e) {
         ERR_POST(Error << e);
@@ -1012,7 +1017,7 @@ CObjectIStream* CAsn2FastaApp::x_OpenIStream(const CArgs& args)
 {
     // determine the file serialization format.
     // default for batch files is binary, otherwise text.
-    ESerialDataFormat serial = args["batch"] ? eSerial_AsnBinary :eSerial_AsnText;
+    ESerialDataFormat serial = args["batch"] ? eSerial_AsnBinary : eSerial_AsnText;
     if ( args["serial"] ) {
         const string& val = args["serial"].AsString();
         if ( val == "text" ) {
