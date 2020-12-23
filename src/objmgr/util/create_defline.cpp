@@ -634,6 +634,7 @@ void CDeflineGenerator::x_SetFlags (
     m_PatentSequence = 0;
 
     m_PDBChain = 0;
+    m_PDBChainID.clear();
 
     m_MIBiomol = NCBI_BIOMOL(unknown);
     m_MITech = NCBI_TECH(unknown);
@@ -779,7 +780,9 @@ void CDeflineGenerator::x_SetFlags (
                 m_IsPDB = true;
                 CConstRef<CSeq_id> id = sid.GetSeqId();
                 const CPDB_seq_id& pdb_id = id->GetPdb ();
-                if (pdb_id.IsSetChain()) {
+                if (pdb_id.IsSetChain_id()) {
+                    m_PDBChainID = pdb_id.GetChain_id();
+                } else if (pdb_id.IsSetChain()) {
                     m_PDBChain = pdb_id.GetChain();
                 }
                 break;
@@ -1738,21 +1741,7 @@ void CDeflineGenerator::x_SetTitleFromPatent (void)
 void CDeflineGenerator::x_SetTitleFromPDB (void)
 
 {
-    if (isprint ((unsigned char) m_PDBChain)) {
-        string chain(1, (char) m_PDBChain);
-        CTextJoiner<4, CTempString> joiner;
-        if (m_UsePDBCompoundForDefline) {
-            joiner.Add("Chain ").Add(chain).Add(", ").Add(m_PDBCompound);
-        } else {
-            std::size_t found = m_Comment.find_first_not_of("0123456789");
-            if (found != std::string::npos && found < m_Comment.length() && m_Comment[found] == ' ') {
-                joiner.Add("Chain ").Add(chain).Add(", ").Add(m_Comment.substr (found));
-            } else {
-                joiner.Add("Chain ").Add(chain).Add(", ").Add(m_Comment);
-            }
-        }
-        joiner.Join(&m_MainTitle);
-    } else if (! m_PDBChainID.empty()) {
+    if (! m_PDBChainID.empty()) {
       string chain(m_PDBChainID);
       CTextJoiner<4, CTempString> joiner;
       if (m_UsePDBCompoundForDefline) {
@@ -1766,6 +1755,20 @@ void CDeflineGenerator::x_SetTitleFromPDB (void)
           }
       }
       joiner.Join(&m_MainTitle);
+    } else if (isprint ((unsigned char) m_PDBChain)) {
+        string chain(1, (char) m_PDBChain);
+        CTextJoiner<4, CTempString> joiner;
+        if (m_UsePDBCompoundForDefline) {
+            joiner.Add("Chain ").Add(chain).Add(", ").Add(m_PDBCompound);
+        } else {
+            std::size_t found = m_Comment.find_first_not_of("0123456789");
+            if (found != std::string::npos && found < m_Comment.length() && m_Comment[found] == ' ') {
+                joiner.Add("Chain ").Add(chain).Add(", ").Add(m_Comment.substr (found));
+            } else {
+                joiner.Add("Chain ").Add(chain).Add(", ").Add(m_Comment);
+            }
+        }
+        joiner.Join(&m_MainTitle);
     } else {
         m_MainTitle = m_PDBCompound;
     }

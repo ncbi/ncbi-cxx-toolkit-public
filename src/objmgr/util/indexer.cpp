@@ -1037,10 +1037,10 @@ CBioseqIndex::CBioseqIndex (CBioseq_Handle bsh,
                 m_IsPDB = true;
                 CConstRef<CSeq_id> id = sid.GetSeqId();
                 const CPDB_seq_id& pdb_id = id->GetPdb ();
-                if (pdb_id.IsSetChain()) {
-                    m_PDBChain = pdb_id.GetChain();
-                } else if (pdb_id.IsSetChain_id()) {
+                if (pdb_id.IsSetChain_id()) {
                     m_PDBChainID = pdb_id.GetChain_id();
+                } else if (pdb_id.IsSetChain()) {
+                    m_PDBChain = pdb_id.GetChain();
                 }
                 break;
             }
