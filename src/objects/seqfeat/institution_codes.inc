@@ -3180,6 +3180,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "IRDA\ts\tAgriculture Department\t\t\t",
 "IREC\ts\tInstitut de Recherches Entomologique de la Caribe\t\t\t",
 "IRGC\tb\tInternational Rice Genebank Collection\t\t\t",
+"IRGN\ts\tIridian Genomes\t\t\t",
 "IRK\ts\tSiberian Institute of Plant Physiology and Biochemistry\t\t\t",
 "IRKU\ts\tIrkutsk State University, Department of Botany and Genetics\t\t\t",
 "IRP\ts\tIsle Royale National Park\t\t\t",

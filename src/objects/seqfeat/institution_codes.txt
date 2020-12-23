@@ -3147,6 +3147,7 @@ IRD	s	Institut de Recherche pour le Developpement
 IRDA	s	Agriculture Department			
 IREC	s	Institut de Recherches Entomologique de la Caribe			
 IRGC	b	International Rice Genebank Collection			
+IRGN	s	Iridian Genomes			
 IRK	s	Siberian Institute of Plant Physiology and Biochemistry			
 IRKU	s	Irkutsk State University, Department of Botany and Genetics			
 IRP	s	Isle Royale National Park			
