@@ -53,22 +53,22 @@ template<typename T> size_t WriteCompressionFile(T& file, const void* buf, size_
 // Auxiliary methods for CTest
 //
 
-CNcbiIos* CTest::x_CreateIStream(const string& filename, const char* buf, size_t len, size_t buf_len)
+CNcbiIos* CTest::x_CreateIStream(const string& filename, const string& src, size_t buf_len)
 {
     CNcbiIos* stm = nullptr;
 
     if ( m_AllowIstrstream ) {
-        stm = new CNcbiIstrstream(buf, (streamsize)len);
+        stm = new CNcbiIstrstream(src);
     } else {
         // Create file with uncompressed data,
         // or reuse m_SrcFile if we have it already (big data test)
         string fname;
         if ( !m_SrcFile.empty() && 
-             (len == buf_len) /* this is possible for uncompressed data only */) {
+             (src.size() == buf_len) /* this is possible for uncompressed data only */) {
             fname = m_SrcFile;
         } else {
             fname = filename;
-            x_CreateFile(fname, buf, len);
+            x_CreateFile(fname, src.data(), src.size());
         }
         stm = new CNcbiIfstream(_T_XCSTRING(fname), ios::in | ios::binary);
     }

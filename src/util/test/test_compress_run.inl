@@ -351,9 +351,10 @@
     {{
         ERR_POST(Trace << "Compression input stream test...");
         INIT_BUFFERS;
+        string src(src_buf, src_len);
 
         // Create stream with uncompressed data
-        unique_ptr<CNcbiIos> stm(x_CreateIStream(kFileName, src_buf, src_len, buf_len));
+        unique_ptr<CNcbiIos> stm(x_CreateIStream(kFileName, src, buf_len));
         CCompressionIStream ics_zip(*stm, new TStreamCompressor(),
                                     CCompressionStream::fOwnProcessor);
         assert(ics_zip.good());
@@ -410,8 +411,9 @@
         PrintResult(eCompress, c.GetErrorCode(), src_len, buf_len, dst_len);
         assert(result);
         assert(dst_len > 0);
+        string dst(dst_buf, dst_len);
 
-        unique_ptr<CNcbiIos> stm(x_CreateIStream(kFileName, dst_buf, dst_len, buf_len));
+        unique_ptr<CNcbiIos> stm(x_CreateIStream(kFileName, dst, buf_len));
         CCompressionIStream ids_zip(*stm, new TStreamDecompressor(), CCompressionStream::fOwnReader);
         assert(ids_zip.good());
 
@@ -599,11 +601,12 @@
     {{
         ERR_POST(Trace << "Decompression input stream test (transparent read)...");
         INIT_BUFFERS;
+        string src(src_buf, src_len);
 
         // Create test input stream with uncompressed data
         unique_ptr<CNcbiIos> stm;
         if ( m_AllowIstrstream ) {
-            stm.reset(new CNcbiIstrstream(src_buf, (streamsize)src_len));
+            stm.reset(new CNcbiIstrstream(src));
         } else {
             stm.reset(new CNcbiIfstream(_T_XCSTRING(m_SrcFile), ios::in | ios::binary));
         }
@@ -643,9 +646,7 @@
             CNcbiFstream* fs = nullptr; // need for flushing between read/write
             
             if ( m_AllowStrstream ) {
-                stm.reset(new CNcbiStrstream(
-                              NCBI_STRSTREAM_INIT(dst_buf, buf_len), 
-                              ios::in | ios::out | ios::binary));
+                stm.reset(new CNcbiStrstream());
             } else {
                 fs = new CNcbiFstream(kFileName, ios::trunc | ios::in | ios::out | ios::binary);
                 stm.reset(fs);
@@ -714,7 +715,7 @@
                 int n = kCount[k];
 
                 INIT_BUFFERS;
-                CNcbiStrstream stm(NCBI_STRSTREAM_INIT(dst_buf, buf_len));
+                CNcbiStrstream stm;
                 CCompressionIOStream zip(stm,
                                          new TStreamDecompressor(),
                                          new TStreamCompressor(),
@@ -774,7 +775,7 @@
             PrintResult(eCompress, kUnknownErr, kUnknown, kUnknown, str.size());
 
             // Decompress data from input stream
-            CNcbiIstrstream is_str(str.data(), str.size());
+            CNcbiIstrstream is_str(str);
             CCompressionIStream ids_zip(is_str, &decompressor);
             assert(ids_zip.good());
             for (int i = 0; i < n; i++) {
@@ -832,7 +833,7 @@
         assert(memcmp(src_buf, cmp_buf, out_len) == 0);
 
         // Decompress data using manipulator
-        CNcbiIstrstream is_cmp(str.data(), str.size());
+        CNcbiIstrstream is_cmp(str);
         string str_cmp;
         INIT_BUFFERS;
         if (test_name == "bzip2") {
@@ -881,7 +882,8 @@
         // Manipulators and operator<<
         {{
             INIT_BUFFERS;
-            CNcbiIstrstream is_str(src_buf, (streamsize)src_len);
+            string src(src_buf, src_len);
+            CNcbiIstrstream is_str(src);
             CNcbiOstrstream os_str;
             if (test_name == "bzip2") {
                 os_str << MCompress_BZip2 << is_str;
@@ -908,7 +910,7 @@
 
             // Decompress data using manipulator and << operator
             INIT_BUFFERS;
-            CNcbiIstrstream is_cmp(str.data(), (streamsize)os_str_len);
+            CNcbiIstrstream is_cmp(str);
             CNcbiOstrstream os_cmp;
             if (test_name == "bzip2") {
                 os_cmp << MDecompress_BZip2 << is_cmp;
@@ -934,7 +936,8 @@
         // Manipulators and operator>>
         {{
             INIT_BUFFERS;
-            CNcbiIstrstream is_str(src_buf, (streamsize)src_len);
+            string src(src_buf, src_len);
+            CNcbiIstrstream is_str(src);
             CNcbiOstrstream os_str;
             if (test_name == "bzip2") {
                 is_str >> MCompress_BZip2 >> os_str;
@@ -961,7 +964,7 @@
 
             // Decompress data using manipulator and << operator
             INIT_BUFFERS;
-            CNcbiIstrstream is_cmp(str.data(), (streamsize)os_str_len);
+            CNcbiIstrstream is_cmp(str);
             CNcbiOstrstream os_cmp;
             if (test_name == "bzip2") {
                 is_cmp >> MDecompress_BZip2 >> os_cmp;
@@ -1013,7 +1016,8 @@
         }
 
         // Compress data into the file
-        CNcbiIstrstream is_str(src_buf, src_len);
+        string src(src_buf, src_len);
+        CNcbiIstrstream is_str(src);
         CNcbiOfstream os(kFileName, ios::out | ios::binary);
         assert(os.good());
         if (test_name == "bzip2") {

@@ -86,7 +86,7 @@ public:
 
 private:
     // Auxiliary methods
-    CNcbiIos* x_CreateIStream(const string& filename, const char* buf, size_t len, size_t buf_len);
+    CNcbiIos* x_CreateIStream(const string& filename, const string& src, size_t buf_len);
     void x_CreateFile(const string& filename, const char* buf, size_t len);
 
 private:

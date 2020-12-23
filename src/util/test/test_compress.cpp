@@ -92,7 +92,7 @@ public:
 
 private:
     // Auxiliary methods
-    CNcbiIos* x_CreateIStream(const string& filename, const char* buf, size_t len, size_t buf_len);
+    CNcbiIos* x_CreateIStream(const string& filename, const string& src, size_t buf_len);
     void x_CreateFile(const string& filename, const char* buf, size_t len);
   
 private:
@@ -562,9 +562,10 @@ void CTest::TestTransparentCopy(const char* src_buf, size_t src_len, size_t buf_
     // Input stream test
     {{
         memset(dst_buf, 0, buf_len);
+        string src(src_buf, src_len);
         // Create input stream
         if ( m_AllowIstrstream ) {
-            stm.reset(new CNcbiIstrstream(src_buf, (streamsize)src_len));
+            stm.reset(new CNcbiIstrstream(src));
         } else {
             stm.reset(new CNcbiIfstream(_T_XCSTRING(m_SrcFile), ios::in | ios::binary));
         }
