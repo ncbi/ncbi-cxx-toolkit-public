@@ -1,6 +1,4 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(netstorage_gc)
   NCBI_sources(netstorage_gc netstorage_gc_database netstorage_gc_exception)

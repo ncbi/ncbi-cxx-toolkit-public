@@ -1,11 +1,9 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(remote_cgi)
   NCBI_sources(remote_cgi_wn exec_helpers)
   NCBI_uses_toolkit_libraries(xcgi xconnserv)
-  NCBI_project_watchers(sadyrovr)
   NCBI_project_tags(grid)
+  NCBI_project_watchers(sadyrovr)
 NCBI_end_app()
 

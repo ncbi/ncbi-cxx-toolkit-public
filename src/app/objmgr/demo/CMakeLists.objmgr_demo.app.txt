@@ -1,15 +1,17 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(objmgr_demo)
+
   NCBI_sources(objmgr_demo)
   NCBI_uses_toolkit_libraries(
     ncbi_xdbapi_ftds ncbi_xloader_blastdb ncbi_xloader_genbank
     ncbi_xloader_lds2 ncbi_xreader_pubseqos ncbi_xreader_pubseqos2 xobjutil
   )
-  NCBI_project_watchers(vasilche)
+  NCBI_set_test_assets(all_readers.sh)
   NCBI_add_test(all_readers.sh objmgr_demo -id 568815307 -resolve all -adaptive)
   NCBI_add_test(all_readers.sh objmgr_demo -id ABYI02000001 -resolve all -adaptive)
+
+  NCBI_project_watchers(vasilche)
+
 NCBI_end_app()
 

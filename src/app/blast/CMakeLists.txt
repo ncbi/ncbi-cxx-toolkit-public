@@ -1,8 +1,5 @@
-#############################################################################
 # $Id$
-#############################################################################
 
-NCBI_project_watchers(camacho madden fongah2)
 NCBI_add_library(blast_app_util)
 NCBI_add_app(
   blastp
@@ -18,3 +15,5 @@ NCBI_add_app(
   deltablast
   seedtop
 )
+
+NCBI_project_watchers(camacho madden fongah2)

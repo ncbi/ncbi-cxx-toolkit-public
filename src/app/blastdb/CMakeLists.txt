@@ -1,6 +1,4 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_add_app(
   blastdbcmd makeblastdb blastdb_aliastool blastdbcheck convert2blastmask

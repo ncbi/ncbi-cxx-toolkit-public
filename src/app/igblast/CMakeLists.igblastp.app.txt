@@ -1,11 +1,9 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(igblastp)
   NCBI_sources(igblastp_app)
   NCBI_uses_toolkit_libraries(blast_app_util igblast)
-  NCBI_project_watchers(camacho madden maning)
   NCBI_requires(-Cygwin)
+  NCBI_project_watchers(camacho madden maning)
 NCBI_end_app()
 

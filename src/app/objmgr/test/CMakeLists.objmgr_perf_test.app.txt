@@ -1,14 +1,14 @@
-#############################################################################
 #  $Id$
-#############################################################################
 
 NCBI_begin_app(objmgr_perf_test)
+
   NCBI_sources(objmgr_perf_test)
   NCBI_uses_toolkit_libraries(ncbi_xdbapi_ftds xobjutil ncbi_xloader_genbank ncbi_xreader_pubseqos ncbi_xreader_pubseqos2)
+
   NCBI_set_test_assets(perf_ids1_acc perf_ids1_gi perf_ids2_acc perf_ids2_gi perf_ids3_acc perf_ids3_gi)
   NCBI_set_test_timeout(300)
-
   NCBI_set_test_resources(ServiceMapper)
+
   NCBI_add_test(objmgr_perf_test -ids perf_ids1_acc -threads 0 -loader gb)
   NCBI_add_test(objmgr_perf_test -ids perf_ids1_acc -threads 0 -loader gb -pubseqos)
   NCBI_add_test(objmgr_perf_test -ids perf_ids1_acc -threads 0 -loader gb -no_split)
@@ -86,5 +86,7 @@ NCBI_begin_app(objmgr_perf_test)
   NCBI_add_test(objmgr_perf_test -ids perf_ids3_gi -threads 20 -loader gb -pubseqos -no_split)
   NCBI_add_test(objmgr_perf_test -ids perf_ids3_gi -threads 20 -loader psg)
   NCBI_add_test(objmgr_perf_test -ids perf_ids3_gi -threads 20 -loader psg -no_split)
+
   NCBI_project_watchers(grichenk)
+
 NCBI_end_app()

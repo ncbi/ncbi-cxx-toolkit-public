@@ -1,11 +1,9 @@
-#############################################################################
 # $Id$
-#############################################################################
 
 NCBI_begin_app(compart)
   NCBI_sources(compart)
   NCBI_uses_toolkit_libraries(ncbi_xloader_genbank xalgoalignsplign)
-  NCBI_project_watchers(chetvern)
   NCBI_set_test_requires(-Cygwin)
+  NCBI_project_watchers(chetvern)
 NCBI_end_app()
 
