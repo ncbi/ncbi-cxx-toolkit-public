@@ -265,6 +265,68 @@ TReplyItem* CPSG_Reply::SImpl::CreateImpl(TReplyItem* item, const vector<SPSG_Ch
     return rv.release();
 }
 
+struct SItemTypeAndReason : pair<CPSG_ReplyItem::EType, CPSG_SkippedBlob::EReason>
+{
+    static SItemTypeAndReason Get(const SPSG_Args& args);
+
+private:
+    using TBase = pair<CPSG_ReplyItem::EType, CPSG_SkippedBlob::EReason>;
+    using TBase::TBase;
+    SItemTypeAndReason(CPSG_ReplyItem::EType type) : TBase(type, CPSG_SkippedBlob::eUnknown) {}
+};
+
+SItemTypeAndReason SItemTypeAndReason::Get(const SPSG_Args& args)
+{
+    const auto item_type = args.GetValue("item_type");
+
+    if (item_type == "blob") {
+        const auto reason = args.GetValue("reason");
+
+        if (reason.empty()) {
+            return CPSG_ReplyItem::eBlobData;
+
+        } else if (reason == "excluded") {
+            return { CPSG_ReplyItem::eSkippedBlob, CPSG_SkippedBlob::eExcluded };
+
+        } else if (reason == "inprogress") {
+            return { CPSG_ReplyItem::eSkippedBlob, CPSG_SkippedBlob::eInProgress };
+
+        } else if (reason == "sent") {
+            return { CPSG_ReplyItem::eSkippedBlob, CPSG_SkippedBlob::eSent };
+
+        } else {
+            return { CPSG_ReplyItem::eSkippedBlob, CPSG_SkippedBlob::eUnknown };
+        }
+
+    } else if (item_type == "bioseq_info") {
+        return CPSG_ReplyItem::eBioseqInfo;
+
+    } else if (item_type == "blob_prop") {
+        return CPSG_ReplyItem::eBlobInfo;
+
+    } else if (item_type == "bioseq_na") {
+        return CPSG_ReplyItem::eNamedAnnotInfo;
+
+    } else if (item_type == "public_comment") {
+        return CPSG_ReplyItem::ePublicComment;
+
+    } else if (item_type == "processor") {
+        return CPSG_ReplyItem::eProcessor;
+
+    } else {
+        if (TPSG_FailOnUnknownItems::GetDefault()) {
+            NCBI_THROW_FMT(CPSG_Exception, eServerError, "Received unknown item type: " << item_type);
+        }
+
+        static atomic_bool reported(false);
+
+        if (!reported.exchange(true)) {
+            ERR_POST("Received unknown item type: " << item_type);
+        }
+
+        return CPSG_ReplyItem::eEndOfReply;
+    }
+}
 
 shared_ptr<CPSG_ReplyItem> CPSG_Reply::SImpl::Create(SPSG_Reply::SItem::TTS* item_ts)
 {
@@ -284,60 +346,42 @@ shared_ptr<CPSG_ReplyItem> CPSG_Reply::SImpl::Create(SPSG_Reply::SItem::TTS* ite
 
     auto& chunks = item_locked->chunks;
     auto& args = item_locked->args;
-    auto item_type = args.GetValue("item_type");
     auto processor_id = args.GetValue("processor_id");
 
-    if (item_type == "blob") {
+    const auto& state = item_locked->state.GetState();
+    const auto itar = SItemTypeAndReason::Get(args);
+
+    if ((state == SPSG_Reply::SState::eNotFound) || (state == SPSG_Reply::SState::eError)) {
+        rv.reset(new CPSG_ReplyItem(itar.first));
+
+    } else if (itar.first == CPSG_ReplyItem::eBlobData) {
+        unique_ptr<CPSG_BlobData> blob_data(new CPSG_BlobData(s_GetDataId(args)));
+        blob_data->m_Stream.reset(new SPSG_RStream(item_ts));
+        rv.reset(blob_data.release());
+
+    } else if (itar.first == CPSG_ReplyItem::eSkippedBlob) {
         auto data_id = s_GetDataId(args);
-        auto reason = args.GetValue("reason");
+        auto blob_id = move(dynamic_cast<CPSG_BlobId&>(*data_id));
+        rv.reset(new CPSG_SkippedBlob(move(blob_id), itar.second));
 
-        if (reason.empty()) {
-            unique_ptr<CPSG_BlobData> blob_data(new CPSG_BlobData(move(data_id)));
-            blob_data->m_Stream.reset(new SPSG_RStream(item_ts));
-            rv.reset(blob_data.release());
-        } else {
-            auto r = CPSG_SkippedBlob::eUnknown;
-
-            if (reason == "excluded") {
-                r = CPSG_SkippedBlob::eExcluded;
-            } else if (reason == "inprogress") {
-                r = CPSG_SkippedBlob::eInProgress;
-            } else if (reason == "sent") {
-                r = CPSG_SkippedBlob::eSent;
-            }
-
-            auto blob_id = move(dynamic_cast<CPSG_BlobId&>(*data_id));
-            rv.reset(new CPSG_SkippedBlob(move(blob_id), r));
-        }
-
-    } else if (item_type == "bioseq_info") {
+    } else if (itar.first == CPSG_ReplyItem::eBioseqInfo) {
         rv.reset(CreateImpl(new CPSG_BioseqInfo, chunks));
 
-    } else if (item_type == "blob_prop") {
+    } else if (itar.first == CPSG_ReplyItem::eBlobInfo) {
         rv.reset(CreateImpl(new CPSG_BlobInfo(s_GetDataId(args)), chunks));
 
-    } else if (item_type == "bioseq_na") {
+    } else if (itar.first == CPSG_ReplyItem::eNamedAnnotInfo) {
         auto name = args.GetValue("na");
         rv.reset(CreateImpl(new CPSG_NamedAnnotInfo(name), chunks));
 
-    } else if (item_type == "public_comment") {
+    } else if (itar.first == CPSG_ReplyItem::ePublicComment) {
         auto text = chunks.empty() ? string() : chunks.front();
         rv.reset(new CPSG_PublicComment(s_GetDataId(args), text));
 
-    } else if (item_type == "processor") {
+    } else if (itar.first == CPSG_ReplyItem::eProcessor) {
         rv.reset(new CPSG_ReplyItem(CPSG_ReplyItem::eProcessor));
 
     } else {
-        if (TPSG_FailOnUnknownItems::GetDefault()) {
-            NCBI_THROW_FMT(CPSG_Exception, eServerError, "Received unknown item type: " << item_type);
-        }
-
-        static atomic_bool reported(false);
-
-        if (!reported.exchange(true)) {
-            ERR_POST("Received unknown item type: " << item_type);
-        }
-
         return rv;
     }
 
