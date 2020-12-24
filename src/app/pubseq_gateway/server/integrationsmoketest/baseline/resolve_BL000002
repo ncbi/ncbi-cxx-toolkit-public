@@ -1,15 +1,23 @@
 [
 {
     "reply": "BioseqInfo",
-    "canonical_id": "tpg|BL000002.1|",
+    "canonical_id": {
+        "id": "tpg|BL000002.1|",
+        "type": 16
+    },
     "other_ids": [
-        "gi|30089982"
+        {
+            "id": "gi|30089982",
+            "type": 12
+        }
     ],
     "molecule_type": "dna",
     "length": 158409401,
     "seq_state": 10,
     "state": 10,
-    "blob_id": "4.5134316",
+    "blob_id": {
+        "id": "4.5134316"
+    },
     "tax_id": 9606,
     "hash": 1482740092,
     "date_changed": "04/04/2011 23:50:00",

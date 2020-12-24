@@ -1,16 +1,27 @@
 [
 {
     "reply": "BioseqInfo",
-    "canonical_id": "gi|3643631",
+    "canonical_id": {
+        "id": "gi|3643631",
+        "type": 12
+    },
     "other_ids": [
-        "gb|AC005299|",
-        "gnl|UOKNOR|2H2"
+        {
+            "id": "gb|AC005299",
+            "type": 5
+        },
+        {
+            "id": "gnl|UOKNOR|2H2",
+            "type": 11
+        }
     ],
     "molecule_type": "dna",
     "length": 40756,
     "seq_state": 10,
     "state": 0,
-    "blob_id": "0.5985907",
+    "blob_id": {
+        "id": "0.5985907"
+    },
     "tax_id": 5072,
     "hash": 1310387125,
     "date_changed": "10/04/1998 22:05:16",

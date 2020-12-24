@@ -1,9 +1,15 @@
 [
 {
     "reply": "BioseqInfo",
-    "canonical_id": "gb|U83448.1|RCU83448",
+    "canonical_id": {
+        "id": "gb|U83448.1|RCU83448",
+        "type": 5
+    },
     "other_ids": [
-        "gi|1778878"
+        {
+            "id": "gi|1778878",
+            "type": 12
+        }
     ],
     "molecule_type": "dna",
     "length": 3182,

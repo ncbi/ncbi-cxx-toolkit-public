@@ -1,43 +1,64 @@
-[
-{
-    "reply": "BioseqInfo",
-    "canonical_id": "ref|NW_001364032.1|SPUUN_WGA87311_2",
-    "other_ids": [
-        "gi|115952497"
-    ],
-    "molecule_type": "dna",
-    "length": 1169,
-    "seq_state": 10,
-    "state": 10,
-    "blob_id": "4.15318858",
-    "tax_id": 7668,
-    "hash": 1488528452,
-    "date_changed": "07/30/2013 09:30:00",
-    "gi": 115952497
-},
-{
-    "reply": "BlobInfo",
-    "id": "4.15318858",
+            "id": "gi|115952497",
+            "type": 12
+        "id": "4.15318858"
+        "id": "4.15318858",
+        "id": "4.15318858",
+        "id": "4.15318858",
+        "id": "ref|NW_001364032.1|SPUUN_WGA87311_2",
+        "last_modified": 1160395665046
+        "last_modified": 1160395665046
+        "last_modified": 1160395665046
+        "type": 10
+        {
+        }
+    "blob_id": {
+    "canonical_id": {
+    "class": "not-set",
     "compression": "gzip",
+    "data": "x\\u009c\\u0085T\\u00cdn\\u00d3@\\u0010\\u008eM\\u00816E\\u0008\\u0010\\u00a7H\\u0095\\u00f6\\u00c0\\u00a1\\u0095*\\u00c7N\\u00a0\\u00148%mU\\u000aj\\u0084\\u0014h\\u008f\\u00d1f3\\u00b1\\u000d\\u008e7\\u00b5\\u00d7\\u0084p2<\\u0001H<@\\u00d2\\u00b4\\u00a0\\u00828\\u00c0\\u0001\\u00de\\u0084w\\u00e0\\u00ce\\u00030\\u00bb\\u00eb\\u00a4I+\\u00c1\\u00d8\\u0092gg\\u00be\\u009d\\u009fog=H\\u00edt\\u0090:\\u00e9\\u0089\\u00fa\\u0016\\u00ae\\u00d5\\u00bb\\u00c9\\u00b3\\u00b0\\u00b1\\u00bf]Y\\u00bf[v\\u009cF)\\u0097\\u001b\\u00a6\\u0085+\\u00b5\\u00fd\\u0086m;\\u00e5\\u00b5\\u00dbv\\u0019-\\u00a3\\u00d44\\u008c\\u009c\\u0092/\\u00a99w\\u00e9\\u00f7\\u00e3\\u0003\\u00bd\\u001ab\\u00a0\\u00af\\u0018h\\u0088Oaq\\u001bB\\u00de\\u0081j\\u00e2\\u0007-\\u00e9<D\\u0087\\u00cc\\u0081\\u00ae\\u00f9J\\u001cC\\u00a7\\u0019\\u00f4\\u00b5\\u001d\\u00f3.`\\u00de\\u00a8\\u00f1\\u00b2d9:R\\u0006\\u00bcZcM\\u00bf\\u0012\\u0086\\\\P\\u00e1\\u00f3p\\u00027J3\\u00b0E\\u0009\\u00db\\u0083(\\u009e\\u00c1d\\u00a1\\u00c62)\\u00ec\\u009a.\\u00ecI\\u00c4\\u009f\\u0003\\u0013\\u00f1f\\u00f5Lu\\u000b\\u0099ggS;\\u0086\\u00a9i\\u00de\\u0019\\u00cc\\u0006\\u00fb\\u0098\\u0016\\u00de\\u001a\\u00b7\\u009ez@6k\\u0015\\u0012\\u00c3A\\u0002!\\u0003\\u00e2\\u00c7\\u00a4\\u001d\\u00f1\\u000e\\u0011\\u00e8\\u00e8y<\\u0000\\u00e2\\u00aa\\\\\\u0084f\\u000d\\u0093\\u0008\\u0002\\u00a01\\u00b4H\\u00b3\\u00afPU\\u00da\\u000fxD6x\\u0010\\u0080\\u000b\\u0084\\u00b7\\u00c9.\\u00b4|\\u00e6\\u0087@\\u001e&\\u001d\\u001a\\u0012],\\u00a9\\u00eb\\u0014~\\u00e8\\u0092\\u000d\\u0008\\u0005D\\u0018\\u0092LH[EW`\\u0006\\u00b4\\u0097l{\\u008d,\\u00c7\\u0000\\u00c4\\u0013\\u00a2{\\u00bfX\\u00ec\\u00f5z\\u0096\\u00e7\\u00c6\\u00ccj\\u00b2\\u008e%:\\u00cc\\u0082VR\\u00ecf\\u00dd\\u0017c\\u00a0I\\u00c4<?,\\u00aeXD6\\u00c4#\\u00df\\u00f5C\\u001a\\u00cc6\\u0010{\\\\\\u00b8IH\\u00b2}\\u00c4\\u00c3\\u00f4\\u00b2\\u00fe\\u00f1\\u009a2\\u0006\\u00b1\\u00e4\\u009fT*\\u00db\\u008f\\u00ecL\\u00ac\\u0092\\u0095\\u00cb\\u001d\\u00a5\\u0005\\u00af.\\\"\\u001e\\u00ba\\u00d8*\\u00c3\\u00e2#.\\u0092\\u0098`\\u00ed\\u00f8R\\u00a9\\u00aa\\u001c>#\\u008c\\u0087\\u00c2wW\\u0091\\u00a46D\\u008a\\u00d0\\u0009o\\u00cbM\\u00c5\\u001a\\u00c6\\u00afn\\u00ec6&\\u008d7\\u00ea\\u008c\\u00b6\\u00db<h\\u00ad\\u00df\\u00b3K\\u00ce\\u000af\\u00fb\\u00a9\\u008eQ\\u000d(\\u001e\\u009cqS\\u009f\\u00d7\\u008fS\\u00eb\\u00a1\\u009e\\u00f4\\u00a5\\u0096$\\u0087\\u00dc\\u00d1\\u00c0\\u008b\\u0082\\u00be\\u0092c5\\u0094\\u0001\\u00cc\\u00a5?\\u00a7Cp\\u00ac\\u0000\\u0003\\u000d\\u00bbq>\\u009e\\u00ba;\\u00f9\\u00e9\\u00a0Z\\u00c6\\u00b3f\\u001a\\u00d7\\u0015\\u00c4\\u00ac\\u0094\\u00c7\\u00aeQZx\\u00f3a+yA\\u00a3>\\u00ce\\u00fc\\u0003\\u001c\\u0006A_sT\\u00b6\\u00e4\\u0011\\u00f1\\u0016D\\u001d*\\u00ed[\\u0001$H\\u00c4\\u00a7\\u009cS\\u00aa\\u00df\\u0002\\u00a9'0\\u00bd\\u0092:e0\\u0005B\\u00f5l\\u00d5h\\u0084\\u00f3VY\\u00fb\\u0091\\u00a6\\u00ef\\u0018?\\u000b\\u00ea\\u0002\\\\\\u00d8\\u00a9\\u00ed\\u00cd\\u00de\\u008a\\u00efxWTc\\u00e6\\u00e5_\\u009a\\u00fe\\u00bc\\u00ecVm\\u00d0\\u00f2\\u00ed\\u00bf\\u00881A\\u00834o\\u00ccKH^\\u001f\\u009ai\\u00ce\\u00bd\\u0097\\u00d9\\u00f3\\u0086\\u0099\\u00cb}JG\\u000a2\\u00caxT\\u00ff\\u001eD\\u00bc\\u0093H\\u00b5a\\u0094\\u00aa_\\u00d3\\u00c9\\u00e73\\u0017\\u00f7T\\u00fe\\u0002\\u008d\\u00f8\\u0081\\u00a8"
+    "date_changed": "07/30/2013 09:30:00",
+    "division": "CON",
     "format": "asn.1",
-    "version": 1160395665046,
-    "storage_size": 691,
-    "size": 1274,
+    "gi": 115952497
+    "hash": 1488528452,
+    "hup_release_date": "",
+    "id": {
+    "id": {
+    "id": {
+    "id2_info": "",
     "is_dead": false,
     "is_suppressed": true,
     "is_withdrawn": false,
-    "hup_release_date": "",
-    "owner": 21,
+    "length": 1169,
+    "molecule_type": "dna",
+    "n_chunks": 1
     "original_load_date": "10/09/2006 12:07:45",
-    "class": "not-set",
-    "division": "CON",
-    "username": "chenhc",
-    "split_info_blob_id": "",
-    "split_version": 0
-},
-{
+    "other_ids": [
+    "owner": 21,
+    "reply": "BioseqInfo",
     "reply": "BlobData",
-    "id": "4.15318858",
-    "data": "x\\u009c\\u0085T\\u00cdn\\u00d3@\\u0010\\u008eM\\u00816E\\u0008\\u0010\\u00a7H\\u0095\\u00f6\\u00c0\\u00a1\\u0095*\\u00c7N\\u00a0\\u00148%mU\\u000aj\\u0084\\u0014h\\u008f\\u00d1f3\\u00b1\\u000d\\u008e7\\u00b5\\u00d7\\u0084p2<\\u0001H<@\\u00d2\\u00b4\\u00a0\\u00828\\u00c0\\u0001\\u00de\\u0084w\\u00e0\\u00ce\\u00030\\u00bb\\u00eb\\u00a4I+\\u00c1\\u00d8\\u0092gg\\u00be\\u009d\\u009fog=H\\u00edt\\u0090:\\u00e9\\u0089\\u00fa\\u0016\\u00ae\\u00d5\\u00bb\\u00c9\\u00b3\\u00b0\\u00b1\\u00bf]Y\\u00bf[v\\u009cF)\\u0097\\u001b\\u00a6\\u0085+\\u00b5\\u00fd\\u0086m;\\u00e5\\u00b5\\u00dbv\\u0019-\\u00a3\\u00d44\\u008c\\u009c\\u0092/\\u00a99w\\u00e9\\u00f7\\u00e3\\u0003\\u00bd\\u001ab\\u00a0\\u00af\\u0018h\\u0088Oaq\\u001bB\\u00de\\u0081j\\u00e2\\u0007-\\u00e9<D\\u0087\\u00cc\\u0081\\u00ae\\u00f9J\\u001cC\\u00a7\\u0019\\u00f4\\u00b5\\u001d\\u00f3.`\\u00de\\u00a8\\u00f1\\u00b2d9:R\\u0006\\u00bcZcM\\u00bf\\u0012\\u0086\\\\P\\u00e1\\u00f3p\\u00027J3\\u00b0E\\u0009\\u00db\\u0083(\\u009e\\u00c1d\\u00a1\\u00c62)\\u00ec\\u009a.\\u00ecI\\u00c4\\u009f\\u0003\\u0013\\u00f1f\\u00f5Lu\\u000b\\u0099ggS;\\u0086\\u00a9i\\u00de\\u0019\\u00cc\\u0006\\u00fb\\u0098\\u0016\\u00de\\u001a\\u00b7\\u009ez@6k\\u0015\\u0012\\u00c3A\\u0002!\\u0003\\u00e2\\u00c7\\u00a4\\u001d\\u00f1\\u000e\\u0011\\u00e8\\u00e8y<\\u0000\\u00e2\\u00aa\\\\\\u0084f\\u000d\\u0093\\u0008\\u0002\\u00a01\\u00b4H\\u00b3\\u00afPU\\u00da\\u000fxD6x\\u0010\\u0080\\u000b\\u0084\\u00b7\\u00c9.\\u00b4|\\u00e6\\u0087@\\u001e&\\u001d\\u001a\\u0012],\\u00a9\\u00eb\\u0014~\\u00e8\\u0092\\u000d\\u0008\\u0005D\\u0018\\u0092LH[EW`\\u0006\\u00b4\\u0097l{\\u008d,\\u00c7\\u0000\\u00c4\\u0013\\u00a2{\\u00bfX\\u00ec\\u00f5z\\u0096\\u00e7\\u00c6\\u00ccj\\u00b2\\u008e%:\\u00cc\\u0082VR\\u00ecf\\u00dd\\u0017c\\u00a0I\\u00c4<?,\\u00aeXD6\\u00c4#\\u00df\\u00f5C\\u001a\\u00cc6\\u0010{\\\\\\u00b8IH\\u00b2}\\u00c4\\u00c3\\u00f4\\u00b2\\u00fe\\u00f1\\u009a2\\u0006\\u00b1\\u00e4\\u009fT*\\u00db\\u008f\\u00ecL\\u00ac\\u0092\\u0095\\u00cb\\u001d\\u00a5\\u0005\\u00af.\\\"\\u001e\\u00ba\\u00d8*\\u00c3\\u00e2#.\\u0092\\u0098`\\u00ed\\u00f8R\\u00a9\\u00aa\\u001c>#\\u008c\\u0087\\u00c2wW\\u0091\\u00a46D\\u008a\\u00d0\\u0009o\\u00cbM\\u00c5\\u001a\\u00c6\\u00afn\\u00ec6&\\u008d7\\u00ea\\u008c\\u00b6\\u00db<h\\u00ad\\u00df\\u00b3K\\u00ce\\u000af\\u00fb\\u00a9\\u008eQ\\u000d(\\u001e\\u009cqS\\u009f\\u00d7\\u008fS\\u00eb\\u00a1\\u009e\\u00f4\\u00a5\\u0096$\\u0087\\u00dc\\u00d1\\u00c0\\u008b\\u0082\\u00be\\u0092c5\\u0094\\u0001\\u00cc\\u00a5?\\u00a7Cp\\u00ac\\u0000\\u0003\\u000d\\u00bbq>\\u009e\\u00ba;\\u00f9\\u00e9\\u00a0Z\\u00c6\\u00b3f\\u001a\\u00d7\\u0015\\u00c4\\u00ac\\u0094\\u00c7\\u00aeQZx\\u00f3a+yA\\u00a3>\\u00ce\\u00fc\\u0003\\u001c\\u0006A_sT\\u00b6\\u00e4\\u0011\\u00f1\\u0016D\\u001d*\\u00ed[\\u0001$H\\u00c4\\u00a7\\u009cS\\u00aa\\u00df\\u0002\\u00a9'0\\u00bd\\u0092:e0\\u0005B\\u00f5l\\u00d5h\\u0084\\u00f3VY\\u00fb\\u0091\\u00a6\\u00ef\\u0018?\\u000b\\u00ea\\u0002\\\\\\u00d8\\u00a9\\u00ed\\u00cd\\u00de\\u008a\\u00efxWTc\\u00e6\\u00e5_\\u009a\\u00fe\\u00bc\\u00ecVm\\u00d0\\u00f2\\u00ed\\u00bf\\u00881A\\u00834o\\u00ccKH^\\u001f\\u009ai\\u00ce\\u00bd\\u0097\\u00d9\\u00f3\\u0086\\u0099\\u00cb}JG\\u000a2\\u00caxT\\u00ff\\u001eD\\u00bc\\u0093H\\u00b5a\\u0094\\u00aa_\\u00d3\\u00c9\\u00e73\\u0017\\u00f7T\\u00fe\\u0002\\u008d\\u00f8\\u0081\\u00a8"
-}
+    "reply": "BlobInfo",
+    "reply": "PublicComment",
+    "seq_state": 10,
+    "size": 1274,
+    "state": 10,
+    "storage_size": 691,
+    "tax_id": 7668,
+    "text": "This record was removed as a result of standard genome annotation processing. See the genome build documentation at http://www.ncbi.nlm.nih.gov/genome/guide/build.shtml for further information, or contact info@ncbi.nlm.nih.gov."
+    "username": "chenhc",
+    ],
+    },
+    },
+    },
+    },
+    },
+[
 ]
+{
+{
+{
+{
+}
+},
+},
+},

@@ -1,15 +1,23 @@
 [
 {
     "reply": "BioseqInfo",
-    "canonical_id": "gb|EC097430.1|",
+    "canonical_id": {
+        "id": "gb|EC097430.1|",
+        "type": 5
+    },
     "other_ids": [
-        "gi|106779053"
+        {
+            "id": "gi|106779053",
+            "type": 12
+        }
     ],
     "molecule_type": "rna",
     "length": 793,
     "seq_state": 10,
     "state": 10,
-    "blob_id": "4.268180274",
+    "blob_id": {
+        "id": "4.268180274"
+    },
     "tax_id": 35845,
     "hash": 1977665744,
     "date_changed": "08/26/2020 15:06:27",

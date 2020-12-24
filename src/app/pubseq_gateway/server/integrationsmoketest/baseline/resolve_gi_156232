@@ -1,12 +1,17 @@
 [
 {
     "reply": "BioseqInfo",
-    "canonical_id": "gi|156232",
+    "canonical_id": {
+        "id": "gi|156232",
+        "type": 12
+    },
     "molecule_type": "dna",
     "length": 3561,
     "seq_state": 0,
     "state": 0,
-    "blob_id": "0.118268",
+    "blob_id": {
+        "id": "0.118268"
+    },
     "tax_id": 0,
     "hash": 1085670538,
     "date_changed": "10/03/1994 06:34:45",

@@ -1,6 +1,7 @@
 [
 {
     "reply": "BioseqInfo",
+    "status": "NotFound",
     "errors": [
         "Could not resolve seq_id 1VU9|AA"
     ]

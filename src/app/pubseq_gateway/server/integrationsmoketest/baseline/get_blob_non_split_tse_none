@@ -1,10 +1,12 @@
 [
 {
     "reply": "BlobInfo",
-    "id": "4.15971",
+    "id": {
+        "id": "4.15971",
+        "last_modified": 1123767887386
+    },
     "compression": "gzip",
     "format": "asn.1",
-    "version": 1123767887386,
     "storage_size": 1291,
     "size": 2256,
     "is_dead": true,
@@ -16,7 +18,7 @@
     "class": "nuc-prot",
     "division": "PRI",
     "username": "cavanaug",
-    "split_info_blob_id": "",
-    "split_version": 0
+    "id2_info": "",
+    "n_chunks": 1
 }
 ]

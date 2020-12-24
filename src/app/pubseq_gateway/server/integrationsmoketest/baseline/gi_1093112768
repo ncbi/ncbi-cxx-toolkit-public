@@ -1,17 +1,31 @@
 [
 {
     "reply": "BioseqInfo",
-    "canonical_id": "ref|NW_017516490.1|",
+    "canonical_id": {
+        "id": "ref|NW_017516490.1|",
+        "type": 10
+    },
     "other_ids": [
-        "gnl|ASM:GCF_000227165.2|GORGOR4_CHRUN_RANDOM_3256",
-        "gi|1093112768",
-        "gpp|GPS_014332008.1|"
+        {
+            "id": "gnl|ASM:GCF_000227165.2|GORGOR4_CHRUN_RANDOM_3256",
+            "type": 11
+        },
+        {
+            "id": "gi|1093112768",
+            "type": 12
+        },
+        {
+            "id": "gpp|GPS_014332008.1",
+            "type": 19
+        }
     ],
     "molecule_type": "dna",
     "length": 5175,
     "seq_state": 10,
     "state": 10,
-    "blob_id": "4.211423175",
+    "blob_id": {
+        "id": "4.211423175"
+    },
     "tax_id": 9595,
     "hash": -181807675,
     "date_changed": "10/18/2019 17:48:00",

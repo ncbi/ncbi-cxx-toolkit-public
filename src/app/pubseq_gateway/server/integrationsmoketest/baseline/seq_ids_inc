@@ -2,7 +2,10 @@
 {
     "reply": "BioseqInfo",
     "other_ids": [
-        "gi|1778878"
+        {
+            "id": "gi|1778878",
+            "type": 12
+        }
     ]
 }
 ]

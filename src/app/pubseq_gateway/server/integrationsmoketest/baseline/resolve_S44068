@@ -1,16 +1,27 @@
 [
 {
     "reply": "BioseqInfo",
-    "canonical_id": "gb|S44068.1|S44068S1",
+    "canonical_id": {
+        "id": "gb|S44068.1|S44068S1",
+        "type": 5
+    },
     "other_ids": [
-        "bbs|113780",
-        "gi|252553"
+        {
+            "id": "bbs|113780",
+            "type": 2
+        },
+        {
+            "id": "gi|252553",
+            "type": 12
+        }
     ],
     "molecule_type": "dna",
     "length": 272,
     "seq_state": 7,
     "state": 0,
-    "blob_id": "4.42755620",
+    "blob_id": {
+        "id": "4.42755620"
+    },
     "tax_id": 208726,
     "hash": 915065305,
     "date_changed": "04/06/2016 16:39:00",

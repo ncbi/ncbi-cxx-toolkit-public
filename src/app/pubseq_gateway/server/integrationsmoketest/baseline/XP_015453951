@@ -1,15 +1,23 @@
 [
 {
     "reply": "BioseqInfo",
-    "canonical_id": "ref|XP_015453951.1|",
+    "canonical_id": {
+        "id": "ref|XP_015453951.1|",
+        "type": 10
+    },
     "other_ids": [
-        "gi|990014459"
+        {
+            "id": "gi|990014459",
+            "type": 12
+        }
     ],
     "molecule_type": "aa",
     "length": 514,
     "seq_state": 10,
     "state": 10,
-    "blob_id": "4.219727302",
+    "blob_id": {
+        "id": "4.219727302"
+    },
     "tax_id": 9402,
     "hash": -1121154486,
     "date_changed": "05/07/2018 22:02:00",

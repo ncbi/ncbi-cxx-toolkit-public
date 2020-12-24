@@ -1,6 +1,8 @@
 [
 {
     "reply": "BioseqInfo",
-    "blob_id": "4.66360584"
+    "blob_id": {
+        "id": "4.66360584"
+    }
 }
 ]

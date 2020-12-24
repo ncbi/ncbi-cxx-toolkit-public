@@ -3,7 +3,7 @@
     "reply": "Processor",
     "status": "Error",
     "errors": [
-        "Invalid chunk requested. The number of available chunks: 96, requested number: 500"
+        "Invalid chunk requested. The number of available chunks: 5, requested number: 96"
     ]
 }
 ]

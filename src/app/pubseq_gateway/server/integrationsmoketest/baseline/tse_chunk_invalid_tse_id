@@ -1,8 +1,8 @@
 [
 {
-    "status": "Error",
+    "status": "NotFound",
     "errors": [
-        "Invalid 'chunk' parameter. Expected > 0"
+        "No matching processors found to serve the request"
     ]
 }
 ]

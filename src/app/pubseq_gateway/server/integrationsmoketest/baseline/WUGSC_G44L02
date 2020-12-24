@@ -1,16 +1,27 @@
 [
 {
     "reply": "BioseqInfo",
-    "canonical_id": "gb|AC084620.1|CBRG44L02",
+    "canonical_id": {
+        "id": "gb|AC084620.1|CBRG44L02",
+        "type": 5
+    },
     "other_ids": [
-        "gnl|WUGSC|G44L02",
-        "gi|11095069"
+        {
+            "id": "gnl|WUGSC|G44L02",
+            "type": 11
+        },
+        {
+            "id": "gi|11095069",
+            "type": 12
+        }
     ],
     "molecule_type": "dna",
     "length": 43429,
     "seq_state": 10,
     "state": 10,
-    "blob_id": "4.2155365",
+    "blob_id": {
+        "id": "4.2155365"
+    },
     "tax_id": 6238,
     "hash": 596104617,
     "date_changed": "08/23/2020 11:16:22",

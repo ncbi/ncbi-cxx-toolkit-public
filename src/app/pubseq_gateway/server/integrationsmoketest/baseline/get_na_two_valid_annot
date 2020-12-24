@@ -1,17 +1,31 @@
 [
 {
     "reply": "BioseqInfo",
-    "canonical_id": "ref|NW_017890465.1|",
+    "canonical_id": {
+        "id": "ref|NW_017890465.1|",
+        "type": 10
+    },
     "other_ids": [
-        "gnl|ASM:GCF_001984775.1|SCAFFOLD_21139",
-        "gi|1142971274",
-        "gpp|GPS_014705339.1|"
+        {
+            "id": "gnl|ASM:GCF_001984775.1|SCAFFOLD_21139",
+            "type": 11
+        },
+        {
+            "id": "gi|1142971274",
+            "type": 12
+        },
+        {
+            "id": "gpp|GPS_014705339.1",
+            "type": 19
+        }
     ],
     "molecule_type": "dna",
     "length": 51589,
     "seq_state": 10,
     "state": 10,
-    "blob_id": "4.188284756",
+    "blob_id": {
+        "id": "4.188284756"
+    },
     "tax_id": 51338,
     "hash": 332537203,
     "date_changed": "03/09/2017 10:58:00",
@@ -20,12 +34,18 @@
 {
     "reply": "NamedAnnotInfo",
     "name": "NA000122202.1",
+    "annotated_id": {
+        "id": "ref|NW_017890465.1|",
+        "type": 10
+    },
     "range": {
         "from": 31827,
         "to": 39272
     },
-    "blob_id": "41.12",
-    "version": 1487707080566,
+    "blob_id": {
+        "id": "41.12",
+        "last_modified": 1487707080566
+    },
     "zoom_levels": [
         10
     ],
@@ -40,12 +60,18 @@
 {
     "reply": "NamedAnnotInfo",
     "name": "NA000122203.1",
+    "annotated_id": {
+        "id": "ref|NW_017890465.1|",
+        "type": 10
+    },
     "range": {
         "from": 1068,
         "to": 38141
     },
-    "blob_id": "41.18279",
-    "version": 1487707249870,
+    "blob_id": {
+        "id": "41.18279",
+        "last_modified": 1487707249870
+    },
     "zoom_levels": [
         10,
         100
