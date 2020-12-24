@@ -133,12 +133,20 @@ int CPubseqGatewayApp::OnBadURL(CHttpRequest &  req,
             http_reply->SetContentType(ePSGS_PSGMime);
 
             m_ErrorCounters.IncBadUrlPath();
-            x_SendMessageAndCompletionChunks(reply, kBadUrlMessage + req.GetPath(),
+
+            string      bad_url = req.GetPath();
+            x_SendMessageAndCompletionChunks(reply, kBadUrlMessage + bad_url,
                                              CRequestStatus::e400_BadRequest,
                                              ePSGS_BadURL,
                                              eDiag_Error);
+            auto    bad_url_size = bad_url.size();
+            if (bad_url_size > 128) {
+                bad_url.resize(128);
+                bad_url += "... (truncated; original length: " +
+                           to_string(bad_url_size) + ")";
+            }
 
-            PSG_WARNING(kBadUrlMessage + req.GetPath());
+            PSG_WARNING(kBadUrlMessage + bad_url);
             x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
         } catch (const exception &  exc) {
             string      msg = "Exception when handling a bad URL event: " +
