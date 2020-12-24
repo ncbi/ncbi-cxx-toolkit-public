@@ -2819,10 +2819,6 @@ bool CGff3Writer::xWriteFeatureProtein(
     CWriteUtil::ChangeToPackedInt(packedInt);
     _ASSERT(packedInt.IsPacked_int() && packedInt.GetPacked_int().CanGet());
     
-    TSeqPos seqlength = 0;
-    if(fc.BioseqHandle() && fc.BioseqHandle().CanGetInst())
-        seqlength = fc.BioseqHandle().GetInst().GetLength();
-
     list< CRef< CSeq_interval > > sublocs( packedInt.GetPacked_int().Get() );
 
     unsigned int wrapSize(0), wrapPoint(0);

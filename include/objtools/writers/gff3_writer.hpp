@@ -251,7 +251,7 @@ protected:
         const CMappedFeat& );
     virtual bool xWriteAllChildren(
         CGffFeatureContext&,
-        const CMappedFeat&);
+        const CMappedFeat&) override;
 
 
     virtual bool xWriteRecord( 

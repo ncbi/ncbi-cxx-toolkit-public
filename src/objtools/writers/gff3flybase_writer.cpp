@@ -169,20 +169,6 @@ bool CGff3FlybaseWriter::xAssignDefline(
 
     
 //  ----------------------------------------------------------------------------
-static CConstRef<CSeq_id> s_GetSourceId(
-    const CSeq_id& id, CScope& scope )
-//  ----------------------------------------------------------------------------
-{
-    try {
-        return sequence::GetId(id, scope, sequence::eGetId_Best).GetSeqId();
-    }
-    catch (CException&) {
-    }
-    return CConstRef<CSeq_id>(&id);
-}
-
-
-//  ----------------------------------------------------------------------------
 bool CGff3FlybaseWriter::WriteHeader()
 //  ----------------------------------------------------------------------------
 {

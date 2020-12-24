@@ -99,11 +99,6 @@ public:
 
     bool AnnotHasAllLocusTags() const;
 
-    bool m_use_hypothetic_protein = true;
-    string mLocusTagPrefix;
-    unsigned int mLocusTagNumber = 1;
-    unsigned int mNextFeatId     = 1;
-
 protected:
     void xGenerateLocusIdsUseExisting();
     void xGenerateLocusIdsRegenerate();
@@ -206,6 +201,12 @@ protected:
     CSeq_annot_EditHandle mEditHandle;
     IObjtoolsListener* mpMessageListener;
 
+    bool m_use_hypothetic_protein = true;
+    string mLocusTagPrefix;
+    unsigned int mLocusTagNumber = 1;
+    unsigned int mNextFeatId     = 1;
+
+protected:
     map<string, int> mMapProtIdCounts;
 
     using TFeatQualMap = map<CMappedFeat, string>;

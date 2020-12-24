@@ -231,8 +231,8 @@ bool CGtfWriter::xWriteFeature(
 //  ----------------------------------------------------------------------------
 {
     auto subtype = mf.GetFeatSubtype();
-    const auto& feat = mf.GetMappedFeature();
 
+    //const auto& feat = mf.GetMappedFeature();
     //if (subtype == CSeqFeatData::eSubtype_gene) {
     //    auto from = feat.GetLocation().GetStart(ESeqLocExtremes::eExtreme_Biological);
     //    if (from == 2991447) {

@@ -1597,7 +1597,6 @@ CRef<CSeq_loc> CFeatTableEdit::xGetGeneLocation(
     auto baseStart = baseLoc.GetStart(eExtreme_Positional);
     auto baseStop = baseLoc.GetStop(eExtreme_Positional);
     auto& baseId = *baseLoc.GetId();
-    auto baseStrand = baseLoc.GetStrand();
 
     if (mSequenceSize == 0  ||  baseStart <= baseStop) {
         pEnvelope->SetInt();
@@ -1660,9 +1659,6 @@ CRef<CSeq_feat> CFeatTableEdit::xMakeGeneForFeature(
     pGene.Reset(new CSeq_feat);
     pGene->SetLocation(*xGetGeneLocation(rna.GetLocation()));
     pGene->SetData().SetGene();
-
-    const auto& rnaLocation = rna.GetLocation();
-    const auto& geneLocation = pGene->GetLocation();
     return pGene;
 }
 

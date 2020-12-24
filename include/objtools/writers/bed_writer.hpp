@@ -97,7 +97,7 @@ public:
     bool WriteSeqEntryHandle(
         CSeq_entry_Handle seh,
         const string& asmblyName="",
-        const string& asmblyAccession="" );
+        const string& asmblyAccession="" ) override;
 
 protected:
     bool xWriteAnnotFeatureTable(
