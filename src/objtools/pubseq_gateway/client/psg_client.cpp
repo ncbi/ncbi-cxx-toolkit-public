@@ -206,10 +206,11 @@ unique_ptr<CPSG_DataId> s_GetDataId(const SPSG_Args& args)
         CPSG_BlobId::TLastModified last_modified;
         const auto& last_modified_str = args.GetValue("last_modified");
 
-        if (!last_modified_str.empty()) {
-            last_modified = NStr::StringToNumeric<Int8>(last_modified_str);
+        if (last_modified_str.empty()) {
+            return unique_ptr<CPSG_DataId>(new CPSG_BlobId(blob_id));
         }
 
+        last_modified = NStr::StringToNumeric<Int8>(last_modified_str);
         return unique_ptr<CPSG_DataId>(new CPSG_BlobId(blob_id, move(last_modified)));
     }
     catch (...) {
