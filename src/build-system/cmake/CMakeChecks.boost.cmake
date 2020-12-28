@@ -27,7 +27,7 @@ if(NOT Boost_FOUND)
     find_package(Boost OPTIONAL_COMPONENTS
         unit_test_framework system thread filesystem iostreams
 #        coroutine program_options prg_exec_monitor test_exec_monitor
-        context chrono date_time regex serialization
+        context chrono date_time regex serialization timer
     )
 endif()
 
