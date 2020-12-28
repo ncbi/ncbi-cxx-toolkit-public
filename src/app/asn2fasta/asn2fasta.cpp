@@ -105,6 +105,7 @@ private:
     void x_BatchProcess(CObjectIStream& istr);
     void x_InitFeatDisplay(const string& feats);
     void x_ProcessIStream(const string& asn_type, CObjectIStream& istr);
+    int x_ProcessISubdirectory(const CDir&);
 
 
     // data
@@ -144,7 +145,7 @@ private:
 // constructor
 CAsn2FastaApp::CAsn2FastaApp()
 {
-    SetVersion(CVersionInfo(1, 0, 2));
+    SetVersion(CVersionInfo(1, 0, 3));
 }
 
 // destructor
@@ -189,6 +190,14 @@ void CAsn2FastaApp::Init(void)
             CArgDescriptions::eString, "any" );
         arg_desc->SetConstraint( "type",
             &( *new CArgAllow_Strings, "any", "seq-entry", "bioseq", "bioseq-set", "seq-submit" ) );
+
+        // directory processing
+        arg_desc->AddOptionalKey("indir", "InputDirectory",
+            "Path to input files", CArgDescriptions::eDirectory);
+        arg_desc->AddOptionalKey("x", "InputExtension",
+            "Input files extension", CArgDescriptions::eString);
+        arg_desc->SetDependency("indir", CArgDescriptions::eExcludes, "og_head");
+        arg_desc->SetDependency("indir", CArgDescriptions::eExcludes, "og_tail");
     }}
 
 
@@ -281,9 +290,6 @@ void CAsn2FastaApp::Init(void)
         arg_desc->AddOptionalKey("og_maxsize", "GenomeFileMaxSize",
             "Maximum size of each genomic fasta file in Mb",
             CArgDescriptions::eInteger);
-        arg_desc->AddOptionalKey("x", "deprecated",
-            "Use -og_maxsize instead",
-            CArgDescriptions::eString);
 
         arg_desc->AddOptionalKey("or", "RNAOutputFile",
             "RNA output file name", CArgDescriptions::eOutputFile);
@@ -479,6 +485,10 @@ int CAsn2FastaApp::Run(void)
             return ret_value;
         }
 
+        if (args["indir"]) {
+            return x_ProcessISubdirectory(args["indir"].AsDirectory());
+        }
+
         string ifname;
         if (args["i"]) {
             ifname = args["i"].AsString();
@@ -487,7 +497,7 @@ int CAsn2FastaApp::Run(void)
         unique_ptr<CObjectIStream> is(x_OpenIStream(ifname));
         if (!is) {
             string msg = !ifname.empty() ?
-                "Unable to open input file" + ifname :
+                "Unable to open input file " + ifname :
                 "Unable to read data from stdin";
             NCBI_THROW(CException, eUnknown, msg);
         }
@@ -1064,6 +1074,56 @@ CObjectIStream* CAsn2FastaApp::x_OpenIStream(const string& ifname)
         pI->UseMemoryPool();
     }
     return pI;
+}
+
+//  --------------------------------------------------------------------------
+int CAsn2FastaApp::x_ProcessISubdirectory(const CDir& dir)
+//  --------------------------------------------------------------------------
+{
+    if (!dir.Exists() || !dir.CheckAccess(CDirEntry::fRead)) {
+        ERR_POST("Unable to read directory: " + dir.GetName());
+        return 2;
+    }
+
+    const CArgs& args = GetArgs();
+
+    string ext = ".sqn";
+    if (args["x"]) {
+        ext = args["x"].AsString();
+    }
+    const string mask = "*" + ext;
+
+    CDir::TEntries entries = dir.GetEntries(mask, CDir::fIgnoreRecursive);
+    if (entries.empty()) {
+        WARNING_POST("No files matching " + mask + " found in " + dir.GetName());
+    }
+
+    for (CDir::TEntry de : entries) {
+        const string ifname = de->GetPath();
+        string ofname = ifname;
+        if (NStr::EndsWith(ofname, ext)) {
+            // strip extension
+            ofname.resize(ofname.size() - ext.size());
+        }
+        ofname += ".faa";
+
+        unique_ptr<CObjectIStream> is(x_OpenIStream(ifname));
+        if (!is) {
+            const string msg = "Unable to open input file" + ifname;
+            NCBI_THROW(CException, eUnknown, msg);
+        }
+
+        m_Os.reset(OpenFastaOstream("", ofname, false));
+
+        if (args["batch"]) {
+            x_BatchProcess(*is.release());
+        } else {
+            string asn_type = args["type"].AsString();
+            x_ProcessIStream(asn_type, *is);
+        }
+    }
+
+    return 0;
 }
 
 END_NCBI_SCOPE
