@@ -675,8 +675,8 @@ CFormatGuess::EnsureStats()
         return false;
     }
 
-    CNcbiIstrstream TestBuffer(
-        reinterpret_cast<const char*>( m_pTestBuffer ), m_iTestDataSize );
+    string strBuffer(m_pTestBuffer, m_iTestDataSize);
+    CNcbiIstrstream TestBuffer(strBuffer);
     string strLine;
 
     init_symbol_type_table();
@@ -1419,8 +1419,8 @@ CFormatGuess::TestFormatCLUSTAL()
         return false;
     }
 
-    CNcbiIstrstream TestBuffer(
-        reinterpret_cast<const char*>( m_pTestBuffer ), m_iTestDataSize );
+    string strBuffer(m_pTestBuffer, m_iTestDataSize);
+    CNcbiIstrstream TestBuffer(strBuffer);
     string strLine;
 
     SClustalBlockInfo block_info;
@@ -1679,8 +1679,8 @@ CFormatGuess::TestFormatTextAsn(
         return false;
     }
 
-    CNcbiIstrstream TestBuffer(
-        reinterpret_cast<const char*>( m_pTestBuffer ), m_iTestDataSize );
+    string strBuffer(m_pTestBuffer, m_iTestDataSize);
+    CNcbiIstrstream TestBuffer(strBuffer);
     string strLine;
 
     while ( ! TestBuffer.fail() ) {
