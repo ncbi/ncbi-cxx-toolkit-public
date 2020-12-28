@@ -787,8 +787,8 @@ static bool CannotProcess(const CSeq_id_Handle& sih)
             // WGS is good
             return false;
         }
-        // other general ids are bad
-        return true;
+        // other general ids are good too(?)
+        return false;
     }
     return false;
 }
