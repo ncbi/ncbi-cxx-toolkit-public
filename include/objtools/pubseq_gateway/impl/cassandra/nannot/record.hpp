@@ -183,7 +183,7 @@ class CNAnnotRecord {
 
     TAnnotInfo const & GetSeqAnnotInfo() const
     {
-        return "";
+        return m_SeqAnnotInfo;
     }
 
     TWritetime GetWritetime(void) const
@@ -197,6 +197,7 @@ class CNAnnotRecord {
     string m_Accession;
     string m_AnnotName;
     TAnnotInfo m_AnnotInfo;
+    TAnnotInfo m_SeqAnnotInfo;
     TTimestamp m_Modified;
     TWritetime m_Writetime;
     TSatKey m_SatKey;
