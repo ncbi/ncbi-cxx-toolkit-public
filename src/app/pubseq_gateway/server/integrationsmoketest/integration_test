@@ -73,7 +73,7 @@ def doesTestNeedSort(outputFile):
     needSort = ['get_164040__3', 'get_with_exclude_not_excluded',
                 'get_AC052670__5', 'get_fasta_bbm_164040',
                 'get_fasta_bbm_164040__3', 'get_115952497', 'get_AC052670',
-                'get_115952497__12']
+                'get_115952497__12', 'get_invalid_exclude_blob']
     for item in needSort:
         if '/' + item + '/' in outputFile:
             return True
