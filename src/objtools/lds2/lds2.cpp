@@ -627,82 +627,22 @@ static const SLDS2_Blob::EBlobType kExpectedBlobTypes[] = {
 SLDS2_Blob::EBlobType CLDS2_ObjectParser::x_GetBlobType(void)
 {
     SLDS2_Blob::EBlobType ret = SLDS2_Blob::eUnknown;
-
-    // Read some data - just to detect the object type.
-    // The data will be pushed back after testing.
-    char buf[1024];
-    m_Stream.read(buf, 1024);
-    int sz = (int)m_Stream.gcount();
-    m_Stream.clear();
-    if (sz == 0) {
-        // The stream is empty - nothing to check. Force eof detection.
-        m_Stream.peek();
-        return ret;
+    set<TTypeInfo> known_types;
+    int num_types = sizeof(kExpectedBlobTypes)/sizeof(kExpectedBlobTypes[0]);
+    for (int i = 0; i < num_types; i++) {
+        known_types.insert(sx_GetObjectTypeInfo(kExpectedBlobTypes[i]));
     }
-    CNcbiIstrstream test_str(buf, sz);
-    unique_ptr<CObjectIStream> test_in(CObjectIStream::Open(
-        m_Format, test_str));
-    switch ( m_Format ) {
-    case eSerial_AsnText:
-    case eSerial_Xml:
-        {
-            // Read type name, set the blob type
-            string obj_type = test_in->ReadFileHeader();
-            if (obj_type == "Seq-entry") {
-                ret = SLDS2_Blob::eSeq_entry;
-            }
-            else if (obj_type == "Bioseq") {
-                ret = SLDS2_Blob::eBioseq;
-            }
-            else if (obj_type == "Bioseq-set") {
-                ret = SLDS2_Blob::eBioseq_set;
-            }
-            else if (obj_type == "Seq-annot") {
-                ret = SLDS2_Blob::eSeq_annot;
-            }
-            else if (obj_type == "Seq-align-set") {
-                ret = SLDS2_Blob::eSeq_align_set;
-            }
-            else if (obj_type == "Seq-align") {
-                ret = SLDS2_Blob::eSeq_align;
-            }
-            else if (obj_type == "Seq-submit") {
-                ret = SLDS2_Blob::eSeq_submit;
-            }
-            break;
-        }
-    case eSerial_AsnBinary:
-        {
-            int num_types = sizeof(kExpectedBlobTypes)/
-                sizeof(kExpectedBlobTypes[0]);
-            for (int i = 0; i < num_types; i++) {
+    unique_ptr<CObjectIStream> test_in(CObjectIStream::Open(m_Format, m_Stream));
+    set<TTypeInfo> types = test_in->GuessDataType(known_types);
+    if ( types.size() == 1 ) {
+        TTypeInfo type = *types.begin();
+        for (int i = 0; i < num_types; i++) {
+            if (type == sx_GetObjectTypeInfo(kExpectedBlobTypes[i])) {
                 ret = kExpectedBlobTypes[i];
-                try {
-                    TTypeInfo type_info = sx_GetObjectTypeInfo(ret);
-                    test_in->Skip(type_info);
-                    break;
-                }
-                catch (CEofException) {
-                    // Not enough data in the test stream, but the blob type
-                    // is correct.
-                    break;
-                }
-                catch (CSerialException ex) {
-                    if (ex.GetErrCode() == CSerialException::eEOF) {
-                        // Same as CEofException
-                        break;
-                    }
-                    // Reset blob type
-                    ret = SLDS2_Blob::eUnknown;
-                }
-                test_in->SetStreamPos(0); // rewind
+                break;
             }
-            break;
         }
-    default:
-        break;
     }
-    CStreamUtils::Stepback(m_Stream, buf, sz);
     return ret;
 }
 
