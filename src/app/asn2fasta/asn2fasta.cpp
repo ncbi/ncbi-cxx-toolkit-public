@@ -99,7 +99,7 @@ public:
 
 private:
     CFastaOstreamEx* x_GetFastaOstream(CBioseq_Handle& handle);
-    CObjectIStream* x_OpenIStream(const CArgs& args);
+    CObjectIStream* x_OpenIStream(const string& ifname);
     bool x_IsOtherFeat(const CSeq_feat_Handle& feat) const;
     void x_InitOStreams(const CArgs& args);
     void x_BatchProcess(CObjectIStream& istr);
@@ -118,7 +118,7 @@ private:
     unique_ptr<CFastaOstreamEx> m_Or;           // RNA output stream
     unique_ptr<CFastaOstreamEx> m_Op;           // protein output stream
     unique_ptr<CFastaOstreamEx> m_Ou;           // unknown output stream
-    CNcbiOstream*               m_Oq;           // quality score output stream
+    CNcbiOstream*               m_Oq = nullptr; // quality score output stream
     unique_ptr<CQualScoreWriter>  m_pQualScoreWriter;
 
     string                      m_OgHead;
@@ -142,13 +142,13 @@ private:
 };
 
 // constructor
-CAsn2FastaApp::CAsn2FastaApp (void)
+CAsn2FastaApp::CAsn2FastaApp()
 {
     SetVersion(CVersionInfo(1, 0, 2));
 }
 
 // destructor
-CAsn2FastaApp::~CAsn2FastaApp (void)
+CAsn2FastaApp::~CAsn2FastaApp()
 {
 }
 
@@ -356,20 +356,20 @@ CFastaOstreamEx* CAsn2FastaApp::OpenFastaOstream(const string& argname, const st
         CFastaOstreamEx::fNoExpensiveOps |
         CFastaOstreamEx::fHideGenBankPrefix );
 
-    if (GetArgs()["enable-gi"])
+    if (args["enable-gi"])
     {
         fasta_os->SetFlag(CFastaOstreamEx::fEnableGI);
     }
 
-    if (GetArgs()["ignore-origid"]) 
+    if (args["ignore-origid"])
     {
         fasta_os->SetFlag(CFastaOstreamEx::fIgnoreOriginalID);
     }
 
-    if( GetArgs()["gap-mode"] ) {
+    if( args["gap-mode"] ) {
         fasta_os->SetFlag(
             CFastaOstreamEx::fInstantiateGaps);
-        string gapmode = GetArgs()["gap-mode"].AsString();
+        string gapmode = args["gap-mode"].AsString();
         if ( gapmode == "one-dash" ) {
             fasta_os->SetGapMode(CFastaOstreamEx::eGM_one_dash);
         } else if ( gapmode == "dashes" ) {
@@ -393,7 +393,7 @@ CFastaOstreamEx* CAsn2FastaApp::OpenFastaOstream(const string& argname, const st
         fasta_os->SetFlag(CFastaOstreamEx::fDoNotUseAutoDef);
     }
     if( args["width"] ) {
-        fasta_os->SetWidth( GetArgs()["width"].AsInteger() );
+        fasta_os->SetWidth( args["width"].AsInteger() );
     }
 
     m_do_cleanup = ( args["cleanup"]);
@@ -479,9 +479,15 @@ int CAsn2FastaApp::Run(void)
             return ret_value;
         }
 
-        unique_ptr<CObjectIStream> is(x_OpenIStream(args));
+        string ifname;
+        if (args["i"]) {
+            ifname = args["i"].AsString();
+        }
+
+        unique_ptr<CObjectIStream> is(x_OpenIStream(ifname));
         if (!is) {
-            string msg = args["i"] ? "Unable to open input file" + args["i"].AsString() :
+            string msg = !ifname.empty() ?
+                "Unable to open input file" + ifname :
                 "Unable to read data from stdin";
             NCBI_THROW(CException, eUnknown, msg);
         }
@@ -569,7 +575,7 @@ void CAsn2FastaApp::x_InitFeatDisplay(const string& feats)
     if (feat_list.empty()) {
         m_AllFeats = true;
     } else{
-        for(const auto feat_name : feat_list) {
+        for(const string& feat_name : feat_list) {
             if (feat_name == "fasta_cds_na") {
                 m_CDS = true;
             } 
@@ -981,8 +987,7 @@ bool CAsn2FastaApp::HandleSeqEntry(CSeq_entry_Handle& seh)
     sel.ExcludeNamedAnnots("SNP");    
     sel.SetExcludeExternal();
 
-    auto& scope = seh.GetScope();
-
+    CScope& scope = seh.GetScope();
 
     for (CBioseq_CI bioseq_it(seh); bioseq_it; ++bioseq_it) {
         CBioseq_Handle bsh = *bioseq_it;
@@ -1013,9 +1018,10 @@ bool CAsn2FastaApp::HandleSeqEntry(CSeq_entry_Handle& seh)
 }
 
 //  --------------------------------------------------------------------------
-CObjectIStream* CAsn2FastaApp::x_OpenIStream(const CArgs& args)
+CObjectIStream* CAsn2FastaApp::x_OpenIStream(const string& ifname)
 //  --------------------------------------------------------------------------
 {
+    const CArgs& args = GetArgs();
     // determine the file serialization format.
     // default for batch files is binary, otherwise text.
     ESerialDataFormat serial = args["batch"] ? eSerial_AsnBinary : eSerial_AsnText;
@@ -1034,8 +1040,8 @@ CObjectIStream* CAsn2FastaApp::x_OpenIStream(const CArgs& args)
     // then the input comes from a file. Otherwise, it comes from stdin:
     CNcbiIstream* pInputStream = &NcbiCin;
     bool bDeleteOnClose = false;
-    if ( args["i"] ) {
-        pInputStream = new CNcbiIfstream( args["i"].AsString(), ios::binary  );
+    if ( !ifname.empty() ) {
+        pInputStream = new CNcbiIfstream( ifname, ios::binary );
         bDeleteOnClose = true;
     }
 
