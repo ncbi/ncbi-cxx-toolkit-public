@@ -108,10 +108,7 @@ CAlnScannerClustal::xImportAlignmentData(
 //  ----------------------------------------------------------------------------
 {
     bool inBlock = false;
-    int  blockLineLength = 0;
-    int  blockCount = 0;
     int  numSeqs = 0;
-    int  seqCount = 0;
 
     string line;
     int lineCount = 0;

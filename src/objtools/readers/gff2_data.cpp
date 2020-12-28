@@ -525,7 +525,6 @@ bool CGff2Record::UpdateFeature(
     auto subtype = pFeature->GetData().GetSubtype();
     auto recType = Type();
     NStr::ToLower(recType);
-    const CSeq_loc& target = pFeature->GetLocation();
     CRef<CSeq_loc> pAddLoc = GetSeqLoc(flags, seqidresolve);
 
     pFeature->SetLocation().SetMix().AddSeqLoc(*pAddLoc);
