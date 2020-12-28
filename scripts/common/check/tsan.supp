@@ -133,3 +133,20 @@ race:^ncbi::CThreadPool_Impl::DestroyReference()$
 # the CRef to the task are good and may not be in conflict
 race:^CThreadPoolTester::Thread_Run(int)$
 
+
+################################################################
+# satskyse CXX-11623
+# Formally suppress complains on libuv and datastax
+race:^uv__writev$
+race:^uv_mutex_lock$
+race:^uv_mutex_unlock$
+race:^uv_mutex_destroy$
+race:^uv_export_wait$
+race:^uv_export_wait$
+race:^cass_prepared_bind$
+race:^datastax::internal::core::Session::execute(datastax::internal::SharedRefPtr<datastax::internal::core::Request const> const&)$
+race:^datastax::internal::core::Buffer::copy(datastax::internal::core::Buffer const&)$
+race:^datastax::internal::core::Buffer::copy(unsigned long, char const*, unsigned long)$
+race:^datastax::internal::Memory::free(void*)$
+race:^std::__cxx11::basic_string<char, std::char_traits<char>, datastax::internal::Allocator<char> >::compare(std::__cxx11::basic_string<char, std::char_traits<char>, datastax::internal::Allocator<char> > const&) const$
+
