@@ -1462,7 +1462,7 @@ CShowBlastDefline::x_GetScoreInfo(const CSeq_align& aln, int blast_rank)
                               evalue_buf, bit_score_buf, total_bit_score_buf,
                               raw_score_buf);
 
-    unique_ptr<SScoreInfo> score_info(new SScoreInfo);
+    auto_ptr<SScoreInfo> score_info(new SScoreInfo);
     score_info->sum_n = sum_n == -1 ? 1:sum_n ;
     score_info->id = &(aln.GetSeq_id(1));
 
@@ -1486,9 +1486,9 @@ CShowBlastDefline::x_GetScoreInfoForTable(const CSeq_align_set& aln, int blast_r
     if(aln.Get().empty())
         return NULL;
 
-    unique_ptr<SScoreInfo> score_info(new SScoreInfo);
+    auto_ptr<SScoreInfo> score_info(new SScoreInfo);
 
-    unique_ptr<CAlignFormatUtil::SSeqAlignSetCalcParams> seqSetInfo( CAlignFormatUtil::GetSeqAlignSetCalcParamsFromASN(aln));
+    auto_ptr<CAlignFormatUtil::SSeqAlignSetCalcParams> seqSetInfo( CAlignFormatUtil::GetSeqAlignSetCalcParamsFromASN(aln)); 
     if(seqSetInfo->hspNum == 0) {//calulated params are not in ASN - calculate now
         seqSetInfo.reset( CAlignFormatUtil::GetSeqAlignSetCalcParams(aln,m_QueryLength,m_TranslatedNucAlignment)); 
     }
@@ -1629,6 +1629,7 @@ static void s_GetTaxonomyInfoForTaxID(TTaxId sdlTaxid, SSeqDBTaxInfo &taxInfo)
         taxid = NStr::IntToString(sdlTaxid);
         try{
             CSeqDB::GetTaxInfo(sdlTaxid, taxInfo);         
+            taxInfo.common_name = (taxInfo.common_name == taxInfo.scientific_name || taxInfo.common_name.empty()) ? "NA" : taxInfo.common_name;
         } catch (const CException&){
             taxInfo.common_name = "Unknown";
             taxInfo.scientific_name  = "Unknown";
@@ -1829,7 +1830,7 @@ string CShowBlastDefline::x_FormatDeflineTableLine(SDeflineInfo* sdl,SScoreInfo*
         sdl->id->GetLabel(&deflAccs, CSeq_id::eContent);
     }       
     SSeqDBTaxInfo taxInfo;
-    s_GetTaxonomyInfoForTaxID(sdl->taxid, taxInfo);
+    s_GetTaxonomyInfoForTaxID(sdl->taxid, taxInfo);    
     defLine = CAlignFormatUtil::MapTemplate(defLine,"common_name",taxInfo.common_name);
     defLine = CAlignFormatUtil::MapTemplate(defLine,"scientific_name",taxInfo.scientific_name);
     defLine = CAlignFormatUtil::MapTemplate(defLine,"blast_name",taxInfo.blast_name);
