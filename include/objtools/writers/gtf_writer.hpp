@@ -79,7 +79,7 @@ protected:
     virtual bool xAssignFeatureType(
         CGffFeatureRecord&,
         CGffFeatureContext&,
-        const CMappedFeat&);
+        const CMappedFeat&) override;
 
     virtual bool xAssignFeatureMethod(
         CGffFeatureRecord&,

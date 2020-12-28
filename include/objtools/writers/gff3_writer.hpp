@@ -419,7 +419,7 @@ protected:
     virtual bool xAssignFeatureStrand(
         CGffFeatureRecord&,
         CGffFeatureContext&,
-        const CMappedFeat&);
+        const CMappedFeat&) override;
     virtual bool xAssignFeaturePhase(
         CGffFeatureRecord&,
         CGffFeatureContext&,

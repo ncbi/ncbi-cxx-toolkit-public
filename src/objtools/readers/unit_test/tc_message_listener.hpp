@@ -47,7 +47,7 @@ public:
     ~CTeamCityMessageListener() { mOstr.close(); };
 
     bool PutMessage(
-        const IObjtoolsMessage& message)
+        const IObjtoolsMessage& message) override
     {
         const CReaderMessage* pReaderMessage = 
             dynamic_cast<const CReaderMessage*>(&message);
