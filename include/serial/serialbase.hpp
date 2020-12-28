@@ -834,7 +834,8 @@ public:
 
     void operator >> (CSerialObject& dest) const
     {
-        CNcbiIstrstream istr(m_Data, m_Size);
+        string data(m_Data, m_Size);
+        CNcbiIstrstream istr(data);
         istr >> MSerial_AsnText >> dest;
     }
 
