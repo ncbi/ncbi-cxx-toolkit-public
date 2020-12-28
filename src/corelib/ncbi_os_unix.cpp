@@ -455,7 +455,7 @@ bool CLinuxFeature::GetMemoryUsage(pid_t pid, CProcess::SMemoryUsage& usage)
 
     n = s_ReadFile(PROCFS(pid,"statm"), buf, sizeof(buf));
     if ( n ) {
-        CNcbiIstrstream is(buf, n);
+        CNcbiIstrstream is((const char*)buf, n);
         is >> usage.total >> usage.resident >> usage.shared >> usage.text >> usage.lib /*>> usage.data*/;
         const unsigned long page_size = CSystemInfo::GetVirtualMemoryPageSize();
         usage.total    *= page_size;
