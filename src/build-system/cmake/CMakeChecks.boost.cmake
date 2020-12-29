@@ -16,7 +16,7 @@ if(EXISTS "${NCBI_ThirdParty_Boost}")
     find_package(Boost OPTIONAL_COMPONENTS
         unit_test_framework system thread filesystem iostreams
 #        coroutine program_options prg_exec_monitor test_exec_monitor
-        context chrono date_time regex serialization
+        context chrono date_time regex serialization timer
     )
     set(CMAKE_PREFIX_PATH ${_foo_CMAKE_PREFIX_PATH})
 endif()
