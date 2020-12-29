@@ -72,6 +72,7 @@ static const string     kNChunks = "n_chunks";
 static const string     kStart = "start";
 static const string     kStop = "stop";
 static const string     kAnnotInfo = "annot_info";
+static const string     kSeqAnnotInfo = "seq_annot_info";
 
 static const string     kRequest = "request";
 static const string     kSecSeqId = "sec_seq_id";
@@ -243,12 +244,13 @@ CJsonNode ToJson(const CNAnnotRecord &  annot_record,
         json.SetString(kBlobId, custom_blob_id);
     }
 
-    json.SetString("accession", annot_record.GetAccession());
-    json.SetInteger("version", annot_record.GetVersion());
-    json.SetInteger("seq_id_type", annot_record.GetSeqIdType());
+    json.SetString(kAccession, annot_record.GetAccession());
+    json.SetInteger(kVersion, annot_record.GetVersion());
+    json.SetInteger(kSeqIdType, annot_record.GetSeqIdType());
     json.SetInteger(kStart, annot_record.GetStart());
     json.SetInteger(kStop, annot_record.GetStop());
     json.SetString(kAnnotInfo, annot_record.GetAnnotInfo());
+    json.SetString(kSeqAnnotInfo, annot_record.GetSeqAnnotInfo());
     return json;
 }
 
