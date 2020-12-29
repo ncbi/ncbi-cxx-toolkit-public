@@ -275,7 +275,8 @@ bool s_HasMobileElementForInterval(TSeqPos from, TSeqPos to, CBioseq_Handle bsh)
     GetOverlappingFeatures(*loc, CSeqFeatData::e_Imp,
         CSeqFeatData::eSubtype_mobile_element, eOverlap_Contained, mobile_elements, bsh.GetScope());
     ITERATE(TFeatScores, m, mobile_elements) {
-        if (m->second->GetLocation().Compare(*loc) == 0 || m->second->GetLocation().Compare(*rev_loc) == 0) {
+        if (m->second->GetLocation().Compare(*loc, CSeq_loc::fCompare_Default) == 0
+            || m->second->GetLocation().Compare(*rev_loc, CSeq_loc::fCompare_Default) == 0) {
             return true;
         }
     }
@@ -283,7 +284,8 @@ bool s_HasMobileElementForInterval(TSeqPos from, TSeqPos to, CBioseq_Handle bsh)
     GetOverlappingFeatures(*rev_loc, CSeqFeatData::e_Imp,
         CSeqFeatData::eSubtype_mobile_element, eOverlap_Contained, mobile_elements, bsh.GetScope());
     ITERATE(TFeatScores, m, mobile_elements) {
-        if (m->second->GetLocation().Compare(*loc) == 0 || m->second->GetLocation().Compare(*rev_loc) == 0) {
+        if (m->second->GetLocation().Compare(*loc, CSeq_loc::fCompare_Default) == 0
+            || m->second->GetLocation().Compare(*rev_loc, CSeq_loc::fCompare_Default) == 0) {
             return true;
         }
     }
