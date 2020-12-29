@@ -930,7 +930,7 @@ void CXcompareAnnotsApplication::x_ProcessMappingRanges()
                 sequence::GetId(*m_t_loc, m_scope_t),
                 m_scope_q)
             && m_scope_q.GetPointer() == m_scope_t.GetPointer()
-            && m_q_loc->Compare(*m_t_loc) == 0;
+            && m_q_loc->Compare(*m_t_loc, CSeq_loc::fCompare_Default) == 0;
 
 
     TSeqPos len = sequence::GetLength(*m_q_loc, m_scope_q);
