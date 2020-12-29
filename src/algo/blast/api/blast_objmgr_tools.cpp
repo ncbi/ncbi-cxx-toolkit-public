@@ -360,7 +360,22 @@ CBlastQuerySourceOM::GetTitle(int i) const
     }
 
     CBioseq_Handle bh = scope->GetBioseqHandle(*seqloc->GetId());
-    return bh ? sequence::CDeflineGenerator().GenerateDefline(bh) : kEmptyStr;
+    if (!bh)
+	return kEmptyStr;
+
+    string title(kEmptyStr);
+    if (bh.CanGetDescr())
+    {
+    	const CSeq_descr::Tdata& descr = bh.GetDescr();
+    	ITERATE(CSeq_descr::Tdata, desc, descr) {
+        	if ((*desc)->Which() == CSeqdesc::e_Title && title == kEmptyStr) {
+            		title = (*desc)->GetTitle();
+			break;
+        	}
+    	}
+    }
+
+    return title;
 }
 
 TSeqPos
