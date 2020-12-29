@@ -6699,6 +6699,7 @@ TARI<IRN>	s	Research Institute of Forests and Rangelands, Botanical Department
 TARI<TUR>	s	Trakya  Agricultural Research Institute			
 TASH	s	National Academy of Science, Uzbekistan			
 TASM	s	Uzbek Academy of Sciences, Laboratory of Mycology			
+TAU-MAC	c	Thessaloniki Aristotle University Microalgae and Cyanobacteria culture collection			
 TAU<GRC>	sc	Aristotle University of Thessaloniki, Biology Department			
 TAU<ISR>	s	Tel-Aviv University			
 TAUF	s	Aristotle University of Thessaloniki, Laboratory of Forest Botany - Geobotany			
