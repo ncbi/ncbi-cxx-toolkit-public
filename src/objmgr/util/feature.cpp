@@ -2359,12 +2359,12 @@ struct SChildLess
         const CMappedFeat& f1 = cr1.first->m_Feat;
         const CMappedFeat& f2 = cr2.first->m_Feat;
         // Sort by location/product
-        int cmp = f1.GetLocation().Compare(f2.GetLocation());
+        int cmp = f1.GetLocation().Compare(f2.GetLocation(), CSeq_loc::fCompare_Default);
         if (cmp != 0) return cmp < 0;
         if ( f1.IsSetProduct() ) {
             // Features with product go first.
             if ( !f2.IsSetProduct() ) return true;
-            cmp = f1.GetProduct().Compare(f2.GetProduct());
+            cmp = f1.GetProduct().Compare(f2.GetProduct(), CSeq_loc::fCompare_Default);
             if (cmp != 0) return cmp < 0;
         }
         else if ( f2.IsSetProduct() ) return false;
