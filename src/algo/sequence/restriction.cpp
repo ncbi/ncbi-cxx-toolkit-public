@@ -401,7 +401,7 @@ struct SLessSeq_loc
     bool operator()
         (const CRef<CSeq_loc>& lhs, const CRef<CSeq_loc>& rhs) const
     {
-        return (lhs->Compare(*rhs) < 0);
+        return (lhs->Compare(*rhs, CSeq_loc::fCompare_Default) < 0);
     }
 };
 
