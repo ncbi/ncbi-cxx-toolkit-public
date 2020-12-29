@@ -1418,8 +1418,27 @@ struct PSeq_locLess {
             cout << "a: "<<MSerial_AsnText<<a;
             cout << "b: "<<MSerial_AsnText<<b<<endl;
         }
-        int diff = a.Compare(b);
+        int diff = a.Compare(b, CSeq_loc::fCompare_Default);
         if ( 0 && (a.IsNull() || b.IsNull()) ) {
+            cout << " = " << diff << endl;
+        }
+        //a.GetId();
+        //b.GetId();
+        return diff < 0;
+    }
+    bool operator()(const CRef<CSeq_loc>& a, const CRef<CSeq_loc>& b) const {
+        return (*this)(*a, *b);
+    }
+};
+
+struct PSeq_locStrandLess {
+    bool operator()(const CSeq_loc& a, const CSeq_loc& b) const {
+        if (0 && (a.IsNull() || b.IsNull())) {
+            cout << "a: " << MSerial_AsnText << a;
+            cout << "b: " << MSerial_AsnText << b << endl;
+        }
+        int diff = a.Compare(b, CSeq_loc::fCompare_Strand);
+        if (0 && (a.IsNull() || b.IsNull())) {
             cout << " = " << diff << endl;
         }
         //a.GetId();
@@ -1454,22 +1473,44 @@ BOOST_AUTO_TEST_CASE(s_TestSeq_id_Compare_Seq_loc)
         sort(locs.begin(), locs.end(), PSeq_locLess());
         for ( size_t i = 0; i < locs.size(); ++i ) {
             //cout << i << ": " << MSerial_AsnText << *locs[i] << endl;
-            BOOST_CHECK_EQUAL(locs[i]->Compare(*locs[i]), 0);
-            if ( locs[i]->Compare(*locs[i]) != 0 ) {
+            BOOST_CHECK_EQUAL(locs[i]->Compare(*locs[i], CSeq_loc::fCompare_Default), 0);
+            if ( locs[i]->Compare(*locs[i], CSeq_loc::fCompare_Default) != 0 ) {
                 cout << i << ": " << MSerial_AsnText << *locs[i];
-                cout << " = " << locs[i]->Compare(*locs[i]) << endl;
+                cout << " = " << locs[i]->Compare(*locs[i], CSeq_loc::fCompare_Default) << endl;
             }
             for ( size_t j = 0; j < i; ++j ) {
-                BOOST_CHECK(locs[j]->Compare(*locs[i]) <= 0);
-                BOOST_CHECK(locs[i]->Compare(*locs[j]) >= 0);
-                if ( locs[j]->Compare(*locs[i]) > 0 ||
-                     locs[i]->Compare(*locs[j]) < 0 ) {
+                BOOST_CHECK(locs[j]->Compare(*locs[i], CSeq_loc::fCompare_Default) <= 0);
+                BOOST_CHECK(locs[i]->Compare(*locs[j], CSeq_loc::fCompare_Default) >= 0);
+                if ( locs[j]->Compare(*locs[i], CSeq_loc::fCompare_Default) > 0 ||
+                     locs[i]->Compare(*locs[j], CSeq_loc::fCompare_Default) < 0 ) {
                     cout << j << ": " << MSerial_AsnText << *locs[j];
                     cout << i << ": " << MSerial_AsnText << *locs[i];
-                    cout << " = " << locs[j]->Compare(*locs[i]) << endl;
+                    cout << " = " << locs[j]->Compare(*locs[i], CSeq_loc::fCompare_Default) << endl;
                     cout << i << ": " << MSerial_AsnText << *locs[i];
                     cout << j << ": " << MSerial_AsnText << *locs[j];
-                    cout << " = " << locs[i]->Compare(*locs[j]) << endl;
+                    cout << " = " << locs[i]->Compare(*locs[j], CSeq_loc::fCompare_Default) << endl;
+                }
+            }
+        }
+        sort(locs.begin(), locs.end(), PSeq_locStrandLess());
+        for (size_t i = 0; i < locs.size(); ++i) {
+            //cout << i << ": " << MSerial_AsnText << *locs[i] << endl;
+            BOOST_CHECK_EQUAL(locs[i]->Compare(*locs[i], CSeq_loc::fCompare_Strand), 0);
+            if (locs[i]->Compare(*locs[i], CSeq_loc::fCompare_Strand) != 0) {
+                cout << i << ": " << MSerial_AsnText << *locs[i];
+                cout << " = " << locs[i]->Compare(*locs[i], CSeq_loc::fCompare_Strand) << endl;
+            }
+            for (size_t j = 0; j < i; ++j) {
+                BOOST_CHECK(locs[j]->Compare(*locs[i], CSeq_loc::fCompare_Strand) <= 0);
+                BOOST_CHECK(locs[i]->Compare(*locs[j], CSeq_loc::fCompare_Strand) >= 0);
+                if (locs[j]->Compare(*locs[i], CSeq_loc::fCompare_Strand) > 0 ||
+                    locs[i]->Compare(*locs[j], CSeq_loc::fCompare_Strand) < 0) {
+                    cout << j << ": " << MSerial_AsnText << *locs[j];
+                    cout << i << ": " << MSerial_AsnText << *locs[i];
+                    cout << " = " << locs[j]->Compare(*locs[i], CSeq_loc::fCompare_Strand) << endl;
+                    cout << i << ": " << MSerial_AsnText << *locs[i];
+                    cout << j << ": " << MSerial_AsnText << *locs[j];
+                    cout << " = " << locs[i]->Compare(*locs[j], CSeq_loc::fCompare_Strand) << endl;
                 }
             }
         }
