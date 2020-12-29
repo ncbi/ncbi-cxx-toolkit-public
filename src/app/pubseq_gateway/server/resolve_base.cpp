@@ -62,7 +62,6 @@ CPSGS_ResolveBase::CPSGS_ResolveBase(shared_ptr<CPSGS_Request> request,
                                      TSeqIdResolutionFinishedCB finished_cb,
                                      TSeqIdResolutionErrorCB error_cb,
                                      TSeqIdResolutionStartProcessingCB resolution_start_processing_cb) :
-    CPSGS_CassProcessorBase(request, reply),
     CPSGS_AsyncResolveBase(request, reply,
                            bind(&CPSGS_ResolveBase::x_OnSeqIdResolveFinished,
                                 this, _1),

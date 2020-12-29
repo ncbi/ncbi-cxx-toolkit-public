@@ -63,7 +63,8 @@ static bool s_HttpUrlDecode(const char *  what, size_t  len, char *  buf,
                 if (pch >= end - 1 || dest >= dest_end)
                     return false;
                 ch = *pch;
-                v = 0;
+                // To avoid CLang static analizer report on dead assignment
+                // v = 0;
                 if (ch >= '0' && ch <= '9')
                     v = (ch - '0') * 16;
                 else if (ch >= 'A' && ch <= 'F')

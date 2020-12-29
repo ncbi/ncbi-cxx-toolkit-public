@@ -77,7 +77,7 @@ private:
 
     CCassFetch *                        m_Fetch;
     CCassFetch *                        m_NoSeqIdTypeFetch;
-    chrono::system_clock::time_point    m_BioseqRequestStart;
+    TPSGS_HighResolutionTimePoint       m_BioseqRequestStart;
 
     bool                                m_WithSeqIdType;
 };

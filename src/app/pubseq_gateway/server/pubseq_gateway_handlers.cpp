@@ -187,7 +187,7 @@ int CPubseqGatewayApp::OnGet(CHttpRequest &  req,
 
         CTempString                             seq_id;
         int                                     seq_id_type;
-        SPSGS_RequestBase::EPSGS_CacheAndDbUse  use_cache;
+        SPSGS_RequestBase::EPSGS_CacheAndDbUse  use_cache = SPSGS_RequestBase::ePSGS_CacheAndDb;
 
         if (!x_ProcessCommonGetAndResolveParams(req, reply, seq_id,
                                                 seq_id_type, use_cache)) {
@@ -435,7 +435,7 @@ int CPubseqGatewayApp::OnResolve(CHttpRequest &  req,
 
         CTempString                             seq_id;
         int                                     seq_id_type;
-        SPSGS_RequestBase::EPSGS_CacheAndDbUse  use_cache;
+        SPSGS_RequestBase::EPSGS_CacheAndDbUse  use_cache = SPSGS_RequestBase::ePSGS_CacheAndDb;
 
         if (!x_ProcessCommonGetAndResolveParams(req, reply, seq_id,
                                                 seq_id_type, use_cache)) {
@@ -678,7 +678,7 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
     try {
         CTempString                             seq_id;
         int                                     seq_id_type;
-        SPSGS_RequestBase::EPSGS_CacheAndDbUse  use_cache;
+        SPSGS_RequestBase::EPSGS_CacheAndDbUse  use_cache = SPSGS_RequestBase::ePSGS_CacheAndDb;
 
         if (!x_ProcessCommonGetAndResolveParams(req, reply, seq_id,
                                                 seq_id_type, use_cache)) {

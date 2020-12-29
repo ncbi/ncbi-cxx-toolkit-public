@@ -49,7 +49,6 @@ CPSGS_AsyncBioseqInfoBase::CPSGS_AsyncBioseqInfoBase(
                                 shared_ptr<CPSGS_Reply> reply,
                                 TSeqIdResolutionFinishedCB finished_cb,
                                 TSeqIdResolutionErrorCB error_cb) :
-    CPSGS_CassProcessorBase(request, reply),
     m_FinishedCB(finished_cb),
     m_ErrorCB(error_cb),
     m_NeedTrace(request->NeedTrace()),

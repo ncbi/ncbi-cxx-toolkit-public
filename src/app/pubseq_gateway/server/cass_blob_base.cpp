@@ -56,7 +56,6 @@ CPSGS_CassBlobBase::CPSGS_CassBlobBase() :
 CPSGS_CassBlobBase::CPSGS_CassBlobBase(shared_ptr<CPSGS_Request>  request,
                                        shared_ptr<CPSGS_Reply>  reply,
                                        const string &  processor_id) :
-    CPSGS_CassProcessorBase(request, reply),
     m_NeedToParseId2Info(true),
     m_ProcessorId(processor_id),
     m_LastModified(-1)

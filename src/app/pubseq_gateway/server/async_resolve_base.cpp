@@ -65,7 +65,6 @@ CPSGS_AsyncResolveBase::CPSGS_AsyncResolveBase(
                                 TSeqIdResolutionFinishedCB finished_cb,
                                 TSeqIdResolutionErrorCB error_cb,
                                 TSeqIdResolutionStartProcessingCB  start_processing_cb) :
-    CPSGS_CassProcessorBase(request, reply),
     m_FinishedCB(finished_cb),
     m_ErrorCB(error_cb),
     m_StartProcessingCB(start_processing_cb),

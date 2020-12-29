@@ -787,7 +787,9 @@ void CPubseqGatewayApp::x_ValidateArgs(void)
                 "The statistics parameters are reset to default.";
             m_Alerts.Register(ePSGS_ConfigStatNBins, err_msg);
             PSG_ERROR(err_msg);
-            stat_settings_good = false;
+
+            // Uncomment if there will be more [STATISTICS] section parameters
+            // stat_settings_good = false;
 
             m_MinStatValue = kMinStatValue;
             m_MaxStatValue = kMaxStatValue;
