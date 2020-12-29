@@ -240,10 +240,21 @@ public:
     /// Invalidate id/range cache after deserialization.
     void PostRead(void) const;
 
+    /// Flags for location comparison.
+    enum ECompareFlags {
+        fCompare_Default = 0,
+        fCompare_Strand =  1
+    };
+    typedef int TCompareFlags;
+
+    /// @deprecated Use the 2-argument version taking flags.
+    NCBI_DEPRECATED int Compare(const CSeq_loc& loc) const;
+
     /// Compare locations by total range for each seq-id.
     /// Compares seq-ids (@sa CSeq_loc::CompareOrdered()), then compares
     /// total range starts (left to right) and lengths (longerst first).
-    int Compare(const CSeq_loc& loc) const;
+    /// Optionally compares strands; location without strand goes first.
+    int Compare(const CSeq_loc& loc, TCompareFlags flags) const;
 
     /// Used as a helper for determining which pieces of a
     /// CSeq_loc to compare.
@@ -375,7 +386,8 @@ private:
     /// Compare single-id locations, or throw an exception if any location
     /// is multi-id.
     int x_CompareSingleId(const CSeq_loc& loc, const CSeq_id* id1,
-                          const CSeq_id* id2) const;
+                          const CSeq_id* id2,
+                          TCompareFlags flags) const;
 
     enum {
         kDirtyCache = -2,

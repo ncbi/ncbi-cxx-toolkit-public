@@ -538,7 +538,8 @@ CSeq_loc::TRange CSeq_loc::x_CalculateTotalRangeCheckId(const CSeq_id*& id) cons
 
 
 int CSeq_loc::x_CompareSingleId(const CSeq_loc& loc, const CSeq_id* id1,
-                                const CSeq_id* id2) const
+                                const CSeq_id* id2,
+                                TCompareFlags flags) const
 {
     if ( !id1 || !id2 ) {
         NCBI_THROW(CSeqLocException, eMultipleId,
@@ -572,18 +573,33 @@ int CSeq_loc::x_CompareSingleId(const CSeq_loc& loc, const CSeq_id* id1,
     if ( to1 != to2 ) {
         return to1 > to2? -1: 1;
     }
-
+    if (flags & fCompare_Strand) {
+        if (!IsSetStrand()) {
+            return loc.IsSetStrand() ? -1 : 0;
+        }
+        else {
+            if (!loc.IsSetStrand()) return 1;
+        }
+        auto s1 = GetStrand();
+        auto s2 = loc.GetStrand();
+        if (s1 != s2) return s1 < s2 ? -1 : 1;
+    }
     return 0;
 }
 
-
 int CSeq_loc::Compare(const CSeq_loc& loc_arg) const
+{
+    return Compare(loc_arg, fCompare_Default);
+}
+
+
+int CSeq_loc::Compare(const CSeq_loc& loc_arg, TCompareFlags flags) const
 {
     // first try fast single-id comparison
     const CSeq_id* id1 = GetId();
     const CSeq_id* id2 = id1 == NULL ? NULL : loc_arg.GetId();
     if (id1 != NULL  &&  id2 != NULL) {
-        return x_CompareSingleId(loc_arg, id1, id2);
+        return x_CompareSingleId(loc_arg, id1, id2, flags);
     }
     // Slow comparison of ranges on each Seq-id separately.
     CSeq_loc_CI iter1(*this,   CSeq_loc_CI::eEmpty_Allow);
@@ -639,7 +655,7 @@ int CSeq_loc::Compare(const CSeq_loc& loc_arg) const
         }
         id1 = loc1->GetId();
         id2 = loc2->GetId();
-        if ( int diff = loc1->x_CompareSingleId(*loc2, id1, id2) ) {
+        if ( int diff = loc1->x_CompareSingleId(*loc2, id1, id2, flags) ) {
             // next sub-locs are different
             return diff;
         }
