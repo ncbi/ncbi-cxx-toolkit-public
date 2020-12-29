@@ -228,7 +228,7 @@ inline
 int CSeq_feat::Compare(const CSeq_feat& f2,
                        const CSeq_loc& loc1, const CSeq_loc& loc2) const
 {
-    int diff = loc1.Compare(loc2);
+    int diff = loc1.Compare(loc2, CSeq_loc::fCompare_Default);
     return diff != 0? diff: CompareNonLocation(f2, loc1, loc2);
 }
 
