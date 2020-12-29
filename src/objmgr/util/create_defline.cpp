@@ -1599,8 +1599,9 @@ static void x_FlyCG_PtoR (
 {
     // s =~ s/\b(CG\d*-)P([[:alpha:]])\b/$1R$2/g, more or less.
     SIZE_TYPE pos = 0, len = s.size();
-    while ((pos = NStr::FindCase (s, "CG", pos)) != NPOS) {
+    while (pos + 3 < len && (pos = NStr::FindCase (s, "CG", pos)) != NPOS) {
         if (pos > 0  &&  !isspace((unsigned char)s[pos - 1]) ) {
+            pos += 2;
             continue;
         }
         pos += 2;
