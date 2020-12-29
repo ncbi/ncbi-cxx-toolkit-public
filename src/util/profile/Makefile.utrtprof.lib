@@ -1,0 +1,9 @@
+# $Id$
+
+
+SRC =  rtprofile
+
+
+LIB = utrtprof
+
+WATCHERS = merezhuk
