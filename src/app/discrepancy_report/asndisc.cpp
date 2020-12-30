@@ -299,8 +299,21 @@ unsigned CDiscRepApp::x_ProcessAll(const string& outname)
             Tests->ParseStrings(fname);
         }
         severity = Tests->Summarize();
-    }
-    else {
+    } else if (m_AutoFix) {
+        for (auto& tname : m_Tests) {
+            Tests->AddTest(tname);
+        }
+        Tests->SetLineage(m_Lineage);
+        for (auto& fname : m_Files) {
+            ++count;
+            if (m_Files.size() > 1) {
+                LOG_POST("Processing file " + to_string(count) + " of " + to_string(m_Files.size()));
+            }
+            x_ProcessFile(fname, *Tests);
+            severity = Tests->Summarize();
+            x_Autofix(*Tests);
+        }
+    } else {
         for (auto& fname : m_Files) {
             for (auto& tname : m_Tests) {
                 Tests->AddTest(tname);
@@ -311,11 +324,8 @@ unsigned CDiscRepApp::x_ProcessAll(const string& outname)
                 LOG_POST("Processing file " + to_string(count) + " of " + to_string(m_Files.size()));
             }
             x_ProcessFile(fname, *Tests);
-            severity = Tests->Summarize();
-            if (m_AutoFix) {
-                x_Autofix(*Tests);
-            }
         }
+        severity = Tests->Summarize();
     }
     unsigned short flags = (GetArgs()["S"].AsBoolean() ? CDiscrepancySet::eOutput_Summary : 0) | (m_Fat ? CDiscrepancySet::eOutput_Fatal : 0) | (m_Ext ? CDiscrepancySet::eOutput_Ext : 0) | CDiscrepancySet::eOutput_Files;
     m_Xml ? x_OutputXml(outname, *Tests, flags) : x_Output(outname, *Tests, flags);
