@@ -416,7 +416,8 @@ inline void CHTMLPage::LoadTemplateLibBuffer(const void* template_buffer,
                                              size_t size,
                                              TTemplateLibFilter* filter)
 {
-    CNcbiIstrstream is((const char*)template_buffer, size);
+    string data((const char*)template_buffer, size);
+    CNcbiIstrstream is(data);
     x_LoadTemplateLib(is, size, eSkipIncludes, kEmptyStr, filter);
 }
 
