@@ -3319,7 +3319,7 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
             }
             NON_CONST_ITERATE (CCdregion::TCode_break, it, feat.SetData().SetCdregion().SetCode_break()) {
                 CCode_break & cb = **it;
-                if (cb.GetLoc().Compare(*mapped)==0) {
+                if (cb.GetLoc().Compare(*mapped, CSeq_loc::fCompare_Strand)==0) {
                     code_break = *it;
                     break;
                 }
