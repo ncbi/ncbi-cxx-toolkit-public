@@ -953,7 +953,7 @@ CCMI	c	Culture Collection of Industrial Microorganisms
 CCML	s	Coleccion Ictiologica del Departamento de Ciencias Marinas de la Universidad de la Laguna			
 CCMM	c	Moroccan Coordinated Collections of Microorganisms			
 CCMP	c	Provasoli-Guillard National Center for Marine Algae and Microiota			
-CCNH	s	Central Michigan University, Center for Cultural and Natural History			
+CCNH	s	Central Michigan University, Center for Cultural and Natural History	MCNH		
 CCNL	s	Connecticut College, Botany Department			
 CCNP	s	Carlsbad, Carlsbad Caverns National Park			
 CCNP<POL>	c	Culture Collection of Northern Poland			

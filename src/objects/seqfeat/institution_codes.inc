@@ -986,7 +986,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CCML\ts\tColeccion Ictiologica del Departamento de Ciencias Marinas de la Universidad de la Laguna\t\t\t",
 "CCMM\tc\tMoroccan Coordinated Collections of Microorganisms\t\t\t",
 "CCMP\tc\tProvasoli-Guillard National Center for Marine Algae and Microiota\t\t\t",
-"CCNH\ts\tCentral Michigan University, Center for Cultural and Natural History\t\t\t",
+"CCNH\ts\tCentral Michigan University, Center for Cultural and Natural History\tMCNH\t\t",
 "CCNL\ts\tConnecticut College, Botany Department\t\t\t",
 "CCNP\ts\tCarlsbad, Carlsbad Caverns National Park\t\t\t",
 "CCNP<POL>\tc\tCulture Collection of Northern Poland\t\t\t",
