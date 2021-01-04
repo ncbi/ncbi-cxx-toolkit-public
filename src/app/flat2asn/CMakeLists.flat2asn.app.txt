@@ -2,6 +2,7 @@
 
 NCBI_begin_app(flat2asn)
   NCBI_sources(flat2asn)
-  NCBI_uses_toolkit_libraries(xflatfile xlogging taxon1 xobjutil tables xregexp)
+  NCBI_uses_toolkit_libraries(
+  xflatfile fix_pub eutils_client xmlwrapp xlogging taxon1 xobjutil tables xregexp)
 NCBI_end_app()
 
