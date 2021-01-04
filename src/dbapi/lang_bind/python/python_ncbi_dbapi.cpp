@@ -3338,6 +3338,8 @@ void CError::x_Init(const string& msg, long db_errno, const string& db_msg,
         return;
     }
 
+    pythonpp::CError::Clear();
+
     // Instantiate a Python exception object.
     exc_ob = PyObject_CallFunction(err_type, (char *)"s", (char*)msg.c_str());
     if (exc_ob == NULL)
