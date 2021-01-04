@@ -898,13 +898,13 @@ CModuleExt::Declare(const string& name, PyMethodDef* methods,
 {
     _ASSERT( m_Module == NULL );
 
+    m_Name = name;
 #if PY_MAJOR_VERSION >= 3
     m_ModuleDef.m_name = strdup(name.c_str());
     m_ModuleDef.m_methods = methods;
     m_ModuleDef.m_clear = cleanup_hook;
     m_Module = PyModule_Create(&m_ModuleDef);
 #else
-    m_Name = name;
     m_Module = Py_InitModule( const_cast<char*>( name.c_str() ), methods );
 #endif
     CError::Check(m_Module);
