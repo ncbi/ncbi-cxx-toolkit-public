@@ -216,11 +216,11 @@ void FindStartsStops(const CGeneModel& model, const CEResidueVec& contig_seq, co
 
         if (left_cds_limit<0) {
             if (reading_frame_start >= 3) {
-                FindAllStops(stops,mrna,TSignedSeqRange(0,reading_frame_start),frame);
+                FindAllStops(stops,mrna,TSignedSeqRange(0,reading_frame_start),frame);   // 5' inframe stops
             }
 
             if (stops[frame].size()>0)
-                left_cds_limit = stops[frame].back()+3;
+                left_cds_limit = stops[frame].back()+3;                                  // earliest start of CDS
         } else {
             FindAllStops(stops,mrna,TSignedSeqRange(0,left_cds_limit),frame);
         }
@@ -232,7 +232,7 @@ void FindStartsStops(const CGeneModel& model, const CEResidueVec& contig_seq, co
         }
     }
 
-    if (left_cds_limit<0) {
+    if (left_cds_limit<0) {                                                             // don't know frame or no upstream stop
         int model_start = mrnamap.MapEditedToOrig(0);
 
         if(Include(model.GetCdsInfo().ProtReadingFrame(),model_start) && reading_frame_start < 3) {
@@ -246,7 +246,7 @@ void FindStartsStops(const CGeneModel& model, const CEResidueVec& contig_seq, co
                     if(Partial5pCodonIsStop(contig_seq,model_start,i))
                         stops[i].push_back(i-3); // stop to limit MaxCds
                     else 
-                        starts[i].push_back(i-3);
+                        starts[i].push_back(i-3);                                      // fake start(s) for open cds
 
 
                     /*
@@ -266,16 +266,16 @@ void FindStartsStops(const CGeneModel& model, const CEResidueVec& contig_seq, co
         TSignedSeqRange start = mrnamap.MapRangeOrigToEdited(model.GetCdsInfo().Start(),false);
         starts[frame].push_back(start.GetFrom());
     } else if(reading_frame_start-left_cds_limit >= 3) {
-        FindAllStarts(starts,mrna,TSignedSeqRange(left_cds_limit,reading_frame_start-1),frame);
+        FindAllStarts(starts,mrna,TSignedSeqRange(left_cds_limit,reading_frame_start-1),frame); // 5' starts or all starts
     }
 
     if (frame==-1) {
-        FindAllStops(stops,mrna,TSignedSeqRange(0,mrna.size()-1),frame);
+        FindAllStops(stops,mrna,TSignedSeqRange(0,mrna.size()-1),frame);                        // all stops
     } else if (right_cds_limit - reading_frame_stop >= 3) {
-        FindAllStops(stops,mrna,TSignedSeqRange(reading_frame_stop+1,right_cds_limit),frame);
+        FindAllStops(stops,mrna,TSignedSeqRange(reading_frame_stop+1,right_cds_limit),frame);   // inframe 3' stops
     }
 
-    if (int(mrna.size()) <= right_cds_limit) {
+    if (int(mrna.size()) <= right_cds_limit) {                                                  // fake stops for partials
         stops[mrna.size()%3].push_back(mrna.size());
         stops[(mrna.size()-1)%3].push_back(mrna.size()-1);
         stops[(mrna.size()-2)%3].push_back(mrna.size()-2);
