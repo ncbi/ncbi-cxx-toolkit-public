@@ -243,7 +243,7 @@ bool CGtfWriter::xWriteFeature(
     switch(subtype) {
         default:
             if (mf.GetFeatType() == CSeqFeatData::e_Rna) {
-                return xWriteFeatureTranscript(context, mf);
+                return xWriteRecordsTranscript(context, mf);
             }
             // GTF is not interested --- ignore
             return true;
@@ -251,17 +251,18 @@ bool CGtfWriter::xWriteFeature(
         case CSeqFeatData::eSubtype_D_segment:
         case CSeqFeatData::eSubtype_J_segment:
         case CSeqFeatData::eSubtype_V_segment:
-            return xWriteFeatureTranscript(context, mf);
+            return xWriteRecordsTranscript(context, mf);
         case CSeqFeatData::eSubtype_gene: 
-            return xWriteFeatureGene(context, mf);
+            return xWriteRecordsGene(context, mf);
         case CSeqFeatData::eSubtype_cdregion:
             return xWriteFeatureCds(context, mf);
     }
     return false;
 }
 
+
 //  ----------------------------------------------------------------------------
-bool CGtfWriter::xWriteFeatureGene(
+bool CGtfWriter::xWriteRecordsGene(
     CGffFeatureContext& context,
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
@@ -270,34 +271,152 @@ bool CGtfWriter::xWriteFeatureGene(
         return true;
     }
 
-    CRef<CGtfRecord> pRecord( 
-        new CGtfRecord(context, (m_uFlags & fNoExonNumbers)));
-    if (!xAssignFeature(*pRecord, context, mf)) {
+    list<CRef<CGtfRecord>> records;
+    if (!xAssignFeatures(records, context, mf)) {
         return false;
     }
 
-    return xWriteRecord(pRecord);
+    for (const auto record: records) {
+        if (!xWriteRecord(record)) {
+            return false;
+        }
+    }
+    return true;
 }
 
 //  ----------------------------------------------------------------------------
-bool CGtfWriter::xWriteFeatureTranscript(
+bool CGtfWriter::xAssignFeatures(
+    list<CRef<CGtfRecord>>& recordList,
+    CGffFeatureContext& context,
+    const CMappedFeat& mf)
+//  ----------------------------------------------------------------------------
+{
+    const auto& mfLoc = mf.GetLocation();
+    
+    CSeq_loc mfLocAsPackedInt;
+    mfLocAsPackedInt.Assign(mfLoc);
+    mfLocAsPackedInt.ChangeToPackedInt();
+
+    const auto& sublocs = mfLocAsPackedInt.GetPacked_int().Get();
+    bool needsPartNumbers = (sublocs.size() > 1);
+    unsigned int partNum = 1;
+    for ( auto it = sublocs.begin(); it != sublocs.end(); it++ ) {
+        const CSeq_interval& intv = **it;
+        CRef<CGtfRecord> pRecord( 
+            new CGtfRecord(context, (m_uFlags & fNoExonNumbers)));
+        if (!xAssignFeature(*pRecord, context, mf)) {
+            return false;
+        }
+        pRecord->SetEndpoints(intv.GetFrom(), intv.GetTo(), 
+            (intv.IsSetStrand() ? intv.GetStrand() : eNa_strand_plus));
+        if (needsPartNumbers) {
+            pRecord->SetAttribute("part", NStr::NumericToString(partNum++));
+        }
+        recordList.push_back(pRecord);
+    }
+    return true;
+}
+
+
+//  ----------------------------------------------------------------------------
+bool CGtfWriter::xAssignTranscriptFeatures(
+    list<CRef<CGtfRecord>>& recordList,
+    CGffFeatureContext& context,
+    const CMappedFeat& mf,
+    const string& transcriptId)
+//  ----------------------------------------------------------------------------
+{
+    const auto& mfLoc = mf.GetLocation();
+    
+    CSeq_loc mfLocAsPackedInt;
+    mfLocAsPackedInt.Assign(mfLoc);
+    mfLocAsPackedInt.ChangeToPackedInt();
+
+    const auto& sublocs = mfLocAsPackedInt.GetPacked_int().Get();
+    CRef<CGtfRecord> pRecord(
+        new CGtfRecord(context, (m_uFlags & fNoExonNumbers)));
+    if (!transcriptId.empty()) {
+        pRecord->SetTranscriptId(transcriptId);
+    }
+    if (!xAssignFeature(*pRecord, context, mf)) {
+        return false;
+    }
+    TSeqPos lastFrom = sublocs.front()->GetFrom();
+    TSeqPos lastTo = sublocs.front()->GetTo();
+    auto it = sublocs.begin();
+    for ( it++; it != sublocs.end(); it++ ) {
+        const CSeq_interval& intv = **it;
+
+        if (intv.IsSetStrand()  &&  intv.GetStrand() == eNa_strand_minus) {
+            if (intv.GetTo() <= lastFrom) {
+                lastFrom = intv.GetFrom();
+            }
+            else {
+                pRecord->SetEndpoints(lastFrom, lastTo, mfLoc.GetStrand());
+                recordList.push_back(pRecord);
+                pRecord.Reset(new CGtfRecord(context, (m_uFlags & fNoExonNumbers)));
+                if (!transcriptId.empty()) {
+                    pRecord->SetTranscriptId(transcriptId);
+                }
+                if (!xAssignFeature(*pRecord, context, mf)) {
+                    return false;
+                }
+                lastFrom = intv.GetFrom();
+                lastTo = intv.GetTo();
+            }
+        }
+        else {
+            if (intv.GetFrom() >= lastTo) {
+                lastTo = intv.GetTo();
+            }
+            else { //wrapping back to 0
+                pRecord->SetEndpoints(lastFrom, lastTo, mfLoc.GetStrand());
+                recordList.push_back(pRecord);
+                pRecord.Reset(new CGtfRecord(context, (m_uFlags & fNoExonNumbers)));
+                if (!transcriptId.empty()) {
+                    pRecord->SetTranscriptId(transcriptId);
+                }
+                if (!xAssignFeature(*pRecord, context, mf)) {
+                    return false;
+                }
+                lastFrom = 0;
+                lastTo = intv.GetTo();
+            }
+        }
+    }
+    pRecord->SetEndpoints(lastFrom, lastTo, mfLoc.GetStrand());
+    recordList.push_back(pRecord);
+
+    bool needPartNumbers = (recordList.size() > 1);
+    unsigned int partNum = 1;
+    for (auto& record: recordList) {
+        if (needPartNumbers) {
+            record->SetAttribute("part", NStr::NumericToString(partNum++));
+        }
+        record->SetType("transcript");
+        record->SetAttribute(
+            "gbkey", CSeqFeatData::SubtypeValueToName(mf.GetFeatSubtype()));
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGtfWriter::xWriteRecordsTranscript(
     CGffFeatureContext& context,
     const CMappedFeat& mf,
     const string& transcriptId )
 //  ----------------------------------------------------------------------------
 {
-    CRef<CGtfRecord> pTranscript(new CGtfRecord(context));
-    if (!transcriptId.empty()) {
-        pTranscript->SetTranscriptId(transcriptId);
-    }
-    if (!xAssignFeature(*pTranscript, context, mf)) {
+    list<CRef<CGtfRecord>> records;
+    if (!xAssignTranscriptFeatures(records, context, mf, transcriptId)) {
         return false;
     }
-    pTranscript->SetType("transcript");
-    pTranscript->SetAttribute(
-        "gbkey", CSeqFeatData::SubtypeValueToName(
-            mf.GetFeatSubtype()));
-    xWriteRecord(pTranscript);
+
+    for (const auto record: records) {
+        if (!xWriteRecord(record)) {
+            return false;
+        }
+    }
     return xWriteFeatureExons(context, mf, transcriptId);
 }
 
@@ -349,7 +468,7 @@ bool CGtfWriter::xWriteFeatureCds(
     string transcriptId;
     if (tf) {
         transcriptId = CGtfIdGenerator::NextId("unassigned_transcript");
-        if (!xWriteFeatureTranscript(context, tf, transcriptId)) {
+        if (!xWriteRecordsTranscript(context, tf, transcriptId)) {
             return false;
         }
     }
