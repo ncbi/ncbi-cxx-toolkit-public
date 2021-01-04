@@ -39,6 +39,10 @@
 BEGIN_SCOPE(ncbi)
 BEGIN_SCOPE(gnomon)
 
+// used in chainer and collapser
+#define MINIMAL_POSITION_WEIGHT 2
+#define MINIMAL_BLOB_WEIGHT 5
+
 struct SAlignIndividual {
     SAlignIndividual() : m_weight(0) {};
     SAlignIndividual(const CAlignModel& align, deque<char>& target_id_pool) : m_range(align.Limits()), m_align_id(align.ID()), m_weight(align.Weight()) {
@@ -125,7 +129,7 @@ class CAlignCollapser {
 public:
     CAlignCollapser(string contig = "", CScope* scope = 0, bool nofilteringcollapsing = false);
     void InitContig(string contig, CScope* scope);
-    void AddAlignment(const CAlignModel& align);
+    void AddAlignment(CAlignModel& align);
     void FilterAlignments();
     void GetCollapsedAlgnments(TAlignModelClusterSet& clsset);
     void GetOnlyOtherAlignments(TAlignModelClusterSet& clsset);
@@ -205,6 +209,7 @@ private:
     Tidpool m_target_id_pool;
     TAlignIntrons m_align_introns;
     TAlignModelList m_aligns_for_filtering_only;
+    map<tuple<CGeneModel::EStatus, CGeneModel::EStatus>, TAlignModelList> m_special_aligns; // [left/right flex, cap/polya]
 
     int m_count;
     bool m_filtersr;

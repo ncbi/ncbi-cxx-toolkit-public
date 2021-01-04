@@ -941,14 +941,31 @@ TSignedSeqPos CGeneModel::FShiftedMove(TSignedSeqPos pos, int len) const
 
 int CGeneModel::MutualExtension(const CGeneModel& a) const
 {
-    //    if(Strand() != a.Strand()) return 0;
+    if(Strand() != a.Strand()) 
+        return 0;
     const TSignedSeqRange limits = Limits();
     const TSignedSeqRange alimits = a.Limits();
 
-    const int intersection = (limits & alimits).GetLength();
-    if (intersection==0 || intersection==limits.GetLength() || intersection==alimits.GetLength()) return 0;
-    
-    return isCompatible(a);
+    if((Status()&(CGeneModel::eLeftFlexible|CGeneModel::eRightFlexible)) == 0 && (a.Status()&(CGeneModel::eLeftFlexible|CGeneModel::eRightFlexible)) == 0) {
+        const int intersection = (limits & alimits).GetLength();
+        if(intersection==0 || intersection==limits.GetLength() || intersection==alimits.GetLength()) 
+            return 0;    
+        return isCompatible(a);
+    } else if((Status()&(CGeneModel::eLeftFlexible|CGeneModel::eRightFlexible)) == 0) {
+        if(a.Status()&CGeneModel::eRightFlexible) 
+            return alimits.GetFrom() < limits.GetFrom() && alimits.GetTo() > limits.GetFrom();
+        else
+            return alimits.GetTo() > limits.GetTo() && alimits.GetFrom() < limits.GetTo();
+    } else if((a.Status()&(CGeneModel::eLeftFlexible|CGeneModel::eRightFlexible)) == 0) {
+        if(Status()&CGeneModel::eRightFlexible) 
+            return limits.GetFrom() < alimits.GetFrom() && limits.GetTo() > alimits.GetFrom();
+        else
+            return limits.GetTo() > alimits.GetTo() && limits.GetFrom() < alimits.GetTo();
+    } else if((Status()&(CGeneModel::eLeftFlexible|CGeneModel::eRightFlexible)) != (a.Status()&(CGeneModel::eLeftFlexible|CGeneModel::eRightFlexible))) {
+        return 0;
+    } else {
+        return limits.IntersectingWith(alimits) && limits != alimits; 
+    }                  
 }
 
 int CGeneModel::isCompatible(const CGeneModel& a) const
@@ -956,20 +973,6 @@ int CGeneModel::isCompatible(const CGeneModel& a) const
     const CGeneModel& b = *this;  // shortcut to this alignment
 
     _ASSERT( b.Strand() == a.Strand() || ((a.Status()&CGeneModel::eUnknownOrientation) != 0 && (b.Status()&CGeneModel::eUnknownOrientation) != 0));
-
-    /*     this code creates clatter of similr chains 
-    if((a.Status()&CGeneModel::ePolyA) != (b.Status()&CGeneModel::ePolyA)) {   // one has PolyA another doesn't
-        if(a.Strand() == ePlus) {
-            int polya = (a.Status()&CGeneModel::ePolyA) != 0 ? a.Limits().GetTo() : b.Limits().GetTo();
-            if(polya < max(a.Limits().GetTo(),b.Limits().GetTo()))            // extension beyond PolyA
-                return 0;
-        } else {
-            int polya = (a.Status()&CGeneModel::ePolyA) != 0 ? a.Limits().GetFrom() : b.Limits().GetFrom();
-            if(polya > min(a.Limits().GetFrom(),b.Limits().GetFrom()))            // extension beyond PolyA
-                return 0;
-        }
-    }
-    */   
 
     TSignedSeqRange intersect(a.Limits() & b.Limits());
     if(intersect.GetLength() <= 1) return 0;     // intersection with 1 base is not legit

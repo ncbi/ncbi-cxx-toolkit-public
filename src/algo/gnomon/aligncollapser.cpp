@@ -2107,8 +2107,78 @@ void CAlignCollapser::GetCollapsedAlgnments(TAlignModelClusterSet& clsset) {
         if(CheckAndInsert(*i, clsset))
             ++total;
     }
+
+    size_t cap_peaks = 0;
+    size_t polya_peaks = 0;
+    for(auto& key : m_special_aligns) { // separated for 4 different cap/polya and strand
+        map<int, CAlignModel*> position_align;
+        for(auto& align : key.second) {
+            if(align.Limits().GetFrom() < 0 || align.Limits().GetTo() >= m_contig.FullLength())
+                continue;
+            int pos = (align.Status()&CGeneModel::eRightFlexible) ? align.Limits().GetFrom() : align.Limits().GetTo();
+            auto rslt = position_align.emplace(pos, &align);
+            if(!rslt.second) {
+                CAlignModel* existingp = rslt.first->second;
+                existingp->SetWeight(existingp->Weight()+align.Weight());
+            }
+        }
+        for(auto it_loop = position_align.begin(); it_loop != position_align.end(); ) {
+            auto it = it_loop++;
+            if(it->second->Weight() < MINIMAL_POSITION_WEIGHT)
+                position_align.erase(it);
+        }
+        if(position_align.empty())
+            continue;
+
+        CAlignModel* peakp = position_align.begin()->second; // peak alignments in the blob
+        double w = peakp->Weight();                          // total blob weight
+        for(auto it = next(position_align.begin()); it != position_align.end(); ++it) {
+            double aw = it->second->Weight();
+            if(it->first != prev(it)->first+1) {           // next blob
+                if(w >= MINIMAL_BLOB_WEIGHT) {
+                    peakp->SetWeight(w);
+                    if(CheckAndInsert(*peakp, clsset)) {
+                        if(peakp->Status()&CGeneModel::eCap)
+                            ++cap_peaks;
+                        else
+                            ++polya_peaks;
+                    }
+                }
+                   
+                peakp = it->second;
+                w = aw;
+            } else {
+                w += aw;
+                if(((peakp->Status()&CGeneModel::eLeftFlexible) && aw > peakp->Weight()) ||   // first if equal
+                   ((peakp->Status()&CGeneModel::eRightFlexible) && aw >= peakp->Weight()))   // last if equal
+                    peakp = it->second;
+            }
+        }
+        if(w >= MINIMAL_BLOB_WEIGHT) {
+            peakp->SetWeight(w);
+            if(CheckAndInsert(*peakp, clsset)) {
+                if(peakp->Status()&CGeneModel::eCap)
+                    ++cap_peaks;
+                else
+                    ++polya_peaks;
+            }
+        }        
+    }
+
+    if(cap_peaks > 0 || polya_peaks > 0) { // drop cap/polya from normal alignments if there are flexible
+        for(auto& cluster : clsset) {
+            for(const CAlignModel& align : cluster) {
+                if(align.Status()&(CGeneModel::eLeftFlexible|CGeneModel::eRightFlexible))
+                    continue;
+                if(cap_peaks > 0)
+                    const_cast<CAlignModel&>(align).Status() &= ~CGeneModel::eCap;
+                if(polya_peaks > 0)
+                    const_cast<CAlignModel&>(align).Status() &= ~CGeneModel::ePolyA;
+            }
+        }
+    }
     
-    cerr << "After collapsing: " << total << " alignments" << endl;
+    cerr << "After collapsing: " << total << " alignments " << cap_peaks << " Cap peaks " << polya_peaks << " PolyA peaks" << endl;
 }
 
 
@@ -2218,7 +2288,7 @@ CAlignModel CAlignCollapser::FillGapsInAlignmentAndAddToGenomicGaps(const CAlign
 }
 
 #define COLLAPS_CHUNK 500000
-void CAlignCollapser::AddAlignment(const CAlignModel& a) {
+void CAlignCollapser::AddAlignment(CAlignModel& a) {
 
     string acc = a.TargetAccession();
     if(acc.find("CorrectionData") != string::npos) {
@@ -2244,6 +2314,31 @@ void CAlignCollapser::AddAlignment(const CAlignModel& a) {
             }
         }                
 
+        return;
+    }
+
+    if(acc.find("CapInfo") != string::npos) {
+        a.Status() |= CGeneModel::eCap;
+        a.SetType(CGeneModel::eSR);
+        if(a.Strand() == ePlus) {
+            a.Status() |= CGeneModel::eRightFlexible;
+            m_special_aligns[make_tuple(CGeneModel::eRightFlexible, CGeneModel::eCap)].push_back(a);
+        } else {
+            a.Status() |= CGeneModel::eLeftFlexible;
+            m_special_aligns[make_tuple(CGeneModel::eLeftFlexible, CGeneModel::eCap)].push_back(a);
+        }
+        return;
+    }
+    if(acc.find("PolyAInfo") != string::npos) {
+        a.Status() |= CGeneModel::ePolyA;
+        a.SetType(CGeneModel::eSR);
+        if(a.Strand() == ePlus) {
+            a.Status() |= CGeneModel::eLeftFlexible;
+            m_special_aligns[make_tuple(CGeneModel::eLeftFlexible, CGeneModel::ePolyA)].push_back(a);
+        } else {
+            a.Status() |= CGeneModel::eRightFlexible;
+            m_special_aligns[make_tuple(CGeneModel::eRightFlexible, CGeneModel::ePolyA)].push_back(a);
+        }
         return;
     }
 

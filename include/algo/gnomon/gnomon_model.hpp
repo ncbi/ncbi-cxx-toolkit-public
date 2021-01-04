@@ -388,7 +388,9 @@ public:
         eChangedByFilter = 16384,
         eTSA = 32768,
         eLeftConfirmed = 65536,
-        eRightConfirmed = 131072
+        eRightConfirmed = 131072,
+        eLeftFlexible = 262144,
+        eRightFlexible = 524288
     };
 
     CGeneModel(EStrand s = ePlus, Int8 id = 0, int type = 0) :
