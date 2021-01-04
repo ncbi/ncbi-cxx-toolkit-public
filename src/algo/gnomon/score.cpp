@@ -1403,6 +1403,7 @@ void CGnomonEngine::GetScore(CGeneModel& model, bool extend5p, bool obeystart) c
     if((cds_info.ReadingFrame().NotEmpty() || !cds_info.PStops().empty()) && cds_info.IsMappedToGenome())
         cds_info = cds_info.MapFromOrigToEdited(mrnamap);
 
+    // remove legit pstopd from stops[]
     CCDSInfo::TPStops pstops = cds_info.PStops();
     for(int fr = 0; fr < 3; ++fr) {
         ERASE_ITERATE(TIVec, pstp, stops[fr]) {
@@ -1520,7 +1521,7 @@ void CGnomonEngine::GetScore(CGeneModel& model, bool extend5p, bool obeystart) c
         }
     }
 
-    if (cds_info.ConfirmedStart() && best_start != starts[frame].back()) {
+    if (cds_info.ConfirmedStart() && best_start != starts[frame].back()) {  // confirmed start was expanded within alignment
         model.AddComment("movedconfstart");
     }
                 
