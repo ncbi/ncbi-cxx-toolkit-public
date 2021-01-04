@@ -11,10 +11,12 @@ APP = table2asn
 SRC = table2asn multireader struc_cmt_reader table2asn_context feature_table_reader \
       fcs_reader table2asn_validator src_quals fasta_ex suspect_feat descr_apply
 
-LIB  = xdiscrepancy xalgophytree fastme prosplign xalgoalignutil xalgoseq xmlwrapp \
-       xvalidate xobjwrite xobjreadex valerr biotree macro xflatfile ctransition \
+LIB  = xdiscrepancy xalgophytree fastme prosplign xalgoalignutil xalgoseq \
+	   xflatfile fix_pub eutils_client xmlwrapp \
+       xvalidate xobjwrite xobjreadex valerr biotree macro ctransition \
        $(OBJEDIT_LIBS) $(XFORMAT_LIBS) $(BLAST_LIBS) taxon1 xobjutil id2cli \
-       xregexp $(PCRE_LIB) xqueryparse $(DATA_LOADERS_UTIL_LIB) $(OBJMGR_LIBS) 
+	   $(SEQ_LIBS) pub medline general xser xconnect xutil xncbi \
+	   xregexp $(PCRE_LIB) xqueryparse $(DATA_LOADERS_UTIL_LIB) $(OBJMGR_LIBS) 
 
 LIBS = $(GENBANK_THIRD_PARTY_LIBS) \
        $(LIBXSLT_STATIC_LIBS) $(LIBXML_STATIC_LIBS) $(BERKELEYDB_STATIC_LIBS) \
