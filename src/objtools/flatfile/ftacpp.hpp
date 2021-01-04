@@ -74,7 +74,7 @@ inline bool StringHasNoText(const char* s) {
 inline bool StringDoesHaveText(const char* s) { return !StringHasNoText(s); }
 inline char* SkipSpaces(char* s) { while (*s && std::isspace(*s)) s++; return s; }
 
-char* TrimSpacesAroundString(char* str);
+//char* TrimSpacesAroundString(char* str);
 END_NCBI_SCOPE
 
 #define IS_DIGIT(c)	('0'<=(c) && (c)<='9')
