@@ -89,10 +89,9 @@ public:
 public:
     explicit CSimpleBufferT(size_type new_size = 0)
     {
+        m_Buffer = NULL;
         if (new_size) {
             m_Buffer = x_Allocate(new_size);
-        } else {
-            m_Buffer = NULL;
         }
         m_Size = m_Capacity = new_size;
     }
