@@ -606,10 +606,8 @@ static EIO_Status x_FTPLogin(SFTPConnector* xxx)
         status = s_FTPReply(xxx, &code, 0, 0, 0);
         if (status != eIO_Success)
             return status;
-        if (code == 503)
-            return eIO_Closed;
         if (code != 230  &&  code != 202)
-            return code == 332 ? eIO_NotSupported : eIO_Unknown;
+            return code == 332 ? eIO_NotSupported : eIO_Unknown/*incl 503*/;
     }
     status = x_FTPFeatures(xxx);
     if (status != eIO_Success)
