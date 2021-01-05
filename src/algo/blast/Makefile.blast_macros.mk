@@ -18,7 +18,7 @@ BLAST_INPUT_LIBS = blastinput \
 BLAST_SRA_LIBS=blast_sra $(SRAXF_LIBS) vxf $(SRA_LIBS)
 
 # BLAST_FORMATTER_LIBS and BLAST_INPUT_LIBS need $BLAST_LIBS
-BLAST_LDEP = xalgoblastdbindex composition_adjustment \
+BLAST_LDEP = utrtprof xalgoblastdbindex composition_adjustment \
              xalgodustmask xalgowinmask seqmasks_io seqdb blast_services xalnmgr \
              xobjutil $(OBJREAD_LIBS) xnetblastcli xnetblast blastdb scoremat tables $(LMDB_LIB)
 BLAST_LIBS = proteinkmer xblast $(BLAST_LDEP)
