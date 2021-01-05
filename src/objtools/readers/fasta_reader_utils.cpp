@@ -54,27 +54,38 @@ size_t CFastaDeflineReader::s_MaxAccessionLength = CSeq_id::kMaxAccessionLength;
 
 static void s_PostError(ILineErrorListener* pMessageListener,
     const TSeqPos lineNumber,
+    const string& idString,
     const string& errMessage,
     const CObjReaderLineException::EProblem problem,
     const CObjReaderParseException::EErrCode errCode) 
 {
+    
+    if (pMessageListener) {
+        unique_ptr<CObjReaderLineException> pLineExpt(
+            CObjReaderLineException::Create(
+            eDiag_Error,
+            lineNumber,
+            errMessage, 
+            problem,
+            idString, "", "", "",
+            errCode));
 
-    unique_ptr<CObjReaderLineException> pLineExpt(
-        CObjReaderLineException::Create(
-        eDiag_Error,
-        lineNumber,
-        errMessage, 
-        problem,
-        "", "", "", "",
-        errCode));
-
-    if (!pMessageListener || !pMessageListener->PutError(*pLineExpt)) {
-        throw CObjReaderParseException(DIAG_COMPILE_INFO, 0, errCode, errMessage, lineNumber, eDiag_Error);
+        if (pMessageListener->PutError(*pLineExpt)) {
+            return;
+        }
     }
+
+    throw CObjReaderParseException(DIAG_COMPILE_INFO, 
+            0, 
+            errCode, 
+            errMessage, 
+            lineNumber, 
+            eDiag_Error);
 }
 
 static void s_PostWarning(ILineErrorListener* pMessageListener, 
     const TSeqPos lineNumber,
+    const string& idString,
     const string& errMessage, 
     const CObjReaderLineException::EProblem problem, 
     const CObjReaderParseException::EErrCode errCode) 
@@ -85,7 +96,7 @@ static void s_PostWarning(ILineErrorListener* pMessageListener,
         lineNumber,
         errMessage, 
         problem,
-        "", "", "", "",
+        idString, "", "", "",
         errCode));
 
     if (!pMessageListener) {
@@ -94,7 +105,12 @@ static void s_PostWarning(ILineErrorListener* pMessageListener,
     }
 
     if (!pMessageListener->PutError(*pLineExpt)) {
-        throw CObjReaderParseException(DIAG_COMPILE_INFO, 0, errCode, errMessage, lineNumber, eDiag_Warning);
+        throw CObjReaderParseException(DIAG_COMPILE_INFO, 
+                0, 
+                errCode, 
+                errMessage, 
+                lineNumber, 
+                eDiag_Warning);
     }
 }
 
@@ -127,38 +143,6 @@ void CFastaDeflineReader::ParseDefline(const CTempString& defline,
     ParseDefline(defline, info, data, pMessageListener, fn_idcheck);
 }
 
-/*
-class CDeprecatedIdCheckWrapper {
-public:
-    using FDeprecatedIdCheck = CFastaDeflineReader::FIdCheck;
-    using TParseInfo = CFastaDeflineReader::SDeflineParseInfo;
-
-    CDeprecatedIdCheckWrapper(
-            FDeprecatedIdCheck fDeprecatedCheck, 
-            const TParseInfo& parseInfo, 
-            ILineErrorListener* pMessageListener) : 
-        m_fDeprecatedCheck(fDeprecatedCheck), 
-        m_ParseInfo(parseInfo),
-        m_pMessageListener(pMessageListener) {}
-
-    using TIds = list<CRef<CSeq_id>>;
-    using FReportError = CFastaIdValidate::FReportError;
-
-
-    void operator()(const TIds& ids, 
-            int lineNum, 
-            FReportError //fReportError
-        ) {
-        m_ParseInfo.lineNumber = lineNum;
-        m_fDeprecatedCheck(ids, m_ParseInfo, m_pMessageListener);
-    }
-
-private:
-    TParseInfo m_ParseInfo;
-    FDeprecatedIdCheck m_fDeprecatedCheck=nullptr;
-    ILineErrorListener* m_pMessageListener=nullptr;
-};
-*/
 
 void CFastaDeflineReader::ParseDefline(const CTempString& defline,
         const SDeflineParseInfo& info,
@@ -400,10 +384,10 @@ void CIdErrorReporter::operator()(EDiagSev severity,
 
     const auto& parseExceptionCode = cit->second.second;
     if (severity == eDiag_Error) {
-        s_PostError(m_pMessageListener, lineNum, msg, problem, parseExceptionCode);
+        s_PostError(m_pMessageListener, lineNum, idString, msg, problem, parseExceptionCode);
     }
     else {
-        s_PostWarning(m_pMessageListener, lineNum, msg, problem, parseExceptionCode);
+        s_PostWarning(m_pMessageListener, lineNum, idString, msg, problem, parseExceptionCode);
     }
 }
 
@@ -443,6 +427,7 @@ void CFastaDeflineReader::x_ProcessIDs(
 
         s_PostWarning(pMessageListener,
             info.lineNumber,
+            id_string,
             err_message,
             ILineError::eProblem_GeneralParsingError,
             CObjReaderParseException::eFormat);
@@ -455,13 +440,25 @@ void CFastaDeflineReader::x_ProcessIDs(
         to_parse = local_copy;
     }
 
-    CSeq_id::ParseIDs(ids, to_parse, flags);
+    try {
+        CSeq_id::ParseIDs(ids, to_parse, flags);
+        ids.remove_if([](CRef<CSeq_id> id_ref)
+                { return NStr::IsBlank(id_ref->GetSeqIdString()); });
+    }
+    catch(...) {
+        ids.clear();
+    }
 
-    ids.remove_if([](CRef<CSeq_id> id_ref){ return NStr::IsBlank(id_ref->GetSeqIdString()); });
     if (ids.empty()) {
-        NCBI_THROW2(CObjReaderParseException, eNoIDs,
+        s_PostError(pMessageListener, 
+                info.lineNumber,
+                id_string,
                 "Could not construct seq-id from '" + id_string + "'",
-                0);
+                ILineError::eProblem_GeneralParsingError,
+                CObjReaderParseException::eNoIDs);
+    
+        ids.push_back(Ref(new CSeq_id(CSeq_id::e_Local, id_string)));
+        return;
     }
     // Convert anything that looks like a GI to a local id
     if ( info.fBaseFlags & CReaderBase::fNumericIdsAsLocal ) {
@@ -520,6 +517,7 @@ bool CFastaDeflineReader::ParseIDs(
             if (!ignoreGeneralParsingError) {
                 s_PostWarning(pMessageListener, 
                             info.lineNumber,
+                            s,
                             errMessage,
                             ILineError::eProblem_GeneralParsingError,
                             CObjReaderParseException::eFormat);

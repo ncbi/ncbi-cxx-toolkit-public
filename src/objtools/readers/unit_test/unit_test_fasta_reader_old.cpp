@@ -1622,6 +1622,33 @@ BOOST_AUTO_TEST_CASE(TestIgnoringSpacesAfterGreaterThanInDefline)
     }
 }
 
+BOOST_AUTO_TEST_CASE(RW1125_RW1245) 
+{
+    auto pMessageListener = Ref(new CMessageListenerLenient());
+    const string idString = "lcl||SeqID";
+    const string defline = ">" + idString;
+    CFastaDeflineReader::SDeflineParseInfo parseInfo;
+    parseInfo.fFastaFlags = 0;
+    CFastaDeflineReader::SDeflineData data;
+    CFastaDeflineReader::ParseDefline(defline,
+                                      parseInfo,
+                                      data,
+                                      pMessageListener.GetPointer());
+
+    BOOST_CHECK_EQUAL(data.ids.size(), 1);
+    auto pId = data.ids.front();
+    BOOST_CHECK(pId->IsLocal() && pId->GetLocal().IsStr());
+    BOOST_CHECK_EQUAL(pId->GetLocal().GetStr(), idString);
+
+    BOOST_CHECK_EQUAL(pMessageListener->Count(), 1);
+
+    const auto& error = pMessageListener->GetError(0);
+    BOOST_CHECK_EQUAL(error.SeqId(), idString);
+
+    BOOST_CHECK_EQUAL(error.ErrorMessage(), 
+            "Could not construct seq-id from '" + idString + "'");
+}
+
 /*
 BOOST_AUTO_TEST_CASE(TestModFilter)
 {

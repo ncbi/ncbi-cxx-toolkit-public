@@ -1,5 +1,6 @@
                 Error:
 Problem:        Near line 1, the local id is too long.  Its length is 51 but the maximum allowed local id length is 50.  Please find and correct all local ids that are too long.
+SeqId:          abababababababababababababababababababababababababa
 Line:           1
 
 
