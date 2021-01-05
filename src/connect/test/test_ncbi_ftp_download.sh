@@ -23,27 +23,30 @@ rm -f $log
 trap 'echo "`date`."' 0 1 2 3 15
 
 if [ "`echo $FEATURES | grep -c -E '(^| )connext( |$)'`" != "1" ]; then
-  n=2
-else
   n=3
+else
+  n=4
 fi
 
 case "`expr '(' $$ / 10 ')' '%' $n`" in
   0)
-    file=
+    url=
     ;;
   1)
-    file='ftp://ftp.freebsd.org/'
+    url='ftp://ftp.ubuntu.com/'
     ;;
   2)
-    file='ftp://ftp-ext.ncbi.nlm.nih.gov/'
+    url='ftp://ftp.freebsd.org/'
+    ;;
+  3)
+    url='ftp://ftp-ext.ncbi.nlm.nih.gov/'
     ;;
 esac
 
 :    ${CONN_MAX_TRY:=1} ${CONN_DEBUG_PRINTOUT:=SOME}
 export CONN_MAX_TRY       CONN_DEBUG_PRINTOUT
 
-$CHECK_EXEC test_ncbi_ftp_download $file 2>&1
+$CHECK_EXEC test_ncbi_ftp_download $url 2>&1
 exit_code=$?
 
 test "$exit_code" = "0"  ||  outlog "$log"
