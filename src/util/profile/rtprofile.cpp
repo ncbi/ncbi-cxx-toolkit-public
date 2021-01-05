@@ -3,7 +3,7 @@
 #include <stdlib.h>
 
 #include <util/profile/rtprofile.hpp>
-
+#include <corelib/ncbi_process.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -175,7 +175,7 @@ bool CRtProfiler::DoReport(const CTimeFormat &fmt) {
       }
       //................................
       std::map< std::string,CStopWatch >::iterator item_itr;
-      log_ofs <<"PID, "<< getpid() <<", ";
+      log_ofs <<"PID, "<< CCurrentProcess::GetPid() <<", ";
       // add user data if any
       std::list< std::pair< std::string, std::string >>::iterator user_it;
       for( user_it=m_user_data.begin(); user_it!=m_user_data.end(); user_it++){
@@ -196,7 +196,7 @@ bool CRtProfiler::DoReport(const CTimeFormat &fmt) {
     }
     // REPORT #2 =======================================================================
     if( !m_markers.empty() ) {
-      string pid_str = NStr::NumericToString( getpid() );
+      string pid_str = NStr::NumericToString( CCurrentProcess::GetPid() );
       report_name = report_name + string(".") + pid_str;
       log_ofs.open (report_name.c_str(), std::ofstream::out);
       if (log_ofs.fail()) {

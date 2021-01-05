@@ -3,7 +3,6 @@
 #define UTIL_PROFILE___RTPROFILE_HPP
 
 #include <sys/types.h>
-#include <unistd.h>
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbitime.hpp> 
 #include <corelib/ncbimtx.hpp>
@@ -16,6 +15,15 @@
 
 BEGIN_NCBI_SCOPE
 
+#define BLAST_PROF_REPORT CRtProfiler::getInstance()->DoReport()
+#define BLAST_PROF_START(sw_name) CRtProfiler::getInstance()->Start( std::string( #sw_name ) ) 
+#define BLAST_PROF_START2(sw_name) CRtProfiler::getInstance()->Start( sw_name ) 
+#define BLAST_PROF_STOP(sw_name) CRtProfiler::getInstance()->Stop( std::string( #sw_name ) ) 
+#define BLAST_PROF_ADD(key_name,key_val) CRtProfiler::getInstance()->AddUserKVMT(std::string( #key_name ), key_val )
+#define BLAST_PROF_ADD2(key_name,key_val) CRtProfiler::getInstance()->AddUserKVMT( std::string( #key_name ), std::string( #key_val ) )
+
+#define BLAST_PROF_MARK(marker_name) CRtProfiler::getInstance()->AddMarkerMT( std::string( #marker_name ) )
+#define BLAST_PROF_MARK2(marker_val) CRtProfiler::getInstance()->AddMarkerMT(  marker_val  )
 class CRtProfiler 
 {
     private:

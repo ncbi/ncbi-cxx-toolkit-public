@@ -15,5 +15,6 @@ NCBI_add_subdirectory(
     lmdbxx 
     test 
     demo
+    profile
 )
 
