@@ -62,22 +62,19 @@
 #include <objects/biblio/ArticleIdSet.hpp>
 #include <objects/biblio/ArticleId.hpp>
 #include <objmgr/util/sequence.hpp>
-#include <misc/fix_pub/fix_pub.hpp>
-
+//#include <internal/ID/utils/cpubseq.hpp>
 #include <dbapi/driver/drivers.hpp>
 
 #include "index.h"
 
 #include <objtools/flatfile/flatdefn.h>
 #include <objtools/flatfile/flatfile_parser.hpp>
-#include <corelib/ncbi_message.hpp>
 
 #include "ftaerr.hpp"
 #include "asci_blk.h"
 #include "ftamed.h"
 #include "utilfun.h"
 #include "ref.h"
-#include "flatfile_message_reporter.hpp"
 
 #ifdef THIS_FILE
 #    undef THIS_FILE
@@ -87,7 +84,6 @@
 #define HEALTHY_ACC "U12345"
 
 BEGIN_NCBI_SCOPE
-USING_SCOPE(objects);
 
 static KwordBlk PubStatus[] = {
     {"Publication Status: Available-Online prior to print", 51},
@@ -600,37 +596,6 @@ void fta_fill_find_pub_option(ParserPtr pp, bool htag, bool rtag)
     pp->fpo.merge_ids = true;
 }
 
-
-class CFindPub {
-
-public:
-    CFindPub(Parser* pp) : 
-        m_pParser(pp),
-        m_pPubFixingListener(new CPubFixingMessageListener()) {
-            if (m_pParser) {
-                const auto& findPubOptions = m_pParser->fpo;
-                m_pPubFixing.reset(new CPubFixing(
-                            findPubOptions.always_look,
-                            findPubOptions.replace_cit,
-                            findPubOptions.merge_ids,
-                            m_pPubFixingListener.get()));
-            }
-        }
-
-    using TEntryList = list<CRef<CSeq_entry>>;
-    void Apply(TEntryList& entries);
-private:
-    void fix_pub_equiv(CPub_equiv& pub_equiv, Parser* pp, bool er);
-    void fix_pub_annot(CPub& pub, Parser* pp, bool er);
-    void find_pub(Parser* pp, list<CRef<CSeq_annot>>& annots, CSeq_descr& descrs);
-
-    Parser* m_pParser;
-    unique_ptr<CPubFixingMessageListener> m_pPubFixingListener;
-    unique_ptr<CPubFixing> m_pPubFixing = nullptr;
-};
-
-
-
 /**********************************************************/
 static void fta_check_pub_ids(TPubList& pub_list)
 {
@@ -663,63 +628,82 @@ static void fta_check_pub_ids(TPubList& pub_list)
     }
 }
 
-
 /**********************************************************/
-void CFindPub::fix_pub_equiv(CPub_equiv& pub_equiv, ParserPtr pp, bool er)
+static void fta_fix_pub_equiv(TPubList& pub_list, ParserPtr pp, bool er)
 {
-    if (!pp)
+    IndexblkPtr      ibp;
+
+    Uint1            drop;
+    TEntrezId        oldpmid;
+    TEntrezId        oldmuid;
+    TEntrezId        pmid;
+    TEntrezId        muid;
+
+    if (pp == NULL)
         return;
 
-    IndexblkPtr ibp = pp->entrylist[pp->curindx];
+    ibp = pp->entrylist[pp->curindx];
 
-
-    list<CRef<CPub>> cit_arts;
-    for (auto pPub : pub_equiv.Set()) 
+    objects::CPub_equiv::Tdata cit_arts;
+    NON_CONST_ITERATE(objects::CPub_equiv::Tdata, pub, pub_list)
     {
-        if (!pPub->IsGen()) {
+        if (!(*pub)->IsGen())
             continue;
-        }
-        const CCit_gen& cit_gen = pPub->SetGen();
+
+        objects::CCit_gen& cit_gen = (*pub)->SetGen();
+
         if (cit_gen.IsSetCit() &&
             (StringNCmp(cit_gen.GetCit().c_str(), "(er)", 4) == 0 || er))
         {
-            cit_arts.push_back(pPub);
+            cit_arts.push_back(*pub);
             break;
         }
     }
 
     if (cit_arts.empty())
     {
-        fta_check_pub_ids(pub_equiv.Set());
-        m_pPubFixing->FixPubEquiv(pub_equiv);
+        fta_check_pub_ids(pub_list);
+        FixPubEquiv(pub_list, pp->fpo);
         return;
     }
 
-    auto cit_gen = cit_arts.front();
+    objects::CPub* cit_gen = *cit_arts.begin();
 
-    list<CRef<CPub>> others;
-    CRef<CPub> pMuid, pPmid;
+    objects::CPub_equiv::Tdata muids,
+                                     pmids,
+                                     others;
 
-    for (auto pPub : pub_equiv.Set())
+    NON_CONST_ITERATE(objects::CPub_equiv::Tdata, pub, pub_list)
     {
-        if (cit_gen == pPub)
+        if (cit_gen == *pub)
             continue;
-        if (pPub->IsMuid() && !pMuid)
-            pMuid = pPub;
-        else if (pPub->IsPmid() && !pPmid)
-            pPmid = pPub;
-        else if (!pPub->IsArticle())
-            others.push_back(pPub);
+
+        if ((*pub)->IsMuid() && muids.empty())
+            muids.push_back(*pub);
+        else if ((*pub)->IsPmid() && pmids.empty())
+            pmids.push_back(*pub);
+        else if (!(*pub)->IsArticle())
+            others.push_back(*pub);
     }
 
+    pub_list.clear();
 
+    objects::CPub* muid_ptr = nullptr;
+    if (!muids.empty())
+        muid_ptr = *muids.begin();
 
-    TEntrezId oldpmid = pPmid ? pPmid->GetPmid() : ZERO_ENTREZ_ID;
-    TEntrezId oldmuid = pMuid ? pMuid->GetMuid() : ZERO_ENTREZ_ID;
-    TEntrezId muid = ZERO_ENTREZ_ID;
-    TEntrezId pmid = ZERO_ENTREZ_ID;
+    objects::CPub* pmid_ptr = nullptr;
+    if (!pmids.empty())
+        pmid_ptr = *pmids.begin();
 
-    CRef<CCit_art> new_cit_art;
+    oldpmid = (pmid_ptr == NULL) ? ZERO_ENTREZ_ID : pmid_ptr->GetPmid();
+    oldmuid = (muid_ptr == NULL) ? ZERO_ENTREZ_ID : muid_ptr->GetMuid();
+
+    drop = 0;
+    muid = ZERO_ENTREZ_ID;
+    pmid = ZERO_ENTREZ_ID;
+
+    CRef<objects::CCit_art> new_cit_art;
     if(oldpmid > ZERO_ENTREZ_ID)
     {
         new_cit_art = FetchPubPmId(ENTREZ_ID_TO(Int4, oldpmid));
@@ -728,21 +712,18 @@ void CFindPub::fix_pub_equiv(CPub_equiv& pub_equiv, ParserPtr pp, bool er)
             ErrPostEx(SEV_REJECT, ERR_REFERENCE_InvalidPmid,
                       "MedArch failed to find a Cit-art for reference with pmid \"%d\".",
                       oldpmid);
-            ibp->drop = 1;
+            drop = 1;
         }
         else
         {
             if (new_cit_art->IsSetIds())
             {
-
-                for (const auto pId : new_cit_art->GetIds().Get()) 
+                ITERATE(objects::CArticleIdSet::Tdata, id, new_cit_art->GetIds().Get())
                 {
-                    if (pId->IsPubmed()) {
-                        pmid = pId->GetPubmed();
-                    }
-                    else if (pId->IsMedline()) {
-                        muid = pId->GetMedline();
-                    }
+                    if ((*id)->IsPubmed())
+                        pmid = (*id)->GetPubmed();
+                    else if ((*id)->IsMedline())
+                        muid = (*id)->GetMedline();
                 }
             }
 
@@ -750,14 +731,14 @@ void CFindPub::fix_pub_equiv(CPub_equiv& pub_equiv, ParserPtr pp, bool er)
             {
                 ErrPostEx(SEV_REJECT, ERR_REFERENCE_CitArtLacksPmid,
                           "Cit-art returned by MedArch lacks pmid identifier in its ArticleIdSet.");
-                ibp->drop = 1;
+                drop = 1;
             }
             else if(pmid != oldpmid)
             {
                 ErrPostEx(SEV_REJECT, ERR_REFERENCE_DifferentPmids,
                           "Pmid \"%d\" used for lookup does not match pmid \"%d\" in the ArticleIdSet of the Cit-art returned by MedArch.",
                           oldpmid, pmid);
-                ibp->drop = 1;
+                drop = 1;
             }
             if(muid > ZERO_ENTREZ_ID && oldmuid > ZERO_ENTREZ_ID && muid != oldmuid)
             {
@@ -768,122 +749,144 @@ void CFindPub::fix_pub_equiv(CPub_equiv& pub_equiv, ParserPtr pp, bool er)
         }
     }
 
-    if (new_cit_art.NotEmpty() && !ibp->drop)
+    if(drop != 0)
+        ibp->drop = 1;
+    else if (new_cit_art.NotEmpty())
     {
         cit_arts.clear();
         CRef<objects::CPub> new_pub(new objects::CPub);
         new_pub->SetArticle(*new_cit_art);
         cit_arts.push_back(new_pub);
+        cit_gen = *cit_arts.begin();
 
-        if (pmid > ZERO_ENTREZ_ID && !pPmid)
+        if (pmid > ZERO_ENTREZ_ID)
         {
-            pPmid = Ref(new CPub());
-            pPmid->SetPmid().Set(pmid);
+            if (pmids.empty())
+            {
+                CRef<objects::CPub> pmid_pub(new objects::CPub);
+                pmids.push_back(pmid_pub);
+                pmid_ptr = *pmids.begin();
+            }
+            pmid_ptr->SetPmid().Set(pmid);
         }
 
-        if(muid > ZERO_ENTREZ_ID && !pMuid)
+        if(muid > ZERO_ENTREZ_ID)
         {
-            pMuid = Ref(new CPub());
-            pMuid->SetMuid(muid);
+            if (muids.empty())
+            {
+                CRef<objects::CPub> muid_pub(new objects::CPub);
+                muids.push_back(muid_pub);
+                muid_ptr = *muids.begin();
+            }
+            muid_ptr->SetMuid(muid);
         }
     }
 
-    auto& pub_list = pub_equiv.Set();
-    pub_list = others;
-    if (pPmid) {
-        pub_list.push_back(pPmid);
-    }
-    if (pMuid && muid > ZERO_ENTREZ_ID) {
-        pub_list.push_back(pMuid);
-    }
-    pub_list.splice(pub_list.end(), cit_arts);
+    pub_list.splice(pub_list.begin(), cit_arts);
+
+    if(muid > ZERO_ENTREZ_ID)
+        pub_list.splice(pub_list.begin(), muids);
+
+    pub_list.splice(pub_list.begin(), pmids);
+    pub_list.splice(pub_list.begin(), others);
 }
 
 /**********************************************************/
-void CFindPub::fix_pub_annot(CPub& pub, ParserPtr pp, bool er)
+static void fta_fix_pub_annot(CRef<objects::CPub>& pub, ParserPtr pp, bool er)
 {
     if (pp == NULL)
         return;
 
-    if (pub.IsEquiv())
+    if (pub->IsEquiv())
     {
-        fix_pub_equiv(pub.SetEquiv(), pp, er);
+        fta_fix_pub_equiv(pub->SetEquiv().Set(), pp, er);
         if(pp->qamode)
-            fta_fix_imprint_language(pub.SetEquiv().Set());
-        fta_fix_affil(pub.SetEquiv().Set(), pp->source);
+            fta_fix_imprint_language(pub->SetEquiv().Set());
+        fta_fix_affil(pub->SetEquiv().Set(), pp->source);
         return;
     }
 
-    m_pPubFixing->FixPub(pub);
+    TPubList pub_list;
+    pub_list.push_back(pub);
+
+    FixPub(pub_list, pp->fpo);
+
+    if (pub_list.empty())
+        pub.Reset();
+
+    if (pub_list.size() > 1) // pub equiv
+    {
+        pub->Reset();
+        pub->SetEquiv().Set().splice(pub->SetEquiv().Set().end(), pub_list);
+    }
 }
 
-
 /**********************************************************/
-void CFindPub::find_pub(ParserPtr pp, list<CRef<CSeq_annot>>& annots, CSeq_descr& descrs)
+static void find_pub(ParserPtr pp, objects::CBioseq::TAnnot& annots, objects::CSeq_descr& descrs)
 {
-    bool er = any_of(begin(descrs.Get()), end(descrs.Get()),
-            [](CRef<CSeqdesc> pDesc) {
-                if (pDesc->IsPub()) {
-                    const auto& pubdesc = pDesc->GetPub();
-                    return (pubdesc.IsSetComment() &&
-                            fta_remark_is_er(pubdesc.GetComment().c_str()));
-                }
-                return false;
-            });
+    bool er = false;
 
-
-    for (auto pDescr : descrs.Set())
+    ITERATE(TSeqdescList, descr, descrs.Get())
     {
-        if (!pDescr->IsPub())
+        if (!(*descr)->IsPub())
+            continue;
+        
+        const objects::CPubdesc& pub_descr = (*descr)->GetPub();
+        if (pub_descr.IsSetComment() && fta_remark_is_er(pub_descr.GetComment().c_str()) != 0)
+            er = true;
+        break;
+    }
+
+    NON_CONST_ITERATE(TSeqdescList, descr, descrs.Set())
+    {
+        if (!(*descr)->IsPub())
             continue;
 
-        CPubdesc& pub_descr = pDescr->SetPub();
-        fix_pub_equiv(pub_descr.SetPub(), pp, er);
+        objects::CPubdesc& pub_descr = (*descr)->SetPub();
+
+        fta_fix_pub_equiv(pub_descr.SetPub().Set(), pp, er);
         if(pp->qamode)
             fta_fix_imprint_language(pub_descr.SetPub().Set());
         fta_fix_affil(pub_descr.SetPub().Set(), pp->source);
         fta_strip_er_remarks(pub_descr);
     }
 
-    for (auto pAnnot : annots)
+    NON_CONST_ITERATE(objects::CBioseq::TAnnot, annot, annots)
     {
-        if (!pAnnot->IsSetData() || !pAnnot->GetData().IsFtable())              /* feature table */
+        if (!(*annot)->IsSetData() || !(*annot)->GetData().IsFtable())              /* feature table */
             continue;
 
 
-        for (auto pFeat : pAnnot->SetData().SetFtable()) 
+        NON_CONST_ITERATE(objects::CSeq_annot::C_Data::TFtable, feat, (*annot)->SetData().SetFtable())
         {
-            if (pFeat->IsSetData() && pFeat->GetData().IsPub())   /* pub feature */
+            if ((*feat)->IsSetData() && (*feat)->GetData().IsPub())   /* pub feature */
             {
-                fix_pub_equiv(pFeat->SetData().SetPub().SetPub(), pp, er);
+                fta_fix_pub_equiv((*feat)->SetData().SetPub().SetPub().Set(), pp, er);
                 if(pp->qamode)
-                    fta_fix_imprint_language(pFeat->SetData().SetPub().SetPub().Set());
-                fta_fix_affil(pFeat->SetData().SetPub().SetPub().Set(), pp->source);
-                fta_strip_er_remarks(pFeat->SetData().SetPub());
+                    fta_fix_imprint_language((*feat)->SetData().SetPub().SetPub().Set());
+                fta_fix_affil((*feat)->SetData().SetPub().SetPub().Set(), pp->source);
+                fta_strip_er_remarks((*feat)->SetData().SetPub());
             }
 
-            if (!pFeat->IsSetCit()) {
+            if (!(*feat)->IsSetCit())
                 continue;
-            }
 
-            for (auto pPub : pFeat->SetCit().SetPub()) {
-                if (pPub) {
-                    fix_pub_annot(*pPub, pp, er);
-                }
-            }
+            objects::CPub_set& pubs = (*feat)->SetCit();
+
+            NON_CONST_ITERATE(objects::CPub_set::TPub, pub, pubs.SetPub())
+                fta_fix_pub_annot(*pub, pp, er);
         }
     }
 }
 
 /**********************************************************/
-//static void fta_find_pub(ParserPtr pp, TEntryList& seq_entries)
-void CFindPub::Apply(list<CRef<CSeq_entry>>& seq_entries)
+static void fta_find_pub(ParserPtr pp, TEntryList& seq_entries)
 {
-    for (auto pEntry : seq_entries) 
+    NON_CONST_ITERATE(TEntryList, entry, seq_entries)
     {
-        for (CTypeIterator<objects::CBioseq_set> bio_set(Begin(*pEntry)); bio_set; ++bio_set)
+        for (CTypeIterator<objects::CBioseq_set> bio_set(Begin(*(*entry))); bio_set; ++bio_set)
         {
-            find_pub(m_pParser, bio_set->SetAnnot(), bio_set->SetDescr());
+            find_pub(pp, bio_set->SetAnnot(), bio_set->SetDescr());
 
             if (bio_set->GetDescr().Get().empty())
                 bio_set->ResetDescr();
@@ -892,9 +895,9 @@ void CFindPub::Apply(list<CRef<CSeq_entry>>& seq_entries)
                 bio_set->ResetAnnot();
         }
 
-        for (CTypeIterator<objects::CBioseq> bioseq(Begin(*pEntry)); bioseq; ++bioseq)
+        for (CTypeIterator<objects::CBioseq> bioseq(Begin(*(*entry))); bioseq; ++bioseq)
         {
-            find_pub(m_pParser, bioseq->SetAnnot(), bioseq->SetDescr());
+            find_pub(pp, bioseq->SetAnnot(), bioseq->SetDescr());
 
             if (bioseq->GetDescr().Get().empty())
                 bioseq->ResetDescr();
@@ -916,8 +919,7 @@ void fta_find_pub_explore(ParserPtr pp, TEntryList& seq_entries)
 
     if (pp->medserver == 1)
     {
-        CFindPub find_pub(pp);
-        find_pub.Apply(seq_entries);
+        fta_find_pub(pp, seq_entries);
     }
 }
 

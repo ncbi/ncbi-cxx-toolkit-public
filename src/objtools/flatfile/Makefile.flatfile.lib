@@ -46,11 +46,11 @@ SRC     = \
 
 LIB     = xflatfile
 
-DLL_LIB = xlogging fix_pub
+DLL_LIB = xlogging
 
 ASN_DEP = genome_collection mla submit taxon1
 
-USES_LIBRARIES = xlogging fix_pub
+USES_LIBRARIES = xlogging
 
 WATCHERS = kachalos foleyjp
 
