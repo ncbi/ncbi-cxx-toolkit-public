@@ -778,13 +778,13 @@ static void x_ShowDataLayout(void)
 
 static EIO_Status s_Init(void)
 {
-    CORE_TRACE("[SOCK::InitializeAPI]  Begin");
+    CORE_TRACE("[SOCK::InitializeAPI]  Enter");
 
     CORE_LOCK_WRITE;
 
     if (s_Initialized) {
         CORE_UNLOCK;
-        CORE_TRACE("[SOCK::InitializeAPI]  Noop");
+        CORE_TRACE("[SOCK::InitializeAPI]  No-op");
         return s_Initialized < 0 ? eIO_NotSupported : eIO_Success;
     }
 
@@ -844,7 +844,7 @@ static EIO_Status s_Init(void)
     s_Initialized = 1/*inited*/;
 
     CORE_UNLOCK;
-    CORE_TRACE("[SOCK::InitializeAPI]  End");
+    CORE_TRACE("[SOCK::InitializeAPI]  Leave");
     return eIO_Success;
 }
 
