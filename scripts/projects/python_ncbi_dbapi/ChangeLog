@@ -1,3 +1,8 @@
+Version 1.22.0 (2021-01-05):
+* Advance to version 24.0 of the stable C++ Toolkit components.
+* Correct error reporting, particularly in cases of internal exception
+  conversion (as when passing non-string arguments to connect).
+
 Version 1.21.0 (2020-02-25):
 * Advance to version 23.0 of the stable C++ Toolkit components, with
   FreeTDS 1.0 ("ftds100") now the default "ftds" and 0.95 ("ftds95")
