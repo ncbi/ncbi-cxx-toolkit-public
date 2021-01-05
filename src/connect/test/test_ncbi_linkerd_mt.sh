@@ -27,7 +27,7 @@ fi
 #    'MMDevLinux' \
 #    'NC_SV_ObjCache' \
 #    'beVarSearch' \
-#    'GC_GetAssembly_v3s'
+#    'GC_GetAssembly_v3'
 #shift `expr $$ '%' $#`
 #svc="$1"
 svc=cxx-fast-cgi-sample
