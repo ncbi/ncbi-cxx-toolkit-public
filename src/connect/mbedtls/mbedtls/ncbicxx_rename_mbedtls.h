@@ -22,8 +22,6 @@
         mbedtls_aes_free_ncbicxx_2_7_6
 #define mbedtls_aes_init \
         mbedtls_aes_init_ncbicxx_2_7_6
-#define mbedtls_aes_self_test \
-        mbedtls_aes_self_test_ncbicxx_2_7_6
 #define mbedtls_aes_setkey_dec \
         mbedtls_aes_setkey_dec_ncbicxx_2_7_6
 #define mbedtls_aes_setkey_enc \
@@ -48,8 +46,6 @@
         mbedtls_arc4_free_ncbicxx_2_7_6
 #define mbedtls_arc4_init \
         mbedtls_arc4_init_ncbicxx_2_7_6
-#define mbedtls_arc4_self_test \
-        mbedtls_arc4_self_test_ncbicxx_2_7_6
 #define mbedtls_arc4_setup \
         mbedtls_arc4_setup_ncbicxx_2_7_6
 #define mbedtls_asn1_find_named_data \
@@ -110,8 +106,6 @@
         mbedtls_base64_decode_ncbicxx_2_7_6
 #define mbedtls_base64_encode \
         mbedtls_base64_encode_ncbicxx_2_7_6
-#define mbedtls_base64_self_test \
-        mbedtls_base64_self_test_ncbicxx_2_7_6
 #define mbedtls_mpi_add_abs \
         mbedtls_mpi_add_abs_ncbicxx_2_7_6
 #define mbedtls_mpi_add_int \
@@ -174,8 +168,6 @@
         mbedtls_mpi_safe_cond_assign_ncbicxx_2_7_6
 #define mbedtls_mpi_safe_cond_swap \
         mbedtls_mpi_safe_cond_swap_ncbicxx_2_7_6
-#define mbedtls_mpi_self_test \
-        mbedtls_mpi_self_test_ncbicxx_2_7_6
 #define mbedtls_mpi_set_bit \
         mbedtls_mpi_set_bit_ncbicxx_2_7_6
 #define mbedtls_mpi_shift_l \
@@ -226,8 +218,6 @@
         mbedtls_camellia_free_ncbicxx_2_7_6
 #define mbedtls_camellia_init \
         mbedtls_camellia_init_ncbicxx_2_7_6
-#define mbedtls_camellia_self_test \
-        mbedtls_camellia_self_test_ncbicxx_2_7_6
 #define mbedtls_camellia_setkey_dec \
         mbedtls_camellia_setkey_dec_ncbicxx_2_7_6
 #define mbedtls_camellia_setkey_enc \
@@ -240,8 +230,6 @@
         mbedtls_ccm_free_ncbicxx_2_7_6
 #define mbedtls_ccm_init \
         mbedtls_ccm_init_ncbicxx_2_7_6
-#define mbedtls_ccm_self_test \
-        mbedtls_ccm_self_test_ncbicxx_2_7_6
 #define mbedtls_ccm_setkey \
         mbedtls_ccm_setkey_ncbicxx_2_7_6
 #define mbedtls_test_ca_crt \
@@ -392,8 +380,6 @@
         mbedtls_ctr_drbg_seed_ncbicxx_2_7_6
 #define mbedtls_ctr_drbg_seed_entropy_len \
         mbedtls_ctr_drbg_seed_entropy_len_ncbicxx_2_7_6
-#define mbedtls_ctr_drbg_self_test \
-        mbedtls_ctr_drbg_self_test_ncbicxx_2_7_6
 #define mbedtls_ctr_drbg_set_entropy_len \
         mbedtls_ctr_drbg_set_entropy_len_ncbicxx_2_7_6
 #define mbedtls_ctr_drbg_set_prediction_resistance \
@@ -450,8 +436,6 @@
         mbedtls_des_key_check_weak_ncbicxx_2_7_6
 #define mbedtls_des_key_set_parity \
         mbedtls_des_key_set_parity_ncbicxx_2_7_6
-#define mbedtls_des_self_test \
-        mbedtls_des_self_test_ncbicxx_2_7_6
 #define mbedtls_des_setkey \
         mbedtls_des_setkey_ncbicxx_2_7_6
 #define mbedtls_des_setkey_dec \
@@ -476,8 +460,6 @@
         mbedtls_dhm_read_params_ncbicxx_2_7_6
 #define mbedtls_dhm_read_public \
         mbedtls_dhm_read_public_ncbicxx_2_7_6
-#define mbedtls_dhm_self_test \
-        mbedtls_dhm_self_test_ncbicxx_2_7_6
 #define mbedtls_dhm_set_group \
         mbedtls_dhm_set_group_ncbicxx_2_7_6
 #define mbedtls_ecdh_calc_secret \
@@ -572,8 +554,6 @@
         mbedtls_ecp_point_read_string_ncbicxx_2_7_6
 #define mbedtls_ecp_point_write_binary \
         mbedtls_ecp_point_write_binary_ncbicxx_2_7_6
-#define mbedtls_ecp_self_test \
-        mbedtls_ecp_self_test_ncbicxx_2_7_6
 #define mbedtls_ecp_set_zero \
         mbedtls_ecp_set_zero_ncbicxx_2_7_6
 #define mbedtls_ecp_tls_read_group \
@@ -596,8 +576,6 @@
         mbedtls_entropy_gather_ncbicxx_2_7_6
 #define mbedtls_entropy_init \
         mbedtls_entropy_init_ncbicxx_2_7_6
-#define mbedtls_entropy_self_test \
-        mbedtls_entropy_self_test_ncbicxx_2_7_6
 #define mbedtls_entropy_update_manual \
         mbedtls_entropy_update_manual_ncbicxx_2_7_6
 #define mbedtls_entropy_update_seed_file \
@@ -620,8 +598,6 @@
         mbedtls_gcm_free_ncbicxx_2_7_6
 #define mbedtls_gcm_init \
         mbedtls_gcm_init_ncbicxx_2_7_6
-#define mbedtls_gcm_self_test \
-        mbedtls_gcm_self_test_ncbicxx_2_7_6
 #define mbedtls_gcm_setkey \
         mbedtls_gcm_setkey_ncbicxx_2_7_6
 #define mbedtls_gcm_starts \
@@ -642,8 +618,6 @@
         mbedtls_hmac_drbg_seed_ncbicxx_2_7_6
 #define mbedtls_hmac_drbg_seed_buf \
         mbedtls_hmac_drbg_seed_buf_ncbicxx_2_7_6
-#define mbedtls_hmac_drbg_self_test \
-        mbedtls_hmac_drbg_self_test_ncbicxx_2_7_6
 #define mbedtls_hmac_drbg_set_entropy_len \
         mbedtls_hmac_drbg_set_entropy_len_ncbicxx_2_7_6
 #define mbedtls_hmac_drbg_set_prediction_resistance \
@@ -718,8 +692,6 @@
         mbedtls_md5_process_ncbicxx_2_7_6
 #define mbedtls_md5_ret \
         mbedtls_md5_ret_ncbicxx_2_7_6
-#define mbedtls_md5_self_test \
-        mbedtls_md5_self_test_ncbicxx_2_7_6
 #define mbedtls_md5_starts \
         mbedtls_md5_starts_ncbicxx_2_7_6
 #define mbedtls_md5_starts_ret \
@@ -856,8 +828,6 @@
         mbedtls_pkcs5_pbes2_ncbicxx_2_7_6
 #define mbedtls_pkcs5_pbkdf2_hmac \
         mbedtls_pkcs5_pbkdf2_hmac_ncbicxx_2_7_6
-#define mbedtls_pkcs5_self_test \
-        mbedtls_pkcs5_self_test_ncbicxx_2_7_6
 #define mbedtls_pk_load_file \
         mbedtls_pk_load_file_ncbicxx_2_7_6
 #define mbedtls_pk_parse_key \
@@ -902,8 +872,6 @@
         mbedtls_ripemd160_process_ncbicxx_2_7_6
 #define mbedtls_ripemd160_ret \
         mbedtls_ripemd160_ret_ncbicxx_2_7_6
-#define mbedtls_ripemd160_self_test \
-        mbedtls_ripemd160_self_test_ncbicxx_2_7_6
 #define mbedtls_ripemd160_starts \
         mbedtls_ripemd160_starts_ncbicxx_2_7_6
 #define mbedtls_ripemd160_starts_ret \
@@ -970,8 +938,6 @@
         mbedtls_rsa_rsassa_pss_verify_ncbicxx_2_7_6
 #define mbedtls_rsa_rsassa_pss_verify_ext \
         mbedtls_rsa_rsassa_pss_verify_ext_ncbicxx_2_7_6
-#define mbedtls_rsa_self_test \
-        mbedtls_rsa_self_test_ncbicxx_2_7_6
 #define mbedtls_rsa_set_padding \
         mbedtls_rsa_set_padding_ncbicxx_2_7_6
 #define mbedtls_rsa_deduce_crt \
@@ -1002,8 +968,6 @@
         mbedtls_sha1_process_ncbicxx_2_7_6
 #define mbedtls_sha1_ret \
         mbedtls_sha1_ret_ncbicxx_2_7_6
-#define mbedtls_sha1_self_test \
-        mbedtls_sha1_self_test_ncbicxx_2_7_6
 #define mbedtls_sha1_starts \
         mbedtls_sha1_starts_ncbicxx_2_7_6
 #define mbedtls_sha1_starts_ret \
@@ -1030,8 +994,6 @@
         mbedtls_sha256_process_ncbicxx_2_7_6
 #define mbedtls_sha256_ret \
         mbedtls_sha256_ret_ncbicxx_2_7_6
-#define mbedtls_sha256_self_test \
-        mbedtls_sha256_self_test_ncbicxx_2_7_6
 #define mbedtls_sha256_starts \
         mbedtls_sha256_starts_ncbicxx_2_7_6
 #define mbedtls_sha256_starts_ret \
@@ -1058,8 +1020,6 @@
         mbedtls_sha512_process_ncbicxx_2_7_6
 #define mbedtls_sha512_ret \
         mbedtls_sha512_ret_ncbicxx_2_7_6
-#define mbedtls_sha512_self_test \
-        mbedtls_sha512_self_test_ncbicxx_2_7_6
 #define mbedtls_sha512_starts \
         mbedtls_sha512_starts_ncbicxx_2_7_6
 #define mbedtls_sha512_starts_ret \
@@ -1392,8 +1352,6 @@
         mbedtls_timing_get_timer_ncbicxx_2_7_6
 #define mbedtls_timing_hardclock \
         mbedtls_timing_hardclock_ncbicxx_2_7_6
-#define mbedtls_timing_self_test \
-        mbedtls_timing_self_test_ncbicxx_2_7_6
 #define mbedtls_timing_set_delay \
         mbedtls_timing_set_delay_ncbicxx_2_7_6
 #define mbedtls_version_get_number \
@@ -1426,8 +1384,6 @@
         mbedtls_x509_get_time_ncbicxx_2_7_6
 #define mbedtls_x509_key_size_helper \
         mbedtls_x509_key_size_helper_ncbicxx_2_7_6
-#define mbedtls_x509_self_test \
-        mbedtls_x509_self_test_ncbicxx_2_7_6
 #define mbedtls_x509_serial_gets \
         mbedtls_x509_serial_gets_ncbicxx_2_7_6
 #define mbedtls_x509_sig_alg_gets \
@@ -1566,7 +1522,5 @@
         mbedtls_xtea_free_ncbicxx_2_7_6
 #define mbedtls_xtea_init \
         mbedtls_xtea_init_ncbicxx_2_7_6
-#define mbedtls_xtea_self_test \
-        mbedtls_xtea_self_test_ncbicxx_2_7_6
 #define mbedtls_xtea_setup \
         mbedtls_xtea_setup_ncbicxx_2_7_6
