@@ -691,6 +691,7 @@ public:
                       CBamIndex::EIndexLevel min_level,
                       CBamIndex::EIndexLevel max_level,
                       ESearchMode search_mode = eSearchByOverlap);
+    ~CBamAlignIterator();
 
     CBamAlignIterator(const CBamAlignIterator& iter);
     CBamAlignIterator& operator=(const CBamAlignIterator& iter);
@@ -742,6 +743,11 @@ public:
     CTempString GetRefSeqId(void) const;
     TSeqPos GetRefSeqPos(void) const;
 
+    // next segment in template (mate)
+    Int4 GetNextRefSeqIndex() const; // -1 if no next segment
+    CTempString GetNextRefSeqId(void) const; // "" if no next segment
+    TSeqPos GetNextRefSeqPos() const; // kInvalidSeqPos if no next segment
+
     CTempString GetShortSeqId(void) const;
     CTempString GetShortSeqAcc(void) const;
     CTempString GetShortSequence(void) const;
@@ -779,6 +785,7 @@ public:
     bool IsPaired(void) const;
     bool IsFirstInPair(void) const;
     bool IsSecondInPair(void) const;
+    bool IsSecondary(void) const;
 
     Uint2 GetFlags(void) const;
     // returns false if BAM flags are not available
@@ -874,11 +881,7 @@ private:
     mutable CRef<CSeq_id> m_ShortSeq_id;
 
     typedef CRef<CObject_id> TObjectIdCache;
-    struct SCreateCache {
-        TObjectIdCache m_ObjectIdTracebacks;
-        TObjectIdCache m_ObjectIdCIGAR;
-        TObjectIdCache m_ObjectIdHP;
-    };
+    struct SCreateCache;
     mutable AutoPtr<SCreateCache> m_CreateCache;
 
     SCreateCache& x_GetCreateCache(void) const;

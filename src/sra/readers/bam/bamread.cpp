@@ -389,6 +389,18 @@ bool CBamDb::UseRawIndex(EUseAPI use_api)
 }
 
 
+NCBI_PARAM_DECL(bool, BAM, EXPLICIT_MATE_INFO);
+NCBI_PARAM_DEF_EX(bool, BAM, EXPLICIT_MATE_INFO, false,
+                  eParam_NoThread, BAM_EXPLICIT_MATE_INFO);
+
+
+static bool s_ExplicitMateInfo(void)
+{
+    static CSafeStatic<NCBI_PARAM_TYPE(BAM, EXPLICIT_MATE_INFO)> s_Value;
+    return s_Value->Get();
+}
+
+
 static
 void sx_MapId(CSeq_id& id, IIdMapper* idmapper)
 {
@@ -1797,6 +1809,11 @@ TSeqPos CBamAlignIterator::SAADBImpl::GetRefSeqPos() const
 }
 
 
+CBamAlignIterator::~CBamAlignIterator()
+{
+}
+
+
 CBamAlignIterator::CBamAlignIterator(void)
     : m_DB(0),
       m_BamFlagsAvailability(eBamFlags_NotTried)
@@ -2046,6 +2063,49 @@ TSeqPos CBamAlignIterator::GetRefSeqPos(void) const
     }
     else {
         return m_AADBImpl->GetRefSeqPos();
+    }
+}
+
+
+Int4 CBamAlignIterator::GetNextRefSeqIndex(void) const
+{
+    if ( m_RawImpl ) {
+        return m_RawImpl->m_Iter.GetNextRefSeqIndex();
+    }
+    else {
+        // not implemented
+        return -1;
+    }
+}
+
+
+CTempString CBamAlignIterator::GetNextRefSeqId(void) const
+{
+    if ( m_RawImpl ) {
+        Int4 next_ref_index = m_RawImpl->m_Iter.GetNextRefSeqIndex();
+        if ( next_ref_index == -1 ) {
+            // no next segment
+            return CTempString();
+        }
+        else {
+            return m_RawImpl->m_RawDB->GetData().GetHeader().GetRefName(next_ref_index);
+        }
+    }
+    else {
+        // not implemented
+        return CTempString();
+    }
+}
+
+
+TSeqPos CBamAlignIterator::GetNextRefSeqPos(void) const
+{
+    if ( m_RawImpl ) {
+        return m_RawImpl->m_Iter.GetNextRefSeqPos();
+    }
+    else {
+        // not implemented
+        return kInvalidSeqPos;
     }
 }
 
@@ -2528,6 +2588,22 @@ bool CBamAlignIterator::IsSecondInPair(void) const
 }
 
 
+bool CBamAlignIterator::IsSecondary(void) const
+{
+    if ( m_RawImpl ) {
+        return m_RawImpl->m_Iter.IsSecondary();
+    }
+    else {
+        x_CheckValid();
+        Uint2 flags;
+        if ( TryGetFlags(flags) ) {
+            return (flags & BAMFlags_IsNotPrimary) != 0;
+        }
+        return false; // assume non-secondary
+    }
+}
+
+
 CBamFileAlign::CBamFileAlign(const CBamAlignIterator& iter)
 {
     if ( rc_t rc = AlignAccessAlignmentEnumeratorGetBAMAlignment(iter.m_AADBImpl->m_Iter, x_InitPtr()) ) {
@@ -2656,6 +2732,19 @@ CRef<CBioseq> CBamAlignIterator::GetShortBioseq(void) const
 }
 
 
+struct CBamAlignIterator::SCreateCache {
+    TObjectIdCache m_ObjectIdTracebacks;
+    TObjectIdCache m_ObjectIdCIGAR;
+    TObjectIdCache m_ObjectIdHP;
+    TObjectIdCache m_ObjectIdMateRead;
+    TObjectIdCache m_ObjectIdRefId;
+    TObjectIdCache m_ObjectIdRefPos;
+    TObjectIdCache m_ObjectIdLcl;
+    CRef<CUser_object> m_SecondaryIndicator;
+    CRef<CAnnotdesc> m_MatchAnnotIndicator;
+};
+
+
 CBamAlignIterator::SCreateCache&
 CBamAlignIterator::x_GetCreateCache(void) const
 {
@@ -2666,14 +2755,37 @@ CBamAlignIterator::x_GetCreateCache(void) const
 }
 
 
-static inline CObject_id& sx_GetObject_id(CTempString name,
-                                          CRef<CObject_id>& cache)
+static CObject_id& sx_GetObject_id(CTempString name,
+                                   CRef<CObject_id>& cache)
 {
     if ( !cache ) {
         cache = new CObject_id();
         cache->SetStr(name);
     }
     return *cache;
+}
+
+
+static CRef<CUser_object> sx_GetSecondaryIndicator(CRef<CUser_object>& cache)
+{
+    if ( !cache ) {
+        cache = new CUser_object();
+        cache->SetType().SetStr("Secondary");
+        cache->SetData();
+    }
+    return cache;
+}
+
+
+static CRef<CAnnotdesc> sx_GetMatchAnnotIndicator(CRef<CAnnotdesc>& cache)
+{
+    if ( !cache ) {
+        cache = new CAnnotdesc;
+        CUser_object& obj = cache->SetUser();
+        obj.SetType().SetStr("Mate read");
+        obj.AddField("Match by local Seq-id", true);
+    }
+    return cache;
 }
 
 
@@ -2777,6 +2889,28 @@ CRef<CSeq_align> CBamAlignIterator::GetMatchAlign(void) const
         // only raw index API provides aux tags 
         add_aux = false;
     }
+    bool add_mate = s_ExplicitMateInfo();
+    if ( add_mate && !UsesRawIndex() ) {
+        // only raw index API provides next segment info 
+        add_mate = false;
+    }
+    Int4 next_ref_index = -1;
+    CTempString next_ref_id;
+    TSeqPos next_ref_pos = kInvalidSeqPos;
+    if ( add_mate ) {
+        next_ref_pos = GetNextRefSeqPos();
+        if ( next_ref_pos != kInvalidSeqPos ) {
+            next_ref_index = GetNextRefSeqIndex();
+            next_ref_id = GetNextRefSeqId();
+            if ( next_ref_id.empty() ) {
+                next_ref_pos = kInvalidSeqPos;
+            }
+        }
+        if ( next_ref_pos == kInvalidSeqPos ) {
+            // no next segment
+            add_mate = false;
+        }
+    }
     if ( add_cigar || add_aux ) {
         SCreateCache& cache = x_GetCreateCache();
         CRef<CUser_object> obj(new CUser_object);
@@ -2834,6 +2968,48 @@ CRef<CSeq_align> CBamAlignIterator::GetMatchAlign(void) const
             align->SetExt().push_back(obj);
         }
     }
+    if ( add_mate ) {
+        SCreateCache& cache = x_GetCreateCache();
+        CRef<CUser_object> obj(new CUser_object);
+        obj->SetType(sx_GetObject_id("Mate read", cache.m_ObjectIdMateRead));
+        
+        if ( next_ref_index != GetRefSeqIndex() ) {
+            CRef<CUser_field> field(new CUser_field());
+            field->SetLabel(sx_GetObject_id("RefId", cache.m_ObjectIdRefId));
+            field->SetData().SetStr(m_DB->GetRefSeq_id(next_ref_id)->AsFastaString());
+            obj->SetData().push_back(field);
+        }
+        {
+            CRef<CUser_field> field(new CUser_field());
+            field->SetLabel(sx_GetObject_id("RefPos", cache.m_ObjectIdRefPos));
+            field->SetData().SetInt(next_ref_pos);
+            obj->SetData().push_back(field);
+        }
+        {
+            // search for mate read to determine its Seq-id
+            auto this_ref_index = GetRefSeqIndex();
+            TSeqPos this_ref_pos = GetRefSeqPos();
+            CBamAlignIterator mate_iter(*m_DB, next_ref_id, next_ref_pos, 1, eSearchByStart);
+            for ( ; mate_iter; ++mate_iter ) {
+                if ( mate_iter.GetNextRefSeqPos() == this_ref_pos &&
+                     mate_iter.GetNextRefSeqIndex() == this_ref_index ) {
+                    // found mate read
+                    CRef<CUser_field> field(new CUser_field());
+                    field->SetLabel(sx_GetObject_id("lcl|", cache.m_ObjectIdLcl));
+                    mate_iter.GetShortSeq_id()->GetLabel(&field->SetData().SetStr(),
+                                                         CSeq_id::eContent);
+                    obj->SetData().push_back(field);
+                    break;
+                }
+            }
+        }
+        
+        align->SetExt().push_back(obj);
+    }
+    if ( IsSecondary() ) {
+        SCreateCache& cache = x_GetCreateCache();
+        align->SetExt().push_back(sx_GetSecondaryIndicator(cache.m_SecondaryIndicator));
+    }
     
     return align;
 }
@@ -2848,6 +3024,10 @@ CBamAlignIterator::x_GetSeq_annot(const string* annot_name) const
         CRef<CAnnotdesc> desc(new CAnnotdesc);
         desc->SetName(*annot_name);
         annot->SetDesc().Set().push_back(desc);
+    }
+    if ( !s_ExplicitMateInfo() ) {
+        SCreateCache& cache = x_GetCreateCache();
+        annot->SetDesc().Set().push_back(sx_GetMatchAnnotIndicator(cache.m_MatchAnnotIndicator));
     }
     return annot;
 }

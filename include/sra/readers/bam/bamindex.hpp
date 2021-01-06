@@ -973,6 +973,16 @@ public:
             return m_AlignRefRange.GetFrom();
         }
 
+    // next segment in template (mate)
+    int32_t GetNextRefSeqIndex() const
+        {
+            return m_AlignInfo.get_next_ref_index();
+        }
+    TSeqPos GetNextRefSeqPos() const
+        {
+            return m_AlignInfo.get_next_ref_pos();
+        }
+
     CTempString GetShortSeqId() const
         {
             return CTempString(m_AlignInfo.get_read_name_ptr(),
@@ -1092,6 +1102,10 @@ public:
     bool IsSecondInPair() const
         {
             return (GetFlags() & m_AlignInfo.fAlign_IsSecond) != 0;
+        }
+    bool IsSecondary() const
+        {
+            return (GetFlags() & m_AlignInfo.fAlign_IsNotPrimary) != 0;
         }
 
     void GetSegments(vector<int>& starts, vector<TSeqPos>& lens) const;
