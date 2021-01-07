@@ -4951,7 +4951,7 @@ NICC	s	National Insect Collection
 NICD	s	Malaria Research Center			
 NICE	s	Museum d'Histoire Naturelle			
 NICH	s	Hattori Botanical Laboratory			
-NIES	c	Microbial Culture Collection			
+NIES	c	Microbial Culture Collection	MCC-NIES,NIES-MCC		
 NIFI	s	National Inland Fisheries Institute			
 NIFRS	s	National Research Institute of Fisheries Science			
 NIG	s	Nanjing Geographical Institute	NGI		
@@ -5019,7 +5019,7 @@ NMED	s	New Mexico Environment Department
 NMEG	s	Naturkundesmuseum			
 NMFC	s	Inner Mongolia Forestry College, Desert Control and Utilization Department			
 NMFSH	s	National Marine Fisheries Service			
-NMI	s	National Museum of Ireland	NMID		
+NMI	s	National Museum of Ireland	NMID,NMINH		
 NMI<POL>	c	Bacteria collection of National Institute of Public Health, National Medicines Institute, Poland			
 NMID	s	National Museum of Ireland	NMD		
 NMK	s	National Museums of Kenya			
