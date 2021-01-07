@@ -55,6 +55,7 @@ class CNAnnotRecord {
  public:
     CNAnnotRecord()
         : m_Modified(0)
+        , m_AnnotInfoModified(0)
         , m_Writetime(0)
         , m_SatKey(0)
         , m_Start(0)
@@ -99,6 +100,12 @@ class CNAnnotRecord {
         return *this;
     }
 
+    CNAnnotRecord& SetAnnotInfoModified(TTimestamp value)
+    {
+        m_AnnotInfoModified = value;
+        return *this;
+    }
+
     CNAnnotRecord& SetAnnotName(string value)
     {
         m_AnnotName = value;
@@ -126,6 +133,18 @@ class CNAnnotRecord {
     CNAnnotRecord& SetAnnotInfo(TAnnotInfo&& value)
     {
         m_AnnotInfo = move(value);
+        return *this;
+    }
+
+    CNAnnotRecord& SetSeqAnnotInfo(TAnnotInfo const& value)
+    {
+        m_SeqAnnotInfo = value;
+        return *this;
+    }
+
+    CNAnnotRecord& SetSeqAnnotInfo(TAnnotInfo&& value)
+    {
+        m_SeqAnnotInfo = move(value);
         return *this;
     }
 
@@ -171,6 +190,11 @@ class CNAnnotRecord {
         return m_Modified;
     }
 
+    TTimestamp GetAnnotInfoModified() const
+    {
+        return m_AnnotInfoModified;
+    }
+
     string const & GetAnnotName() const
     {
         return m_AnnotName;
@@ -199,6 +223,7 @@ class CNAnnotRecord {
     TAnnotInfo m_AnnotInfo;
     TAnnotInfo m_SeqAnnotInfo;
     TTimestamp m_Modified;
+    TTimestamp m_AnnotInfoModified;
     TWritetime m_Writetime;
     TSatKey m_SatKey;
     TCoord m_Start;

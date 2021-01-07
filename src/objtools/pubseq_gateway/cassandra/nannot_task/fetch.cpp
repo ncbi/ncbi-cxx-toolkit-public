@@ -202,7 +202,7 @@ void CCassNAnnotTaskFetch::Wait1()
 
                 string sql =
                     " SELECT "
-                    "  annot_name, sat_key, last_modified, start, stop, annot_info, writetime(annot_info) "
+                    "  annot_name, sat_key, last_modified, start, stop, annot_info, seq_annot_info, annot_info_modified, writetime(stop) "
                     " FROM " + GetKeySpace() + ".bioseq_na "
                     " WHERE"
                     "  accession = ? AND version = ? AND seq_id_type = ?";
@@ -258,7 +258,9 @@ void CCassNAnnotTaskFetch::Wait1()
                             .SetStart(m_QueryArr[0].query->FieldGetInt32Value(3, 0))
                             .SetStop(m_QueryArr[0].query->FieldGetInt32Value(4, 0))
                             .SetAnnotInfo(m_QueryArr[0].query->FieldGetStrValueDef(5, ""))
-                            .SetWritetime(m_QueryArr[0].query->FieldGetInt64Value(6, 0));
+                            .SetSeqAnnotInfo(m_QueryArr[0].query->FieldGetStrValueDef(6, ""))
+                            .SetAnnotInfoModified(m_QueryArr[0].query->FieldGetInt64Value(7, 0))
+                            .SetWritetime(m_QueryArr[0].query->FieldGetInt64Value(8, 0));
 
                         if (m_Consume) {
                             string annot_name = record.GetAnnotName();
