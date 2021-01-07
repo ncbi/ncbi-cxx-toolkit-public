@@ -5,8 +5,14 @@
  *
  * \author Mathias Olsson <mathias@kompetensum.com>
  *
- *  Copyright (C) 2006-2015, ARM Limited, All Rights Reserved
- *  SPDX-License-Identifier: Apache-2.0
+ *  Copyright The Mbed TLS Contributors
+ *  SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-or-later
+ *
+ *  This file is provided under the Apache License 2.0, or the
+ *  GNU General Public License v2.0 or later.
+ *
+ *  **********
+ *  Apache License 2.0:
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may
  *  not use this file except in compliance with the License.
@@ -20,7 +26,26 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  *
- *  This file is part of mbed TLS (https://tls.mbed.org)
+ *  **********
+ *
+ *  **********
+ *  GNU General Public License v2.0 or later:
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along
+ *  with this program; if not, write to the Free Software Foundation, Inc.,
+ *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ *  **********
  */
 /*
  * PKCS#5 includes PBKDF2 and more
@@ -54,22 +79,12 @@
 #define mbedtls_printf printf
 #endif
 
-#if !defined(MBEDTLS_ASN1_PARSE_C)
-int mbedtls_pkcs5_pbes2( const mbedtls_asn1_buf *pbe_params, int mode,
-                 const unsigned char *pwd,  size_t pwdlen,
-                 const unsigned char *data, size_t datalen,
-                 unsigned char *output )
-{
-    ((void) pbe_params);
-    ((void) mode);
-    ((void) pwd);
-    ((void) pwdlen);
-    ((void) data);
-    ((void) datalen);
-    ((void) output);
-    return( MBEDTLS_ERR_PKCS5_FEATURE_UNAVAILABLE );
+/* Implementation that should never be optimized out by the compiler */
+static void mbedtls_zeroize( void *v, size_t n ) {
+    volatile unsigned char *p = (unsigned char*)v; while( n-- ) *p++ = 0;
 }
-#else
+
+#if defined(MBEDTLS_ASN1_PARSE_C)
 static int pkcs5_parse_pbkdf2_params( const mbedtls_asn1_buf *params,
                                       mbedtls_asn1_buf *salt, int *iterations,
                                       int *keylen, mbedtls_md_type_t *md_type )
@@ -237,7 +252,7 @@ int mbedtls_pkcs5_pbkdf2_hmac( mbedtls_md_context_t *ctx, const unsigned char *p
                        unsigned int iteration_count,
                        uint32_t key_length, unsigned char *output )
 {
-    int ret, j;
+    int ret = 0, j;
     unsigned int i;
     unsigned char md1[MBEDTLS_MD_MAX_SIZE];
     unsigned char work[MBEDTLS_MD_MAX_SIZE];
@@ -259,16 +274,16 @@ int mbedtls_pkcs5_pbkdf2_hmac( mbedtls_md_context_t *ctx, const unsigned char *p
         // U1 ends up in work
         //
         if( ( ret = mbedtls_md_hmac_starts( ctx, password, plen ) ) != 0 )
-            return( ret );
+            goto cleanup;
 
         if( ( ret = mbedtls_md_hmac_update( ctx, salt, slen ) ) != 0 )
-            return( ret );
+            goto cleanup;
 
         if( ( ret = mbedtls_md_hmac_update( ctx, counter, 4 ) ) != 0 )
-            return( ret );
+            goto cleanup;
 
         if( ( ret = mbedtls_md_hmac_finish( ctx, work ) ) != 0 )
-            return( ret );
+            goto cleanup;
 
         memcpy( md1, work, md_size );
 
@@ -277,13 +292,13 @@ int mbedtls_pkcs5_pbkdf2_hmac( mbedtls_md_context_t *ctx, const unsigned char *p
             // U2 ends up in md1
             //
             if( ( ret = mbedtls_md_hmac_starts( ctx, password, plen ) ) != 0 )
-                return( ret );
+                goto cleanup;
 
             if( ( ret = mbedtls_md_hmac_update( ctx, md1, md_size ) ) != 0 )
-                return( ret );
+                goto cleanup;
 
             if( ( ret = mbedtls_md_hmac_finish( ctx, md1 ) ) != 0 )
-                return( ret );
+                goto cleanup;
 
             // U1 xor U2
             //
@@ -302,7 +317,12 @@ int mbedtls_pkcs5_pbkdf2_hmac( mbedtls_md_context_t *ctx, const unsigned char *p
                 break;
     }
 
-    return( 0 );
+cleanup:
+    /* Zeroise buffers to clear sensitive data from memory. */
+    mbedtls_zeroize( work, MBEDTLS_MD_MAX_SIZE );
+    mbedtls_zeroize( md1, MBEDTLS_MD_MAX_SIZE );
+
+    return( ret );
 }
 
 #if defined(MBEDTLS_SELF_TEST)
