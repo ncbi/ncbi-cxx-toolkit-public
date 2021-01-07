@@ -204,6 +204,7 @@ public:
     DECLARE_OPERATOR_BOOL(m_AADB || m_RawDB);
     
     static bool UseRawIndex(EUseAPI use_api);
+    static int GetDebugLevel();
     
     bool UsesAlignAccessDB() const
         {

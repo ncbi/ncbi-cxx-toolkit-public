@@ -58,16 +58,6 @@ BEGIN_SCOPE(objects)
 
 class CSeq_entry;
 
-NCBI_PARAM_DECL(int, BAM, DEBUG);
-NCBI_PARAM_DEF_EX(int, BAM, DEBUG, 0, eParam_NoThread, BAM_DEBUG);
-
-
-static int s_GetDebug(void)
-{
-    static int value = NCBI_PARAM_TYPE(BAM, DEBUG)::GetDefault();
-    return value;
-}
-
 
 static const float kEstimatedCompression = 0.25;
 
@@ -946,7 +936,7 @@ void CBamIndex::Read(const string& index_file_name)
     size_t size = ReadVDBFile(data, index_file_name);
     m_TotalReadBytes = size;
     m_TotalReadSeconds = sw.Elapsed();
-    if ( s_GetDebug() >= 1 ) {
+    if ( CBamDb::GetDebugLevel() >= 3 ) {
         LOG_POST("BAM: read index "<<size/double(1<<20)<<" MB"
                  " speed: "<<size/(m_TotalReadSeconds*(1<<20))<<" MB/s");
     }

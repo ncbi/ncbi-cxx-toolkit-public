@@ -372,6 +372,17 @@ static bool s_OmitAmbiguousMatchCigar(void)
 }
 
 
+NCBI_PARAM_DECL(int, BAM, DEBUG);
+NCBI_PARAM_DEF_EX(int, BAM, DEBUG, 0, eParam_NoThread, BAM_DEBUG);
+
+
+int CBamDb::GetDebugLevel(void)
+{
+    static int value = NCBI_PARAM_TYPE(BAM, DEBUG)::GetDefault();
+    return value;
+}
+
+
 NCBI_PARAM_DECL(bool, BAM, USE_RAW_INDEX);
 NCBI_PARAM_DEF_EX(bool, BAM, USE_RAW_INDEX, true,
                   eParam_NoThread, BAM_USE_RAW_INDEX);
@@ -473,25 +484,34 @@ static
 void s_InitVDBVersion()
 {
     if ( !s_VDBVersion[0] ) {
-        SraReleaseVersion release_version;
-        SraReleaseVersionGet(&release_version);
-        CNcbiOstrstream s(s_VDBVersion, sizeof(s_VDBVersion));
-        s << (release_version.version>>24) << '.'
-          << ((release_version.version>>16)&0xff) << '.'
-          << (release_version.version&0xffff);
-        if ( release_version.revision != 0 ||
-             release_version.type != SraReleaseVersion::eSraReleaseVersionTypeFinal ) {
-            const char* type = "";
-            switch ( release_version.type ) {
-            case SraReleaseVersion::eSraReleaseVersionTypeDev:   type = "dev"; break;
-            case SraReleaseVersion::eSraReleaseVersionTypeAlpha: type = "a"; break;
-            case SraReleaseVersion::eSraReleaseVersionTypeBeta:  type = "b"; break;
-            case SraReleaseVersion::eSraReleaseVersionTypeRC:    type = "RC"; break;
-            default:                                             type = ""; break;
+        ostringstream s;
+        {{ // format VDB version string
+            SraReleaseVersion release_version;
+            SraReleaseVersionGet(&release_version);
+            s << (release_version.version>>24) << '.'
+              << ((release_version.version>>16)&0xff) << '.'
+              << (release_version.version&0xffff);
+            if ( release_version.revision != 0 ||
+                 release_version.type != SraReleaseVersion::eSraReleaseVersionTypeFinal ) {
+                const char* type = "";
+                switch ( release_version.type ) {
+                case SraReleaseVersion::eSraReleaseVersionTypeDev:   type = "dev"; break;
+                case SraReleaseVersion::eSraReleaseVersionTypeAlpha: type = "a"; break;
+                case SraReleaseVersion::eSraReleaseVersionTypeBeta:  type = "b"; break;
+                case SraReleaseVersion::eSraReleaseVersionTypeRC:    type = "RC"; break;
+                default:                                             type = ""; break;
+                }
+                s << '-' << type << release_version.revision;
             }
-            s << '-' << type << release_version.revision;
+        }}
+        string v = s.str();
+        if ( !v.empty() ) {
+            if ( v.size() >= sizeof(s_VDBVersion) ) {
+                v.resize(sizeof(s_VDBVersion)-1);
+            }
+            copy(v.begin()+1, v.end(), s_VDBVersion+1);
+            s_VDBVersion[0] = v[0];
         }
-        s << ends;
     }
 }
 
@@ -521,7 +541,7 @@ static const SVDBSeverityTag* s_GetVDBSeverityTag(CTempString token)
 }
 
 static
-rc_t VDBLogWriter(void* data, const char* buffer, size_t size, size_t* written)
+rc_t VDBLogWriter(void* /*data*/, const char* buffer, size_t size, size_t* written)
 {
     CTempString msg(buffer, size);
     NStr::TruncateSpacesInPlace(msg);
@@ -705,6 +725,11 @@ static void s_VDBInit()
 #endif
             KLogLevelSet(ask_level);
             KLogLibHandlerSet(VDBLogWriter, 0);
+            if ( CBamDb::GetDebugLevel() >= 2 ) {
+                const char* msg = "info: VDB initialized";
+                size_t written;
+                VDBLogWriter(0, msg, strlen(msg), &written);
+            }
         }
         auto config = s_InitProxyConfig();
         CBamRef<KNSManager> kns_mgr;
