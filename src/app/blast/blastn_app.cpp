@@ -39,6 +39,7 @@
 #include <algo/blast/blastinput/blastn_args.hpp>
 #include <algo/blast/api/objmgr_query_data.hpp>
 #include <algo/blast/format/blast_format.hpp>
+#include <util/profile/rtprofile.hpp>
 #include "blast_app_util.hpp"
 
 #ifndef SKIP_DOXYGEN_PROCESSING
@@ -88,8 +89,12 @@ void CBlastnApp::Init()
 
 int CBlastnApp::Run(void)
 {
+    BLAST_PROF_START( APP.MAIN );
+    BLAST_PROF_START( APP.PRE );
+    BLAST_PROF_ADD2( PROGRAM, blastn ) ;
     int status = BLAST_EXIT_SUCCESS;
     CBlastAppDiagHandler bah;
+    int batch_num = 0;
 
     try {
 
@@ -185,6 +190,7 @@ int CBlastnApp::Run(void)
         int batch_size = m_CmdLineArgs->GetQueryBatchSize();
         if (batch_size) {
             input.SetBatchSize(batch_size);
+	    BLAST_PROF_ADD( BATCH_SIZE, (int)batch_size );
         } else {
             Int8 total_len = formatter.GetDbTotalLength();
             if (total_len > 0) {
@@ -192,9 +198,11 @@ int CBlastnApp::Run(void)
                 mixer.SetTargetHits(total_len / 3000);
             }
             input.SetBatchSize(mixer.GetBatchSize());
+	    BLAST_PROF_ADD( BATCH_SIZE, (int)mixer.GetBatchSize() );
         }
-        for (; !input.End(); formatter.ResetScopeHistory(), QueryBatchCleanup()) {
-
+	BLAST_PROF_STOP( APP.PRE );
+        for (; !input.End(); formatter.ResetScopeHistory(), QueryBatchCleanup() ) {
+	    BLAST_PROF_START( APP.LOOP.PRE );
             CRef<CBlastQueryVector> query_batch(input.GetNextSeqBatch(*scope));
             CRef<IQueryFactory> queries(new CObjMgr_QueryFactory(*query_batch));
 
@@ -202,6 +210,7 @@ int CBlastnApp::Run(void)
 
             CRef<CSearchResultSet> results;
 
+	    BLAST_PROF_STOP( APP.LOOP.PRE );
             if (m_CmdLineArgs->ExecuteRemotely()) {
                 CRef<CRemoteBlast> rmt_blast = 
                     InitializeRemoteBlast(queries, db_args, opts_hndl,
@@ -209,13 +218,16 @@ int CBlastnApp::Run(void)
                           m_CmdLineArgs->GetClientId());
                 results = rmt_blast->GetResultSet();
             } else {
+	        BLAST_PROF_START( APP.LOOP.BLAST );
                 CLocalBlast lcl_blast(queries, opts_hndl, db_adapter);
                 lcl_blast.SetNumberOfThreads(m_CmdLineArgs->GetNumThreads());
+		lcl_blast.SetBatchNumber( batch_num );
                 results = lcl_blast.Run();
                 if (!batch_size) 
                     input.SetBatchSize(mixer.GetBatchSize(lcl_blast.GetNumExtensions()));
+	        BLAST_PROF_STOP( APP.LOOP.BLAST );
             }
-
+	    BLAST_PROF_START( APP.LOOP.FMT );
             if (isArchiveFormat) {
                 formatter.WriteArchive(*queries, *opts_hndl, *results, 0, bah.GetMessages());
                 bah.ResetMessages();
@@ -226,8 +238,10 @@ int CBlastnApp::Run(void)
                     formatter.PrintOneResultSet(**result, query_batch);
                 }
             }
+	    BLAST_PROF_STOP( APP.LOOP.FMT );
+	    batch_num++;
         }
-
+        BLAST_PROF_START( APP.POST );
         formatter.PrintEpilog(opt);
 
         if (m_CmdLineArgs->ProduceDebugOutput()) {
@@ -236,6 +250,7 @@ int CBlastnApp::Run(void)
 
         LogQueryInfo(m_UsageReport, input);
         formatter.LogBlastSearchInfo(m_UsageReport);
+        BLAST_PROF_STOP( APP.POST );
     } CATCH_ALL(status)
 
     if(!bah.GetMessages().empty()) {
@@ -245,6 +260,11 @@ int CBlastnApp::Run(void)
 
 	m_UsageReport.AddParam(CBlastUsageReport::eNumThreads, (int) m_CmdLineArgs->GetNumThreads());
     m_UsageReport.AddParam(CBlastUsageReport::eExitStatus, status);
+    BLAST_PROF_STOP( APP.MAIN );
+    BLAST_PROF_ADD( THREADS , (int)m_CmdLineArgs->GetNumThreads() );
+    BLAST_PROF_ADD( BATCHES , (int)batch_num );
+    BLAST_PROF_ADD( EXIT_STATUS , (int)status );
+    BLAST_PROF_REPORT ;
     return status;
 }
 

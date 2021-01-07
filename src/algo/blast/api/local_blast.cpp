@@ -39,6 +39,7 @@
 #include <objects/scoremat/PssmWithParameters.hpp>
 #include <algo/blast/api/seqinfosrc_seqdb.hpp>
 #include <algo/blast/api/blast_dbindex.hpp>
+#include <util/profile/rtprofile.hpp>
 
 /** @addtogroup AlgoBlast
  *
@@ -168,7 +169,7 @@ CLocalBlast::Run()
     _ASSERT(m_QueryFactory);
     _ASSERT(m_PrelimSearch);
     _ASSERT(m_Opts);
-    
+    BLAST_PROF_MARK2( m_batch_num_str + string("_BLAST.SETUP.START") );    
     // Note: we need to pass the search messages ...
     // filtered query regions should be masked in the BLAST_SequenceBlk
     // already.
@@ -223,6 +224,8 @@ CLocalBlast::Run()
          return result_set;
     }
     
+    BLAST_PROF_MARK2( m_batch_num_str + string("_BLAST.SETUP.STOP") );    
+    BLAST_PROF_MARK2( m_batch_num_str + string("_BLAST.PRE.START") );    
 	try {
 	    m_PrelimSearch->SetNumberOfThreads(GetNumberOfThreads());
 	    m_InternalData = m_PrelimSearch->Run();
@@ -236,6 +239,8 @@ CLocalBlast::Run()
 	}
 
     //_ASSERT(m_InternalData);
+    BLAST_PROF_MARK2( m_batch_num_str + string("_BLAST.PRE.STOP") );    
+    BLAST_PROF_MARK2( m_batch_num_str + string("_BLAST.TB.START") );    
     
     TSearchMessages search_msgs = m_PrelimSearch->GetSearchMessages();
     
@@ -272,6 +277,7 @@ CLocalBlast::Run()
     retval->SetFilteredQueryRegions(m_PrelimSearch->GetFilteredQueryRegions());
     m_Messages = m_TbackSearch->GetSearchMessages();
 
+    BLAST_PROF_MARK2( m_batch_num_str + string("_BLAST.TB.STOP") );    
     return retval;
 }
 
