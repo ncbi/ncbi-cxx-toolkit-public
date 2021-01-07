@@ -1387,6 +1387,7 @@ uilist needs xser
 unicoll_dump_access needs gpipe_sqlite
 univ_prot_access needs gpipe_common
 upb needs3party $(ORIG_LIBS)
+utrtprof needs xncbi
 uudutil needs $(COMPRESS_LIBS)
 uudutil needs gbproj
 uudutil needs xconnserv
