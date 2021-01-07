@@ -516,7 +516,7 @@ Seq-annot ::= {
       location mix {
         int {
           from 2306,
-          to 3214,
+          to 3181,
           strand plus,
           id genbank {
             accession "AF121239",
@@ -525,7 +525,7 @@ Seq-annot ::= {
         },
         int {
           from 0,
-          to 1589,
+          to 1622,
           strand plus,
           id genbank {
             accession "AF121239",
@@ -561,7 +561,7 @@ Seq-annot ::= {
       location mix {
         int {
           from 2306,
-          to 3214,
+          to 3181,
           strand plus,
           id genbank {
             accession "AF121239",
@@ -570,7 +570,7 @@ Seq-annot ::= {
         },
         int {
           from 0,
-          to 1589,
+          to 1622,
           strand plus,
           id genbank {
             accession "AF121239",
@@ -620,7 +620,7 @@ Seq-annot ::= {
       location mix {
         int {
           from 2847,
-          to 3214,
+          to 3181,
           strand plus,
           id genbank {
             accession "AF121239",
@@ -629,7 +629,7 @@ Seq-annot ::= {
         },
         int {
           from 0,
-          to 801,
+          to 834,
           strand plus,
           id genbank {
             accession "AF121239",
@@ -674,7 +674,7 @@ Seq-annot ::= {
         },
         int {
           from 2847,
-          to 3214,
+          to 3181,
           strand plus,
           id genbank {
             accession "AF121239",
@@ -683,7 +683,7 @@ Seq-annot ::= {
         },
         int {
           from 0,
-          to 801,
+          to 834,
           strand plus,
           id genbank {
             accession "AF121239",
@@ -692,7 +692,7 @@ Seq-annot ::= {
         },
         int {
           from 3171,
-          to 3214,
+          to 3181,
           strand plus,
           id genbank {
             accession "AF121239",
@@ -701,7 +701,7 @@ Seq-annot ::= {
         },
         int {
           from 0,
-          to 801,
+          to 834,
           strand plus,
           id genbank {
             accession "AF121239",
@@ -988,7 +988,7 @@ Seq-annot ::= {
       location mix {
         int {
           from 2306,
-          to 3214,
+          to 3181,
           strand plus,
           id genbank {
             accession "AF121240",
@@ -997,7 +997,7 @@ Seq-annot ::= {
         },
         int {
           from 0,
-          to 1589,
+          to 1622,
           strand plus,
           id genbank {
             accession "AF121240",
@@ -1033,7 +1033,7 @@ Seq-annot ::= {
       location mix {
         int {
           from 2306,
-          to 3214,
+          to 3181,
           strand plus,
           id genbank {
             accession "AF121240",
@@ -1042,7 +1042,7 @@ Seq-annot ::= {
         },
         int {
           from 0,
-          to 1589,
+          to 1622,
           strand plus,
           id genbank {
             accession "AF121240",
@@ -1092,7 +1092,7 @@ Seq-annot ::= {
       location mix {
         int {
           from 2847,
-          to 3214,
+          to 3181,
           strand plus,
           id genbank {
             accession "AF121240",
@@ -1101,7 +1101,7 @@ Seq-annot ::= {
         },
         int {
           from 0,
-          to 801,
+          to 834,
           strand plus,
           id genbank {
             accession "AF121240",
@@ -1146,7 +1146,7 @@ Seq-annot ::= {
         },
         int {
           from 2847,
-          to 3214,
+          to 3181,
           strand plus,
           id genbank {
             accession "AF121240",
@@ -1155,7 +1155,7 @@ Seq-annot ::= {
         },
         int {
           from 0,
-          to 801,
+          to 834,
           strand plus,
           id genbank {
             accession "AF121240",
@@ -1164,7 +1164,7 @@ Seq-annot ::= {
         },
         int {
           from 3171,
-          to 3214,
+          to 3181,
           strand plus,
           id genbank {
             accession "AF121240",
@@ -1173,7 +1173,7 @@ Seq-annot ::= {
         },
         int {
           from 0,
-          to 801,
+          to 834,
           strand plus,
           id genbank {
             accession "AF121240",
@@ -1460,7 +1460,7 @@ Seq-annot ::= {
       location mix {
         int {
           from 2306,
-          to 3214,
+          to 3181,
           strand plus,
           id genbank {
             accession "AF121241",
@@ -1469,7 +1469,7 @@ Seq-annot ::= {
         },
         int {
           from 0,
-          to 1589,
+          to 1622,
           strand plus,
           id genbank {
             accession "AF121241",
@@ -1505,7 +1505,7 @@ Seq-annot ::= {
       location mix {
         int {
           from 2306,
-          to 3214,
+          to 3181,
           strand plus,
           id genbank {
             accession "AF121241",
@@ -1514,7 +1514,7 @@ Seq-annot ::= {
         },
         int {
           from 0,
-          to 1589,
+          to 1622,
           strand plus,
           id genbank {
             accession "AF121241",
@@ -1564,7 +1564,7 @@ Seq-annot ::= {
       location mix {
         int {
           from 2847,
-          to 3214,
+          to 3181,
           strand plus,
           id genbank {
             accession "AF121241",
@@ -1573,7 +1573,7 @@ Seq-annot ::= {
         },
         int {
           from 0,
-          to 801,
+          to 834,
           strand plus,
           id genbank {
             accession "AF121241",
@@ -1618,7 +1618,7 @@ Seq-annot ::= {
         },
         int {
           from 2847,
-          to 3214,
+          to 3181,
           strand plus,
           id genbank {
             accession "AF121241",
@@ -1627,7 +1627,7 @@ Seq-annot ::= {
         },
         int {
           from 0,
-          to 801,
+          to 834,
           strand plus,
           id genbank {
             accession "AF121241",
@@ -1636,7 +1636,7 @@ Seq-annot ::= {
         },
         int {
           from 3171,
-          to 3214,
+          to 3181,
           strand plus,
           id genbank {
             accession "AF121241",
@@ -1645,7 +1645,7 @@ Seq-annot ::= {
         },
         int {
           from 0,
-          to 801,
+          to 834,
           strand plus,
           id genbank {
             accession "AF121241",
