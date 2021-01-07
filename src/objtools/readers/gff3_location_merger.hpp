@@ -115,8 +115,8 @@ private:
     static void xSortLocations(
         LOCATIONS&);
 
-    TSeqPos mSequenceSize;
     unsigned int mFlags;
+    TSeqPos mSequenceSize;
     CGff3ReadRecord::SeqIdResolver mIdResolver;
 
     LOCATION_MAP mMapIdToLocations;

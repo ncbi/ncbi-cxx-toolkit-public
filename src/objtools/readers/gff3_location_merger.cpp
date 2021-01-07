@@ -168,8 +168,8 @@ CGff3LocationMerger::CGff3LocationMerger(
     TSeqPos sequenceSize):
 //  ============================================================================
     mFlags(flags),
-    mIdResolver(idResolver),
-    mSequenceSize(sequenceSize)
+    mSequenceSize(sequenceSize),
+    mIdResolver(idResolver)
 {
 }
 

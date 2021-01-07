@@ -84,7 +84,7 @@ protected:
     virtual bool xAssignFeatureMethod(
         CGffFeatureRecord&,
         CGffFeatureContext&,
-        const CMappedFeat&);
+        const CMappedFeat&) override;
 
     virtual bool xAssignFeatureAttributesFormatSpecific(
         CGffFeatureRecord&,

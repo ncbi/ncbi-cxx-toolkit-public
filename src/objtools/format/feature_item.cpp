@@ -1409,7 +1409,6 @@ void CFeatureItem::x_AddQualExceptions(
     const CSeqFeatData& data  = m_Feat.GetData();
 
     string raw_exception;
-    const CFlatFileConfig& cfg = ctx.Config();
 
     if ( ( m_Feat.IsSetExcept() && m_Feat.GetExcept() ) && 
         (m_Feat.IsSetExcept_text()  &&  !m_Feat.GetExcept_text().empty()) ) {
