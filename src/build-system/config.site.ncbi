@@ -247,7 +247,10 @@ case "$ncbi_platform" in
     *          ) : ${LZO_PATH=$NCBI/lzo-2.05} ;;
 esac
 
-: ${MBEDTLS_PATH=$NCBI/mbedtls-2.7.6-apache}
+case "$ncbi_platform" in
+    Linux64    ) : ${MBEDTLS_PATH=$NCBI/mbedtls-2.7.18} ;;
+    *          ) : ${MBEDTLS_PATH=$NCBI/mbedtls-2.7.6-apache} ;;
+esac
 
 : ${MIMETIC_PATH=$NCBI/mimetic-0.9.7-ncbi2}
 
