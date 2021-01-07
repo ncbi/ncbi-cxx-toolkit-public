@@ -52,7 +52,6 @@
 #include <vfs/resolver.h>
 
 #include <sra/sradb-priv.h>
-#include <sra/sraschema.h>
 
 #include <vdb/vdb-priv.h>
 #include <vdb/manager.h>
@@ -460,25 +459,34 @@ static
 void s_InitVDBVersion()
 {
     if ( !s_VDBVersion[0] ) {
-        SraReleaseVersion release_version;
-        SraReleaseVersionGet(&release_version);
-        CNcbiOstrstream s(s_VDBVersion, sizeof(s_VDBVersion));
-        s << (release_version.version>>24) << '.'
-          << ((release_version.version>>16)&0xff) << '.'
-          << (release_version.version&0xffff);
-        if ( release_version.revision != 0 ||
-             release_version.type != SraReleaseVersion::eSraReleaseVersionTypeFinal ) {
-            const char* type = "";
-            switch ( release_version.type ) {
-            case SraReleaseVersion::eSraReleaseVersionTypeDev:   type = "dev"; break;
-            case SraReleaseVersion::eSraReleaseVersionTypeAlpha: type = "a"; break;
-            case SraReleaseVersion::eSraReleaseVersionTypeBeta:  type = "b"; break;
-            case SraReleaseVersion::eSraReleaseVersionTypeRC:    type = "RC"; break;
-            default:                                             type = ""; break;
+        ostringstream s;
+        {{ // format VDB version string
+            SraReleaseVersion release_version;
+            SraReleaseVersionGet(&release_version);
+            s << (release_version.version>>24) << '.'
+              << ((release_version.version>>16)&0xff) << '.'
+              << (release_version.version&0xffff);
+            if ( release_version.revision != 0 ||
+                 release_version.type != SraReleaseVersion::eSraReleaseVersionTypeFinal ) {
+                const char* type = "";
+                switch ( release_version.type ) {
+                case SraReleaseVersion::eSraReleaseVersionTypeDev:   type = "dev"; break;
+                case SraReleaseVersion::eSraReleaseVersionTypeAlpha: type = "a"; break;
+                case SraReleaseVersion::eSraReleaseVersionTypeBeta:  type = "b"; break;
+                case SraReleaseVersion::eSraReleaseVersionTypeRC:    type = "RC"; break;
+                default:                                             type = ""; break;
+                }
+                s << '-' << type << release_version.revision;
             }
-            s << '-' << type << release_version.revision;
+        }}
+        string v = s.str();
+        if ( !v.empty() ) {
+            if ( v.size() >= sizeof(s_VDBVersion) ) {
+                v.resize(sizeof(s_VDBVersion)-1);
+            }
+            copy(v.begin()+1, v.end(), s_VDBVersion+1);
+            s_VDBVersion[0] = v[0];
         }
-        s << ends;
     }
 }
 
@@ -508,7 +516,7 @@ static const SVDBSeverityTag* s_GetVDBSeverityTag(CTempString token)
 }
 
 static
-rc_t VDBLogWriter(void* data, const char* buffer, size_t size, size_t* written)
+rc_t VDBLogWriter(void* /*data*/, const char* buffer, size_t size, size_t* written)
 {
     CTempString msg(buffer, size);
     NStr::TruncateSpacesInPlace(msg);
@@ -676,6 +684,11 @@ static void s_VDBInit()
 #endif
             KLogLevelSet(ask_level);
             KLogLibHandlerSet(VDBLogWriter, 0);
+            if ( s_GetDebugLevel() >= 2 ) {
+                const char* msg = "info: VDB initialized";
+                size_t written;
+                VDBLogWriter(0, msg, strlen(msg), &written);
+            }
         }
         CKConfig config = s_InitProxyConfig();
         CKNSManager kns_mgr(CKNSManager::eMake);
@@ -841,17 +854,11 @@ CVDBTable::CVDBTable(const CVDBMgr& mgr,
     : m_Name(acc_or_path)
 {
     *x_InitPtr() = 0;
-    VSchema *schema;
     DECLARE_SDK_GUARD();
-    if ( rc_t rc = SRASchemaMake(&schema, mgr) ) {
-        NCBI_THROW2(CSraException, eInitFailed,
-                    "Cannot make default SRA schema", rc);
-    }
     string path = CVPath::ConvertAccOrSysPathToPOSIX(acc_or_path);
-    if ( rc_t rc = VDBManagerOpenTableRead(mgr, x_InitPtr(), schema, "%.*s",
+    if ( rc_t rc = VDBManagerOpenTableRead(mgr, x_InitPtr(), 0, "%.*s",
                                            int(path.size()), path.data()) ) {
         *x_InitPtr() = 0;
-        VSchemaRelease(schema);
         if ( (GetRCObject(rc) == RCObject(rcDirectory) ||
               GetRCObject(rc) == RCObject(rcPath)) &&
              GetRCState(rc) == rcNotFound ) {
@@ -874,7 +881,6 @@ CVDBTable::CVDBTable(const CVDBMgr& mgr,
                             "Cannot open SRA table: "<<acc_or_path, rc);
         }
     }
-    VSchemaRelease(schema);
 }
 
 
