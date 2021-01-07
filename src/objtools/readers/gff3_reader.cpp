@@ -228,9 +228,9 @@ CGff3Reader::ReadSeqAnnot(
     ILineErrorListener* pEC ) 
 //  ----------------------------------------------------------------------------                
 {
- 
     mCurrentFeatureCount = 0;
     mParsingAlignment = false;
+    mpLocations->Reset();
     auto pAnnot = CReaderBase::ReadSeqAnnot(lr, pEC);
     if (pAnnot  &&  pAnnot->GetData().Which() == CSeq_annot::TData::e_not_set) {
         return CRef<CSeq_annot>();
@@ -383,6 +383,12 @@ bool CGff3Reader::xUpdateAnnotFeature(
     ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
+    //if (gffRecord.Type() == "gene") {
+    //    if (gffRecord.SeqStart() == 114392786) {
+    //        cerr << "";
+    //    }
+    //}
+
     auto recType = gffRecord.Type();
     NStr::ToLower(recType);
     if (recType != "cds") {

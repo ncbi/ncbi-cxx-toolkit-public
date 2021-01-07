@@ -85,6 +85,10 @@ public:
         CGff3ReadRecord::SeqIdResolver =nullptr,
         TSeqPos sequenceSize =0);
 
+    void Reset() {
+        mMapIdToLocations.clear();
+    };
+
     void SetSequenceSize(
         TSeqPos sequenceSize) { mSequenceSize = sequenceSize; }
 
