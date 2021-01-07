@@ -112,6 +112,11 @@ public:
     /// Get the diagnostics structure (deep copy, needs to be deleted by caller)
     BlastDiagnostics* GetDiagnostics();
 
+    // set batch number
+    void SetBatchNumber( int batch_num ) {
+	m_batch_num_str = string("B") + NStr::NumericToString( batch_num );
+    }
+
 private:
     /// Query factory from which to obtain the query sequence data
     CRef<IQueryFactory> m_QueryFactory;
@@ -138,6 +143,9 @@ private:
 
     /// Warnings and error messages
     TSearchMessages                 m_Messages;
+
+    // current batch number
+    std::string m_batch_num_str;
 
     friend class ::CBlastFilterTest;
     friend class CBl2Seq;
