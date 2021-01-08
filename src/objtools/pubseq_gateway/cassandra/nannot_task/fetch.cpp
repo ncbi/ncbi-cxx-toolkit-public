@@ -258,9 +258,14 @@ void CCassNAnnotTaskFetch::Wait1()
                             .SetStart(m_QueryArr[0].query->FieldGetInt32Value(3, 0))
                             .SetStop(m_QueryArr[0].query->FieldGetInt32Value(4, 0))
                             .SetAnnotInfo(m_QueryArr[0].query->FieldGetStrValueDef(5, ""))
-                            .SetSeqAnnotInfo(m_QueryArr[0].query->FieldGetStrValueDef(6, ""))
                             .SetAnnotInfoModified(m_QueryArr[0].query->FieldGetInt64Value(7, 0))
                             .SetWritetime(m_QueryArr[0].query->FieldGetInt64Value(8, 0));
+
+                        const unsigned char * rawdata = nullptr;
+                        int64_t len = m_QueryArr[0].query->FieldGetBlobRaw(6, &rawdata);
+                        if (len > 0) {
+                            record.SetSeqAnnotInfo(string(reinterpret_cast<const char*>(rawdata), len));
+                        }
 
                         if (m_Consume) {
                             string annot_name = record.GetAnnotName();
