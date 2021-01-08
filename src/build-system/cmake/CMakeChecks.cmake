@@ -216,25 +216,6 @@ set(NCBI_CPP_TOOLKIT_VERSION
 # Subversion
 # This is needed for some use cases
 
-macro(NCBI_util_ToCygwinPath _result _value)
-    set(${_result} "${_value}")
-    if(WIN32)
-        string(FIND ${_value} ":" _pos)
-        if(${_pos} EQUAL 1)
-            string(REPLACE ":" ""  _tmp "${_value}")
-            set(${_result} "/cygdrive/${_tmp}")
-        endif()
-    endif()
-endmacro()
-macro(NCBI_Subversion_WC_INFO _dir _prefix)
-    if(CYGWIN)
-        NCBI_util_ToCygwinPath(_tmp ${_dir})
-        Subversion_WC_INFO(${_tmp} ${_prefix})
-    else()
-        Subversion_WC_INFO(${_dir} ${_prefix})
-    endif()
-endmacro()
-
 include(FindSubversion)
 if (Subversion_FOUND AND EXISTS ${top_src_dir}/.svn)
     NCBI_Subversion_WC_INFO(${top_src_dir} TOOLKIT)

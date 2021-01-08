@@ -16,6 +16,18 @@ if("$ENV{OSTYPE}" STREQUAL "cygwin")
     endif()
 endif()
 
+if(DEFINED NCBIPTB.env.NCBI)
+    set(ENV{NCBI} ${NCBIPTB.env.NCBI})
+endif()
+if(DEFINED NCBIPTB.env.PATH)
+    if(WIN32)
+        set(ENV{PATH} "${NCBIPTB.env.PATH};$ENV{PATH}")
+    else()
+        set(ENV{PATH} "${NCBIPTB.env.PATH}:$ENV{PATH}")
+    endif()
+endif()
+
+
 string(REGEX REPLACE "([][^$.\\*+?|()])" "\\\\\\1" _tmp ${CMAKE_CURRENT_SOURCE_DIR})
 if (NOT DEFINED NCBI_EXTERNAL_TREE_ROOT AND NOT ${CMAKE_CURRENT_LIST_DIR} MATCHES "^${_tmp}/")
     get_filename_component(NCBI_EXTERNAL_TREE_ROOT "${CMAKE_CURRENT_LIST_DIR}/../../.."   ABSOLUTE)

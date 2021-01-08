@@ -267,3 +267,37 @@ macro( RunDatatool MODULE MODULE_SEARCH )
 
 endmacro( RunDatatool )
 
+
+##############################################################################
+macro(NCBI_util_Cfg_ToStd _value _result)
+    set(${_result} ${_value})
+    if("${NCBI_CONFIGURATION_TYPES_COUNT}" EQUAL 1)
+        if("${_value}" MATCHES "Debug")
+            set(${_result} Debug)
+        else()
+            set(${_result} Release)
+        endif()
+    endif()
+endmacro()
+
+##############################################################################
+macro(NCBI_util_ToCygwinPath _value _result)
+    set(${_result} "${_value}")
+    if(WIN32)
+        string(FIND ${_value} ":" _pos)
+        if(${_pos} EQUAL 1)
+            string(REPLACE ":" ""  _tmp "${_value}")
+            set(${_result} "/cygdrive/${_tmp}")
+        endif()
+    endif()
+endmacro()
+
+##############################################################################
+macro(NCBI_Subversion_WC_INFO _dir _prefix)
+    if(CYGWIN)
+        NCBI_util_ToCygwinPath(${_dir} _tmp)
+        Subversion_WC_INFO(${_tmp} ${_prefix})
+    else()
+        Subversion_WC_INFO(${_dir} ${_prefix})
+    endif()
+endmacro()
