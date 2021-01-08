@@ -4953,11 +4953,27 @@ void CChain::ClipToCompleteAlignment(EStatus determinant)
         if(align.Status()&determinant) {
             if(right_end) {
                 int rlimit = (coding ? RealCdsLimits().GetTo() : Exons().back().Limits().GetFrom());      // look in the last exon of notcoding or right UTR of coding
-                if(rlimit < align.Limits().GetTo() && BelongToExon(Exons(),align.Limits().GetTo()))
+                bool belong_to_exon = false;
+                int pos = align.Limits().GetTo();
+                for(auto& exon : Exons()) {
+                    if(pos >= exon.Limits().GetFrom()+MIN_SPLICE_DIST && pos <= exon.Limits().GetTo()) {
+                        belong_to_exon = true;
+                        break;
+                    }
+                }
+                if(rlimit < pos && belong_to_exon)
                     raw_weights[align.Limits().GetTo()] += align.Weight();
             } else {
                 int llimit = (coding ? RealCdsLimits().GetFrom() : Exons().front().Limits().GetTo());     // look in the first exon of notcoding or left UTR of coding
-                if(llimit > align.Limits().GetFrom() && BelongToExon(Exons(),align.Limits().GetFrom()))
+                bool belong_to_exon = false;
+                int pos = align.Limits().GetFrom();
+                for(auto& exon : Exons()) {
+                    if(pos >= exon.Limits().GetFrom() && pos <= exon.Limits().GetTo()-MIN_SPLICE_DIST) {
+                        belong_to_exon = true;
+                        break;
+                    }
+                }
+                if(llimit > pos && belong_to_exon)
                     raw_weights[-align.Limits().GetFrom()] += align.Weight();                             // negative position, so the map is in convinient order
             }
         }
@@ -4969,15 +4985,18 @@ void CChain::ClipToCompleteAlignment(EStatus determinant)
     if(raw_weights.empty())
         return;
 
+    double min_blob_weight = (determinant == CGeneModel::eCap ? MIN_BLOB_WEIGHT_CAGE : MIN_BLOB_WEIGHT_POLY);
+    int max_empty_dist =  MAX_EMPTY_DIST;
+
     int last_allowed = right_end ? real_limits.GetTo()+flex_len : -(real_limits.GetFrom()-flex_len);
     TIDMap peak_weights;
     auto ipeak = raw_weights.begin();
     double w = ipeak->second;
     for(auto it = next(raw_weights.begin()); it != raw_weights.end(); ++it) {
-        if(it->first != prev(it)->first+1) {           // next blob
+        if(it->first != prev(it)->first+1+max_empty_dist) {           // next blob
             if(ipeak->first > last_allowed)
                 break;
-            if(w >= MINIMAL_BLOB_WEIGHT)
+            if(w >= min_blob_weight)
                 peak_weights.emplace(ipeak->first, w); // peak position, blob weight
             ipeak = it;
             w = it->second;
@@ -4987,7 +5006,7 @@ void CChain::ClipToCompleteAlignment(EStatus determinant)
                 ipeak = it;
         }
     }
-    if(ipeak->first <= last_allowed && w >= MINIMAL_BLOB_WEIGHT)
+    if(ipeak->first <= last_allowed && w >= min_blob_weight)
         peak_weights.emplace(ipeak->first, w);       // last peak
 
     if(peak_weights.empty()) {

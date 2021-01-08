@@ -40,8 +40,12 @@ BEGIN_SCOPE(ncbi)
 BEGIN_SCOPE(gnomon)
 
 // used in chainer and collapser
-#define MINIMAL_POSITION_WEIGHT 2
-#define MINIMAL_BLOB_WEIGHT 5
+#define MIN_POSITION_WEIGHT_CAGE 5
+#define MIN_BLOB_WEIGHT_CAGE 50
+#define MIN_POSITION_WEIGHT_POLY 3
+#define MIN_BLOB_WEIGHT_POLY 5
+#define MAX_EMPTY_DIST 20 
+#define MIN_SPLICE_DIST 25 
 
 struct SAlignIndividual {
     SAlignIndividual() : m_weight(0) {};
