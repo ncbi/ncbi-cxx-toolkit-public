@@ -5965,7 +5965,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "RSCS\tc\tMedical Culture Collection\t\t\t",
 "RSDR\ts\tDesert Institute, Turkmenistan Academy of Sciences\t\t\t",
 "RSKK\tc\tRefik Saydam National Type Culture Collection-RSKK\t\t\t",
-"RSM<CAN>\ts\tRoyal Saskatchewan Museum\tSMNH<CAN>\t\t",
+"RSM<CAN>\ts\tRoyal Saskatchewan Museum\tRSKM,SMNH<CAN>\t\t",
 "RSM<GBR>\ts\tRoyal Scottish Museum\tNMSZ,RSME\t\t",
 "RSU\ts\tRyazan State University\t\t\t",
 "RSY\ts\tButeshire Natural History Society, The Museum\t\t\t",

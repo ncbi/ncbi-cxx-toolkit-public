@@ -5932,7 +5932,7 @@ RSA	s	Rancho Santa Ana Botanic Garden
 RSCS	c	Medical Culture Collection			
 RSDR	s	Desert Institute, Turkmenistan Academy of Sciences			
 RSKK	c	Refik Saydam National Type Culture Collection-RSKK			
-RSM<CAN>	s	Royal Saskatchewan Museum	SMNH<CAN>		
+RSM<CAN>	s	Royal Saskatchewan Museum	RSKM,SMNH<CAN>		
 RSM<GBR>	s	Royal Scottish Museum	NMSZ,RSME		
 RSU	s	Ryazan State University			
 RSY	s	Buteshire Natural History Society, The Museum			
