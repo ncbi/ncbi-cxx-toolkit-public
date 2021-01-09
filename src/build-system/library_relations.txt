@@ -12,7 +12,6 @@ BlastCgiUtils needs $(CONNEXT)
 BlastCgiUtils needs connect
 BlastCgiUtils needs xhtml
 BlastOptsTools needs $(BLAST_LIBS)
-BlastOptsTools needs utrtprof
 BlastOptsTools needs xcgi
 BlastOptsTools needs xhtml
 BlastOptsTools needs3party $(BLAST_THIRD_PARTY_LIBS)
@@ -180,7 +179,6 @@ blast needs connect
 blast needs tables
 blast_app_util needs $(BLAST_INPUT_LIBS)
 blast_app_util needs $(BLAST_LIBS)
-blast_app_util needs utrtprof
 blast_app_util needs3party $(BLAST_THIRD_PARTY_LIBS)
 blast_hits_cache needs $(SQLITE3_WRAPPER)
 blast_hits_cache needs xncbi
@@ -190,7 +188,6 @@ blast_sra_input needs $(SOBJMGR_LIBS)
 blast_sra_input needs $(SRAREAD_LIBS)
 blast_unit_test_util needs $(BLAST_LIBS)
 blast_unit_test_util needs $(OBJMGR_LIBS)
-blast_unit_test_util needs utrtprof
 blast_unit_test_util needs3party $(BLAST_THIRD_PARTY_LIBS)
 blast_unit_test_util needs3party $(BOOST_TEST_LIBS)
 blast_unit_test_util needs3party $(GENBANK_THIRD_PARTY_LIBS)
@@ -207,7 +204,6 @@ blastdbinfo needs taxutl
 blastinput needs $(BLAST_DB_DATA_LOADER_LIBS)
 blastinput needs $(BLAST_LIBS)
 blastinput needs align_format
-blastinput needs utrtprof
 blastinput needs3party $(BLAST_THIRD_PARTY_LIBS)
 blaststoreasncpp_g needs bl2seqasn_g
 blastxml needs xser
@@ -256,7 +252,6 @@ cluster_utils needs gpipe_objutil
 clustering needs cobalt
 cn3d needs mmdb
 cobalt needs $(BLAST_LIBS)
-cobalt needs utrtprof
 cobalt needs xalgoalignnw
 cobalt needs xalgophytree
 cobalt needs3party $(BLAST_THIRD_PARTY_LIBS)
@@ -539,7 +534,6 @@ gpipe_best_placement needs xalgoalignutil
 gpipe_blast needs $(BLAST_INPUT_LIBS)
 gpipe_blast needs $(BLAST_LIBS)
 gpipe_blast needs gpipe_alnutil
-gpipe_blast needs utrtprof
 gpipe_blast needs3party $(BLAST_THIRD_PARTY_LIBS)
 gpipe_clean_prot_names needs gpipe_attr
 gpipe_clean_prot_names needs macro
@@ -784,7 +778,6 @@ idload needs3party ctutils
 idload_utils needs gpipe_objutil
 idload_utils needs gpipe_sqlite
 igblast needs $(BLAST_LIBS)
-igblast needs utrtprof
 igblast needs3party $(BLAST_THIRD_PARTY_LIBS)
 insdseq needs xser
 intvarutil needs gencoll_client
@@ -1424,7 +1417,6 @@ variation_utils needs variation
 variation_utils needs xobjutil
 varrep needs xser
 vdb2blast needs $(BLAST_LIBS)
-vdb2blast needs utrtprof
 vdb2blast needs3party $(BLAST_THIRD_PARTY_LIBS)
 vdb2blast needs3party $(VDB_LIBS)
 vdb_reader needs xncbi
@@ -1569,7 +1561,6 @@ xalgoalignnw needs tables
 xalgoalignsplign needs xalgoalignnw
 xalgoalignsplign needs xalgoalignutil
 xalgoalignutil needs $(BLAST_LIBS)
-xalgoalignutil needs utrtprof
 xalgoalignutil needs xalgoseq
 xalgoalignutil needs xqueryparse
 xalgoalignutil needs3party $(BLAST_THIRD_PARTY_LIBS)
@@ -1579,7 +1570,6 @@ xalgoblastdbindex needs seqdb
 xalgoblastdbindex needs xobjutil
 xalgoblastdbindex_search needs $(SOBJMGR_LIBS)
 xalgocontig_assembly needs $(BLAST_LIBS)
-xalgocontig_assembly needs utrtprof
 xalgocontig_assembly needs xalgoalignnw
 xalgocontig_assembly needs3party $(BLAST_THIRD_PARTY_LIBS)
 xalgodustmask needs $(SOBJMGR_LIBS)
@@ -1628,7 +1618,6 @@ xblastformat needs $(XFORMAT_LIBS)
 xblastformat needs align_format
 xblastformat needs blastxml
 xblastformat needs blastxml2
-xblastformat needs utrtprof
 xblastformat needs3party $(BLAST_THIRD_PARTY_LIBS)
 xbma_refiner needs xcd_utils
 xbma_refiner needs xstruct_util
@@ -1638,7 +1627,6 @@ xcd_utils needs entrez2cli
 xcd_utils needs id1cli
 xcd_utils needs ncbimime
 xcd_utils needs taxon1
-xcd_utils needs utrtprof
 xcd_utils needs xregexp
 xcd_utils needs3party $(BLAST_THIRD_PARTY_LIBS)
 xcddalignview needs ncbimime
@@ -1831,7 +1819,6 @@ xsoap_server needs xsoap
 xstruct_dp needs xncbi
 xstruct_thread needs xutil
 xstruct_util needs $(BLAST_LIBS)
-xstruct_util needs utrtprof
 xstruct_util needs xstruct_dp
 xstruct_util needs3party $(BLAST_THIRD_PARTY_LIBS)
 xsubmit2id needs idload_utils
