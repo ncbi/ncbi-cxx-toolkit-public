@@ -72,11 +72,11 @@ private:
     static CSafeStatic<map<string, string> > sm_AliasTable;
     static CSafeStatic<map<string, vector<string> > > sm_AliasListTable;
 
-friend string GetDiscrepancyCaseName(const string& s);
-friend string GetDiscrepancyDescr(const string& s);
-friend TGroup GetDiscrepancyGroup(const string& s);
-friend vector<string> GetDiscrepancyNames(TGroup group);
-friend vector<string> GetDiscrepancyAliases(const string& name);
+friend NCBI_DISCREPANCY_EXPORT string GetDiscrepancyCaseName(const string& s);
+friend NCBI_DISCREPANCY_EXPORT string GetDiscrepancyDescr(const string& s);
+friend NCBI_DISCREPANCY_EXPORT TGroup GetDiscrepancyGroup(const string& s);
+friend NCBI_DISCREPANCY_EXPORT vector<string> GetDiscrepancyNames(TGroup group);
+friend NCBI_DISCREPANCY_EXPORT vector<string> GetDiscrepancyAliases(const string& name);
 friend class CDiscrepancyAlias;
 friend class CDiscrepancyContext;
 friend class CReportItem;
