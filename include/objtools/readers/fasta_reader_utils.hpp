@@ -74,11 +74,11 @@ public:
     using TSeqTitles = vector<SLineTextAndLoc>; 
 
     struct SDeflineParseInfo {
-        TBaseFlags fBaseFlags;
-        TFastaFlags fFastaFlags;
+        TBaseFlags fBaseFlags=0;
+        TFastaFlags fFastaFlags=0;
         TSeqPos maxIdLength=0; // If maxIdLength is zero, the code uses the 
                                // default values specified in CSeq_id
-        TSeqPos lineNumber;
+        TSeqPos lineNumber=-1;
     };
 
     using TInfo = SDeflineParseInfo;
