@@ -177,7 +177,7 @@ string CDiscRepApp::x_ConstructOutputName(const string& input) // LCOV_EXCL_STAR
 
 static unique_ptr<CObjectIStream> OpenUncompressedStream(const string& fname, bool& compressed)
 {
-    unique_ptr<CNcbiIstream> InputStream(new CNcbiIfstream (fname.c_str(), ios::binary));
+    unique_ptr<CNcbiIstream> InputStream(new CNcbiIfstream(fname, ios::binary));
     CCompressStream::EMethod method;
     
     CFormatGuess::EFormat format = CFormatGuess::Format(*InputStream);
@@ -224,7 +224,8 @@ void CDiscRepApp::x_ProcessFile(const string& fname, CDiscrepancySet& tests)
 {
     bool compressed = false;
     unique_ptr<CObjectIStream> in = OpenUncompressedStream(fname, compressed);
-    tests.ParseStream(*in, fname, !compressed, x_DefaultHeader());
+    if (in)
+        tests.ParseStream(*in, fname, !compressed, x_DefaultHeader());
 }
 
 
@@ -338,14 +339,14 @@ unsigned CDiscRepApp::x_ProcessAll(const string& outname)
 
 void CDiscRepApp::x_Output(const string& filename, CDiscrepancySet& tests, unsigned short flags)
 {
-    CNcbiOfstream out(filename.c_str(), ofstream::out);
+    CNcbiOfstream out(filename, ofstream::out);
     tests.OutputText(out, flags, m_Group);
 }
 
 
 void CDiscRepApp::x_OutputXml(const string& filename, CDiscrepancySet& tests, unsigned short flags)
 {
-    CNcbiOfstream out(filename.c_str(), ofstream::out);
+    CNcbiOfstream out(filename, ofstream::out);
     tests.OutputXML(out, flags);
 }
 
