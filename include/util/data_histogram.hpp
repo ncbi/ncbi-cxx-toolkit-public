@@ -245,7 +245,7 @@ public:
     /// @note 
     ///   This method doesn't check calculated sum on overflow.
     /// @sa Add, TSum
-    TSum GetSum(void) { RETURN_MT_SAFE(m_Sum); }
+    TSum GetSum(void) const { RETURN_MT_SAFE(m_Sum); }
 
     /// Reset all data counters.
     void Reset();
@@ -253,7 +253,7 @@ public:
     /// Add counters from 'other' histogram to this histogram, 'other' doesn't changes.
     /// @note Both histograms should have the same structure.
     /// @sa Clone, Reset, StealCountersFrom
-    void AddCountersFrom(CHistogram& other);
+    void AddCountersFrom(const CHistogram& other);
 
     /// Add counters from 'other' histogram to this histogram,
     /// then reset the counters of 'other' histogram.
@@ -328,15 +328,15 @@ public:
     /// The number of hits whose values fall outside that range can be obtained
     /// using GetLowerAnomalyCount() and GetUpperAnomalyCount() methods.
     /// @sa GetMin, GetMax, GetLowerAnomalyCount, GetUpperAnomalyCount, GetBinCounters
-    TCounter GetCount() { RETURN_MT_SAFE(m_Count); }
+    TCounter GetCount() const { RETURN_MT_SAFE(m_Count); }
 
     /// Get number of hits whose values were less than GetMin().
     /// @sa GetUpperAnomalyCount, GetCount
-    size_t GetLowerAnomalyCount() {RETURN_MT_SAFE(m_LowerAnomalyCount); }
+    size_t GetLowerAnomalyCount() const {RETURN_MT_SAFE(m_LowerAnomalyCount); }
 
     /// Get number of hits whose values were greater than GetMax().
     /// @sa GetLowerAnomalyCount, GetCount
-    size_t GetUpperAnomalyCount() { RETURN_MT_SAFE(m_UpperAnomalyCount); }
+    size_t GetUpperAnomalyCount() const { RETURN_MT_SAFE(m_UpperAnomalyCount); }
 
 
     /////////////////////////////////////////////////////////////////////////
@@ -420,7 +420,7 @@ public:
     /// Creates a copy of the histogram structure depending on clone method.
     /// By default it is a whole copy, but you can clone histogram's structure only, without counters.
     ///
-    CHistogram Clone(EClone how = eCloneAll);
+    CHistogram Clone(EClone how = eCloneAll) const;
 
 
     /////////////////////////////////////////////////////////////////////////
@@ -438,11 +438,11 @@ public:
         m_IsMT = true; 
     };
     /// MT locking
-    void MT_Lock() {
+    void MT_Lock() const {
         if (m_IsMT) m_Mutex.lock();
     }
     // MT unlocking
-    void MT_Unlock() {
+    void MT_Unlock() const {
         if (m_IsMT) m_Mutex.unlock();
     }
 
@@ -567,12 +567,12 @@ public:
         // due optional protection, so we use const_cast<> here. It is safe, 
         // because Clone() change internal mutex only.
         STimeBin(const STimeBin& other) :
-            histogram(const_cast<STimeBin&>(other).histogram.Clone(THistogram::eCloneAll)),
+            histogram(other.histogram.Clone(THistogram::eCloneAll)),
             n_ticks(other.n_ticks)
         {}
         STimeBin& operator=(const STimeBin& other)
         {
-            histogram = const_cast<STimeBin&>(other).histogram.Clone(THistogram::eCloneAll);
+            histogram = other.histogram.Clone(THistogram::eCloneAll);
             n_ticks = other.n_ticks;
         }
         STimeBin(THistogram&& h, TTicks t) :
@@ -586,14 +586,14 @@ public:
     using TTimeBins = list<STimeBin>;
 
     /// Histograms -- in the order from the most recent to the least recent
-    TTimeBins GetHistograms();
+    TTimeBins GetHistograms() const;
 
     /// Number of ticks the histogram series has handled.
     /// Initially the number of ticks is zero.
     TTicks GetCurrentTick(void) const { return m_CurrentTick; }
 
 private:
-    void x_AppendBin(THistogram& model_histogram, TTicks n_ticks);
+    void x_AppendBin(const THistogram& model_histogram, TTicks n_ticks);
     void x_Shift(size_t index, typename TTimeBins::iterator current_it);
 
 private:
@@ -1109,7 +1109,7 @@ CHistogram<TValue, TScale, TCounter>::operator=(CHistogram&& other)
 
 template <typename TValue, typename TScale, typename TCounter>
 CHistogram<TValue, TScale, TCounter> 
-CHistogram<TValue, TScale, TCounter>::Clone(EClone how)
+CHistogram<TValue, TScale, TCounter>::Clone(EClone how) const
 {
     MT_Lock();
 
@@ -1185,7 +1185,7 @@ CHistogram<TValue, TScale, TCounter>::x_IsEqual(TScale a, TScale b)
 
 template <typename TValue, typename TScale, typename TCounter>
 void 
-CHistogram<TValue, TScale, TCounter>::AddCountersFrom(CHistogram& other)
+CHistogram<TValue, TScale, TCounter>::AddCountersFrom(const CHistogram& other)
 { 
     if (this == &other) return;
 
@@ -1352,7 +1352,7 @@ CHistogramTimeSeries<TValue, TScale, TCounter>::x_Shift(size_t index,
 
 template <typename TValue, typename TScale, typename TCounter>
 typename CHistogramTimeSeries<TValue, TScale, TCounter>::TTimeBins
-CHistogramTimeSeries<TValue, TScale, TCounter>::GetHistograms()
+CHistogramTimeSeries<TValue, TScale, TCounter>::GetHistograms() const
 {
     m_Mutex.lock();
     TTimeBins ret = m_TimeBins;
@@ -1364,7 +1364,7 @@ CHistogramTimeSeries<TValue, TScale, TCounter>::GetHistograms()
 template <typename TValue, typename TScale, typename TCounter>
 void
 CHistogramTimeSeries<TValue, TScale, TCounter>::x_AppendBin(
-    THistogram& model_histogram, TTicks n_ticks)
+    const THistogram& model_histogram, TTicks n_ticks)
 {
     m_TimeBins.push_back(
             STimeBin{model_histogram.Clone(THistogram::eCloneStructureOnly),
