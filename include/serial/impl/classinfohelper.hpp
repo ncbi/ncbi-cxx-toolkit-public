@@ -240,6 +240,10 @@ public:
                                                 sizeof(CClassType),
                                                 typeid(CClassType));
         }
+    static CChoiceTypeInfo* CreateAsnChoiceInfo(const char* name)
+        {
+            return CAsnClassInfoHelperBase::CreateAsnChoiceInfo(name);
+        }
 #endif
 
 private:
