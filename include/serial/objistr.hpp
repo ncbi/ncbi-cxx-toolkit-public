@@ -905,7 +905,7 @@ public:
 
 #if HAVE_NCBI_C
     // ASN.1 interface
-    class NCBI_XSERIAL_EXPORT AsnIo
+    class AsnIo
     {
     public:
         AsnIo(CObjectIStream& in, const string& rootTypeName);

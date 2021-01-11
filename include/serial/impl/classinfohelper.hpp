@@ -82,14 +82,6 @@ protected:
                                              TSelectFunction selectFunc,
                                              TResetFunction resetFunc);
 
-public:
-#if HAVE_NCBI_C
-    static CChoiceTypeInfo* CreateAsnChoiceInfo(const char* name);
-    static CClassTypeInfo* CreateAsnStructInfo(const char* name, size_t size,
-                                               const type_info& id);
-#endif
-    
-protected:
     static CClassTypeInfo* CreateClassInfo(const char* name, size_t size,
                                            const void* nonCObject,
                                            TCreateFunction createFunc,
@@ -100,7 +92,20 @@ protected:
                                            TCreateFunction createFunc,
                                            const type_info& id,
                                            TGetTypeIdFunction func);
+#if HAVE_NCBI_C
+    friend class CAsnClassInfoHelperBase;
+#endif
 };
+
+#if HAVE_NCBI_C
+class CAsnClassInfoHelperBase
+{
+public:
+    static CChoiceTypeInfo* CreateAsnChoiceInfo(const char* name);
+    static CClassTypeInfo* CreateAsnStructInfo(const char* name, size_t size,
+                                               const type_info& id);
+};
+#endif
 
 // template collecting all helper methods for generated classes
 template<class C>

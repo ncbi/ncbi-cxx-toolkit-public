@@ -86,11 +86,11 @@ static const type_info* GetNullId(TConstObjectPtr )
     return 0;
 }
 
-CClassTypeInfo* CClassInfoHelperBase::CreateAsnStructInfo(const char* name,
+CClassTypeInfo* CAsnClassInfoHelperBase::CreateAsnStructInfo(const char* name,
                                                           size_t size,
                                                           const type_info& id)
 {
-    return CreateClassInfo(name, size,
+    return CClassInfoHelperBase::CreateClassInfo(name, size,
                            TConstObjectPtr(0), &CreateAsnStruct,
                            id, &GetNullId);
 }
@@ -118,9 +118,9 @@ static void ResetAsn(const CChoiceTypeInfo* /*choiceType*/,
     node->choice = 0;
 }
 
-CChoiceTypeInfo* CClassInfoHelperBase::CreateAsnChoiceInfo(const char* name)
+CChoiceTypeInfo* CAsnClassInfoHelperBase::CreateAsnChoiceInfo(const char* name)
 {
-    return CreateChoiceInfo(name, sizeof(valnode),
+    return CClassInfoHelperBase::CreateChoiceInfo(name, sizeof(valnode),
                             TConstObjectPtr(0), &CreateAsnStruct, typeid(bool),
                             &WhichAsn, &SelectAsn, &ResetAsn);
 }

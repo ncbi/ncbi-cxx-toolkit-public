@@ -639,7 +639,7 @@ public:
     };
 
 #if HAVE_NCBI_C
-    class NCBI_XSERIAL_EXPORT AsnIo
+    class AsnIo
     {
     public:
         AsnIo(CObjectOStream& out, const string& rootTypeName);
