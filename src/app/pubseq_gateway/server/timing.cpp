@@ -41,9 +41,9 @@ static string           kTimeRangeEnd("TimeRangeEnd");
 const unsigned long     kMaxBlobSize = 1024L*1024L*1024L*8L;   // 8 GB
 
 
-CJsonNode SerializeHistogram(const TOnePSGTiming &  histogram,
-                             const string &  name,
-                             const string &  description)
+CJsonNode SerializeHistogram(TOnePSGTiming &  histogram,
+                             const string  &  name,
+                             const string  &  description)
 {
     static string   kBins("Bins");
     static string   kStart("Start");
@@ -65,8 +65,8 @@ CJsonNode SerializeHistogram(const TOnePSGTiming &  histogram,
 
     size_t          bin_count =  histogram.GetNumberOfBins();
     size_t          last_bin_index = bin_count - 1;
-    auto            starts = histogram.GetBinStarts();
-    auto            counters = histogram.GetBinCounters();
+    auto            starts = histogram.GetBinStartsPtr();
+    auto            counters = histogram.GetBinCountersPtr();
     for (size_t  k = 0; k < bin_count; ++k) {
         CJsonNode   bin(CJsonNode::NewObjectNode());
         bin.SetInteger(kStart, starts[k]);
@@ -104,7 +104,7 @@ CJsonNode CPSGTimingBase::SerializeSeries(int  most_ancient_time,
 
     int64_t         histogram_start_time = 0;
 
-    for (const auto &  bin : bins) {
+    for (auto &  bin : bins) {
         int64_t     histogram_cover = tick_span * bin.n_ticks;
         int64_t     histogram_end_time = histogram_start_time + histogram_cover - 1;
 
@@ -153,7 +153,7 @@ CJsonNode CPSGTimingBase::SerializeCombined(int  most_ancient_time,
     int64_t         actual_recent_time = -1;    // undefined so far
     int64_t         actual_ancient_time = -1;   // undefined so far
 
-    for (const auto &  bin : bins) {
+    for (auto &  bin : bins) {
         int64_t     histogram_cover = tick_span * bin.n_ticks;
         int64_t     histogram_end_time = histogram_start_time + histogram_cover - 1;
 
@@ -1151,4 +1151,3 @@ COperationTiming::Serialize(int  most_ancient_time,
 
     return ret;
 }
-
