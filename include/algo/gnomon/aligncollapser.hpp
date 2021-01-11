@@ -213,7 +213,7 @@ private:
     Tidpool m_target_id_pool;
     TAlignIntrons m_align_introns;
     TAlignModelList m_aligns_for_filtering_only;
-    map<tuple<CGeneModel::EStatus, CGeneModel::EStatus>, TAlignModelList> m_special_aligns; // [left/right flex, cap/polya]
+    map<tuple<int, int>, CAlignModel> m_special_aligns; // [left/right flex|cap/polya, position]
 
     int m_count;
     bool m_filtersr;

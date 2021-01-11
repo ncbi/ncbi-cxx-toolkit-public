@@ -266,6 +266,7 @@ public:
     void RestoreReasonableConfirmedStart(const CGnomonEngine& gnomon, TOrigAligns& orig_aligns);
     void SetOpenForPartialyAlignedProteins(map<string, pair<bool,bool> >& prot_complet);
     void ClipToCompleteAlignment(EStatus determinant); // determinant - cap or polya
+    void CheckSecondaryCapPolyAEnds();
     void ClipLowCoverageUTR(double utr_clip_threshold);
     void CalculateDropLimits();
     void CalculateSupportAndWeightFromMembers(bool keep_all_evidence = false);
@@ -1433,9 +1434,9 @@ void CChainer::CChainerImpl::TrimAlignmentsIncludedInDifferentGenes(list<CGene>&
                     noclip_limits.SetTo(max(noclip_limits.GetTo(),alim.GetTo()));
             }
         }
-        */
 
         noclip_limits = (noclip_limits & chain.Limits());
+        */
 
         if(chain.Status()&CGeneModel::ePolyA) {
             if(chain.Strand() == ePlus) {
@@ -1462,7 +1463,7 @@ void CChainer::CChainerImpl::TrimAlignmentsIncludedInDifferentGenes(list<CGene>&
                 else
                     noclip_limits.SetTo(max(noclip_limits.GetTo(),chain.m_coverage_drop_right));
             }
-        }
+        }        
 
         TSignedSeqRange new_limits = chain.Limits();
         ITERATE(TMemberPtrSet, im, conflict_members) {
@@ -1538,6 +1539,13 @@ void CChainer::CChainerImpl::TrimAlignmentsIncludedInDifferentGenes(list<CGene>&
                 new_limits.SetTo(right);
         }
 
+        //if has to clip, clip to next cap/polya
+        if(new_limits.GetFrom() != chain.Limits().GetFrom() && chain.m_polya_cap_left_soft_limit < chain.Limits().GetTo())
+            new_limits.SetFrom(chain.m_polya_cap_left_soft_limit);
+        if(new_limits.GetTo() != chain.Limits().GetTo() && chain.m_polya_cap_right_soft_limit > chain.Limits().GetFrom())
+            new_limits.SetTo(chain.m_polya_cap_right_soft_limit);
+
+        //don't clip confirmed ends
         if(chain.Status()&CGeneModel::eLeftConfirmed)
             new_limits.SetFrom(chain.Limits().GetFrom());
         if(chain.Status()&CGeneModel::eRightConfirmed)
@@ -1555,8 +1563,10 @@ void CChainer::CChainerImpl::TrimAlignmentsIncludedInDifferentGenes(list<CGene>&
 
             bool wasopen = chain.OpenCds();
             chain.ClipChain(new_limits);
+            /* cap/polya is always retained (could be shifted)
             chain.ClipToCompleteAlignment(CGeneModel::eCap);
             chain.ClipToCompleteAlignment(CGeneModel::ePolyA);
+            */
             if(chain.Type()&CGeneModel::eNested)
                 chain.ClipLowCoverageUTR(0.1);
             _ASSERT(chain.Limits().NotEmpty());
@@ -3154,6 +3164,7 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust, bool co
         if(!chain.SetConfirmedEnds(*m_gnomon, confirmed_ends))
             continue;
         m_gnomon->GetScore(chain, !no5pextension); // this will return CDS to best/longest depending on no5pextension
+        chain.CheckSecondaryCapPolyAEnds();
 
         double ms = GoodCDNAScore(chain);
 
@@ -3226,6 +3237,7 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust, bool co
         CChain chain(mi);
         if(!chain.SetConfirmedEnds(*m_gnomon, confirmed_ends))
             continue;
+
         chain.RemoveFshiftsFromUTRs();
         mi.MarkIncludedForChain();
         chain.ClipToCompleteAlignment(CGeneModel::eCap);
@@ -3735,6 +3747,7 @@ void CChainer::CChainerImpl::CreateChainsForPartialProteins(TChainList& chains, 
         if(!chain.SetConfirmedEnds(*m_gnomon, confirmed_ends))
             continue;
         m_gnomon->GetScore(chain, !no5pextension); // this will return CDS to best/longest depending on no5pextension
+        chain.CheckSecondaryCapPolyAEnds();
         chain.CalculateDropLimits();
         _ASSERT( chain.FShiftedLen(chain.GetCdsInfo().Start()+chain.ReadingFrame()+chain.GetCdsInfo().Stop(), false)%3==0 );
 
@@ -4943,6 +4956,11 @@ void CChain::ClipToCompleteAlignment(EStatus determinant)
 
     if(!complete)
         return;
+
+    double min_blob_weight = (determinant == CGeneModel::eCap ? MIN_BLOB_WEIGHT_CAGE : MIN_BLOB_WEIGHT_POLY);
+    double min_pos_weight = (determinant == CGeneModel::eCap ? MIN_POSITION_WEIGHT_CAGE : MIN_POSITION_WEIGHT_POLY);
+    int max_empty_dist =  MAX_EMPTY_DIST;
+    int min_splice_dist = MIN_SPLICE_DIST;
     
     typedef map<int, double> TIDMap;
     TIDMap raw_weights;
@@ -4956,7 +4974,7 @@ void CChain::ClipToCompleteAlignment(EStatus determinant)
                 bool belong_to_exon = false;
                 int pos = align.Limits().GetTo();
                 for(auto& exon : Exons()) {
-                    if(pos >= exon.Limits().GetFrom()+MIN_SPLICE_DIST && pos <= exon.Limits().GetTo()) {
+                    if(pos >= exon.Limits().GetFrom()+min_splice_dist && pos <= exon.Limits().GetTo()) {
                         belong_to_exon = true;
                         break;
                     }
@@ -4968,7 +4986,7 @@ void CChain::ClipToCompleteAlignment(EStatus determinant)
                 bool belong_to_exon = false;
                 int pos = align.Limits().GetFrom();
                 for(auto& exon : Exons()) {
-                    if(pos >= exon.Limits().GetFrom() && pos <= exon.Limits().GetTo()-MIN_SPLICE_DIST) {
+                    if(pos >= exon.Limits().GetFrom() && pos <= exon.Limits().GetTo()-min_splice_dist) {
                         belong_to_exon = true;
                         break;
                     }
@@ -4982,18 +5000,20 @@ void CChain::ClipToCompleteAlignment(EStatus determinant)
         else
             real_limits += (align.Limits()&Limits());
     }
+    for(auto it_loop = raw_weights.begin(); it_loop != raw_weights.end(); ) {
+        auto it = it_loop++;
+        if(it->second < min_pos_weight)
+            raw_weights.erase(it);
+    }
     if(raw_weights.empty())
         return;
-
-    double min_blob_weight = (determinant == CGeneModel::eCap ? MIN_BLOB_WEIGHT_CAGE : MIN_BLOB_WEIGHT_POLY);
-    int max_empty_dist =  MAX_EMPTY_DIST;
 
     int last_allowed = right_end ? real_limits.GetTo()+flex_len : -(real_limits.GetFrom()-flex_len);
     TIDMap peak_weights;
     auto ipeak = raw_weights.begin();
     double w = ipeak->second;
     for(auto it = next(raw_weights.begin()); it != raw_weights.end(); ++it) {
-        if(it->first != prev(it)->first+1+max_empty_dist) {           // next blob
+        if(it->first > prev(it)->first+1+max_empty_dist) {           // next blob
             if(ipeak->first > last_allowed)
                 break;
             if(w >= min_blob_weight)
@@ -5025,6 +5045,11 @@ void CChain::ClipToCompleteAlignment(EStatus determinant)
                 AddComment(name+"overlapcds");
             }
         } 
+
+        if(right_end)
+            m_polya_cap_right_soft_limit = Limits().GetFrom()-1;
+        else
+            m_polya_cap_left_soft_limit = Limits().GetTo()+1;
         
         return;
     }
@@ -5057,6 +5082,14 @@ void CChain::ClipToCompleteAlignment(EStatus determinant)
         ClipChain(limits);
     } 
 
+}
+
+void CChain::CheckSecondaryCapPolyAEnds() {
+    if(m_polya_cap_left_soft_limit < Limits().GetTo() && Include(RealCdsLimits(), m_polya_cap_left_soft_limit))
+        m_polya_cap_left_soft_limit = Limits().GetFrom();
+    
+    if(m_polya_cap_right_soft_limit > Limits().GetFrom() && Include(RealCdsLimits(), m_polya_cap_right_soft_limit))
+        m_polya_cap_right_soft_limit = Limits().GetTo();
 }
 
 #define MIN_UTR_EXON 15
@@ -5217,7 +5250,7 @@ void CChain::ClipLowCoverageUTR(double utr_clip_threshold)
                 ClipChain(TSignedSeqRange(Exons()[1].Limits().GetFrom(),Limits().GetTo()));
             else if(Strand() == eMinus && Exons().back().Limits().GetLength() < MIN_UTR_EXON && Exons().back().Limits().GetFrom() > genome_core_lim.GetTo())
                 ClipChain(TSignedSeqRange(Limits().GetFrom(),Exons()[Exons().size()-2].GetTo()));
-            if((Status()&CGeneModel::eCap) != 0)           // cap was further clipped
+            if((Status()&CGeneModel::eCap) != 0)           // cap was further clipped (currently not possible)
                 ClipToCompleteAlignment(CGeneModel::eCap);
         }
     }
@@ -5254,7 +5287,7 @@ void CChain::ClipLowCoverageUTR(double utr_clip_threshold)
                 ClipChain(TSignedSeqRange(Limits().GetFrom(),Exons()[Exons().size()-2].GetTo()));
             else if(Strand() == eMinus && Exons().front().Limits().GetLength() < MIN_UTR_EXON && Exons().front().Limits().GetTo() < genome_core_lim.GetFrom())
                 ClipChain(TSignedSeqRange(Exons()[1].Limits().GetFrom(),Limits().GetTo()));
-            if((Status()&CGeneModel::ePolyA) != 0)           // polya was further clipped
+            if((Status()&CGeneModel::ePolyA) != 0)           // polya was further clipped (currently not possible)
                 ClipToCompleteAlignment(CGeneModel::ePolyA);
         }
     }

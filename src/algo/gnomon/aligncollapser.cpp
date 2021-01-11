@@ -2108,6 +2108,7 @@ void CAlignCollapser::GetCollapsedAlgnments(TAlignModelClusterSet& clsset) {
             ++total;
     }
 
+    /*
     size_t cap_peaks = 0;
     size_t polya_peaks = 0;
     for(auto& key : m_special_aligns) { // separated for 4 different cap/polya and strand
@@ -2187,21 +2188,33 @@ void CAlignCollapser::GetCollapsedAlgnments(TAlignModelClusterSet& clsset) {
             }
         }        
     }
+    */
 
-    if(cap_peaks > 0 || polya_peaks > 0) { // drop cap/polya from normal alignments if there are flexible
+    size_t flex_cap = 0;
+    size_t flex_polya = 0;
+    for(auto& status_align : m_special_aligns) {
+        if(status_align.second.Limits().GetFrom() >= 0 && status_align.second.Limits().GetTo() < m_contig.FullLength() && CheckAndInsert(status_align.second, clsset)) {
+            if(status_align.second.Status()&CGeneModel::eCap)
+                ++flex_cap;
+            else
+                ++flex_polya;
+        }
+    }
+
+    if(flex_cap > 0 || flex_polya > 0) { // drop cap/polya from normal alignments if there are flexible
         for(auto& cluster : clsset) {
             for(const CAlignModel& align : cluster) {
                 if(align.Status()&(CGeneModel::eLeftFlexible|CGeneModel::eRightFlexible))
                     continue;
-                if(cap_peaks > 0)
+                if(flex_cap > 0)
                     const_cast<CAlignModel&>(align).Status() &= ~CGeneModel::eCap;
-                if(polya_peaks > 0)
+                if(flex_polya > 0)
                     const_cast<CAlignModel&>(align).Status() &= ~CGeneModel::ePolyA;
             }
         }
     }
     
-    cerr << "After collapsing: " << total << " alignments " << cap_peaks << " Cap peaks " << polya_peaks << " PolyA peaks" << endl;
+    cerr << "After collapsing: " << total << " alignments " << flex_cap << " Flexible caps " << flex_polya << " Flexible polyas" << endl;
 }
 
 
@@ -2343,6 +2356,30 @@ void CAlignCollapser::AddAlignment(CAlignModel& a) {
         return;
     }
 
+    int status = 0;
+    if(acc.find("CAPINFO") != string::npos)
+        status = CGeneModel::eCap;
+    else if(acc.find("POLYAINFO") != string::npos)
+        status = CGeneModel::ePolyA;
+    if(status != 0) {
+        int pos;
+        if(((status&CGeneModel::eCap) && a.Strand() == ePlus) || ((status&CGeneModel::ePolyA) && a.Strand() == eMinus)) {
+            status |= CGeneModel::eRightFlexible;
+            pos = a.Limits().GetFrom();
+        } else {
+            status |= CGeneModel::eLeftFlexible;
+            pos = a.Limits().GetTo();
+        }
+        a.Status() |= status;
+        auto rslt = m_special_aligns.emplace(make_tuple(status, pos), a);
+        if(!rslt.second) { // same position exists
+            auto& stored = rslt.first->second;
+            stored.SetWeight(stored.Weight()+a.Weight());
+        }
+        return;
+    }
+
+    /*
     if(acc.find("CAPINFO") != string::npos) {
         a.Status() |= CGeneModel::eCap;
         a.SetType(CGeneModel::eSR);
@@ -2367,6 +2404,7 @@ void CAlignCollapser::AddAlignment(CAlignModel& a) {
         }
         return;
     }
+    */
 
     if((a.Type()&CGeneModel::eSR) && !a.Continuous())   // ignore SR with internal gaps
         return;
