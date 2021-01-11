@@ -31,9 +31,8 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <corelib/test_boost.hpp>
 #include <ncbiconf.h>
-
+#include <corelib/test_boost.hpp>
 #include <util/data_histogram.hpp>
 
 
@@ -45,45 +44,39 @@ typedef CHistogramTimeSeries<int64_t, int64_t, int64_t>  TTestSeries;
 
 BOOST_AUTO_TEST_CASE(Workflow)
 {
-
     // Create Time series
     TTestHistogram      model_histogram(0, 9, 2, TTestHistogram::eLinear);
     TTestSeries         test_series(model_histogram);
-
     {
         auto    bins = test_series.GetHistograms();
         BOOST_CHECK(1 == bins.size());
         BOOST_CHECK(1 == bins.front().n_ticks);
 
-        auto    counters = bins.front().histogram.GetBinCounters();
+        auto    counters = bins.front().histogram.GetBinCountersPtr();
         BOOST_CHECK(0 == counters[0]);
         BOOST_CHECK(0 == counters[1]);
         BOOST_CHECK(0 == bins.front().histogram.GetLowerAnomalyCount());
         BOOST_CHECK(0 == bins.front().histogram.GetUpperAnomalyCount());
     }
 
-
     // Do a few adds
     test_series.Add(1);
     test_series.Add(8);
     test_series.Add(720);
-
     {
         auto    bins = test_series.GetHistograms();
         BOOST_CHECK(1 == bins.size());
         BOOST_CHECK(1 == bins.front().n_ticks);
 
-        auto    counters = bins.front().histogram.GetBinCounters();
+        auto    counters = bins.front().histogram.GetBinCountersPtr();
         BOOST_CHECK(1 == counters[0]);
         BOOST_CHECK(1 == counters[1]);
         BOOST_CHECK(0 == bins.front().histogram.GetLowerAnomalyCount());
         BOOST_CHECK(1 == bins.front().histogram.GetUpperAnomalyCount());
     }
 
-
     // Tick
     test_series.Rotate();
-
     {
         auto    bins = test_series.GetHistograms();
         auto    it = bins.begin();
@@ -94,8 +87,8 @@ BOOST_AUTO_TEST_CASE(Workflow)
         BOOST_CHECK(1 == bin0.n_ticks);
         BOOST_CHECK(1 == bin1.n_ticks);
 
-        auto    counters0 = bin0.histogram.GetBinCounters();
-        auto    counters1 = bin1.histogram.GetBinCounters();
+        auto    counters0 = bin0.histogram.GetBinCountersPtr();
+        auto    counters1 = bin1.histogram.GetBinCountersPtr();
         BOOST_CHECK(0 == counters0[0]);
         BOOST_CHECK(0 == counters0[1]);
         BOOST_CHECK(0 == bin0.histogram.GetLowerAnomalyCount());
@@ -106,12 +99,10 @@ BOOST_AUTO_TEST_CASE(Workflow)
         BOOST_CHECK(1 == bin1.histogram.GetUpperAnomalyCount());
     }
 
-
     // add
     test_series.Add(8);
     test_series.Add(8);
     test_series.Add(-1);
-
     {
         auto    bins = test_series.GetHistograms();
         auto    it = bins.begin();
@@ -122,8 +113,8 @@ BOOST_AUTO_TEST_CASE(Workflow)
         BOOST_CHECK(1 == bin0.n_ticks);
         BOOST_CHECK(1 == bin1.n_ticks);
 
-        auto    counters0 = bin0.histogram.GetBinCounters();
-        auto    counters1 = bin1.histogram.GetBinCounters();
+        auto    counters0 = bin0.histogram.GetBinCountersPtr();
+        auto    counters1 = bin1.histogram.GetBinCountersPtr();
         BOOST_CHECK(0 == counters0[0]);
         BOOST_CHECK(2 == counters0[1]);
         BOOST_CHECK(1 == bin0.histogram.GetLowerAnomalyCount());
@@ -137,7 +128,6 @@ BOOST_AUTO_TEST_CASE(Workflow)
     // tick and add
     test_series.Rotate();
     test_series.Add(1);
-
     {
         auto    bins = test_series.GetHistograms();
         auto    it = bins.begin();
@@ -148,8 +138,8 @@ BOOST_AUTO_TEST_CASE(Workflow)
         BOOST_CHECK(1 == bin0.n_ticks);
         BOOST_CHECK(2 == bin1.n_ticks);
 
-        auto    counters0 = bin0.histogram.GetBinCounters();
-        auto    counters1 = bin1.histogram.GetBinCounters();
+        auto    counters0 = bin0.histogram.GetBinCountersPtr();
+        auto    counters1 = bin1.histogram.GetBinCountersPtr();
         BOOST_CHECK(1 == counters0[0]);
         BOOST_CHECK(0 == counters0[1]);
         BOOST_CHECK(0 == bin0.histogram.GetLowerAnomalyCount());
@@ -160,15 +150,12 @@ BOOST_AUTO_TEST_CASE(Workflow)
         BOOST_CHECK(1 == bin1.histogram.GetUpperAnomalyCount());
     }
 
-
-
     // tick and add
     test_series.Rotate();
     test_series.Add(8);
     test_series.Add(8);
     test_series.Add(-2);
     test_series.Add(500);
-
     {
         auto    bins = test_series.GetHistograms();
         auto    it = bins.begin();
@@ -182,9 +169,9 @@ BOOST_AUTO_TEST_CASE(Workflow)
         BOOST_CHECK(1 == bin1.n_ticks);
         BOOST_CHECK(2 == bin2.n_ticks);
 
-        auto    counters0 = bin0.histogram.GetBinCounters();
-        auto    counters1 = bin1.histogram.GetBinCounters();
-        auto    counters2 = bin2.histogram.GetBinCounters();
+        auto    counters0 = bin0.histogram.GetBinCountersPtr();
+        auto    counters1 = bin1.histogram.GetBinCountersPtr();
+        auto    counters2 = bin2.histogram.GetBinCountersPtr();
 
         BOOST_CHECK(0 == counters0[0]);
         BOOST_CHECK(2 == counters0[1]);
@@ -202,14 +189,11 @@ BOOST_AUTO_TEST_CASE(Workflow)
         BOOST_CHECK(1 == bin2.histogram.GetUpperAnomalyCount());
     }
 
-
-
     // tick
     test_series.Rotate();
     test_series.Add(1);
     test_series.Add(500);
     test_series.Add(500);
-
     {
         auto    bins = test_series.GetHistograms();
         auto    it = bins.begin();
@@ -223,9 +207,9 @@ BOOST_AUTO_TEST_CASE(Workflow)
         BOOST_CHECK(2 == bin1.n_ticks);
         BOOST_CHECK(2 == bin2.n_ticks);
 
-        auto    counters0 = bin0.histogram.GetBinCounters();
-        auto    counters1 = bin1.histogram.GetBinCounters();
-        auto    counters2 = bin2.histogram.GetBinCounters();
+        auto    counters0 = bin0.histogram.GetBinCountersPtr();
+        auto    counters1 = bin1.histogram.GetBinCountersPtr();
+        auto    counters2 = bin2.histogram.GetBinCountersPtr();
 
         BOOST_CHECK(1 == counters0[0]);
         BOOST_CHECK(0 == counters0[1]);
@@ -249,7 +233,6 @@ BOOST_AUTO_TEST_CASE(Workflow)
     test_series.Add(7);
     test_series.Add(500);
     test_series.Add(-2);
-
     {
         auto    bins = test_series.GetHistograms();
         auto    it = bins.begin();
@@ -263,9 +246,9 @@ BOOST_AUTO_TEST_CASE(Workflow)
         BOOST_CHECK(1 == bin1.n_ticks);
         BOOST_CHECK(4 == bin2.n_ticks);
 
-        auto    counters0 = bin0.histogram.GetBinCounters();
-        auto    counters1 = bin1.histogram.GetBinCounters();
-        auto    counters2 = bin2.histogram.GetBinCounters();
+        auto    counters0 = bin0.histogram.GetBinCountersPtr();
+        auto    counters1 = bin1.histogram.GetBinCountersPtr();
+        auto    counters2 = bin2.histogram.GetBinCountersPtr();
 
         BOOST_CHECK(1 == counters0[0]);
         BOOST_CHECK(1 == counters0[1]);
@@ -298,9 +281,9 @@ BOOST_AUTO_TEST_CASE(Workflow)
         BOOST_CHECK(2 == bin1.n_ticks);
         BOOST_CHECK(4 == bin2.n_ticks);
 
-        auto    counters0 = bin0.histogram.GetBinCounters();
-        auto    counters1 = bin1.histogram.GetBinCounters();
-        auto    counters2 = bin2.histogram.GetBinCounters();
+        auto    counters0 = bin0.histogram.GetBinCountersPtr();
+        auto    counters1 = bin1.histogram.GetBinCountersPtr();
+        auto    counters2 = bin2.histogram.GetBinCountersPtr();
 
         BOOST_CHECK(0 == counters0[0]);
         BOOST_CHECK(0 == counters0[1]);

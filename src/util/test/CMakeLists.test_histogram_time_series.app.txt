@@ -1,0 +1,10 @@
+# $Id$
+
+NCBI_begin_app(test_histogram_time_series)
+  NCBI_sources(test_histogram_time_series)
+  NCBI_requires(Boost.Test.Included)
+  NCBI_uses_toolkit_libraries(test_boost xutil)
+  NCBI_add_test()
+  NCBI_project_watchers(satskyse)
+NCBI_end_app()
+

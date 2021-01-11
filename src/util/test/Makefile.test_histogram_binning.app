@@ -1,4 +1,3 @@
-#################################
 # $Id$
 
 APP = test_histogram_binning

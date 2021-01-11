@@ -37,6 +37,8 @@ NCBI_add_app(
     test_uttp
     test_value_convert
     test_histogram
+    test_histogram_mt
+    test_histogram_time_series
     test_histogram_binning
     test_table_printer
     test_random

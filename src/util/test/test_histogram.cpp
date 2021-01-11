@@ -153,9 +153,9 @@ private:
         cout << "Range          : [" << h.GetMin() << ":" << h.GetMax() << "]" << endl; \
         cout << "Number of bins : "  << h.GetNumberOfBins() << endl; \
         cout << "Starts         : "; \
-        PrintArray<>(h.GetNumberOfBins(), h.GetBinStarts()); \
+        PrintArray<>(h.GetNumberOfBins(), h.GetBinStartsPtr()); \
         cout << "Counters       : "; \
-        PrintArray<>(h.GetNumberOfBins(), h.GetBinCounters()); \
+        PrintArray<>(h.GetNumberOfBins(), h.GetBinCountersPtr()); \
         cout << "Total count    : "  << h.GetCount()             << endl; \
         cout << "Anomaly (lower): "  << h.GetLowerAnomalyCount() << endl; \
         cout << "Anomaly (upper): "  << h.GetUpperAnomalyCount() << endl; \

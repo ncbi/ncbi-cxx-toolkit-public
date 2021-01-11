@@ -57,9 +57,10 @@ BEGIN_NCBI_SCOPE
 /// Helper types for CHistogram<>::GetSum() support
 //
 
-// if T doesn't have foo method with the signature that allows to compile the bellow
-// expression then instantiating this template is Substitution Failure (SF)
-// which Is Not An Error (INAE) if this happens during overload resolution
+// if T doesn't have 'foo' method  (operator+= in our case) with the signature
+// that allows to compile the bellow expression then instantiating this template
+// is Substitution Failure (SF) which Is Not An Error (INAE) if this happens
+// during overload resolution
 template <typename T>
 using T_HistogramValueTypeHavePlus = decltype((T&)(std::declval<T>().operator+=(std::declval<const T&>())));
 
@@ -91,10 +92,18 @@ constexpr bool g_HistogramValueTypeHavePlus()
 /// 
 /// @note
 ///   TValue and TScale types should be equal, or allow comparison and conversion
-///   between them. Any types can ve used as TValue if it have:
+///   between them. Any types can be used as TValue if it have:
 ///   = default constructor: TValue()  -- for initialization;
 ///   - operator TScale() const        -- to convert to scale type TScale;
 ///   - bool operator >(const TValue&) -- for comparison.
+///
+/// @note
+///   CHistogram is not MT safe by default, it is intended to be created 
+///   and collect data withing the same thread. If you want to use the same 
+///   CHistogram class object across multiple threads, you need to provide
+///   some sort of MT protection to guard access to the histogram object, 
+///   or enable internal MT protection, and call CHistogram::EnableMT()
+///   immediately after creating a histogram object.
 
 
 template <typename TValue = int, typename TScale = TValue, typename TCounter = Uint8>
@@ -106,8 +115,8 @@ public:
     /// It is good if you have a limited range, but sometimes values are distributed
     /// very wide, and if you want to count all of them, but concentrate on a 
     /// some range with most significant values, logarithmic scales helps a lot.
-    /// For logarithmic scales each next bin have a greather size.
-    /// Bins size increasing depends on a logariphmic base (used scale type).
+    /// For logarithmic scales each next bin have a greater size.
+    /// Bins size increasing depends on a logarithmic base (used scale type).
     ///
     enum EScaleType {
         eLinear = 1, ///< Arithmetic or linear scale
@@ -123,7 +132,7 @@ public:
         /// to a maximum value.
         eMonotonic,
         /// Determine a mean for a specified value range and calculates
-        /// bins sizes using specified scale to both sides from it, symmetricaly.
+        /// bins sizes using specified scale to both sides from it, symmetrically.
         eSymmetrical
     };
 
@@ -165,7 +174,7 @@ public:
     ///
     /// @param min_value
     ///   Minimum allowed value for the auxiliary scale. 
-    ///   Its maximim value is the same as a minimum value for the main scale,
+    ///   Its maximum value is the same as a minimum value for the main scale,
     ///   or previously added scale.
     /// @param n_bins
     ///   Number of bins for the auxiliary scale.
@@ -191,21 +200,35 @@ public:
 
     /// Add value to the data distribution.
     /// Try to find an appropriate bin for a specified value and increase its counter on 1.
-    /// Also, calculates a sum of all added values it TValue type have addition support.
+    /// Also, calculates a sum of all added values if TValue type have addition support.
     /// @sa GetStarts, GetCounters, GetSum
     ///
     template <typename V, typename S = TSum,
               std::enable_if_t<g_HistogramValueTypeHavePlus<S>(), int> = 0>
     void Add(const V& v) {
+        MT_Lock();
         x_Add(v);
         // Calculate sum, TSum have operator+=
         m_Sum += v;
+        MT_Unlock();
     }
     template <typename V, typename S = TSum, 
              std::enable_if_t<!g_HistogramValueTypeHavePlus<S>(), int> = 0>
     void Add(const V& v) {
+        MT_Lock();
         x_Add(v);
+        MT_Unlock();
     }
+
+    // Return value for a class member, MT safe
+    #define RETURN_MT_SAFE(member) \
+        if (m_IsMT) {    \
+            MT_Lock();       \
+            auto v = member; \
+            MT_Unlock();     \
+            return v;        \
+        }                    \
+        return member
 
     /// Return the sum of all added values.
     /// @return
@@ -222,7 +245,7 @@ public:
     /// @note 
     ///   This method doesn't check calculated sum on overflow.
     /// @sa Add, TSum
-    TSum GetSum(void) const { return m_Sum; }
+    TSum GetSum(void) { RETURN_MT_SAFE(m_Sum); }
 
     /// Reset all data counters.
     void Reset();
@@ -230,13 +253,13 @@ public:
     /// Add counters from 'other' histogram to this histogram, 'other' doesn't changes.
     /// @note Both histograms should have the same structure.
     /// @sa Clone, Reset, StealCountersFrom
-    void AddCountersFrom(const CHistogram& other) { x_AddCountersFrom(const_cast<CHistogram&>(other), eAddCounters); }
+    void AddCountersFrom(CHistogram& other);
 
     /// Add counters from 'other' histogram to this histogram,
     /// then reset the counters of 'other' histogram.
     /// @note Both histograms should have the same structure.
     /// @sa Clone, Reset, AddCountersFrom
-    void StealCountersFrom(CHistogram& other)  { x_AddCountersFrom(other, eStealCounters); }
+    void StealCountersFrom(CHistogram& other);
 
 
     /////////////////////////////////////////////////////////////////////////
@@ -249,37 +272,71 @@ public:
     TValue GetMax() const { return m_Max; }
 
     /// Return the number ot bins on the combined scale.
-    /// @sa GetBinStarts, GetBinCounters
+    /// @sa GetBinStarts, GetBinCounters, GetBinCountersPtr
     unsigned GetNumberOfBins() const { return m_NumBins; }
 
     /// Get starting positions for bins on the combined scale.
+    ///
+    /// Populate a vector with starting positions for bins on the combined scale.
+    /// The size of the vector changes to be equal the number of bins.
+    /// @sa GetNumberOfBins, GetBinCounters, GetBinStartsPtr
+    void GetBinStarts(vector<TScale>& positions) {
+        MT_Lock();
+        positions.resize(m_NumBins);
+        positions.assign(m_Starts.get(), m_Starts.get() + m_NumBins);
+        MT_Unlock();
+    }
+
+    /// Get starting positions for bins on the combined scale (not MT safe).
+    ///
     /// Returns a pointer to array. The number of bins can be obtained with GetNumberOfBins().
     /// and a number of a counters in each bin -- with GetBinCounters().
-    /// @sa GetNumberOfBins, GetBinCounters
-    const TScale* GetBinStarts() const { return m_Starts.get(); }
+    /// @warning
+    ///   Be aware that any change in the histogram's structure, adding additional scales,
+    ///   invalidate all data and pointer itself. This method is not intended to use in MT
+    ///   environment. Please use vector version GetBinStarts(vector<TScale>&).
+    /// @sa GetNumberOfBins, GetBinCountersPtr, GetBinStarts, EnableMT
+    const TScale* GetBinStartsPtr() const { return m_Starts.get(); }
 
 
     /////////////////////////////////////////////////////////////////////////
     // Results
 
     /// Get counters for the combined scale's bins.
+    ///
+    /// Populate a vector with counters for the combined scale's bins.
+    /// The size of the vector changes to be equal to the number of bins.
+    /// @sa GetNumberOfBins, GetBinStarts, GetBinCountersPtr, Add
+    void GetBinCounters(vector<TCounter>& counters) {
+        MT_Lock();
+        counters.resize(m_NumBins);
+        counters.assign(m_Counters.get(), m_Counters.get() + m_NumBins);
+        MT_Unlock();
+    }
+
+    /// Get counters for the combined scale's bins (not MT safe).
+    ///
     /// Returns a pointer to array. The number of bins can be obtained with GetNumberOfBins().
-    /// @sa Add, GetBinStarts, GetNumberOfBins
-    const TCounter* GetBinCounters() const { return m_Counters.get(); }
+    /// @warning
+    ///   Be aware that any change in the histogram's structure invalidate all data
+    ///   and pointer itself. This method is not intended to use in MT environment.
+    ///   Please use vector version GetBinCounters(vector<TCounter>&).
+    /// @sa GetNumberOfBins, GetBinStartsPtr, GetBinCounters, Add, EnableMT
+    const TCounter* GetBinCountersPtr() const { return m_Counters.get(); }
 
     /// Get total number of hits whose value fell between GetMin() and GetMax().
     /// The number of hits whose values fall outside that range can be obtained
     /// using GetLowerAnomalyCount() and GetUpperAnomalyCount() methods.
     /// @sa GetMin, GetMax, GetLowerAnomalyCount, GetUpperAnomalyCount, GetBinCounters
-    TCounter GetCount() const { return m_Count; }
+    TCounter GetCount() { RETURN_MT_SAFE(m_Count); }
 
     /// Get number of hits whose values were less than GetMin().
     /// @sa GetUpperAnomalyCount, GetCount
-    size_t GetLowerAnomalyCount() const { return m_LowerAnomalyCount; }
+    size_t GetLowerAnomalyCount() {RETURN_MT_SAFE(m_LowerAnomalyCount); }
 
     /// Get number of hits whose values were greater than GetMax().
     /// @sa GetLowerAnomalyCount, GetCount
-    size_t GetUpperAnomalyCount() const { return m_UpperAnomalyCount; }
+    size_t GetUpperAnomalyCount() { RETURN_MT_SAFE(m_UpperAnomalyCount); }
 
 
     /////////////////////////////////////////////////////////////////////////
@@ -340,7 +397,7 @@ public:
     ///     CHistogram<> h2(h1.Clone(how));
     /// @sa Clone
     ///
-    CHistogram(CHistogram&& other) { x_MoveFrom(other); };
+    CHistogram(CHistogram&& other);
 
     /// Move assignment operator.
     ///
@@ -351,7 +408,7 @@ public:
     ///     h2 = h1.Clone(how);
     /// @sa Clone
     ///
-    CHistogram& operator=(CHistogram&& other) { x_MoveFrom(other); return *this;  };
+    CHistogram& operator=(CHistogram&& other);
 
     enum EClone {
         eCloneAll = 0,       ///< Clone whole histogram, with scale and counters
@@ -363,9 +420,35 @@ public:
     /// Creates a copy of the histogram structure depending on clone method.
     /// By default it is a whole copy, but you can clone histogram's structure only, without counters.
     ///
-    CHistogram Clone(EClone how = eCloneAll) const;
+    CHistogram Clone(EClone how = eCloneAll);
+
+
+    /////////////////////////////////////////////////////////////////////////
+    // Optional MT protection
+
+    /// Add MT protection to histogram.
+    ///
+    /// By default CHistogram is not MT protected and intended to be created 
+    /// and used withing the same thread. Calling this method add MT protection
+    /// on adding additional scales, adding and resetting values, cloning and
+    /// moving histograms. Please call this method immediately after creating
+    /// each histogram, before accessing it from any other thread, or deadlock can occurs.
+    ///
+    void EnableMT(void) {
+        m_IsMT = true; 
+    };
+    /// MT locking
+    void MT_Lock() {
+        if (m_IsMT) m_Mutex.lock();
+    }
+    // MT unlocking
+    void MT_Unlock() {
+        if (m_IsMT) m_Mutex.unlock();
+    }
 
 protected:
+    // Note, none of x_*() methods have MT locking, it should be done in public methods only.
+
     /// Calculate bins starting positions.
     /// Calculate positions for 'n' number of bins in [start,end] value range,
     /// starting from 'pos' bin index.
@@ -397,8 +480,7 @@ protected:
     /// Calculates a data value on a base of scale value/position.
     TScale x_FuncInverse(EScaleType scale_type, TScale scale_value);
 
-
-    /// Add value to the data distribution.
+    /// Add value to the data distribution (internal version without locking).
     void x_Add(TValue value);
 
     /// Add value to the data distribution using a linear search method.
@@ -413,24 +495,22 @@ protected:
     /// @sa Add, x_AddLinear
     void x_AddBisection(TValue value);
 
+    /// Move data from 'other' histogram. 'other' became invalid.
+    void x_MoveFrom(CHistogram& other);
+
+    /// Add counters from 'other' histogram.
+    void x_AddCountersFrom(CHistogram& other);
+
+    /// Check that 'a' and 'b' scale values are equal (or almost equal for floating scales).
+    bool x_IsEqual(TScale a, TScale b);
+
+    /// Reset all data counters (internal version without locking).
+    void x_Reset();
+
     /// Prevent copying.
     /// See move constructor and move assignment operator to use with move-semantics.
     CHistogram(const CHistogram&);
     CHistogram& operator=(const CHistogram&);
-
-    /// Move data from 'other' histogram. 'other' became invalid.
-    void x_MoveFrom(CHistogram& other);
-
-    // Mode for x_AddCountersFrom
-    enum EAddCountersMode {
-        eStealCounters,
-        eAddCounters
-    };
-    /// Add counters from 'other' histogram.
-    void x_AddCountersFrom(CHistogram& other, EAddCountersMode mode);
-
-    /// Check that 'a' and 'b' scale values are equal (or almost equal for floating scales).
-    bool x_IsEqual(TScale a, TScale b);
 
 protected:
     TValue    m_Min;         ///< Minimum value (the lower bound of combined scale)
@@ -444,25 +524,28 @@ protected:
     TCounter  m_Count;              ///< Number of counted values (sum all m_Counters[])
     TCounter  m_LowerAnomalyCount;  ///< Number of anomaly values < m_Min
     TCounter  m_UpperAnomalyCount;  ///< Number of anomaly values > m_Max
+
+    bool      m_IsMT;               ///< MT protection flag
+    mutable std::mutex m_Mutex;     ///< MT protection mutex
 };
+
 
 
 /// A series of same-structured histograms covering logarithmically (base 2)
 /// increasing time periods... roughly
-
+///
 template <typename TValue, typename TScale, typename TCounter>
 class CHistogramTimeSeries
 {
 public:
     /// @param model_histogram
-    ///  This histogram will be used as a template for all histogram objects
-    ///  in this time series
+    ///   This histogram will be used as a template for all histogram objects
+    ///   in this time series.
     using THistogram = CHistogram<TValue,TScale,TCounter>;
-    CHistogramTimeSeries(const THistogram& model_histogram);
+    CHistogramTimeSeries(THistogram& model_histogram);
 
     /// Add value to the data distribution.
-    /// Try to find an appropriate bin for a specified value and increment its
-    /// counter by 1.
+    /// Try to find an appropriate bin for a specified value and increment its counter by 1.
     /// @sa CHistogram::Add()
     void Add(TValue value);
 
@@ -479,44 +562,38 @@ public:
 
     /// A histograms which covers a certain number of ticks
     struct STimeBin {
-        STimeBin(STimeBin &&) = default;
-        STimeBin & operator=(STimeBin &&) = default;
-
-        STimeBin(const STimeBin &  other) :
-            histogram(other.histogram.Clone(THistogram::eCloneAll)),
+        // Copy constructor and assignment operator should be passed with 'const'
+        // qualifier to operate on list<STimeBin>. But Clone() is not 'const'
+        // due optional protection, so we use const_cast<> here. It is safe, 
+        // because Clone() change internal mutex only.
+        STimeBin(const STimeBin& other) :
+            histogram(const_cast<STimeBin&>(other).histogram.Clone(THistogram::eCloneAll)),
             n_ticks(other.n_ticks)
         {}
-
-        STimeBin & operator=(const STimeBin &  other)
+        STimeBin& operator=(const STimeBin& other)
         {
-            histogram = other.histogram.Clone(THistogram::eCloneAll);
+            histogram = const_cast<STimeBin&>(other).histogram.Clone(THistogram::eCloneAll);
             n_ticks = other.n_ticks;
         }
-
-        STimeBin(THistogram &&  h, TTicks  t) :
+        STimeBin(THistogram&& h, TTicks t) :
             histogram(std::move(h)), n_ticks(t)
         {}
-
-        /// Histogram for the ticks
-        THistogram histogram;
-        /// Number of ticks in this histogram
-        TTicks     n_ticks;
+        
+        THistogram histogram;  ///< Histogram for the ticks
+        TTicks     n_ticks;    ///< Number of ticks in this histogram
     };
     /// Type of the series of histograms
     using TTimeBins = list<STimeBin>;
 
     /// Histograms -- in the order from the most recent to the least recent
-    TTimeBins GetHistograms() const;
+    TTimeBins GetHistograms();
 
     /// Number of ticks the histogram series has handled.
     /// Initially the number of ticks is zero.
-    TTicks GetCurrentTick(void) const
-    {
-        return m_CurrentTick;
-    }
+    TTicks GetCurrentTick(void) const { return m_CurrentTick; }
 
 private:
-    void x_AppendBin(const THistogram& model_histogram, TTicks n_ticks);
+    void x_AppendBin(THistogram& model_histogram, TTicks n_ticks);
     void x_Shift(size_t index, typename TTimeBins::iterator current_it);
 
 private:
@@ -543,7 +620,7 @@ CHistogram<TValue, TScale, TCounter>::CHistogram
     EScaleType  scale_type, 
     EScaleView  scale_view
 )
-    : m_Min(min_value), m_Max(max_value), m_NumBins(n_bins)
+    : m_Min(min_value), m_Max(max_value), m_NumBins(n_bins), m_IsMT(false)
 {
     if ( m_Min > m_Max ) {
         NCBI_THROW(CCoreException, eInvalidArg, "Minimum value cannot exceed maximum value");
@@ -557,7 +634,7 @@ CHistogram<TValue, TScale, TCounter>::CHistogram
 
     x_CalculateBins(m_Min, m_Max, 0, m_NumBins, scale_type, scale_view);
     // Reset counters
-    Reset();
+    x_Reset();
 }
 
 
@@ -566,13 +643,18 @@ void
 CHistogram<TValue, TScale, TCounter>::AddLeftScale(
     TValue min_value, unsigned n_bins, EScaleType scale_type)
 {
+    MT_Lock();
+
     if ( min_value >= m_Min ) {
+        MT_Unlock();
         NCBI_THROW(CCoreException, eInvalidArg, "New minimum value cannot exceed minimum value for the histogram");
     }
     if ( !n_bins ) {
+        MT_Unlock();
         NCBI_THROW(CCoreException, eInvalidArg, "Number of bins cannot be zero");
     }
     if (m_Count + m_LowerAnomalyCount + m_UpperAnomalyCount) {
+        MT_Unlock();
         NCBI_THROW(CCoreException, eInvalidArg, "Please call AddLeftScale() before Add()");
     }
     unsigned n_prev = m_NumBins;
@@ -589,6 +671,8 @@ CHistogram<TValue, TScale, TCounter>::AddLeftScale(
     // Calculate scale for newly added bins: from right to left
     x_CalculateBins(m_Min, min_value, n_bins-1, n_bins, scale_type, eMonotonic);
     m_Min = min_value;
+
+    MT_Unlock();
 }
 
 
@@ -597,13 +681,18 @@ void
 CHistogram<TValue, TScale, TCounter>::AddRightScale(
     TValue max_value, unsigned n_bins, EScaleType scale_type)
 {
+    MT_Lock();
+
     if ( max_value <= m_Max ) {
+        MT_Unlock();
         NCBI_THROW(CCoreException, eInvalidArg, "New maximum value cannot be less than a maximum value for the histogram");
     }
     if ( !n_bins ) {
+        MT_Unlock();
         NCBI_THROW(CCoreException, eInvalidArg, "Number of bins cannot be zero");
     }
     if (m_Count + m_LowerAnomalyCount + m_UpperAnomalyCount) {
+        MT_Unlock();
         NCBI_THROW(CCoreException, eInvalidArg, "Please call AddRightScale() before Add()");
     }
     unsigned n_prev = m_NumBins;
@@ -620,6 +709,8 @@ CHistogram<TValue, TScale, TCounter>::AddRightScale(
     // Calculate scale for newly added bins: from left to right
     x_CalculateBins(m_Max, max_value, n_prev, n_bins, scale_type, eMonotonic);
     m_Max = max_value;
+
+    MT_Unlock();
 }
 
 
@@ -653,6 +744,16 @@ CHistogram<TValue, TScale, TCounter>::EstimateNumberOfBins(size_t n, EEstimateNu
 template <typename TValue, typename TScale, typename TCounter>
 void 
 CHistogram<TValue, TScale, TCounter>::Reset(void)
+{
+    MT_Lock();
+    x_Reset();
+    MT_Unlock();
+}
+
+
+template <typename TValue, typename TScale, typename TCounter>
+void 
+CHistogram<TValue, TScale, TCounter>::x_Reset(void)
 {
     // Reset counters
     m_Count = m_LowerAnomalyCount = m_UpperAnomalyCount = 0;
@@ -977,21 +1078,46 @@ CHistogram<TValue, TScale, TCounter>::x_FuncInverse(EScaleType scale_type, TScal
 
 template <typename TValue, typename TScale, typename TCounter>
 CHistogram<TValue, TScale, TCounter>::CHistogram()
-    : m_NumBins(0) 
+    : m_NumBins(0), m_IsMT(false)
 {
     // Reset counters
-    Reset();
+    x_Reset();
 }
 
 
 template <typename TValue, typename TScale, typename TCounter>
+CHistogram<TValue, TScale, TCounter>::CHistogram(CHistogram&& other) 
+{ 
+    if (this == &other) return;
+    other.MT_Lock();
+    x_MoveFrom(other); 
+    other.MT_Unlock();
+};
+
+
+template <typename TValue, typename TScale, typename TCounter>
+CHistogram<TValue, TScale, TCounter>& 
+CHistogram<TValue, TScale, TCounter>::operator=(CHistogram&& other)
+{ 
+    if (this == &other) return *this;
+    other.MT_Lock();
+    x_MoveFrom(other); 
+    other.MT_Unlock();
+    return *this;
+ };
+
+
+template <typename TValue, typename TScale, typename TCounter>
 CHistogram<TValue, TScale, TCounter> 
-CHistogram<TValue, TScale, TCounter>::Clone(EClone how) const 
+CHistogram<TValue, TScale, TCounter>::Clone(EClone how)
 {
+    MT_Lock();
+
     CHistogram h;
     h.m_Min     = m_Min;
     h.m_Max     = m_Max;
     h.m_NumBins = m_NumBins;
+    h.m_IsMT    = m_IsMT;
 
     h.m_Starts.reset(new TScale[m_NumBins]);
     h.m_Counters.reset(new TCounter[m_NumBins]);
@@ -1015,8 +1141,10 @@ CHistogram<TValue, TScale, TCounter>::Clone(EClone how) const
         memcpy(h.m_Counters.get(), m_Counters.get(), sizeof(TCounter) * m_NumBins);
         break;
     default:
+        MT_Unlock();
         _TROUBLE;
     }
+    MT_Unlock();
     return h;
 }
 
@@ -1025,8 +1153,6 @@ template <typename TValue, typename TScale, typename TCounter>
 void
 CHistogram<TValue, TScale, TCounter>::x_MoveFrom(CHistogram& other)
 {
-    if (this == &other) return;
-
     m_Min               = other.m_Min;
     m_Max               = other.m_Max;
     m_NumBins           = other.m_NumBins;
@@ -1034,12 +1160,13 @@ CHistogram<TValue, TScale, TCounter>::x_MoveFrom(CHistogram& other)
     m_Count             = other.m_Count;
     m_LowerAnomalyCount = other.m_LowerAnomalyCount;
     m_UpperAnomalyCount = other.m_UpperAnomalyCount;
+    m_IsMT              = other.m_IsMT;
 
     m_Starts.reset(other.m_Starts.release());
     m_Counters.reset(other.m_Counters.release());
     other.m_NumBins = 0;
     other.m_Sum = 0;
-    
+
     return;
 }
 
@@ -1057,10 +1184,52 @@ CHistogram<TValue, TScale, TCounter>::x_IsEqual(TScale a, TScale b)
 
 
 template <typename TValue, typename TScale, typename TCounter>
-void
-CHistogram<TValue, TScale, TCounter>::x_AddCountersFrom(CHistogram& other, EAddCountersMode mode)
+void 
+CHistogram<TValue, TScale, TCounter>::AddCountersFrom(CHistogram& other)
+{ 
+    if (this == &other) return;
+
+    MT_Lock();
+    other.MT_Lock();
+    try {
+        x_AddCountersFrom(const_cast<CHistogram&>(other));
+    }
+    catch (...) {
+        MT_Unlock();
+        other.MT_Unlock();
+        throw;
+    }
+    MT_Unlock();
+    other.MT_Unlock();
+}
+
+
+template <typename TValue, typename TScale, typename TCounter>
+void 
+CHistogram<TValue, TScale, TCounter>::StealCountersFrom(CHistogram& other)
 {
     if (this == &other) return;
+
+    MT_Lock();
+    other.MT_Lock();
+    try {
+        x_AddCountersFrom(other);
+        other.x_Reset();
+    }
+    catch (...) {
+        MT_Unlock();
+        other.MT_Unlock();
+        throw;
+    }
+    MT_Unlock();
+    other.MT_Unlock();
+}
+
+
+template <typename TValue, typename TScale, typename TCounter>
+void
+CHistogram<TValue, TScale, TCounter>::x_AddCountersFrom(CHistogram& other)
+{
     // Check structure
     if ( m_NumBins != other.m_NumBins  ||
         !x_IsEqual(m_Min, other.m_Min) ||
@@ -1086,10 +1255,6 @@ CHistogram<TValue, TScale, TCounter>::x_AddCountersFrom(CHistogram& other, EAddC
     m_LowerAnomalyCount += other.m_LowerAnomalyCount;
     m_UpperAnomalyCount += other.m_UpperAnomalyCount;
     m_Sum += other.m_Sum;
-
-    if (eStealCounters == mode) {
-        other.Reset();
-    }
 }
 
 
@@ -1101,8 +1266,8 @@ CHistogram<TValue, TScale, TCounter>::x_AddCountersFrom(CHistogram& other, EAddC
 //============================================================================
 
 template <typename TValue, typename TScale, typename TCounter>
-CHistogramTimeSeries<TValue, TScale, TCounter>::CHistogramTimeSeries(const THistogram& model_histogram) :
-    m_CurrentTick(0)
+CHistogramTimeSeries<TValue, TScale, TCounter>::CHistogramTimeSeries(THistogram& model_histogram)
+    : m_CurrentTick(0)
 {
     // Need to create the first item in the list
     x_AppendBin(model_histogram, 1);
@@ -1154,7 +1319,7 @@ CHistogramTimeSeries<TValue, TScale, TCounter>::x_Shift(size_t index,
         x_AppendBin(m_TimeBins.front().histogram, TTicks(1) << index);
 
         // Move from index to index + 1
-        auto    next_it = current_it;
+        auto next_it = current_it;
         ++next_it;
         next_it->histogram.StealCountersFrom(current_it->histogram);
 
@@ -1184,24 +1349,26 @@ CHistogramTimeSeries<TValue, TScale, TCounter>::x_Shift(size_t index,
         current_it->n_ticks /= 2;
 }
 
+
 template <typename TValue, typename TScale, typename TCounter>
 typename CHistogramTimeSeries<TValue, TScale, TCounter>::TTimeBins
-CHistogramTimeSeries<TValue, TScale, TCounter>::GetHistograms() const
+CHistogramTimeSeries<TValue, TScale, TCounter>::GetHistograms()
 {
     m_Mutex.lock();
-    TTimeBins       ret = m_TimeBins;
+    TTimeBins ret = m_TimeBins;
     m_Mutex.unlock();
     return ret;
 }
 
+
 template <typename TValue, typename TScale, typename TCounter>
 void
-CHistogramTimeSeries<TValue, TScale, TCounter>::x_AppendBin(const THistogram& model_histogram,
-                                                            TTicks n_ticks)
+CHistogramTimeSeries<TValue, TScale, TCounter>::x_AppendBin(
+    THistogram& model_histogram, TTicks n_ticks)
 {
     m_TimeBins.push_back(
             STimeBin{model_histogram.Clone(THistogram::eCloneStructureOnly),
-                     n_ticks});
+                     n_ticks} );
 }
 
 

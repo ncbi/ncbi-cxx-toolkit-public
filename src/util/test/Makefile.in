@@ -16,11 +16,15 @@ APP_PROJ = example_value_convert \
            test_id_mux \
            test_floating_point_comparison \
            test_get_console_password \
-           test_queue_mt \
-           test_math \
+           test_histogram \
+           test_histogram_mt \
+           test_histogram_time_series \
+           test_histogram_binning \
            test_logrotate \
            test_line_reader \
+           test_math \
            test_porter_stemming \
+           test_queue_mt \
            test_range_coll \
            test_range_set \
            test_rangemap \
@@ -36,8 +40,6 @@ APP_PROJ = example_value_convert \
            test_utf8 \
            test_uttp \
            test_value_convert \
-           test_histogram \
-           test_histogram_binning \
            test_table_printer \
            test_random \
            test_timsort \
@@ -48,8 +50,8 @@ APP_PROJ = example_value_convert \
            test_row_reader_iana_csv \
            test_row_reader_ncbi_tsv \
            test_row_reader_excel_csv \
-           test_compile_time \
-           test_histogram_time_series
+           test_compile_time
+
 
 EXPENDABLE_APP_PROJ = \
            test_limited_map
