@@ -435,7 +435,8 @@ struct SBlobCopier
 
             CRef<CSeq_entry> entry(new CSeq_entry);
             CCache_blob blob;
-            CNcbiIstrstream istr(&m_Buffer[0], m_Buffer.size());
+            string buffer(&m_Buffer[0], m_Buffer.size());
+            CNcbiIstrstream istr(buffer);
             istr >> MSerial_AsnBinary >> blob;
             blob.UnPack(*entry);
 
