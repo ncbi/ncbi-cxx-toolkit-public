@@ -83,7 +83,7 @@ NCBI_begin_lib(xblast)
   NCBI_uses_toolkit_libraries(
     xalgoblastdbindex xalgodustmask xalgowinmask
     xnetblastcli
-    seq blastdb
+    seq blastdb utrtprof
   )
   NCBI_project_watchers(morgulis boratyng madden camacho fongah2)
 NCBI_end_lib()
