@@ -137,7 +137,9 @@ void CCassNAnnotTaskInsert::Wait1()
                 qry->BindInt32(6, m_Annot->GetStart());
                 qry->BindInt32(7, m_Annot->GetStop());
                 qry->BindStr(8, m_Annot->GetAnnotInfo());
-                qry->BindStr(9, m_Annot->GetSeqAnnotInfo());
+                auto annot_info_data = m_Annot->GetSeqAnnotInfo().c_str();
+                auto annot_info_size = m_Annot->GetSeqAnnotInfo().size();
+                qry->BindBytes(9, reinterpret_cast<const unsigned char *>(annot_info_data), annot_info_size);
                 qry->BindInt64(10, m_Annot->GetAnnotInfoModified());
 
                 UpdateLastActivity();

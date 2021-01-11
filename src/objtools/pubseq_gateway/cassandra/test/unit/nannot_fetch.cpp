@@ -42,6 +42,13 @@
 
 #include <corelib/ncbireg.hpp>
 
+#include <serial/serial.hpp>
+#include <serial/iterator.hpp>
+#include <serial/objistr.hpp>
+#include <serial/objostr.hpp>
+
+#include <objects/seqsplit/ID2S_Seq_annot_Info.hpp>
+
 #include <objtools/pubseq_gateway/impl/cassandra/nannot_task/fetch.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_driver.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_factory.hpp>
@@ -50,6 +57,7 @@ namespace {
 
 USING_NCBI_SCOPE;
 USING_IDBLOB_SCOPE;
+USING_SCOPE(objects);
 
 class CNAnnotTaskFetchTest
     : public testing::Test
@@ -176,6 +184,25 @@ class CCassNAnnotTaskFetchWithTimeout : public CCassNAnnotTaskFetch
     size_t m_RestartTrigger;
     bool m_TestRestartDone;
 };
+
+string gGetSeqAnnotInfoString(CNAnnotRecord* record)
+{
+    istringstream ss(record->GetSeqAnnotInfo());
+    unique_ptr<CObjectIStream> obj_strm(CObjectIStream::Open(eSerial_AsnBinary, ss));
+    ostringstream oss;
+    unique_ptr<CObjectOStream> out(
+        CObjectOStream::Open(
+            eSerial_AsnText, oss, eNoOwnership,
+            fSerial_AsnText_NoIndentation | fSerial_AsnText_NoEol
+        )
+    );
+    while (!obj_strm->EndOfData()) {
+        CID2S_Seq_annot_Info annot_info;
+        (*obj_strm) >> annot_info;
+        *out << annot_info;
+    }
+    return oss.str();
+}
 
 const char* CNAnnotTaskFetchTest::m_TestClusterName = "ID_CASS_TEST";
 shared_ptr<CCassConnectionFactory> CNAnnotTaskFetchTest::m_Factory(nullptr);
@@ -510,6 +537,91 @@ TEST_F(CNAnnotTaskFetchTest, ListRetrievalWithCancel) {
     EXPECT_TRUE(fetch.Wait());
     EXPECT_TRUE(fetch.Cancelled());
     EXPECT_TRUE(fetch.HasErrorState());
+}
+
+TEST_F(CNAnnotTaskFetchTest, RetrievalWithSeqAnnotInfo) {
+    size_t call_count = 0;
+    CCassNAnnotTaskFetch fetch(
+        m_Timeout, 0, m_Connection, m_KeyspaceName,
+        "NW_017889735", 1, 10, vector<string>({"NA000122202.1"}),
+        [&call_count](CNAnnotRecord && entry, bool last) -> bool {
+            switch(++call_count) {
+                case 1:
+                    EXPECT_EQ(entry.GetAnnotName(), "NA000122202.1");
+                    EXPECT_EQ(entry.GetStart(), 6616);
+                    EXPECT_EQ(entry.GetStop(), 41589);
+                    EXPECT_EQ(entry.GetSatKey(), 500);
+                    EXPECT_EQ(entry.GetAnnotInfoModified(), 1567710575270);
+                    EXPECT_FALSE(entry.GetSeqAnnotInfo().empty());
+                    EXPECT_EQ(gGetSeqAnnotInfoString(&entry),
+                        "ID2S-Seq-annot-Info ::= {name \"NA000122202.1\",feat {{type 13}},seq-loc gi-interval {gi 1142972004,start 6616,length 34974}}\n"
+                        "ID2S-Seq-annot-Info ::= {name \"NA000122202.1@@10\",graph NULL,seq-loc gi-interval {gi 1142972004,start 6610,length 34980}}\n"
+                        "ID2S-Seq-annot-Info ::= {name \"NA000122202.1@@100\",graph NULL,seq-loc gi-interval {gi 1142972004,start 6610,length 35000}}\n");
+                    EXPECT_FALSE(last);
+                    return true;
+                case 2:
+                    EXPECT_TRUE(last);
+                    return false;
+                default:
+                    EXPECT_TRUE(false) << "Callback should not be called " << call_count << " times.";
+            }
+            return true;
+        },
+        [](CRequestStatus::ECode status, int code, EDiagSev severity, const string & message) {
+            EXPECT_TRUE(false) << "Error callback called during the test (status - "
+                << status << ", code - " << code << ", message - '" << message << "')";
+        }
+    );
+    bool done = fetch.Wait();
+    while (!done) {
+        usleep(1000);
+        done = fetch.Wait();
+    }
+    fetch.SetConsumeCallback(nullptr);
+    EXPECT_EQ(call_count, 2UL);
+}
+
+TEST_F(CNAnnotTaskFetchTest, RetrievalWithSeqAnnotInfo2) {
+    size_t call_count = 0;
+    CCassNAnnotTaskFetch fetch(
+        m_Timeout, 0, m_Connection, m_KeyspaceName,
+        "NW_020201082", 1, 10, vector<string>({"NA000156740.1"}),
+        [&call_count](CNAnnotRecord && entry, bool last) -> bool {
+            switch(++call_count) {
+                case 1:
+                    EXPECT_EQ(entry.GetAnnotName(), "NA000156740.1");
+                    EXPECT_EQ(entry.GetStart(), 14153);
+                    EXPECT_EQ(entry.GetStop(), 77991);
+                    EXPECT_EQ(entry.GetSatKey(), 26395559);
+                    EXPECT_EQ(entry.GetAnnotInfoModified(), 1567919439853);
+                    EXPECT_FALSE(entry.GetSeqAnnotInfo().empty());
+                    EXPECT_EQ(gGetSeqAnnotInfoString(&entry),
+                        "ID2S-Seq-annot-Info ::= {name \"NA000156740.1\",feat {{type 8,subtypes {56}}},seq-loc gi-interval {gi 1385009444,start 14153,length 63839}}\n"
+                        "ID2S-Seq-annot-Info ::= {name \"NA000156740.1@@10\",graph NULL,seq-loc gi-interval {gi 1385009444,start 14150,length 63850}}\n"
+                        "ID2S-Seq-annot-Info ::= {name \"NA000156740.1@@100\",graph NULL,seq-loc gi-interval {gi 1385009444,start 14150,length 63900}}\n"
+                    );
+                    EXPECT_FALSE(last);
+                    return true;
+                case 2:
+                    EXPECT_TRUE(last);
+                    return false;
+                default:
+                    EXPECT_TRUE(false) << "Callback should not be called " << call_count << " times.";
+            }
+            return true;
+        },
+        [](CRequestStatus::ECode status, int code, EDiagSev severity, const string & message) {
+            EXPECT_TRUE(false) << "Error callback called during the test (status - "
+                << status << ", code - " << code << ", message - '" << message << "')";
+        }
+    );
+    bool done = fetch.Wait();
+    while (!done) {
+        usleep(1000);
+        done = fetch.Wait();
+    }
+    fetch.SetConsumeCallback(nullptr);
+    EXPECT_EQ(call_count, 2UL);
 }
 
 }  // namespace
