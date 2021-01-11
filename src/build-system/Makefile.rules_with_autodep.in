@@ -53,7 +53,9 @@ D_TAIL = $(DEPFLAGS_ALL) $< $(DEPFLAGS_POST) \
 	       -e 's%\$$(wildcard $(*F)@obj_ext@) *:%$*@obj_ext@ $@ :%g' \
 	       -e 's%$(incdir)%$$(incdir)%g' \
 	       -e 's%$(includedir)%$$(includedir)%g' \
-	       -e 's%$(includedir0)%$$(includedir0)%g' $(FIXPCH) > $@_ \
+	       -e 's%$(includedir0)%$$(includedir0)%g' \
+	       -e 's%$(srcdir)%$$(srcdir)%g' \
+	       -e 's%$(top_srcdir)%$$(top_srcdir)%g' $(FIXPCH) > $@_ \
 	  &&  test -s $@_  &&  /bin/mv -f $@_ $@
 D_TAIL_PCH = -x c++-header -DNCBI_USE_PCH -DNCBI_PCH__HPP= \
 	 $(DEPFLAGS_ALL) $< $(DEPFLAGS_POST) \
@@ -61,7 +63,9 @@ D_TAIL_PCH = -x c++-header -DNCBI_USE_PCH -DNCBI_PCH__HPP= \
 	       -e 's%\$$(wildcard ncbi_pch_impl@obj_ext@) *:%$$(pchdir)/$(PCHMODE) $$(builddir)/corelib/ncbi_pch_impl.d.$(PCHMODE) :%g' \
 	       -e 's%$(incdir)%$$(incdir)%g' \
 	       -e 's%$(includedir)%$$(includedir)%g' \
-	       -e 's%$(includedir0)%$$(includedir0)%g' > $@_ \
+	       -e 's%$(includedir0)%$$(includedir0)%g' \
+	       -e 's%$(srcdir)%$$(srcdir)%g' \
+	       -e 's%$(top_srcdir)%$$(top_srcdir)%g' > $@_ \
 	  &&  test -s $@_  &&  /bin/mv -f $@_ $@
 
 define make_cpp_dep
