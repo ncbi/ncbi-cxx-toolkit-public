@@ -236,7 +236,7 @@ public:
 #ifdef HAVE_NCBI_C
     static CClassTypeInfo* CreateAsnStructInfo(const char* name)
         {
-            return CParent::CreateAsnStructInfo(name,
+            return CAsnClassInfoHelperBase::CreateAsnStructInfo(name,
                                                 sizeof(CClassType),
                                                 typeid(CClassType));
         }
