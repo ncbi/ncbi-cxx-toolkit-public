@@ -94,7 +94,7 @@ typedef CHistogramTimeSeries<uint64_t, uint64_t, uint64_t>  TPSGTiming;
 
 
 // Returns a serialized dictionary
-CJsonNode SerializeHistogram(TOnePSGTiming &  histogram,
+CJsonNode SerializeHistogram(const TOnePSGTiming &  histogram,
                              const string &  name,
                              const string &  description);
 

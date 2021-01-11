@@ -41,7 +41,7 @@ static string           kTimeRangeEnd("TimeRangeEnd");
 const unsigned long     kMaxBlobSize = 1024L*1024L*1024L*8L;   // 8 GB
 
 
-CJsonNode SerializeHistogram(TOnePSGTiming &  histogram,
+CJsonNode SerializeHistogram(const TOnePSGTiming &  histogram,
                              const string  &  name,
                              const string  &  description)
 {
