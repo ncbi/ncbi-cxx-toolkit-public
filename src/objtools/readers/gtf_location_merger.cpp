@@ -296,9 +296,10 @@ CGtfLocationMerger::MergeLocationDefault(
         pSeqloc = onlyOne.GetLocation(); 
         return pSeqloc;
     }
-    std::stable_sort(
-        locations.begin(), locations.end(), CGtfLocationRecord::ComparePartNumbers);
-    //locations.sort(CGtfLocationRecord::ComparePartNumbers);
+    //using CCompare = bool(*)(const CGtfLocationRecord&, const CGtfLocationRecord&);
+    //std::stable_sort<LOCATIONS::iterator>(
+    //    locations.begin(), locations.end(), CGtfLocationRecord::ComparePartNumbers);
+    locations.sort(CGtfLocationRecord::ComparePartNumbers);
     auto& mix = pSeqloc->SetMix();
     for (auto& location: locations) {
         mix.AddSeqLoc(*location.GetLocation());
@@ -315,8 +316,9 @@ CGtfLocationMerger::MergeLocationForCds(
     NCBI_ASSERT(!locations.empty(), 
         "Cannot call MergeLocationForCds with empty location");
 
-    std::stable_sort(
-        locations.begin(), locations.end(), CGtfLocationRecord::ComparePartNumbers);
+    //std::stable_sort<LOCATIONS::iterator>(
+    //    locations.begin(), locations.end(), CGtfLocationRecord::ComparePartNumbers);
+    locations.sort(CGtfLocationRecord::ComparePartNumbers);
     CRef<CSeq_loc> pSeqloc(new CSeq_loc);
     auto& mix = pSeqloc->SetMix();
     for (auto& location: locations) {
