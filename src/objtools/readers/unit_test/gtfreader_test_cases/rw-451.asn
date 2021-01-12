@@ -1,29 +1,7 @@
 Seq-annot ::= {
   data ftable {
     {
-      id local str "gene_29",
-      data gene {
-        locus-tag "XNAG_00001"
-      },
-      location int {
-        from 10834,
-        to 11663,
-        strand minus,
-        id local str "chr1"
-      },
-      qual {
-        {
-          qual "gene_id",
-          val "CNAG_00001"
-        },
-        {
-          qual "protein_id",
-          val "CNAG_00001T0"
-        }
-      }
-    },
-    {
-      id local str "cds_30",
+      id local str "cds_29",
       data cdregion {
       },
       location mix {
@@ -56,7 +34,40 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local str "gene_29"
+          id local str "mrna_31"
+        },
+        {
+          id local str "gene_30"
+        }
+      }
+    },
+    {
+      id local str "gene_30",
+      data gene {
+        locus-tag "XNAG_00001"
+      },
+      location int {
+        from 10834,
+        to 11663,
+        strand minus,
+        id local str "chr1"
+      },
+      qual {
+        {
+          qual "gene_id",
+          val "CNAG_00001"
+        },
+        {
+          qual "protein_id",
+          val "CNAG_00001T0"
+        }
+      },
+      xref {
+        {
+          id local str "cds_29"
+        },
+        {
+          id local str "mrna_31"
         }
       }
     },
@@ -107,10 +118,10 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local str "gene_29"
+          id local str "gene_30"
         },
         {
-          id local str "cds_30"
+          id local str "cds_29"
         }
       }
     }

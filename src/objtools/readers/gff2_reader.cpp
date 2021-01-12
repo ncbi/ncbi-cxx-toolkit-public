@@ -1339,14 +1339,39 @@ bool sFeatureHasXref(
     if (!feat.IsSetXref()) {
         return false;
     }
-    int xrefId = featId.GetLocal().GetId();
-    const XREFS& xrefs = feat.GetXref();
-    for (XREFS::const_iterator cit = xrefs.begin(); cit != xrefs.end(); ++cit) {
-        const CSeqFeatXref& ref = **cit; 
-        int contentId = ref.GetId().GetLocal().GetId();
-        if (contentId == xrefId) {
-            return true;
+    if (!featId.IsLocal()) {
+        return false;
+    }
+    const auto& local = featId.GetLocal();
+    if (local.IsId()) {
+        auto xrefId = local.GetId();
+        const XREFS& xrefs = feat.GetXref();
+        for (XREFS::const_iterator cit = xrefs.begin(); cit != xrefs.end(); ++cit) {
+            const CSeqFeatXref& ref = **cit; 
+            if (!ref.GetId().IsLocal()  ||  !ref.GetId().GetLocal().IsId()) {
+                continue;
+            }
+            auto contentId = ref.GetId().GetLocal().GetId();
+            if (contentId == xrefId) {
+                return true;
+            }
         }
+        return false;
+    }
+    if (local.IsStr()) {
+        auto xrefId = local.GetStr();
+        const XREFS& xrefs = feat.GetXref();
+        for (XREFS::const_iterator cit = xrefs.begin(); cit != xrefs.end(); ++cit) {
+            const CSeqFeatXref& ref = **cit; 
+            if (!ref.GetId().IsLocal()  ||  !ref.GetId().GetLocal().IsStr()) {
+                continue;
+            }
+            auto contentId = ref.GetId().GetLocal().GetStr();
+            if (contentId == xrefId) {
+                return true;
+            }
+        }
+        return false;
     }
     return false;
 }

@@ -40,6 +40,8 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_SCOPE(objects) // namespace ncbi::objects::
 
+class CGtfLocationMerger;
+
 //  ============================================================================
 class CGtfAttributes
 //  ============================================================================
@@ -123,7 +125,8 @@ class CGtfReadRecord
     : public CGff2Record
 {
 public:
-    CGtfReadRecord(): CGff2Record() {};
+    CGtfReadRecord(): CGff2Record() {
+    };
     ~CGtfReadRecord() {};
 
     const CGtfAttributes&
@@ -213,6 +216,9 @@ protected:
         const CGtfReadRecord&,
         CSeq_annot&);
 
+    virtual void xPostProcessAnnot(
+        CSeq_annot&);
+
     bool xCreateFeatureId(
         const CGtfReadRecord&,
         const string&,
@@ -291,14 +297,11 @@ protected:
         const CGtfReadRecord&,
         CSeq_feat&);
 
-    CRef<CSeq_feat> xFindParentGene(
-        const CGtfReadRecord&);
-
-    CRef<CSeq_feat> xFindParentCds(
-        const CGtfReadRecord&);
-
     CRef<CSeq_feat> xFindParentMrna(
         const CGtfReadRecord&);
+
+    CRef<CSeq_feat> xFindFeatById(
+        const string&);
 
     bool xProcessQualifierSpecialCase(
         const string&,
@@ -320,6 +323,7 @@ protected:
 
     typedef map<string, string> TGeneIdToLocusTag;
     TGeneIdToLocusTag m_LocusTags;
+    unique_ptr<CGtfLocationMerger> mpLocations;
 };
 
 END_SCOPE(objects)

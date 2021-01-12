@@ -58,6 +58,7 @@
 #include <objects/seqfeat/Feat_id.hpp>
 
 #include <objtools/readers/gtf_reader.hpp>
+#include "gtf_location_merger.hpp"
 #include "reader_message_handler.hpp"
 
 #include <algorithm>
@@ -145,7 +146,9 @@ CGtfReader::CGtfReader(
 //  ----------------------------------------------------------------------------
     CGff2Reader( uFlags, strAnnotName, strAnnotTitle, resolver, pRL)
 {
+    mpLocations.reset(new CGtfLocationMerger(uFlags, resolver, 0));
 }
+
 //  ----------------------------------------------------------------------------
 CGtfReader::CGtfReader( 
     unsigned int uFlags,
@@ -205,17 +208,18 @@ bool CGtfReader::xUpdateAnnotFeature(
 //  ----------------------------------------------------------------------------
 {
     const CGtfReadRecord& gff = dynamic_cast<const CGtfReadRecord&>(record);
-    string strType = gff.Type();
+    auto recType = gff.Type();
+    NStr::ToLower(recType);
 
     using TYPEHANDLER = bool (CGtfReader::*)(const CGtfReadRecord&, CSeq_annot&);
     using HANDLERMAP = map<string, TYPEHANDLER>;
 
     HANDLERMAP typeHandlers = {
-        {"CDS",         &CGtfReader::xUpdateAnnotCds},
+        {"cds",         &CGtfReader::xUpdateAnnotCds},
         {"start_codon", &CGtfReader::xUpdateAnnotCds},
         {"stop_codon",  &CGtfReader::xUpdateAnnotCds},
-        {"5UTR",        &CGtfReader::xUpdateAnnotTranscript},
-        {"3UTR",        &CGtfReader::xUpdateAnnotTranscript},
+        {"5utr",        &CGtfReader::xUpdateAnnotTranscript},
+        {"3utr",        &CGtfReader::xUpdateAnnotTranscript},
         {"exon",        &CGtfReader::xUpdateAnnotTranscript},
         {"initial",     &CGtfReader::xUpdateAnnotTranscript},
         {"internal",    &CGtfReader::xUpdateAnnotTranscript},
@@ -226,7 +230,7 @@ bool CGtfReader::xUpdateAnnotFeature(
     //
     // Handle officially recognized GTF types:
     //
-    HANDLERMAP::iterator it = typeHandlers.find(strType);
+    HANDLERMAP::iterator it = typeHandlers.find(recType);
     if (it != typeHandlers.end()) {
         TYPEHANDLER handler = it->second;
         return (this->*handler)(gff, annot);
@@ -237,10 +241,10 @@ bool CGtfReader::xUpdateAnnotFeature(
     //  supposed to ignore it. In the spirit of being lenient on input we may
     //  try to salvage some of it anyway.
     //
-    if ( strType == "gene" ) {
+    if (recType == "gene") {
         return xCreateParentGene(gff, annot);
     }
-    if (strType == "mRNA") {
+    if (recType == "mrna"  ||  recType == "transcript") {
         return xCreateParentMrna(gff, annot);
     }
     return true;
@@ -252,53 +256,12 @@ bool CGtfReader::xUpdateAnnotCds(
     CSeq_annot& annot )
 //  ----------------------------------------------------------------------------
 {
-    //
-    // From the spec, the stop codon has _not_ been accounted for in any of the 
-    //  coding regions. Hence, we will treat (pieces of) the stop codon just
-    //  like (pieces of) CDS.
-    //
-    //
-    // If there is no gene feature to go with this CDS then make one. Otherwise,
-    //  make sure the existing gene feature includes the location of the CDS.
-    //
-    CRef<CSeq_feat> pGene = xFindParentGene(gff);
-    if (!pGene) {
-        if (!xCreateParentGene(gff, annot)) {
-            return false;
-        }
-        pGene = xFindParentGene(gff);
-    }
-    else {
-        if (!xMergeParentGene(gff, *pGene)) {
-            return false;
-        }
-    }
-
-    //
-    // If there is no CDS feature with this gene_id|transcript_id then make one.
-    //  Otherwise, fix up the location of the existing one.
-    //
-    CRef<CSeq_feat> pCds = xFindParentCds(gff);
-    if (!pCds) {
-        //
-        // Create a brand new CDS feature:
-        //
-        if (!xCreateParentCds(gff, annot)) {
-            return false;
-        }
-        pCds = xFindParentCds(gff);
-    }
-    else {
-        //
-        // Update an already existing CDS features:
-        //
-        if (!xMergeFeatureLocationMultiInterval(gff, *pCds)) {
-            return false;
-        }
-    }
-
-    return true;
-}
+    auto featId = mpLocations->GetFeatureIdFor(gff, "cds");
+    auto gffType = gff.Type();
+    NStr::ToLower(gffType);
+    mpLocations->AddRecordForId(featId, gff) ;
+    return (xFindFeatById(featId)  ||  xCreateParentCds(gff, annot));
+ }
 
 //  ----------------------------------------------------------------------------
 bool CGtfReader::xUpdateAnnotTranscript(
@@ -310,13 +273,16 @@ bool CGtfReader::xUpdateAnnotTranscript(
     // If there is no gene feature to go with this CDS then make one. Otherwise,
     //  make sure the existing gene feature includes the location of the CDS.
     //
-    CRef< CSeq_feat > pGene = xFindParentGene(gff);
+    auto geneFeatId = mpLocations->GetFeatureIdFor(gff, "gene");
+    CRef< CSeq_feat > pGene = xFindFeatById(geneFeatId);
     if (!pGene) {
         if (!xCreateParentGene(gff, annot)) {
             return false;
         }
+        mpLocations->AddRecordForId(geneFeatId, gff);
     }
     else {
+        mpLocations->AddRecordForId(geneFeatId, gff);
         if (!xMergeParentGene(gff, *pGene)) {
             return false;
         }
@@ -329,7 +295,8 @@ bool CGtfReader::xUpdateAnnotTranscript(
     // If there is no mRNA feature with this gene_id|transcript_id then make one.
     //  Otherwise, fix up the location of the existing one.
     //
-    CRef<CSeq_feat> pMrna = xFindParentMrna(gff);
+    auto transcriptFeatId = mpLocations->GetFeatureIdFor(gff, "transcript");
+    CRef<CSeq_feat> pMrna = xFindFeatById(transcriptFeatId);
     if (!pMrna) {
         //
         // Create a brand new CDS feature:
@@ -337,11 +304,13 @@ bool CGtfReader::xUpdateAnnotTranscript(
         if (!xCreateParentMrna(gff, annot)) {
             return false;
         }
+        mpLocations->AddRecordForId(transcriptFeatId, gff);
     }
     else {
         //
         // Update an already existing CDS features:
         //
+        mpLocations->AddRecordForId(transcriptFeatId, gff);
         if (!xMergeFeatureLocationMultiInterval(gff, *pMrna)) {
             return false;
         }
@@ -404,7 +373,8 @@ bool CGtfReader::xCreateGeneXrefs(
     CSeq_feat& feature )
 //  ----------------------------------------------------------------------------
 {
-    CRef<CSeq_feat> pParent = xFindParentGene(record);
+    auto geneFeatId = mpLocations->GetFeatureIdFor(record, "gene");
+    CRef<CSeq_feat> pParent = xFindFeatById(geneFeatId);
     if (!pParent) {
         return true;
     }
@@ -448,7 +418,8 @@ bool CGtfReader::xCreateCdsXrefs(
     CSeq_feat& feature )
 //  ----------------------------------------------------------------------------
 {
-    CRef<CSeq_feat> pParent = xFindParentCds(record);
+    auto cdsFeatId = mpLocations->GetFeatureIdFor(record, "cds");
+    CRef<CSeq_feat> pParent = xFindFeatById(cdsFeatId);
     if (!pParent) {
         return true;
     }
@@ -512,9 +483,11 @@ bool CGtfReader::xCreateParentGene(
     CSeq_annot& annot )
 //  -----------------------------------------------------------------------------
 {
-    //
-    // Create a single gene feature:
-    //
+    auto featId = mpLocations->GetFeatureIdFor(gff, "gene");
+    if (m_MapIdToFeature.find(featId) != m_MapIdToFeature.end()) {
+        return true;
+    }
+
     CRef<CSeq_feat> pFeature( new CSeq_feat );
 
     if (!xFeatureSetDataGene(gff, *pFeature)) {
@@ -529,8 +502,13 @@ bool CGtfReader::xCreateParentGene(
     if ( !xFeatureSetQualifiersGene(gff, *pFeature)) {
         return false;
     }
+
+    (gff.Type() == "gene") ?
+        mpLocations->AddRecordForId(featId, gff) :
+        mpLocations->AddStubForId(featId);
+    m_MapIdToFeature[featId] = pFeature;
     m_GeneMap[gff.GeneKey()] = pFeature;
-    xAddFeatureToAnnot( pFeature, annot );
+    xAddFeatureToAnnot(pFeature, annot);
     return true;
 }
     
@@ -639,21 +617,12 @@ bool CGtfReader::xCreateParentCds(
     CSeq_annot& annot )
 //  -----------------------------------------------------------------------------
 {
-    //
-    // Create a single cds feature.
-	// This creation may either be triggered by an actual CDS feature found in the
-	//	gtf, or by a feature that would imply a CDS feature (such as a start codon 
-	//	or a stop codon). The latter is necessary because nothing the the gtf 
-	//	standard stipulates that gtf features have to be arranged in any particular
-	//	order.
-    //
-    CRef<CSeq_feat> pFeature(new CSeq_feat);
-
-    string strType = gff.Type();
-    if (strType != "CDS"  &&  strType != "start_codon"  &&  strType != "stop_codon") {
-        return false;
+    auto featId = mpLocations->GetFeatureIdFor(gff, "cds");
+    if (m_MapIdToFeature.find(featId) != m_MapIdToFeature.end()) {
+        return true;
     }
 
+    CRef<CSeq_feat> pFeature(new CSeq_feat);
     m_CdsMap[gff.FeatureKey()] = pFeature;
 
     if (!xFeatureSetDataCds(gff, *pFeature)) {
@@ -675,6 +644,8 @@ bool CGtfReader::xCreateParentCds(
         return false;
     }
 
+    m_MapIdToFeature[featId] = pFeature;
+
     return xAddFeatureToAnnot(pFeature, annot);
 }
 
@@ -684,9 +655,11 @@ bool CGtfReader::xCreateParentMrna(
     CSeq_annot& annot )
 //  -----------------------------------------------------------------------------
 {
-    //
-    // Create a single cds feature:
-    //
+    auto featId = mpLocations->GetFeatureIdFor(gff, "transcript");
+    if (m_MapIdToFeature.find(featId) != m_MapIdToFeature.end()) {
+        return true;
+    }
+
     CRef< CSeq_feat > pFeature( new CSeq_feat );
 
     if (!xFeatureSetDataMrna(gff, *pFeature)) {
@@ -708,45 +681,37 @@ bool CGtfReader::xCreateParentMrna(
         return false;
     }
 
+    mpLocations->AddStubForId(featId);
+    m_MapIdToFeature[featId] = pFeature;
     m_MrnaMap[gff.FeatureKey()] = pFeature;
 
     return xAddFeatureToAnnot( pFeature, annot );
 }
 
 //  ----------------------------------------------------------------------------
-CRef<CSeq_feat> CGtfReader::xFindParentGene(
-    const CGtfReadRecord& gff)
+CRef<CSeq_feat> CGtfReader::xFindFeatById(
+    const string& featId)
 //  ----------------------------------------------------------------------------
 {
-    auto gene_it = m_GeneMap.find(gff.GeneKey());
-    if (gene_it == m_GeneMap.end()) {
+    auto featIt = m_MapIdToFeature.find(featId);
+    if (featIt == m_MapIdToFeature.end()) {
         return CRef<CSeq_feat>();
     }
-    return gene_it->second;
+    return featIt->second;
 }
 
-//  ----------------------------------------------------------------------------
-CRef<CSeq_feat> CGtfReader::xFindParentCds(
-    const CGtfReadRecord& gff)
-//  ----------------------------------------------------------------------------
-{
-    auto cds_it = m_CdsMap.find(gff.FeatureKey());
-    if (cds_it == m_CdsMap.end()) {
-        return CRef<CSeq_feat>();
-    }
-    return cds_it->second;
-}
 
 //  ----------------------------------------------------------------------------
 CRef<CSeq_feat> CGtfReader::xFindParentMrna(
     const CGtfReadRecord& gff)
 //  ----------------------------------------------------------------------------
 {
-    TIdToFeature::iterator rna_it = m_MrnaMap.find(gff.FeatureKey());
-    if ( rna_it == m_MrnaMap.end() ) {
+    auto featId = mpLocations->GetFeatureIdFor(gff, "transcript");
+    auto transcriptIt = m_MapIdToFeature.find(featId);
+    if (transcriptIt == m_MapIdToFeature.end()) {
         return CRef<CSeq_feat>();
     }
-    return rna_it->second;
+    return transcriptIt->second;
 }
 
 //  ----------------------------------------------------------------------------
@@ -956,6 +921,71 @@ void CGtfReader::xFeatureAddQualifiers(
         feature.AddQualifier(key, value);
     }
 };
+
+//  ----------------------------------------------------------------------------
+void CGtfReader::xPostProcessAnnot(
+    CSeq_annot& annot)
+//  ----------------------------------------------------------------------------
+{
+    //location fixup:
+    mpLocations->SetSequenceSize(mSequenceSize);
+    for (auto itLocation: mpLocations->LocationMap()) {
+        auto id = itLocation.first;
+        if (id == "gene:SSO12256") {
+            cerr << "";
+        }
+        auto itFeature = m_MapIdToFeature.find(id);
+        if (itFeature == m_MapIdToFeature.end()) {
+            continue;
+        }
+        CRef<CSeq_feat> pFeature = itFeature->second;
+        auto featSubType = pFeature->GetData().GetSubtype();
+        CRef<CSeq_loc> pNewLoc = mpLocations->MergeLocation(
+            featSubType, itLocation.second);
+        pFeature->SetLocation(*pNewLoc);
+    }
+
+    //generate xrefs:
+    for (auto itLocation: mpLocations->LocationMap()) {
+        auto id = itLocation.first;
+        auto itFeature = m_MapIdToFeature.find(id);
+        if (itFeature == m_MapIdToFeature.end()) {
+            continue;
+        }
+        CRef<CSeq_feat> pFeature = itFeature->second;
+        auto featSubType = pFeature->GetData().GetSubtype();
+        switch(featSubType) {
+            default: {
+                break;
+            }
+            case CSeqFeatData::eSubtype_mRNA: {
+                auto parentGeneFeatId = string("gene:") + pFeature->GetNamedQual("gene_id");
+                CRef<CSeq_feat> pParentGene;
+                if (x_GetFeatureById(parentGeneFeatId, pParentGene)) {
+                    this->xSetAncestorXrefs(*pFeature, *pParentGene);
+                }
+                break;
+            }
+            case CSeqFeatData::eSubtype_cdregion: {
+                auto parentRnaFeatId = string("transcript:") + pFeature->GetNamedQual("gene_id") +
+                    "_" + pFeature->GetNamedQual("transcript_id");
+                CRef<CSeq_feat> pParentRna;
+                if (x_GetFeatureById(parentRnaFeatId, pParentRna)) {
+                    this->xSetAncestorXrefs(*pFeature, *pParentRna);
+                }
+                auto parentGeneFeatId = string("gene:") + pFeature->GetNamedQual("gene_id");
+                CRef<CSeq_feat> pParentGene;
+                if (x_GetFeatureById(parentGeneFeatId, pParentGene)) {
+                    this->xSetAncestorXrefs(*pFeature, *pParentGene);
+                }
+                break;
+            }
+        }
+    }
+
+    return CGff2Reader::xPostProcessAnnot(annot);
+}
+
 
 END_objects_SCOPE
 END_NCBI_SCOPE

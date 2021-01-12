@@ -29,6 +29,14 @@ Seq-annot ::= {
           qual "transcript_name",
           val "A2M-013"
         }
+      },
+      xref {
+        {
+          id local str "cds_28"
+        },
+        {
+          id local str "mrna_27"
+        }
       }
     },
     {

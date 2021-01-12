@@ -19,6 +19,14 @@ Seq-annot ::= {
           qual "real",
           val "X"
         }
+      },
+      xref {
+        {
+          id local str "cds_3"
+        },
+        {
+          id local str "mrna_2"
+        }
       }
     },
     {
@@ -40,6 +48,12 @@ Seq-annot ::= {
           id local id 381
         },
         int {
+          from 799,
+          to 850,
+          strand plus,
+          id local id 381
+        },
+        int {
           from 500,
           to 649,
           strand plus,
@@ -47,7 +61,7 @@ Seq-annot ::= {
         },
         int {
           from 699,
-          to 850,
+          to 799,
           strand plus,
           id local id 381
         },

@@ -15,6 +15,14 @@ Seq-annot ::= {
           qual "gene_id",
           val "AT1G01010"
         }
+      },
+      xref {
+        {
+          id local str "cds_6"
+        },
+        {
+          id local str "mrna_5"
+        }
       }
     },
     {
@@ -154,6 +162,20 @@ Seq-annot ::= {
         {
           qual "gene_id",
           val "AT1G01020"
+        }
+      },
+      xref {
+        {
+          id local str "cds_9"
+        },
+        {
+          id local str "cds_11"
+        },
+        {
+          id local str "mrna_8"
+        },
+        {
+          id local str "mrna_10"
         }
       }
     },
@@ -478,6 +500,14 @@ Seq-annot ::= {
           qual "gene_id",
           val "AT1G01030"
         }
+      },
+      xref {
+        {
+          id local str "cds_14"
+        },
+        {
+          id local str "mrna_13"
+        }
       }
     },
     {
@@ -561,6 +591,20 @@ Seq-annot ::= {
         {
           qual "gene_id",
           val "AT1G01040"
+        }
+      },
+      xref {
+        {
+          id local str "cds_17"
+        },
+        {
+          id local str "cds_19"
+        },
+        {
+          id local str "mrna_16"
+        },
+        {
+          id local str "mrna_18"
         }
       }
     },
