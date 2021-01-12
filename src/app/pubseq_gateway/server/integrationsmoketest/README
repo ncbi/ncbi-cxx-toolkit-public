@@ -1,0 +1,10 @@
+To run the integration tests someone may use the following command line:
+
+./integration_test localhost:2180
+
+The localhost:2180 needs to be replaced with the host port of the running PSG
+server.
+
+Note: the script uses psg_client. First, psg_client is searched in the directory
+of the script. Otherwise the PATH available will be used.
+
