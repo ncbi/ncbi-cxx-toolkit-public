@@ -1,0 +1,19 @@
+To run the unit tests the following command can be used:
+
+./test_netschedule.py 9102 --path-netschedule=/export/home/satskyse/ns_testsuite --db-path=/export/home/satskyse/ns_testsuite/data.9102 --ns-version=4.16.4 --path-grid-cli=/export/home/satskyse/ns_testsuite --start-from=0
+
+where:
+9102 is a port number on which the server accepts the requests
+--path-netschedule specifies the directory where the server binary is
+--db-path specifies the directory where the server strores its data
+--ns-version specifies what version of the server is tested
+--path-grid-cli specifies the directory where grid_cli utility is located
+--start-from tells the test number from which the test suite should start
+
+use --help for the full list of options
+
+
+There is another quick test script:
+./test_ns_commands.py localhost:9102
+it may be useful running it together with valgrind
+
