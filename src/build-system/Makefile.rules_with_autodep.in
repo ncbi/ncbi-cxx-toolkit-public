@@ -54,7 +54,7 @@ D_TAIL = $(DEPFLAGS_ALL) $< $(DEPFLAGS_POST) \
 	       -e 's%$(incdir)%$$(incdir)%g' \
 	       -e 's%$(includedir)%$$(includedir)%g' \
 	       -e 's%$(includedir0)%$$(includedir0)%g' \
-	       -e 's%$(srcdir)%$$(srcdir)%g' \
+	       -e 's% $(subst .,\.,$(srcdir))/% $$(srcdir)/%g' \
 	       -e 's%$(top_srcdir)%$$(top_srcdir)%g' $(FIXPCH) > $@_ \
 	  &&  test -s $@_  &&  /bin/mv -f $@_ $@
 D_TAIL_PCH = -x c++-header -DNCBI_USE_PCH -DNCBI_PCH__HPP= \
@@ -64,7 +64,7 @@ D_TAIL_PCH = -x c++-header -DNCBI_USE_PCH -DNCBI_PCH__HPP= \
 	       -e 's%$(incdir)%$$(incdir)%g' \
 	       -e 's%$(includedir)%$$(includedir)%g' \
 	       -e 's%$(includedir0)%$$(includedir0)%g' \
-	       -e 's%$(srcdir)%$$(srcdir)%g' \
+	       -e 's% $(subst .,\.,$(srcdir))/% $$(srcdir)/%g' \
 	       -e 's%$(top_srcdir)%$$(top_srcdir)%g' > $@_ \
 	  &&  test -s $@_  &&  /bin/mv -f $@_ $@
 
