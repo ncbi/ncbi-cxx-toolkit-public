@@ -61,14 +61,6 @@ Seq-annot ::= {
           qual "protein_id",
           val "CNAG_00001T0"
         }
-      },
-      xref {
-        {
-          id local str "cds_29"
-        },
-        {
-          id local str "mrna_31"
-        }
       }
     },
     {
@@ -119,9 +111,6 @@ Seq-annot ::= {
       xref {
         {
           id local str "gene_30"
-        },
-        {
-          id local str "cds_29"
         }
       }
     }

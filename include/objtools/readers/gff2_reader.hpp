@@ -286,7 +286,11 @@ protected:
         CSeq_feat&,
         const string&);
 
-    void xSetAncestorXrefs(
+    virtual void xSetAncestorXrefs(
+        CSeq_feat&,
+        CSeq_feat&);
+
+    void xSetXrefFromTo(
         CSeq_feat&,
         CSeq_feat&);
 

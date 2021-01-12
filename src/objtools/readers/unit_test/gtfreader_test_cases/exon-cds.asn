@@ -19,14 +19,6 @@ Seq-annot ::= {
           qual "real",
           val "X"
         }
-      },
-      xref {
-        {
-          id local str "cds_3"
-        },
-        {
-          id local str "mrna_2"
-        }
       }
     },
     {
@@ -95,9 +87,6 @@ Seq-annot ::= {
       xref {
         {
           id local str "gene_1"
-        },
-        {
-          id local str "cds_3"
         }
       }
     },
@@ -137,10 +126,10 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local str "gene_1"
+          id local str "mrna_2"
         },
         {
-          id local str "mrna_2"
+          id local str "gene_1"
         }
       }
     }

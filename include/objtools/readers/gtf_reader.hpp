@@ -228,34 +228,10 @@ protected:
         const CGtfReadRecord&,
         CSeq_feat&);
     
-    bool xCreateGeneXrefs(
-        const CGtfReadRecord&,
-        CSeq_feat&);
-    
-    bool xCreateMrnaXrefs(
-        const CGtfReadRecord&,
-        CSeq_feat&);
-    
-    bool xCreateCdsXrefs(
-        const CGtfReadRecord&,
-        CSeq_feat&);
-    
-    bool xMergeFeatureLocationSingleInterval(
-        const CGtfReadRecord&,
-        CSeq_feat&);
-    
-    bool xMergeFeatureLocationMultiInterval(
-        const CGtfReadRecord&,
-        CSeq_feat&);
-
     bool xCreateParentGene(
         const CGtfReadRecord&,
         CSeq_annot&);
         
-    bool xMergeParentGene(
-        const CGtfReadRecord&,
-        CSeq_feat&);
-            
     bool xFeatureSetQualifiersGene(
         const CGtfReadRecord& record,
         CSeq_feat&);
@@ -313,8 +289,9 @@ protected:
         const CGtfAttributes::MultiValue&,
         CSeq_feat&);
 
-    NCBI_DEPRECATED bool xCdsIsPartial(
-        const CGtfReadRecord& );
+    void xSetAncestorXrefs(
+        CSeq_feat&,
+        CSeq_feat&) override;
 
     unique_ptr<CGtfLocationMerger> mpLocations;
 };

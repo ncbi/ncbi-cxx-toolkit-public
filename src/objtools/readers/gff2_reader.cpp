@@ -1377,29 +1377,28 @@ bool sFeatureHasXref(
 }
 
 //  ============================================================================
+void CGff2Reader::xSetXrefFromTo(
+    CSeq_feat& from,
+    CSeq_feat& to)
+//  ============================================================================
+{
+    if (!sFeatureHasXref(from, to.GetId())) {
+        CRef<CFeat_id> pToId(new CFeat_id);
+        pToId->Assign(to.GetId());
+        CRef<CSeqFeatXref> pToXref(new CSeqFeatXref);
+        pToXref->SetId(*pToId);
+        from.SetXref().push_back(pToXref);
+    }
+}
+
+//  ============================================================================
 void CGff2Reader::xSetAncestorXrefs(
     CSeq_feat& descendent,
     CSeq_feat& ancestor)
 //  ============================================================================
 {
-
-    //xref descendent->ancestor
-    if (!sFeatureHasXref(descendent, ancestor.GetId())) {
-        CRef<CFeat_id> pAncestorId(new CFeat_id);
-        pAncestorId->Assign(ancestor.GetId());
-        CRef<CSeqFeatXref> pAncestorXref(new CSeqFeatXref);
-        pAncestorXref->SetId(*pAncestorId);
-        descendent.SetXref().push_back(pAncestorXref);
-    }
-
-    //xref ancestor->descendent
-    if (!sFeatureHasXref(ancestor, descendent.GetId())) {
-        CRef<CFeat_id> pDescendentId(new CFeat_id);
-        pDescendentId->Assign(descendent.GetId());
-        CRef<CSeqFeatXref> pDescendentXref(new CSeqFeatXref);
-        pDescendentXref->SetId(*pDescendentId);
-        ancestor.SetXref().push_back(pDescendentXref);
-    }
+    xSetXrefFromTo(descendent, ancestor);
+    xSetXrefFromTo(ancestor, descendent);
 }
 
 //  ============================================================================

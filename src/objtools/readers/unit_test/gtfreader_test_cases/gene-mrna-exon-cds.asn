@@ -15,14 +15,6 @@ Seq-annot ::= {
           qual "gene_id",
           val "AT1G01010"
         }
-      },
-      xref {
-        {
-          id local str "cds_6"
-        },
-        {
-          id local str "mrna_5"
-        }
       }
     },
     {
@@ -81,9 +73,6 @@ Seq-annot ::= {
       xref {
         {
           id local str "gene_4"
-        },
-        {
-          id local str "cds_6"
         }
       }
     },
@@ -141,10 +130,10 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local str "gene_4"
+          id local str "mrna_5"
         },
         {
-          id local str "mrna_5"
+          id local str "gene_4"
         }
       }
     },
@@ -162,20 +151,6 @@ Seq-annot ::= {
         {
           qual "gene_id",
           val "AT1G01020"
-        }
-      },
-      xref {
-        {
-          id local str "cds_9"
-        },
-        {
-          id local str "cds_11"
-        },
-        {
-          id local str "mrna_8"
-        },
-        {
-          id local str "mrna_10"
         }
       }
     },
@@ -259,9 +234,6 @@ Seq-annot ::= {
       xref {
         {
           id local str "gene_7"
-        },
-        {
-          id local str "cds_9"
         }
       }
     },
@@ -337,10 +309,10 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local str "gene_7"
+          id local str "mrna_8"
         },
         {
-          id local str "mrna_8"
+          id local str "gene_7"
         }
       }
     },
@@ -412,9 +384,6 @@ Seq-annot ::= {
       xref {
         {
           id local str "gene_7"
-        },
-        {
-          id local str "cds_11"
         }
       }
     },
@@ -478,10 +447,10 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local str "gene_7"
+          id local str "mrna_10"
         },
         {
-          id local str "mrna_10"
+          id local str "gene_7"
         }
       }
     },
@@ -499,14 +468,6 @@ Seq-annot ::= {
         {
           qual "gene_id",
           val "AT1G01030"
-        }
-      },
-      xref {
-        {
-          id local str "cds_14"
-        },
-        {
-          id local str "mrna_13"
         }
       }
     },
@@ -542,9 +503,6 @@ Seq-annot ::= {
       xref {
         {
           id local str "gene_12"
-        },
-        {
-          id local str "cds_14"
         }
       }
     },
@@ -570,10 +528,10 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local str "gene_12"
+          id local str "mrna_13"
         },
         {
-          id local str "mrna_13"
+          id local str "gene_12"
         }
       }
     },
@@ -591,20 +549,6 @@ Seq-annot ::= {
         {
           qual "gene_id",
           val "AT1G01040"
-        }
-      },
-      xref {
-        {
-          id local str "cds_17"
-        },
-        {
-          id local str "cds_19"
-        },
-        {
-          id local str "mrna_16"
-        },
-        {
-          id local str "mrna_18"
         }
       }
     },
@@ -748,9 +692,6 @@ Seq-annot ::= {
       xref {
         {
           id local str "gene_15"
-        },
-        {
-          id local str "cds_17"
         }
       }
     },
@@ -892,10 +833,10 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local str "gene_15"
+          id local str "mrna_16"
         },
         {
-          id local str "mrna_16"
+          id local str "gene_15"
         }
       }
     },
@@ -997,9 +938,6 @@ Seq-annot ::= {
       xref {
         {
           id local str "gene_15"
-        },
-        {
-          id local str "cds_19"
         }
       }
     },
@@ -1099,10 +1037,10 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local str "gene_15"
+          id local str "mrna_18"
         },
         {
-          id local str "mrna_18"
+          id local str "gene_15"
         }
       }
     }
