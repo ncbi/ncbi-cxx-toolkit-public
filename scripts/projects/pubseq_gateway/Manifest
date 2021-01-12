@@ -33,4 +33,4 @@ Linux64-Centos : O2g      : GCC.sh 7.3.0 --without-debug  --with-symbols --with-
 # --with-max-debug builds with a GCC sanitizer
 Linux64-Centos : MaxDebug : GCC.sh 7.3.0 --with-max-debug                --with-mt --with-flat-makefile --with-libuv=$NCBI/libuv-1.35.0 --with-cassandra=$NCBI/datastax-cpp-driver-2.15.1 --with-h2o=$NCBI/h2o-2.2.5 --with-lmdb=$NCBI/lmdb-0.9.24
 
-# USE_COMPONENTS
+USE_COMPONENTS
