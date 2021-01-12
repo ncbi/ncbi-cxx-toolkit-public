@@ -134,72 +134,16 @@ CGtfLocationRecord::IsContainedBy(
 
 //  ----------------------------------------------------------------------------
 CRef<CSeq_loc> 
-CGtfLocationRecord::GetLocation(
-    TSeqPos sequenceSize)
+CGtfLocationRecord::GetLocation()
 //  ----------------------------------------------------------------------------
 {
     CRef<CSeq_loc> pLocation(new CSeq_loc);
-
-    if (sequenceSize == 0) {
-        CRef<CSeq_interval> pInterval(new CSeq_interval);
-        pInterval->SetId().Assign(mId);
-        pInterval->SetFrom(mStart);
-        pInterval->SetTo(mStop);
-        pInterval->SetStrand(mStrand);
-        pLocation->SetInt(*pInterval);
-        return pLocation;
-    }
-
-    if (mStrand == eNa_strand_minus) {
-        if (mStart >= sequenceSize  ||  mStop < sequenceSize) {
-            CRef<CSeq_interval> pInterval(new CSeq_interval);
-            pInterval->SetId().Assign(mId);
-            pInterval->SetFrom(mStart % sequenceSize);
-            pInterval->SetTo(mStop % sequenceSize);
-            pInterval->SetStrand(mStrand);
-            pLocation->SetInt(*pInterval);
-        }
-        else {
-            CRef<CSeq_interval> pTop(new CSeq_interval);
-            pTop->SetId().Assign(mId);
-            pTop->SetFrom(0);
-            pTop->SetTo(mStop % sequenceSize);
-            pTop->SetStrand(mStrand);
-            pLocation->SetPacked_int().AddInterval(*pTop);
-            CRef<CSeq_interval> pBottom(new CSeq_interval);
-            pBottom->SetId().Assign(mId);
-            pBottom->SetFrom(mStart % sequenceSize);
-            pBottom->SetTo(sequenceSize - 1);
-            pBottom->SetStrand(mStrand);
-            pLocation->SetPacked_int().AddInterval(*pBottom);
-            pLocation->ChangeToMix();
-        }
-    }
-    else {
-        if (mStart >= sequenceSize  ||  mStop < sequenceSize) {
-            CRef<CSeq_interval> pInterval(new CSeq_interval);
-            pInterval->SetId().Assign(mId);
-            pInterval->SetFrom(mStart % sequenceSize);
-            pInterval->SetTo(mStop % sequenceSize);
-            pInterval->SetStrand(mStrand);
-            pLocation->SetInt(*pInterval);
-        }
-        else {
-            CRef<CSeq_interval> pBottom(new CSeq_interval);
-            pBottom->SetId().Assign(mId);
-            pBottom->SetFrom(mStart % sequenceSize);
-            pBottom->SetTo(sequenceSize - 1);
-            pBottom->SetStrand(mStrand);
-            pLocation->SetPacked_int().AddInterval(*pBottom);
-            CRef<CSeq_interval> pTop(new CSeq_interval);
-            pTop->SetId().Assign(mId);
-            pTop->SetFrom(0);
-            pTop->SetTo(mStop % sequenceSize);
-            pTop->SetStrand(mStrand);
-            pLocation->SetPacked_int().AddInterval(*pTop);
-            pLocation->ChangeToMix();
-        }
-    }
+    CRef<CSeq_interval> pInterval(new CSeq_interval);
+    pInterval->SetId().Assign(mId);
+    pInterval->SetFrom(mStart);
+    pInterval->SetTo(mStop);
+    pInterval->SetStrand(mStrand);
+    pLocation->SetInt(*pInterval);
     return pLocation;
 }
 
@@ -207,12 +151,10 @@ CGtfLocationRecord::GetLocation(
 //  ============================================================================
 CGtfLocationMerger::CGtfLocationMerger(
     unsigned int flags,
-    CGff3ReadRecord::SeqIdResolver idResolver,
-    TSeqPos sequenceSize):
+    CGff3ReadRecord::SeqIdResolver idResolver):
 //  ============================================================================
     mFlags(flags),
-    mIdResolver(idResolver),
-    mSequenceSize(sequenceSize)
+    mIdResolver(idResolver)
 {
 }
 
@@ -246,20 +188,12 @@ CGtfLocationMerger::GetFeatureIdFor(
 }
 
 //  ============================================================================
-bool
+void
 CGtfLocationMerger::AddRecord(
     const CGtfReadRecord& record)
 //  ============================================================================
 {
-    list<string> ids;
-    if (!CGtfLocationMerger::xGetLocationIds(record, ids)) {
-        return false;
-    }
-
-    for (const auto& id: ids) {
-        AddRecordForId(id, record);
-    }
-    return true;
+    AddRecordForId(xGetLocationId(record), record);
 }
 
 //  ============================================================================
@@ -309,9 +243,8 @@ CGtfLocationMerger::AddStubForId(
 
 
 //  ============================================================================
-bool CGtfLocationMerger::xGetLocationIds(
-    const CGtfReadRecord& record,
-    list<string>& ids)
+string CGtfLocationMerger::xGetLocationId(
+    const CGtfReadRecord& record)
 //  ============================================================================
 {
     string recordType = record.Type();
@@ -320,29 +253,7 @@ bool CGtfLocationMerger::xGetLocationIds(
     if (recordType == "start_codon"  || recordType == "stop_codon") {
         recordType = "cds";
     }
-    ids.push_back(recordType + ":" + record.FeatureKey());
-    return true;
-
-    if (NStr::EndsWith(recordType, "rna")) {
-        return false;
-    }
-    if (NStr::EndsWith(recordType, "transcript")) {
-        return false;
-    }
-    if (recordType == "exon") {
-        return record.GetAttribute("Parent", ids);
-    }
-    if (record.GetAttribute("ID", ids)) {
-        return true;
-    }
-    // create a temporary ID:
-    if (!record.GetAttribute("Parent", ids)) {
-        return false;
-    }
-    for (auto& id: ids) {
-        id = record.Type() + ":" + id;
-    }
-    return true;
+    return (recordType + ":" + record.FeatureKey());
 }
 
 //  ============================================================================
@@ -382,7 +293,7 @@ CGtfLocationMerger::MergeLocationDefault(
     CRef<CSeq_loc> pSeqloc(new CSeq_loc);
     if (locations.size() == 1) {
         auto& onlyOne = locations.front();
-        pSeqloc = onlyOne.GetLocation(mSequenceSize); 
+        pSeqloc = onlyOne.GetLocation(); 
         return pSeqloc;
     }
     std::stable_sort(
@@ -390,7 +301,7 @@ CGtfLocationMerger::MergeLocationDefault(
     //locations.sort(CGtfLocationRecord::ComparePartNumbers);
     auto& mix = pSeqloc->SetMix();
     for (auto& location: locations) {
-        mix.AddSeqLoc(*location.GetLocation(mSequenceSize));
+        mix.AddSeqLoc(*location.GetLocation());
     }
     return pSeqloc;
 }
@@ -406,16 +317,10 @@ CGtfLocationMerger::MergeLocationForCds(
 
     std::stable_sort(
         locations.begin(), locations.end(), CGtfLocationRecord::ComparePartNumbers);
-    //if (locations.front().mStrand == eNa_strand_minus) {
-    //    locations.back().mStart -= 3;
-    //}
-    //else {
-    //    locations.back().mStop += 3;
-    //}
     CRef<CSeq_loc> pSeqloc(new CSeq_loc);
     auto& mix = pSeqloc->SetMix();
     for (auto& location: locations) {
-        mix.AddSeqLoc(*location.GetLocation(mSequenceSize));
+        mix.AddSeqLoc(*location.GetLocation());
     }
     pSeqloc = pSeqloc->Merge(CSeq_loc::fMerge_All, 0);
     return pSeqloc;

@@ -316,13 +316,6 @@ protected:
     NCBI_DEPRECATED bool xCdsIsPartial(
         const CGtfReadRecord& );
 
-    typedef map< string, CRef< CSeq_feat > > TIdToFeature;
-    TIdToFeature m_GeneMap;
-    TIdToFeature m_CdsMap;
-    TIdToFeature m_MrnaMap;
-
-    typedef map<string, string> TGeneIdToLocusTag;
-    TGeneIdToLocusTag m_LocusTags;
     unique_ptr<CGtfLocationMerger> mpLocations;
 };
 

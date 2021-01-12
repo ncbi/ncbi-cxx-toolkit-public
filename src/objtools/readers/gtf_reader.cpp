@@ -146,7 +146,7 @@ CGtfReader::CGtfReader(
 //  ----------------------------------------------------------------------------
     CGff2Reader( uFlags, strAnnotName, strAnnotTitle, resolver, pRL)
 {
-    mpLocations.reset(new CGtfLocationMerger(uFlags, resolver, 0));
+    mpLocations.reset(new CGtfLocationMerger(uFlags, resolver));
 }
 
 //  ----------------------------------------------------------------------------
@@ -507,7 +507,6 @@ bool CGtfReader::xCreateParentGene(
         mpLocations->AddRecordForId(featId, gff) :
         mpLocations->AddStubForId(featId);
     m_MapIdToFeature[featId] = pFeature;
-    m_GeneMap[gff.GeneKey()] = pFeature;
     xAddFeatureToAnnot(pFeature, annot);
     return true;
 }
@@ -623,7 +622,6 @@ bool CGtfReader::xCreateParentCds(
     }
 
     CRef<CSeq_feat> pFeature(new CSeq_feat);
-    m_CdsMap[gff.FeatureKey()] = pFeature;
 
     if (!xFeatureSetDataCds(gff, *pFeature)) {
         return false;
@@ -683,7 +681,6 @@ bool CGtfReader::xCreateParentMrna(
 
     mpLocations->AddStubForId(featId);
     m_MapIdToFeature[featId] = pFeature;
-    m_MrnaMap[gff.FeatureKey()] = pFeature;
 
     return xAddFeatureToAnnot( pFeature, annot );
 }
@@ -928,12 +925,8 @@ void CGtfReader::xPostProcessAnnot(
 //  ----------------------------------------------------------------------------
 {
     //location fixup:
-    mpLocations->SetSequenceSize(mSequenceSize);
     for (auto itLocation: mpLocations->LocationMap()) {
         auto id = itLocation.first;
-        if (id == "gene:SSO12256") {
-            cerr << "";
-        }
         auto itFeature = m_MapIdToFeature.find(id);
         if (itFeature == m_MapIdToFeature.end()) {
             continue;

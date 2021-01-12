@@ -58,8 +58,7 @@ public:
     operator=(
         const CGtfLocationRecord&);
 
-    CRef<CSeq_loc> GetLocation(
-        TSeqPos sequenceSize);
+    CRef<CSeq_loc> GetLocation();
 
     static bool ComparePartNumbers(
         const CGtfLocationRecord& lhs,
@@ -91,13 +90,9 @@ class CGtfLocationMerger
 public:
     CGtfLocationMerger(
         unsigned int flags =0,
-        CGff3ReadRecord::SeqIdResolver =nullptr,
-        TSeqPos sequenceSize =0);
+        CGff3ReadRecord::SeqIdResolver =nullptr);
 
-    void SetSequenceSize(
-        TSeqPos sequenceSize) { mSequenceSize = sequenceSize; }
-
-    bool AddRecord(
+    void AddRecord(
         const CGtfReadRecord&);
 
     void AddRecordForId(
@@ -126,11 +121,9 @@ public:
         const CGtfReadRecord&,
         const string& =""); //prefix override
 private:
-    static bool xGetLocationIds(
-        const CGtfReadRecord&,
-        list<string>&);
+    static string xGetLocationId(
+        const CGtfReadRecord&);
 
-    TSeqPos mSequenceSize;
     unsigned int mFlags;
     CGff3ReadRecord::SeqIdResolver mIdResolver;
 
