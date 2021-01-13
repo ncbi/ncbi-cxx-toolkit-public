@@ -499,20 +499,6 @@ CRef<CSeq_feat> CGtfReader::xFindFeatById(
     return featIt->second;
 }
 
-
-//  ----------------------------------------------------------------------------
-CRef<CSeq_feat> CGtfReader::xFindParentMrna(
-    const CGtfReadRecord& gff)
-//  ----------------------------------------------------------------------------
-{
-    auto featId = mpLocations->GetFeatureIdFor(gff, "transcript");
-    auto transcriptIt = m_MapIdToFeature.find(featId);
-    if (transcriptIt == m_MapIdToFeature.end()) {
-        return CRef<CSeq_feat>();
-    }
-    return transcriptIt->second;
-}
-
 //  ----------------------------------------------------------------------------
 bool CGtfReader::xFeatureSetDataGene(
     const CGtfReadRecord& record,

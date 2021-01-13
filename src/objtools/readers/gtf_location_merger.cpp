@@ -44,7 +44,7 @@ CGtfLocationRecord::CGtfLocationRecord(
     CGff3ReadRecord::SeqIdResolver seqIdResolve)
 //  ----------------------------------------------------------------------------
 {
-    static map<string, size_t> typeToPart {
+    static map<string, int> typeToPart {
         {"cds",         1},
         {"start_codon", 0},
         {"stop_codon",  2},

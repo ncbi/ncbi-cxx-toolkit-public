@@ -269,9 +269,6 @@ protected:
         const CGtfReadRecord&,
         CSeq_feat&);
 
-    CRef<CSeq_feat> xFindParentMrna(
-        const CGtfReadRecord&);
-
     CRef<CSeq_feat> xFindFeatById(
         const string&);
 
