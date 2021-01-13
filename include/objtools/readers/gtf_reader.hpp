@@ -224,10 +224,6 @@ protected:
         const string&,
         CSeq_feat&);
 
-    bool xCreateFeatureLocation(
-        const CGtfReadRecord&,
-        CSeq_feat&);
-    
     bool xCreateParentGene(
         const CGtfReadRecord&,
         CSeq_annot&);

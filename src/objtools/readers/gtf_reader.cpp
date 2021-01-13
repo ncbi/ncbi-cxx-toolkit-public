@@ -67,26 +67,6 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ----------------------------------------------------------------------------
-bool s_AnnotId(
-    const CSeq_annot& annot,
-    string& strId )
-//  ----------------------------------------------------------------------------
-{
-    if ( ! annot.CanGetId() || annot.GetId().size() != 1 ) {
-        // internal error
-        return false;
-    }
-    
-    CRef< CAnnot_id > pId = *( annot.GetId().begin() );
-    if ( ! pId->IsLocal() ) {
-        // internal error
-        return false;
-    }
-    strId = pId->GetLocal().GetStr();
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
 bool CGtfReadRecord::xAssignAttributesFromGff(
     const string& strGtfType,
     const string& strRawAttributes )
@@ -334,33 +314,6 @@ bool CGtfReader::xCreateFeatureId(
     return true;
 }
 
-//  ----------------------------------------------------------------------------
-bool CGtfReader::xCreateFeatureLocation(
-    const CGtfReadRecord& record,
-    CSeq_feat& feature )
-//  ----------------------------------------------------------------------------
-{
-    CRef<CSeq_id> pId = mSeqIdResolve(
-        record.Id(), m_iFlags & fAllIdsAsLocal, true);
-
-    CSeq_interval& location = feature.SetLocation().SetInt();
-    location.SetId(*pId);
-    location.SetFrom(record.SeqStart());
-    if (record.Type() != "mRNA") {
-        location.SetTo(record.SeqStop());
-    }
-    else {
-        // placeholder
-        //  actual location will be computed from the exons and CDSs living on 
-        //  this feature.
-        location.SetTo(record.SeqStart());
-    }
-    if (record.IsSetStrand()) {
-        location.SetStrand(record.Strand());
-    }
-    return true;
-}
-
 //  -----------------------------------------------------------------------------
 bool CGtfReader::xCreateParentGene(
     const CGtfReadRecord& gff,
@@ -375,9 +328,6 @@ bool CGtfReader::xCreateParentGene(
     CRef<CSeq_feat> pFeature( new CSeq_feat );
 
     if (!xFeatureSetDataGene(gff, *pFeature)) {
-        return false;
-    }
-    if (!xCreateFeatureLocation(gff, *pFeature)) {
         return false;
     }
     if (!xCreateFeatureId(gff, "gene", *pFeature)) {
@@ -498,18 +448,13 @@ bool CGtfReader::xCreateParentCds(
     if (!xFeatureSetDataCds(gff, *pFeature)) {
         return false;
     }
-    if (!xCreateFeatureLocation(gff, *pFeature)) {
-        return false;
-    }
     if (!xCreateFeatureId(gff, "cds", *pFeature)) {
         return false;
     }
     if (!xFeatureSetQualifiersCds(gff, *pFeature)) {
         return false;
     }
-
     m_MapIdToFeature[featId] = pFeature;
-
     return xAddFeatureToAnnot(pFeature, annot);
 }
 
@@ -527,9 +472,6 @@ bool CGtfReader::xCreateParentMrna(
     CRef< CSeq_feat > pFeature( new CSeq_feat );
 
     if (!xFeatureSetDataMrna(gff, *pFeature)) {
-        return false;
-    }
-    if (!xCreateFeatureLocation(gff, *pFeature)) {
         return false;
     }
     if (!xCreateFeatureId(gff, "mrna", *pFeature)) {
@@ -776,7 +718,6 @@ void CGtfReader::xSetAncestorXrefs(
     }
 }
 
-
 //  ----------------------------------------------------------------------------
 void CGtfReader::xPostProcessAnnot(
     CSeq_annot& annot)
@@ -833,7 +774,6 @@ void CGtfReader::xPostProcessAnnot(
             }
         }
     }
-
     return CGff2Reader::xPostProcessAnnot(annot);
 }
 
