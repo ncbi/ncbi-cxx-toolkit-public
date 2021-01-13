@@ -37,6 +37,7 @@
 #include <corelib/plugin_manager_store.hpp>
 #include <objects/seqsplit/ID2S_Split_Info.hpp>
 #include <objects/seqsplit/ID2S_Chunk.hpp>
+#include <objects/seqsplit/ID2S_Feat_type_Info.hpp>
 #include <objects/general/Dbtag.hpp>
 #include <objmgr/impl/data_source.hpp>
 #include <objmgr/impl/tse_loadlock.hpp>
@@ -1805,47 +1806,111 @@ protected:
     }
 };
 
-static CRef<CTSE_Chunk_Info> s_CreateNAChunk(const CPSG_NamedAnnotInfo& annot_info,
-                                             const CPSG_BioseqInfo* bioseq_info)
+static
+pair<CRef<CTSE_Chunk_Info>, string>
+s_CreateNAChunk(const CPSG_NamedAnnotInfo& psg_annot_info,
+                const CPSG_BioseqInfo* bioseq_info)
 {
-    CSeq_id_Handle id = PsgIdToHandle(annot_info.GetAnnotatedId());
-    CSeq_id_Handle id2;
-    if ( bioseq_info &&
-         (bioseq_info->IncludedInfo() & CPSG_Request_Resolve::fGi) &&
-         id.IsAccVer() ) {
-        // register on GI too
-        id2 = CSeq_id_Handle::GetGiHandle(bioseq_info->GetGi());
-    }
-    CRange<TSeqPos> range = annot_info.GetRange();
-    if ( !id ) {
-        return null;
-    }
+    pair<CRef<CTSE_Chunk_Info>, string> ret;
     CRef<CTSE_Chunk_Info> chunk(new CTSE_Chunk_Info(kDelayedMain_ChunkId));
-    // add main annot types
-    CAnnotName name = annot_info.GetName();
-    for ( auto& i : annot_info.GetAnnotInfoList() ) {
-        SAnnotTypeSelector type(i.annot_type);
-        if ( i.annot_type == CSeq_annot::C_Data::e_Ftable ) {
-            type.SetFeatType(CSeqFeatData::E_Choice(i.feat_type));
-            if ( i.feat_subtype != 0 ) {
-                type.SetFeatSubtype(CSeqFeatData::ESubtype(i.feat_subtype));
+    auto id2_annot_info = psg_annot_info.GetId2AnnotInfo();
+    if ( !id2_annot_info.empty() ) {
+        // detailed annot info
+        set<string> names;
+        for ( auto annot_info_iter : id2_annot_info ) {
+            const CID2S_Seq_annot_Info& annot_info = *annot_info_iter;
+            // create special external annotations blob
+            CAnnotName name(annot_info.GetName());
+            if ( name.IsNamed() && !ExtractZoomLevel(name.GetName(), 0, 0) ) {
+                //setter.GetTSE_LoadLock()->SetName(name);
+                names.insert(name.GetName());
+            }
+            
+            vector<SAnnotTypeSelector> types;
+            if ( annot_info.IsSetAlign() ) {
+                types.push_back(SAnnotTypeSelector(CSeq_annot::C_Data::e_Align));
+            }
+            if ( annot_info.IsSetGraph() ) {
+                types.push_back(SAnnotTypeSelector(CSeq_annot::C_Data::e_Graph));
+            }
+            if ( annot_info.IsSetFeat() ) {
+                for ( auto feat_type_info_iter : annot_info.GetFeat() ) {
+                    const CID2S_Feat_type_Info& finfo = *feat_type_info_iter;
+                    int feat_type = finfo.GetType();
+                    if ( feat_type == 0 ) {
+                        types.push_back(SAnnotTypeSelector
+                                        (CSeq_annot::C_Data::e_Seq_table));
+                    }
+                    else if ( !finfo.IsSetSubtypes() ) {
+                        types.push_back(SAnnotTypeSelector
+                                        (CSeqFeatData::E_Choice(feat_type)));
+                    }
+                    else {
+                        for ( auto feat_subtype : finfo.GetSubtypes() ) {
+                            types.push_back(SAnnotTypeSelector
+                                            (CSeqFeatData::ESubtype(feat_subtype)));
+                        }
+                    }
+                }
+            }
+            
+            CTSE_Chunk_Info::TLocationSet loc;
+            CSplitParser::x_ParseLocation(loc, annot_info.GetSeq_loc());
+            
+            ITERATE ( vector<SAnnotTypeSelector>, it, types ) {
+                chunk->x_AddAnnotType(name, *it, loc);
             }
         }
-        chunk->x_AddAnnotType(name, type, id, range);
-        if ( id2 ) {
-            chunk->x_AddAnnotType(name, type, id2, range);
+        if ( names.size() == 1 ) {
+            ret.second = *names.begin();
         }
     }
-    // add zoom graphs
-    for ( auto z : annot_info.GetZoomLevels() ) {
-        CAnnotName name = CombineWithZoomLevel(annot_info.GetName(), z);
-        SAnnotTypeSelector type(CSeq_annot::C_Data::e_Graph);
-        chunk->x_AddAnnotType(name, type, id, range);
-        if ( id2 ) {
-            chunk->x_AddAnnotType(name, type, id2, range);
+    else {
+        // old style annot info
+        CSeq_id_Handle id = PsgIdToHandle(psg_annot_info.GetAnnotatedId());
+        CSeq_id_Handle id2;
+        if ( bioseq_info &&
+             (bioseq_info->IncludedInfo() & CPSG_Request_Resolve::fGi) &&
+             id.IsAccVer() ) {
+            // register on GI too
+            id2 = CSeq_id_Handle::GetGiHandle(bioseq_info->GetGi());
         }
+        CRange<TSeqPos> range = psg_annot_info.GetRange();
+        if ( !id ) {
+            return ret;
+        }
+        // add main annot types
+        string psg_annot_name = psg_annot_info.GetName();
+        {{
+            // add main annot types
+            CAnnotName name = psg_annot_name;
+            for ( auto& i : psg_annot_info.GetAnnotInfoList() ) {
+                SAnnotTypeSelector type(i.annot_type);
+                if ( i.annot_type == CSeq_annot::C_Data::e_Ftable ) {
+                    type.SetFeatType(CSeqFeatData::E_Choice(i.feat_type));
+                    if ( i.feat_subtype != 0 ) {
+                        type.SetFeatSubtype(CSeqFeatData::ESubtype(i.feat_subtype));
+                    }
+                }
+                chunk->x_AddAnnotType(name, type, id, range);
+                if ( id2 ) {
+                    chunk->x_AddAnnotType(name, type, id2, range);
+                }
+            }
+        }}
+        // add zoom graphs
+        for ( auto z : psg_annot_info.GetZoomLevels() ) {
+            CAnnotName name = CombineWithZoomLevel(psg_annot_name, z);
+            SAnnotTypeSelector type(CSeq_annot::C_Data::e_Graph);
+            chunk->x_AddAnnotType(name, type, id, range);
+            if ( id2 ) {
+                chunk->x_AddAnnotType(name, type, id2, range);
+            }
+        }
+        ret.second = psg_annot_name;
     }
-    return chunk;
+    ret.first = chunk;
+    return ret;
 }
 
 
@@ -1887,13 +1952,16 @@ CDataLoader::TTSE_LockSet CPSGDataLoader_Impl::GetAnnotRecordsNA(
                 for ( auto& info : task->m_AnnotInfo ) {
                     CDataLoader::SetProcessedNA(info->GetName(), processed_nas);
                     CRef<CPsgBlobId> blob_id(new CPsgBlobId(info->GetBlobId().GetId()));
-                    if ( auto chunk = s_CreateNAChunk(*info, task->m_BioseqInfo.get()) ) {
+                    auto chunk_info = s_CreateNAChunk(*info, task->m_BioseqInfo.get());
+                    if ( chunk_info.first ) {
                         CDataLoader::TBlobId dl_blob_id = CDataLoader::TBlobId(blob_id);
                         CTSE_LoadLock load_lock = data_source->GetTSE_LoadLock(dl_blob_id);
                         if ( load_lock ) {
                             if ( !load_lock.IsLoaded() ) {
-                                load_lock->SetName(info->GetName());
-                                load_lock->GetSplitInfo().AddChunk(*chunk);
+                                if ( !chunk_info.second.empty() ) {
+                                    load_lock->SetName(chunk_info.second);
+                                }
+                                load_lock->GetSplitInfo().AddChunk(*chunk_info.first);
                                 _ASSERT(load_lock->x_NeedsDelayedMainChunk());
                                 load_lock.SetLoaded();
                             }
@@ -1901,6 +1969,7 @@ CDataLoader::TTSE_LockSet CPSGDataLoader_Impl::GetAnnotRecordsNA(
                         }
                     }
                     else {
+                        // no annot info
                         if ( auto tse_lock = GetBlobById(data_source, *blob_id) ) {
                             locks.insert(tse_lock);
                         }
