@@ -39,6 +39,7 @@
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seq/Seq_annot.hpp>
+#include <objects/seqsplit/ID2S_Seq_annot_Info.hpp>
 
 
 #if defined(NCBI_THREADS) && defined(HAVE_LIBNGHTTP2) && defined(HAVE_LIBUV)
@@ -762,6 +763,11 @@ public:
     using TAnnotInfoList = list<SAnnotInfo>;
     TAnnotInfoList GetAnnotInfoList() const;
 
+    /// detailed ID2-Seq-annot-Info structure
+    using TId2AnnotInfo = objects::CID2S_Seq_annot_Info;
+    using TId2AnnotInfoList = list<CRef<TId2AnnotInfo>>;
+    TId2AnnotInfoList GetId2AnnotInfo() const;
+    
 private:
     CPSG_NamedAnnotInfo(string name);
 

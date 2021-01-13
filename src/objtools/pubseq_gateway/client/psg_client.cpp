@@ -41,9 +41,14 @@
 #include <type_traits>
 
 #include <corelib/ncbitime.hpp>
+#include <corelib/ncbi_base64.h>
 #include <connect/ncbi_socket.hpp>
 #include <connect/ncbi_service.h>
 #include <connect/ncbi_connutil.h>
+
+#include <serial/serial.hpp>
+#include <serial/objistrasnb.hpp>
+#undef ThrowError // unfortunately
 
 #include "psg_client_impl.hpp"
 
@@ -858,6 +863,42 @@ CPSG_NamedAnnotInfo::CPSG_NamedAnnotInfo(string name) :
     m_Name(move(name))
 {
 }
+
+
+static string base64Decode(const string& str)
+{
+    size_t src_size = str.size();
+    string decoded;
+    char dst_buf[128];
+    size_t ptr = 0, src_read, dst_written;
+    while (src_size > 0) {
+        if (!BASE64_Decode(&str[ptr], src_size, &src_read, dst_buf, sizeof(dst_buf), &dst_written))
+            break;
+        ptr      += src_read;
+        src_size -= src_read;
+        decoded += string(dst_buf, dst_written);
+    }
+    return decoded;
+}
+
+
+CPSG_NamedAnnotInfo::TId2AnnotInfoList CPSG_NamedAnnotInfo::GetId2AnnotInfo() const
+{
+    TId2AnnotInfoList ret;
+    auto info_node = m_Data.GetByKeyOrNull("seq_annot_info");
+    if ( info_node && info_node.IsString() ) {
+        auto in_string = base64Decode(info_node.AsString());
+        istringstream in_stream(in_string);
+        CObjectIStreamAsnBinary in(in_stream);
+        while ( in.HaveMoreData() ) {
+            CRef<TId2AnnotInfo> info(new TId2AnnotInfo);
+            in >> *info;
+            ret.push_back(info);
+        }
+    }
+    return ret;
+}
+
 
 CPSG_BioId CPSG_NamedAnnotInfo::GetAnnotatedId() const
 {
