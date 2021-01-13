@@ -10,7 +10,8 @@ REQUIRES = CASSANDRA MT Linux GCC
 #COVERAGE_FLAGS=-fprofile-arcs -ftest-coverage
 CPPFLAGS=$(ORIG_CPPFLAGS) $(GMOCK_INCLUDE) $(CASSANDRA_INCLUDE) $(COVERAGE_FLAGS)
 
-MY_LIB=$(XCONNEXT) xconnect connext psg_cassandra psg_diag $(COMPRESS_LIBS) xobjutil $(OBJMGR_LIBS)
+MY_LIB=$(XCONNEXT) xconnect connext psg_cassandra psg_diag $(COMPRESS_LIBS) \
+    xobjutil id2 seqsplit seqset $(SEQ_LIBS) pub medline biblio general xser xutil
 LIB=$(MY_LIB:%=%$(STATIC)) $(LOCAL_LIB) xncbi
 
 LIBS= -lconnect $(GMOCK_LIBS) $(CASSANDRA_STATIC_LIBS) $(ORIG_LIBS)

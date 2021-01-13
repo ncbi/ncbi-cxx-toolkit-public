@@ -57,7 +57,7 @@ class CFetchSplitHistoryTest
 {
  public:
     CFetchSplitHistoryTest()
-     : m_KeyspaceName("satold_v2")
+     : m_KeyspaceName("psg_test_sat_4")
      , m_Timeout(10000)
     {}
 
@@ -115,7 +115,7 @@ TEST_F(CFetchSplitHistoryTest, EmptyHistory) {
 
 TEST_F(CFetchSplitHistoryTest, FetchAllVersions) {
     size_t call_count{0};
-    CBlobRecord::TSatKey sat_key = 64211779;
+    CBlobRecord::TSatKey sat_key = 340865818;
     vector<SSplitHistoryRecord> actual_result;
     CCassBlobTaskFetchSplitHistory fetch(
         m_Timeout, 0, m_Connection, m_KeyspaceName, sat_key,
@@ -134,20 +134,20 @@ TEST_F(CFetchSplitHistoryTest, FetchAllVersions) {
         done = fetch.Wait();
     }
     EXPECT_EQ(1UL, call_count);
-    ASSERT_EQ(1UL, actual_result.size());
+    ASSERT_EQ(4UL, actual_result.size());
 
     EXPECT_EQ(sat_key, actual_result[0].sat_key);
-    EXPECT_EQ(1589226071, actual_result[0].split_version);
-    EXPECT_EQ(1480242981266LL, actual_result[0].modified);
-    EXPECT_EQ("40.256900413.6.1589226071", actual_result[0].id2_info);
+    EXPECT_EQ(1591109641, actual_result[0].split_version);
+    EXPECT_EQ(1565313318883LL, actual_result[0].modified);
+    EXPECT_EQ("40.261500448.96.1591109641", actual_result[0].id2_info);
 }
 
 TEST_F(CFetchSplitHistoryTest, FetchOneVersion) {
     size_t call_count{0};
-    CBlobRecord::TSatKey sat_key = 64211779;
+    CBlobRecord::TSatKey sat_key = 340865818;
     vector<SSplitHistoryRecord> actual_result;
     CCassBlobTaskFetchSplitHistory fetch(
-        m_Timeout, 0, m_Connection, m_KeyspaceName, sat_key, 1589226071,
+        m_Timeout, 0, m_Connection, m_KeyspaceName, sat_key, 1565300000,
         [&call_count, &actual_result](vector<SSplitHistoryRecord> && result) {
             ++call_count;
             swap(actual_result, result);
@@ -166,9 +166,9 @@ TEST_F(CFetchSplitHistoryTest, FetchOneVersion) {
     ASSERT_EQ(1UL, actual_result.size());
 
     EXPECT_EQ(sat_key, actual_result[0].sat_key);
-    EXPECT_EQ(1589226071, actual_result[0].split_version);
-    EXPECT_EQ(1480242981266LL, actual_result[0].modified);
-    EXPECT_EQ("40.256900413.6.1589226071", actual_result[0].id2_info);
+    EXPECT_EQ(1565300000, actual_result[0].split_version);
+    EXPECT_EQ(1565313318883LL, actual_result[0].modified);
+    EXPECT_EQ("25.116773936.96.1565300000", actual_result[0].id2_info);
 }
 
 }  // namespace
