@@ -2925,16 +2925,123 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust, bool co
 {
     if(clust.empty()) return TGeneModelList();
 
-#ifdef NCBI_COMPILER_WORKSHOP
-    {{
-      vector<CGeneModel> v;
-      copy(clust.begin(), clust.end(), back_inserter(v));
-      sort(v.begin(), v.end(), GModelOrder(orig_aligns));
-      copy(v.begin(), v.end(), clust.begin());
-    }}
-#else
     clust.sort(GModelOrder(orig_aligns));
-#endif
+
+    {
+        map<tuple<int, int>, TGeneModelList::iterator> special_aligns; // [left/right flex|cap/polya, position] 
+        //all known flexible
+        for(TGeneModelList::iterator it = clust.begin(); it != clust.end(); ++it) {
+            if(it->Status()&CGeneModel::eLeftFlexible) {
+                int status = it->Status()&(CGeneModel::eLeftFlexible|CGeneModel::eCap|CGeneModel::ePolyA);
+                special_aligns.emplace(make_tuple(status, it->Limits().GetTo()), it);
+            }
+            if(it->Status()&CGeneModel::eRightFlexible) {
+                int status = it->Status()&(CGeneModel::eRightFlexible|CGeneModel::eCap|CGeneModel::ePolyA);
+                special_aligns.emplace(make_tuple(status, it->Limits().GetFrom()), it);
+            }
+        }
+        //make flexible from normal cap/polya   
+        int contig_len = m_gnomon->GetSeq().size();
+        for(TGeneModelList::iterator it = clust.begin(); it != clust.end(); ++it) {
+            if(it->Status()&(CGeneModel::eLeftFlexible|CGeneModel::eRightFlexible))
+                continue;
+
+            if(it->Status()&CGeneModel::eCap) {
+                it->Status() &= ~CGeneModel::eCap;
+                CGeneModel galign(it->Strand(), it->ID(), CGeneModel::eSR);
+                galign.SetWeight(it->Weight());
+
+                int pos;
+                int status = CGeneModel::eCap;
+                if(it->Strand() == ePlus) {
+                    pos = it->Limits().GetFrom();
+                    galign.AddExon(TSignedSeqRange(pos, pos+99));
+                    status |= CGeneModel::eRightFlexible;
+                } else {
+                    pos = it->Limits().GetTo();
+                    galign.AddExon(TSignedSeqRange(pos-99, pos));
+                    status |= CGeneModel::eLeftFlexible;
+                }
+                if(galign.Limits().GetFrom() >= 0 && galign.Limits().GetTo() < contig_len) {
+                    galign.Status() |= status;
+                    clust.push_front(galign);
+                    auto rslt = special_aligns.emplace(make_tuple(status, pos), clust.begin());
+                    if(!rslt.second) {  //this position already exists
+                        auto ialign = rslt.first->second;
+                        ialign->SetWeight(ialign->Weight()+galign.Weight());
+                        clust.pop_front();
+                    }
+                }
+            }
+            if(it->Status()&CGeneModel::ePolyA) {
+                it->Status() &= ~CGeneModel::ePolyA;
+                CGeneModel galign(it->Strand(), it->ID(), CGeneModel::eSR);
+                galign.SetWeight(it->Weight());
+
+                int pos;
+                int status = CGeneModel::ePolyA;
+                if(it->Strand() == eMinus) {
+                    pos = it->Limits().GetFrom();
+                    galign.AddExon(TSignedSeqRange(pos, pos+99));
+                    status |= CGeneModel::eRightFlexible;
+                } else {
+                    pos = it->Limits().GetTo();
+                    galign.AddExon(TSignedSeqRange(pos-99, pos));
+                    status |= CGeneModel::eLeftFlexible;
+                }
+                if(galign.Limits().GetFrom() >= 0 && galign.Limits().GetTo() < contig_len) {
+                    galign.Status() |= status;
+                    clust.push_front(galign);
+                    auto rslt = special_aligns.emplace(make_tuple(status, pos), clust.begin());
+                    if(!rslt.second) {  //this position already exists
+                        auto ialign = rslt.first->second;
+                        ialign->SetWeight(ialign->Weight()+galign.Weight());
+                        clust.pop_front();
+                    }
+                }
+            }
+        }
+
+        //remove below threshold
+        for(auto it_loop = special_aligns.begin(); it_loop != special_aligns.end(); ) {
+            auto it = it_loop++;
+            auto ialign = it->second;
+            double min_pos_weight = ((ialign->Status()&CGeneModel::eCap) ? MIN_POSITION_WEIGHT_CAGE : MIN_POSITION_WEIGHT_POLY);
+            if(ialign->Weight() < min_pos_weight) {
+                //                special_aligns.erase(it);
+                clust.erase(ialign);
+            }
+        }
+
+        /* doesn't substantially reduce timing
+           to activate uncomment special_aligns.erase(it) above
+        //reduce the number by compressiing flexaligns into mini-blobs
+        int span = MAX_EMPTY_DIST/5;         //span for mini-blob
+        if(span > 0) {
+            for(auto it = special_aligns.begin(); it != special_aligns.end(); ) {
+                auto keyb = it->first;
+                get<1>(keyb) += span;
+                auto itb = next(it);
+                auto ipeak = it->second;     //peak position in mini-blob
+                double w = ipeak->Weight();  //total weight of mini-blob
+                for( ; itb != special_aligns.end() && itb->first <= keyb; ++itb) { // same status and position in range
+                    auto ialign = itb->second;
+                    w += ialign->Weight();
+                    if(ialign->Weight() > ipeak->Weight())
+                        ipeak = ialign;
+                }
+                ipeak->SetWeight(w);
+                for( ; it != itb; ++it) {
+                    auto ialign = it->second;
+                    if(ialign != ipeak)
+                       clust.erase(ialign); 
+                }
+            }
+        }
+        */
+
+        clust.sort(GModelOrder(orig_aligns));
+    }
 
     confirmed_ends.clear();
     ITERATE (TGeneModelList, it, clust) {
@@ -4958,7 +5065,7 @@ void CChain::ClipToCompleteAlignment(EStatus determinant)
         return;
 
     double min_blob_weight = (determinant == CGeneModel::eCap ? MIN_BLOB_WEIGHT_CAGE : MIN_BLOB_WEIGHT_POLY);
-    double min_pos_weight = (determinant == CGeneModel::eCap ? MIN_POSITION_WEIGHT_CAGE : MIN_POSITION_WEIGHT_POLY);
+    //    double min_pos_weight = (determinant == CGeneModel::eCap ? MIN_POSITION_WEIGHT_CAGE : MIN_POSITION_WEIGHT_POLY);
     int max_empty_dist =  MAX_EMPTY_DIST;
     int min_splice_dist = MIN_SPLICE_DIST;
     
@@ -5000,11 +5107,13 @@ void CChain::ClipToCompleteAlignment(EStatus determinant)
         else
             real_limits += (align.Limits()&Limits());
     }
+    /*
     for(auto it_loop = raw_weights.begin(); it_loop != raw_weights.end(); ) {
         auto it = it_loop++;
         if(it->second < min_pos_weight)
             raw_weights.erase(it);
     }
+    */
     if(raw_weights.empty())
         return;
 
@@ -5250,8 +5359,10 @@ void CChain::ClipLowCoverageUTR(double utr_clip_threshold)
                 ClipChain(TSignedSeqRange(Exons()[1].Limits().GetFrom(),Limits().GetTo()));
             else if(Strand() == eMinus && Exons().back().Limits().GetLength() < MIN_UTR_EXON && Exons().back().Limits().GetFrom() > genome_core_lim.GetTo())
                 ClipChain(TSignedSeqRange(Limits().GetFrom(),Exons()[Exons().size()-2].GetTo()));
+            /*
             if((Status()&CGeneModel::eCap) != 0)           // cap was further clipped (currently not possible)
                 ClipToCompleteAlignment(CGeneModel::eCap);
+            */
         }
     }
     
@@ -5287,8 +5398,10 @@ void CChain::ClipLowCoverageUTR(double utr_clip_threshold)
                 ClipChain(TSignedSeqRange(Limits().GetFrom(),Exons()[Exons().size()-2].GetTo()));
             else if(Strand() == eMinus && Exons().front().Limits().GetLength() < MIN_UTR_EXON && Exons().front().Limits().GetTo() < genome_core_lim.GetFrom())
                 ClipChain(TSignedSeqRange(Exons()[1].Limits().GetFrom(),Limits().GetTo()));
+            /*
             if((Status()&CGeneModel::ePolyA) != 0)           // polya was further clipped (currently not possible)
                 ClipToCompleteAlignment(CGeneModel::ePolyA);
+            */
         }
     }
 }

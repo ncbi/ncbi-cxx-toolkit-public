@@ -2108,7 +2108,7 @@ void CAlignCollapser::GetCollapsedAlgnments(TAlignModelClusterSet& clsset) {
             ++total;
     }
 
-    /*
+    /* this will find peaks before chaining
     size_t cap_peaks = 0;
     size_t polya_peaks = 0;
     for(auto& key : m_special_aligns) { // separated for 4 different cap/polya and strand
@@ -2201,6 +2201,7 @@ void CAlignCollapser::GetCollapsedAlgnments(TAlignModelClusterSet& clsset) {
         }
     }
 
+    /*
     if(flex_cap > 0 || flex_polya > 0) { // drop cap/polya from normal alignments if there are flexible
         for(auto& cluster : clsset) {
             for(const CAlignModel& align : cluster) {
@@ -2213,6 +2214,7 @@ void CAlignCollapser::GetCollapsedAlgnments(TAlignModelClusterSet& clsset) {
             }
         }
     }
+    */
     
     cerr << "After collapsing: " << total << " alignments " << flex_cap << " Flexible caps " << flex_polya << " Flexible polyas" << endl;
 }
