@@ -76,9 +76,10 @@ public:
     TSeqPos mStop;
     ENa_strand mStrand;
     string mType;
-    size_t mPartNum; 
+    int mPartNum; 
 
 };
+
 
 //  ============================================================================
 class CGtfLocationMerger
