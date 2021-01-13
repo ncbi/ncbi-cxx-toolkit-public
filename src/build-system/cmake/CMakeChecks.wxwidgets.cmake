@@ -3,27 +3,27 @@ set(_foo_CMAKE_PREFIX_PATH "${CMAKE_PREFIX_PATH}")
 if (WIN32)
     set(CMAKE_PREFIX_PATH ${WXWIDGETS_ROOT})
 else()
-    set(CMAKE_PREFIX_PATH "${NCBI_TOOLS_ROOT}/wxWidgets-3.1.3-ncbi1/${CMAKE_BUILD_TYPE}/bin")
+    set(CMAKE_PREFIX_PATH "${NCBI_TOOLS_ROOT}/wxWidgets-3.1.3-ncbi1/${STD_BUILD_TYPE}/bin")
 endif()
 
 set(wxWidgets_USE_UNICODE ON)
 set(wxWidgets_USE_SHAREED_LIBS ${BUILD_SHARED_LIBS})
 
-if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+if ("${CMAKE_BUILD_TYPE}" MATCHES "Debug")
     set(wxWidgets_CONFIG_OPTIONS "--debug=yes")
     set(wxWidgets_USE_DEBUG ON)
-elseif ("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
+else()
     set(wxWidgets_USE_DEBUG OFF)
 endif()
 
 find_package(GTK2)
 if (GTK2_FOUND)
   set(WXWIDGETS_INCLUDE
-    ${NCBI_TOOLS_ROOT}/wxWidgets-3.1.3-ncbi1/${CMAKE_BUILD_TYPE}MT64/lib/wx/include/gtk2-ansi-3.1
+    ${NCBI_TOOLS_ROOT}/wxWidgets-3.1.3-ncbi1/${NCBI_BUILD_TYPE}/lib/wx/include/gtk2-ansi-3.1
     ${NCBI_TOOLS_ROOT}/wxWidgets-3.1.3-ncbi1/include/wx-3.1
     ${GTK2_INCLUDE_DIRS}
   )
-  set(_wxp ${NCBI_TOOLS_ROOT}/wxWidgets-3.1.3-ncbi1/${CMAKE_BUILD_TYPE}MT64/lib/lib)
+  set(_wxp ${NCBI_TOOLS_ROOT}/wxWidgets-3.1.3-ncbi1/${NCBI_BUILD_TYPE}/lib/lib)
   set(_wxs -3.1.so)
   set(WXWIDGETS_LIBS
     ${_wxp}wx_gtk2_gl${_wxs}

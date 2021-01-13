@@ -534,8 +534,8 @@ endif()
 
 ##############################################################################
 # GRPC/PROTOBUF
-set(NCBI_PROTOC_APP "${NCBI_ThirdParty_GRPC}/${CMAKE_BUILD_TYPE}${NCBI_PlatformBits}/bin/protoc")
-set(NCBI_GRPC_PLUGIN "${NCBI_ThirdParty_GRPC}/${CMAKE_BUILD_TYPE}${NCBI_PlatformBits}/bin/grpc_cpp_plugin")
+set(NCBI_PROTOC_APP "${NCBI_ThirdParty_GRPC}/${NCBI_BUILD_TYPE}/bin/protoc")
+set(NCBI_GRPC_PLUGIN "${NCBI_ThirdParty_GRPC}/${NCBI_BUILD_TYPE}/bin/grpc_cpp_plugin")
 if(NOT EXISTS "${NCBI_PROTOC_APP}")
     find_program(NCBI_PROTOC_APP protoc)
 endif()
