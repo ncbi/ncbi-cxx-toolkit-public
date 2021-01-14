@@ -1105,8 +1105,7 @@ pcassay needs $(SEQ_LIBS)
 pcassay needs pcsubstance
 pcre needs3party $(ORIG_LIBS)
 pcsubstance needs pub
-pdt_common needs gpinit_access
-pdt_common needs gpipe_common
+pdt_common needs pathogen_ctl
 pgap_yaml_input_reader needs xser
 phytree_format needs align_format
 phytree_format needs xalgophytree
