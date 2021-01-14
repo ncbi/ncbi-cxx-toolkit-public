@@ -46,6 +46,20 @@ class CGtfLocationRecord
 //  ============================================================================
 {
 public:
+    enum RecordType {
+        TYPE_start_codon = 0,
+        TYPE_cds = 1,
+        TYPE_stop_codon = 2,
+
+        TYPE_5utr = 10,
+        TYPE_initial = 11,
+        TYPE_exon = 13,
+        TYPE_terminal = 14,
+        TYPE_3utr = 16,
+
+        TYPE_unspecified = 100,
+    };
+
     CGtfLocationRecord(
         const CGtfReadRecord&,
         unsigned int,
@@ -58,11 +72,15 @@ public:
     operator=(
         const CGtfLocationRecord&);
 
+    RecordType
+    GetRecordType(
+        const CGtfReadRecord&);
+
     CRef<CSeq_loc> GetLocation();
 
-    static bool ComparePartNumbers(
+    static bool CompareTypeAndPartNumbers(
         const CGtfLocationRecord& lhs,
-        const CGtfLocationRecord& rhs) { return lhs.mPartNum < rhs.mPartNum; };
+        const CGtfLocationRecord& rhs);
 
     bool
     Contains(
@@ -71,11 +89,14 @@ public:
     IsContainedBy(
         const CGtfLocationRecord&) const;
 
+    using TYPEORDER_MAP = map<string, RecordType>;
+    static TYPEORDER_MAP msTypeOrder;
+
     CSeq_id mId;
     TSeqPos mStart;
     TSeqPos mStop;
     ENa_strand mStrand;
-    string mType;
+    int mType;
     int mPartNum; 
 
 };
@@ -87,7 +108,6 @@ class CGtfLocationMerger
 {
     using LOCATIONS = list<CGtfLocationRecord>;
     using LOCATION_MAP = map<string, LOCATIONS>;
-
 public:
     CGtfLocationMerger(
         unsigned int flags =0,
@@ -121,10 +141,13 @@ public:
     string GetFeatureIdFor(
         const CGtfReadRecord&,
         const string& =""); //prefix override
-private:
-    static string xGetLocationId(
-        const CGtfReadRecord&);
 
+    void GetNextElementOfType(
+        const LOCATIONS&,
+        const string&,
+        LOCATIONS::const_iterator&);
+
+private:
     unsigned int mFlags;
     CGff3ReadRecord::SeqIdResolver mIdResolver;
 

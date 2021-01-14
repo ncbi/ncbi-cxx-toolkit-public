@@ -37,6 +37,20 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
 
+CGtfLocationRecord::TYPEORDER_MAP CGtfLocationRecord::msTypeOrder = {
+    {"start_codon", TYPE_start_codon},
+    {"cds",         TYPE_cds},
+    {"stop_codon",  TYPE_stop_codon},
+
+    {"5utr",        TYPE_5utr},
+    {"initial",     TYPE_initial},
+    {"exon",        TYPE_exon},
+    {"single",      TYPE_exon},
+    {"internal",    TYPE_exon},
+    {"terminal",    TYPE_terminal},
+    {"3utr",        TYPE_3utr},
+};
+
 //  ----------------------------------------------------------------------------
 CGtfLocationRecord::CGtfLocationRecord(
     const CGtfReadRecord& record,
@@ -44,36 +58,18 @@ CGtfLocationRecord::CGtfLocationRecord(
     CGff3ReadRecord::SeqIdResolver seqIdResolve)
 //  ----------------------------------------------------------------------------
 {
-    static map<string, int> typeToPart {
-        {"cds",         1},
-        {"start_codon", 0},
-        {"stop_codon",  2},
-        {"5utr",        0},
-        {"3utr",        4},
-        {"exon",        2},
-        {"initial",     1},
-        {"internal",    2},
-        {"terminal",    3},
-        {"single",      1},
-    };
+    const int partBase = 100;  //anything bigger than any value above
 
     mId.Assign(*record.GetSeqId(flags, seqIdResolve));
     mStart = static_cast<TSeqPos>(record.SeqStart());
     mStop  = static_cast<TSeqPos>(record.SeqStop());
     mStrand = (record.IsSetStrand() ? record.Strand() : eNa_strand_plus);
-    mType = record.Type();
-    NStr::ToLower(mType);
+    mType = GetRecordType(record);
+
     mPartNum = 0;
     string recordPart = record.GtfAttributes().ValueOf("part");
     if (recordPart.empty()) {
         recordPart = record.GtfAttributes().ValueOf("exon_number");
-    }
-    if (recordPart.empty()) {
-        auto partIt = typeToPart.find(mType);
-        if (partIt != typeToPart.end()) {
-            mPartNum = partIt->second;
-        }
-        return;
     }
     try {
         mPartNum = NStr::StringToInt(recordPart);
@@ -94,6 +90,21 @@ CGtfLocationRecord::CGtfLocationRecord(
     mStrand = other.mStrand;
     mType = other.mType;
     mPartNum = other.mPartNum;
+}
+
+//  ----------------------------------------------------------------------------
+CGtfLocationRecord::RecordType
+CGtfLocationRecord::GetRecordType(
+    const CGtfReadRecord& record)
+//  ----------------------------------------------------------------------------
+{
+    auto recType = record.Type();
+    NStr::ToLower(recType);
+    auto typeIt = msTypeOrder.find(recType);
+    if (typeIt == msTypeOrder.end()) {
+        return TYPE_unspecified;
+    }
+    return typeIt->second;
 }
 
 //  ----------------------------------------------------------------------------
@@ -147,6 +158,18 @@ CGtfLocationRecord::GetLocation()
     return pLocation;
 }
 
+//  -----------------------------------------------------------------------------
+bool CGtfLocationRecord::CompareTypeAndPartNumbers(
+    const CGtfLocationRecord& lhs,
+    const CGtfLocationRecord& rhs)
+//  ---------------------------------------------------------------------------- 
+{
+    if (lhs.mType == rhs.mType) {  
+        return (lhs.mPartNum < rhs.mPartNum);
+    }
+    return (lhs.mType < rhs.mType);
+};
+
 
 //  ============================================================================
 CGtfLocationMerger::CGtfLocationMerger(
@@ -193,7 +216,7 @@ CGtfLocationMerger::AddRecord(
     const CGtfReadRecord& record)
 //  ============================================================================
 {
-    AddRecordForId(xGetLocationId(record), record);
+    AddRecordForId(GetFeatureIdFor(record), record);
 }
 
 //  ============================================================================
@@ -210,18 +233,18 @@ CGtfLocationMerger::AddRecordForId(
     LOCATIONS& locations = existingEntry->second;
     CGtfLocationRecord location(record, mFlags, mIdResolver);
     auto& existingRecords = existingEntry->second;
-    for (auto& existing: existingRecords) {
-        if (existing.Contains(location)) {
-            if (location.mType == "start_codon") {
-                existing.mPartNum -= 1;
+    for (auto& record: existingRecords) {
+        if (record.Contains(location)) {
+            if (location.mType == CGtfLocationRecord::TYPE_start_codon) {
+                record.mType = CGtfLocationRecord::TYPE_start_codon;
             }
             return;
         }
-        if (existing.IsContainedBy(location)) {
-            if (existing.mType == "start_codon") {
-                location.mPartNum -= 1;
+        if (record.IsContainedBy(location)) {
+            if (record.mType == CGtfLocationRecord::TYPE_start_codon) {
+                location.mType = CGtfLocationRecord::TYPE_start_codon;
             }
-            existing = location;
+            record = location;
             return;
         }
     }
@@ -241,20 +264,6 @@ CGtfLocationMerger::AddStubForId(
     mMapIdToLocations.emplace(id, LOCATIONS());
 }
 
-
-//  ============================================================================
-string CGtfLocationMerger::xGetLocationId(
-    const CGtfReadRecord& record)
-//  ============================================================================
-{
-    string recordType = record.Type();
-    NStr::ToLower(recordType);
-
-    if (recordType == "start_codon"  || recordType == "stop_codon") {
-        recordType = "cds";
-    }
-    return (recordType + ":" + record.FeatureKey());
-}
 
 //  ============================================================================
 CRef<CSeq_loc> 
@@ -298,7 +307,8 @@ CGtfLocationMerger::MergeLocationDefault(
         pSeqloc = onlyOne.GetLocation(); 
         return pSeqloc;
     }
-    locations.sort(CGtfLocationRecord::ComparePartNumbers);
+    locations.sort(CGtfLocationRecord::CompareTypeAndPartNumbers);
+    
     auto& mix = pSeqloc->SetMix();
     for (auto& location: locations) {
         mix.AddSeqLoc(*location.GetLocation());
@@ -315,7 +325,7 @@ CGtfLocationMerger::MergeLocationForCds(
     NCBI_ASSERT(!locations.empty(), 
         "Cannot call MergeLocationForCds with empty location");
 
-    locations.sort(CGtfLocationRecord::ComparePartNumbers);
+    locations.sort(CGtfLocationRecord::CompareTypeAndPartNumbers);
     CRef<CSeq_loc> pSeqloc(new CSeq_loc);
     auto& mix = pSeqloc->SetMix();
     for (auto& location: locations) {
@@ -414,6 +424,32 @@ CGtfLocationMerger::MergeLocationForTranscript(
 //  ============================================================================
 {
     return MergeLocationDefault(locations);
+}
+
+//  =============================================================================
+void
+CGtfLocationMerger::GetNextElementOfType(
+    const LOCATIONS& locations,
+    const string& recType,
+    LOCATIONS::const_iterator& locIt)
+//  =============================================================================
+{
+    if (locIt == locations.end()) {
+        return;
+    }
+    
+    string lookupTypeStr(recType);
+    NStr::ToLower(lookupTypeStr);
+    auto typeIt = CGtfLocationRecord::msTypeOrder.find(lookupTypeStr);
+    if (typeIt == CGtfLocationRecord::msTypeOrder.end()) {
+        return;
+    } //!!!
+    while (locIt != locations.end()) {
+        if (locIt->mType == typeIt->second) {
+            return;
+        }
+        locIt++;
+    }
 }
 
 END_SCOPE(objects)
