@@ -118,7 +118,6 @@ public:
     bool   m_RemotePubLookup{ false };
     bool   m_HandleAsSet{ false };
     objects::CBioseq_set::TClass m_ClassValue{ objects::CBioseq_set::eClass_genbank };
-    bool   m_GenomicProductSet{ false };
     bool   m_SetIDFromFile{ false };
     //int    m_taxid;
     TSeqPos m_gapNmin{ 0 };

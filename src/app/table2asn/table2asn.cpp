@@ -248,18 +248,24 @@ void CTbl2AsnApp::Init(void)
         CArgDescriptions::eInputFile);
 
     arg_desc->AddDefaultKey
-        ("a", "String", "File Type\n\
-      a Any\n\
-      s FASTA Set (s Batch, s1 Pop, s2 Phy, s3 Mut, s4 Eco,\n\
-        s9 Small-genome)\n\
-      d FASTA Delta, di FASTA Delta with Implicit Gaps\n\
-      l FASTA+Gap Alignment (l Batch, l1 Pop, l2 Phy, l3 Mut, l4 Eco,\n\
-        l9 Small-genome)\n\
-      z FASTA with Gap Lines\n\
-      e PHRAP/ACE\n\
-      b ASN.1 for -M flag", CArgDescriptions::eString, "a");
+        ("a", "String", "File Type\n"
+"      a Any\n"
+"      s FASTA Set (s Batch, s1 Pop, s2 Phy, s3 Mut, s4 Eco,\n"
+"        s9 Small-genome)\n"
+"      d FASTA Delta, di FASTA Delta with Implicit Gaps\n"
+#if 0
+may be implemented in the future; RW-1253
+"      l FASTA+Gap Alignment (l Batch, l1 Pop, l2 Phy, l3 Mut, l4 Eco,\n"
+"        l9 Small-genome)\n"
+#endif
+"      z FASTA with Gap Lines"
+#if 0
+may be implemented in the future; RW-1253
+"\n"
+"      e PHRAP/ACE"
+#endif
+      , CArgDescriptions::eString, "a");
 
-    arg_desc->AddFlag("g", "Genomic Product Set");
     arg_desc->AddFlag("J", "Delayed Genomic Product Set ");                // done
 
     arg_desc->AddOptionalKey
@@ -289,12 +295,6 @@ void CTbl2AsnApp::Init(void)
       t Validate with TSA Check", CArgDescriptions::eString);
 
     arg_desc->AddFlag("q", "Seq ID from File Name");      // done
-
-    arg_desc->AddFlag("S", "Smart Feature Annotation");
-
-    arg_desc->AddOptionalKey("Q", "String", "mRNA Title Policy\n\
-      s Special mRNA Titles\n\
-      r RefSeq mRNA Titles", CArgDescriptions::eString);
 
     arg_desc->AddFlag("U", "Remove Unnecessary Gene Xref");
     arg_desc->AddFlag("T", "Remote Taxonomy Lookup");               // done
@@ -422,7 +422,6 @@ int CTbl2AsnApp::Run(void)
     m_logger->m_enable_log = args["W"].AsBoolean();
     m_validator.Reset(new CTable2AsnValidator(m_context));
 
-    m_context.m_GenomicProductSet = args["g"].AsBoolean();
     m_context.m_SetIDFromFile = args["q"].AsBoolean();
     m_context.m_allow_accession = args["allow-acc"].AsBoolean();
     m_context.m_delay_genprodset = args["J"].AsBoolean();
@@ -445,7 +444,6 @@ int CTbl2AsnApp::Run(void)
     {
         m_context.m_master_genome_flag = args["M"].AsString();
         m_context.m_delay_genprodset = true;
-        m_context.m_GenomicProductSet = false;
         m_context.m_HandleAsSet = true;
         m_context.m_cleanup += "fU";
         m_context.m_validate = "v"; // do we still need that?
@@ -510,9 +508,6 @@ int CTbl2AsnApp::Run(void)
     if (args["m"]) {
         m_context.m_disc_lineage = args["m"].AsString();
     }
-
-    if (m_context.m_delay_genprodset)
-        m_context.m_GenomicProductSet = false;
 
     m_context.m_asn1_suffix = args["out-suffix"].AsString();
 
@@ -733,8 +728,8 @@ int CTbl2AsnApp::Run(void)
     
     if (m_context.m_HandleAsSet)
     {
-        if (m_context.m_GenomicProductSet)
-            NCBI_THROW(CArgException, eConstraint, "-s flag cannot be used with -d, -e, -g, -l or -z");
+        if (false)
+            NCBI_THROW(CArgException, eConstraint, "-s flag cannot be used with -d, -e, -l or -z");
     }
 
     // Designate where do we output files: local folder, specified folder or a specific single output file
@@ -980,11 +975,6 @@ void CTbl2AsnApp::ProcessOneEntry(
 
     if (m_possible_proteins.NotEmpty())
         fr.AddProteins(*m_possible_proteins, *entry);
-
-    if (m_context.m_GenomicProductSet)
-    {
-        //fr.ConvertSeqIntoSeqSet(*entry, false);
-    }
 
     if (m_context.m_HandleAsSet)
     {
