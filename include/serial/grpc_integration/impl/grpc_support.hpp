@@ -194,6 +194,9 @@ CGRPCRequestLogger::CGRPCRequestLogger(
     const grpc_impl::internal::ServerStreamingInterface&)
     : m_DiagContext(GetDiagContext()),
       m_RequestContext(m_DiagContext.GetRequestContext()),
+#ifdef HAVE_LIBGRPC // HAVE_LIBPROTOBUF
+      m_Reply(nullptr),
+#endif
       m_ManagingRequest(false)
 {
     x_Init(sctx, method_name, request);
