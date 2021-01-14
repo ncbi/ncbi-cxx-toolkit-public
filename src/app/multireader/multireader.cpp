@@ -1634,6 +1634,6 @@ int main(int argc, const char* argv[])
 //  ----------------------------------------------------------------------------
 {
     // Execute main application function
-    return CMultiReaderApp().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CMultiReaderApp().AppMain(argc, argv);
 }
 

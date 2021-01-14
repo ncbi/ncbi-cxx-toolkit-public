@@ -994,5 +994,5 @@ USING_NCBI_SCOPE;
 int main(int argc, const char** argv)
 //  ===========================================================================
 {
-	return CAnnotWriterApp().AppMain(argc, argv, 0, eDS_ToStderr, 0);
+	return CAnnotWriterApp().AppMain(argc, argv);
 }
