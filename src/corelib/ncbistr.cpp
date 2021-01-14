@@ -38,6 +38,7 @@
 #include <corelib/error_codes.hpp>
 #include <corelib/ncbierror.hpp>
 #include <corelib/ncbifloat.h>
+#include <corelib/ncbi_base64.h>
 #include <memory>
 #include <functional>
 #include <algorithm>
@@ -6079,6 +6080,42 @@ bool NStr::NeedsURLEncoding(const CTempString str, EUrlEncode flag)
     }
     return false;
 }
+
+
+string NStr::Base64Encode(const CTempString str, size_t line_len)
+{
+    size_t n = str.size();
+    string dst;
+    char   dst_buf[128];
+    size_t pos = 0, n_read, n_written;
+
+    while ( n ) {
+        BASE64_Encode(str.data() + pos, n, &n_read, dst_buf, sizeof(dst_buf), &n_written, &line_len);
+	    pos += n_read;
+	    n   -= n_read;
+	    dst.append(dst_buf, n_written);
+    }
+    return dst;
+}
+
+string NStr::Base64Decode(const CTempString str)
+{
+    size_t n = str.size();
+    string dst;
+    char   dst_buf[128];
+    size_t pos = 0, n_read, n_written;
+
+    while ( n ) {
+        if (!BASE64_Decode(str.data() + pos, n, &n_read, dst_buf, sizeof(dst_buf), &n_written)) {
+            return string();
+        }
+	    pos += n_read;
+	    n   -= n_read;
+	    dst.append(dst_buf, n_written);
+    }
+    return dst;
+}
+
 
 
 /// @internal

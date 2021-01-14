@@ -3161,6 +3161,27 @@ public:
     /// Check if the string needs the requested URL-encoding
     static bool NeedsURLEncoding(const CTempString str, EUrlEncode flag = eUrlEnc_SkipMarkChars);
 
+    /// Base64-encode string.
+    ///
+    /// @param str
+    ///   The string to encode.
+    /// @param line_len
+    ///   Specify a fixed length for Base64-encoded lines.
+    ///   Default 76 conform to the MIME (Multipurpose Internet Mail Extensions) specification.
+    /// @return
+    ///   Encoded string.
+    /// @sa Base64Decode, BASE64_Encode, BASE64_Deccode
+    static string Base64Encode(const CTempString str, size_t line_len = 76);
+    
+    /// Base64-decode string
+    ///
+    /// @param str
+    ///   The string to decode.
+    /// @return
+    ///   Encoded string, or empty line on encoding error.
+    /// @sa Base64Encode, BASE64_Encode, BASE64_Deccode
+    static string Base64Decode(const CTempString str);
+
     /// Check if the string contains a valid IP address
     static bool IsIPAddress(const CTempStringEx str);
 
