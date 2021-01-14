@@ -46,6 +46,7 @@ BEGIN_SCOPE(gnomon)
 #define MIN_BLOB_WEIGHT_POLY 5
 #define MAX_EMPTY_DIST 20 
 #define MIN_SPLICE_DIST 25 
+#define SECOND_PEAK 0.5
 
 struct SAlignIndividual {
     SAlignIndividual() : m_weight(0) {};

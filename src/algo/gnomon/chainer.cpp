@@ -265,7 +265,8 @@ public:
     void RemoveFshiftsFromUTRs();
     void RestoreReasonableConfirmedStart(const CGnomonEngine& gnomon, TOrigAligns& orig_aligns);
     void SetOpenForPartialyAlignedProteins(map<string, pair<bool,bool> >& prot_complet);
-    void ClipToCompleteAlignment(EStatus determinant); // determinant - cap or polya
+    bool ValidPolyA(int pos, int strand, const CResidueVec& contig);
+    void ClipToCompleteAlignment(EStatus determinant, const CResidueVec& contig); // determinant - cap or polya
     void CheckSecondaryCapPolyAEnds();
     void ClipLowCoverageUTR(double utr_clip_threshold);
     void CalculateDropLimits();
@@ -3265,8 +3266,9 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust, bool co
 
         chain.RemoveFshiftsFromUTRs();
         chain.RestoreReasonableConfirmedStart(*m_gnomon, orig_aligns);
-        chain.ClipToCompleteAlignment(CGeneModel::eCap);   // alignments clipped below might not be in any chain; clipping may produce redundant chains
-        chain.ClipToCompleteAlignment(CGeneModel::ePolyA);
+        const CResidueVec& contig = m_gnomon->GetSeq();
+        chain.ClipToCompleteAlignment(CGeneModel::eCap, contig);   // alignments clipped below might not be in any chain; clipping may produce redundant chains
+        chain.ClipToCompleteAlignment(CGeneModel::ePolyA, contig);
         chain.ClipLowCoverageUTR(minscor.m_utr_clip_threshold);
         if(!chain.SetConfirmedEnds(*m_gnomon, confirmed_ends))
             continue;
@@ -3347,8 +3349,9 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust, bool co
 
         chain.RemoveFshiftsFromUTRs();
         mi.MarkIncludedForChain();
-        chain.ClipToCompleteAlignment(CGeneModel::eCap);
-        chain.ClipToCompleteAlignment(CGeneModel::ePolyA);
+        const CResidueVec& contig = m_gnomon->GetSeq();
+        chain.ClipToCompleteAlignment(CGeneModel::eCap, contig);
+        chain.ClipToCompleteAlignment(CGeneModel::ePolyA, contig);
         chain.ClipLowCoverageUTR(minscor.m_utr_clip_threshold);
         if(!chain.SetConfirmedEnds(*m_gnomon, confirmed_ends))
             continue;
@@ -3848,8 +3851,9 @@ void CChainer::CChainerImpl::CreateChainsForPartialProteins(TChainList& chains, 
 
         chain.RemoveFshiftsFromUTRs();
         chain.RestoreReasonableConfirmedStart(*m_gnomon, orig_aligns);
-        chain.ClipToCompleteAlignment(CGeneModel::eCap);
-        chain.ClipToCompleteAlignment(CGeneModel::ePolyA);
+        const CResidueVec& contig = m_gnomon->GetSeq();
+        chain.ClipToCompleteAlignment(CGeneModel::eCap, contig);
+        chain.ClipToCompleteAlignment(CGeneModel::ePolyA, contig);
         chain.ClipLowCoverageUTR(minscor.m_utr_clip_threshold);
         if(!chain.SetConfirmedEnds(*m_gnomon, confirmed_ends))
             continue;
@@ -5036,10 +5040,45 @@ bool CChain::SetConfirmedEnds(const CGnomonEngine& gnomon, CGnomonAnnotator_Base
     return true;
 }
 
-#define MINIMAL_TERMINALS 1
-#define SECOND_PEAK 0.5
+bool CChain::ValidPolyA(int pos, int strand, const CResidueVec& contig) {
+    string motif1 = "AATAAA";
+    string motif2 = "ATTAAA";
+    string motif3 = "AGTAAA";
+    int block_of_As_len = 6;
+    CResidueVec block_of_As;
+    if(strand == ePlus)
+        block_of_As.assign(block_of_As_len, 'A');
+    else
+        block_of_As.assign(block_of_As_len, 'T');
 
-void CChain::ClipToCompleteAlignment(EStatus determinant)
+    int a = max(0, pos-block_of_As_len);
+    int b = min((int)contig.size()-1, pos+block_of_As_len);
+    if(b-a+1 < block_of_As_len)
+        return false;
+    if(search(contig.begin()+a, contig.begin()+b+1, block_of_As.begin(), block_of_As.end()) != contig.begin()+b+1) {  // found As
+        int left;
+        int right;
+        if(strand == ePlus) {
+            left = pos-35;
+            right = pos-18;
+        } else {
+            left = pos+18;
+            right = pos+35;
+        }
+        if(left < 0 || right >= (int)contig.size())
+            return false;
+
+        string segment(contig.begin()+left, contig.begin()+right+1);
+        if(strand == eMinus)
+            ReverseComplement(segment.begin(), segment.end());
+
+        return (segment.find(motif1) != string::npos) ||  (segment.find(motif2) != string::npos) ||  (segment.find(motif3) != string::npos);
+    } else {
+        return true;
+    }
+}
+
+void CChain::ClipToCompleteAlignment(EStatus determinant, const CResidueVec& contig)
 {
     bool right_end = (determinant == CGeneModel::ePolyA && Strand() == ePlus) || (determinant == CGeneModel::eCap && Strand() == eMinus); // determinant is on the right gene side
     
@@ -5107,13 +5146,6 @@ void CChain::ClipToCompleteAlignment(EStatus determinant)
         else
             real_limits += (align.Limits()&Limits());
     }
-    /*
-    for(auto it_loop = raw_weights.begin(); it_loop != raw_weights.end(); ) {
-        auto it = it_loop++;
-        if(it->second < min_pos_weight)
-            raw_weights.erase(it);
-    }
-    */
     if(raw_weights.empty())
         return;
 
@@ -5125,8 +5157,10 @@ void CChain::ClipToCompleteAlignment(EStatus determinant)
         if(it->first > prev(it)->first+1+max_empty_dist) {           // next blob
             if(ipeak->first > last_allowed)
                 break;
-            if(w >= min_blob_weight)
-                peak_weights.emplace(ipeak->first, w); // peak position, blob weight
+            if(w >= min_blob_weight) {
+                if(determinant == eCap || ValidPolyA(abs(ipeak->first), Strand(), contig))
+                    peak_weights.emplace(ipeak->first, w); // peak position, blob weight    
+            }
             ipeak = it;
             w = it->second;
         } else {
@@ -5135,7 +5169,7 @@ void CChain::ClipToCompleteAlignment(EStatus determinant)
                 ipeak = it;
         }
     }
-    if(ipeak->first <= last_allowed && w >= min_blob_weight)
+    if(ipeak->first <= last_allowed && w >= min_blob_weight && (determinant == eCap || ValidPolyA(abs(ipeak->first), Strand(), contig)))
         peak_weights.emplace(ipeak->first, w);       // last peak
 
     if(peak_weights.empty()) {
