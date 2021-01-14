@@ -46,7 +46,7 @@ SRC     = \
 
 LIB     = xflatfile
 
-DLL_LIB = xlogging
+DLL_LIB = xlogging 
 
 ASN_DEP = genome_collection mla submit taxon1
 

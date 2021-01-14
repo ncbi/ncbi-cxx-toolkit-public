@@ -112,6 +112,49 @@ static char* DecodeXml(char* str)
     return str;
 }
 
+
+static char* TrimSpacesAroundString(char* str)
+{
+    unsigned char ch;
+    char* dst;
+    char* ptr;
+
+    if (str != NULL && str[0] != '\0') {
+        dst = str;
+        ptr = str;
+        ch = *ptr;
+        while (ch != '\0' && ch <= ' ') {
+            ptr++;
+            ch = *ptr;
+        }
+        while (ch != '\0') {
+            *dst = ch;
+            dst++;
+            ptr++;
+            ch = *ptr;
+        }
+        *dst = '\0';
+        dst = NULL;
+        ptr = str;
+        ch = *ptr;
+        while (ch != '\0') {
+            if (ch > ' ') {
+                dst = NULL;
+            }
+            else if (dst == NULL) {
+                dst = ptr;
+            }
+            ptr++;
+            ch = *ptr;
+        }
+        if (dst != NULL) {
+            *dst = '\0';
+        }
+    }
+    return str;
+}
+
+
 static void TokenizeXmlLine(ValNodePtr* headp, ValNodePtr* tailp, char* str)
 {
     char     *atr, *fst, *lst, *nxt, *ptr;

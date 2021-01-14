@@ -9,9 +9,9 @@ NCBI_begin_lib(xobjedit)
     feattable_edit gaps_edit source_edit rna_edit
     remote_updater parse_text_options publication_edit gap_trim
     external_annots feature_propagate text_object_description
-    seq_edit
+    seq_edit pub_fix
   )
-  NCBI_uses_toolkit_libraries(mlacli taxon3 valid xobjread xobjutil xlogging)
+  NCBI_uses_toolkit_libraries(eutils esearch esummary mlacli taxon3 valid xobjread xobjutil xlogging)
   NCBI_project_watchers(bollin gotvyans foleyjp)
 NCBI_end_lib()
 

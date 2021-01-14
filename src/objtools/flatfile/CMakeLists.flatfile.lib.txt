@@ -55,7 +55,6 @@ NCBI_begin_lib(xflatfile)
     xlogging
     ncbi_xdbapi_ftds
     taxon1
-
     ncbi_xloader_genbank
     ncbi_xdbapi_ftds
     taxon1
