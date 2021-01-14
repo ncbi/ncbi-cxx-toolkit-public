@@ -1165,5 +1165,66 @@ CRef<CCit_art> CPubFixing::FetchPubPmId(TEntrezId pmid)
     return cit_art;
 }
 
+bool CAuthorsValidatorByPubYear::configured = false;
+void CAuthorsValidatorByPubYear::Configure(CNcbiRegistry& cfg, string& section)
+{
+    configured = true;
+}
+
+CAuthorsValidatorByPubYear::CAuthorsValidatorByPubYear(int pub_year_, 
+                                                       const vector<string>& gb_lastnames, 
+                                                       const vector<string>& pm_lastnames)
+    : pub_year(pub_year_),
+      removed(gb_lastnames.begin(), gb_lastnames.end()), 
+      added(pm_lastnames.begin(), pm_lastnames.end())
+{
+    if (! configured) {
+        throw logic_error("Should call static Configure() before creating CAuthorsValidatorByPubYear object");
+    }
+    auto gbit = removed.begin();
+    while (gbit != removed.end()) {
+        list<string>::iterator gbnext(gbit);
+        ++gbnext;
+        list<string>::iterator pmit = std::find(added.begin(), added.end(), *gbit);
+        if (pmit != added.end()) {
+            matched.push_back(*gbit);
+            removed.erase(gbit++);
+            added.erase(pmit);
+        }
+        gbit = gbnext;
+    }
+    cnt_matched = matched.size();
+    cnt_removed = removed.size();
+    cnt_added = added.size();
+    cnt_gb = cnt_matched + cnt_removed;
+    cnt_pm = cnt_matched + cnt_added;
+}
+
+CAuthorsValidatorByPubYear::EOutcome CAuthorsValidatorByPubYear::validate()
+{
+    // determine outcome according to ID-6514 (see fix_pub.hpp)
+    if (pub_year > 1999) {
+        return eAccept_pubmed;
+    }
+    else if (pub_year > 1995) {
+        if (cnt_gb > 25) {
+            return eKeep_genbank;
+        }
+        else {
+            return eAccept_pubmed;
+        }
+    }
+    else { // pub_year < 1996
+        if (cnt_gb > 10) {
+            return eKeep_genbank;
+        }
+        else {
+            return eAccept_pubmed;
+        }
+    }
+    // we shouldn't be here
+    throw logic_error("CAuthorsValidatorByPubYear::validate() - we shouldn't be here!");
+}
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
