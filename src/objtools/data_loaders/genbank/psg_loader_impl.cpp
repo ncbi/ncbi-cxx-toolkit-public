@@ -70,6 +70,17 @@ class CBlobId;
 
 const int kSplitInfoChunkId = 999999999;
 
+NCBI_PARAM_DECL(unsigned int, PSG_LOADER, DEBUG);
+NCBI_PARAM_DEF_EX(unsigned int, PSG_LOADER, DEBUG, 1,
+    eParam_NoThread, PSG_LOADER_DEBUG);
+typedef NCBI_PARAM_TYPE(PSG_LOADER, DEBUG) TPSG_Debug;
+
+
+static unsigned int s_GetDebugLevel()
+{
+    static auto value = TPSG_Debug::GetDefault();
+    return value;
+}
 
 /////////////////////////////////////////////////////////////////////////////
 // CPsgBlobId
@@ -701,7 +712,6 @@ NCBI_PARAM_DEF_EX(unsigned int, PSG_LOADER, MAX_POOL_THREADS, 10,
     eParam_NoThread, PSG_LOADER_MAX_POOL_THREADS);
 typedef NCBI_PARAM_TYPE(PSG_LOADER, MAX_POOL_THREADS) TPSG_MaxPoolThreads;
 
-
 CPSGDataLoader_Impl::CPSGDataLoader_Impl(const CGBLoaderParams& params)
     : m_BlobMap(new CPSGBlobMap()),
       m_BioseqCache(new CPSGBioseqCache()),
@@ -1020,7 +1030,9 @@ CTSE_Lock CPSGDataLoader_Impl::GetBlobById(CDataSource* data_source, const CPsgB
     }}
     
     if ( x_IsLocalCDDEntryId(blob_id) ) {
-        LOG_POST("Re-loading CDD blob: " << blob_id.ToString());
+        if ( s_GetDebugLevel() >= 5 ) {
+            LOG_POST(Info<<"PSG loader: Re-loading CDD blob: " << blob_id.ToString());
+        }
         CSeq_id_Handle gi, acc_ver;
         if ( x_ParseLocalCDDEntryId(blob_id, gi, acc_ver) ) {
             return x_CreateLocalCDDEntry(data_source, gi, acc_ver);
@@ -1272,6 +1284,10 @@ void CPSG_Blob_Task::DoExecute(void)
                                                         *chunk_slot.second.second));
             CRef<CID2S_Chunk> id2_chunk(new CID2S_Chunk);
             *in >> *id2_chunk;
+            if ( s_GetDebugLevel() >= 8 ) {
+                LOG_POST(Info<<"PSG loader: TSE "<<chunk->GetBlobId().ToString()<<" "<<
+                         " chunk "<<chunk->GetChunkId()<<" "<<MSerial_AsnText<<*id2_chunk);
+            }
             
             CSplitParser::Load(*chunk, *id2_chunk);
             if ( delayed_main_chunk ) {
@@ -1482,6 +1498,10 @@ void CPSG_LoadChunk_Task::DoExecute(void)
 
     CRef<CID2S_Chunk> id2_chunk(new CID2S_Chunk);
     *in >> *id2_chunk;
+    if ( s_GetDebugLevel() >= 8 ) {
+        LOG_POST(Info<<"PSG loader: TSE "<<m_Chunk->GetBlobId().ToString()<<" "<<
+                 " chunk "<<m_Chunk->GetChunkId()<<" "<<MSerial_AsnText<<*id2_chunk);
+    }
     CSplitParser::Load(*m_Chunk, *id2_chunk);
     m_Chunk->SetLoaded();
 
@@ -1616,6 +1636,10 @@ static void x_CreateEmptyLocalCDDEntry(CDataSource* data_source,
     _ASSERT(load_lock->HasNoSeq_entry());
     CRef<CSeq_entry> entry(new CSeq_entry);
     entry->SetSet().SetSeq_set();
+    if ( s_GetDebugLevel() >= 8 ) {
+        LOG_POST(Info<<"PSG loader: TSE "<<load_lock->GetBlobId().ToString()<<" "<<
+                 " created empty CDD entry");
+    }
     load_lock->SetSeq_entry(*entry);
     chunk->SetLoaded();
 }
@@ -1814,6 +1838,9 @@ s_CreateNAChunk(const CPSG_NamedAnnotInfo& psg_annot_info,
     pair<CRef<CTSE_Chunk_Info>, string> ret;
     CRef<CTSE_Chunk_Info> chunk(new CTSE_Chunk_Info(kDelayedMain_ChunkId));
     auto id2_annot_info = psg_annot_info.GetId2AnnotInfo();
+    const char* source_type = "";
+    unsigned main_count = 0;
+    unsigned zoom_count = 0;
     if ( !id2_annot_info.empty() ) {
         // detailed annot info
         set<string> names;
@@ -1824,6 +1851,10 @@ s_CreateNAChunk(const CPSG_NamedAnnotInfo& psg_annot_info,
             if ( name.IsNamed() && !ExtractZoomLevel(name.GetName(), 0, 0) ) {
                 //setter.GetTSE_LoadLock()->SetName(name);
                 names.insert(name.GetName());
+                ++main_count;
+            }
+            else {
+                ++zoom_count;
             }
             
             vector<SAnnotTypeSelector> types;
@@ -1867,6 +1898,7 @@ s_CreateNAChunk(const CPSG_NamedAnnotInfo& psg_annot_info,
     }
     else {
         // old style annot info
+        source_type = " old";
         CSeq_id_Handle id = PsgIdToHandle(psg_annot_info.GetAnnotatedId());
         CSeq_id_Handle id2;
         if ( bioseq_info &&
@@ -1883,6 +1915,7 @@ s_CreateNAChunk(const CPSG_NamedAnnotInfo& psg_annot_info,
         string psg_annot_name = psg_annot_info.GetName();
         {{
             // add main annot types
+            main_count = 1;
             CAnnotName name = psg_annot_name;
             for ( auto& i : psg_annot_info.GetAnnotInfoList() ) {
                 SAnnotTypeSelector type(i.annot_type);
@@ -1900,6 +1933,7 @@ s_CreateNAChunk(const CPSG_NamedAnnotInfo& psg_annot_info,
         }}
         // add zoom graphs
         for ( auto z : psg_annot_info.GetZoomLevels() ) {
+            ++zoom_count;
             CAnnotName name = CombineWithZoomLevel(psg_annot_name, z);
             SAnnotTypeSelector type(CSeq_annot::C_Data::e_Graph);
             chunk->x_AddAnnotType(name, type, id, range);
@@ -1908,6 +1942,10 @@ s_CreateNAChunk(const CPSG_NamedAnnotInfo& psg_annot_info,
             }
         }
         ret.second = psg_annot_name;
+    }
+    if ( s_GetDebugLevel() >= 5 ) {
+        LOG_POST(Info<<"PSG loader: TSE "<<psg_annot_info.GetBlobId().GetId()<<
+                 source_type<<" annots: "<<ret.second<<" "<<main_count<<"+"<<zoom_count);
     }
     ret.first = chunk;
     return ret;
@@ -2210,11 +2248,19 @@ void CPSGDataLoader_Impl::x_ReadBlobData(
     if ( is_split_info ) {
         CRef<CID2S_Split_Info> split_info(new CID2S_Split_Info);
         *in >> *split_info;
+        if ( s_GetDebugLevel() >= 8 ) {
+            LOG_POST(Info<<"PSG loader: TSE "<<load_lock->GetBlobId().ToString()<<" "<<
+                     MSerial_AsnText<<*split_info);
+        }
         CSplitParser::Attach(*load_lock, *split_info);
     }
     else {
         CRef<CSeq_entry> entry(new CSeq_entry);
         *in >> *entry;
+        if ( s_GetDebugLevel() >= 8 ) {
+            LOG_POST(Info<<"PSG loader: TSE "<<load_lock->GetBlobId().ToString()<<" "<<
+                     MSerial_AsnText<<*entry);
+        }
         load_lock->SetSeq_entry(*entry);
     }
     if ( m_AddWGSMasterDescr ) {
