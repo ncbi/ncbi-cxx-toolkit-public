@@ -7,8 +7,8 @@ REQUIRES = objects
 
 SUB_PROJ = logging unit_test_util readers blast lds2 pubseq_gateway \
            data_loaders simple \
-           alnmgr cddalignview test manip edit cleanup format validator \
-           asniotest align seqmasks_io eutils \
+           alnmgr cddalignview test manip eutils edit cleanup format validator \
+           asniotest align seqmasks_io \
            align_format snputil uudutil variation writers \
            import flatfile
 
