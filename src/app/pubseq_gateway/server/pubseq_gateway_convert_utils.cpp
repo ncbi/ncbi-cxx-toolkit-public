@@ -31,7 +31,6 @@
 #include <ncbi_pch.hpp>
 
 #include <corelib/ncbistr.hpp>
-#include <corelib/ncbi_base64.h>
 #include <objtools/pubseq_gateway/protobuf/psg_protobuf.pb.h>
 
 #include "pubseq_gateway_convert_utils.hpp"
@@ -224,23 +223,6 @@ CJsonNode  ToJson(const CBlobRecord &  blob_prop)
 }
 
 
-static string base64Encode(const string& str)
-{
-    string encoded;
-    size_t src_size = str.size();
-    char dst_buf[128];
-    size_t ptr = 0, src_read, dst_written, line_len = 0;
-    while (src_size > 0) {
-        BASE64_Encode(&str[ptr], src_size, &src_read,
-                      dst_buf, sizeof(dst_buf), &dst_written, &line_len);
-        ptr      += src_read;
-        src_size -= src_read;
-        encoded += string(dst_buf, dst_written);
-    }
-    return encoded;
-}
-
-
 CJsonNode ToJson(const CNAnnotRecord &  annot_record,
                  int32_t  sat,
                  const string &  custom_blob_id)
@@ -268,7 +250,7 @@ CJsonNode ToJson(const CNAnnotRecord &  annot_record,
     json.SetInteger(kStart, annot_record.GetStart());
     json.SetInteger(kStop, annot_record.GetStop());
     json.SetString(kAnnotInfo, annot_record.GetAnnotInfo());
-    json.SetString(kSeqAnnotInfo, base64Encode(annot_record.GetSeqAnnotInfo()));
+    json.SetString(kSeqAnnotInfo, NStr::Base64Encode(annot_record.GetSeqAnnotInfo(), 0));
     return json;
 }
 
