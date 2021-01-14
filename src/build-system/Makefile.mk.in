@@ -858,7 +858,7 @@ OBJREAD_LIBS = xobjread variation submit xlogging
 XFORMAT_LIBS = xformat xcleanup gbseq $(OBJEDIT_LIBS)
 
 # object editing library
-OBJEDIT_LIBS = xobjedit $(OBJREAD_LIBS) taxon3 mlacli mla medlars pubmed valid 
+OBJEDIT_LIBS = xobjedit $(EUTILS_LIBS) $(OBJREAD_LIBS) taxon3 mlacli mla medlars pubmed valid 
 
 # standard data loader configuration, plus supporting libraries
 DATA_LOADERS_UTIL_LIB = data_loaders_util \
