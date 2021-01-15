@@ -3080,9 +3080,15 @@ public:
     /// @param str
     ///   The string to encode.
     /// @param encoding
-    ///   Specifies how to encode string. There are 2 approaches, with representing whole
-    ///   string as UTF-8 encoded string, or leave all Unicode symbols "as is", 
-    ///   but the resulting string  will be put in double quotes.
+    ///   Specifies how to encode string. 
+    ///   There are 2 approaches, with representing whole string as UTF-8 encoded string,
+    ///   or leave all Unicode symbols "as is", but the resulting string  will be put in double quotes.
+    /// @warning
+    ///   This method is not intended to work with strings that already have UTF-8 encoding,
+    ///   except simple eJsonEnc_Quoted mode, that just quote a string, without any real encoding.
+    ///   Passed string have no information on encoding and JsonEncode() cannot detect it.
+    ///   So, with default eJsonEnc_UTF8 mode such strings will be re-encoded again, so you will
+    ///   have double UTF-8 encoded string as result, that is not what you may expect. Be aware.
     /// @return
     ///   JSON encoded string
     static string JsonEncode(const CTempString str, EJsonEncode encoding = eJsonEnc_UTF8);
