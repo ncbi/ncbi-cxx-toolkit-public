@@ -35,6 +35,7 @@
 #include "ncbi_priv.h"
 #include "ncbi_servicep.h"
 #include <connect/ncbi_gnutls.h>
+#include <connect/ncbi_tls.h>
 #include <stdlib.h>
 
 #ifdef HAVE_LIBGNUTLS
@@ -703,11 +704,13 @@ static EIO_Status s_GnuTlsInit(FSSLPull pull, FSSLPush push)
     if (!pull  ||  !push)
         return eIO_InvalidArg;
 
-    val = ConnNetInfo_GetValueInternal(0, "GNUTLS_LOGLEVEL",
-                                       buf, sizeof(buf), 0);
+    val = ConnNetInfo_GetValueInternal(0, "GNU" REG_CONN_TLS_LOGLEVEL,
+                                       buf, sizeof(buf),
+                                       DEF_CONN_TLS_LOGLEVEL);
     if (!val  ||  !*val) {
-        val = ConnNetInfo_GetValueInternal(0, "TLS_LOGLEVEL",
-                                           buf, sizeof(buf), 0);
+        val = ConnNetInfo_GetValueInternal(0, REG_CONN_TLS_LOGLEVEL,
+                                           buf, sizeof(buf),
+                                           DEF_CONN_TLS_LOGLEVEL);
     }
     CORE_LOCK_READ;
     if (!val  ||  !*val)

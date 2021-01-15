@@ -78,6 +78,22 @@ extern NCBI_XCONNECT_EXPORT
 SOCKSSL NcbiSetupTls(void);
 
 
+/* Debugging (see also <connect/ncbi_connutil.h>), sets log level in the TLS
+ * provider library, and using an empty setting disables the logging.  Levels
+ * are provider-specific, but generally the higher the level the more verbose
+ * is the output, and usually level 0 is used to stop the output altogether. */
+#define REG_CONN_TLS_LOGLEVEL  "TLS_LOGLEVEL"
+#define DEF_CONN_TLS_LOGLEVEL  ""
+
+/* Provider-specific log level can be turned on by using the provider name
+ * merged with the above.  For example, for mbedTLS that setting would become
+ * MBEDTLS_LOGLEVEL, and it takes precedence over the generic setting above.
+ *
+ * Note that GNUTLS has its own environment setting "GNUTLS_DEBUG_LEVEL", which
+ * will be considered if none of the TLS_LOGLEVEL settings are used.
+ */
+
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
