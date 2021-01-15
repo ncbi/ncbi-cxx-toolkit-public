@@ -1147,8 +1147,7 @@ psg_cassandra needs3party $(CASSANDRA_LIBS)
 psg_cassandra needs3party $(KRB5_LIBS)
 psg_cassandra needs3party $(OPENSSL_LIBS)
 psg_cassandra needs3party $(Z_LIBS)
-psg_client needs $(SEQ_LIBS)
-psg_client needs pub
+psg_client needs seqsplit
 psg_client needs xconnserv
 psg_client needs xxconnect2
 psg_client needs3party $(PSG_CLIENT_LIBS)
