@@ -3068,17 +3068,17 @@ public:
     /// or empty string if suitable HTML entity was not found
     static string HtmlEntity(TUnicodeSymbol uch);
 
-    /// URL-encode flags
+    /// Json-encode flags
     enum EJsonEncode {
         eJsonEnc_UTF8,     ///< Encode all characters above 0x80 to \uXXXX form. 
                            ///< https://tools.ietf.org/html/rfc7159#section-8.1
-        eJsonEnc_Quoted    ///< Quote resulting string. Keep all Unicode symbols ss is.
+        eJsonEnc_Quoted    ///< Quote resulting string. Keep all Unicode symbols as is.
                            ///< https://tools.ietf.org/html/rfc7159#section-7
     };
     /// Encode a string for JSON.
     ///
     /// @param str
-    ///   The string to encode
+    ///   The string to encode.
     /// @param encoding
     ///   Specifies how to encode string. There are 2 approaches, with representing whole
     ///   string as UTF-8 encoded string, or leave all Unicode symbols "as is", 
@@ -3166,12 +3166,11 @@ public:
     /// @param str
     ///   The string to encode.
     /// @param line_len
-    ///   Specify a fixed length for Base64-encoded lines.
-    ///   Default 76 conform to the MIME (Multipurpose Internet Mail Extensions) specification.
+    ///   Specify a length for Base64-encoded lines. Default 0 mean no line breaks at all.
     /// @return
     ///   Encoded string.
     /// @sa Base64Decode, BASE64_Encode, BASE64_Deccode
-    static string Base64Encode(const CTempString str, size_t line_len = 76);
+    static string Base64Encode(const CTempString str, size_t line_len = 0);
     
     /// Base64-decode string
     ///
