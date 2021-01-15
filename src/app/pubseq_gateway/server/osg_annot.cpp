@@ -480,6 +480,14 @@ void CPSGS_OSGAnnot::SendReplies()
                 }
             }
         }
+        if ( r->IsSetAnnot_info() ) {
+            // set ASN.1 annot info
+            ostringstream str;
+            for ( auto& info : r->GetAnnot_info() ) {
+                str << MSerial_AsnBinary << *info;
+            }
+            json.SetString("seq_annot_info", NStr::Base64Encode(str.str(), 0));
+        }
         if ( m_NamesToProcess.count(annot_name) ) {
             GetReply()->PrepareNamedAnnotationData(annot_name, GetName(),
                                                    json.Repr(CJsonNode::fStandardJson));
