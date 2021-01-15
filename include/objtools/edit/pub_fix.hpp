@@ -48,7 +48,7 @@ class CCit_art;
 
 BEGIN_SCOPE(edit)
 
-class CPubFix
+class NCBI_XOBJEDIT_EXPORT CPubFix
 {
 public:
 
