@@ -75,7 +75,6 @@ affy needs3party $(ORIG_LIBS)
 affy needs3party $(XERCES_LIBS)
 affy needs3party $(Z_LIBS)
 agp_db needs agp_lookup
-agp_lookup needs $(EUTILS_LIBS)
 agp_lookup needs $(GPIPE_COMMON_LIBS)
 agp_lookup needs gpipe_objutil
 agp_lookup needs xhtml
@@ -591,8 +590,6 @@ gpipe_objutil needs $(OBJEDIT_LIBS)
 gpipe_objutil needs $(OBJMGR_LIBS)
 gpipe_objutil needs gpipe_attr
 gpipe_objutil needs local_taxon
-gpipe_objutil needs mlacli
-gpipe_objutil needs valid
 gpipe_objutil needs writedb
 gpipe_objutil needs xid_wgsdb
 gpipe_objutil needs3party $(DATA_LOADERS_UTIL_LIBS)
@@ -1594,8 +1591,6 @@ xasn needs xhtml
 xasn needs3party $(NCBI_C_ncbi)
 xassembly_svc needs xgencollstats
 xbiosample_util needs $(OBJEDIT_LIBS)
-xbiosample_util needs mlacli
-xbiosample_util needs valid
 xbiosample_util needs xmlwrapp
 xbiosample_util needs xobjutil
 xblast includes blast
@@ -1625,8 +1620,6 @@ xcgi needs xutil
 xcgi_redirect needs xcgi
 xcgi_redirect needs xhtml
 xcleanup needs $(OBJEDIT_LIBS)
-xcleanup needs mlacli
-xcleanup needs valid
 xcleanup needs xobjutil
 xcompress needs $(CMPRS_LIB)
 xcompress needs xutil
@@ -1750,6 +1743,7 @@ xngalign needs $(BLAST_INPUT_LIBS)
 xngalign needs xalgoalignnw
 xngalign needs xalgoalignutil
 xngalign needs xmergetree
+xobjedit needs $(EUTILS_LIBS)
 xobjedit needs mlacli
 xobjedit needs taxon3
 xobjedit needs valid
