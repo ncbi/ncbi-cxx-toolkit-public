@@ -184,7 +184,8 @@ void CTable2AsnValidator::ReportErrorStats(CNcbiOstream& out)
 
 void CTable2AsnValidator::CollectDiscrepancies(CSerialObject& obj, bool eucariote, const string& lineage)
 {
-    m_discrepancy = NDiscrepancy::CDiscrepancySet::New(*m_context->m_scope);
+    if (!m_discrepancy)
+        m_discrepancy = NDiscrepancy::CDiscrepancySet::New(*m_context->m_scope);
     vector<string> names = NDiscrepancy::GetDiscrepancyNames(m_context->m_discrepancy_group);
     m_discrepancy->AddTests(names);
 
