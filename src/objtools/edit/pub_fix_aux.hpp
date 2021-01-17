@@ -89,20 +89,20 @@ enum EFixPubPrintError
 };
 
 
-void MedlineToISO(CCit_art& cit_art);
-void SplitMedlineEntry(CPub_equiv::Tdata& medlines);
-bool IsInpress(const CCit_art& cit_art);
-bool NeedToPropagateInJournal(const CCit_art& cit_art);
-bool MULooksLikeISSN(const string& str);
-bool MUIsJournalIndexed(const string& journal);
-void PrintPub(const CCit_art& cit_art, bool found, bool auth, long muid, IMessageListener* err_log);
-bool IsFromBook(const CCit_art& art);
-bool TenAuthorsCompare(CCit_art& cit_old, CCit_art& cit_new);
-size_t ExtractConsortiums(const CAuth_list::C_Names::TStd& names, CAuth_list::C_Names::TStr& extracted);
-void GetFirstTenNames(const CAuth_list::C_Names::TStd& names, list<CTempString>& res);
-bool TenAuthorsProcess(CCit_art& cit, CCit_art& new_cit, IMessageListener* err_log);
-void MergeNonPubmedPubIds(const CCit_art& cit_old, CCit_art& cit_new);
-void PropagateInPress(bool inpress, CCit_art& cit_art);
+NCBI_XOBJEDIT_EXPORT void MedlineToISO(CCit_art& cit_art);
+NCBI_XOBJEDIT_EXPORT void SplitMedlineEntry(CPub_equiv::Tdata& medlines);
+NCBI_XOBJEDIT_EXPORT bool IsInpress(const CCit_art& cit_art);
+NCBI_XOBJEDIT_EXPORT bool NeedToPropagateInJournal(const CCit_art& cit_art);
+NCBI_XOBJEDIT_EXPORT bool MULooksLikeISSN(const string& str);
+NCBI_XOBJEDIT_EXPORT bool MUIsJournalIndexed(const string& journal);
+NCBI_XOBJEDIT_EXPORT void PrintPub(const CCit_art& cit_art, bool found, bool auth, long muid, IMessageListener* err_log);
+NCBI_XOBJEDIT_EXPORT bool IsFromBook(const CCit_art& art);
+NCBI_XOBJEDIT_EXPORT bool TenAuthorsCompare(CCit_art& cit_old, CCit_art& cit_new);
+NCBI_XOBJEDIT_EXPORT size_t ExtractConsortiums(const CAuth_list::C_Names::TStd& names, CAuth_list::C_Names::TStr& extracted);
+NCBI_XOBJEDIT_EXPORT void GetFirstTenNames(const CAuth_list::C_Names::TStd& names, list<CTempString>& res);
+NCBI_XOBJEDIT_EXPORT bool TenAuthorsProcess(CCit_art& cit, CCit_art& new_cit, IMessageListener* err_log);
+NCBI_XOBJEDIT_EXPORT void MergeNonPubmedPubIds(const CCit_art& cit_old, CCit_art& cit_new);
+NCBI_XOBJEDIT_EXPORT void PropagateInPress(bool inpress, CCit_art& cit_art);
 }
 
 END_SCOPE(edit)
