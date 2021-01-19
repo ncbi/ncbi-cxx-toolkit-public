@@ -68,7 +68,7 @@ END_SCOPE(impl)
         x_Assign(other); \
     } \
 public: \
-    virtual ~exception_class(void) throw() {} \
+    virtual ~exception_class(void) noexcept {} \
     const char* GetType(void) const override {return #exception_class;} \
     typedef int TErrCode; \
     TErrCode GetErrCode(void) const \
