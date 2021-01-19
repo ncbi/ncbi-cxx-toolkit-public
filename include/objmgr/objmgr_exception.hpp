@@ -171,7 +171,7 @@ public:
     {
         x_Assign(other);
     }
-    virtual ~CBlobStateException(void) throw() {}
+    virtual ~CBlobStateException(void) noexcept {}
     const char* GetType(void) const override { return "CBlobStateException"; }
     typedef int TErrCode;
     TErrCode GetErrCode(void) const
