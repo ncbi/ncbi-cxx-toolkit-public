@@ -176,7 +176,7 @@ void CPubseqGatewayApp::ParseArgs(void)
 
     if (!registry.HasEntry("SERVER", "port"))
         NCBI_THROW(CPubseqGatewayException, eConfigurationError,
-                   "[SERVER]/port value is not fond in the configuration "
+                   "[SERVER]/port value is not found in the configuration "
                    "file. The port must be provided to run the server. "
                    "Exiting.");
 
