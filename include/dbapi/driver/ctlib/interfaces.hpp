@@ -140,7 +140,7 @@ class Connection
 {
 public:
     Connection(CTLibContext& context, CTL_Connection& ctl_conn);
-    ~Connection(void) throw();
+    ~Connection(void) noexcept;
     /// Drop allocated connection.
     bool Drop(void);
 
