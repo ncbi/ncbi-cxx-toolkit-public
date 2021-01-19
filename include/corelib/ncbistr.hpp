@@ -4353,7 +4353,7 @@ public:
     }
 
     /// Destructor.
-    virtual ~CParseTemplException(void) throw() {}
+    virtual ~CParseTemplException(void) noexcept {}
 
     /// Report error position.
     virtual void ReportExtra(ostream& out) const override
@@ -4377,7 +4377,7 @@ public:
     }
 
     /// Get error position.
-    string::size_type GetPos(void) const throw() { return m_Pos; }
+    string::size_type GetPos(void) const noexcept { return m_Pos; }
 
 protected:
     CParseTemplException(const CDiagCompileInfo &info,
