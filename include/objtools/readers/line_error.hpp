@@ -114,7 +114,7 @@ public:
         NCBI_USER_THROW("not implemented: ILineError::Clone");
     }
 
-    virtual ~ILineError(void) throw() {}
+    virtual ~ILineError(void) noexcept {}
 
     virtual EProblem
     Problem(void) const = 0;
@@ -397,7 +397,7 @@ public:
     /// Use this because copy ctor is protected.
     virtual ILineError *Clone(void) const;
 
-    virtual ~CLineError(void) throw() {}
+    virtual ~CLineError(void) noexcept {}
 
     /// copy constructor is protected so please use this function to
     /// throw the object.
@@ -642,7 +642,7 @@ public:
     /// this function to throw this object.
     NCBI_NORETURN void Throw(void) const;
 
-    ~CObjReaderLineException(void) throw() { }
+    ~CObjReaderLineException(void) noexcept { }
 
     TErrCode GetErrCode(void) const 
     { 
