@@ -126,7 +126,7 @@ public:
                   EDiagSev severity = eDiag_Error);
     CSraException(const CSraException& other);
 
-    ~CSraException(void) throw();
+    ~CSraException(void) noexcept;
 
     /// Report "non-standard" attributes.
     virtual void ReportExtra(ostream& out) const;
