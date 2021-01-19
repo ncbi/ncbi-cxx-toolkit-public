@@ -106,6 +106,7 @@ class CPSGAlerts
         EPSGS_AlertAckResult Acknowledge(EPSGS_AlertType alert_type,
                                          const string &  user);
         CJsonNode Serialize(void) const;
+        CJsonNode SerializeActive(void) const;
 
     private:
         mutable mutex                               m_Lock;

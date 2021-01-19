@@ -111,6 +111,9 @@ private:
 protected:
     void ResolveInputSeqId(void);
 
+public:
+    SBioseqResolution  ResolveTestInputSeqId(void);
+
 private:
     TSeqIdResolutionFinishedCB          m_FinalFinishedCB;
     TSeqIdResolutionErrorCB             m_FinalErrorCB;

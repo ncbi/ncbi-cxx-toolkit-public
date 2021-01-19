@@ -64,6 +64,7 @@ static const string     kGetBlobBySatSatKeyRequestCount("GetBlobBySatSatKeyReque
 static const string     kGetNamedAnnotationsCount("GetNamedAnnotationsCount");
 static const string     kTestIORequestCount("TestIORequestCount");
 static const string     kGetTSEChunkCount("GetTSEChunkCount");
+static const string     kHealthRequestCount("HealthRequestCount");
 static const string     kTotalRequestCount("TotalRequestCount");
 static const string     kSi2csiCacheHit("Si2csiCacheHit");
 static const string     kSi2csiCacheMiss("Si2csiCacheMiss");

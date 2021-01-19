@@ -39,6 +39,7 @@
 #include "pubseq_gateway.hpp"
 #include "pubseq_gateway_exception.hpp"
 #include "stat_counters.hpp"
+#include "resolve_processor.hpp"
 
 #include "shutdown_data.hpp"
 extern SShutdownData    g_ShutdownData;
@@ -764,6 +765,138 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
                                          ePSGS_UnknownError, eDiag_Error);
         x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError);
     }
+    return 0;
+}
+
+
+int CPubseqGatewayApp::OnHealth(CHttpRequest &  req,
+                                shared_ptr<CPSGS_Reply>  reply)
+{
+    static string   separator = "==============================================";
+    static string   prefix = "PSG_HEALTH_ERROR: ";
+
+    m_RequestCounters.IncHealth();
+
+    auto                    now = chrono::high_resolution_clock::now();
+    CRequestContextResetter context_resetter;
+    CRef<CRequestContext>   context = x_CreateRequestContext(req);
+
+    auto    startup_data_state = GetStartupDataState();
+    if (startup_data_state != ePSGS_StartupDataOK) {
+        // Something is wrong with access to Cassandra
+        // Check if there are any active alerts
+        auto        active_alerts = m_Alerts.SerializeActive();
+        string      msg = separator + "\n" +
+                          prefix + "CASSANDRA" "\n" +
+                          GetCassStartupDataStateMessage(startup_data_state) + "\n" +
+                          separator + "\n" +
+                          prefix + "ALERTS" "\n";
+        if (active_alerts.GetSize() == 0) {
+            msg += "There are no active alerts";
+        } else {
+            msg += "Active alerts are:" "\n" +
+                   active_alerts.Repr(CJsonNode::fStandardJson);
+        }
+
+        reply->Send500(msg.c_str());
+        PSG_WARNING("Cassandra is not available or is in non-working state");
+        x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError);
+        return 0;
+    }
+
+    if (m_TestSeqId.empty()) {
+        // seq_id for a health test is not configured so skip the test
+        auto    http_reply = reply->GetHttpReply();
+        http_reply->SetContentType(ePSGS_PlainTextMime);
+        http_reply->SetContentLength(0);
+        http_reply->SendOk(nullptr, 0, false);
+        PSG_WARNING("Test seq_id resolution skipped (configured as an empty string)");
+        x_PrintRequestStop(context, CRequestStatus::e200_Ok);
+        return 0;
+    }
+
+    if (m_Si2csiDbFile.empty() || m_BioseqInfoDbFile.empty()) {
+        // Cache is not configured so skip the test
+        auto    http_reply = reply->GetHttpReply();
+        http_reply->SetContentType(ePSGS_PlainTextMime);
+        http_reply->SetContentLength(0);
+        http_reply->SendOk(nullptr, 0, false);
+        PSG_WARNING("Test seq_id resolution skipped (cache is not configured)");
+        x_PrintRequestStop(context, CRequestStatus::e200_Ok);
+        return 0;
+    }
+
+    // If cache is configured then we can give it a try to resolve the
+    // configured seq_id in cache
+    try {
+        vector<string>      enabled_processors;
+        vector<string>      disabled_processors;
+
+        unique_ptr<SPSGS_RequestBase>
+            req(new SPSGS_ResolveRequest(m_TestSeqId, -1,
+                                         SPSGS_ResolveRequest::fPSGS_CanonicalId,
+                                         SPSGS_ResolveRequest::ePSGS_JsonFormat,
+                                         SPSGS_RequestBase::ePSGS_CacheOnly,
+                                         SPSGS_RequestBase::ePSGS_NeverAccSubstitute,
+                                         0, SPSGS_RequestBase::ePSGS_NoTracing,
+                                         enabled_processors, disabled_processors,
+                                         now));
+        shared_ptr<CPSGS_Request>
+            request(new CPSGS_Request(move(req), CRef<CRequestContext>()));
+
+
+        CPSGS_ResolveProcessor  resolve_processor(request, reply, 0);
+        auto    resolution = resolve_processor.ResolveTestInputSeqId();
+
+        if (!resolution.IsValid()) {
+            if (!m_TestSeqIdIgnoreError) {
+                string  msg = separator + "\n" +
+                              prefix + "RESOLUTION" "\n";
+                if (resolution.m_Error.HasError()) {
+                    msg += resolution.m_Error.m_ErrorMessage;
+                } else {
+                    msg += "Cannot resolve '" + m_TestSeqId + "' seq_id";
+                }
+                reply->Send500(msg.c_str());
+                PSG_WARNING("Cannot resolve test seq_id '" + m_TestSeqId + "'");
+                x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError);
+                return 0;
+            }
+            PSG_WARNING("Cannot resolve test seq_id '" + m_TestSeqId +
+                        "', however the configuration is to ignore test errors");
+        }
+    } catch (const exception &  exc) {
+        if (!m_TestSeqIdIgnoreError) {
+            string  msg = separator + "\n" +
+                          prefix + "RESOLUTION" "\n" +
+                          exc.what();
+            reply->Send500(msg.c_str());
+            PSG_WARNING("Cannot resolve test seq_id '" + m_TestSeqId + "'");
+            x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError);
+            return 0;
+        }
+        PSG_WARNING("Cannot resolve test seq_id '" + m_TestSeqId +
+                    "', however the configuration is to ignore test errors");
+    } catch (...) {
+        if (!m_TestSeqIdIgnoreError) {
+            string  msg = separator + "\n" +
+                          prefix + "RESOLUTION" "\n"
+                          "Unknown '" + m_TestSeqId + "' resolution error";
+            reply->Send500(msg.c_str());
+            PSG_WARNING("Cannot resolve test seq_id '" + m_TestSeqId + "'");
+            x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError);
+            return 0;
+        }
+        PSG_WARNING("Cannot resolve test seq_id '" + m_TestSeqId +
+                    "', however the configuration is to ignore test errors");
+    }
+
+    // Here: all OK or errors are ignored
+    auto    http_reply = reply->GetHttpReply();
+    http_reply->SetContentType(ePSGS_PlainTextMime);
+    http_reply->SetContentLength(0);
+    http_reply->SendOk(nullptr, 0, false);
+    x_PrintRequestStop(context, CRequestStatus::e200_Ok);
     return 0;
 }
 

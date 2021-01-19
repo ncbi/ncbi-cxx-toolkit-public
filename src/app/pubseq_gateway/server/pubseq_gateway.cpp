@@ -90,6 +90,8 @@ const unsigned long     kDefaultSlimMaxBlobSize = 10 * 1024;
 const unsigned int      kDefaultMaxHops = 2;
 const unsigned long     kDefaultSmallBlobSize = 16;
 const bool              kDefaultCassandraProcessorsEnabled = true;
+const string            kDefaultTestSeqId = "gi|2";
+const bool              kDefaultTestSeqIdIgnoreError = true;
 
 static const string     kDaemonizeArgName = "daemonize";
 
@@ -134,6 +136,8 @@ CPubseqGatewayApp::CPubseqGatewayApp() :
     m_SlimMaxBlobSize(kDefaultSlimMaxBlobSize),
     m_MaxHops(kDefaultMaxHops),
     m_CassandraProcessorsEnabled(kDefaultCassandraProcessorsEnabled),
+    m_TestSeqId(kDefaultTestSeqId),
+    m_TestSeqIdIgnoreError(kDefaultTestSeqIdIgnoreError),
     m_ExcludeBlobCache(nullptr),
     m_StartupDataState(ePSGS_NoCassConnection)
 {
@@ -257,6 +261,10 @@ void CPubseqGatewayApp::ParseArgs(void)
     m_CassandraProcessorsEnabled = registry.GetBool(
             "CASSANDRA_PROCESSOR", "enabled",
             kDefaultCassandraProcessorsEnabled);
+
+    m_TestSeqId = registry.GetString("HEALTH", "test_seq_id", kDefaultTestSeqId);
+    m_TestSeqIdIgnoreError = registry.GetBool("HEALTH", "test_seq_id_ignore_error",
+                                              kDefaultTestSeqIdIgnoreError);
 
     // It throws an exception in case of inability to start
     x_ValidateArgs();
@@ -456,6 +464,19 @@ int CPubseqGatewayApp::Run(void)
             [this](CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply)->int
             {
                 return OnGetNA(req, reply);
+            }, &get_parser, nullptr);
+    http_handler.emplace_back(
+            "/health",
+            [this](CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply)->int
+            {
+                return OnHealth(req, reply);
+            }, &get_parser, nullptr);
+    http_handler.emplace_back(
+            "/deep-health",
+            [this](CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply)->int
+            {
+                // For the time being 'deep-health' matches 'health'
+                return OnHealth(req, reply);
             }, &get_parser, nullptr);
     http_handler.emplace_back(
             "/ADMIN/config",

@@ -152,6 +152,7 @@ public:
     int OnResolve(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
     int OnGetTSEChunk(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
     int OnGetNA(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
+    int OnHealth(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
     int OnConfig(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
     int OnInfo(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
     int OnStatus(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
@@ -360,6 +361,8 @@ private:
     int                                 m_MaxHops;
 
     bool                                m_CassandraProcessorsEnabled;
+    string                              m_TestSeqId;
+    bool                                m_TestSeqIdIgnoreError;
 
     unique_ptr<CPubseqGatewayCache>     m_LookupCache;
     unique_ptr<CHttpDaemon<CPendingOperation>>

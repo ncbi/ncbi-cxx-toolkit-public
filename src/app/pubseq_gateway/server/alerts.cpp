@@ -180,3 +180,20 @@ CJsonNode CPSGAlerts::Serialize(void) const
     return result;
 }
 
+
+// Provides only the active alerts
+CJsonNode CPSGAlerts::SerializeActive(void) const
+{
+    CJsonNode                                   result = CJsonNode::NewObjectNode();
+    map<EPSGS_AlertType,
+        SPSGAlertAttributes>::const_iterator    k;
+    lock_guard<mutex>                           guard(m_Lock);
+
+    for (k = m_Alerts.begin(); k != m_Alerts.end(); ++k) {
+        if (k->second.m_On) {
+            result.SetByKey(x_TypeToId(k->first), k->second.Serialize());
+        }
+    }
+    return result;
+}
+

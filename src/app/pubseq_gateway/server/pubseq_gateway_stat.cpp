@@ -196,6 +196,11 @@ static map<string, tuple<string, string>>   s_IdToNameDescription =
           "Number of times a client requested a TSE chunk"
         }
     },
+    { kHealthRequestCount,
+        { "Health requests counter",
+          "Number of times a client requested health or deep-health status"
+        }
+    },
     { kTotalRequestCount,
         { "Total number of requests",
           "Total number of requests"
@@ -443,6 +448,10 @@ void CPubseqGatewayRequestCounters::PopulateDictionary(CJsonNode &  dict) const
     value = m_GetTSEChunk;
     req_sum += value;
     AppendValueNode(dict, kGetTSEChunkCount, value);
+
+    value = m_Health;
+    req_sum += value;
+    AppendValueNode(dict, kHealthRequestCount, value);
 
     AppendValueNode(dict, kTotalRequestCount, req_sum);
 }

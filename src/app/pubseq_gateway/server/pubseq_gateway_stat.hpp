@@ -129,7 +129,7 @@ class CPubseqGatewayRequestCounters
 public:
     CPubseqGatewayRequestCounters() :
         m_Admin(0), m_Resolve(0), m_GetBlobBySeqId(0), m_GetBlobBySatSatKey(0),
-        m_TestIO(0), m_GetNA(0), m_GetTSEChunk(0),
+        m_TestIO(0), m_GetNA(0), m_GetTSEChunk(0), m_Health(0),
         m_TSEChunkSplitVersionCacheMatched(0),
         m_TSEChunkSplitVersionCacheNotMatched(0),
         m_NotResolved(0)
@@ -156,6 +156,9 @@ public:
     void IncGetTSEChunk(void)
     { ++m_GetTSEChunk; }
 
+    void IncHealth(void)
+    { ++m_Health; }
+
     void IncTSEChunkSplitVersionCacheMatched(void)
     { ++m_TSEChunkSplitVersionCacheMatched; }
 
@@ -175,6 +178,7 @@ private:
     atomic_uint_fast64_t        m_TestIO;
     atomic_uint_fast64_t        m_GetNA;
     atomic_uint_fast64_t        m_GetTSEChunk;
+    atomic_uint_fast64_t        m_Health;
     atomic_uint_fast64_t        m_TSEChunkSplitVersionCacheMatched;
     atomic_uint_fast64_t        m_TSEChunkSplitVersionCacheNotMatched;
 

@@ -173,7 +173,7 @@ CPSGS_ResolveBase::x_ParseInputSeqId(CSeq_id &  seq_id,
         if (request_seq_id_type <= 0) {
             if (need_trace)
                 m_Reply->SendTrace("Parsing CSeq_id finished OK (#1)",
-                                 m_Request->GetStartTimestamp());
+                                   m_Request->GetStartTimestamp());
             return ePSGS_ParsedOK;
         }
 
@@ -182,7 +182,7 @@ CPSGS_ResolveBase::x_ParseInputSeqId(CSeq_id &  seq_id,
         if (x_GetEffectiveSeqIdType(seq_id, eff_seq_id_type, false)) {
             if (need_trace)
                 m_Reply->SendTrace("Parsing CSeq_id finished OK (#2)",
-                                 m_Request->GetStartTimestamp());
+                                   m_Request->GetStartTimestamp());
             return ePSGS_ParsedOK;
         }
 
@@ -191,17 +191,17 @@ CPSGS_ResolveBase::x_ParseInputSeqId(CSeq_id &  seq_id,
 
         if (need_trace)
             m_Reply->SendTrace("CSeq_id provided type " + to_string(seq_id_type) +
-                             " and URL provided seq_id_type " +
-                             to_string(request_seq_id_type) + " mismatch",
-                             m_Request->GetStartTimestamp());
+                               " and URL provided seq_id_type " +
+                               to_string(request_seq_id_type) + " mismatch",
+                               m_Request->GetStartTimestamp());
 
         if (IsINSDCSeqIdType(request_seq_id_type) &&
             IsINSDCSeqIdType(seq_id_type)) {
             // Both seq_id_types belong to INSDC
             if (need_trace) {
                 m_Reply->SendTrace("Both types belong to INSDC types.\n"
-                                 "Parsing CSeq_id finished OK (#3)",
-                                 m_Request->GetStartTimestamp());
+                                   "Parsing CSeq_id finished OK (#3)",
+                                   m_Request->GetStartTimestamp());
             }
             return ePSGS_ParsedOK;
         }
@@ -215,8 +215,8 @@ CPSGS_ResolveBase::x_ParseInputSeqId(CSeq_id &  seq_id,
     } catch (...) {
         if (need_trace)
             m_Reply->SendTrace("Parsing CSeq_id('" + request_seq_id +
-                             "') failed (exception)",
-                             m_Request->GetStartTimestamp());
+                               "') failed (exception)",
+                               m_Request->GetStartTimestamp());
     }
 
     // Second variation of Set()
@@ -227,24 +227,24 @@ CPSGS_ResolveBase::x_ParseInputSeqId(CSeq_id &  seq_id,
                        request_seq_id);
             if (need_trace) {
                 m_Reply->SendTrace("Parsing CSeq_id(eFasta_AsTypeAndContent, " +
-                                 to_string(request_seq_id_type) +
-                                 ", '" + request_seq_id + "') succeeded.\n"
-                                 "Parsing CSeq_id finished OK (#4)",
-                                 m_Request->GetStartTimestamp());
+                                   to_string(request_seq_id_type) +
+                                   ", '" + request_seq_id + "') succeeded.\n"
+                                   "Parsing CSeq_id finished OK (#4)",
+                                   m_Request->GetStartTimestamp());
             }
             return ePSGS_ParsedOK;
         } catch (...) {
             if (need_trace)
                 m_Reply->SendTrace("Parsing CSeq_id(eFasta_AsTypeAndContent, " +
-                                 to_string(request_seq_id_type) +
-                                 ", '" + request_seq_id + "') failed (exception)",
-                                 m_Request->GetStartTimestamp());
+                                   to_string(request_seq_id_type) +
+                                   ", '" + request_seq_id + "') failed (exception)",
+                                   m_Request->GetStartTimestamp());
         }
     }
 
     if (need_trace) {
         m_Reply->SendTrace("Parsing CSeq_id finished FAILED",
-                         m_Request->GetStartTimestamp());
+                           m_Request->GetStartTimestamp());
     }
 
     return ePSGS_ParseFailed;
@@ -587,6 +587,48 @@ CPSGS_ResolveBase::ResolveInputSeqId(void)
     x_OnSeqIdResolveError(CRequestStatus::e404_NotFound, ePSGS_UnresolvedSeqId,
                           eDiag_Error,
                           "Could not resolve seq_id " + GetRequestSeqId());
+}
+
+
+SBioseqResolution
+CPSGS_ResolveBase::ResolveTestInputSeqId(void)
+{
+    // The method is to support the 'health' and 'deep-health' URLs.
+    // The only cache needs to be tried and no writing to the reply is allowed
+    SBioseqResolution   bioseq_resolution;
+    string              parse_err_msg;
+    CSeq_id             oslt_seq_id;
+    auto                parsing_result = x_ParseInputSeqId(oslt_seq_id,
+                                                           parse_err_msg);
+
+    // The results of the ComposeOSLT are used in both cache and DB
+    int16_t         effective_seq_id_type;
+    list<string>    secondary_id_list;
+    string          primary_id;
+    bool            composed_ok = false;
+    if (parsing_result == ePSGS_ParsedOK) {
+        composed_ok = x_ComposeOSLT(oslt_seq_id, effective_seq_id_type,
+                                    secondary_id_list, primary_id);
+    }
+
+    // Try cache unconditionally
+    if (composed_ok)
+        x_ResolveViaComposeOSLTInCache(oslt_seq_id, effective_seq_id_type,
+                                       secondary_id_list, primary_id,
+                                       bioseq_resolution);
+    else
+        x_ResolveAsIsInCache(bioseq_resolution);
+
+
+    if (!bioseq_resolution.IsValid()) {
+        if (!bioseq_resolution.m_Error.HasError()) {
+            if (!parse_err_msg.empty()) {
+                bioseq_resolution.m_Error.m_ErrorMessage = parse_err_msg;
+            }
+        }
+    }
+
+    return bioseq_resolution;
 }
 
 
