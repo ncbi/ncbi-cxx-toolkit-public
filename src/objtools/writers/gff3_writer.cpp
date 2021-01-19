@@ -2856,13 +2856,12 @@ bool CGff3Writer::xWriteFeatureRecords(
         return xWriteRecord(record);
     }
 
-    string totIntervals = string("/") + NStr::NumericToString(sublocs.size());
     unsigned int curInterval = 1;
     for (auto it = sublocs.begin(); it != sublocs.end(); ++it) {
         const CSeq_interval& subint = **it;
         CRef<CGffFeatureRecord> pChild(new CGff3FeatureRecord(*pRecord));
         pChild->SetLocation(subint, 0);
-        string part = NStr::IntToString(curInterval++) + totIntervals;
+        string part = NStr::IntToString(curInterval++);
         pChild->SetAttribute("part", part);
         if (!xWriteRecord(*pChild)) {
             return false;

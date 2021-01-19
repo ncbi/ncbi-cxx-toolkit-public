@@ -218,8 +218,8 @@ LK023325.1	EMBL	CDS	44289	44441	.	+	0	ID=cds-CDS08403.1;Parent=rna-LRAMOSA09766;
 LK023325.1	EMBL	CDS	44497	44550	.	+	0	ID=cds-CDS08403.1;Parent=rna-LRAMOSA09766;Dbxref=EnsemblGenomes-Gn:LRAMOSA09766,EnsemblGenomes-Tr:CDS08403,GOA:A0A077WML1,InterPro:IPR001683,UniProtKB/TrEMBL:A0A077WML1,NCBI_GP:CDS08403.1;Name=CDS08403.1;gbkey=CDS;locus_tag=LRAMOSA09766;part=8;product=hypothetical protein;protein_id=CDS08403.1
 LK023325.1	EMBL	gene	44606	45878	.	-	.	ID=gene-LRAMOSA09767;Name=LRAMOSA09767;gbkey=Gene;gene_biotype=protein_coding;locus_tag=LRAMOSA09767
 LK023325.1	EMBL	three_prime_UTR	44606	44657	.	-	.	ID=id-LRAMOSA09767;Parent=gene-LRAMOSA09767;gbkey=3'UTR;locus_tag=LRAMOSA09767
-LK023325.1	EMBL	five_prime_UTR	45801	45878	.	-	.	ID=id-LRAMOSA09767-2;Parent=gene-LRAMOSA09767;gbkey=5'UTR;locus_tag=LRAMOSA09767;part=1/2
-LK023325.1	EMBL	five_prime_UTR	45621	45671	.	-	.	ID=id-LRAMOSA09767-2;Parent=gene-LRAMOSA09767;gbkey=5'UTR;locus_tag=LRAMOSA09767;part=2/2
+LK023325.1	EMBL	five_prime_UTR	45801	45878	.	-	.	ID=id-LRAMOSA09767-2;Parent=gene-LRAMOSA09767;gbkey=5'UTR;locus_tag=LRAMOSA09767;part=1
+LK023325.1	EMBL	five_prime_UTR	45621	45671	.	-	.	ID=id-LRAMOSA09767-2;Parent=gene-LRAMOSA09767;gbkey=5'UTR;locus_tag=LRAMOSA09767;part=2
 LK023325.1	EMBL	CDS	45521	45620	.	-	0	ID=cds-CDS08404.1;Parent=gene-LRAMOSA09767;Dbxref=EnsemblGenomes-Gn:LRAMOSA09767,EnsemblGenomes-Tr:CDS08404,InterPro:IPR025886,UniProtKB/TrEMBL:A0A077WMT1,NCBI_GP:CDS08404.1;Name=CDS08404.1;gbkey=CDS;locus_tag=LRAMOSA09767;part=1;product=hypothetical protein;protein_id=CDS08404.1
 LK023325.1	EMBL	CDS	45341	45471	.	-	2	ID=cds-CDS08404.1;Parent=gene-LRAMOSA09767;Dbxref=EnsemblGenomes-Gn:LRAMOSA09767,EnsemblGenomes-Tr:CDS08404,InterPro:IPR025886,UniProtKB/TrEMBL:A0A077WMT1,NCBI_GP:CDS08404.1;Name=CDS08404.1;gbkey=CDS;locus_tag=LRAMOSA09767;part=2;product=hypothetical protein;protein_id=CDS08404.1
 LK023325.1	EMBL	CDS	45158	45274	.	-	0	ID=cds-CDS08404.1;Parent=gene-LRAMOSA09767;Dbxref=EnsemblGenomes-Gn:LRAMOSA09767,EnsemblGenomes-Tr:CDS08404,InterPro:IPR025886,UniProtKB/TrEMBL:A0A077WMT1,NCBI_GP:CDS08404.1;Name=CDS08404.1;gbkey=CDS;locus_tag=LRAMOSA09767;part=3;product=hypothetical protein;protein_id=CDS08404.1
@@ -229,8 +229,8 @@ LK023325.1	EMBL	mRNA	45621	45878	.	-	.	ID=rna-LRAMOSA09767;Parent=gene-LRAMOSA09
 LK023325.1	EMBL	exon	45801	45878	.	-	.	ID=exon-LRAMOSA09767-1;Parent=rna-LRAMOSA09767;gbkey=mRNA;inference=protein motif:InterPro:IPR025886;locus_tag=LRAMOSA09767;part=1;product=hypothetical protein
 LK023325.1	EMBL	exon	45621	45671	.	-	.	ID=exon-LRAMOSA09767-2;Parent=rna-LRAMOSA09767;gbkey=mRNA;inference=protein motif:InterPro:IPR025886;locus_tag=LRAMOSA09767;part=2;product=hypothetical protein
 LK023325.1	EMBL	gene	45192	47172	.	+	.	ID=gene-LRAMOSA09768;Name=LRAMOSA09768;gbkey=Gene;gene_biotype=protein_coding;locus_tag=LRAMOSA09768
-LK023325.1	EMBL	five_prime_UTR	45192	45417	.	+	.	ID=id-LRAMOSA09768;Parent=gene-LRAMOSA09768;gbkey=5'UTR;locus_tag=LRAMOSA09768;part=1/2
-LK023325.1	EMBL	five_prime_UTR	45482	46342	.	+	.	ID=id-LRAMOSA09768;Parent=gene-LRAMOSA09768;gbkey=5'UTR;locus_tag=LRAMOSA09768;part=2/2
+LK023325.1	EMBL	five_prime_UTR	45192	45417	.	+	.	ID=id-LRAMOSA09768;Parent=gene-LRAMOSA09768;gbkey=5'UTR;locus_tag=LRAMOSA09768;part=1
+LK023325.1	EMBL	five_prime_UTR	45482	46342	.	+	.	ID=id-LRAMOSA09768;Parent=gene-LRAMOSA09768;gbkey=5'UTR;locus_tag=LRAMOSA09768;part=2
 LK023325.1	EMBL	five_prime_UTR	46157	46342	.	+	.	ID=id-LRAMOSA09768-2;Parent=gene-LRAMOSA09768;gbkey=5'UTR;locus_tag=LRAMOSA09768
 LK023325.1	EMBL	three_prime_UTR	47004	47172	.	+	.	ID=id-LRAMOSA09768-3;Parent=gene-LRAMOSA09768;gbkey=3'UTR;locus_tag=LRAMOSA09768
 LK023325.1	EMBL	mRNA	46157	47172	.	+	.	ID=rna-LRAMOSA09768;Parent=gene-LRAMOSA09768;gbkey=mRNA;inference=protein motif:InterPro:IPR001683;locus_tag=LRAMOSA09768;product=Putative Sorting nexin-3
@@ -280,9 +280,9 @@ LK023325.1	EMBL	exon	49848	50279	.	+	.	ID=exon-LRAMOSA09771-1;Parent=rna-LRAMOSA
 LK023325.1	EMBL	CDS	49848	50279	.	+	0	ID=cds-CDS08408.1;Parent=rna-LRAMOSA09771;Dbxref=EnsemblGenomes-Gn:LRAMOSA09771,EnsemblGenomes-Tr:CDS08408,UniProtKB/TrEMBL:A0A077WML6,NCBI_GP:CDS08408.1;Name=CDS08408.1;gbkey=CDS;locus_tag=LRAMOSA09771;product=hypothetical protein;protein_id=CDS08408.1
 LK023325.1	EMBL	gene	50265	52064	.	-	.	ID=gene-LRAMOSA09772;Name=LRAMOSA09772;gbkey=Gene;gene_biotype=protein_coding;locus_tag=LRAMOSA09772
 LK023325.1	EMBL	three_prime_UTR	50265	50521	.	-	.	ID=id-LRAMOSA09772;Parent=gene-LRAMOSA09772;gbkey=3'UTR;locus_tag=LRAMOSA09772
-LK023325.1	EMBL	five_prime_UTR	51999	52064	.	-	.	ID=id-LRAMOSA09772-2;Parent=gene-LRAMOSA09772;gbkey=5'UTR;locus_tag=LRAMOSA09772;part=1/3
-LK023325.1	EMBL	five_prime_UTR	51875	51935	.	-	.	ID=id-LRAMOSA09772-2;Parent=gene-LRAMOSA09772;gbkey=5'UTR;locus_tag=LRAMOSA09772;part=2/3
-LK023325.1	EMBL	five_prime_UTR	51555	51823	.	-	.	ID=id-LRAMOSA09772-2;Parent=gene-LRAMOSA09772;gbkey=5'UTR;locus_tag=LRAMOSA09772;part=3/3
+LK023325.1	EMBL	five_prime_UTR	51999	52064	.	-	.	ID=id-LRAMOSA09772-2;Parent=gene-LRAMOSA09772;gbkey=5'UTR;locus_tag=LRAMOSA09772;part=1
+LK023325.1	EMBL	five_prime_UTR	51875	51935	.	-	.	ID=id-LRAMOSA09772-2;Parent=gene-LRAMOSA09772;gbkey=5'UTR;locus_tag=LRAMOSA09772;part=2
+LK023325.1	EMBL	five_prime_UTR	51555	51823	.	-	.	ID=id-LRAMOSA09772-2;Parent=gene-LRAMOSA09772;gbkey=5'UTR;locus_tag=LRAMOSA09772;part=3
 LK023325.1	EMBL	five_prime_UTR	52040	52064	.	-	.	ID=id-LRAMOSA09772-3;Parent=gene-LRAMOSA09772;gbkey=5'UTR;locus_tag=LRAMOSA09772
 LK023325.1	EMBL	CDS	51147	51554	.	-	0	ID=cds-CDS08410.1;Parent=gene-LRAMOSA09772;Dbxref=EnsemblGenomes-Gn:LRAMOSA09772,EnsemblGenomes-Tr:CDS08410,GOA:A0A077WLS8,InterPro:IPR004821,InterPro:IPR014729,UniProtKB/TrEMBL:A0A077WLS8,NCBI_GP:CDS08410.1;Name=CDS08410.1;gbkey=CDS;locus_tag=LRAMOSA09772;part=1;product=hypothetical protein;protein_id=CDS08410.1
 LK023325.1	EMBL	CDS	51017	51094	.	-	0	ID=cds-CDS08410.1;Parent=gene-LRAMOSA09772;Dbxref=EnsemblGenomes-Gn:LRAMOSA09772,EnsemblGenomes-Tr:CDS08410,GOA:A0A077WLS8,InterPro:IPR004821,InterPro:IPR014729,UniProtKB/TrEMBL:A0A077WLS8,NCBI_GP:CDS08410.1;Name=CDS08410.1;gbkey=CDS;locus_tag=LRAMOSA09772;part=2;product=hypothetical protein;protein_id=CDS08410.1
@@ -549,8 +549,8 @@ LK023325.1	EMBL	exon	85754	85865	.	-	.	ID=exon-LRAMOSA09790-4;Parent=rna-LRAMOSA
 LK023325.1	EMBL	CDS	86203	86253	.	-	0	ID=cds-CDS08428.1;Parent=rna-LRAMOSA09790;Dbxref=EnsemblGenomes-Gn:LRAMOSA09790,EnsemblGenomes-Tr:CDS08428,UniProtKB/TrEMBL:A0A077WMN6,NCBI_GP:CDS08428.1;Name=CDS08428.1;gbkey=CDS;locus_tag=LRAMOSA09790;part=1;product=hypothetical protein;protein_id=CDS08428.1
 LK023325.1	EMBL	CDS	85866	86147	.	-	0	ID=cds-CDS08428.1;Parent=rna-LRAMOSA09790;Dbxref=EnsemblGenomes-Gn:LRAMOSA09790,EnsemblGenomes-Tr:CDS08428,UniProtKB/TrEMBL:A0A077WMN6,NCBI_GP:CDS08428.1;Name=CDS08428.1;gbkey=CDS;locus_tag=LRAMOSA09790;part=2;product=hypothetical protein;protein_id=CDS08428.1
 LK023325.1	EMBL	gene	86684	89330	.	+	.	ID=gene-LRAMOSA09791;Name=LRAMOSA09791;gbkey=Gene;gene_biotype=protein_coding;locus_tag=LRAMOSA09791
-LK023325.1	EMBL	three_prime_UTR	89030	89031	.	+	.	ID=id-LRAMOSA09791;Parent=gene-LRAMOSA09791;gbkey=3'UTR;locus_tag=LRAMOSA09791;part=1/2
-LK023325.1	EMBL	three_prime_UTR	89088	89330	.	+	.	ID=id-LRAMOSA09791;Parent=gene-LRAMOSA09791;gbkey=3'UTR;locus_tag=LRAMOSA09791;part=2/2
+LK023325.1	EMBL	three_prime_UTR	89030	89031	.	+	.	ID=id-LRAMOSA09791;Parent=gene-LRAMOSA09791;gbkey=3'UTR;locus_tag=LRAMOSA09791;part=1
+LK023325.1	EMBL	three_prime_UTR	89088	89330	.	+	.	ID=id-LRAMOSA09791;Parent=gene-LRAMOSA09791;gbkey=3'UTR;locus_tag=LRAMOSA09791;part=2
 LK023325.1	EMBL	mRNA	86684	89029	.	+	.	ID=rna-LRAMOSA09791;Parent=gene-LRAMOSA09791;gbkey=mRNA;inference=protein motif:InterPro:IPR007219;locus_tag=LRAMOSA09791;product=hypothetical protein
 LK023325.1	EMBL	exon	86684	89029	.	+	.	ID=exon-LRAMOSA09791-1;Parent=rna-LRAMOSA09791;gbkey=mRNA;inference=protein motif:InterPro:IPR007219;locus_tag=LRAMOSA09791;product=hypothetical protein
 LK023325.1	EMBL	CDS	86684	89029	.	+	0	ID=cds-CDS08429.1;Parent=rna-LRAMOSA09791;Dbxref=EnsemblGenomes-Gn:LRAMOSA09791,EnsemblGenomes-Tr:CDS08429,GOA:A0A077WMW1,InterPro:IPR007219,UniProtKB/TrEMBL:A0A077WMW1,NCBI_GP:CDS08429.1;Name=CDS08429.1;gbkey=CDS;locus_tag=LRAMOSA09791;product=hypothetical protein;protein_id=CDS08429.1
@@ -1385,8 +1385,8 @@ LK023325.1	EMBL	exon	221576	222022	.	-	.	ID=exon-LRAMOSA09843-1;Parent=rna-LRAMO
 LK023325.1	EMBL	CDS	221576	222022	.	-	0	ID=cds-CDS08481.1;Parent=rna-LRAMOSA09843;Dbxref=EnsemblGenomes-Gn:LRAMOSA09843,EnsemblGenomes-Tr:CDS08481,UniProtKB/TrEMBL:A0A077WLD6,NCBI_GP:CDS08481.1;Name=CDS08481.1;gbkey=CDS;locus_tag=LRAMOSA09843;product=hypothetical protein;protein_id=CDS08481.1
 LK023325.1	EMBL	gene	223399	224332	.	-	.	ID=gene-LRAMOSA09844;Name=LRAMOSA09844;gbkey=Gene;gene_biotype=protein_coding;locus_tag=LRAMOSA09844
 LK023325.1	EMBL	three_prime_UTR	223399	223496	.	-	.	ID=id-LRAMOSA09844;Parent=gene-LRAMOSA09844;gbkey=3'UTR;locus_tag=LRAMOSA09844
-LK023325.1	EMBL	five_prime_UTR	224286	224332	.	-	.	ID=id-LRAMOSA09844-2;Parent=gene-LRAMOSA09844;gbkey=5'UTR;locus_tag=LRAMOSA09844;part=1/2
-LK023325.1	EMBL	five_prime_UTR	224110	224222	.	-	.	ID=id-LRAMOSA09844-2;Parent=gene-LRAMOSA09844;gbkey=5'UTR;locus_tag=LRAMOSA09844;part=2/2
+LK023325.1	EMBL	five_prime_UTR	224286	224332	.	-	.	ID=id-LRAMOSA09844-2;Parent=gene-LRAMOSA09844;gbkey=5'UTR;locus_tag=LRAMOSA09844;part=1
+LK023325.1	EMBL	five_prime_UTR	224110	224222	.	-	.	ID=id-LRAMOSA09844-2;Parent=gene-LRAMOSA09844;gbkey=5'UTR;locus_tag=LRAMOSA09844;part=2
 LK023325.1	EMBL	CDS	224104	224109	.	-	0	ID=cds-CDS08482.1;Parent=gene-LRAMOSA09844;Dbxref=EnsemblGenomes-Gn:LRAMOSA09844,EnsemblGenomes-Tr:CDS08482,GOA:A0A077WP54,UniProtKB/TrEMBL:A0A077WP54,NCBI_GP:CDS08482.1;Name=CDS08482.1;gbkey=CDS;locus_tag=LRAMOSA09844;part=1;product=hypothetical protein;protein_id=CDS08482.1
 LK023325.1	EMBL	CDS	223746	224027	.	-	0	ID=cds-CDS08482.1;Parent=gene-LRAMOSA09844;Dbxref=EnsemblGenomes-Gn:LRAMOSA09844,EnsemblGenomes-Tr:CDS08482,GOA:A0A077WP54,UniProtKB/TrEMBL:A0A077WP54,NCBI_GP:CDS08482.1;Name=CDS08482.1;gbkey=CDS;locus_tag=LRAMOSA09844;part=2;product=hypothetical protein;protein_id=CDS08482.1
 LK023325.1	EMBL	CDS	223497	223697	.	-	0	ID=cds-CDS08482.1;Parent=gene-LRAMOSA09844;Dbxref=EnsemblGenomes-Gn:LRAMOSA09844,EnsemblGenomes-Tr:CDS08482,GOA:A0A077WP54,UniProtKB/TrEMBL:A0A077WP54,NCBI_GP:CDS08482.1;Name=CDS08482.1;gbkey=CDS;locus_tag=LRAMOSA09844;part=3;product=hypothetical protein;protein_id=CDS08482.1
@@ -1456,8 +1456,8 @@ LK023325.1	EMBL	CDS	230934	231208	.	-	0	ID=cds-CDS08486.1;Parent=rna-LRAMOSA0984
 LK023325.1	EMBL	CDS	230543	230883	.	-	1	ID=cds-CDS08486.1;Parent=rna-LRAMOSA09848;Dbxref=EnsemblGenomes-Gn:LRAMOSA09848,EnsemblGenomes-Tr:CDS08486,GOA:A0A077WLE0,InterPro:IPR000308,InterPro:IPR023409,InterPro:IPR023410,UniProtKB/TrEMBL:A0A077WLE0,NCBI_GP:CDS08486.1;Name=CDS08486.1;gbkey=CDS;locus_tag=LRAMOSA09848;part=6;product=Putative 14-3-3 family protein 7;protein_id=CDS08486.1
 LK023325.1	EMBL	CDS	230425	230489	.	-	2	ID=cds-CDS08486.1;Parent=rna-LRAMOSA09848;Dbxref=EnsemblGenomes-Gn:LRAMOSA09848,EnsemblGenomes-Tr:CDS08486,GOA:A0A077WLE0,InterPro:IPR000308,InterPro:IPR023409,InterPro:IPR023410,UniProtKB/TrEMBL:A0A077WLE0,NCBI_GP:CDS08486.1;Name=CDS08486.1;gbkey=CDS;locus_tag=LRAMOSA09848;part=7;product=Putative 14-3-3 family protein 7;protein_id=CDS08486.1
 LK023325.1	EMBL	gene	233073	235664	.	+	.	ID=gene-LRAMOSA09849;Name=LRAMOSA09849;gbkey=Gene;gene_biotype=protein_coding;locus_tag=LRAMOSA09849
-LK023325.1	EMBL	three_prime_UTR	235183	235232	.	+	.	ID=id-LRAMOSA09849;Parent=gene-LRAMOSA09849;gbkey=3'UTR;locus_tag=LRAMOSA09849;part=1/2
-LK023325.1	EMBL	three_prime_UTR	235301	235664	.	+	.	ID=id-LRAMOSA09849;Parent=gene-LRAMOSA09849;gbkey=3'UTR;locus_tag=LRAMOSA09849;part=2/2
+LK023325.1	EMBL	three_prime_UTR	235183	235232	.	+	.	ID=id-LRAMOSA09849;Parent=gene-LRAMOSA09849;gbkey=3'UTR;locus_tag=LRAMOSA09849;part=1
+LK023325.1	EMBL	three_prime_UTR	235301	235664	.	+	.	ID=id-LRAMOSA09849;Parent=gene-LRAMOSA09849;gbkey=3'UTR;locus_tag=LRAMOSA09849;part=2
 LK023325.1	EMBL	three_prime_UTR	235550	235664	.	+	.	ID=id-LRAMOSA09849-2;Parent=gene-LRAMOSA09849;gbkey=3'UTR;locus_tag=LRAMOSA09849
 LK023325.1	EMBL	mRNA	233073	235664	.	+	.	ID=rna-LRAMOSA09849;Parent=gene-LRAMOSA09849;gbkey=mRNA;inference=protein motif:InterPro:IPR020558;locus_tag=LRAMOSA09849;product=Putative Dihydroxy-acid dehydratase
 LK023325.1	EMBL	exon	233073	233104	.	+	.	ID=exon-LRAMOSA09849-1;Parent=rna-LRAMOSA09849;gbkey=mRNA;inference=protein motif:InterPro:IPR020558;locus_tag=LRAMOSA09849;part=1;product=Putative Dihydroxy-acid dehydratase
@@ -1750,8 +1750,8 @@ LK023325.1	EMBL	CDS	277599	277770	.	-	1	ID=cds-CDS08506.1;Parent=rna-LRAMOSA0986
 LK023325.1	EMBL	CDS	277429	277533	.	-	0	ID=cds-CDS08506.1;Parent=rna-LRAMOSA09867;Dbxref=EnsemblGenomes-Gn:LRAMOSA09867,EnsemblGenomes-Tr:CDS08506,GOA:A0A077WLF8,InterPro:IPR020946,InterPro:IPR023753,UniProtKB/TrEMBL:A0A077WLF8,NCBI_GP:CDS08506.1;Name=CDS08506.1;gbkey=CDS;locus_tag=LRAMOSA09867;part=8;product=hypothetical protein;protein_id=CDS08506.1
 LK023325.1	EMBL	gene	280295	281390	.	-	.	ID=gene-LRAMOSA09868;Name=LRAMOSA09868;gbkey=Gene;gene_biotype=protein_coding;locus_tag=LRAMOSA09868
 LK023325.1	EMBL	three_prime_UTR	280295	280342	.	-	.	ID=id-LRAMOSA09868;Parent=gene-LRAMOSA09868;gbkey=3'UTR;locus_tag=LRAMOSA09868
-LK023325.1	EMBL	five_prime_UTR	281211	281390	.	-	.	ID=id-LRAMOSA09868-2;Parent=gene-LRAMOSA09868;gbkey=5'UTR;locus_tag=LRAMOSA09868;part=1/2
-LK023325.1	EMBL	five_prime_UTR	281125	281146	.	-	.	ID=id-LRAMOSA09868-2;Parent=gene-LRAMOSA09868;gbkey=5'UTR;locus_tag=LRAMOSA09868;part=2/2
+LK023325.1	EMBL	five_prime_UTR	281211	281390	.	-	.	ID=id-LRAMOSA09868-2;Parent=gene-LRAMOSA09868;gbkey=5'UTR;locus_tag=LRAMOSA09868;part=1
+LK023325.1	EMBL	five_prime_UTR	281125	281146	.	-	.	ID=id-LRAMOSA09868-2;Parent=gene-LRAMOSA09868;gbkey=5'UTR;locus_tag=LRAMOSA09868;part=2
 LK023325.1	EMBL	CDS	280924	281124	.	-	0	ID=cds-CDS08507.1;Parent=gene-LRAMOSA09868;Dbxref=EnsemblGenomes-Gn:LRAMOSA09868,EnsemblGenomes-Tr:CDS08507,InterPro:IPR029063,UniProtKB/TrEMBL:A0A077WP75,NCBI_GP:CDS08507.1;Name=CDS08507.1;gbkey=CDS;locus_tag=LRAMOSA09868;part=1;product=hypothetical protein;protein_id=CDS08507.1
 LK023325.1	EMBL	CDS	280521	280867	.	-	0	ID=cds-CDS08507.1;Parent=gene-LRAMOSA09868;Dbxref=EnsemblGenomes-Gn:LRAMOSA09868,EnsemblGenomes-Tr:CDS08507,InterPro:IPR029063,UniProtKB/TrEMBL:A0A077WP75,NCBI_GP:CDS08507.1;Name=CDS08507.1;gbkey=CDS;locus_tag=LRAMOSA09868;part=2;product=hypothetical protein;protein_id=CDS08507.1
 LK023325.1	EMBL	CDS	280343	280469	.	-	1	ID=cds-CDS08507.1;Parent=gene-LRAMOSA09868;Dbxref=EnsemblGenomes-Gn:LRAMOSA09868,EnsemblGenomes-Tr:CDS08507,InterPro:IPR029063,UniProtKB/TrEMBL:A0A077WP75,NCBI_GP:CDS08507.1;Name=CDS08507.1;gbkey=CDS;locus_tag=LRAMOSA09868;part=3;product=hypothetical protein;protein_id=CDS08507.1
@@ -1914,8 +1914,8 @@ LK023325.1	EMBL	CDS	313205	313337	.	+	1	ID=cds-CDS08517.1;Parent=rna-LRAMOSA0987
 LK023325.1	EMBL	CDS	313392	313619	.	+	0	ID=cds-CDS08517.1;Parent=rna-LRAMOSA09878;Dbxref=EnsemblGenomes-Gn:LRAMOSA09878,EnsemblGenomes-Tr:CDS08517,InterPro:IPR017853,UniProtKB/TrEMBL:A0A077WP85,NCBI_GP:CDS08517.1;Name=CDS08517.1;gbkey=CDS;locus_tag=LRAMOSA09878;part=6;product=hypothetical protein;protein_id=CDS08517.1
 LK023325.1	EMBL	CDS	313677	313772	.	+	0	ID=cds-CDS08517.1;Parent=rna-LRAMOSA09878;Dbxref=EnsemblGenomes-Gn:LRAMOSA09878,EnsemblGenomes-Tr:CDS08517,InterPro:IPR017853,UniProtKB/TrEMBL:A0A077WP85,NCBI_GP:CDS08517.1;Name=CDS08517.1;gbkey=CDS;locus_tag=LRAMOSA09878;part=7;product=hypothetical protein;protein_id=CDS08517.1
 LK023325.1	EMBL	gene	313923	316124	.	+	.	ID=gene-LRAMOSA09879;Name=LRAMOSA09879;gbkey=Gene;gene_biotype=protein_coding;locus_tag=LRAMOSA09879
-LK023325.1	EMBL	five_prime_UTR	313923	314034	.	+	.	ID=id-LRAMOSA09879;Parent=gene-LRAMOSA09879;gbkey=5'UTR;locus_tag=LRAMOSA09879;part=1/2
-LK023325.1	EMBL	five_prime_UTR	314086	314201	.	+	.	ID=id-LRAMOSA09879;Parent=gene-LRAMOSA09879;gbkey=5'UTR;locus_tag=LRAMOSA09879;part=2/2
+LK023325.1	EMBL	five_prime_UTR	313923	314034	.	+	.	ID=id-LRAMOSA09879;Parent=gene-LRAMOSA09879;gbkey=5'UTR;locus_tag=LRAMOSA09879;part=1
+LK023325.1	EMBL	five_prime_UTR	314086	314201	.	+	.	ID=id-LRAMOSA09879;Parent=gene-LRAMOSA09879;gbkey=5'UTR;locus_tag=LRAMOSA09879;part=2
 LK023325.1	EMBL	mRNA	314202	316124	.	+	.	ID=rna-LRAMOSA09879;Parent=gene-LRAMOSA09879;gbkey=mRNA;inference=protein motif:InterPro:IPR019734;locus_tag=LRAMOSA09879;product=hypothetical protein
 LK023325.1	EMBL	exon	314202	314763	.	+	.	ID=exon-LRAMOSA09879-1;Parent=rna-LRAMOSA09879;gbkey=mRNA;inference=protein motif:InterPro:IPR019734;locus_tag=LRAMOSA09879;part=1;product=hypothetical protein
 LK023325.1	EMBL	exon	314818	316124	.	+	.	ID=exon-LRAMOSA09879-2;Parent=rna-LRAMOSA09879;gbkey=mRNA;inference=protein motif:InterPro:IPR019734;locus_tag=LRAMOSA09879;part=2;product=hypothetical protein
@@ -2207,8 +2207,8 @@ LK023325.1	EMBL	CDS	358847	359047	.	-	0	ID=cds-CDS08536.1;Parent=rna-LRAMOSA0989
 LK023325.1	EMBL	CDS	358538	358792	.	-	0	ID=cds-CDS08536.1;Parent=rna-LRAMOSA09897;Dbxref=EnsemblGenomes-Gn:LRAMOSA09897,EnsemblGenomes-Tr:CDS08536,InterPro:IPR002372,InterPro:IPR011047,InterPro:IPR018391,UniProtKB/TrEMBL:A0A077WLI1,NCBI_GP:CDS08536.1;Name=CDS08536.1;gbkey=CDS;locus_tag=LRAMOSA09897;part=3;product=hypothetical protein;protein_id=CDS08536.1
 LK023325.1	EMBL	gene	359638	360414	.	-	.	ID=gene-LRAMOSA09898;Name=LRAMOSA09898;gbkey=Gene;gene_biotype=protein_coding;locus_tag=LRAMOSA09898
 LK023325.1	EMBL	three_prime_UTR	359638	359695	.	-	.	ID=id-LRAMOSA09898;Parent=gene-LRAMOSA09898;gbkey=3'UTR;locus_tag=LRAMOSA09898
-LK023325.1	EMBL	five_prime_UTR	360352	360414	.	-	.	ID=id-LRAMOSA09898-2;Parent=gene-LRAMOSA09898;gbkey=5'UTR;locus_tag=LRAMOSA09898;part=1/2
-LK023325.1	EMBL	five_prime_UTR	360253	360300	.	-	.	ID=id-LRAMOSA09898-2;Parent=gene-LRAMOSA09898;gbkey=5'UTR;locus_tag=LRAMOSA09898;part=2/2
+LK023325.1	EMBL	five_prime_UTR	360352	360414	.	-	.	ID=id-LRAMOSA09898-2;Parent=gene-LRAMOSA09898;gbkey=5'UTR;locus_tag=LRAMOSA09898;part=1
+LK023325.1	EMBL	five_prime_UTR	360253	360300	.	-	.	ID=id-LRAMOSA09898-2;Parent=gene-LRAMOSA09898;gbkey=5'UTR;locus_tag=LRAMOSA09898;part=2
 LK023325.1	EMBL	CDS	360058	360252	.	-	0	ID=cds-CDS08537.1;Parent=gene-LRAMOSA09898;Dbxref=EnsemblGenomes-Gn:LRAMOSA09898,EnsemblGenomes-Tr:CDS08537,InterPro:IPR029058,UniProtKB/TrEMBL:A0A077WPA1,NCBI_GP:CDS08537.1;Name=CDS08537.1;gbkey=CDS;locus_tag=LRAMOSA09898;part=1;product=hypothetical protein;protein_id=CDS08537.1
 LK023325.1	EMBL	CDS	359931	359993	.	-	0	ID=cds-CDS08537.1;Parent=gene-LRAMOSA09898;Dbxref=EnsemblGenomes-Gn:LRAMOSA09898,EnsemblGenomes-Tr:CDS08537,InterPro:IPR029058,UniProtKB/TrEMBL:A0A077WPA1,NCBI_GP:CDS08537.1;Name=CDS08537.1;gbkey=CDS;locus_tag=LRAMOSA09898;part=2;product=hypothetical protein;protein_id=CDS08537.1
 LK023325.1	EMBL	CDS	359696	359884	.	-	0	ID=cds-CDS08537.1;Parent=gene-LRAMOSA09898;Dbxref=EnsemblGenomes-Gn:LRAMOSA09898,EnsemblGenomes-Tr:CDS08537,InterPro:IPR029058,UniProtKB/TrEMBL:A0A077WPA1,NCBI_GP:CDS08537.1;Name=CDS08537.1;gbkey=CDS;locus_tag=LRAMOSA09898;part=3;product=hypothetical protein;protein_id=CDS08537.1
