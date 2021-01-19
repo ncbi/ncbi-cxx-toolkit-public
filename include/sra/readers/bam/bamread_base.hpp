@@ -125,7 +125,7 @@ public:
                   EDiagSev severity = eDiag_Error);
     CBamException(const CBamException& other);
 
-    ~CBamException(void) throw();
+    ~CBamException(void) noexcept;
 
     /// Report "non-standard" attributes.
     virtual void ReportExtra(ostream& out) const;
