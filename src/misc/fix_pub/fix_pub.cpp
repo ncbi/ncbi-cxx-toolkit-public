@@ -974,7 +974,30 @@ void CPubFixing::FixPubEquiv(CPub_equiv& pub_equiv)
 
                 if (new_cit_art.NotEmpty()) {
 
-                    if (TenAuthorsProcess(*cit_art, *new_cit_art, m_err_log)) {
+                    bool new_cit_is_valid(false);
+                    if (CAuthListValidator::enabled) {
+                        CAuthListValidator::EOutcome outcome = m_authlist_validator.validate(*cit_art, *new_cit_art);
+                        switch (outcome) {
+                        case CAuthListValidator::eAccept_pubmed:
+                            new_cit_is_valid = true;
+                            break;
+                        case CAuthListValidator::eKeep_genbank:
+                            new_cit_art->SetAuthors(cit_art->SetAuthors());
+                            cit_art->ResetAuthors();
+                            new_cit_is_valid = true;
+                            break;
+                        case CAuthListValidator::eFailed_validation:
+                            new_cit_is_valid = false;
+                            break;
+                        default:
+                            throw logic_error("Invalid outcome returned by CAuthListValidator::validate(): " + std::to_string(outcome));
+                        }
+                    }
+                    else {
+                        new_cit_is_valid = TenAuthorsProcess(*cit_art, *new_cit_art, m_err_log);
+                    }
+
+                    if (new_cit_is_valid) {
                         if (pmids.empty()) {
                             CRef<CPub> pmid_pub(new CPub);
                             pmids.push_back(pmid_pub);
@@ -1165,22 +1188,101 @@ CRef<CCit_art> CPubFixing::FetchPubPmId(TEntrezId pmid)
     return cit_art;
 }
 
-bool CAuthorsValidatorByPubYear::configured = false;
-void CAuthorsValidatorByPubYear::Configure(CNcbiRegistry& cfg, string& section)
+bool CAuthListValidator::enabled = false;
+bool CAuthListValidator::configured = false;
+double CAuthListValidator::cfg_matched_to_min = 0.3333;
+double CAuthListValidator::cfg_removed_to_gb = 0.3333;
+void CAuthListValidator::Configure(const CNcbiRegistry& cfg, const string& section)
 {
+    enabled = cfg.GetBool(section, "enabled", enabled);
+    cfg_matched_to_min = cfg.GetDouble(section, "matched_to_min", cfg_matched_to_min);
+    cfg_removed_to_gb = cfg.GetDouble(section, "removed_to_gb", cfg_removed_to_gb);
     configured = true;
 }
 
-CAuthorsValidatorByPubYear::CAuthorsValidatorByPubYear(int pub_year_, 
-                                                       const vector<string>& gb_lastnames, 
-                                                       const vector<string>& pm_lastnames)
-    : pub_year(pub_year_),
-      removed(gb_lastnames.begin(), gb_lastnames.end()), 
-      added(pm_lastnames.begin(), pm_lastnames.end())
+CAuthListValidator::CAuthListValidator()
+    : outcome(eNotSet), pub_year(0)
 {
     if (! configured) {
-        throw logic_error("Should call static Configure() before creating CAuthorsValidatorByPubYear object");
+        Configure(CNcbiApplication::Instance()->GetConfig(), "auth_list_validator");
     }
+}
+
+CAuthListValidator::EOutcome CAuthListValidator::validate(const CCit_art& gb_art, const CCit_art& pm_art)
+{
+    outcome = eNotSet;
+    pub_year = 0;
+    gb_type = CAuth_list::C_Names::SelectionName(gb_art.GetAuthors().GetNames().Which());
+    get_lastnames(gb_art.GetAuthors(), removed);
+    pm_type = CAuth_list::C_Names::SelectionName(pm_art.GetAuthors().GetNames().Which());
+    get_lastnames(pm_art.GetAuthors(), added);
+    pub_year = pm_art.GetFrom().GetJournal().GetImp().GetDate().GetStd().GetYear();
+    if (pub_year < 1900 || pub_year > 3000) {
+        throw logic_error("Publication from PubMed has invalid year: " + std::to_string(pub_year));
+    }
+    matched.clear();
+    compare_lastnames();
+
+    // check minimum required # of matching authors
+    if (double(cnt_matched) / cnt_min < cfg_matched_to_min) {
+        //msg
+        outcome = eFailed_validation;
+        return outcome;
+    }
+    // determine outcome according to ID-6514 (see fix_pub.hpp)
+    if (pub_year > 1999) {
+        if (double(cnt_removed) / cnt_gb > cfg_removed_to_gb ) {
+            //msg: Warning: PubMed article author count is significantly less than the original author count
+        }
+        //msg
+        outcome = eAccept_pubmed;
+    }
+    else if (pub_year > 1995) {
+        if (cnt_gb > 25) {
+            //msg
+            outcome = eKeep_genbank;
+        }
+        else {
+            //msg
+            outcome = eAccept_pubmed;
+        }
+    }
+    else { // pub_year < 1996
+        if (cnt_gb > 10) {
+            //msg
+            outcome = eKeep_genbank;
+        }
+        else {
+            //msg
+            outcome = eAccept_pubmed;
+        }
+    }
+    return outcome;
+}
+
+void CAuthListValidator::DebugDump(CNcbiOstream& out) const
+{
+    out << "\n--- Debug Dump of CAuthListValidator object ---\n";
+    out << "pub_year: " << pub_year << "\n";
+    out << "GB author list type: " << gb_type << "; # of entries: " << cnt_gb << "\n";
+    out << "PM author list type: " << pm_type << "; # of entries: " << cnt_pm << "\n";
+    dumplist("Matched", matched, out);
+    dumplist("Added", added, out);
+    dumplist("Removed", removed, out);
+    const char* outcome_names[] = {"NotSet", "Failed_validation", "Accept_pubmed", "Keep_genbank"};
+    out << "Outcome reported: " << outcome_names[outcome] << "(" << outcome << ")\n";
+    out << "--- End of Debug Dump of CAuthListValidator object ---\n\n";
+}
+
+void CAuthListValidator::dumplist(const char* hdr, const list<string>& lst, CNcbiOstream& out) const
+{
+    out << lst.size() << " " << hdr << " authors:\n";
+    for (const auto& a : lst)
+        out << "    " << a << "\n";
+}
+
+void CAuthListValidator::compare_lastnames()
+{
     auto gbit = removed.begin();
     while (gbit != removed.end()) {
         list<string>::iterator gbnext(gbit);
@@ -1198,32 +1300,55 @@ CAuthorsValidatorByPubYear::CAuthorsValidatorByPubYear(int pub_year_,
     cnt_added = added.size();
     cnt_gb = cnt_matched + cnt_removed;
     cnt_pm = cnt_matched + cnt_added;
+    cnt_min = min(cnt_gb, cnt_pm);
 }
 
-CAuthorsValidatorByPubYear::EOutcome CAuthorsValidatorByPubYear::validate()
+
+void CAuthListValidator::get_lastnames(const CAuth_list& authors, list<string>& lastnames)
 {
-    // determine outcome according to ID-6514 (see fix_pub.hpp)
-    if (pub_year > 1999) {
-        return eAccept_pubmed;
+    //cout << "... get_lastnames()\n";
+    lastnames.clear();
+    switch (authors.GetNames().Which()) {
+    case CAuth_list::C_Names::e_Std:
+        get_lastnames(authors.GetNames().GetStd(), lastnames);
+        break;
+    case CAuth_list::C_Names::e_Ml:
+        {{
+            CRef< CAuth_list > authlist_std;
+            authlist_std->Assign(authors);
+            authlist_std->ConvertMlToStandard();
+            get_lastnames(authlist_std->GetNames().GetStd(), lastnames);
+        }}
+        break;
+    case CAuth_list::C_Names::e_Str:
+        get_lastnames(authors.GetNames().GetStr(), lastnames);
+        break;
+    default:
+        throw logic_error("Unexpected CAuth_list::C_Name choice: " + CAuth_list::C_Names::SelectionName(authors.GetNames().Which()));
     }
-    else if (pub_year > 1995) {
-        if (cnt_gb > 25) {
-            return eKeep_genbank;
-        }
-        else {
-            return eAccept_pubmed;
-        }
-    }
-    else { // pub_year < 1996
-        if (cnt_gb > 10) {
-            return eKeep_genbank;
-        }
-        else {
-            return eAccept_pubmed;
+}
+
+void CAuthListValidator::get_lastnames(const CAuth_list::C_Names::TStd& authors, list<string>& lastnames)
+{
+    for (auto& name : authors) {
+        if (name->IsSetName() && name->GetName().IsName() && name->GetName().GetName().IsSetLast()) {
+            string lname(name->GetName().GetName().GetLast());
+            lastnames.push_back(NStr::ToLower(lname));
         }
     }
-    // we shouldn't be here
-    throw logic_error("CAuthorsValidatorByPubYear::validate() - we shouldn't be here!");
+}
+
+void CAuthListValidator::get_lastnames(const CAuth_list::C_Names::TStr& authors, list<string>& lastnames)
+{
+    //cout << "... str_to_lastnames()\n"
+    //    << "    # of authors in input: " << authors.size() << "\n";
+    const char* alpha = "abcdefghijklmnopqrstuvwxyz";
+    for (auto auth : authors) {
+        //cout << "...   Parsing: " << auth << "\n";
+        size_t eow = NStr::ToLower(auth).find_first_not_of(alpha);
+        //cout << "...   extracting substring of length " << eow << ": " << auth.substr(0, eow) << ";\n";
+        lastnames.push_back(auth.substr(0, eow));
+    }
 }
 
 END_SCOPE(objects)

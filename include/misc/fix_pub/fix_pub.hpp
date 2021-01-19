@@ -103,29 +103,50 @@ Log the author lists: Original vs Pubmed
 
 We may have to tweak things a bit further, but this is a good start.
 -------------------------------------------------------------------------------*/
-class CAuthorsValidatorByPubYear {
+
+class CAuthListValidator
+{
 public:
     enum EOutcome {
-        eInvalid,
+        eNotSet = 0,
+        eFailed_validation,
         eAccept_pubmed,
         eKeep_genbank
     };
-    static void Configure(CNcbiRegistry& cfg, string& section);
-    CAuthorsValidatorByPubYear(int pub_year, const vector<string>& gb_lastnames, const vector<string>& pm_lastnames);
-    EOutcome validate();
+    static void Configure(const CNcbiRegistry& cfg, const string& section);
+    // If true, FixPubEquiv() will use this class to validate authors list
+    static bool enabled;
+    CAuthListValidator();
+    EOutcome validate(const CCit_art& gb_art, const CCit_art& pm_art);
+    void DebugDump(CNcbiOstream& out) const;
+    // utility method
+    static void get_lastnames(const CAuth_list& authors, list<string>& lastnames);
     
     // public vars
+    EOutcome outcome;
     int pub_year;
     int cnt_gb;
     int cnt_pm;
     int cnt_matched;
-    int cnt_added; // new from pubmed list
-    int cnt_removed; // not matched in genbank list
+    int cnt_added;      // new from pubmed list
+    int cnt_removed;    // not matched in genbank list
+    int cnt_min;        // minimum # in GB/PM list, use as a base for ration
     list<string> matched;
     list<string> removed;
     list<string> added;
+    string gb_type;
+    string pm_type;
+
 private:
+    void compare_lastnames();
+    void dumplist(const char* hdr, const list<string>& lst, CNcbiOstream& out) const;
+    static void get_lastnames(const CAuth_list::C_Names::TStd& authors, list<string>& lastnames);
+    static void get_lastnames(const CAuth_list::C_Names::TStr& authors, list<string>& lastnames);
+    // vars
+
     static bool configured;
+    static double cfg_matched_to_min;
+    static double cfg_removed_to_gb;
 };
 
 class CPubFixing
@@ -143,6 +164,7 @@ public:
 
     void FixPub(CPub& pub);
     void FixPubEquiv(CPub_equiv& pub_equiv);
+    const CAuthListValidator& GetValidator() const { return m_authlist_validator; };
 
     static CRef<CCit_art> FetchPubPmId(TEntrezId pmid);
     static string GetErrorId(int code, int subcode);
@@ -154,6 +176,7 @@ private:
 
     IMessageListener* m_err_log;
     CAuthorCompareSettings m_author_settings;
+    CAuthListValidator m_authlist_validator;
 };
 
 END_SCOPE(objects)
