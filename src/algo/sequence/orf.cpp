@@ -47,6 +47,8 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
+typedef vector<CRef<CSeq_interval>> TRangeVec;
+
 
 char Complement(const char c)
 {
@@ -71,44 +73,45 @@ bool IsGapOrN(const char c)
 //
 // return to_open iff not found.
 template<class TSeq>
-inline TSeqPos FindFirstStart(const TSeq& seq, 
+set<TSeqPos> FindStarts(const TSeq& seq, 
                               TSeqPos from, TSeqPos to_open,
-                              const vector<string>& allowable_starts,
-                              size_t max_seq_gap)
+                              const vector<string>& allowable_starts)
 {
     const TSeqPos inframe_to_open = from + ((to_open - from)/3 * 3);
-    size_t gap_length(0);
 
-    TSeqPos best_start_pos = to_open; //a.k.a not-found
+    set<TSeqPos> starts;
+    starts.insert(inframe_to_open);
 
     for (TSeqPos pos = inframe_to_open - 3;
          pos >= from && pos < inframe_to_open;
          pos -= 3) 
     {
-        bool is_gap = IsGapOrN(seq[pos]) 
-                   && IsGapOrN(seq[pos + 1])
-                   && IsGapOrN(seq[pos + 2]);
-
-        gap_length = (gap_length + 3) * is_gap; 
-        // note: this value may slightly differ from the true
-        // one, since we are considering bases in triplets.
-
-        if(gap_length > max_seq_gap) {
-            break;
-        }
-
         ITERATE(vector<string>, it, allowable_starts) {
             if (   seq[pos + 0] == (*it)[0] 
                 && seq[pos + 1] == (*it)[1] 
                 && seq[pos + 2] == (*it)[2]) 
             {
-                best_start_pos = pos;
+                starts.insert(pos);
+                break;
             }
         }
     }
-    return best_start_pos;
+    return starts;
 }
 
+void AddInterval(TRangeVec& intervals,
+                    TSeqPos from, TSeqPos to,
+                    bool from_fuzz=false, bool to_fuzz=false)
+{
+    intervals.emplace_back(new CSeq_interval);
+    auto& interval = *intervals.back();
+    interval.SetFrom(from);
+    interval.SetTo(to);
+    if (from_fuzz)
+        interval.SetFuzz_from().SetLim(objects::CInt_fuzz::eLim_lt);
+    if (to_fuzz)
+        interval.SetFuzz_to().SetLim(objects::CInt_fuzz::eLim_gt);
+}
 
 /// Find all ORFs in forward orientation with
 /// length in *base pairs* >= min_length_bp.
@@ -116,148 +119,101 @@ inline TSeqPos FindFirstStart(const TSeq& seq,
 /// Returned range does not include the
 /// stop codon.
 template<class TSeq>
-inline void FindForwardOrfs(const TSeq& seq, COrf::TRangeVec& ranges,
+inline void FindForwardOrfs(const TSeq& seq, TRangeVec& ranges,
                             unsigned int min_length_bp,
                             int genetic_code,
                             const vector<string>& allowable_starts,
                             bool longest_orfs,
-                            size_t max_seq_gap)
+                            size_t max_seq_gap,
+                            bool stop_to_stop)
 {
-
     vector<vector<TSeqPos> > stops;
     stops.resize(3);
     const objects::CTrans_table& tbl = 
         objects::CGen_code_table::GetTransTable(genetic_code);
     int state = 0;
-    for (unsigned int i = 0;  i < seq.size() - 2;  i += 3) {
-        for (int pos = 0;  pos < 3;  pos++) {
-            state = tbl.NextCodonState(state, seq[i + pos]);
-            if (tbl.IsOrfStop(state)) {
-                stops[(i + pos - 2) % 3].push_back(i + pos - 2);
+    for (unsigned int i = 0;  i < seq.size();  ++i) {
+        if (IsGapOrN(seq[i])) {
+            unsigned int j = i;
+            while (++j < seq.size() && IsGapOrN(seq[j]))
+                state = tbl.NextCodonState(state, seq[j]);
+            if (j - i > max_seq_gap) {
+                for (int f=0; f < 3; ++f) {
+                    stops[f].push_back(i);
+                    stops[f].push_back(j -1);
+                }
             }
+            i = j;
+        } else {
+            state = tbl.NextCodonState(state, seq[i]);
+        }
+        if (tbl.IsOrfStop(state)) {
+            stops[(i - 2) % 3].push_back(i - 2);
         }
     }
-    
 
     TSeqPos from, to;
     // for each reading frame, calculate the orfs
     for (int frame = 0;  frame < 3;  frame++) {
 
-        if (stops[frame].empty()) {
-            // no stops in this frame; the whole sequence,
-            // minus some scraps at the ends, is one ORF
-            from = frame;
-            // 'to' should be the largest index within the
-            // sequence length that gives an ORF length
-            // divisible by 3
-            to = ((seq.size() - from) / 3) * 3 + from - 1;
-            if (!allowable_starts.empty()) {
-                from = FindFirstStart(seq, 
-                                      from, to, 
-                                      allowable_starts, 
-                                      max_seq_gap);
-            }
-            if (to - from + 1 >= min_length_bp) {
-                ranges.push_back(COrf::TRange(from, to));
+        stops[frame].push_back(seq.size());
+        stops[frame].push_back(seq.size());
 
-                if (!longest_orfs && !allowable_starts.empty()) {
-                    for (from += 3; from < to; from += 3) {
-                        from = FindFirstStart(seq, 
-                                              from, to, 
-                                              allowable_starts, 
-                                              max_seq_gap);
-                        if (to - from + 1 < min_length_bp)
-                            break;
-                        ranges.push_back(COrf::TRange(from, to));
-                    }
-                }
-            }
-            continue;  // we're done for this reading frame
-        }
-    
-        // deal specially with first ORF
+        bool gap_before = true;
         from = frame;
-        to = stops[frame].front() - 1;
-        if (to - from + 1 >= min_length_bp) {
-            if (!allowable_starts.empty()) {
-                from = FindFirstStart(seq, 
-                                      from, to, 
-                                      allowable_starts, 
-                                      max_seq_gap);
-            }
-            if (from < to && to - from + 1 >= min_length_bp) {
-                ranges.push_back(COrf::TRange(from, to));
+        for (unsigned int i = 0; i < stops[frame].size() -1;  i++) {
+            TSeqPos from0 = from;
+            TSeqPos stop = stops[frame][i];
+            
+            bool gap_after = (stop >= seq.size() || IsGapOrN(seq[stop]));
 
-                if (!longest_orfs && !allowable_starts.empty()) {
-                    for (from += 3; from < to; from += 3) {
-                        from = FindFirstStart(seq, 
-                                              from, to, 
-                                              allowable_starts, 
-                                              max_seq_gap);
-                        if (to - from + 1 < min_length_bp)
-                            break;
-                        ranges.push_back(COrf::TRange(from, to));
-                    }
-                }
-            }
-        }
-
-        for (unsigned int i = 0;  i < stops[frame].size() - 1;  i++) {
-            from = stops[frame][i] + 3;
-            to = stops[frame][i + 1] - 1;
-            if (to - from + 1 >= min_length_bp) {
+            to = ((stop - from) / 3) * 3 + from - 1; // cerr << from << " " << to << " " << stop << endl;
+            _ASSERT( gap_after || to+1==stop );
+            if (to - from +1 >= min_length_bp) {
+                set<TSeqPos> starts; 
                 if (!allowable_starts.empty()) {
-                    from = FindFirstStart(seq, 
-                                          from, to, 
-                                          allowable_starts, 
-                                          max_seq_gap);
-                    if (from >= to || to - from + 1 < min_length_bp) {
-                        continue;
+                    starts = FindStarts(seq, 
+                                        from, to, 
+                                        allowable_starts);
+                    from = *starts.begin();
+                }
+                if (to - from +1 >= min_length_bp) {
+                    if (from != from0 && stop_to_stop) {
+                        AddInterval(ranges, from0, to,
+                                    true, gap_after);
                     }
-                }
-                ranges.push_back(COrf::TRange(from, to));
-
-                if (!longest_orfs && !allowable_starts.empty()) {
-                    for (from += 3; from < to; from += 3) {
-                        from = FindFirstStart(seq, 
-                                              from, to, 
-                                              allowable_starts, 
-                                              max_seq_gap);
-                        if (to - from + 1 < min_length_bp)
-                            break;
-                        ranges.push_back(COrf::TRange(from, to));
+                    if (!(stop_to_stop && from != from0 && longest_orfs)) {
+                        AddInterval(ranges, from, to,
+                                    !stop_to_stop && from < 3, gap_after);
                     }
-                }
-            }
-        }
-    
-        // deal specially with last ORF
-        from = stops[frame].back() + 3;
-        // 'to' should be the largest index within the
-        // sequence length that gives an orf length
-        // divisible by 3
-        to = ((seq.size() - from) / 3) * 3 + from - 1;
-        if (to - from + 1 >= min_length_bp) {
-            if (!allowable_starts.empty()) {
-                from = FindFirstStart(seq, from, to, allowable_starts, max_seq_gap);
-                if (from >= to || to - from + 1 < min_length_bp) {
-                    continue;
-                }
-            }
-            ranges.push_back(COrf::TRange(from, to));
 
-            if (!longest_orfs && !allowable_starts.empty()) {
-                for (from += 3; from < to; from += 3) {
-                    from = FindFirstStart(seq, from, to, allowable_starts, max_seq_gap);
-                    if (to - from + 1 < min_length_bp)
-                        break;
-                    ranges.push_back(COrf::TRange(from, to));
-                }
+                    if (!longest_orfs && !allowable_starts.empty()) {
+                        starts.erase(starts.begin());
+                        for (auto s: starts) {
+                            from = s;
+                            if (to - from +1 < min_length_bp)
+                                break;
+                            AddInterval(ranges, from, to,
+                                        false, gap_after);
+                        }
+                    }
+                } else // start found but too short
+                    if (stop_to_stop) {
+                        from = from0;
+                        AddInterval(ranges, from, to,
+                                    true, gap_after);
+                    }
             }
+
+            if (gap_after) {
+                ++i;
+                to = ((stops[frame][i] - from) / 3) * 3 + from -1;
+            }
+            gap_before = gap_after;
+            from = to +4;
         }
     }
 }
-
 
 /// Find all ORFs in both orientations that
 /// are at least min_length_bp long (not including the stop).
@@ -267,14 +223,26 @@ template<class TSeq>
 static void s_FindOrfs(const TSeq& seq, COrf::TLocVec& results,
                        unsigned int min_length_bp,
                        int genetic_code,
-                       const vector<string>& allowable_starts,
+                       const vector<string>& allowable_starts_,
                        bool longest_orfs,
                        size_t max_seq_gap)
 {
     if (seq.size() < 3) {
         return;
     }
-    COrf::TRangeVec ranges;
+    TRangeVec ranges;
+
+    bool stop_to_stop = false;
+    auto stop = find(allowable_starts_.begin(), allowable_starts_.end(), "STOP");
+    vector<string> allowable_starts_2;
+    if (stop != allowable_starts_.end()) {
+        stop_to_stop = true;
+        if (allowable_starts_.size() > 1) {
+            allowable_starts_2 = allowable_starts_;
+            allowable_starts_2.erase(allowable_starts_2.begin() + distance(allowable_starts_.begin(), stop));
+        }
+    }
+    const vector<string>& allowable_starts = stop_to_stop ? allowable_starts_2 : allowable_starts_;
 
     // This code might be sped up by a factor of two
     // by use of a state machine that does all six frames
@@ -282,23 +250,12 @@ static void s_FindOrfs(const TSeq& seq, COrf::TLocVec& results,
 
     // find ORFs on the forward sequence and report them as-is
     FindForwardOrfs(seq, ranges, min_length_bp,
-                    genetic_code, allowable_starts, longest_orfs, max_seq_gap);
-    ITERATE (COrf::TRangeVec, iter, ranges) {
+                    genetic_code, allowable_starts, longest_orfs, max_seq_gap, stop_to_stop);
+    for (auto& interval: ranges) {
         CRef<objects::CSeq_loc> orf(new objects::CSeq_loc());
-        orf->SetInt().SetFrom(iter->GetFrom());
-        if (iter->GetFrom() < 3) {
-            // "beginning" of ORF at beginning of sequence
-            orf->SetInt().SetFuzz_from().SetLim(objects::CInt_fuzz::eLim_lt);
-        }
-        unsigned int to = iter->GetTo();
-        if (to + 3 >= seq.size()) {
-            // "end" of ORF is really end of sequence
-            orf->SetInt().SetFuzz_to().SetLim(objects::CInt_fuzz::eLim_gt);
-        } else {
-            // ORF was ended by a stop, rather than end of sequence
-            to += 3;
-        }
-        orf->SetInt().SetTo(to);
+        if (!interval->IsPartialStop(eExtreme_Positional))
+            interval->SetTo() += 3;
+        orf->SetInt().Assign(*interval);
         orf->SetInt().SetStrand(objects::eNa_strand_plus);
         results.push_back(orf);
     }
@@ -316,25 +273,18 @@ static void s_FindOrfs(const TSeq& seq, COrf::TLocVec& results,
     }
 
     FindForwardOrfs(comp, ranges, min_length_bp,
-                    genetic_code, allowable_starts, longest_orfs, max_seq_gap);
-    ITERATE (COrf::TRangeVec, iter, ranges) {
+                    genetic_code, allowable_starts, longest_orfs, max_seq_gap, stop_to_stop);
+    for (auto& interval: ranges) {
         CRef<objects::CSeq_loc> orf(new objects::CSeq_loc);
-        unsigned int from = comp.size() - iter->GetTo() - 1;
-        if (from < 3) {
-            // "end" of ORF is beginning of sequence
-            orf->SetInt().SetFuzz_from().SetLim(objects::CInt_fuzz::eLim_lt);
-        } else {
-            // ORF was ended by a stop, rather than beginning of sequence
-            from -= 3;
-        }
+        if (!interval->IsPartialStop(eExtreme_Positional))
+            interval->SetTo() += 3;
+        unsigned int from = comp.size() - interval->GetTo() - 1;
         orf->SetInt().SetFrom(from);
-        unsigned int to = comp.size() - iter->GetFrom() - 1;
-        if (to + 3 >= comp.size()) {
-            // "beginning" of ORF is really end of sequence
-            orf->SetInt().SetFuzz_to().SetLim(objects::CInt_fuzz::eLim_gt);
-        }
+        unsigned int to = comp.size() - interval->GetFrom() - 1;
         orf->SetInt().SetTo(to);
         orf->SetInt().SetStrand(objects::eNa_strand_minus);
+        orf->SetPartialStart(interval->IsPartialStop(eExtreme_Positional), eExtreme_Positional);
+        orf->SetPartialStop(interval->IsPartialStart(eExtreme_Positional), eExtreme_Positional);
         results.push_back(orf);
     }
 }

@@ -52,19 +52,27 @@ BEGIN_NCBI_SCOPE
 class NCBI_XALGOSEQ_EXPORT COrf
 {
 public:
-    typedef CRange<TSeqPos> TRange;
-    typedef vector<TRange>  TRangeVec;
     typedef vector< CRef<objects::CSeq_loc> > TLocVec;
 
     static const size_t k_default_max_seq_gap = 30;
 
-    /// Find all ORFs in both orientations that
-    /// are at least min_length_bp long.
-    /// Report results as Seq-locs.
+    /// Find ORFs in both orientations. Circularity is ignored.
+    /// Report results as Seq-locs (without seq-id set). Partial ORFs are trimmed to frame.
     /// seq must be in iupac.
-    /// If allowable_starts is empty (the default), any sense codon can begin
-    /// an ORF.  Otherwise, only codons in allowable_starts can do so.
-    /// Do not allow more than max_seq_gap consecutive N-or-gap bases in an ORF
+    
+    /// allowable_starts may contain "STOP" for stop-to-stop ORFs
+    /// If
+    /// - allowable_starts empty (the default) or just "STOP", longest_orfs = any - finds stop-to-stop ORFs, only ORFs near edges are marked partial
+    /// - allowable_starts not empty, no "STOP", longest_orfs = false - find all proper or partial (if no start) ORFs
+    /// - allowable_starts not empty, no "STOP", longest_orfs = true - find longest proper or partial (if no start) ORFs
+    /// - allowable_starts not empty, plus "STOP", longest_orfs = false - find all proper or partial ORFs and stop-to-stop ORFs 
+    /// - allowable_starts not empty, plus "STOP", longest_orfs = true - find partial ORFs or stop-to-stop ORFs, only those without proper start are marked partial
+    
+    /// Do not allow more than max_seq_gap consecutive N-or-gap bases in an ORF,
+    /// longer gaps split the sequence, resulting in no spanning ORFs and possibly partial ORFs before and after the gap
+
+    /// ORFs below min_length_bp long are not reported
+    
     static void FindOrfs(const string& seq,
                          TLocVec& results,
                          unsigned int min_length_bp = 3,

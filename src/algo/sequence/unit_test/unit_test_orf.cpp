@@ -48,6 +48,8 @@
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 
+#include <objects/seq/Annot_descr.hpp>
+#include <objects/seq/Annotdesc.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqfeat/Genetic_code_table.hpp>
@@ -98,6 +100,18 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
             break;
         }
 
+        const CAnnot_descr& desc = ref_annot->GetDesc();
+        string comment = desc.Get().front()->GetComment();
+
+        vector<string> allowable_starts;
+        bool longest_orfs = false;
+        NStr::Split(comment, " ", allowable_starts, NStr::fSplit_Tokenize);
+        auto longest = find(allowable_starts.begin(), allowable_starts.end(), "longest");
+        if (longest != allowable_starts.end()) {
+            longest_orfs = true;
+            allowable_starts.erase(longest);
+        }
+        
         const CSeq_id& seq_id = *ref_annot->GetData().GetFtable().front()->GetLocation().GetId();
         CBioseq_Handle bsh = scope.GetBioseqHandle(seq_id);
 
@@ -110,12 +124,12 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
             CSeqVector sv(bsh);
             size_t min_length = 300; //=100 codons options in gbench
             size_t max_seq_gap = 30;
-            vector<string> allowable_starts(1, "ATG");
-            bool longest_orfs = true;
             COrf::FindOrfs(sv, loc_vec, min_length, gcode, allowable_starts, longest_orfs, max_seq_gap);
         }}
 
         CRef<CSeq_annot> my_annot = COrf::MakeCDSAnnot(loc_vec, gcode, const_cast<CSeq_id*>(&seq_id));
+
+        my_annot->SetDesc().Assign(desc);
 
         if(ostr) {
             *ostr << MSerial_AsnText << *my_annot;
