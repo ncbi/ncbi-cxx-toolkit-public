@@ -298,10 +298,10 @@ public:
                    const string&                   message,
                    unsigned short                  status_code);
 
-    virtual ~CLBOSException(void) throw();
+    virtual ~CLBOSException(void) noexcept;
     
     /** Get original status code and status message from LBOS in a string */
-    virtual const char* what() const throw() override;
+    virtual const char* what() const noexcept override;
 
     /** Translate from the error code value to its string representation
      *  (only for internal errors; real LBOS

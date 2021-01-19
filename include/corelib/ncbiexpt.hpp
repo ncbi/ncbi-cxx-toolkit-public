@@ -68,7 +68,7 @@ BEGIN_NCBI_SCOPE
 ///   "f(void) throw();"       <==  "f(void) THROWS_NONE;"
 ///   "g(void) throw(e1,e2);"  <==  "f(void) THROWS((e1,e2));"
 #ifdef NCBI_USE_THROW_SPEC
-#  define THROWS_NONE throw()
+#  define THROWS_NONE nothrow
 #  define THROWS(x)   throw x
 #else
 #  define THROWS_NONE
@@ -943,7 +943,7 @@ public:
     // ---- Reporting --------------
 
     /// Standard report (includes full backlog).
-    virtual const char* what(void) const throw();
+    virtual const char* what(void) const noexcept;
 
     /// Report the exception.
     ///
@@ -1044,7 +1044,7 @@ public:
     bool HasMainText(void) const { return m_MainText; }
 
     /// Destructor.
-    virtual ~CException(void) throw();
+    virtual ~CException(void) noexcept;
 
     /// Check if the flag is set
     bool IsSetFlag(EFlags flag) const { return (m_Flags & flag) != 0; }
@@ -1276,7 +1276,7 @@ const TTo* UppermostCast(const TFrom& from)
         this->x_Assign(other); \
     } \
 public: \
-    virtual ~exception_class(void) throw() {} \
+    virtual ~exception_class(void) noexcept {} \
     virtual const char* GetType(void) const override {return #exception_class;} \
     typedef int TErrCode; \
     TErrCode GetErrCode(void) const \
@@ -1610,7 +1610,7 @@ public:
     }
 
     /// Destructor.
-    virtual ~CErrnoTemplExceptionEx(void) throw() {}
+    virtual ~CErrnoTemplExceptionEx(void) noexcept {}
 
     /// Report error number on stream.
     virtual void ReportExtra(ostream& out) const override
@@ -1636,7 +1636,7 @@ public:
     }
 
     /// Get error number.
-    int GetErrno(void) const throw() { return m_Errno; }
+    int GetErrno(void) const noexcept { return m_Errno; }
 
 protected:
     /// Constructor (with errno only).

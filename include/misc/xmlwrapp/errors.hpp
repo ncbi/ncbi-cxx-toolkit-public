@@ -219,7 +219,7 @@ public:
      *
      * @return string representation of the errors list ('\n' separated).
     **/
-    virtual const char* what() const throw ();
+    virtual const char* what() const noexcept;
 
     /**
      * Get error messages.
@@ -238,7 +238,7 @@ public:
     /**
      * Destroy the object.
     **/
-    virtual ~parser_exception() throw () {}
+    virtual ~parser_exception() noexcept {}
 
     parser_exception (const parser_exception &other) = default;
     parser_exception & operator=(const parser_exception &other) = default;

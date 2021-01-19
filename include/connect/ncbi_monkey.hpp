@@ -75,7 +75,7 @@ public:
     };
 
     /** Get original status code and status message from LBOS in a string */
-    virtual const char* what(void)  const throw();
+    virtual const char* what(void)  const noexcept;
 
 private:
     NCBI_EXCEPTION_DEFAULT(CMonkeyException, CException);
