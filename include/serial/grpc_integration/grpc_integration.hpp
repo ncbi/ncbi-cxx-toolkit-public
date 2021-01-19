@@ -103,7 +103,7 @@ public:
 /// themselves.
 #define BEGIN_NCBI_GRPC_REQUEST(sctx, request, reply) \
     CGRPCRequestLogger request_logger##__LINE__       \
-        (sctx, NCBI_CURRENT_FUNCTION, request, reply)
+        (sctx, __func__, request, reply)
 
 
 /// NCBI_GRPC_RETURN(_EX) -- Provide consistent gRPC request handler status
