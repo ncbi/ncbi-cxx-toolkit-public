@@ -130,7 +130,7 @@ public:
                             EDiagSev severity = eDiag_Error);
 
     CInvalidChoiceSelection(const CInvalidChoiceSelection& other);
-    virtual ~CInvalidChoiceSelection(void) throw();
+    virtual ~CInvalidChoiceSelection(void) noexcept;
 
     virtual const char* GetType(void) const override;
     typedef int TErrCode;
