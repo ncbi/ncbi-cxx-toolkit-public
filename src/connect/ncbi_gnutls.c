@@ -446,7 +446,7 @@ inline
 #endif /*__GNUC__*/
 static int/*bool*/ x_IfToLog(void)
 {
-    return 7 < s_GnuTlsLogLevel  &&  s_GnuTlsLogLevel <= 10 ? 1/*T*/ : 0/*F*/;
+    return 12 < s_GnuTlsLogLevel ? 1/*T*/ : 0/*F*/;
 }
 
 
