@@ -304,12 +304,17 @@ void CTest::Server(void)
                     for (n = 3;  n < polls.size();  ++n) {
                         if (!polls[n].m_Pollable)
                             continue;
+                        sock = dynamic_cast<CSocket*>(polls[n].m_Pollable);
+                        _ASSERT(sock);
                         if (rand() & 1) {
                             ERR_POST(Info << "Leaving client " << (n-2));
-                            continue;
-                        }
-                        sock = dynamic_cast<CSocket*>(polls[n].m_Pollable);
-                        if (rand() & 1) {
+                            size_t handle_size = CSocketAPI::OSHandleSize();
+                            char*  handle = new char[handle_size];
+                            // Rip the handle out, and just leak it
+                            sock->GetOSHandle(handle, handle_size,
+                                              eTakeOwnership);
+                            delete[] handle;
+                        } else if (rand() & 1) {
                             ERR_POST(Info << "Aborting client " << (n-2));
                             sock->Abort();
                         } else
