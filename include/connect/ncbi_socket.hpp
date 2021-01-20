@@ -58,7 +58,8 @@ class NCBI_XCONNECT_EXPORT CPollable
 {
 public:
     virtual
-    EIO_Status GetOSHandle(void* handle_buf, size_t handle_size) const = 0;
+    EIO_Status GetOSHandle(void* handle_buf, size_t handle_size,
+                           EOwnership ownership = eNoOwnership) const = 0;
 
     virtual
     POLLABLE   GetPOLLABLE(void) const = 0;
@@ -96,7 +97,8 @@ public:
     EIO_Status Reset(void);
 
     /// Access to the the system-specific handle.
-    virtual EIO_Status GetOSHandle(void* handle_buf, size_t handle_size) const;
+    virtual EIO_Status GetOSHandle(void* handle_buf, size_t handle_size,
+                                   EOwnership ownership = eNoOwnership) const;
 
     /// Access to the underlying "TRIGGER".
     TRIGGER GetTRIGGER(void) const;
@@ -366,9 +368,9 @@ public:
     /// @param handle_size
     ///
     /// @sa
-    ///  SOCK_GetOSHandle, SOCK_GetOSHandleSize
-    virtual EIO_Status GetOSHandle(void*  handle_buf,
-                                   size_t handle_size) const;
+    ///  SOCK_GetOSHandleEx, CSocketAPI::OSHandleSize, SOCK_GetOSHandleSize
+    virtual EIO_Status GetOSHandle(void*  handle_buf, size_t handle_size,
+                                   EOwnership ownership = eNoOwnership) const;
 
     /// @note  Use CSocketAPI::SetReadOnWrite() to set the default value.
     ///
@@ -649,7 +651,8 @@ public:
     ///
     /// @param handle_size
     ///
-    virtual EIO_Status GetOSHandle(void* handle_buf, size_t handle_size) const;
+    virtual EIO_Status GetOSHandle(void* handle_buf, size_t handle_size,
+                                   EOwnership ownership = eNoOwnership) const;
 
     /// Return port which the server listens on
     unsigned short GetPort(ENH_ByteOrder byte_order) const;
@@ -824,7 +827,7 @@ inline EIO_Status CTrigger::Reset(void)
 }
 
 
-inline EIO_Status CTrigger::GetOSHandle(void*, size_t) const
+inline EIO_Status CTrigger::GetOSHandle(void*, size_t, EOwnership) const
 {
     return m_Trigger ? eIO_NotSupported : eIO_Closed;
 }
@@ -905,9 +908,12 @@ inline unsigned short CSocket::GetRemotePort(ENH_ByteOrder byte_order) const
 }
 
 
-inline EIO_Status CSocket::GetOSHandle(void* hnd_buf, size_t hnd_siz) const
+inline EIO_Status CSocket::GetOSHandle(void* handle_buf, size_t handle_size,
+                                       EOwnership ownership) const
 {
-    return m_Socket? SOCK_GetOSHandle(m_Socket, hnd_buf, hnd_siz) : eIO_Closed;
+    return m_Socket
+        ? SOCK_GetOSHandleEx(m_Socket, handle_buf, handle_size, ownership)
+        : eIO_Closed;
 }
 
  
@@ -1109,10 +1115,12 @@ inline EIO_Status CListeningSocket::GetStatus(void) const
 
 
 inline EIO_Status CListeningSocket::GetOSHandle(void*  handle_buf,
-                                                size_t handle_size) const
+                                                size_t handle_size,
+                                                EOwnership ownership) const
 {
     return m_Socket
-        ? LSOCK_GetOSHandle(m_Socket, handle_buf, handle_size) : eIO_Closed;
+        ? LSOCK_GetOSHandleEx(m_Socket, handle_buf, handle_size, ownership)
+        : eIO_Closed;
 }
 
 
