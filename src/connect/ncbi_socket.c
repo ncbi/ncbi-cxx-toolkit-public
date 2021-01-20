@@ -560,7 +560,7 @@ static void s_DoLog(ELOG_Level  level, const SOCK sock, EIO_Event   event,
         } else if (!ptr  ||  !*((char*) ptr)) {
             sprintf(head, " at offset %" NCBI_BIGCOUNT_FORMAT_SPEC,
                     event == eIO_Read ? sock->n_read : sock->n_written);
-            strcpy(tail, ptr ? " [OOB]" : "");
+            strcpy(tail, !ptr ? "" : " [OOB]");
         } else {
             strncpy0(head, (const char*) ptr, sizeof(head));
             *tail = '\0';
