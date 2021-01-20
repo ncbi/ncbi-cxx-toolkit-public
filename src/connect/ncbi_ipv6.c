@@ -716,9 +716,9 @@ extern int/*bool*/ NcbiIsInIPv6Network(const TNCBI_IPv6Addr* base,
 
     for (n = 0;  n < sizeof(addr->octet);  ++n) {
         unsigned char mask;
-        if (!bits)
+        if (!bits) {
             mask  =                  0;
-        else if (8 > bits) {
+        } else if (8 > bits) {
             mask  = (unsigned char)(~0 << (8 - bits));
             bits  =                  0;
         } else {
@@ -740,9 +740,9 @@ extern int/*bool*/ NcbiIPv6Subnet(TNCBI_IPv6Addr* addr, unsigned int bits)
     if (addr) {
         size_t n;
         for (n = 0;  n < sizeof(addr->octet);  ++n) {
-            if (!bits)
+            if (!bits) {
                 addr->octet[n] = 0;
-            else if (8 > bits) {
+            } else if (8 > bits) {
                 unsigned char mask = (unsigned char)(~0 << (8 - bits));
                 if (addr->octet[n] &= mask)
                     zero = 0/*false*/;
@@ -751,6 +751,34 @@ extern int/*bool*/ NcbiIPv6Subnet(TNCBI_IPv6Addr* addr, unsigned int bits)
                 bits -= 8;
                 if (addr->octet[n])
                     zero = 0/*false*/;
+            }
+        }
+    }
+
+    return !zero;
+}
+
+
+extern int/*bool*/ NcbiIPv6Suffix(TNCBI_IPv6Addr* addr, unsigned int bits)
+{
+    int/*bool*/ zero = 1/*true*/;
+
+    if (addr) {
+        size_t n;
+        if (bits < sizeof(addr->octet) * 8)
+            bits = sizeof(addr->octet) * 8 - bits;
+        for (n = 0;  n < sizeof(addr->octet);  ++n) {
+            if (!bits) {
+                if (addr->octet[n])
+                    zero = 0/*false*/;
+            } else if (8 > bits) {
+                unsigned char mask = (unsigned char)(~0 << (8 - bits));
+                if (addr->octet[n] &= ~mask)
+                    zero = 0/*false*/;
+                bits  = 0;
+            } else {
+                bits -= 8;
+                addr->octet[n] = 0;
             }
         }
     }

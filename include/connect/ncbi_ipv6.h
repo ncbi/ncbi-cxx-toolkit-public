@@ -240,10 +240,21 @@ int/*bool*/  NcbiIsInIPv6Network(const TNCBI_IPv6Addr* base,
  *  Return non-zero(true) if the resultant "addr" is non-empty; return
  *  zero(false) otherwise.
  * @sa
- *  NcbiIsEmptyIPv6, NcbiIsInIPv6Network
+ *  NcbiIsEmptyIPv6, NcbiIsInIPv6Network, NcbiIPv6Suffix
  */
 extern NCBI_XCONNECT_EXPORT
 int/*bool*/  NcbiIPv6Subnet(TNCBI_IPv6Addr* addr,
+                            unsigned int    bits);
+
+
+/** Retain last "bits" in a given "addr", resetting all remaining bits to 0.
+ *  Return non-zero(true) if the resultant "addr" is non-empty; return
+ *  zero(false) otherwise.
+ * @sa
+ *  NcbiIsEmptyIPv6, NcbiIsInIPv6Network, NcbiIPv6Subnet
+ */
+extern NCBI_XCONNECT_EXPORT
+int/*bool*/  NcbiIPv6Suffix(TNCBI_IPv6Addr* addr,
                             unsigned int    bits);
 
 

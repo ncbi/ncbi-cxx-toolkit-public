@@ -30,18 +30,50 @@
  *
  */
 
+#include "../ncbi_priv.h"
 #include <connect/ncbi_ipv6.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include "test_assert.h"  /* This header must go last */
 
 
 int main(int argc, const char* argv[])
 {
-    TNCBI_IPv6Addr addr;
+    TNCBI_IPv6Addr addr, a, b, temp;
     const char *str;
+    unsigned int n;
     char buf[150];
+
+    g_NCBI_ConnectRandomSeed
+        = (unsigned int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
+    srand(g_NCBI_ConnectRandomSeed);
+    for (n = 0;  n < sizeof(addr.octet);  ++n)
+        addr.octet[n] = rand() & 0xFF;
+    n = rand() % (sizeof(addr.octet) * 8 + 1);
+    if (!NcbiAddrToString(buf, sizeof(buf), &addr))
+        *buf = '\0';
+    printf("Address  = %s/%u\n", buf, n);
+    a = addr;
+    NcbiIPv6Subnet(&a,                          n);
+    if (!NcbiAddrToString(buf, sizeof(buf), &a))
+        *buf = '\0';
+    printf("Subnet   = %s\n", buf);
+    b = addr;
+    NcbiIPv6Suffix(&b, sizeof(addr.octet) * 8 - n);
+    if (!NcbiAddrToString(buf, sizeof(buf), &b))
+        *buf = '\0';
+    printf("Suffix   = %s\n", buf);
+    for (n = 0;  n < sizeof(addr.octet);  ++n) {
+        /* XOR here (instead of OR) to test that there's no overlap */
+        temp.octet[n] = a.octet[n] ^ b.octet[n];
+    }
+    if (!NcbiAddrToString(buf, sizeof(buf), &temp))
+        *buf = '\0';
+    printf("Combined = %s\n", buf);
+    assert(memcmp(&temp, &addr, sizeof(addr)) == 0);
 
     if (!(str = NcbiStringToAddr(&addr, argv[1], 0))) {
         printf("\"%s\" is not a valid IPv6 address\n", argv[1]);
@@ -55,7 +87,6 @@ int main(int argc, const char* argv[])
     if (*str)
         printf("Unparsed part: \"%s\"\n", str);
     if (NcbiAddrToDNS(buf, sizeof(buf), &addr)) {
-        TNCBI_IPv6Addr temp;
         printf("Domain = %s\n", buf);
         str = NcbiStringToAddr(&temp, buf, 0);
         assert(str  &&  !*str);
