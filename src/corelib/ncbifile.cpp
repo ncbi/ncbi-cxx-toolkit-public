@@ -4823,8 +4823,8 @@ void s_GetDiskSpace_PANFS(const string& path, CFileUtil::SFileSystemInfo* info)
     if ( !s_InitDLL ) {
         s_InitDLL = true;
 
-        #define STRINGIFY(x) #x
-        #define TOSTRING(x) STRINGIFY(x)
+#  define _TOSTRING(x) #x
+#  define  TOSTRING(x) _TOSTRING(x)
         const char* kNcbiPanfsDLL = "/opt/ncbi/" TOSTRING(NCBI_PLATFORM_BITS) "/lib/ncbi_panfs.so";
         
         // Check if 'ncbi_panfs.so' exists and can be loaded
