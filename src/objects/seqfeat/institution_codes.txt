@@ -3102,7 +3102,7 @@ IOPM	s	Izu Oceanic Park Museum
 IORD	s	Takai University, Institute of Oceanic Research and Development			
 IOS	s	Institute of Oceanographic Sciences			
 IOUSP	c	Marine Microalgae Culture Collection			
-IOWA	s	University of Iowa, Museum of Natural History			
+IOWA	s	University of Iowa, Museum of Natural History	SUI		
 IP	c	Department of Insect Pathology, Institute of Entomology			
 IPA	s	Empresa Pernambucana de Pesquisa Agropecuaria, IPA			
 IPA:germplasm bank	b	Empresa Pernambucana de Pesquisa Agropecuaria, IPA, 		

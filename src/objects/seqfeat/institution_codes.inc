@@ -3135,7 +3135,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "IORD\ts\tTakai University, Institute of Oceanic Research and Development\t\t\t",
 "IOS\ts\tInstitute of Oceanographic Sciences\t\t\t",
 "IOUSP\tc\tMarine Microalgae Culture Collection\t\t\t",
-"IOWA\ts\tUniversity of Iowa, Museum of Natural History\t\t\t",
+"IOWA\ts\tUniversity of Iowa, Museum of Natural History\tSUI\t\t",
 "IP\tc\tDepartment of Insect Pathology, Institute of Entomology\t\t\t",
 "IPA\ts\tEmpresa Pernambucana de Pesquisa Agropecuaria, IPA\t\t\t",
 "IPA:germplasm bank\tb\tEmpresa Pernambucana de Pesquisa Agropecuaria, IPA, \t\t",
