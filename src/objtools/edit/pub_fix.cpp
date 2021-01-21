@@ -330,8 +330,13 @@ static void s_GetESearchIds(CESearch_Request& req,
                 if (idList.IsSetId()) {
                     ids = idList.GetId();
                 }
+                return;
             }
-            return;
+
+            if (!pRes->IsSetData() ||
+                !pRes->GetData().IsERROR()) {
+                return;
+            }
         }
         catch(...) {
         }
@@ -358,9 +363,12 @@ static bool s_IsIndexed(CRef<CEUtils_ConnContext> pContext,
     bool success=false;
     for (int retry=0; retry<10; ++retry) {
         try {
-            request.Read(&xmlOutput);
-            success = true;
-            break;
+            auto& istr = dynamic_cast<CConn_HttpStream&>(request.GetStream());
+            NcbiStreamToString(&xmlOutput, istr);
+            if (istr.GetStatusCode() == 200) {
+                success = true;
+                break;
+            } 
         }
         catch (...) {
             int sleepSeconds = sqrt(retry);
