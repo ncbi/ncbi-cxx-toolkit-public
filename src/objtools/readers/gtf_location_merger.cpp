@@ -237,12 +237,14 @@ CGtfLocationMerger::AddRecordForId(
         if (record.Contains(location)) {
             if (location.mType == CGtfLocationRecord::TYPE_start_codon) {
                 record.mType = CGtfLocationRecord::TYPE_start_codon;
+                record.mPartNum = location.mPartNum;
             }
             return;
         }
         if (record.IsContainedBy(location)) {
             if (record.mType == CGtfLocationRecord::TYPE_start_codon) {
                 location.mType = CGtfLocationRecord::TYPE_start_codon;
+                location.mPartNum = record.mPartNum;
             }
             record = location;
             return;
@@ -384,6 +386,9 @@ CGtfLocationMerger::MergeLocationForGene(
                     oldFrom = newFrom, oldTo = newTo;
                 }
             }
+            if (oldFrom > oldTo) {
+                return MergeLocationForTranscript(locations);
+            }
             pMix->AddInterval(*pRangeId, oldFrom, oldTo, rangeStrand);
             pSeqloc->SetMix(*pMix);
         }
@@ -409,6 +414,9 @@ CGtfLocationMerger::MergeLocationForGene(
                     pMix->AddInterval(*pRangeId, oldFrom, oldTo, rangeStrand);
                     oldFrom = 0, oldTo = newTo;
                 }
+            }
+            if (oldFrom > oldTo) {
+                return MergeLocationForTranscript(locations);
             }
             pMix->AddInterval(*pRangeId, oldFrom, oldTo, rangeStrand);
             pSeqloc->SetMix(*pMix);
