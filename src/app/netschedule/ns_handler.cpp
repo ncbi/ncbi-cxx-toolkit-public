@@ -92,7 +92,7 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
           { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "GETCONF",       { &CNetScheduleHandler::x_ProcessGetConf,
-                         eNS_Admin },
+                         eNS_NoChecks },
         { { "effective",         eNSPT_Int, eNSPA_Optional, "0" },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
