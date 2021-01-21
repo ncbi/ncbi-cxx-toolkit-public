@@ -159,7 +159,7 @@ void CFeatureGenerator::SImplementation::StitchSmallHoles(CSeq_align& align)
         } else if (spliced_seg.IsSetProduct_length()) {
             product_max_pos = spliced_seg.GetProduct_length()-1;
             if (is_protein)
-                product_max_pos *= 3+2;
+                product_max_pos = product_max_pos*3+2;
         } else {
             product_max_pos = exons.back().prod_to;
         }
@@ -584,19 +584,31 @@ void CFeatureGenerator::SImplementation::TrimHolesToCodons(CSeq_align& align)
             }
         }
 
-        if (right_exon_it != exons.begin() && (right_exon_it != exons.end() || (m_flags & fTrimEnds)) &&
-            cds.GetFrom() < left_exon_it->prod_to && left_exon_it->prod_to < cds.GetTo()
-            )
-            TrimLeftExon((left_exon_it->prod_to - cds.GetFrom() + 1) % 3, eTrimProduct,
-                         exons.rend(), left_exon_it, left_spl_exon_it,
-                         product_strand, genomic_strand);
+        if (right_exon_it != exons.begin() && (right_exon_it != exons.end() || (m_flags & fTrimEnds))) {
+            while (exons.rend() != left_exon_it &&
+                   cds.GetFrom() < left_exon_it->prod_to && left_exon_it->prod_to < cds.GetTo() &&
+                   (left_exon_it->prod_to - cds.GetFrom() + 1) % 3 > 0
+                ) {
+                TrimLeftExon(min(left_exon_it->prod_to - left_exon_it->prod_from + 1,
+                                 (left_exon_it->prod_to - cds.GetFrom() + 1) % 3),
+                             eTrimProduct,
+                             exons.rend(), left_exon_it, left_spl_exon_it,
+                             product_strand, genomic_strand);
+            }
+        }
 
-        if (right_exon_it != exons.end() && (right_exon_it != exons.begin() || (m_flags & fTrimEnds)) &&
-            cds.GetFrom() < right_exon_it->prod_from && right_exon_it->prod_from < cds.GetTo()
-            )
-            TrimRightExon((frame_offset-right_exon_it->prod_from) % 3, eTrimProduct,
-                          right_exon_it, exons.end(), right_spl_exon_it,
-                          product_strand, genomic_strand);
+        if (right_exon_it != exons.end() && (right_exon_it != exons.begin() || (m_flags & fTrimEnds))) {
+            while (right_exon_it != exons.end() && 
+                   cds.GetFrom() < right_exon_it->prod_from && right_exon_it->prod_from < cds.GetTo() &&
+                   (frame_offset-right_exon_it->prod_from) % 3 > 0
+                ) {
+                TrimRightExon(min(right_exon_it->prod_to - right_exon_it->prod_from + 1,
+                                  (frame_offset-right_exon_it->prod_from) % 3),
+                              eTrimProduct,
+                              right_exon_it, exons.end(), right_spl_exon_it,
+                              product_strand, genomic_strand);
+            }
+        }
         
         if (left_exon_it.base() != right_exon_it) {
             right_exon_it = exons.erase(left_exon_it.base(), right_exon_it);
@@ -1076,6 +1088,7 @@ void CFeatureGenerator::SImplementation::TrimLeftExon(int trim_amount, ETrimSide
                                                       ENa_strand product_strand,
                                                       ENa_strand genomic_strand)
 {
+    _ASSERT( trim_amount < 3 || side!=eTrimProduct );
     bool is_protein = (*spl_exon_it)->GetProduct_start().IsProtpos();
 
     while (trim_amount > 0) {
@@ -1083,11 +1096,16 @@ void CFeatureGenerator::SImplementation::TrimLeftExon(int trim_amount, ETrimSide
             ? (exon_it->prod_to - exon_it->prod_from + 1)
             : (exon_it->genomic_to - exon_it->genomic_from + 1);
         if (exon_len <= trim_amount) {
+            int next_from = exon_it->genomic_from;
             ++exon_it;
             ++spl_exon_it;
             trim_amount -= exon_len;
+            _ASSERT( trim_amount==0 || side!=eTrimProduct );
             if (exon_it == left_edge)
                 break;
+            if (trim_amount > 0) { // eTrimGenomic, account for distance between exons
+                trim_amount -= next_from - exon_it->genomic_to -1;
+            }
         } else {
             (*spl_exon_it)->SetPartial(true);
             (*spl_exon_it)->ResetDonor_after_exon();
@@ -1196,6 +1214,7 @@ void CFeatureGenerator::SImplementation::TrimRightExon(int trim_amount, ETrimSid
                                                        ENa_strand product_strand,
                                                        ENa_strand genomic_strand)
 {
+    _ASSERT( trim_amount < 3 || side!=eTrimProduct );
     bool is_protein = (*spl_exon_it)->GetProduct_start().IsProtpos();
 
     while (trim_amount > 0) {
@@ -1203,11 +1222,16 @@ void CFeatureGenerator::SImplementation::TrimRightExon(int trim_amount, ETrimSid
             ? (exon_it->prod_to - exon_it->prod_from + 1)
             : (exon_it->genomic_to - exon_it->genomic_from + 1);
         if (exon_len <= trim_amount) {
+            int prev_to = exon_it->genomic_to;
             ++exon_it;
             ++spl_exon_it;
             trim_amount -= exon_len;
+            _ASSERT( trim_amount==0 || side!=eTrimProduct );
             if (exon_it == right_edge)
                 break;
+            if (trim_amount > 0) { // eTrimGenomic, account for distance between exons
+                trim_amount -= exon_it->genomic_from - prev_to -1;
+            }
         } else {
             (*spl_exon_it)->SetPartial(true);
             (*spl_exon_it)->ResetAcceptor_before_exon();

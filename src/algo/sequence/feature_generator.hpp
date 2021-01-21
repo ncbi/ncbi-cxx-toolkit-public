@@ -113,6 +113,13 @@ struct CFeatureGenerator::SImplementation {
         eTrimProduct,
         eTrimGenomic
     };
+
+    // left and right are relative to a hole, so TrimLeftExon trims its right edge.
+    // if side=eTrimProduct - the intention is to trim partial codons,
+    //                        so trim_amount should be < 2 and <= exon length
+    // if side=eTrimGenomic - just cuts off overlap with genomic interval [edge, edge + trim_amount)
+    //                        the remaining alignments can shrink more from edge + trim_amount
+    //                        if it falls into intron or hole
     static void TrimLeftExon(int trim_amount, ETrimSide side,
                       vector<SExon>::reverse_iterator left_edge,
                       vector<SExon>::reverse_iterator& exon_it,

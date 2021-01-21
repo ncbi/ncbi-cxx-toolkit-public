@@ -704,6 +704,133 @@ BOOST_AUTO_TEST_CASE(TestCaseTrimProtein)
     BOOST_CHECK_EQUAL((*++i)->GetGenomic_start(), TSeqPos(2001) );
 }
 
+BOOST_AUTO_TEST_CASE(TestCaseTrimHolesToCodons)
+{
+    CRef<CObjectManager> om = CObjectManager::GetInstance();
+    CGBDataLoader::RegisterInObjectManager(*om);
+    CRef<CScope> scope(new CScope(*om));
+    scope->AddDefaults();
+    
+    CFeatureGenerator feat_gen(*scope);
+    
+string buf = " \
+Seq-align ::= { \
+  type disc, \
+  dim 2, \
+  segs spliced { \
+    product-id gi 16762324, \
+    genomic-id gi 188504888, \
+    genomic-strand plus, \
+    product-type protein, \
+    exons { \
+      { \
+        product-start protpos { amin 25, frame 1 }, \
+        product-end protpos { amin 30, frame 3 }, \
+        genomic-start 0, genomic-end 17 \
+      }, \
+      { \
+        product-start protpos { amin 35, frame 2 }, \
+        product-end protpos { amin 45, frame 2 }, \
+        genomic-start 31, genomic-end 61 \
+      }, \
+      { \
+        product-start protpos { amin 55, frame 2 }, \
+        product-end protpos { amin 55, frame 2 }, \
+        genomic-start 91, genomic-end 91 \
+      }, \
+      { \
+        product-start protpos { amin 65, frame 2 }, \
+        product-end protpos { amin 576, frame 3 }, \
+        genomic-start 121, genomic-end 1655 \
+      } \
+    }, \
+    product-length 577, \
+    modifiers { \
+      stop-codon-found TRUE \
+    } \
+  } \
+}";
+    CNcbiIstrstream istrs(buf);
+    unique_ptr<CObjectIStream> istr(CObjectIStream::Open(eSerial_AsnText, istrs));
+    CSeq_align align;
+    *istr >> align;
+    
+    BOOST_CHECK_NO_THROW(align.Validate(true));
+
+    feat_gen.SetMinIntron(5);
+    CConstRef<CSeq_align> trimmed_align;
+    trimmed_align = feat_gen.CleanAlignment(align);
+
+    BOOST_CHECK_NO_THROW(trimmed_align->Validate(true));
+
+    BOOST_CHECK_EQUAL(trimmed_align->GetSegs().GetSpliced().GetExons().size(), size_t(3));
+
+    CSpliced_seg::TExons::const_iterator i = trimmed_align->GetSegs().GetSpliced().GetExons().begin();
+
+    BOOST_CHECK_EQUAL((*i)->GetGenomic_start(), TSeqPos(0) );
+    BOOST_CHECK_EQUAL((*i)->GetGenomic_end(), TSeqPos(17) );
+    BOOST_CHECK_EQUAL((*++i)->GetGenomic_start(), TSeqPos(33) );
+    BOOST_CHECK_EQUAL((*i)->GetGenomic_end(), TSeqPos(59) );
+    BOOST_CHECK_EQUAL((*++i)->GetGenomic_start(), TSeqPos(123) );
+    BOOST_CHECK_EQUAL((*i)->GetGenomic_end(), TSeqPos(1655) );
+}
+BOOST_AUTO_TEST_CASE(TestCaseTrimHoleOff)
+{
+    CRef<CObjectManager> om = CObjectManager::GetInstance();
+    CGBDataLoader::RegisterInObjectManager(*om);
+    CRef<CScope> scope(new CScope(*om));
+    scope->AddDefaults();
+    
+    CFeatureGenerator feat_gen(*scope);
+    
+string buf = " \
+Seq-align ::= { \
+  type disc, \
+  dim 2, \
+  segs spliced { \
+    product-id gi 16762324, \
+    genomic-id gi 188504888, \
+    genomic-strand plus, \
+    product-type protein, \
+    exons { \
+      { \
+        product-start protpos { amin 25, frame 1 }, \
+        product-end protpos { amin 30, frame 3 }, \
+        genomic-start 0, genomic-end 17 \
+      }, \
+      { \
+        product-start protpos { amin 65, frame 2 }, \
+        product-end protpos { amin 576, frame 3 }, \
+        genomic-start 121, genomic-end 1655 \
+      } \
+    }, \
+    product-length 577, \
+    modifiers { \
+      stop-codon-found TRUE \
+    } \
+  } \
+}";
+    CNcbiIstrstream istrs(buf);
+    unique_ptr<CObjectIStream> istr(CObjectIStream::Open(eSerial_AsnText, istrs));
+    CSeq_align align;
+    *istr >> align;
+    
+    BOOST_CHECK_NO_THROW(align.Validate(true));
+
+    feat_gen.SetMinIntron(5);
+    CConstRef<CSeq_align> trimmed_align;
+    trimmed_align = feat_gen.AdjustAlignment(align, TSeqRange(1653, 1655));
+
+    BOOST_CHECK_NO_THROW(trimmed_align->Validate(true));
+
+    BOOST_CHECK_EQUAL(trimmed_align->GetSegs().GetSpliced().GetExons().size(), size_t(1));
+
+    CSpliced_seg::TExons::const_iterator i = trimmed_align->GetSegs().GetSpliced().GetExons().begin();
+
+    BOOST_CHECK_EQUAL((*i)->GetGenomic_start(), TSeqPos(1653) );
+    BOOST_CHECK_EQUAL((*i)->GetGenomic_end(), TSeqPos(1655) );
+}
+
 BOOST_AUTO_TEST_CASE(TestCaseStitchProtein)
 {
     CRef<CObjectManager> om = CObjectManager::GetInstance();
