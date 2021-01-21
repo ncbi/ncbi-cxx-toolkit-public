@@ -944,12 +944,13 @@ static void s_Repr_Value(string& os, const CJsonNode& node,
         os.append(1, ']');
         break;
     case CJsonNode::eString:
-        os.append(1, '"');
-        if (flags & CJsonNode::fStandardJson)
-            os.append(NStr::JsonEncode(node.AsString()));
-        else
+        if (flags & CJsonNode::fStandardJson) {
+            os.append(NStr::JsonEncode(node.AsString(), NStr::eJsonEnc_Quoted));
+        } else {
+            os.append(1, '"');
             os.append(NStr::PrintableString(node.AsString()));
-        os.append(1, '"');
+            os.append(1, '"');
+        }
         break;
     case CJsonNode::eInteger:
         os.append(NStr::NumericToString(node.AsInteger()));
