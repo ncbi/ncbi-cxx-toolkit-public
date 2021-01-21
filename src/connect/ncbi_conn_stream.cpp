@@ -168,7 +168,7 @@ EIO_Status CConn_IOStream::Close(void)
     if (!m_CSb)
         return eIO_Closed;
     EIO_Status status = m_CSb->Close();
-    if (status != eIO_Success  ||  status != eIO_Closed)
+    if (status != eIO_Success  &&  status != eIO_Closed)
         clear(NcbiBadbit);
     return status;
 }
