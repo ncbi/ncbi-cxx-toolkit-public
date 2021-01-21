@@ -4883,7 +4883,7 @@ string NStr::ParseEscapes(const CTempString str, EEscSeqRange mode, char user_ch
 }
 
 
-string NStr::ParseQuoted(const CTempString str, size_t* n_read /*= NULL*/)
+CTempString s_Unquote(const CTempString str, size_t* n_read)
 {
     const char* str_pos = str.data();
     char quote_char;
@@ -4901,13 +4901,87 @@ string NStr::ParseQuoted(const CTempString str, size_t* n_read /*= NULL*/)
             size_t pos = str_pos - str.data();
             if (n_read != NULL)
                 *n_read = pos + 1;
-            return ParseEscapes(CTempString(str.data() + 1, pos - 1));
+            return CTempString(str.data() + 1, pos - 1);
         } else {
             escaped = *str_pos == '\\' ? !escaped : false;
         }
     }
     NCBI_THROW2(CStringException, eFormat,
         "Unterminated quoted string", str.length());
+}
+
+
+string NStr::ParseQuoted(const CTempString str, size_t* n_read /*= NULL*/)
+{
+    return ParseEscapes(s_Unquote(move(str), n_read));
+}
+
+
+// An adjusted copy-paste of NStr::ParseEscapes
+string s_ParseJsonEncodeEscapes(const CTempString str)
+{
+    string out;
+    out.reserve(str.size());  // result string can only be smaller
+    SIZE_TYPE pos = 0;
+
+    while (pos < str.size()) {
+        SIZE_TYPE pos2 = str.find('\\', pos);
+        if (pos2 == NPOS) {
+            //~ out += str.substr(pos);
+            CTempString sub(str, pos);
+            out += sub;
+            break;
+        }
+        //~ out += str.substr(pos, pos2 - pos);
+        CTempString sub(str, pos, pos2-pos);
+        out += sub;
+        if (++pos2 == str.size()) {
+            NCBI_THROW2(CStringException, eFormat,
+                        "Unterminated escape sequence", pos2);
+        }
+        switch (str[pos2]) {
+        case '"':
+        case '\\':
+        case '/':  out += str[pos2]; break;
+        case 'b':  out += '\b';      break;
+        case 'f':  out += '\f';      break;
+        case 'n':  out += '\n';      break;
+        case 'r':  out += '\r';      break;
+        case 't':  out += '\t';      break;
+        case 'u':
+            pos = ++pos2;
+            while (pos < str.size() && isxdigit((unsigned char) str[pos])) {
+                pos++;
+            }
+            if (auto len = pos - pos2) {
+                if (len < 4) {
+                    NCBI_THROW2(CStringException, eFormat, "Invalid JSON escape sequence", pos2);
+                } else if (len > 4) {
+                    len = 4;
+                    pos = pos2 + 4;
+                }
+                unsigned int value = NStr::StringToUInt(CTempString(str, pos2, len), 0, 16);
+                if (value > 0xff) {
+                    NCBI_THROW2(CStringException, eConvert,
+                            "Escaped UTF-8 characters after '\\u00ff' are not supported", pos2);
+                }
+                out += static_cast<char>(value);
+                continue;
+            } else {
+                NCBI_THROW2(CStringException, eFormat, "\\u followed by no hexadecimal digits", pos);
+            }
+        default:
+            NCBI_THROW2(CStringException, eFormat, "Invalid JSON escape sequence", pos2);
+        }
+        pos = pos2 + 1;
+    }
+    return out;
+}
+
+
+string NStr::JsonDecode(const CTempString str, size_t* n_read /*= NULL*/)
+{
+    return s_ParseJsonEncodeEscapes(s_Unquote(move(str), n_read));
 }
 
 

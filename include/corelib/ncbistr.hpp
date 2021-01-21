@@ -3093,6 +3093,19 @@ public:
     ///   JSON encoded string
     static string JsonEncode(const CTempString str, EJsonEncode encoding = eJsonEnc_UTF8);
 
+    /// Decode a string encoded by JsonEncode.
+    ///
+    /// @param str
+    ///   The string to encode.
+    ///   It must be in double quotes.
+    /// @param[out] n_read
+    ///   How many symbols the quoted string occupied in the original string.
+    /// @sa
+    ///   JsonEncode
+    /// @warning
+    ///   This method only supports strings encoded by JsonEncode-specific encodings.
+    static string JsonDecode(const CTempString str, size_t* n_read = NULL);
+
     /// Quotes a string in Bourne Again Shell (BASH) syntax, in a way
     /// that disallows non-printable characters in the result.
     /// This function does NOT implement aesthetically optimal quoting,
