@@ -320,27 +320,29 @@ static void s_GetESearchIds(CESearch_Request& req,
     req.SetArgument("term", term);
     for (int retry=0; retry<10; ++retry) {
         try {
-            auto pRes = req.GetESearchResult();
-            if (pRes->IsSetData() &&
-                pRes->GetData().IsInfo() &&
-                pRes->GetData().GetInfo().IsSetContent() &&
-                pRes->GetData().GetInfo().GetContent().IsSetIdList()) {
+            auto& istr = dynamic_cast<CConn_HttpStream&>(req.GetStream());
+            auto pRes = Ref(new esearch::CESearchResult());
+            istr >> MSerial_Xml >> *pRes;
 
-                const auto& idList = pRes->GetData().GetInfo().GetContent().GetIdList();
-                if (idList.IsSetId()) {
-                    ids = idList.GetId();
+            if (istr.GetStatusCode() == 200) {
+                if (pRes->IsSetData() &&
+                    pRes->GetData().IsInfo() &&
+                    pRes->GetData().GetInfo().IsSetContent() &&
+                    pRes->GetData().GetInfo().GetContent().IsSetIdList()) {
+
+                    const auto& idList = pRes->GetData().GetInfo().GetContent().GetIdList();
+                    if (idList.IsSetId()) {
+                        ids = idList.GetId();
+                    }
                 }
-                return;
-            }
-
-            if (!pRes->IsSetData() ||
-                !pRes->GetData().IsERROR()) {
+                req.Disconnect();
                 return;
             }
         }
         catch(...) {
         }
-    
+        req.Disconnect();
+   
         int sleepSeconds = sqrt(retry);
         if (sleepSeconds) {
             SleepSec(sleepSeconds);
