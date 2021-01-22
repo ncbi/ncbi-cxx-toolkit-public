@@ -828,6 +828,15 @@ if test "$with_bin_release" = "yes" ; then
              [Define to 1 when building binaries for public release.])
 fi
 
+case "$with_strip:$with_symbols" in
+   yes:yes )
+      AC_MSG_ERROR([incompatible options: --with-strip but --with-symbols])
+      ;;
+   yes:* )
+      with_symbols=no
+      ;;
+esac
+
 if test "$with_debug" = no; then
     : ${with_symbols=no}
     : ${with_optimization=yes}

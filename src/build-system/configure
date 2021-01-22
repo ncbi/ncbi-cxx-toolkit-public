@@ -5976,6 +5976,15 @@ $as_echo "#define NCBI_BIN_RELEASE 1" >>confdefs.h
 
 fi
 
+case "$with_strip:$with_symbols" in
+   yes:yes )
+      as_fn_error $? "incompatible options: --with-strip but --with-symbols" "$LINENO" 5
+      ;;
+   yes:* )
+      with_symbols=no
+      ;;
+esac
+
 if test "$with_debug" = no; then
     : ${with_symbols=no}
     : ${with_optimization=yes}
