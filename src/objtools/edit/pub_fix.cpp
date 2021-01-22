@@ -373,11 +373,13 @@ static bool s_IsIndexed(CRef<CEUtils_ConnContext> pContext,
             } 
         }
         catch (...) {
-            int sleepSeconds = sqrt(retry);
-            if (sleepSeconds) {
-                SleepSec(sleepSeconds);
-            }   
         }
+        request.Disconnect();
+
+        int sleepSeconds = sqrt(retry);
+        if (sleepSeconds) {
+            SleepSec(sleepSeconds);
+        }   
     }
 
     if (!success) {
