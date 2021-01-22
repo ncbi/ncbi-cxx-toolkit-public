@@ -6124,6 +6124,7 @@ USER_LDFLAGS=$LDFLAGS
 with_experimental="$with_experimental PSGLoader"
 
 if test -n "$with_experimental"; then
+   NCBI_C_PATH_TAGS="/ncbi.gi64 .gi64"
    want_gi32=no
    want_gi64=no
    for x in `echo $with_experimental | tr , ' '`; do
@@ -6138,6 +6139,7 @@ $as_echo "#define NCBI_MONKEY 1" >>confdefs.h
 
 $as_echo "#define NCBI_INT4_GI 1" >>confdefs.h
 
+            NCBI_C_PATH_TAGS=
                       WithFeatures="$WithFeatures${WithFeaturesSep}Int4GI"; WithFeaturesSep=" "
             want_gi32=yes
             ;;
@@ -6145,7 +6147,6 @@ $as_echo "#define NCBI_INT4_GI 1" >>confdefs.h
 
 $as_echo "#define NCBI_INT8_GI 1" >>confdefs.h
 
-            NCBI_C_PATH_TAGS="/ncbi.gi64 .gi64"
                       WithFeatures="$WithFeatures${WithFeaturesSep}Int8GI"; WithFeaturesSep=" "
             want_gi64=yes
             ;;
@@ -6153,7 +6154,6 @@ $as_echo "#define NCBI_INT8_GI 1" >>confdefs.h
 
 $as_echo "#define NCBI_STRICT_GI 1" >>confdefs.h
 
-            NCBI_C_PATH_TAGS="/ncbi.gi64 .gi64"
                       WithFeatures="$WithFeatures${WithFeaturesSep}Int8GI"; WithFeaturesSep=" "
                       WithFeatures="$WithFeatures${WithFeaturesSep}StrictGI"; WithFeaturesSep=" "
             want_gi64=yes

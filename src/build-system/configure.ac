@@ -949,6 +949,7 @@ USER_LDFLAGS=$LDFLAGS
 with_experimental="$with_experimental PSGLoader"
 
 if test -n "$with_experimental"; then
+   NCBI_C_PATH_TAGS="/ncbi.gi64 .gi64"
    want_gi32=no
    want_gi64=no
    for x in `echo $with_experimental | tr , ' '`; do
@@ -961,20 +962,19 @@ if test -n "$with_experimental"; then
          Int4GI )
             AC_DEFINE(NCBI_INT4_GI, 1,
                [Define to 1 to use a simple 32-bit type for GI numbers.])
+            NCBI_C_PATH_TAGS=
             NCBI_FEATURE(Int4GI)
             want_gi32=yes
             ;;
          Int8GI )
             AC_DEFINE(NCBI_INT8_GI, 1,
                [Define to 1 to use a simple 64-bit type for GI numbers.])
-            NCBI_C_PATH_TAGS="/ncbi.gi64 .gi64"
             NCBI_FEATURE(Int8GI)
             want_gi64=yes
             ;;
          StrictGI )
             AC_DEFINE(NCBI_STRICT_GI, 1,
                [Define to 1 to use a strict 64-bit type for GI numbers.])
-            NCBI_C_PATH_TAGS="/ncbi.gi64 .gi64"
             NCBI_FEATURE(Int8GI)
             NCBI_FEATURE(StrictGI)
             want_gi64=yes
