@@ -319,9 +319,16 @@ class NCBI_XCONNECT_EXPORT CJsonNode
     /// Return a string representation of this node.
     string Repr(TReprFlags flags = 0) const;
 
-    static CJsonNode ParseObject(const string& json);
-    static CJsonNode ParseArray(const string& json);
-    static CJsonNode ParseJSON(const string& json);
+    /// Parse methods flags.
+    enum class EParseFlags {
+        fStandardJson = EReprFlags::fStandardJson,
+    };
+    /// Binary OR of EParseFlags.
+    typedef int TParseFlags;
+
+    static CJsonNode ParseObject(const string& json, TParseFlags flags = 0);
+    static CJsonNode ParseArray(const string& json, TParseFlags flags = 0);
+    static CJsonNode ParseJSON(const string& json, TParseFlags flags = 0);
 };
 
 /// Iterator for JSON arrays and objects.

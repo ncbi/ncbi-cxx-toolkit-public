@@ -43,6 +43,8 @@ BEGIN_NCBI_SCOPE
 class CJsonParser
 {
 public:
+    CJsonParser(CJsonNode::TParseFlags flags) : m_Flags(flags) {}
+
     CJsonNode ParseObject(const string& ns_output)
     {
         m_Ch = (m_NSOutput = ns_output).c_str();
@@ -81,6 +83,7 @@ private:
 
     string m_NSOutput;
     const char* m_Ch;
+    CJsonNode::TParseFlags m_Flags;
 };
 
 const char* CJsonException::GetErrCodeString() const
@@ -1043,8 +1046,10 @@ CJsonNode CJsonParser::ParseJSON(const string& json)
 
 string CJsonParser::ParseString(size_t max_len)
 {
+    const bool standard_json = m_Flags & CJsonNode::fStandardJson;
+    auto str = CTempString(m_Ch, max_len);
     size_t len;
-    string val(NStr::ParseQuoted(CTempString(m_Ch, max_len), &len));
+    auto val = standard_json ? NStr::JsonDecode(move(str), &len) : NStr::ParseQuoted(move(str), &len);
 
     m_Ch += len;
     return val;
@@ -1241,19 +1246,19 @@ CJsonNode CJsonParser::ParseValue()
     INVALID_FORMAT_ERROR();
 }
 
-CJsonNode CJsonNode::ParseObject(const string& json)
+CJsonNode CJsonNode::ParseObject(const string& json, TParseFlags flags)
 {
-    return CJsonParser().ParseObject(json);
+    return CJsonParser(flags).ParseObject(json);
 }
 
-CJsonNode CJsonNode::ParseArray(const string& json)
+CJsonNode CJsonNode::ParseArray(const string& json, TParseFlags flags)
 {
-    return CJsonParser().ParseArray(json);
+    return CJsonParser(flags).ParseArray(json);
 }
 
-CJsonNode CJsonNode::ParseJSON(const string& json)
+CJsonNode CJsonNode::ParseJSON(const string& json, TParseFlags flags)
 {
-    return CJsonParser().ParseJSON(json);
+    return CJsonParser(flags).ParseJSON(json);
 }
 
 const char* CJsonOverUTTPException::GetErrCodeString() const
