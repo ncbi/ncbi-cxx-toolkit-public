@@ -140,9 +140,11 @@ ifeq "$(JUST_TOUCH)" "1"
 	    case $$x in *@dll_ext@) ;; *) relink_after_all=true ;; esac; \
 	done; \
 	if [ $$relink_after_all = true ]; then \
-	    $(MAKE) -f $(MAKEFILE) $(MFLAGS) $(XDLL) LDD_R=; \
+	    $(MAKE) -f $(MAKEFILE) $(MFLAGS) $(XDLL) \
+	        srcdir=$(srcdir) TMPL=$(TMPL) LDD_R=; \
 	else \
-	    $(MAKE) -f $(MAKEFILE) $(MFLAGS) retouch; \
+	    $(MAKE) -f $(MAKEFILE) $(MFLAGS) retouch \
+	        srcdir=$(srcdir) TMPL=$(TMPL); \
 	fi
 else
  ARGS = $(LDFLAGS_DLL) $(DLL_LDFLAGS) $(XDLLOBJ) $(XOBJ) $(XDLL_LIB) $(LIBS)
