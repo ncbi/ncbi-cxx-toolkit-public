@@ -4217,6 +4217,7 @@ MHNA	s	Museum d'Histoire Naturelle d'Autun
 MHNB	s	Museum d'Histoire Naturelle de Bale			
 MHNC<CHE>	s	Musee d'Histoire Naturelle - La Chaux-de-Fonds	LCFM		
 MHNC<CHL>	s	Museo de Historia Natural de Concepcion (Chile)			
+MHNCI	s	Museu de Historia Natural Capao da Imbuia	MNHCI		
 MHNCSJ	s	Museo de Historia Natural			
 MHNES	s	Museo de Historia Natural de El Salvador			
 MHNG	s	Natural History Museum of Geneva			
@@ -4360,7 +4361,6 @@ MNGA	s	Muzeul National de Istorie Natural "Grigore Antipa"
 MNGC	s	Museo Nacional de Historia Natural, Guatemala City			
 MNH	s	Museo de Ciencias Naturales de Tenerife			
 MNH<USA>	s	Missouri Department of Conservation			
-MNHCI	s	Museu de Historia Natural Capao da Imbuia	MNHCI		
 MNHM<DEU>	s	Naturhistorisches Museum Mainz/Landessammlung fuer Naturkunde Rheinland-Pfalz			
 MNHM<USA-CO>	s	John May Museum of Natural History			
 MNHN	s	Museum National d'Histoire Naturelle			
@@ -7075,8 +7075,9 @@ UCONN	s	University of Connecticut
 UCP	s	Universidad del Cauca	MHNUC 		
 UCPC	s	Universidad del Cauca			
 UCR<CRI>	s	Universidad de Costa Rica, Museo de Zoologia	MZUCR		
-UCR<USA-CA>	s	University of California, Riverside			
+UCR<USA-CA>	s	University of California, Riverside	UCRC		
 UCR<USA-CA>:ENT	s	University of California, Riverside, Entomology Collection		
+UCR<USA-CA>:ESM	s	University of California, Riverside, Earth Sciences Museum	
 UCS<USA-CT>	s	University of Connecticut			
 UCS<USA-NY>	s	Union College, Department of Biological Sciences			
 UCSA	s	University College of Swansea, Botany Department			
