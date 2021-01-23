@@ -114,6 +114,13 @@ static map<int, SErrorSubcodes> ERROR_CODE_STR =
     {
         { err_Print_Failed, "Failed" }
     }
+    } },
+    { err_AuthList,{ "AuthList",
+    {
+        { err_AuthList_SignificantDrop, "SignificantDrop" },
+        { err_AuthList_PreserveGB, "PreserveGB" },
+        { err_AuthList_LowMatch, "LowMatch" }
+    }
     } }
 };
 }
@@ -1200,8 +1207,8 @@ void CAuthListValidator::Configure(const CNcbiRegistry& cfg, const string& secti
     configured = true;
 }
 
-CAuthListValidator::CAuthListValidator()
-    : outcome(eNotSet), pub_year(0)
+CAuthListValidator::CAuthListValidator(IMessageListener* err_log)
+    : outcome(eNotSet), pub_year(0), reported_limit("not initialized"), m_err_log(err_log)
 {
     if (! configured) {
         Configure(CNcbiApplication::Instance()->GetConfig(), "auth_list_validator");
@@ -1212,50 +1219,58 @@ CAuthListValidator::EOutcome CAuthListValidator::validate(const CCit_art& gb_art
 {
     outcome = eNotSet;
     pub_year = 0;
-    gb_type = CAuth_list::C_Names::SelectionName(gb_art.GetAuthors().GetNames().Which());
-    get_lastnames(gb_art.GetAuthors(), removed);
-    pm_type = CAuth_list::C_Names::SelectionName(pm_art.GetAuthors().GetNames().Which());
-    get_lastnames(pm_art.GetAuthors(), added);
     pub_year = pm_art.GetFrom().GetJournal().GetImp().GetDate().GetStd().GetYear();
     if (pub_year < 1900 || pub_year > 3000) {
         throw logic_error("Publication from PubMed has invalid year: " + std::to_string(pub_year));
     }
+    gb_type = CAuth_list::C_Names::SelectionName(gb_art.GetAuthors().GetNames().Which());
+    get_lastnames(gb_art.GetAuthors(), removed);
+    pm_type = CAuth_list::C_Names::SelectionName(pm_art.GetAuthors().GetNames().Which());
+    get_lastnames(pm_art.GetAuthors(), added);
     matched.clear();
     compare_lastnames();
-
-    // check minimum required # of matching authors
-    if (double(cnt_matched) / cnt_min < cfg_matched_to_min) {
-        //msg
-        outcome = eFailed_validation;
-        return outcome;
+    actual_matched_to_min = double(cnt_matched) / cnt_min;
+    actual_removed_to_gb = double(cnt_removed) / cnt_gb;
+    if (actual_removed_to_gb > cfg_removed_to_gb) {
+        ERR_POST_TO_LISTENER(m_err_log, eDiag_Warning, err_AuthList, err_AuthList_SignificantDrop,
+            "Too many authors removed (" << cnt_removed << ") compared to total Genbank authors (" << cnt_gb << ")");
     }
     // determine outcome according to ID-6514 (see fix_pub.hpp)
     if (pub_year > 1999) {
-        if (double(cnt_removed) / cnt_gb > cfg_removed_to_gb ) {
-            //msg: Warning: PubMed article author count is significantly less than the original author count
-        }
-        //msg
+        reported_limit = "Unlimited";
         outcome = eAccept_pubmed;
     }
     else if (pub_year > 1995) {
+        reported_limit = "25 authors";
         if (cnt_gb > 25) {
-            //msg
+            ERR_POST_TO_LISTENER(m_err_log, eDiag_Warning, err_AuthList, err_AuthList_PreserveGB,
+                "Preserving original " << cnt_gb << " GB authors, ignoring " << cnt_pm << " PubMed authors "
+                << "(PubMed limit was " << reported_limit << " in pub.year " << pub_year << ")");
             outcome = eKeep_genbank;
         }
         else {
-            //msg
             outcome = eAccept_pubmed;
         }
     }
     else { // pub_year < 1996
+        reported_limit = "10 authors";
         if (cnt_gb > 10) {
-            //msg
+            ERR_POST_TO_LISTENER(m_err_log, eDiag_Warning, err_AuthList, err_AuthList_PreserveGB,
+                "Preserving original " << cnt_gb << " GB authors, ignoring " << cnt_pm << " PubMed authors "
+                << "(PubMed limit was " << reported_limit << " in pub.year " << pub_year << ")");
             outcome = eKeep_genbank;
         }
         else {
-            //msg
             outcome = eAccept_pubmed;
         }
+    }
+    // check minimum required # of matching authors
+    if (actual_matched_to_min < cfg_matched_to_min) {
+        ERR_POST_TO_LISTENER(m_err_log, eDiag_Error, err_AuthList, err_AuthList_LowMatch,
+            "Only " << cnt_matched << " authors matched between " << cnt_gb << " Genbank and " 
+            << cnt_pm << " PubMed. Match/Min ratio " << fixed << setprecision(2) << actual_matched_to_min
+            << " is below threshold " << fixed << setprecision(2) << cfg_matched_to_min);
+        outcome = eFailed_validation;
     }
     return outcome;
 }
@@ -1264,8 +1279,13 @@ void CAuthListValidator::DebugDump(CNcbiOstream& out) const
 {
     out << "\n--- Debug Dump of CAuthListValidator object ---\n";
     out << "pub_year: " << pub_year << "\n";
+    out << "PubMed Auth-list limit in " << pub_year << ": " << reported_limit << "\n";
     out << "GB author list type: " << gb_type << "; # of entries: " << cnt_gb << "\n";
     out << "PM author list type: " << pm_type << "; # of entries: " << cnt_pm << "\n";
+    out << "Configured ratio 'matched' to 'min(gb,pm)': " << cfg_matched_to_min 
+        << "; actual: " << actual_matched_to_min << "\n";
+    out << "Configured ratio 'removed' to 'gb': " << cfg_removed_to_gb
+        << "; actual: " << actual_removed_to_gb << "\n";
     dumplist("Matched", matched, out);
     dumplist("Added", added, out);
     dumplist("Removed", removed, out);

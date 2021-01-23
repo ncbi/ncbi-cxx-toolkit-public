@@ -46,34 +46,6 @@ class CPub;
 class CPub_equiv;
 class CCit_art;
 
-class CAuthorCompareSettings {
-public:
-    CAuthorCompareSettings() 
-    : m_limit_list( {
-            { 1984, 1995, 10, EAction::eKeepGB, EAction::eKeepGB },
-            { 1996, 1999, 25, EAction::eKeepGB, EAction::eKeepGB },
-            { 2000, 3000, -1, EAction::eKeepGB, EAction::eAccept }
-        }
-      ),
-      percent_Pubmed_match(30), 
-      percent_GB_match(30) {};
-    enum EAction {
-        eAccept,     // accept pubmed authors
-        eKeepGB,     // keep Genbank authors
-        eReject      // consider author comarison failed, cancel pub modification
-    };
-    struct SPubmedLimit {
-        int year_from;  // for the firs period, specify 1900
-        int year_to;    // for the last period specify 3000
-        int limit;      // for no limit, specify -1; all actions ignored
-        EAction on_below_limit; // what to do, if pubmed # is below limit
-        EAction on_equal_to_limit;
-    };
-    vector<SPubmedLimit> m_limit_list;  // it's expected to be ordered by year range
-    int percent_Pubmed_match;  // if Pubmed list is shorter than GB list
-    int percent_GB_match;   // if GB list is shorter than Pubmed list, normally the same as above
-};
-
 /*-------------------------------------------------------------------------------
 https://jira.ncbi.nlm.nih.gov/browse/ID-6514?focusedCommentId=6241819&page=com.atlassian.jira.plugin.system.issuetabpanels:comment-tabpanel#comment-6241819
 As requested by Mark Cavanaugh:
@@ -116,7 +88,7 @@ public:
     static void Configure(const CNcbiRegistry& cfg, const string& section);
     // If true, FixPubEquiv() will use this class to validate authors list
     static bool enabled;
-    CAuthListValidator();
+    CAuthListValidator(IMessageListener* err_log);
     EOutcome validate(const CCit_art& gb_art, const CCit_art& pm_art);
     void DebugDump(CNcbiOstream& out) const;
     // utility method
@@ -136,6 +108,10 @@ public:
     list<string> added;
     string gb_type;
     string pm_type;
+    // for DebugDump()
+    string reported_limit;
+    double actual_matched_to_min;
+    double actual_removed_to_gb;
 
 private:
     void compare_lastnames();
@@ -143,7 +119,7 @@ private:
     static void get_lastnames(const CAuth_list::C_Names::TStd& authors, list<string>& lastnames);
     static void get_lastnames(const CAuth_list::C_Names::TStr& authors, list<string>& lastnames);
     // vars
-
+    IMessageListener* m_err_log;
     static bool configured;
     static double cfg_matched_to_min;
     static double cfg_removed_to_gb;
@@ -157,10 +133,10 @@ public:
         m_always_lookup(always_lookup),
         m_replace_cit(replace_cit),
         m_merge_ids(merge_ids),
-        m_err_log(err_log)
+        m_err_log(err_log),
+        m_authlist_validator(err_log)
     {
     }
-    void SetAuthorCompareSettings(CAuthorCompareSettings acs);
 
     void FixPub(CPub& pub);
     void FixPubEquiv(CPub_equiv& pub_equiv);
@@ -175,7 +151,6 @@ private:
         m_merge_ids;
 
     IMessageListener* m_err_log;
-    CAuthorCompareSettings m_author_settings;
     CAuthListValidator m_authlist_validator;
 };
 
