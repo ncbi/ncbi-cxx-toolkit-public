@@ -44,6 +44,7 @@
 #include <objtools/pubseq_gateway/impl/cassandra/cass_blob_op.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_driver.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/IdCassScope.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/changelog/writer.hpp>
 
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
@@ -110,7 +111,6 @@ void CCassID2SplitTaskInsert::Wait1()
                 m_QueryArr.resize(1);
                 m_QueryArr[0] = { m_Conn->NewQuery(), 0};
                 auto qry = m_QueryArr[0].query;
-#if 00001
                 string sql = "INSERT INTO " + GetKeySpace() + ".split"
                   " (ent, sat, sat_key, ent_type, split_id)"
                   " VALUES(?, ?, ?, ?, ?)";
@@ -120,26 +120,19 @@ void CCassID2SplitTaskInsert::Wait1()
                 qry->BindInt32( 2, m_Id2Split->GetSatKey());
                 qry->BindInt32( 3, m_Id2Split->GetEntType());
                 qry->BindInt32( 4, m_Id2Split->GetSplitId());
-#else
-                string sql = "INSERT INTO " + GetKeySpace() + ".split"
-                  " (ent, sat, sat_key, ent_type,"
-                  " split_id, user_name, length, full_length, modified, data)"
-                  " VALUES(?, ?, ?, ?, ?, ?, ?, ?, toTimestamp(now()), ?)";
-                qry->SetSQL( sql, 9);
-                qry->BindInt32( 0, m_Id2Split->GetUniqueId());
-                qry->BindInt16( 1, m_Id2Split->GetSat());
-                qry->BindInt32( 2, m_Id2Split->GetSatKey());
-                qry->BindInt32( 3, m_Id2Split->GetEntType());
-                qry->BindInt32( 4, m_Id2Split->GetSplitId());
-                qry->BindStr(   5, m_Id2Split->GetUserName());
-                qry->BindInt32( 6, m_Id2Split->GetLength());
-                qry->BindInt32( 7, m_Id2Split->GetFullLen());
-                const CBlobRecord::TBlobChunk& chunk = m_Blob->GetChunk(0);
-                qry->BindBytes(8, chunk.data(), chunk.size());
-#endif
 
                 UpdateLastActivity();
                 qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
+
+                CBlobChangelogWriter().WriteChangelogEvent(
+                    qry.get(),
+                    GetKeySpace(),
+                    CBlobChangelogRecord(
+                        m_Id2Split->GetUniqueId(),
+                        m_Blob->GetModified(),
+                        TChangelogOperation::eUpdated)
+                );
+
                 m_State = eWaitingId2SplitInfoInserted;
                 break;
             }
