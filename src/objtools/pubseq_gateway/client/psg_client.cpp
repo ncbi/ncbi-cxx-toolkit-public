@@ -266,7 +266,7 @@ TReplyItem* CPSG_Reply::SImpl::CreateImpl(TReplyItem* item, const vector<SPSG_Ch
     if (chunks.empty()) return item;
 
     unique_ptr<TReplyItem> rv(item);
-    rv->m_Data = CJsonNode::ParseJSON(chunks.front());
+    rv->m_Data = CJsonNode::ParseJSON(chunks.front(), CJsonNode::fStandardJson);
 
     return rv.release();
 }
@@ -924,7 +924,7 @@ template <class TResult>
 TResult SAnnotInfoProcessor<TResult>::operator()(const CPSG_ReplyItem* item, const CJsonNode& data) const
 {
     auto annot_info_str(NStr::Unescape(data.GetString("annot_info")));
-    auto annot_info(CJsonNode::ParseJSON(annot_info_str));
+    auto annot_info(CJsonNode::ParseJSON(annot_info_str, CJsonNode::fStandardJson));
 
     if (!annot_info.IsObject()) ThrowError(item, annot_info);
 
