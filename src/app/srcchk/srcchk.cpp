@@ -41,7 +41,7 @@
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 
-#include <objtools/data_loaders/genbank/gbloader.hpp>
+#include <misc/data_loaders_util/data_loaders_util.hpp>
 
 #include <objtools/writers/writer_exception.hpp>
 #include <objtools/readers/message_listener.hpp>
@@ -167,7 +167,7 @@ int CSrcChkApp::Run()
 
 	CONNECT_Init(&GetConfig());
     m_pObjMngr = CObjectManager::GetInstance();
-    CGBDataLoader::RegisterInObjectManager(*m_pObjMngr);
+    CDataLoadersUtil::SetupObjectManager(args, *m_pObjMngr);
     m_pScope.Reset(new CScope(*m_pObjMngr));
     m_pScope->AddDefaults();
 
@@ -404,5 +404,5 @@ USING_NCBI_SCOPE;
 int main(int argc, const char** argv)
 //  ===========================================================================
 {
-    return CSrcChkApp().AppMain(argc, argv, 0, eDS_ToStderr, 0);
+    return CSrcChkApp().AppMain(argc, argv);
 }
