@@ -87,7 +87,8 @@ struct SErrorSubcodes
 
 static map<int, SErrorSubcodes> ERROR_CODE_STR =
 {
-    { err_Reference,{ "REFERENCE",
+    // I'm using it in blob_maint application. The string REFERENCE is not informative, changing to FixPub.
+    { err_Reference,{ "FixPub",
     {
         { err_Reference_MuidNotFound, "MuidNotFound" },
         { err_Reference_SuccessfulMuidLookup, "SuccessfulMuidLookup" },
@@ -1280,12 +1281,12 @@ void CAuthListValidator::DebugDump(CNcbiOstream& out) const
     out << "\n--- Debug Dump of CAuthListValidator object ---\n";
     out << "pub_year: " << pub_year << "\n";
     out << "PubMed Auth-list limit in " << pub_year << ": " << reported_limit << "\n";
-    out << "GB author list type: " << gb_type << "; # of entries: " << cnt_gb << "\n";
-    out << "PM author list type: " << pm_type << "; # of entries: " << cnt_pm << "\n";
     out << "Configured ratio 'matched' to 'min(gb,pm)': " << cfg_matched_to_min 
         << "; actual: " << actual_matched_to_min << "\n";
     out << "Configured ratio 'removed' to 'gb': " << cfg_removed_to_gb
         << "; actual: " << actual_removed_to_gb << "\n";
+    out << "GB author list type: " << gb_type << "; # of entries: " << cnt_gb << "\n";
+    out << "PM author list type: " << pm_type << "; # of entries: " << cnt_pm << "\n";
     dumplist("Matched", matched, out);
     dumplist("Added", added, out);
     dumplist("Removed", removed, out);
