@@ -36,7 +36,9 @@
 #define __REMOTE_UPDATER_HPP_INCLUDED__
 
 #include <corelib/ncbimisc.hpp>
-#include<functional>
+#include <functional>
+#include <objects/mla/mla_client.hpp>
+#include <objtools/edit/edit_error.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -57,6 +59,26 @@ class CPub;
 BEGIN_SCOPE(edit)
 
 class CCachedTaxon3_impl;
+
+class NCBI_XOBJEDIT_EXPORT CRemoteUpdaterMessage: public CObjEditMessage
+{
+public:
+    CRemoteUpdaterMessage(const std::string& msg, EError_val error)
+    : CObjEditMessage(msg, eDiag_Warning), m_error(error)
+    {
+    }
+    virtual CRemoteUpdaterMessage *Clone(void) const {
+        return new CRemoteUpdaterMessage(GetText(), m_error);
+    }
+
+    EError_val m_error;
+};
+
+class NCBI_XOBJEDIT_EXPORT CRemoteUpdaterException: public CException
+{   
+public:
+    using CException::CException;
+};
 
 class NCBI_XOBJEDIT_EXPORT CRemoteUpdater
 {

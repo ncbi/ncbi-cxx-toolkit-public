@@ -125,11 +125,11 @@ CRef<CPub> s_GetPubFrompmid(CMLAClient& mlaClient, TEntrezId id, int maxAttempts
                 << errorVal;
             string msg = CNcbiOstrstreamToString(oss);
             if (pMessageListener) {
-                pMessageListener->PutMessage(CObjEditMessage(msg, eDiag_Error));
+                pMessageListener->PutMessage(CRemoteUpdaterMessage(msg, errorVal));
                 break;
             }
             else {
-                NCBI_THROW(CException, eUnknown, msg);
+                NCBI_THROW(CRemoteUpdaterException, eUnknown, msg);
             }
         }
     }

@@ -123,6 +123,18 @@ public:
         bool retval = CMessageListenerLenient::PutError(err);
         return retval;
     }
+
+    virtual bool PutMessage(const IObjtoolsMessage& message) override
+    {
+        auto edit = dynamic_cast<const edit::CRemoteUpdaterMessage*>(&message);
+        if (edit)
+        {
+            if (edit->m_error != eError_val_citation_not_found)
+                return false;
+        }
+        return CMessageListenerLenient::PutMessage(message);
+    }
+
 };
 
 class CTbl2AsnApp : public CNcbiApplication
@@ -456,8 +468,7 @@ int CTbl2AsnApp::Run(void)
     }
 
     m_reader.reset(new CMultiReader(m_context));
-    unique_ptr<CObjtoolsListener> pDummyListener(new CObjtoolsListener()); // RW-1130
-    m_context.m_remote_updater.reset(new edit::CRemoteUpdater(pDummyListener.get()));
+    m_context.m_remote_updater.reset(new edit::CRemoteUpdater(m_logger));   
 
     // excluded per RW-589
 #if 0
@@ -1010,7 +1021,7 @@ void CTbl2AsnApp::ProcessOneEntry(
     {
         VisitAllFeatures(*entry, [this](CSeq_feat& feature){m_context.RemoveProteinIdsQuals(feature); });
     }
-
+    
     CSeq_entry_Handle seh = m_context.m_scope->AddTopLevelSeqEntry(*entry);
     CCleanup::ConvertPubFeatsToPubDescs(seh);
 
