@@ -729,7 +729,7 @@ struct SJobs : unordered_map<string, SJob>
 
 void CCgi2RCgiApp::ListenJobs(const string& job_ids_value, const string& timeout_value)
 {
-    CTimeout timeout;
+    CTimeout timeout(CTimeout::eZero);
 
     try {
         timeout.Set(NStr::StringToDouble(timeout_value));
@@ -842,11 +842,11 @@ CNcbiOstream& operator<<(CNcbiOstream& out, SJobs jobs)
         const auto& job = j.second;
 
         const auto status = CNetScheduleAPI::StatusToString(job.status);
-        const auto message = NStr::JsonEncode(job.progress_msg);
+        const auto message = NStr::JsonEncode(job.progress_msg, NStr::eJsonEnc_Quoted);
         out << delimiter << "\n  \"" << job_id << "\":\n  {\n    \"Status\": \"" << status << "\"";
 
         if (!job.progress_msg.empty()) {
-            out << ",\n    \"Message\": \"" << message << "\"";
+            out << ",\n    \"Message\": " << message;
             if (job.progress_msg_truncated) out << ",\n    \"Truncated\": true";
         }
 

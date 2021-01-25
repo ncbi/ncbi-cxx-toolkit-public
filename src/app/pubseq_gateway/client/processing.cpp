@@ -244,7 +244,7 @@ void CJsonResponse::Fill(shared_ptr<CPSG_BlobData> blob_data)
     Set("id", blob_data);
     ostringstream os;
     os << blob_data->GetStream().rdbuf();
-    Set("data", NStr::JsonEncode(os.str()));
+    Set("data", NStr::Base64Encode(os.str()));
 }
 
 void CJsonResponse::Fill(shared_ptr<CPSG_BlobInfo> blob_info)

@@ -291,7 +291,7 @@ void CSynRegistry::CAlert::Report(ostream& os) const
 {
     lock_guard<mutex> lock(m_Mutex);
     for (const auto& alert : m_Alerts) {
-        os << "Alert_" << alert.first << ": \"" << alert.second << '"' << endl;
+        os << "Alert_" << alert.first << ": " << alert.second << endl;
     }
 }
 
@@ -367,7 +367,7 @@ TType CSynRegistry::TGet(const SRegSynonyms& sections, SRegSynonyms names, TType
                 }
 
                 ERR_POST(Warning << msg);
-                m_Alert->Set(NStr::JsonEncode(msg));
+                m_Alert->Set(NStr::JsonEncode(msg, NStr::eJsonEnc_Quoted));
             }
         }
     }
