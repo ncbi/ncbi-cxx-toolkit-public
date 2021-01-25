@@ -106,7 +106,8 @@ public:
     };
 
     CHttpReply(h2o_req_t *  req, CHttpProto<P> *  proto,
-               CHttpConnection<P> *  http_conn) :
+               CHttpConnection<P> *  http_conn,
+               const char *  cd_uid) :
         m_Req(req),
         m_RespGenerator({0}),
         m_OutputIsReady(true),
@@ -117,7 +118,8 @@ public:
         m_HttpProto(proto),
         m_HttpConn(http_conn),
         m_DataReady(make_shared<CDataTrigger>(proto)),
-        m_ReplyContentType(ePSGS_NotSet)
+        m_ReplyContentType(ePSGS_NotSet),
+        m_CdUid(cd_uid)
     {}
 
     CHttpReply(const CHttpReply&) = delete;
@@ -445,6 +447,7 @@ private:
             case eReplyInitialized:
                 if (!m_Cancelled) {
                     x_SetContentType();
+                    x_SetCdUid();
                     m_State = eReplyStarted;
                     m_Req->res.status = status;
                     m_Req->res.reason = reason;
@@ -507,6 +510,7 @@ private:
             if (!m_OutputFinished) {
                 if (m_State == eReplyInitialized) {
                     x_SetContentType();
+                    x_SetCdUid();
                     switch (status) {
                         case 400:
                             h2o_send_error_400(m_Req, head ?
@@ -591,6 +595,16 @@ private:
         }
     }
 
+    void x_SetCdUid(void)
+    {
+        if (m_CdUid != nullptr) {
+            static int      cd_uid_size = strlen(m_CdUid);
+            h2o_add_header_by_str(&m_Req->pool, &m_Req->res.headers,
+                                  H2O_STRLIT("X-CD-UID"), 0, NULL,
+                                  m_CdUid, cd_uid_size);
+        }
+    }
+
     h2o_req_t *                     m_Req;
     h2o_generator_t                 m_RespGenerator;
     bool                            m_OutputIsReady;
@@ -605,6 +619,7 @@ private:
 
     shared_ptr<CDataTrigger>        m_DataReady;
     EPSGS_ReplyMimeType             m_ReplyContentType;
+    const char *                    m_CdUid;
 };
 
 
@@ -1070,7 +1085,7 @@ public:
     static void DaemonStarted() {}
     static void DaemonStopped() {}
 
-    int OnHttpRequest(CHttpGateHandler<P> *  rh, h2o_req_t *  req)
+    int OnHttpRequest(CHttpGateHandler<P> *  rh, h2o_req_t *  req, const char *  cd_uid)
     {
         h2o_conn_t *        conn = req->conn;
         h2o_socket_t *      sock = conn->callbacks->get_socket(conn);
@@ -1081,7 +1096,7 @@ public:
         CHttpRequest                hreq(req);
         unique_ptr<CHttpReply<P>>   low_level_reply(
                                         new CHttpReply<P>(req, this,
-                                                          http_conn));
+                                                          http_conn, cd_uid));
         shared_ptr<CPSGS_Reply>     reply(new CPSGS_Reply(move(low_level_reply)));
 
         try {
@@ -1181,6 +1196,8 @@ public:
     */
         h2o_config_init(&m_HttpCfg);
         m_HttpCfgInitialized = true;
+
+        sm_CdUid = getenv("CD_UID");
     }
 
     ~CHttpDaemon()
@@ -1238,6 +1255,7 @@ private:
     h2o_globalconf_t                                    m_HttpCfg;
     bool                                                m_HttpCfgInitialized;
     std::vector<CHttpHandler<P>>                        m_Handlers;
+    static const char *                                 sm_CdUid;
 
     static int s_OnHttpRequest(h2o_handler_t *  self, h2o_req_t *  req)
     {
@@ -1246,7 +1264,7 @@ private:
             CHttpProto<P> *proto = nullptr;
 
             if (rh->m_Tcpd->OnRequest(&proto)) {
-                return proto->OnHttpRequest(rh, req);
+                return proto->OnHttpRequest(rh, req, sm_CdUid);
             }
         } catch (const std::exception &  e) {
             h2o_send_error_503(req, "Malfunction", e.what(), 0);
@@ -1258,5 +1276,10 @@ private:
         return -1;
     }
 };
+
+template<typename P>
+const char *  CHttpDaemon<P>::sm_CdUid = nullptr;
+
+
 
 #endif
