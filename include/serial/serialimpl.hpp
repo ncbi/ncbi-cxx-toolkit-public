@@ -193,7 +193,7 @@ TTypeInfoGetter GetStdTypeInfoGetter(const char* const* )
     &NCBI_NS_NCBI::CStdTypeInfo< SERIAL_TYPE(STL_CHAR_vector)(CharType) >::GetTypeInfo
 
 #define SERIAL_TYPE_STL_auto_ptr(TypeMacro,TypeMacroArgs) \
-    NCBI_NS_STD::unique_ptr<SERIAL_TYPE(TypeMacro)TypeMacroArgs >
+    NCBI_NS_STD::shared_ptr<SERIAL_TYPE(TypeMacro)TypeMacroArgs >
 #define SERIAL_REF_STL_auto_ptr(TypeMacro,TypeMacroArgs) \
     &NCBI_NS_NCBI::CStlClassInfo_auto_ptr<SERIAL_TYPE(TypeMacro)TypeMacroArgs >::GetTypeInfo, SERIAL_REF(TypeMacro)TypeMacroArgs
 
