@@ -117,7 +117,7 @@ FileMessenger::~FileMessenger(void)
 
     // last-minute attempt to write any pending commands to the file
     if (pendingCommands.size() > 0) {
-        auto_ptr<CPIDGuard> lockStream(CreateLock(lockFile));
+        unique_ptr<CPIDGuard> lockStream(CreateLock(lockFile));
         if (lockStream.get() == NULL) {
             int nTries = 1;
             do {
@@ -132,7 +132,7 @@ FileMessenger::~FileMessenger(void)
         else
             ERRORMSG("Timeout occurred when attempting to flush pending commands to file");
 
-        //  CPIDGuard pointer cleaned up when auto_ptr goes out of scope.
+        //  CPIDGuard pointer cleaned up when unique_ptr goes out of scope.
     }
 
     // sanity check to make sure each command received was sent a reply
@@ -242,7 +242,7 @@ void FileMessenger::PollMessageFile(void)
     if (pendingCommands.size() > 0) TRACEMSG("has pending commands to send");
 
     // since we're going to read or write the file, establish a lock now
-    auto_ptr<CPIDGuard> lockStream(CreateLock(lockFile));
+    unique_ptr<CPIDGuard> lockStream(CreateLock(lockFile));
     if (lockStream.get() == NULL)
         return; // try again later, so program isn't locked during wait
 
@@ -260,7 +260,7 @@ void FileMessenger::PollMessageFile(void)
         lastKnownSize = 0;
     }
 
-    //  CPIDGuard pointer cleaned up when auto_ptr goes out of scope.
+    //  CPIDGuard pointer cleaned up when unique_ptr goes out of scope.
 }
 
 static const string COMMAND_END = "### END COMMAND ###";
@@ -287,7 +287,7 @@ void FileMessenger::ReceiveCommands(void)
 {
     TRACEMSG("receiving commands...");
 
-    auto_ptr<CNcbiIfstream> inStream(new ncbi::CNcbiIfstream(
+    unique_ptr<CNcbiIfstream> inStream(new ncbi::CNcbiIfstream(
         messageFile.GetPath().c_str(), IOS_BASE::in));
     if (!(*inStream)) {
         ERRORMSG("cannot open message file for reading!");
@@ -409,7 +409,7 @@ void FileMessenger::SendPendingCommands(void)
     if (pendingCommands.size() == 0)
         return;
 
-    auto_ptr<CNcbiOfstream> outStream(new ncbi::CNcbiOfstream(
+    unique_ptr<CNcbiOfstream> outStream(new ncbi::CNcbiOfstream(
         messageFile.GetPath().c_str(), IOS_BASE::out | IOS_BASE::app));
     if (!(*outStream)) {
         ERRORMSG("cannot open message file for writing!");
@@ -488,7 +488,7 @@ bool SeqIdToIdentifier(const CRef < ncbi::objects::CSeq_id >& seqID, string& ide
         return false;
     try {
         CNcbiOstrstream oss;
-        auto_ptr < CObjectOStream > osa(CObjectOStream::Open(eSerial_Xml, oss, eNoOwnership));
+        unique_ptr < CObjectOStream > osa(CObjectOStream::Open(eSerial_Xml, oss, eNoOwnership));
         osa->SetUseIndentation(false);
         CObjectOStreamXml *osx = dynamic_cast<CObjectOStreamXml*>(osa.get());
         if (osx)
@@ -512,7 +512,7 @@ bool IdentifierToSeqId(const string& identifier, CRef < ncbi::objects::CSeq_id >
 {
     try {
         CNcbiIstrstream iss(identifier.data(), identifier.size());
-        auto_ptr < CObjectIStream > isa(CObjectIStream::Open(eSerial_Xml, iss, eNoOwnership));
+        unique_ptr < CObjectIStream > isa(CObjectIStream::Open(eSerial_Xml, iss, eNoOwnership));
         seqID.Reset(new CSeq_id());
         *isa >> *seqID;
         return true;
