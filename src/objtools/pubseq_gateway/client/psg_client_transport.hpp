@@ -112,14 +112,12 @@ struct SPSG_Params
 {
     TPSG_DebugPrintout debug_printout;
     TPSG_RequestsPerIo requests_per_io;
-    TPSG_UseCache use_cache;
     TPSG_RequestRetries request_retries;
     TPSG_PsgClientMode client_mode;
 
     SPSG_Params() :
         debug_printout(TPSG_DebugPrintout::eGetDefault),
         requests_per_io(TPSG_RequestsPerIo::eGetDefault),
-        use_cache(TPSG_UseCache::eGetDefault),
         request_retries(TPSG_RequestRetries::eGetDefault),
         client_mode(TPSG_PsgClientMode::eGetDefault)
     {}
@@ -674,7 +672,7 @@ struct SPSG_IoCoordinator
     SPSG_IoCoordinator(CServiceDiscovery service);
     bool AddRequest(shared_ptr<SPSG_Request> req, const atomic_bool& stopped, const CDeadline& deadline);
     string GetNewRequestId() { return to_string(m_RequestId++); }
-    const string& GetClientId() const { return m_ClientId; }
+    const string& GetUrlArgs() const { return m_UrlArgs; }
 
 private:
     SUv_Barrier m_Barrier;
@@ -684,7 +682,7 @@ private:
     vector<unique_ptr<SPSG_Thread<SPSG_IoImpl>>> m_Io;
     atomic<size_t> m_RequestCounter;
     atomic<size_t> m_RequestId;
-    const string m_ClientId;
+    const string m_UrlArgs;
 };
 
 END_NCBI_SCOPE

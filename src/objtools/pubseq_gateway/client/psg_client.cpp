@@ -454,17 +454,10 @@ const char* s_GetTSE(CPSG_Request_Biodata::EIncludeData include_data)
 
 string CPSG_Queue::SImpl::x_GetAbsPathRef(shared_ptr<const CPSG_Request> user_request)
 {
-    auto& ioc = m_Service.ioc;
     ostringstream os;
     user_request->x_GetAbsPathRef(os);
+    os << m_Service.ioc.GetUrlArgs();
 
-    switch (ioc.params.use_cache) {
-        case EPSG_UseCache::eDefault:                         break;
-        case EPSG_UseCache::eNo:      os << "&use_cache=no";  break;
-        case EPSG_UseCache::eYes:     os << "&use_cache=yes"; break;
-    }
-
-    os << ioc.GetClientId();
     if (const auto hops = user_request->m_Hops) os << "&hops=" << hops;
     return os.str();
 }
