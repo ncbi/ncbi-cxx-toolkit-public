@@ -182,7 +182,7 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
             splign.SetAlignerScores();
             
             CNcbiIstream& istr = args["mrna-data-in"].AsInputFile();        
-            auto_ptr<CObjectIStream> is (CObjectIStream::Open(eSerial_AsnText, istr));  
+            unique_ptr<CObjectIStream> is (CObjectIStream::Open(eSerial_AsnText, istr));  
             string ofmt;
             if(args["mrna-out"]) {                    
                 ofmt = args["mrna-outfmt"].AsString();
@@ -251,7 +251,7 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
 
                 if(args["mrna-expected"]) {
                     CNcbiIstream& estr = args["mrna-expected"].AsInputFile();        
-                    auto_ptr<CObjectIStream> es (CObjectIStream::Open(eSerial_AsnText, estr));                
+                    unique_ptr<CObjectIStream> es (CObjectIStream::Open(eSerial_AsnText, estr));                
                     CRef<CSeq_align_set> expected_out(new CSeq_align_set);
                     *es >> *expected_out;
 
@@ -295,7 +295,7 @@ if(! splign_out->Equals(*expected_out) ) {
             splign.SetAlignerScores();
             
             CNcbiIstream& istr = args["est-data-in"].AsInputFile();        
-            auto_ptr<CObjectIStream> is (CObjectIStream::Open(eSerial_AsnText, istr));   
+            unique_ptr<CObjectIStream> is (CObjectIStream::Open(eSerial_AsnText, istr));   
             string ofmt;
             if(args["est-out"]) {                    
                 ofmt = args["est-outfmt"].AsString();
@@ -352,7 +352,7 @@ if(! splign_out->Equals(*expected_out) ) {
 
                 if(args["est-expected"]) {
                     CNcbiIstream& estr = args["est-expected"].AsInputFile();        
-                    auto_ptr<CObjectIStream> es (CObjectIStream::Open(eSerial_AsnText, estr));                
+                    unique_ptr<CObjectIStream> es (CObjectIStream::Open(eSerial_AsnText, estr));                
                     CRef<CSeq_align_set> expected_out(new CSeq_align_set);
                     *es >> *expected_out;
 
