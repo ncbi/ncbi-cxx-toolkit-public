@@ -37,7 +37,7 @@
 
 #include <corelib/ncbimisc.hpp>
 #include <functional>
-#include <objects/mla/mla_client.hpp>
+#include <objects/mla/Error_val.hpp>
 #include <objtools/edit/edit_error.hpp>
 
 BEGIN_NCBI_SCOPE
