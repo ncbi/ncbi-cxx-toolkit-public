@@ -1345,7 +1345,7 @@ bool StyleManager::EditGlobalStyle(wxWindow *parent)
 
 CCn3d_style_dictionary * StyleManager::CreateASNStyleDictionary(void) const
 {
-    auto_ptr<CCn3d_style_dictionary> dictionary(new CCn3d_style_dictionary());
+    unique_ptr<CCn3d_style_dictionary> dictionary(new CCn3d_style_dictionary());
     if (!globalStyle.SaveSettingsToASN(&(dictionary->SetGlobal_style()))) return NULL;
 
     if (userStyles.size() > 0) {
