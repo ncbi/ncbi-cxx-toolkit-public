@@ -106,7 +106,7 @@ void Cn3DGLCanvas::SetGLFontFromRegistry(double fontScale)
     }
     if (fontScale != 1.0 && fontScale > 0.0)
         fontInfo.SetPointSize((int)(fontScale * fontInfo.GetPointSize()));
-    auto_ptr<wxFont> newFont(wxFont::New(fontInfo));
+    unique_ptr<wxFont> newFont(wxFont::New(fontInfo));
     if (!newFont.get() || !newFont->Ok()) {
         ERRORMSG("Cn3DGLCanvas::SetGLFontFromRegistry() - can't get wxFont from wxNativeFontInfo");
         return;
