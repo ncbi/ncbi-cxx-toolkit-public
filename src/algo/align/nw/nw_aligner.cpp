@@ -621,7 +621,7 @@ CNWAligner::TScore CNWAligner::x_Run()
                     }
                 }
 
-                auto_ptr<CException> e;
+                unique_ptr<CException> e;
                 ITERATE(TThreadVector, ii, threads) {
 
                     if(e.get() == 0) {
