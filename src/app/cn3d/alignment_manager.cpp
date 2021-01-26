@@ -1239,7 +1239,7 @@ void AlignmentManager::RefineAlignment(bool setUpOptionsOnly)
 
     // set up refiner
     align_refine::BMARefinerInterface interface;
-    static auto_ptr < align_refine::BMARefinerOptions > options;
+    static unique_ptr < align_refine::BMARefinerOptions > options;
     if ((options.get() && !interface.SetOptions(*options)) ||   // set these first since some are overridden by alignment inputs
         !interface.SetInitialAlignment(*cdd, blocks.size(), multiple->NRows()) ||
         !interface.SetRowTitles(rowTitles) ||
@@ -1292,7 +1292,7 @@ void AlignmentManager::RefineAlignment(bool setUpOptionsOnly)
                 for (l=results.front()->GetData().GetAlign().begin(); l!=le; ++l)
                     pairs.push_back(new MasterDependentAlignment(NULL, multiple->GetMaster(), **l));
             }
-            auto_ptr < BlockMultipleAlignment > refined(CreateMultipleFromPairwiseWithIBM(pairs));
+            unique_ptr < BlockMultipleAlignment > refined(CreateMultipleFromPairwiseWithIBM(pairs));
             DELETE_ALL_AND_CLEAR(pairs, PairwiseAlignmentList);
 
             // feed result back into alignment window
