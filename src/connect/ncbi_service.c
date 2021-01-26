@@ -35,10 +35,11 @@
 #include "ncbi_lbsmd.h"
 #include "ncbi_local.h"
 #ifdef NCBI_CXX_TOOLKIT
+#  include "ncbi_lbdns.h"
 #  include "ncbi_lbosp.h"
 #  include "ncbi_linkerd.h"
+#  include "ncbi_namerd.h"
 #endif /*NCBI_CXX_TOOLKIT*/
-#include "ncbi_namerd.h"
 #include "ncbi_priv.h"
 #include <ctype.h>
 #include <stdlib.h>
@@ -243,6 +244,9 @@ static SERV_ITER x_Open(const char*         service,
         do_local,
         do_lbsmd   = -1/*unassigned*/,
 #ifdef NCBI_CXX_TOOLKIT
+#  ifdef NCBI_OS_UNIX
+        do_lbdns   = -1/*unassigned*/,
+#  endif /*NCBI_OS_UNIX*/
         do_linkerd = -1/*unassigned*/,
         do_namerd  = -1/*unassigned*/,
         do_lbos    = -1/*unassigned*/,
@@ -333,6 +337,8 @@ static SERV_ITER x_Open(const char*         service,
             do_lbsmd = 0/*false*/;
     } else
         do_dispd = 0/*false*/;
+    if (host_info)
+        *host_info = 0;
     /* Ugly optimization not to access the registry more than necessary */
     if ((!(do_local = s_IsMapperConfigured(svc, REG_CONN_LOCAL_ENABLE))      ||
          !(op = SERV_LOCAL_Open(iter, info, host_info)))
@@ -345,6 +351,11 @@ static SERV_ITER x_Open(const char*         service,
                                  !(do_dispd = !s_IsMapperConfigured
                                    (svc, REG_CONN_DISPD_DISABLE)))
 #ifdef NCBI_CXX_TOOLKIT
+#  ifdef NCBI_OS_UNIX
+                                &&
+                                !(do_lbdns = s_IsMapperConfigured
+                                  (svc, REG_CONN_LBDNS_ENABLE))
+#  endif /*NCBI_OS_UNIX*/
                                 &&
                                 !(do_linkerd = s_IsMapperConfigured
                                   (svc, REG_CONN_LINKERD_ENABLE))
@@ -358,6 +369,13 @@ static SERV_ITER x_Open(const char*         service,
                                 )))
 
 #ifdef NCBI_CXX_TOOLKIT
+#  ifdef NCBI_OS_UNIX
+        &&
+        (!do_lbdns                                                           ||
+         (do_lbdns < 0  &&  !(do_lbdns = s_IsMapperConfigured
+                              (svc, REG_CONN_LBDNS_ENABLE)))                 ||
+         !(op = SERV_LBDNS_Open(iter, info)))
+#  endif /*NCBI_OS_UNIX*/
         &&
         (!do_linkerd                                                         ||
          (do_linkerd < 0  &&  !(do_linkerd = s_IsMapperConfigured
@@ -382,6 +400,9 @@ static SERV_ITER x_Open(const char*         service,
          !(op = SERV_DISPD_Open(iter, net_info, info, host_info)))) {
         if (!do_local  &&  !do_lbsmd  &&  !do_dispd
 #ifdef NCBI_CXX_TOOLKIT
+#  ifdef NCBI_OS_UNIX
+            &&  !do_lbdns
+#  endif /*NCBI_OS_UNIX*/
             &&  !do_linkerd  &&  !do_namerd  &&  !do_lbos
 #endif /*NCBI_CXX_TOOLKIT*/
             ) {
