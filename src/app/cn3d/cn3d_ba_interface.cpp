@@ -135,7 +135,7 @@ static void FreezeBlocks(const BlockMultipleAlignment *multiple,
 
 // global stuff for DP block aligner score callback
 DP_BlockInfo *dpBlocks = NULL;
-auto_ptr < BlockMultipleAlignment > dpMultiple;
+unique_ptr < BlockMultipleAlignment > dpMultiple;
 const Sequence *dpQuery = NULL;
 
 // sum of scores for residue vs. PSSM
@@ -167,7 +167,7 @@ static BlockMultipleAlignment * UnpackDPResult(DP_BlockInfo *blocks, DP_Alignmen
     BlockMultipleAlignment::SequenceList *seqs = new BlockMultipleAlignment::SequenceList(2);
     (*seqs)[0] = master;
     (*seqs)[1] = query;
-    auto_ptr<BlockMultipleAlignment>
+    unique_ptr<BlockMultipleAlignment>
         bma(new BlockMultipleAlignment(seqs, master->parentSet->alignmentManager));
 
     // unpack result blocks
@@ -233,7 +233,7 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
 
     //  Make the progress meter after the above check so don't have to clean it up 
     //  on the Mac in the event the above test returns prematurely.
-    auto_ptr < ProgressMeter > progress;
+    unique_ptr < ProgressMeter > progress;
     if (nAln > 1) {
         long u = wxGetNumberFromUser("How many sequences do you want to realign?", "Max:", "Alignments...", nAln, 1, nAln, NULL);
         if (u <= 0)
