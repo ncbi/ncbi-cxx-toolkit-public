@@ -264,7 +264,7 @@ private:
 private:
     bool m_RemoveDuplicates;
     string m_Query;
-    auto_ptr<CQueryParseTree> m_ParseTree;
+    unique_ptr<CQueryParseTree> m_ParseTree;
 
     /// Flag indicating whether this is a dry run of the filter. If so we are not
     /// matching an alignment, but instead walking the parse tree and printing
