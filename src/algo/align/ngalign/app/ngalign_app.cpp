@@ -151,7 +151,7 @@ private:
    
 	CRef<CScope> m_Scope;
 	
-	auto_ptr<CUnorderedSplitter> m_Splitter;
+	unique_ptr<CUnorderedSplitter> m_Splitter;
 
 	list<CRef<CSeq_id> > m_LoadedIds;
 	list<CRef<CSeq_id> >::const_iterator LoadedIdsIter;
@@ -191,7 +191,7 @@ private:
 
 void CNgAlignApp::Init()
 {
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     arg_desc->SetUsageContext(GetArguments().GetProgramName(),
                               "Generic app for creating an NgAlign "
                               "run, and running it.");
