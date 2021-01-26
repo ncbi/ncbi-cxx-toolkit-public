@@ -47,16 +47,16 @@
 #include <time.h>
 
 
-#define NCBI_USE_ERRCODE_X   Connect_Linkerd
+#define NCBI_USE_ERRCODE_X   Connect_NamerdLinkerd
 
 
 /* LINKERD subcodes for CORE_LOG*X() macros */
 enum ELINKERD_Subcodes {
     eLSub_Message         = 0,   /**< not an error */
-    eLSub_Alloc           = 1,   /**< memory allocation failed */
-    eLSub_BadData         = 2,   /**< bad data was provided */
-    eLSub_Connect         = 3,   /**< problem in connect library */
-    eLSub_Logic           = 4    /**< logic error */
+    eLSub_Alloc           = 11,  /**< memory allocation failed */
+    eLSub_BadData         = 12,  /**< bad data was provided */
+    eLSub_Connect         = 13,  /**< problem in connect library */
+    eLSub_Logic           = 14   /**< logic error */
 };
 
 

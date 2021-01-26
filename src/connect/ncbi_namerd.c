@@ -59,7 +59,7 @@
 #endif
 
 
-#define NCBI_USE_ERRCODE_X   Connect_Namerd
+#define NCBI_USE_ERRCODE_X   Connect_NamerdLinkerd
 
 
 /* NAMERD subcodes for CORE_LOG*X() macros */
@@ -74,6 +74,7 @@ enum ENAMERD_Subcodes {
     eNSub_NoService       = 7,   /**< couldn't reach namerd service provider */
     eNSub_TooLong         = 8,   /**< data was too long to fit in a buffer */
     eNSub_Logic           = 9    /**< logic error */
+    /*eNSub_Unused        = 10   //   reserved*/
 };
 
 

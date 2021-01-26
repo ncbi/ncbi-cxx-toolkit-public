@@ -92,21 +92,20 @@ extern "C" {
 /* Here are only error codes used in C sources.  For error codes used in
  * C++ sources (in C++ Toolkit) see include/connect/error_codes.hpp.
  */
-NCBI_C_DEFINE_ERRCODE_X(Connect_Conn,     301,  36);
-NCBI_C_DEFINE_ERRCODE_X(Connect_Socket,   302, 160);
-NCBI_C_DEFINE_ERRCODE_X(Connect_Util,     303,   9);
-NCBI_C_DEFINE_ERRCODE_X(Connect_LBSM,     304,  30);
-NCBI_C_DEFINE_ERRCODE_X(Connect_FTP,      305,  13);
-NCBI_C_DEFINE_ERRCODE_X(Connect_SMTP,     306,  33);
-NCBI_C_DEFINE_ERRCODE_X(Connect_HTTP,     307,  25);
-NCBI_C_DEFINE_ERRCODE_X(Connect_Service,  308,  10);
-NCBI_C_DEFINE_ERRCODE_X(Connect_HeapMgr,  309,  34);
-NCBI_C_DEFINE_ERRCODE_X(Connect_LBOS,     310, 600); /*safe upper bound*/
-NCBI_C_DEFINE_ERRCODE_X(Connect_Mghbn,    311,  16);
-NCBI_C_DEFINE_ERRCODE_X(Connect_Crypt,    312,   5);
-NCBI_C_DEFINE_ERRCODE_X(Connect_LocalIP,  313,   5);
-NCBI_C_DEFINE_ERRCODE_X(Connect_Namerd,   314,  10);
-NCBI_C_DEFINE_ERRCODE_X(Connect_Linkerd,  315,   5);
+NCBI_C_DEFINE_ERRCODE_X(Connect_Conn,          301,  36);
+NCBI_C_DEFINE_ERRCODE_X(Connect_Socket,        302, 160);
+NCBI_C_DEFINE_ERRCODE_X(Connect_Util,          303,   9);
+NCBI_C_DEFINE_ERRCODE_X(Connect_LBSM,          304,  30);
+NCBI_C_DEFINE_ERRCODE_X(Connect_FTP,           305,  13);
+NCBI_C_DEFINE_ERRCODE_X(Connect_SMTP,          306,  33);
+NCBI_C_DEFINE_ERRCODE_X(Connect_HTTP,          307,  25);
+NCBI_C_DEFINE_ERRCODE_X(Connect_Service,       308,  10);
+NCBI_C_DEFINE_ERRCODE_X(Connect_HeapMgr,       309,  34);
+NCBI_C_DEFINE_ERRCODE_X(Connect_LBOS,          310, 600); /*safe upper bound*/
+NCBI_C_DEFINE_ERRCODE_X(Connect_Mghbn,         311,  16);
+NCBI_C_DEFINE_ERRCODE_X(Connect_Crypt,         312,   5);
+NCBI_C_DEFINE_ERRCODE_X(Connect_LocalIP,       313,   5);
+NCBI_C_DEFINE_ERRCODE_X(Connect_NamerdLinkerd, 314,  14);
 
 /** Make one identifier from 2 parts */
 #define NCBI_C_CONCAT_IDENTIFIER(prefix, postfix)  prefix##postfix
