@@ -91,7 +91,7 @@ COMSSAMerge::COMSSAMerge()
 void COMSSAMerge::Init()
 {
 
-    auto_ptr<CArgDescriptions> argDesc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> argDesc(new CArgDescriptions);
 
     argDesc->AddDefaultKey("i", "infiles", 
                 "file containing list of input files on separate lines",
@@ -218,9 +218,9 @@ int COMSSAMerge::Run()
  
     // write out the new search
 
-    auto_ptr <CNcbiOfstream> raw_out;
-    auto_ptr <CCompressionOStream> compress_out;
-    auto_ptr <CObjectOStream> txt_out;
+    unique_ptr <CNcbiOfstream> raw_out;
+    unique_ptr <CCompressionOStream> compress_out;
+    unique_ptr <CObjectOStream> txt_out;
     
     if( obz2 ) {
         raw_out.reset(new CNcbiOfstream(args["o"].AsString().c_str()));
@@ -234,7 +234,7 @@ int COMSSAMerge::Run()
     }
 
 
-//    auto_ptr <CObjectOStream> txt_out(
+//    unique_ptr <CObjectOStream> txt_out(
 //         CObjectOStream::Open(args["o"].AsString(), OutFileType));
 
     if(txt_out.get()) {
