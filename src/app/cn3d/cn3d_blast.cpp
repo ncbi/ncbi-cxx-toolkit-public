@@ -393,7 +393,7 @@ void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *m
             (*seqs)[0] = master;
             (*seqs)[1] = subjectTSs[localID]->originalFullSequence;
             string dependentTitle = subjectTSs[localID]->originalFullSequence->identifier->ToString();
-            auto_ptr < BlockMultipleAlignment > newAlignment(
+            unique_ptr < BlockMultipleAlignment > newAlignment(
                 new BlockMultipleAlignment(seqs, master->parentSet->alignmentManager));
             newAlignment->SetRowDouble(0, kMax_Double);
             newAlignment->SetRowDouble(1, kMax_Double);
