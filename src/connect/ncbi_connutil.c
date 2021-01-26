@@ -117,16 +117,16 @@ static const char* x_strncpy0(char* dst, const char* src, size_t dst_size)
 
 static int/*bool*/ x_tr(char* str, char a, char b, size_t len)
 {
-    int/*bool*/ done = 0/*false*/;
+    int/*bool*/ subst = 0/*false*/;
     char* end = str + len;
     while (str < end) {
         if (*str == a) {
             *str  = b;
-            done = 1/*true*/;
+            subst = 1/*true*/;
         }
         ++str;
     }
-    return done;
+    return subst;
 }
 
 
