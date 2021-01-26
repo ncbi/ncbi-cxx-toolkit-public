@@ -150,11 +150,11 @@ typedef struct {
 /* Generic NCBI server meta-address
  */
 typedef union {
-    SSERV_NcbidInfo      ncbid;
-    SSERV_StandaloneInfo standalone;
-    SSERV_HttpInfo       http;
-    SSERV_FirewallInfo   firewall;
-    SSERV_DnsInfo        dns;
+    SSERV_NcbidInfo       ncbid;
+    SSERV_StandaloneInfo  standalone;
+    SSERV_HttpInfo        http;
+    SSERV_FirewallInfo    firewall;
+    SSERV_DnsInfo         dns;
 } USERV_Info;
 
 typedef struct {
