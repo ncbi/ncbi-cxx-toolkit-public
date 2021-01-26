@@ -87,7 +87,7 @@ COmssa2pepxmlApplication::COmssa2pepxmlApplication() {
 void COmssa2pepxmlApplication::Init(void)
 {
     // Create command-line argument descriptions class
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);    
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);    
     arg_desc->PrintUsageIfNoArgs();
 
     // Specify USAGE context
@@ -198,7 +198,7 @@ int COmssa2pepxmlApplication::Run ( void )
     //CNcbiOfstream out(newname.c_str());
     //out << MSerial_Xml << outPepXML;
 
-    auto_ptr<CObjectOStream> oStream(CObjectOStream::Open(newname, eSerial_Xml));
+    unique_ptr<CObjectOStream> oStream(CObjectOStream::Open(newname, eSerial_Xml));
     CObjectOStreamXml *xml_out = dynamic_cast <CObjectOStreamXml *> (oStream.get());
     xml_out->SetDefaultSchemaNamespace("http://regis-web.systemsbiology.net/pepXML");
     xml_out->SetReferenceSchema();
