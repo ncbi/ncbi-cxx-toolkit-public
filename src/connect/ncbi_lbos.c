@@ -1,4 +1,4 @@
-/*
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -1857,9 +1857,9 @@ static SSERV_Info* s_LBOS_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
  *  Connection information.
  * @param[out] info
  *  Pointer to variable to return pointer to info about server. */
-const SSERV_VTable* SERV_LBOS_Open( SERV_ITER            iter,
-                                    const SConnNetInfo*  net_info,
-                                    SSERV_Info**         info     )
+const SSERV_VTable* SERV_LBOS_Open(SERV_ITER           iter,
+                                   const SConnNetInfo* net_info,
+                                   SSERV_Info**        info)
 {
     SLBOS_Data* data;
     char* new_name = NULL; /* if we need to add dbaf */
