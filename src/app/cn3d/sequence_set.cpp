@@ -465,7 +465,7 @@ bool Sequence::HighlightPattern(const string& prositePattern, const MoleculeHigh
     try {
 
         // update CRegexp if not the same pattern as before
-        static auto_ptr < CRegexp > regexp;
+        static unique_ptr < CRegexp > regexp;
         static string previousPrositePattern;
         static int nGroups;
         if (!regexp.get() || prositePattern != previousPrositePattern) {
