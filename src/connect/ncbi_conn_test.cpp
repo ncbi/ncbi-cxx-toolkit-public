@@ -418,13 +418,13 @@ EIO_Status CConnTest::HttpOkay(string* reason)
             temp += "Make sure that ";
             if (host) {
                 n++;
-                temp += "[CONN]HOST=\"";
+                temp += "[" DEF_CONN_REG_SECTION "]" REG_CONN_HOST "=\"";
                 temp += net_info->host;
                 temp += port ? "\"" : "\" and ";
             }
             if (port) {
                 n++;
-                temp += "[CONN]PORT=\"";
+                temp += "[" DEF_CONN_REG_SECTION "]" REG_CONN_PORT "=\"";
                 temp += NStr::UIntToString(net_info->port);
                 temp += '"';
             }
@@ -437,7 +437,8 @@ EIO_Status CConnTest::HttpOkay(string* reason)
             temp += net_info->http_proxy_host;
             temp += ':';
             temp += NStr::UIntToString(net_info->http_proxy_port);
-            temp += "' specified with [CONN]HTTP_PROXY_{HOST|PORT} is correct";
+            temp += "' specified with [" DEF_CONN_REG_SECTION
+                "]HTTP_PROXY_{HOST|PORT} is correct";
         } else {
             if (net_info->http_proxy_host[0]  ||  net_info->http_proxy_port) {
                 temp += "Note that your HTTP proxy seems to have been"
@@ -453,16 +454,17 @@ EIO_Status CConnTest::HttpOkay(string* reason)
             }
             temp += "If your network access requires the use of an HTTP proxy"
                 " server, please contact your network administrator and set"
-                " [CONN]HTTP_PROXY_{HOST|PORT} (both must be set) in your"
-                " configuration accordingly";
+                " [" DEF_CONN_REG_SECTION "]{HTTP_PROXY_{HOST|PORT} (both must"
+                " be set) in your configuration accordingly";
         }
         temp += "; and if your proxy server requires authorization, please"
-            " check that appropriate [CONN]HTTP_PROXY_{USER|PASS} have been"
-            " set\n";
+            " check that appropriate ["
+            DEF_CONN_REG_SECTION "]HTTP_PROXY_{USER|PASS} have been set\n";
         if (*net_info->user  ||  *net_info->pass) {
-            temp += "Make sure there are no stray [CONN]{USER|PASS} that"
-                " appear in your configuration -- NCBI services neither"
-                " require nor use them\n";
+            temp += "Make sure there are no stray values for ["
+                DEF_CONN_REG_SECTION "]{" REG_CONN_USER "|" REG_CONN_PASS
+                "} in your configuration -- NCBI services neither require"
+                " nor use them\n";
         }
         if (status == eIO_NotSupported)
             temp += "Your application may also need to have SSL support on\n";
@@ -507,8 +509,10 @@ EIO_Status CConnTest::DispatcherOkay(string* reason)
     else {
         if (status != eIO_Timeout) {
             if (okay) {
-                temp = "Make sure there are no stray [CONN]{HOST|PORT|PATH}"
-                    " settings in the way in your configuration\n";
+                temp = "Make sure there are no stray values for ["
+                    DEF_CONN_REG_SECTION "]{" REG_CONN_HOST "|"
+                    REG_CONN_PORT "|" REG_CONN_PATH "} in your"
+                    " configuration\n";
             }
             if (okay == 1) {
                 temp += "Service response was not recognized; please contact "
@@ -591,7 +595,7 @@ EIO_Status CConnTest::ServiceOkay(string* reason)
                 temp += "; please remove [";
                 string upper(kService);
                 temp += NStr::ToUpper(upper);
-                temp += "]CONN_SERVICE_NAME=\"";
+                temp += "]" REG_CONN_SERVICE_NAME "=\"";
                 temp += str;
                 temp += "\" from your configuration\n";
             } else if (status != eIO_Timeout  ||  x_Large(m_Timeout))
@@ -602,7 +606,8 @@ EIO_Status CConnTest::ServiceOkay(string* reason)
             if (!mapper  ||  NStr::CompareNocase(mapper, "DISPD") != 0) {
                 temp += "Network dispatcher is not enabled as a service"
                     " locator;  please review your configuration to purge any"
-                    " occurrences of [CONN]DISPD_DISABLE off your settings\n";
+                    " occurrences of [" DEF_CONN_REG_SECTION "]"
+                    REG_CONN_DISPD_DISABLE " from your settings\n";
             }
         } else
             temp += x_TimeoutMsg();
@@ -1090,9 +1095,9 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
                     }
                     temp += '\n';
                 } else {
-                    temp += " try setting [CONN]FIREWALL=1 in your"
-                        " configuration to use a more narrow"
-                        " port range";
+                    temp += " try setting [" DEF_CONN_REG_SECTION "]"
+                        REG_CONN_FIREWALL "=1 in your configuration to use a"
+                        " more narrow port range";
                     if (!url) {
                         temp += " per: " CONN_FWD_URL;
                         url = true;
@@ -1104,7 +1109,8 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
                         " over dedicated (persistent) connections; some can"
                         " still work (at the cost of degraded performance)"
                         " over a stateless carrier such as HTTP;  try setting"
-                        " [CONN]STATELESS=1 in your configuration\n";
+                        " [" DEF_CONN_REG_SECTION "]" REG_CONN_STATELESS "=1"
+                        " in your configuration\n";
                 }
             } else
                 temp = "Now checking fallback port(s)...";
@@ -1236,7 +1242,7 @@ EIO_Status CConnTest::StatefulOkay(string* reason)
                 " please remove [";
             string upper(kEcho);
             temp += NStr::ToUpper(upper);
-            temp += "]CONN_SERVICE_NAME=\"";
+            temp += "]" REG_CONN_SERVICE_NAME "=\"";
             temp += str;
             temp += "\" from your configuration\n";
             free(str); // NB: still, str != NULL
@@ -1259,9 +1265,10 @@ EIO_Status CConnTest::StatefulOkay(string* reason)
                 if (!m_Stateless) {
                     string upper(kEcho);
                     temp += NStr::ToUpper(upper);
-                    temp += "]CONN_STATELESS\n";
+                    temp += "]"
+                        DEF_CONN_REG_SECTION "_" REG_CONN_STATELESS "\n";
                 } else
-                    temp += "CONN]STATELESS\n";
+                    temp += DEF_CONN_REG_SECTION "]" REG_CONN_STATELESS "\n";
             } else if (!str) {
                 SERV_ITER iter = 0;
                 if (status != eIO_Timeout
