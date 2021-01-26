@@ -159,7 +159,7 @@ void CDDRefDialog::OnButton(wxCommandEvent& event)
             descr = dynamic_cast<CCdd_descr*>(reinterpret_cast<CObject*>(listbox->GetClientData(selections.Item(i))));
             if (i > 0)
                 url += ",";
-            url += NStr::IntToString(descr->GetReference().GetPmid().Get());
+            url += NStr::NumericToString(descr->GetReference().GetPmid().Get());
         }
         LaunchWebPage(url.c_str());
     }
