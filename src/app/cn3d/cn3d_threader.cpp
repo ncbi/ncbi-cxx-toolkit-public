@@ -339,7 +339,7 @@ Rcx_Ptl * Threader::CreateRcxPtl(double weightContacts)
     static const unsigned int kPeptideIndex = 20;
 
     /* open the contact potential for reading */
-    auto_ptr<CNcbiIfstream> InFile(new CNcbiIfstream((GetDataDir()+FileName).c_str(), IOS_BASE::in));
+    unique_ptr<CNcbiIfstream> InFile(new CNcbiIfstream((GetDataDir()+FileName).c_str(), IOS_BASE::in));
     if (!(*InFile)) {
         ERRORMSG("Threader::CreateRcxPtl() - can't open " << Path << " for reading");
         return NULL;
