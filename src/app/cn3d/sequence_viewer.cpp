@@ -543,7 +543,7 @@ void SequenceViewer::ExportAlignment(eExportType type)
     if (outputFile.size() > 0) {
 
         // create output stream
-        auto_ptr<CNcbiOfstream> ofs(new CNcbiOfstream(WX_TO_STD(outputFile).c_str(), IOS_BASE::out));
+        unique_ptr<CNcbiOfstream> ofs(new CNcbiOfstream(WX_TO_STD(outputFile).c_str(), IOS_BASE::out));
         if (!(*ofs)) {
             ERRORMSG("Unable to open output file " << outputFile.c_str());
             return;
