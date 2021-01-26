@@ -110,7 +110,7 @@ void COMSSABase::PrintIons(void)
 void COMSSABase::Init()
 {
 
-    auto_ptr<CArgDescriptions> argDesc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> argDesc(new CArgDescriptions);
     argDesc->PrintUsageIfNoArgs();
 
     argDesc->AddDefaultKey("pm", "param",
