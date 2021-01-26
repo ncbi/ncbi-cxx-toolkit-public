@@ -283,7 +283,7 @@ extern "C" {
          ||  (!defined(__i386) && !defined(__powerpc__) \
               && !defined(__powerpc64__) && !defined(__ppc__) \
               && !defined(__ppc64__) && !defined(__sparc) \
-              && !defined(__x86_64)))
+              && !defined(__x86_64) && !defined(__aarch64__)))
 #  define NCBI_SWAP_POINTERS_EXTERN 1
 #  define NCBI_SLOW_ATOMIC_SWAP 1
 #endif
