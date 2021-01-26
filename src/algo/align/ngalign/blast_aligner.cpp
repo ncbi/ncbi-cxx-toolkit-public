@@ -154,7 +154,7 @@ CRef<CBlastOptionsHandle> CBlastArgs::s_CreateBlastOptions(const string& Params)
     CBlastArgs::s_CreateBlastArgDescriptions(ArgDesc);
 
     try {
-        auto_ptr<CArgs> Args(ArgDesc.CreateArgs(Tokens.size(), Tokens));
+        unique_ptr<CArgs> Args(ArgDesc.CreateArgs(Tokens.size(), Tokens));
         return CBlastArgs::s_ExtractBlastArgs(*Args);
     } catch(CException& e) {
         string Message;
