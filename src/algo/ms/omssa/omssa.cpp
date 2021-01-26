@@ -71,7 +71,7 @@ CSearchHelper::ReadModFiles(const string& ModFileName,
         if(!CDirEntry::IsAbsolutePath(ModFileName))
             FileName = DirEntry.GetDir() + ModFileName;
         else FileName = ModFileName;
-        auto_ptr<CObjectIStream> 
+        unique_ptr<CObjectIStream> 
             modsin(CObjectIStream::Open(FileName.c_str(), eSerial_Xml));
         if(modsin->fail()) {	    
             ERR_POST(Fatal << "ommsacl: unable to open modification file" << 
@@ -93,7 +93,7 @@ CSearchHelper::ReadModFiles(const string& ModFileName,
             if(!CDirEntry::IsAbsolutePath(UserModFileName))
                 FileName = DirEntry.GetDir() + UserModFileName;
             else FileName = UserModFileName;
-            auto_ptr<CObjectIStream> 
+            unique_ptr<CObjectIStream> 
              usermodsin(CObjectIStream::Open(FileName.c_str(), eSerial_Xml));
             if(usermodsin->fail()) {	    
                  ERR_POST(Warning << "ommsacl: unable to open user modification file" << 
@@ -175,7 +175,7 @@ CSearchHelper::ReadSearchRequest(const string& Filename,
 //    CRef <CMSResponse> Response (new CMSResponse);
 //    MySearch.SetResponse().push_back(Response);
 
-    auto_ptr<CObjectIStream> 
+    unique_ptr<CObjectIStream> 
         in(CObjectIStream::Open(Filename.c_str(), DataFormat));
     in->Open(Filename.c_str(), DataFormat);
     if(in->fail()) {	    
@@ -195,9 +195,9 @@ CSearchHelper::ReadCompleteSearch(const string& Filename,
                                bool bz2,
                                CMSSearch& MySearch)
 {
-    auto_ptr <CNcbiIfstream> raw_in;
-    auto_ptr <CCompressionIStream> compress_in;
-    auto_ptr <CObjectIStream> in;
+    unique_ptr <CNcbiIfstream> raw_in;
+    unique_ptr <CCompressionIStream> compress_in;
+    unique_ptr <CObjectIStream> in;
 
     if( bz2 ) {
         raw_in.reset(new CNcbiIfstream(Filename.c_str()));
@@ -268,9 +268,9 @@ void CSearchHelper::SaveOneFile(CMSSearch &MySearch,
                                 bool IncludeRequest,
                                 bool bz2) 
 {
-    auto_ptr <CNcbiOfstream> raw_out;
-    auto_ptr <CCompressionOStream> compress_out;
-    auto_ptr <CObjectOStream> txt_out;
+    unique_ptr <CNcbiOfstream> raw_out;
+    unique_ptr <CCompressionOStream> compress_out;
+    unique_ptr <CObjectOStream> txt_out;
 
     if( bz2 ) {
         raw_out.reset(new CNcbiOfstream(Filename.c_str()));
@@ -307,7 +307,7 @@ CSearchHelper::SaveAnyFile(CMSSearch& MySearch,
             static_cast <EMSSerialDataFormat> ((*iOutFile)->GetOutfiletype());
         ESerialDataFormat FileFormat(eSerial_AsnText);
 
-        auto_ptr <CObjectOStream> txt_out;
+        unique_ptr <CObjectOStream> txt_out;
         if(DataFormat == eMSSerialDataFormat_asntext)
             FileFormat = eSerial_AsnText;
         if(DataFormat == eMSSerialDataFormat_asnbinary)
@@ -338,7 +338,7 @@ CSearchHelper::SaveAnyFile(CMSSearch& MySearch,
         {
             CPepXML outPepXML;
             outPepXML.ConvertFromOMSSA(MySearch, Modset, Filename, Filename);
-            auto_ptr<CObjectOStream> file_out(CObjectOStream::Open(Filename, eSerial_Xml));
+            unique_ptr<CObjectOStream> file_out(CObjectOStream::Open(Filename, eSerial_Xml));
             *file_out << outPepXML;
         }
         break;
@@ -381,7 +381,7 @@ CSearchHelper::CreateSearchSettings(string FileName,
 {
     if(FileName != "" ) {
         try {
-            auto_ptr<CObjectIStream> 
+            unique_ptr<CObjectIStream> 
                 paramsin(CObjectIStream::Open(FileName.c_str(), eSerial_Xml));
             if(paramsin->fail()) {	    
                 ERR_POST(Fatal << "ommsacl: unable to open parameter file" << 
