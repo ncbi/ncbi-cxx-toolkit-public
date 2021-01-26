@@ -33,6 +33,7 @@
 
 #include "ncbi_lbdns.h"
 #include "ncbi_priv.h"
+#ifdef NCBI_OS_UNIX
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <arpa/nameser.h>
@@ -47,7 +48,7 @@
 /***********************************************************************
  *  EXTERNAL
  ***********************************************************************/
-
+#endif
 const SSERV_VTable* SERV_LBDNS_Open(SERV_ITER iter, SSERV_Info** info)
 {
     return 0;
