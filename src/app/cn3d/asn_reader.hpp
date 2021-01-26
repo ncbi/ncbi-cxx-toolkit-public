@@ -55,14 +55,6 @@
 #include <string>
 #include <memory>
 
-#ifndef NS_AUTO_PTR
-#ifdef HAVE_NO_AUTO_PTR
-#define NS_AUTO_PTR ncbi::auto_ptr
-#else
-#define NS_AUTO_PTR std::auto_ptr
-#endif
-#endif
-
 USING_NCBI_SCOPE;
 
 BEGIN_SCOPE(Cn3D)
@@ -80,7 +72,7 @@ bool ReadASNFromFile(const char *filename, ASNClass *ASNobject, bool isBinary, s
         return false;
     }
 
-    NS_AUTO_PTR<ncbi::CObjectIStream> inObject;
+    unique_ptr<ncbi::CObjectIStream> inObject;
     if (isBinary) {
         // Associate ASN.1 binary serialization methods with the input
         inObject.reset(new ncbi::CObjectIStreamAsnBinary(inStream));
@@ -119,7 +111,7 @@ bool WriteASNToFile(const char *filename, const ASNClass& ASNobject, bool isBina
         return false;
     }
 
-    NS_AUTO_PTR<ncbi::CObjectOStream> outObject;
+    unique_ptr<ncbi::CObjectOStream> outObject;
     if (isBinary) {
         // Associate ASN.1 binary serialization methods with the input
         outObject.reset(new ncbi::CObjectOStreamAsnBinary(outStream, fixNonPrint));
@@ -165,7 +157,7 @@ bool GetAsnDataViaHTTP(
     try {
         // load data from stream using given URL params
         ncbi::CConn_HttpStream httpStream(host, path, args, kEmptyStr, port);
-        NS_AUTO_PTR<ncbi::CObjectIStream> inObject;
+        unique_ptr<ncbi::CObjectIStream> inObject;
         if (binaryData)
             inObject.reset(new ncbi::CObjectIStreamAsnBinary(httpStream));
         else
@@ -230,7 +222,7 @@ bool GetAsnDataViaHTTPS(
         ESerialDataFormat dataFormat = (binaryData) ? eSerial_AsnBinary : eSerial_AsnText;
         // cout << httpsStream.GetType() << ", " << httpsStream.GetDescription() << endl;
 
-        NS_AUTO_PTR<CObjectIStream> inObject(CObjectIStream::Open(dataFormat, httpsStream));
+        unique_ptr<CObjectIStream> inObject(CObjectIStream::Open(dataFormat, httpsStream));
         *inObject >> *asnObject;
         okay = true;
 
