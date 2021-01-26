@@ -59,11 +59,11 @@
 #include <objects/mla/Title_msg_list.hpp>
 #include <objects/mla/mla_client.hpp>
 
-#include <corelib/ncbi_system.hpp>
 #include <corelib/ncbi_message.hpp>
 #include <objtools/eutils/api/esearch.hpp>
 #include <objtools/eutils/esearch/IdList.hpp>
 #include <objtools/eutils/api/esummary.hpp>
+
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -90,7 +90,8 @@ struct SErrorSubcodes
 
 static map<int, SErrorSubcodes> ERROR_CODE_STR =
 {
-    { err_Reference,{ "REFERENCE",
+    // I'm using it in blob_maint application. The string REFERENCE is not informative, changing to FixPub.
+    { err_Reference,{ "FixPub",
     {
         { err_Reference_MuidNotFound, "MuidNotFound" },
         { err_Reference_SuccessfulMuidLookup, "SuccessfulMuidLookup" },
@@ -116,6 +117,13 @@ static map<int, SErrorSubcodes> ERROR_CODE_STR =
     { err_Print,{ "PRINT",
     {
         { err_Print_Failed, "Failed" }
+    }
+    } },
+    { err_AuthList,{ "AuthList",
+    {
+        { err_AuthList_SignificantDrop, "SignificantDrop" },
+        { err_AuthList_PreserveGB, "PreserveGB" },
+        { err_AuthList_LowMatch, "LowMatch" }
     }
     } }
 };
@@ -312,6 +320,68 @@ bool MULooksLikeISSN(const string& str)
 
     return true;
 }
+
+/*
+bool MUIsJournalIndexed(const string& journal)
+{
+    if (journal.empty()) {
+        return false;
+    }
+
+    string title(journal);
+    NStr::ReplaceInPlace(title, "(", " ");
+    NStr::ReplaceInPlace(title, ")", " ");
+    NStr::ReplaceInPlace(title, ".", " ");
+
+    title = NStr::Sanitize(title);
+
+    CEutilsClient eutils;
+
+    static const int MAX_ITEMS = 200;
+    eutils.SetMaxReturn(MAX_ITEMS);
+
+    vector<string> ids;
+
+    static const string EUTILS_DATABASE("nlmcatalog");
+
+    try {
+        if (MULooksLikeISSN(title)) {
+            eutils.Search(EUTILS_DATABASE, title + "[issn]", ids);
+        }
+
+        if (ids.empty()) {
+            eutils.Search(EUTILS_DATABASE, title + "[multi] AND ncbijournals[sb]", ids);
+        }
+
+        if (ids.empty()) {
+            eutils.Search(EUTILS_DATABASE, title + "[jo]", ids);
+        }
+    }
+    catch (CException&) {
+        return false;
+    }
+
+    if (ids.size() != 1) {
+        return false;
+    }
+
+
+    // getting the indexing status of the journal found
+    static const string SUMMARY_VERSION("2.0");
+    xml::document doc;
+    eutils.Summary(EUTILS_DATABASE, ids, doc, SUMMARY_VERSION);
+
+    const xml::node& root_node = doc.get_root_node();
+    xml::node_set nodes(root_node.run_xpath_query("//DocumentSummarySet/DocumentSummary/CurrentIndexingStatus/text()"));
+
+    string status;
+    if (nodes.size() == 1) {
+        status = nodes.begin()->get_content();
+    }
+
+    return status == "Y";
+}
+*/
 
 static void s_GetESearchIds(CESearch_Request& req,
                             const string& term,
@@ -1044,7 +1114,30 @@ void CPubFix::FixPubEquiv(CPub_equiv& pub_equiv)
 
                 if (new_cit_art.NotEmpty()) {
 
-                    if (TenAuthorsProcess(*cit_art, *new_cit_art, m_err_log)) {
+                    bool new_cit_is_valid(false);
+                    if (CAuthListValidator::enabled) {
+                        CAuthListValidator::EOutcome outcome = m_authlist_validator.validate(*cit_art, *new_cit_art);
+                        switch (outcome) {
+                        case CAuthListValidator::eAccept_pubmed:
+                            new_cit_is_valid = true;
+                            break;
+                        case CAuthListValidator::eKeep_genbank:
+                            new_cit_art->SetAuthors(cit_art->SetAuthors());
+                            cit_art->ResetAuthors();
+                            new_cit_is_valid = true;
+                            break;
+                        case CAuthListValidator::eFailed_validation:
+                            new_cit_is_valid = false;
+                            break;
+                        default:
+                            throw logic_error("Invalid outcome returned by CAuthListValidator::validate(): " + std::to_string(outcome));
+                        }
+                    }
+                    else {
+                        new_cit_is_valid = TenAuthorsProcess(*cit_art, *new_cit_art, m_err_log);
+                    }
+
+                    if (new_cit_is_valid) {
                         if (pmids.empty()) {
                             CRef<CPub> pmid_pub(new CPub);
                             pmids.push_back(pmid_pub);
@@ -1233,6 +1326,182 @@ CRef<CCit_art> CPubFix::FetchPubPmId(TEntrezId pmid)
     }
 
     return cit_art;
+}
+
+bool CAuthListValidator::enabled = false;
+bool CAuthListValidator::configured = false;
+double CAuthListValidator::cfg_matched_to_min = 0.3333;
+double CAuthListValidator::cfg_removed_to_gb = 0.3333;
+void CAuthListValidator::Configure(const CNcbiRegistry& cfg, const string& section)
+{
+    enabled = cfg.GetBool(section, "enabled", enabled);
+    cfg_matched_to_min = cfg.GetDouble(section, "matched_to_min", cfg_matched_to_min);
+    cfg_removed_to_gb = cfg.GetDouble(section, "removed_to_gb", cfg_removed_to_gb);
+    configured = true;
+}
+
+CAuthListValidator::CAuthListValidator(IMessageListener* err_log)
+    : outcome(eNotSet), pub_year(0), reported_limit("not initialized"), m_err_log(err_log)
+{
+    if (! configured) {
+        Configure(CNcbiApplication::Instance()->GetConfig(), "auth_list_validator");
+    }
+}
+
+CAuthListValidator::EOutcome CAuthListValidator::validate(const CCit_art& gb_art, const CCit_art& pm_art)
+{
+    outcome = eNotSet;
+    pub_year = 0;
+    pub_year = pm_art.GetFrom().GetJournal().GetImp().GetDate().GetStd().GetYear();
+    if (pub_year < 1900 || pub_year > 3000) {
+        throw logic_error("Publication from PubMed has invalid year: " + std::to_string(pub_year));
+    }
+    gb_type = CAuth_list::C_Names::SelectionName(gb_art.GetAuthors().GetNames().Which());
+    get_lastnames(gb_art.GetAuthors(), removed);
+    pm_type = CAuth_list::C_Names::SelectionName(pm_art.GetAuthors().GetNames().Which());
+    get_lastnames(pm_art.GetAuthors(), added);
+    matched.clear();
+    compare_lastnames();
+    actual_matched_to_min = double(cnt_matched) / cnt_min;
+    actual_removed_to_gb = double(cnt_removed) / cnt_gb;
+    if (actual_removed_to_gb > cfg_removed_to_gb) {
+        ERR_POST_TO_LISTENER(m_err_log, eDiag_Warning, err_AuthList, err_AuthList_SignificantDrop,
+            "Too many authors removed (" << cnt_removed << ") compared to total Genbank authors (" << cnt_gb << ")");
+    }
+    // determine outcome according to ID-6514 (see fix_pub.hpp)
+    if (pub_year > 1999) {
+        reported_limit = "Unlimited";
+        outcome = eAccept_pubmed;
+    }
+    else if (pub_year > 1995) {
+        reported_limit = "25 authors";
+        if (cnt_gb > 25) {
+            ERR_POST_TO_LISTENER(m_err_log, eDiag_Warning, err_AuthList, err_AuthList_PreserveGB,
+                "Preserving original " << cnt_gb << " GB authors, ignoring " << cnt_pm << " PubMed authors "
+                << "(PubMed limit was " << reported_limit << " in pub.year " << pub_year << ")");
+            outcome = eKeep_genbank;
+        }
+        else {
+            outcome = eAccept_pubmed;
+        }
+    }
+    else { // pub_year < 1996
+        reported_limit = "10 authors";
+        if (cnt_gb > 10) {
+            ERR_POST_TO_LISTENER(m_err_log, eDiag_Warning, err_AuthList, err_AuthList_PreserveGB,
+                "Preserving original " << cnt_gb << " GB authors, ignoring " << cnt_pm << " PubMed authors "
+                << "(PubMed limit was " << reported_limit << " in pub.year " << pub_year << ")");
+            outcome = eKeep_genbank;
+        }
+        else {
+            outcome = eAccept_pubmed;
+        }
+    }
+    // check minimum required # of matching authors
+    if (actual_matched_to_min < cfg_matched_to_min) {
+        ERR_POST_TO_LISTENER(m_err_log, eDiag_Error, err_AuthList, err_AuthList_LowMatch,
+            "Only " << cnt_matched << " authors matched between " << cnt_gb << " Genbank and " 
+            << cnt_pm << " PubMed. Match/Min ratio " << fixed << setprecision(2) << actual_matched_to_min
+            << " is below threshold " << fixed << setprecision(2) << cfg_matched_to_min);
+        outcome = eFailed_validation;
+    }
+    return outcome;
+}
+
+void CAuthListValidator::DebugDump(CNcbiOstream& out) const
+{
+    out << "\n--- Debug Dump of CAuthListValidator object ---\n";
+    out << "pub_year: " << pub_year << "\n";
+    out << "PubMed Auth-list limit in " << pub_year << ": " << reported_limit << "\n";
+    out << "Configured ratio 'matched' to 'min(gb,pm)': " << cfg_matched_to_min 
+        << "; actual: " << actual_matched_to_min << "\n";
+    out << "Configured ratio 'removed' to 'gb': " << cfg_removed_to_gb
+        << "; actual: " << actual_removed_to_gb << "\n";
+    out << "GB author list type: " << gb_type << "; # of entries: " << cnt_gb << "\n";
+    out << "PM author list type: " << pm_type << "; # of entries: " << cnt_pm << "\n";
+    dumplist("Matched", matched, out);
+    dumplist("Added", added, out);
+    dumplist("Removed", removed, out);
+    const char* outcome_names[] = {"NotSet", "Failed_validation", "Accept_pubmed", "Keep_genbank"};
+    out << "Outcome reported: " << outcome_names[outcome] << "(" << outcome << ")\n";
+    out << "--- End of Debug Dump of CAuthListValidator object ---\n\n";
+}
+
+void CAuthListValidator::dumplist(const char* hdr, const list<string>& lst, CNcbiOstream& out) const
+{
+    out << lst.size() << " " << hdr << " authors:\n";
+    for (const auto& a : lst)
+        out << "    " << a << "\n";
+}
+
+void CAuthListValidator::compare_lastnames()
+{
+    auto gbit = removed.begin();
+    while (gbit != removed.end()) {
+        list<string>::iterator gbnext(gbit);
+        ++gbnext;
+        list<string>::iterator pmit = std::find(added.begin(), added.end(), *gbit);
+        if (pmit != added.end()) {
+            matched.push_back(*gbit);
+            removed.erase(gbit++);
+            added.erase(pmit);
+        }
+        gbit = gbnext;
+    }
+    cnt_matched = matched.size();
+    cnt_removed = removed.size();
+    cnt_added = added.size();
+    cnt_gb = cnt_matched + cnt_removed;
+    cnt_pm = cnt_matched + cnt_added;
+    cnt_min = min(cnt_gb, cnt_pm);
+}
+
+
+void CAuthListValidator::get_lastnames(const CAuth_list& authors, list<string>& lastnames)
+{
+    //cout << "... get_lastnames()\n";
+    lastnames.clear();
+    switch (authors.GetNames().Which()) {
+    case CAuth_list::C_Names::e_Std:
+        get_lastnames(authors.GetNames().GetStd(), lastnames);
+        break;
+    case CAuth_list::C_Names::e_Ml:
+        {{
+            CRef< CAuth_list > authlist_std;
+            authlist_std->Assign(authors);
+            authlist_std->ConvertMlToStandard();
+            get_lastnames(authlist_std->GetNames().GetStd(), lastnames);
+        }}
+        break;
+    case CAuth_list::C_Names::e_Str:
+        get_lastnames(authors.GetNames().GetStr(), lastnames);
+        break;
+    default:
+        throw logic_error("Unexpected CAuth_list::C_Name choice: " + CAuth_list::C_Names::SelectionName(authors.GetNames().Which()));
+    }
+}
+
+void CAuthListValidator::get_lastnames(const CAuth_list::C_Names::TStd& authors, list<string>& lastnames)
+{
+    for (auto& name : authors) {
+        if (name->IsSetName() && name->GetName().IsName() && name->GetName().GetName().IsSetLast()) {
+            string lname(name->GetName().GetName().GetLast());
+            lastnames.push_back(NStr::ToLower(lname));
+        }
+    }
+}
+
+void CAuthListValidator::get_lastnames(const CAuth_list::C_Names::TStr& authors, list<string>& lastnames)
+{
+    //cout << "... str_to_lastnames()\n"
+    //    << "    # of authors in input: " << authors.size() << "\n";
+    const char* alpha = "abcdefghijklmnopqrstuvwxyz";
+    for (auto auth : authors) {
+        //cout << "...   Parsing: " << auth << "\n";
+        size_t eow = NStr::ToLower(auth).find_first_not_of(alpha);
+        //cout << "...   extracting substring of length " << eow << ": " << auth.substr(0, eow) << ";\n";
+        lastnames.push_back(auth.substr(0, eow));
+    }
 }
 
 END_SCOPE(edit)

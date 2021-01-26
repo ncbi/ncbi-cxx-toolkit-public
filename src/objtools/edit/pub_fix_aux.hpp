@@ -56,7 +56,8 @@ namespace fix_pub
 enum EFixPubErrorCategory
 {
     err_Reference = 1,
-    err_Print
+    err_Print,
+    err_AuthList
 };
 
 enum EFixPubReferenceError
@@ -86,6 +87,13 @@ enum EFixPubReferenceError
 enum EFixPubPrintError
 {
     err_Print_Failed = 1
+};
+
+enum EFixPubAuthListError
+{
+    err_AuthList_SignificantDrop = 1,
+    err_AuthList_PreserveGB,
+    err_AuthList_LowMatch
 };
 
 
