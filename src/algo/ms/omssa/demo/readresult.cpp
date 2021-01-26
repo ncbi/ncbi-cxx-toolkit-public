@@ -61,7 +61,7 @@ public:
 // initialize application
 void CReadresult::Init()
 {
-    auto_ptr<CArgDescriptions> argDesc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> argDesc(new CArgDescriptions);
 	
 	// set up command line arguments
     argDesc->AddDefaultKey("o", "omssafile", 
@@ -89,7 +89,7 @@ int CReadresult::Run()
 		// read in omssa files
 		if(args["o"].AsString().size() > 0) {
 			// input stream (specialized for ASN.1)
-			auto_ptr<CObjectIStream> 
+			unique_ptr<CObjectIStream> 
 				in(CObjectIStream::Open(args["o"].AsString().c_str(),
 				eSerial_AsnText));
 			// object to hold input
