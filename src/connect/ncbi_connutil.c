@@ -140,7 +140,7 @@ static const char* x_GetValue(const char* svc, size_t svclen,
     char*       s;
 
     assert(!svclen  ||  (svclen == strlen(svc)));
-    assert(value  &&  value_size > 0  &&  !*value);
+    assert(value  &&  value_size  &&  !*value);
     assert(param  &&  *param);
 
     parlen = strlen(param) + 1;
@@ -257,7 +257,7 @@ const char* ConnNetInfo_GetValueInternal(const char* service,const char* param,
 {
     int/*bool*/ dummy;
     assert(!service  ||  !strpbrk(service, "?*["));
-    assert(value  &&  value_size > 1  &&  param  &&  *param);
+    assert(value  &&  value_size  &&  param  &&  *param);
     *value = '\0';
     return s_GetValue(service, service  &&  *service ? strlen(service) : 0,
                       param, value, value_size, def_value, &dummy);
@@ -272,7 +272,7 @@ extern const char* ConnNetInfo_GetValue(const char* service, const char* param,
     size_t      svclen;
     int/*bool*/ dummy;
 
-    if (!value  ||  value_size < 1)
+    if (!value  ||  !value_size)
         return 0;
     *value = '\0';
     if (!param  ||  !*param)
