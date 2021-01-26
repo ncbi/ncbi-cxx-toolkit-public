@@ -57,7 +57,7 @@ protected:
     CNWAligner*                 m_aligner;
     CNWAligner::SAlignInOut*    m_data;
 
-    auto_ptr<CException>        m_exception;
+    unique_ptr<CException>        m_exception;
 };
 
 bool NW_RequestNewThread(const unsigned int max_threads);
