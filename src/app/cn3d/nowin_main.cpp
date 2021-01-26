@@ -224,7 +224,7 @@ int Cn3DNoWin::Run(void)
 
         if (!sset)
             ERRORTHROW("Somehow ended up with NULL sset");
-        auto_ptr < StructureSet > sset_ap(sset); // so we can be sure it's deleted
+        unique_ptr < StructureSet > sset_ap(sset); // so we can be sure it's deleted
         
         // export PNG image
         if (!ExportPNG(NULL, &renderer, args["p"].AsString(), args["w"].AsInteger(), args["h"].AsInteger(), args["i"].HasValue()))
