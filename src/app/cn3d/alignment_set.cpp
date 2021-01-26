@@ -90,7 +90,7 @@ AlignmentSet * AlignmentSet::CreateFromMultiple(StructureBase *parent,
     }
 
     // create a single Seq-annot, with 'align' data that holds one Seq-align per dependent
-    auto_ptr<SeqAnnotList> newAsnAlignmentData(new SeqAnnotList(1));
+    unique_ptr<SeqAnnotList> newAsnAlignmentData(new SeqAnnotList(1));
     CSeq_annot *seqAnnot = new CSeq_annot();
     newAsnAlignmentData->back().Reset(seqAnnot);
 
@@ -113,7 +113,7 @@ AlignmentSet * AlignmentSet::CreateFromMultiple(StructureBase *parent,
     } else
         sa->Reset(CreatePairwiseSeqAlignFromMultipleRow(multiple, blocks, 0));
 
-    auto_ptr<AlignmentSet> newAlignmentSet;
+    unique_ptr<AlignmentSet> newAlignmentSet;
     try {
         newAlignmentSet.reset(new AlignmentSet(parent, multiple->GetMaster(), *newAsnAlignmentData));
     } catch (exception& e) {
