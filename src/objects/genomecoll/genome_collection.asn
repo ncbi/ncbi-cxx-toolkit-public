@@ -478,6 +478,9 @@ GC-Scaf-stats ::= SEQUENCE {
         scaf-L50 (35),  -- scaffold L50
         scaf-n75 (36),  -- scaffold N75
         scaf-n90 (37),  -- scaffold N90
+        ten-percentage-gc (38),  -- 10*percentage-gc, gc-counts/atgc-counts*100.0*10
+        gc-counts (39),  -- base counts for G,C
+        atgc-counts (40),  -- base count for A,T,G,C
         is-there-unplaced-scaf (72), -- 1 means there is unplaced scaffold. 0 means none
         count-singleton-unordered-scaffold (73),
         count-chr-made-of-singleton-ordered-scaffold (74),
