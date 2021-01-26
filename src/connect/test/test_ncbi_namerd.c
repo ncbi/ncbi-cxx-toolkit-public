@@ -432,14 +432,19 @@ static int run_a_test(size_t test_idx, int live, const char *svc,
         }
 
         /* Make sure endpoint data can be repopulated and reset. */
+#if 0
         if (repop  &&  s_n_hits_got) {
             /* repopulate */
             CORE_LOG(eLOG_Trace, "Repopulating the service mapper.");
             if ( ! info  &&  ! SERV_GetNextInfo(iter)) {
+                /* THIS IS A LOGIC ERROR:  if the iterator has reached its end
+                 * repopulating it might end up with all duplicates (to skip)
+                 * and result in no new entries!  Which is NOT an error. */
                 CORE_LOG(eLOG_Error, "Unable to repopulate endpoint data.");
                 errors = 1;
             }
         }
+#endif
         if (reset  &&  s_n_hits_got) {
             /* reset */
             CORE_LOG(eLOG_Trace, "Resetting the service mapper.");
