@@ -740,7 +740,7 @@ void StructureWindow::OnSetFont(wxCommandEvent& event)
     // get initial font info from registry, and create wxFont
     string nativeFont;
     RegistryGetString(section, REG_FONT_NATIVE_FONT_INFO, &nativeFont);
-    auto_ptr<wxFont> initialFont(wxFont::New(wxString(nativeFont.c_str())));
+    unique_ptr<wxFont> initialFont(wxFont::New(wxString(nativeFont.c_str())));
     if (!initialFont.get() || !initialFont->Ok())
     {
         ERRORMSG("StructureWindow::OnSetFont() - error setting up initial font");
