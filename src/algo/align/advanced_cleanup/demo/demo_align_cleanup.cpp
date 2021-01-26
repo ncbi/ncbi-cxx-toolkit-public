@@ -67,7 +67,7 @@ public:
 void CAlignCleanupApplication::Init(void)
 {
     // Create command-line argument descriptions class
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
@@ -196,7 +196,7 @@ int CAlignCleanupApplication::Run(void)
     cleanup.Cleanup(input_aligns, cleaned_aligns, query_type,
                     args["with-best-placement"], false, splign_dir);
 
-    auto_ptr<CObjectOStream> os(
+    unique_ptr<CObjectOStream> os(
         CObjectOStream::Open(output_fmt, args["o"].AsOutputFile()));
     ITERATE (CSeq_align_set::Tdata, it, cleaned_aligns) {
         *os << **it;
