@@ -43,8 +43,7 @@ extern "C" {
 
 
 const SSERV_VTable* SERV_LOCAL_Open(SERV_ITER    iter,
-                                    SSERV_Info** info,
-                                    HOST_INFO*   host_info);
+                                    SSERV_Info** info);
 
 
 #ifdef __cplusplus

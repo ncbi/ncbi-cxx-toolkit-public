@@ -371,9 +371,7 @@ static void s_Close(SERV_ITER iter)
  *  EXTERNAL
  ***********************************************************************/
 
-/*ARGSUSED*/
-const SSERV_VTable* SERV_LOCAL_Open(SERV_ITER iter,
-                                    SSERV_Info** info, HOST_INFO* u/*unused*/)
+const SSERV_VTable* SERV_LOCAL_Open(SERV_ITER iter, SSERV_Info** info)
 {
     struct SLOCAL_Data* data;
 

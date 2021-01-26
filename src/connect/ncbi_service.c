@@ -340,7 +340,7 @@ static SERV_ITER x_Open(const char*         service,
         *host_info = 0;
     /* Ugly optimization not to access the registry more than necessary */
     if ((!(do_local = s_IsMapperConfigured(svc, REG_CONN_LOCAL_ENABLE))      ||
-         !(op = SERV_LOCAL_Open(iter, info, host_info)))
+         !(op = SERV_LOCAL_Open(iter, info)))
 
         &&
         (!do_lbsmd                                                           ||
