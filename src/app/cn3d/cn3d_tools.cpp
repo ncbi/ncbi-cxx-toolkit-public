@@ -177,7 +177,7 @@ void LoadRegistry(void)
         registryFile = GetPrefsDir() + "Preferences";
     else
         registryFile = GetProgramDir() + "Preferences";
-    auto_ptr<CNcbiIfstream> iniIn(new CNcbiIfstream(registryFile.c_str(), IOS_BASE::in | IOS_BASE::binary));
+    unique_ptr<CNcbiIfstream> iniIn(new CNcbiIfstream(registryFile.c_str(), IOS_BASE::in | IOS_BASE::binary));
     if (*iniIn) {
         TRACEMSG("loading program registry " << registryFile);
         registry.Read(*iniIn, (CNcbiRegistry::ePersistent | CNcbiRegistry::eOverride));
@@ -189,7 +189,7 @@ void LoadRegistry(void)
 void SaveRegistry(void)
 {
     if (registryChanged) {
-        auto_ptr<CNcbiOfstream> iniOut(new CNcbiOfstream(registryFile.c_str(), IOS_BASE::out));
+        unique_ptr<CNcbiOfstream> iniOut(new CNcbiOfstream(registryFile.c_str(), IOS_BASE::out));
         if (*iniOut) {
 //            TESTMSG("saving program registry " << registryFile);
             registry.Write(*iniOut);
