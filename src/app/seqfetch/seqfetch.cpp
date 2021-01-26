@@ -139,7 +139,7 @@ public:
 private:
     bool xWriteSequence(
         const string&);
-    bool CSeqFetchApp::WriteHistoryTable(
+    bool WriteHistoryTable(
         const CID1server_back&);
 
     bool xLookupFeatPlex(
@@ -189,7 +189,7 @@ private:
 void CSeqFetchApp::Init()
 //  ----------------------------------------------------------------------------
 {
-    auto_ptr<CArgDescriptions> pArgDesc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> pArgDesc(new CArgDescriptions);
     pArgDesc->SetUsageContext(
         GetArguments().GetProgramBasename(),
         "Fetch sequence by ID",
@@ -1033,7 +1033,7 @@ bool CSeqFetchApp::xFlatIdToGi(
         case '(': {
             data.erase(data.end() - 1);
             vector<string> parts;
-            NStr::Tokenize(data, ",", parts);
+            NStr::Split(data, ",", parts);
             parts.resize(4, "");
             CSeq_id id(idtype, parts[1], parts[0], NStr::StringToInt(parts[3]),
                 parts[2]);
