@@ -65,6 +65,7 @@ NCBI_PARAM_DEF(double,   PSG, rebalance_time,         10.0);
 NCBI_PARAM_DEF(unsigned, PSG, request_timeout,        10);
 NCBI_PARAM_DEF(size_t, PSG, requests_per_io,          1);
 NCBI_PARAM_DEF(unsigned, PSG, request_retries,        2);
+NCBI_PARAM_DEF(string,   PSG, request_user_args,      "");
 NCBI_PARAM_DEF(unsigned, PSG, localhost_preference,   1);
 NCBI_PARAM_DEF(bool,     PSG, fail_on_unknown_items,  false);
 
@@ -1091,6 +1092,13 @@ string s_GetUrlArgs()
     }
 
     os << "&client_id=" << GetDiagContext().GetStringUID();
+
+    const auto user_args = TPSG_RequestUserArgs::GetDefault();
+
+    if (!user_args.empty()) {
+        os << '&' << user_args;
+    }
+
     return os.str();
 }
 
