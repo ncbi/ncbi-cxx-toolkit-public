@@ -364,7 +364,7 @@ void CAlignSort::SortAlignments(IAlignSource &align_source,
                 LOG_POST(Error << "  tmp volume: " << fname
                          << ": " << aligns.size() << " alignments");
                 CNcbiOfstream tmp_ostr(fname.c_str(), ios::binary | ios::out);
-                auto_ptr<CObjectOStream> tmp_os
+                unique_ptr<CObjectOStream> tmp_os
                     (CObjectOStream::Open(eSerial_AsnBinary, tmp_ostr));
                 ITERATE (TAlignments, it, aligns) {
                     if ( !tmp_ostr ) {
@@ -394,7 +394,7 @@ void CAlignSort::SortAlignments(IAlignSource &align_source,
                 LOG_POST(Error << "  tmp volume: " << fname
                          << ": " << aligns.size() << " alignments");
                 CNcbiOfstream tmp_ostr(fname.c_str(), ios::binary | ios::out);
-                auto_ptr<CObjectOStream> tmp_os
+                unique_ptr<CObjectOStream> tmp_os
                     (CObjectOStream::Open(eSerial_AsnBinary, tmp_ostr));
                 ITERATE (TAlignments, it, aligns) {
                     if ( !tmp_ostr ) {
