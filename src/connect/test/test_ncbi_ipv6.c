@@ -50,9 +50,15 @@ int main(int argc, const char* argv[])
     g_NCBI_ConnectRandomSeed
         = (unsigned int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
     srand(g_NCBI_ConnectRandomSeed);
-    for (n = 0;  n < sizeof(addr.octet);  ++n)
-        addr.octet[n] = rand() & 0xFF;
-    n = rand() % (sizeof(addr.octet) * 8 + 1);
+    if (rand() % 13) {
+        for (n = 0;  n < sizeof(addr.octet);  ++n)
+            addr.octet[n] = rand() & 0xFF;
+    } else
+        memset(&addr, 0, sizeof(addr));
+    if (rand() % 11)
+        n = rand() % (sizeof(addr.octet) * 8 + 1);
+    else
+        n = (rand() & 1) * 0xFF;
     if (!NcbiAddrToString(buf, sizeof(buf), &addr))
         *buf = '\0';
     printf("Address  = %s/%u\n", buf, n);

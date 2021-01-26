@@ -767,6 +767,8 @@ extern int/*bool*/ NcbiIPv6Suffix(TNCBI_IPv6Addr* addr, unsigned int bits)
         size_t n;
         if (bits < sizeof(addr->octet) * 8)
             bits = sizeof(addr->octet) * 8 - bits;
+        else
+            bits = 0;
         for (n = 0;  n < sizeof(addr->octet);  ++n) {
             if (!bits) {
                 if (addr->octet[n])
