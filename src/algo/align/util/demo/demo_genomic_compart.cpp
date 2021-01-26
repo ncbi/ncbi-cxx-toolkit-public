@@ -71,7 +71,7 @@ private:
 void CTestCompartApplication::Init(void)
 {
     // Create command-line argument descriptions class
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
@@ -121,7 +121,7 @@ int CTestCompartApplication::Run(void)
     list< CRef<CSeq_align> > aligns;
     {{
          CNcbiIstream& istr = args["i"].AsInputFile();
-         auto_ptr<CObjectIStream> is
+         unique_ptr<CObjectIStream> is
              (CObjectIStream::Open(eSerial_AsnText, istr));
          while ( !is->EndOfData() ) {
              CRef<CSeq_align> align(new CSeq_align);
