@@ -396,7 +396,7 @@ static SERV_ITER x_Open(const char*         service,
         (!do_dispd                                                           ||
          (do_dispd < 0  &&  !(do_dispd = !s_IsMapperConfigured
                               (svc, REG_CONN_DISPD_DISABLE)))                ||
-         !(op = SERV_DISPD_Open(iter, net_info, info, host_info)))) {
+         !(op = SERV_DISPD_Open(iter, net_info, info)))) {
         if (!do_local  &&  !do_lbsmd  &&  !do_dispd
 #ifdef NCBI_CXX_TOOLKIT
 #  ifdef NCBI_OS_UNIX
@@ -469,6 +469,7 @@ static int/*bool*/ x_ConsistencyCheck(SERV_ITER iter, const SSERV_Info* info)
 {
     const char* str = SERV_WriteInfo(info);
     TSERV_TypeOnly types;
+    size_t n;
 
     if (!info->host  ||  !info->port) {
         if (info->type != fSERV_Dns) {
@@ -599,7 +600,6 @@ static int/*bool*/ x_ConsistencyCheck(SERV_ITER iter, const SSERV_Info* info)
             RETURN(0/*failure*/);
         }
         if (SERV_IsStandby(info)  &&  !iter->ok_standby) {
-            size_t n;
             for (n = 0;  n < iter->n_skip;  ++n) {
                 if (!SERV_IsStandby(iter->skip[n])) {
                     CORE_LOGF(eLOG_Critical,
@@ -611,6 +611,14 @@ static int/*bool*/ x_ConsistencyCheck(SERV_ITER iter, const SSERV_Info* info)
         }
     }
 
+    for (n = 0;  n < iter->n_skip;  ++n) {
+        if (SERV_EqualInfo(info, iter->skip[n])) {
+            CORE_LOGF(eLOG_Critical,
+                      ("[%s]  Entry must be skipped:\n%s",
+                       iter->name, str ? str : "<NULL>"));
+            RETURN(0/*failure*/);
+        }
+    }
     RETURN(1/*success*/);
 }
 

@@ -342,7 +342,7 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
             return 0;
     }
 
-    for (n = 0; n < data->n_cand; n++)
+    for (n = 0;  n < data->n_cand;  ++n)
         data->cand[n].status = data->cand[n].info->rate;
     n = LB_Select(iter, data, s_GetCandidate, DISPD_LOCAL_BONUS);
     info = (SSERV_Info*) data->cand[n].info;
@@ -380,8 +380,8 @@ static void s_Reset(SERV_ITER iter)
 static void s_Close(SERV_ITER iter)
 {
     struct SDISPD_Data* data = (struct SDISPD_Data*) iter->data;
-    assert(!data->n_cand); /*s_Reset() had to be called before*/
     iter->data = 0;
+    assert(!data->n_cand); /*s_Reset() had to be called before*/
     if (data->cand)
         free(data->cand);
     ConnNetInfo_Destroy(data->net_info);
@@ -394,9 +394,9 @@ static void s_Close(SERV_ITER iter)
  ***********************************************************************/
 
 /*ARGSUSED*/
-const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
+const SSERV_VTable* SERV_DISPD_Open(SERV_ITER           iter,
                                     const SConnNetInfo* net_info,
-                                    SSERV_Info** info, HOST_INFO* u/*unused*/)
+                                    SSERV_Info**        info)
 {
     struct SDISPD_Data* data;
 

@@ -44,8 +44,7 @@ extern "C" {
 
 const SSERV_VTable* SERV_DISPD_Open(SERV_ITER           iter,
                                     const SConnNetInfo* net_info,
-                                    SSERV_Info**        info,
-                                    HOST_INFO*          host_info);
+                                    SSERV_Info**        info);
 
 
 #ifdef __cplusplus
