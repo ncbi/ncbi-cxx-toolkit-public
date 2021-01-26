@@ -344,7 +344,7 @@ int CScoreBuilder::GetBlastScoreStd(CScope& scope,
 
     const CSeq_align* align_ptr = &align;
 
-    auto_ptr<CSeq_align> swapped_align_ptr;
+    unique_ptr<CSeq_align> swapped_align_ptr;
     if (CSeq_inst::IsNa(mol1)) {
         swapped_align_ptr.reset(new CSeq_align);
         swapped_align_ptr->Assign(align);
