@@ -60,8 +60,6 @@
 
 
 #define SERV_SERVICE_NAME_RECURSION  10
-#define CONN_SERVICE_NAME            DEF_CONN_REG_SECTION               \
-                                     "_" REG_CONN_SERVICE_NAME
 #define CONN_IMPLICIT_SERVER_TYPE    DEF_CONN_REG_SECTION               \
                                      "_" REG_CONN_IMPLICIT_SERVER_TYPE
 
@@ -110,9 +108,9 @@ static char* x_ServiceName(unsigned int depth,
     size_t len = 0;
 
     assert(!svc == !service);
-    assert(sizeof(buf) > sizeof(CONN_SERVICE_NAME));
+    assert(sizeof(buf) > sizeof(REG_CONN_SERVICE_NAME));
     if (!svc  ||  (!ismask  &&  (!*svc  ||  strpbrk(svc, "?*[")))
-        ||  (len = strlen(svc)) >= sizeof(buf)-sizeof(CONN_SERVICE_NAME)
+        ||  (len = strlen(svc)) >= sizeof(buf)-sizeof(REG_CONN_SERVICE_NAME)
         ||  x_HasSpaces(svc, len)) {
         if (!service  ||  strcasecmp(service, svc) == 0)
             service = "";
@@ -121,9 +119,10 @@ static char* x_ServiceName(unsigned int depth,
                      !svc  ||  !*svc ? "" : "[",
                      !svc ? "" : svc,
                      !svc  ||  !*svc ? "" : "]  ",
-                     !svc ? "NULL" : !*svc ? "Empty" :
-                     len < sizeof(buf)-sizeof(CONN_SERVICE_NAME) ? "Invalid" :
-                     "Too long", *service ? " for: " : "", service));
+                     !svc ? "NULL" : !*svc ? "Empty"
+                     : len < sizeof(buf) - sizeof(REG_CONN_SERVICE_NAME)
+                     ? "Invalid" : "Too long",
+                     *service ? " for: " : "", service));
         return 0/*failure*/;
     }
     if (!ismask  &&  !isfast) {
@@ -131,14 +130,14 @@ static char* x_ServiceName(unsigned int depth,
         int/*bool*/ tr = x_tr((char*) memcpy(tmp, svc, len), '-', '_', len);
         char* s = tmp + len;
         *s++ = '_';
-        memcpy(s, CONN_SERVICE_NAME, sizeof(CONN_SERVICE_NAME));
-        len += 1 + sizeof(CONN_SERVICE_NAME);
+        memcpy(s, REG_CONN_SERVICE_NAME, sizeof(REG_CONN_SERVICE_NAME));
+        len += 1 + sizeof(REG_CONN_SERVICE_NAME);
         /* Looking for "svc_CONN_SERVICE_NAME" in the environment */
         if ((!(s = getenv(strupr((char*) memcpy(buf, tmp, len--))))
              &&  (memcmp(buf, tmp, len) == 0  ||  !(s = getenv(tmp))))
             ||  !*s) {
             /* Looking for "CONN_SERVICE_NAME" in registry section "[svc]" */
-            len -= sizeof(CONN_SERVICE_NAME);
+            len -= sizeof(REG_CONN_SERVICE_NAME);
             if (tr)
                 memcpy(buf, svc, len);  /* re-copy */
             buf[len++] = '\0';
@@ -1137,6 +1136,7 @@ extern void SERV_SetImplicitServerType(const char* service, ESERV_Type type)
     size_t len;
     if (!svc)
         return;
+    /* Store service-specific setting */
     if (CORE_REG_SET(svc, CONN_IMPLICIT_SERVER_TYPE, typ, eREG_Transient)) {
         free(svc);
         return;
@@ -1147,7 +1147,7 @@ extern void SERV_SetImplicitServerType(const char* service, ESERV_Type type)
         free(svc);
         return;
     }
-    x_tr(buf, '-', '_', len);
+    x_tr(strupr(buf), '-', '_', len);
     memcpy(buf + len,
            "_"    CONN_IMPLICIT_SERVER_TYPE,
            sizeof(CONN_IMPLICIT_SERVER_TYPE));
@@ -1168,6 +1168,7 @@ extern ESERV_Type SERV_GetImplicitServerType(const char* service)
     ESERV_Type type;
     const char *end;
     char value[40];
+    /* Try to retrieve service-specific first, then global default */
     if (!ConnNetInfo_GetValue(service, REG_CONN_IMPLICIT_SERVER_TYPE,
                               value, sizeof(value), 0)
         ||  !*value  ||  !(end = SERV_ReadType(value, &type))  ||  *end) {

@@ -285,7 +285,6 @@ typedef struct {  /* NCBI_FAKE_WARNING: ICC */
 #define DEF_CONN_HTTP_REFERER       0
 
 /* Environment/registry keys that are *not* kept in SConnNetInfo */
-#define REG_CONN_SERVICE_NAME               "SERVICE_NAME"
 #define REG_CONN_LOCAL_ENABLE               "LOCAL_ENABLE"
 #define REG_CONN_LBSMD_DISABLE              "LBSMD_DISABLE"
 #define REG_CONN_LBDNS_ENABLE               "LBDNS_ENABLE"
@@ -294,6 +293,12 @@ typedef struct {  /* NCBI_FAKE_WARNING: ICC */
 #define REG_CONN_NAMERD_FOR_LINKERD_ENABLE  "NAMERD_FOR_LINKERD_ENABLE"
 #define REG_CONN_NAMERD_ENABLE              "NAMERD_ENABLE"
 #define REG_CONN_DISPD_DISABLE              "DISPD_DISABLE"
+
+/* Implicit server type (LINKERD/NAMERD) */
+#define REG_CONN_IMPLICIT_SERVER_TYPE       "IMPLICIT_SERVER_TYPE"
+
+/* Substitute (redirected) service name */
+#define REG_CONN_SERVICE_NAME       DEF_CONN_REG_SECTION "_" "SERVICE_NAME"
 
 /* Local service dispatcher */
 #define REG_CONN_LOCAL_SERVICES     DEF_CONN_REG_SECTION "_" "LOCAL_SERVICES"
@@ -304,8 +309,6 @@ typedef struct {  /* NCBI_FAKE_WARNING: ICC */
 #define REG_CONN_LBDNS_HOST         DEF_CONN_REG_SECTION "_" "LBDNS_HOST"
 #define REG_CONN_LBDNS_PORT         DEF_CONN_REG_SECTION "_" "LBDNS_PORT"
 
-/* Implicit server type (LINKERD/NAMERD) */
-#define REG_CONN_IMPLICIT_SERVER_TYPE  "IMPLICIT_SERVER_TYPE"
 
 /* Local IP table */
 #define DEF_CONN_LOCAL_IPS          "LOCAL_IPS"
