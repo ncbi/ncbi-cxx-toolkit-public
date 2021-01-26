@@ -393,7 +393,6 @@ static void s_Close(SERV_ITER iter)
  *  EXTERNAL
  ***********************************************************************/
 
-/*ARGSUSED*/
 const SSERV_VTable* SERV_DISPD_Open(SERV_ITER           iter,
                                     const SConnNetInfo* net_info,
                                     SSERV_Info**        info)
