@@ -358,7 +358,7 @@ void CElementaryMatching::x_InitFilteringVector(const string& sdb, bool strand)
 
         Uint4 current_offset (0);
 
-        auto_ptr<vector<Uint4> > pNrCounts (new vector<Uint4> (kNrMersTotal, 0));
+        unique_ptr<vector<Uint4> > pNrCounts (new vector<Uint4> (kNrMersTotal, 0));
         vector<Uint4> & NrCounts (*pNrCounts);
 
         cerr << " Scanning " << subjdb->GetNumSeqs() << " genomic sequences ... ";
@@ -419,7 +419,7 @@ void CElementaryMatching::x_InitFilteringVector(const string& sdb, bool strand)
         cerr << " Constructing FV ... ";
 
         string filename_temp_01;
-        auto_ptr<vector<Uint4> > pNrCounts2 (new vector<Uint4>);
+        unique_ptr<vector<Uint4> > pNrCounts2 (new vector<Uint4>);
         vector<Uint4> & NrCounts2 (* pNrCounts2);
         try {
             NrCounts2 = NrCounts;
