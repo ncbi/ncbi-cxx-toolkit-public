@@ -47,7 +47,7 @@ set(SRC_C
     ncbi_memory_connector ncbi_service_connector ncbi_ftp_connector
     ncbi_version ncbi_iprange ncbi_local ncbi_dispd
     ncbi_lbos ncbi_linkerd ncbi_namerd parson
-    ncbi_localip
+    ncbi_localip ncbi_lbdns
     ${lbsm_src}
     )
 
