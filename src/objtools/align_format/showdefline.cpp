@@ -1462,7 +1462,7 @@ CShowBlastDefline::x_GetScoreInfo(const CSeq_align& aln, int blast_rank)
                               evalue_buf, bit_score_buf, total_bit_score_buf,
                               raw_score_buf);
 
-    auto_ptr<SScoreInfo> score_info(new SScoreInfo);
+    unique_ptr<SScoreInfo> score_info(new SScoreInfo);
     score_info->sum_n = sum_n == -1 ? 1:sum_n ;
     score_info->id = &(aln.GetSeq_id(1));
 
@@ -1486,9 +1486,9 @@ CShowBlastDefline::x_GetScoreInfoForTable(const CSeq_align_set& aln, int blast_r
     if(aln.Get().empty())
         return NULL;
 
-    auto_ptr<SScoreInfo> score_info(new SScoreInfo);
+    unique_ptr<SScoreInfo> score_info(new SScoreInfo);
 
-    auto_ptr<CAlignFormatUtil::SSeqAlignSetCalcParams> seqSetInfo( CAlignFormatUtil::GetSeqAlignSetCalcParamsFromASN(aln)); 
+    unique_ptr<CAlignFormatUtil::SSeqAlignSetCalcParams> seqSetInfo( CAlignFormatUtil::GetSeqAlignSetCalcParamsFromASN(aln)); 
     if(seqSetInfo->hspNum == 0) {//calulated params are not in ASN - calculate now
         seqSetInfo.reset( CAlignFormatUtil::GetSeqAlignSetCalcParams(aln,m_QueryLength,m_TranslatedNucAlignment)); 
     }
