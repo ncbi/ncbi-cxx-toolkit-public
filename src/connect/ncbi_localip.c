@@ -261,7 +261,7 @@ static void s_LoadLocalIPs(void)
         for (n = 0;  n < SizeOf(kFile);  ++n) {
             if (n  ||  !*file)
                 file = kFile[n];
-            else if (strcasecmp(file, REG_CONN_LOCAL_IPS_DISABLE) == 0)
+            else if (strcasecmp(file, DEF_CONN_LOCAL_IPS_DISABLE) == 0)
                 break;
             errno = 0;
             if (NcbiSys_access(file, R_OK) == 0  &&
@@ -281,9 +281,9 @@ static void s_LoadLocalIPs(void)
             if (file == buf)
                 break;
         }
-        net_info = ConnNetInfo_Create(REG_CONN_LOCAL_IPS);
+        net_info = ConnNetInfo_Create(DEF_CONN_LOCAL_IPS);
         if (net_info)
-            n = strcasecmp(net_info->svc, REG_CONN_LOCAL_IPS_DISABLE) ? 1 : 0;
+            n = strcasecmp(net_info->svc, DEF_CONN_LOCAL_IPS_DISABLE) ? 1 : 0;
         else
             n = 0;
         /* Build a pass-thru HTTP connector here to save on a dispatcher hit */
@@ -309,7 +309,7 @@ static void s_LoadLocalIPs(void)
         level = eLOG_Critical;
     if (level != eLOG_Note) {
         CORE_LOG_X(1, level,
-                   "Cannot load local IP specs from " REG_CONN_LOCAL_IPS);
+                   "Cannot load local IP specs from " DEF_CONN_LOCAL_IPS);
     }
 
     CORE_LOG(eLOG_Warning, "Using default local IPv4 specs");
