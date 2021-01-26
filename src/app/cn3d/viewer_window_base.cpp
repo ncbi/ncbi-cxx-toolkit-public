@@ -157,7 +157,7 @@ void ViewerWindowBase::SetupFontFromRegistry(void)
     // get font info from registry, and create wxFont
     string nativeFont;
     RegistryGetString(REG_SEQUENCE_FONT_SECTION, REG_FONT_NATIVE_FONT_INFO, &nativeFont);
-    auto_ptr<wxFont> font(wxFont::New(wxString(nativeFont.c_str())));
+    unique_ptr<wxFont> font(wxFont::New(wxString(nativeFont.c_str())));
     if (!font.get() || !font->Ok())
     {
         ERRORMSG("ViewerWindowBase::SetupFontFromRegistry() - error setting up font");
