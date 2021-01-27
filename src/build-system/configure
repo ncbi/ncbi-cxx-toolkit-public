@@ -16001,6 +16001,7 @@ if test "$ac_cv_lib_resolv_res_search" = "yes"; then
 else
    RESOLVER_LIBS=
 fi
+NETWORK_LIBS="$RESOLVER_LIBS $NETWORK_LIBS"
 
 orig_LIBS=$LIBS
 LIBS="$NETWORK_LIBS $orig_LIBS"
