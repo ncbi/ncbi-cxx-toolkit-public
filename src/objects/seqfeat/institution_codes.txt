@@ -99,12 +99,12 @@ AFAQ	s	Amateur Fisheries Association of Queensland
 AFES	s	Maritimes Forest Research Centre			
 AFGMC	s	Alaska Department of Fish and Game			
 AFR	s	Fundacao Jardim Botanico de Pocos de Caldas			
-AFRC	 	Afribugs			
+AFRC	s	Afribugs			
 AFS	s	American Fern Society Herbarium			
 AFSDU	s	Suleyman Demirel University, Agricultural Faculty			
 AFTC	s	Alaska Frozen Tissue Collection			
-AGIL	 		
-AGMT	 	Associazione Gruppi Micologici Toscani			
+AGIL	s	USDA/ARS, Animal Genomics and Improvement Laboratory			
+AGMT	s	Associazione Gruppi Micologici Toscani			
 AGRITEC	b	AGRITEC, Ltd.			
 AGRL	s	Lethbridge Research Station			
 AGU	s	Astrakhan State University			
@@ -135,7 +135,7 @@ AJBC	s	Atkins Jardin Botanico de Cienfuegos
 AJOU	s	Ajou University, Biological Sciences Department			
 AJU	s	Universidade Tiradentes			
 AK	s	Auckland War Memorial Museum			
-AKASH	 		
+AKASH	s	University of Azad Jammu and Kashmir Pakistan			
 AKPM	s	Akita Prefectural Museum			
 AKSU	s	Aksaray University			
 AKU<JPN>	c	Faculty of Agriculture			
@@ -268,7 +268,7 @@ APM	s	Algonquin Provincial Park, Algonquin Visitor Centre
 APMJ	s	Aomori Prefectural Museum			
 APP	s	Parco Nazionale del Gran Sasso e Monti della Laga - Universita di Camerino, Centro Richerche Floristiche dell'Appennino			
 APSC	s	Austin Peay State University, Biology Department			
-APU	 	Akita Prefectural University			
+APU	s	Akita Prefectural University			
 AQC	s	Aquinas College, Biology Department			
 AQP	s	Estudios Fitogeograficos del Peru			
 AQUAMEB	c	Culture Collection of Microalgae and Cyanobacteria, Bursa Technical University			
@@ -7565,7 +7565,6 @@ UNIP	s	Universidade Paulista, Laboratorio de Botanica
 UNIPAR	s	Mycological Herbarium University of Parakou			
 UNIQEM	c	Institute of Microbiology, Russian Academy of Sciences			
 UNITEC	s	Unitec Institute of Technology			
-University of Azad Jammu and Kashmir Pakistan			
 UNL<MEX>	s	Universidad Autonoma de Nuevo Leon			
 UNL<PRT>	s	Centro de Estratigrafia e Paleobiologia da Universidade Nova de Lisboa			
 UNL<USA-NE>	s	University of Nebraska State Museum			
@@ -7684,7 +7683,6 @@ USCWH	s	United Services College
 USD<DOM>	s	Universidad Autonoma de Santo Domingo			
 USD<USA-SD>	s	University of South Dakota			
 USDA	scb	United States Department of Agriculture			
-USDA/ARS, Animal Genomics and Improvement Laboratory			
 USDA:CFRA	b	United States Department of Agriculture, Corvallis Fragaria Catalog		
 USDA:GRIN	b	United States Department of Agriculture, Germplasm Resources Information Network		
 USDA:NCGR	b	United States Department of Agriculture, National Clonal Germplasm Repository		
