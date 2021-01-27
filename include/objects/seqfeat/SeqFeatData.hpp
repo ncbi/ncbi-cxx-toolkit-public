@@ -391,6 +391,7 @@ public:
         eQual_macronuclear,
         eQual_map,
         eQual_mating_type,
+        eQual_metagenome_source,
         eQual_metagenomic,
         eQual_mitochondrion,
         eQual_mobile_element,
