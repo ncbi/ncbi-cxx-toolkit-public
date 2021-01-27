@@ -395,21 +395,29 @@ static void s_GetESearchIds(CESearch_Request& req,
             istr >> MSerial_Xml >> *pRes;
 
             if (istr.GetStatusCode() == 200) {
-                if (pRes->IsSetData() &&
-                    pRes->GetData().IsInfo() &&
-                    pRes->GetData().GetInfo().IsSetContent() &&
-                    pRes->GetData().GetInfo().GetContent().IsSetIdList()) {
-
-                    const auto& idList = pRes->GetData().GetInfo().GetContent().GetIdList();
-                    if (idList.IsSetId()) {
-                        ids = idList.GetId();
+                if (pRes->IsSetData()) {
+                    if (pRes->GetData().IsInfo() &&
+                        pRes->GetData().GetInfo().IsSetContent() &&
+                        pRes->GetData().GetInfo().GetContent().IsSetIdList()) {
+                
+                        const auto& idList = pRes->GetData().GetInfo().GetContent().GetIdList();
+                        if (idList.IsSetId()) {
+                            ids = idList.GetId();
+                        }
+                        req.Disconnect();
+                        return;
                     }
-                }
-                req.Disconnect();
-                return;
-            }
+                    else 
+                    if (pRes->GetData().IsERROR()) {
+                        NCBI_THROW(CException, eUnknown, 
+                                pRes->GetData().GetERROR());
+                    }
+                } // pRest->IsSetData() 
+            } // istr.GetStatusCode() == 200
         }
-        catch(...) {
+        catch(CException& e) {
+            ERR_POST(Warning << "failed on attempt " << retry + 1
+                    << ": " << e);
         }
         req.Disconnect();
    
