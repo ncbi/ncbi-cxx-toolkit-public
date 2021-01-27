@@ -796,6 +796,28 @@ bool CBuildDatabase::AddSequences(IBioseqSource & src, bool add_pig)
 
         if (bs->CanGetId()) {
             const list< CRef<CSeq_id> > & ids = bs->GetId();
+	    CSeq_id::TGi check_gi ;
+	    //BEGIN:SB-2994
+	    if ( m_SkipLargeGis && !ids.empty() && ids.front().NotEmpty()){
+		bool skip_this = false;
+		for(list< CRef<CSeq_id> >::const_iterator it = ids.begin(); it != ids.end(); it++  ){
+		    if( it->NotEmpty() ){
+			CSeq_id::EAccessionInfo info = (*it)->IdentifyAccession();
+			if( info == CSeq_id::EAccessionInfo::eAcc_gi ){
+			    check_gi = (*it)->GetGi();
+			    if( check_gi > 0x7FFFFFFF ) {
+				skip_this = true;
+			    }
+			}
+		    }
+		}
+		if( skip_this ){
+		    m_LogFile << "Ignoring gi '" << check_gi << "' as it has value larger then " << 0x7FFFFFFF<< endl;
+		    bs = src.GetNext();
+		    continue;
+		}
+	    }
+	    //END:SB-2994
             if (! ids.empty() && ids.front().NotEmpty()) {
                 bioseq_id.assign(ids.front()->AsFastaString());
             }
@@ -1048,7 +1070,8 @@ CBuildDatabase::CBuildDatabase(const string         & dbname,
       m_ParseIDs     (((indexing & CWriteDB::eFullIndex) != 0 ? true : false)),
       m_LongIDs      (long_seqids),
       m_FoundMatchingMasks(false),
-      m_SkipCopyingGis(false)
+      m_SkipCopyingGis(false),
+      m_SkipLargeGis(true)
 {
     CreateDirectories(dbname);
     const string output_dbname = CDirEntry::CreateAbsolutePath(dbname);
@@ -1105,7 +1128,8 @@ CBuildDatabase::CBuildDatabase(const string & dbname,
       m_ParseIDs     (parse_seqids),
       m_LongIDs      (long_seqids),
       m_FoundMatchingMasks(false),
-      m_SkipCopyingGis(false)
+      m_SkipCopyingGis(false),
+      m_SkipLargeGis(true)
 {
     CreateDirectories(dbname);
     const string output_dbname = CDirEntry::CreateAbsolutePath(dbname);
