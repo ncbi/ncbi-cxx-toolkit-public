@@ -1,5 +1,4 @@
 			
-	s	Instituto de Desenvolvimento Sustentavel e Meio Ambiente do Rio Grande do Norte - IDEMA			
 # $Id$
 A	s	Arnold Arboretum, Harvard University			
 AA	s	Ministry of Science, Academy of Sciences			
@@ -17,7 +16,7 @@ AAU<ETH>	s	Addis Ababa University, Department of Biology
 AAU<ETH>:A	s	Addis Ababa University, Department of Biology, Amphibian collection		
 AAUB	s	Anhui Agricultural University, Department of Basic Courses			
 AAUF	s	Anhui Agricultural University, Forest Utilization Faculty			
-ABADRU	 		
+ABADRU	s	USDA/ARS, Arthropod-Borne Animal Diseases Research Unit			
 ABB	c	Asian Bacterial Bank			
 ABBM	s	Biodiversity Application & Research Center, Ataturk University			
 ABCL	 	USDA/ARS, Australian Biological Control Laboratory			
@@ -6110,7 +6109,7 @@ RMSC	s	Rocky Mountain Forest and Range Experiment Station
 RMSCC	c	Roche Molecular Systems Culture Collection			
 RMTV	s	University of Rome Tor Vergata			
 RMWC	s	Randolph-Macon Woman's College, Biology Department			
-RN
+RN	s	Instituto de Desenvolvimento Sustentavel e Meio Ambiente do Rio Grande do Norte - IDEMA			
 RNG	s	University of Reading			
 RNMUT	s	Republic Nature Museum of Uzbekistan			
 RO	s	Universita degli Studi di Roma La Sapienza, Dipartimento di Biologia Vegetale			
@@ -7686,7 +7685,6 @@ USD<DOM>	s	Universidad Autonoma de Santo Domingo
 USD<USA-SD>	s	University of South Dakota			
 USDA	scb	United States Department of Agriculture			
 USDA/ARS, Animal Genomics and Improvement Laboratory			
-USDA/ARS, Arthropod-Borne Animal Diseases Research Unit			
 USDA:CFRA	b	United States Department of Agriculture, Corvallis Fragaria Catalog		
 USDA:GRIN	b	United States Department of Agriculture, Germplasm Resources Information Network		
 USDA:NCGR	b	United States Department of Agriculture, National Clonal Germplasm Repository		

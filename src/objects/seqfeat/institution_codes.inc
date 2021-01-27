@@ -32,7 +32,6 @@
 
 static const char* const kInstitutionCollectionCodeList[] = {
 "\t\t\t",
-"\ts\tInstituto de Desenvolvimento Sustentavel e Meio Ambiente do Rio Grande do Norte - IDEMA\t\t\t",
 "# $Id$",
 "A\ts\tArnold Arboretum, Harvard University\t\t\t",
 "AA\ts\tMinistry of Science, Academy of Sciences\t\t\t",
@@ -50,7 +49,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "AAU<ETH>:A\ts\tAddis Ababa University, Department of Biology, Amphibian collection\t\t",
 "AAUB\ts\tAnhui Agricultural University, Department of Basic Courses\t\t\t",
 "AAUF\ts\tAnhui Agricultural University, Forest Utilization Faculty\t\t\t",
-"ABADRU\t \t\t",
+"ABADRU\ts\tUSDA/ARS, Arthropod-Borne Animal Diseases Research Unit\t\t\t",
 "ABB\tc\tAsian Bacterial Bank\t\t\t",
 "ABBM\ts\tBiodiversity Application & Research Center, Ataturk University\t\t\t",
 "ABCL\t \tUSDA/ARS, Australian Biological Control Laboratory\t\t\t",
@@ -6143,7 +6142,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "RMSCC\tc\tRoche Molecular Systems Culture Collection\t\t\t",
 "RMTV\ts\tUniversity of Rome Tor Vergata\t\t\t",
 "RMWC\ts\tRandolph-Macon Woman's College, Biology Department\t\t\t",
-"RN",
+"RN\ts\tInstituto de Desenvolvimento Sustentavel e Meio Ambiente do Rio Grande do Norte - IDEMA\t\t\t",
 "RNG\ts\tUniversity of Reading\t\t\t",
 "RNMUT\ts\tRepublic Nature Museum of Uzbekistan\t\t\t",
 "RO\ts\tUniversita degli Studi di Roma La Sapienza, Dipartimento di Biologia Vegetale\t\t\t",
@@ -7719,7 +7718,6 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "USD<USA-SD>\ts\tUniversity of South Dakota\t\t\t",
 "USDA\tscb\tUnited States Department of Agriculture\t\t\t",
 "USDA/ARS, Animal Genomics and Improvement Laboratory\t\t\t",
-"USDA/ARS, Arthropod-Borne Animal Diseases Research Unit\t\t\t",
 "USDA:CFRA\tb\tUnited States Department of Agriculture, Corvallis Fragaria Catalog\t\t",
 "USDA:GRIN\tb\tUnited States Department of Agriculture, Germplasm Resources Information Network\t\t",
 "USDA:NCGR\tb\tUnited States Department of Agriculture, National Clonal Germplasm Repository\t\t",
