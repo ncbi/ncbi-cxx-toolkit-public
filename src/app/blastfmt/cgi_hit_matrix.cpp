@@ -155,7 +155,7 @@ void CBlastHitMatrixCGIApplication::x_GetSeqAnnot(CCgiContext& ctx)
 
         try {
             m_Annot.Reset(new CSeq_annot);
-            auto_ptr<CObjectIStream> is
+            unique_ptr<CObjectIStream> is
                     (CObjectIStream::Open(eSerial_AsnText, inHttp));
             *is >> *m_Annot;                                    
         }
@@ -179,7 +179,7 @@ CRef <CSeq_annot> createAnnot(string rid)
         LOG_POST(ASN1FilePath);
         
         try {
-            auto_ptr<CObjectIStream> in
+            unique_ptr<CObjectIStream> in
              (CObjectIStream::Open(eSerial_AsnText,ASN1FilePath));
             *in >> *m_Annot;        
         }
