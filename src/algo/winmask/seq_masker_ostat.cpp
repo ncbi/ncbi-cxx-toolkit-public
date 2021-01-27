@@ -150,7 +150,7 @@ void CSeqMaskerOstat::setUnitCount( Uint4 unit, Uint4 count )
 //------------------------------------------------------------------------------
 void CSeqMaskerOstat::setParam( const string & name, Uint4 value )
 {
-    if( state != udata && state != thres )
+    if( state != udata && state != thres && state != ulen)
     {
         CNcbiOstrstream ostr;
         ostr << "can not set masking parameters in state " << state;
