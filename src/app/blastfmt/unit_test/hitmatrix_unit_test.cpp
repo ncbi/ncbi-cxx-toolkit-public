@@ -65,7 +65,7 @@ BOOST_AUTO_TEST_CASE(TestHitMatrixWriteToFileAcc)
     }
     
 
-    auto_ptr<CBlastHitMatrix> blastHitMatrix
+    unique_ptr<CBlastHitMatrix> blastHitMatrix
         (new CBlastHitMatrix(fileSeqAlignSet->Get(),
                              600, 800, CImageIO::ePng, kFontPath));
     CTmpFile tmpfile;
@@ -87,7 +87,7 @@ BOOST_AUTO_TEST_CASE(TestHitMatrixWriteToFileFasta)
     }
     
 
-    auto_ptr<CBlastHitMatrix> blastHitMatrix
+    unique_ptr<CBlastHitMatrix> blastHitMatrix
         (new CBlastHitMatrix(fileSeqAlignSet->Get(), 600, 800, CImageIO::ePng,
                              kFontPath));
     CTmpFile tmpfile;
