@@ -526,7 +526,7 @@ public:
     ///   Time interval in milliseconds (infinite by default) to wait.
     /// @param info
     ///   Extended exit information for terminated process.
-    ///   Note that if CProcess:Kill() was used to terminate the process
+    ///   Note that if CProcess::Kill() was used to terminate the process
     ///   then the extended information may not be available.
     /// @return
     ///   - Exit code of the process, if the call completed without errors.
@@ -552,7 +552,7 @@ public:
         return Wait(timeout, info);
     }
 
-    /// Wait an infinite amount of time until process terminates.
+    /// Wait indefinitely until the process terminates.
     /// @sa Wait
     int WaitInfinite(CExitInfo* info = 0) const {
         return Wait(kInfiniteTimeoutMs, info);
