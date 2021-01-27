@@ -73,7 +73,7 @@ void CGuideTreeApplication::Init(void)
                 | fHideXmlHelp | fHideDryRun);
 
     // Create command-line argument descriptions class
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
@@ -185,7 +185,7 @@ int CGuideTreeApplication::Run(void)
     CRef<CScope> scope(new CScope(*object_manager));
     scope->AddDefaults();
     
-    auto_ptr<CPhyTreeFormatter> gtree;
+    unique_ptr<CPhyTreeFormatter> gtree;
 
     EInput input;
     if (args["type"].AsString() == "seqalignset") {
