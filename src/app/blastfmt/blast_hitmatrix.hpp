@@ -206,7 +206,7 @@ private:
     CGlPane m_Port;
 
     /// Renderer setup Parameter
-    auto_ptr<CHitMatrixRenderer>   m_Renderer;
+    unique_ptr<CHitMatrixRenderer>   m_Renderer;
 
     ///CGlOsContext context
     CRef <CGlOsContext> m_Context;
