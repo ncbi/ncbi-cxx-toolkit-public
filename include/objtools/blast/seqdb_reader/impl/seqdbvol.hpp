@@ -1349,6 +1349,7 @@ private:
     void x_OpenHdrFile(void) const;
     void x_OpenPigFile(void) const;
     void x_OpenGiFile(void) const;
+    void x_UnleaseGiFile(void) const;
     void x_OpenStrFile(void) const;
     void x_OpenTiFile(void) const;
     void x_OpenHashFile(void) const;
@@ -1433,11 +1434,12 @@ private:
     mutable bool m_SeqFileOpened;
     mutable bool m_HdrFileOpened;
     mutable bool m_PigFileOpened;
-    mutable bool m_GiFileOpened;
     mutable bool m_StrFileOpened;
     mutable bool m_TiFileOpened;
     mutable bool m_HashFileOpened;
     mutable bool m_OidFileOpened;
+
+    mutable CFastMutex m_MtxGi;
 
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )

@@ -88,7 +88,6 @@ CSeqDBVol::CSeqDBVol(CSeqDBAtlas        & atlas,
       m_SeqFileOpened(false),
       m_HdrFileOpened(false),
       m_PigFileOpened(false),
-      m_GiFileOpened (false),
       m_StrFileOpened(false),
       m_TiFileOpened (false),
       m_HashFileOpened(false),
@@ -153,19 +152,28 @@ CSeqDBVol::x_OpenPigFile(void) const{
 
 void
 CSeqDBVol::x_OpenGiFile(void) const{
-    static CFastMutex mtx;
-    CFastMutexGuard mtx_gurad(mtx);
-    if (!m_GiFileOpened &&
-         CSeqDBIsam::IndexExists(m_VolName, (m_IsAA?'p':'n'), 'n') &&
-         m_Idx->GetNumOIDs() != 0) {
-        m_IsamGi =
-            new CSeqDBIsam(m_Atlas,
-                           m_VolName,
-                           (m_IsAA?'p':'n'),
-                           'n',
-                           eGiId);
+    CFastMutexGuard mtx_gurad(m_MtxGi);
+    if (m_IsamGi.NotEmpty()) {
+    	m_IsamGi->AddReference();
+    	return;
     }
-    m_GiFileOpened = true;
+    else if (CSeqDBIsam::IndexExists(m_VolName, (m_IsAA?'p':'n'), 'n') &&
+			   m_Idx->GetNumOIDs() != 0) {
+        m_IsamGi = new CSeqDBIsam(m_Atlas, m_VolName, (m_IsAA?'p':'n'), 'n', eGiId);
+    }
+}
+
+void
+CSeqDBVol::x_UnleaseGiFile(void) const{
+    CFastMutexGuard mtx_gurad(m_MtxGi);
+    if (m_IsamGi.NotEmpty()) {
+    	if (m_IsamGi->ReferencedOnlyOnce()) {
+    		m_IsamGi.Reset();
+    	}
+    	else {
+    		m_IsamGi->RemoveReference();
+    	}
+    }
 }
 
 void
@@ -2422,21 +2430,24 @@ bool CSeqDBVol::TiToOid(Int8                   ti,
 
 bool CSeqDBVol::GiToOid(TGi gi, int & oid, CSeqDBLockHold & locked) const
 {
-    if (!m_GiFileOpened) x_OpenGiFile();
+	bool rv = false;
+     x_OpenGiFile();
     if (m_IsamGi.Empty()) {
         return false;
     }
-
-    return m_IsamGi->IdToOid(GI_TO(Int8, gi), oid);
+    rv = m_IsamGi->IdToOid(GI_TO(Int8, gi), oid);
+    x_UnleaseGiFile();
+    return rv;
 }
 
 void CSeqDBVol::IdsToOids(CSeqDBGiList   & ids,
                           CSeqDBLockHold & locked) const
 {
     if (ids.GetNumGis()) {
-        if (!m_GiFileOpened) x_OpenGiFile();
+         x_OpenGiFile();
         if (m_IsamGi.NotEmpty()) {
             m_IsamGi->IdsToOids(m_VolStart, m_VolEnd, ids);            
+            x_UnleaseGiFile();
         } else {
             NCBI_THROW(CSeqDBException,
                        eArgErr,
@@ -2476,7 +2487,6 @@ void CSeqDBVol::IdsToOids(CSeqDBGiList   & ids,
                        "SI list specified but no ISAM file found for SI in " + m_VolName);
         }
     }
-    x_UnLeaseIsam();
 }
 
 void CSeqDBVol::IdsToOids(CSeqDBNegativeList & ids,
@@ -2485,9 +2495,10 @@ void CSeqDBVol::IdsToOids(CSeqDBNegativeList & ids,
     // Numeric translation is done in batch mode.
 
     if (ids.GetNumGis()) {
-        if (!m_GiFileOpened) x_OpenGiFile();
+         x_OpenGiFile();
         if (m_IsamGi.NotEmpty()) {
             m_IsamGi->IdsToOids(m_VolStart, m_VolEnd, ids);
+            x_UnleaseGiFile();
         } else {
             NCBI_THROW(CSeqDBException,
                        eArgErr,
@@ -2516,7 +2527,6 @@ void CSeqDBVol::IdsToOids(CSeqDBNegativeList & ids,
                        "SI list specified but no ISAM file found for SI in " + m_VolName);
         }
     }
-    x_UnLeaseIsam();
 }
 
 bool CSeqDBVol::GetGi(int                    oid,
@@ -2525,8 +2535,7 @@ bool CSeqDBVol::GetGi(int                    oid,
 {
     gi = INVALID_GI;
 
-    if (!m_GiFileOpened) x_OpenGiFile();
-    if (m_IsamGi.Empty()) {
+    if (!CSeqDBIsam::IndexExists(m_VolName, (m_IsAA?'p':'n'), 'n')) {
         return false;
     }
 
@@ -2598,13 +2607,14 @@ void CSeqDBVol::x_StringToOids(const string          & acc,
 
     case eGiId:
         // Converted to GI type.
-        if (!m_GiFileOpened) x_OpenGiFile();
+        x_OpenGiFile();
         if (! m_IsamGi.Empty()) {
             int oid(-1);
 
             if (m_IsamGi->IdToOid(ident, oid)) {
                 oids.push_back(oid);
             }
+            x_UnleaseGiFile();
         }
         break;
 
@@ -2651,7 +2661,6 @@ void CSeqDBVol::x_StringToOids(const string          & acc,
     if (vcheck) {
         x_CheckVersions(acc, oids);
     }
-    x_UnLeaseIsam();    
 }
 
 void CSeqDBVol::x_CheckVersions(const string         & acc,
@@ -2745,7 +2754,6 @@ void CSeqDBVol::x_UnLeaseIsam(void) const
         m_IsamPig->UnLease();
     }
     if (m_IsamGi.NotEmpty()) {
-        m_GiFileOpened = false;
         m_IsamGi->UnLease();
     }
     if (m_IsamStr.NotEmpty()) {
@@ -3033,7 +3041,7 @@ void CSeqDBVol::GetGiBounds(TGi            & low_id,
                             CSeqDBLockHold & locked) const
 {
     //m_Atlas.Lock(locked);
-    if (!m_GiFileOpened) x_OpenGiFile();
+    x_OpenGiFile();
     low_id = ZERO_GI;
     high_id = ZERO_GI;
     count = 0;
@@ -3048,6 +3056,7 @@ void CSeqDBVol::GetGiBounds(TGi            & low_id,
 
         s_SeqDBFitsInFour(L);
         s_SeqDBFitsInFour(H);
+        x_UnleaseGiFile();
     }
 }
 
