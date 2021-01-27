@@ -495,7 +495,7 @@ bool MUIsJournalIndexed(const string& journal)
     CESearch_Request req("nlmcatalog", pContext);
     req.SetRetMax(2);
     req.SetUseHistory(false);
-    try {
+  //  try {
         if (MULooksLikeISSN(title)) {
             s_GetESearchIds(req, title + "[issn]", ids);
         }
@@ -507,10 +507,10 @@ bool MUIsJournalIndexed(const string& journal)
         if (ids.empty()) {
             s_GetESearchIds(req, title + "[jo]", ids);
         }
-    }
-    catch (CException& e) {
-        return false;
-    }
+  //  }
+  //  catch (CException& e) {
+  //      return false;
+  //  }
 
     if (ids.size() != 1) {
         return false;
