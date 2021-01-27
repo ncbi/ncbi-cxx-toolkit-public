@@ -436,7 +436,7 @@ bool CDataTool::ProcessData(void)
     }
     else {
         typeName = in->ReadFileHeader();
-        if (typeName.empty() && CDataType::GetSourceDataSpec() == EDataSpec::eJSON) {
+        if (CDataType::GetSourceDataSpec() == EDataSpec::eJSON) {
             typeName = "JsonValue";
         }
     }
@@ -481,6 +481,9 @@ bool CDataTool::ProcessData(void)
             NCBI_THROW(CNotFoundException,eType,msg);
         }
         in->ReadFileHeader();
+    }
+    if (CDataType::GetSourceDataSpec() == EDataSpec::eJSON && inFormat == eSerial_Json) {
+        in.reset(CObjectIStream::Open(inFormat, inFileName, eSerial_StdWhenAny));
     }
     
     // determine output data file
