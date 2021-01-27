@@ -318,14 +318,17 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
     DEFINE_STATIC_FAST_MUTEX(s_Mutex);
     CFastMutexGuard guard_mutex(s_Mutex);
 
-    x_Clear();
+    if (m_SelfHandles  ||  m_ProcHandle != INVALID_HANDLE_VALUE) {
+        ERR_POST_X(1, s_FormatErrorMessage("Open", "Pipe busy"));
+        return eIO_Unknown;
+    }
     m_Flags = create_flags;
-
-    EIO_Status status = eIO_Unknown;
 
     HANDLE child_stdin  = INVALID_HANDLE_VALUE;
     HANDLE child_stdout = INVALID_HANDLE_VALUE;
     HANDLE child_stderr = INVALID_HANDLE_VALUE;
+
+    EIO_Status status = eIO_Unknown;
 
     try {
         // Prepare command line to run
@@ -497,7 +500,10 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
 
 void CPipeHandle::OpenSelf(void)
 {
-    x_Clear();
+    if (m_SelfHandles  ||  m_ProcHandle != INVALID_HANDLE_VALUE) {
+        PIPE_THROW(0,
+                   "Pipe busy");
+    }
 
     NcbiCout.flush();
     ::fflush(stdout);
@@ -612,7 +618,7 @@ EIO_Status CPipeHandle::Read(void* buf, size_t count, size_t* n_read,
     EIO_Status status = eIO_Unknown;
 
     try {
-        if (m_ProcHandle == INVALID_HANDLE_VALUE  &&  !m_SelfHandles) {
+        if (!m_SelfHandles  &&  m_ProcHandle == INVALID_HANDLE_VALUE) {
             PIPE_THROW(0,
                        "Pipe closed");
         }
@@ -705,7 +711,7 @@ EIO_Status CPipeHandle::Write(const void* buf, size_t count,
     EIO_Status status = eIO_Unknown;
 
     try {
-        if (m_ProcHandle == INVALID_HANDLE_VALUE  &&  !m_SelfHandles) {
+        if (!m_SelfHandles  &&  m_ProcHandle == INVALID_HANDLE_VALUE) {
             PIPE_THROW(0,
                        "Pipe closed");
         }
@@ -778,7 +784,7 @@ CPipe::TChildPollMask CPipeHandle::Poll(CPipe::TChildPollMask mask,
     CPipe::TChildPollMask poll = 0;
 
     try {
-        if (m_ProcHandle == INVALID_HANDLE_VALUE  &&  !m_SelfHandles) {
+        if (!m_SelfHandles  &&  m_ProcHandle == INVALID_HANDLE_VALUE) {
             PIPE_THROW(0,
                        "Pipe closed");
         }
@@ -1014,7 +1020,7 @@ static int s_ExecShell(const char* executable,
     ++i; // copy last zero element also
 
     // Construct argument list for the shell
-    const char **args = new const char*[i + 1];
+    const char** args = new const char*[i + 1];
     AutoPtr< const char*, ArrayDeleter<const char*> > args_ptr(args);
 
     args[0] = kShell;
@@ -1148,10 +1154,13 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
     DEFINE_STATIC_FAST_MUTEX(s_Mutex);
     CFastMutexGuard guard_mutex(s_Mutex);
 
-    x_Clear();
+    if (m_Pid != (pid_t)(-1)) {
+        ERR_POST_X(1, s_FormatErrorMessage("Open", "Pipe busy"));
+        return eIO_Unknown;
+    }
     m_Flags = create_flags;
 
-    // Child process I/O handles
+    // Child process I/O handles: init "our" ends of the pipes
     int pipe_in[2], pipe_out[2], pipe_err[2];
     pipe_in[0]  = -1;
     pipe_out[1] = -1;
@@ -1381,7 +1390,10 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
 
 void CPipeHandle::OpenSelf(void)
 {
-    x_Clear();
+    if (m_Pid != (pid_t)(-1)) {
+        PIPE_THROW(0,
+                   "Pipe busy");
+    }
 
     NcbiCout.flush();
     ::fflush(stdout);
@@ -1395,7 +1407,7 @@ void CPipeHandle::OpenSelf(void)
 
 void CPipeHandle::x_Clear(void)
 {
-    m_Pid = -1;
+    m_Pid = (pid_t)(-1);
     if (m_SelfHandles) {
         m_ChildStdIn  = -1;
         m_ChildStdOut = -1;
@@ -2189,7 +2201,9 @@ CPipe::EFinish CPipe::ExecWait(const string&           cmd,
                 case IProcessWatcher::eStop:
                     break;
                 case IProcessWatcher::eExit:
-                    if (pipe.m_PipeHandle) pipe.m_PipeHandle->Release();
+                    if (pipe.m_PipeHandle) {
+                        pipe.m_PipeHandle->Release();
+                    }
                     return eCanceled;
                 }
 
