@@ -21,6 +21,7 @@ For more information please visit:  http://bitmagic.io
 */
 
 #include <climits>
+#include <stdint.h>
 
 // Incorporate appropriate tuneups when the NCBI C++ Toolkit's core
 // headers have been included.
@@ -167,7 +168,8 @@ For more information please visit:  http://bitmagic.io
 // BM library keeps GAP flag in pointer.
 
 
-
+// TODO: consider UINTPTR_MAX == 0xFFFFFFFF
+//
 # if ULONG_MAX != 0xffffffff || defined(_WIN64)  // 64-bit
 
 #  define BMPTR_SETBIT0(ptr)   ( ((bm::id64_t)ptr) | 1 )
@@ -200,13 +202,14 @@ For more information please visit:  http://bitmagic.io
 # endif
 #endif
 
-
+#ifndef BMFORCEINLINE
 #ifdef BM_HASFORCEINLINE
 # ifndef BMFORCEINLINE
 #  define BMFORCEINLINE __forceinline
 # endif
 #else
 # define BMFORCEINLINE inline
+#endif
 #endif
 
 

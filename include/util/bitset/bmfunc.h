@@ -1192,6 +1192,133 @@ update_block_digest0(const bm::word_t* const block, bm::id64_t digest) BMNOEXCEP
 
 // --------------------------------------------------------------
 
+/**
+    Compact sub-blocks by digest (rank compaction)
+    \param t_block - target block
+    \param block - src bit block
+    \param digest - digest to use for copy
+    \param zero_tail - flag to zero the tail memory
+
+   @ingroup bitfunc
+   @internal
+ */
+inline
+void block_compact_by_digest(bm::word_t*   t_block,
+                       const bm::word_t*   block,
+                       bm::id64_t          digest,
+                       bool zero_tail) BMNOEXCEPT
+{
+    unsigned t_wave = 0;
+    bm::id64_t d = digest;
+
+    while (d)
+    {
+        bm::id64_t t = bm::bmi_blsi_u64(d); // d & -d;
+        unsigned wave = bm::word_bitcount64(t - 1);
+        unsigned off = wave * bm::set_block_digest_wave_size;
+        unsigned t_off = t_wave * bm::set_block_digest_wave_size;
+
+        const bm::word_t* sub_block = block + off;
+        bm::word_t* t_sub_block = t_block + t_off;
+        const bm::word_t* sub_block_end =
+                    sub_block + bm::set_block_digest_wave_size;
+        // TODO 64-bit optimization or SIMD
+        for (; sub_block < sub_block_end; t_sub_block+=4, sub_block+=4)
+        {
+            t_sub_block[0] = sub_block[0];
+            t_sub_block[1] = sub_block[1];
+            t_sub_block[2] = sub_block[2];
+            t_sub_block[3] = sub_block[3];
+        } // for
+
+        d = bm::bmi_bslr_u64(d); // d &= d - 1;
+        ++t_wave;
+    } // while
+
+    // init rest as zeroes (maybe need to be parametric)
+    //
+    if (zero_tail)
+    {
+        for ( ;t_wave < bm::block_waves; ++t_wave)
+        {
+            unsigned t_off = t_wave * bm::set_block_digest_wave_size;
+            bm::word_t* t_sub_block = t_block + t_off;
+            const bm::word_t* t_sub_block_end =
+                        t_sub_block + bm::set_block_digest_wave_size;
+            for (; t_sub_block < t_sub_block_end; t_sub_block+=4)
+            {
+                t_sub_block[0] = 0;
+                t_sub_block[1] = 0;
+                t_sub_block[2] = 0;
+                t_sub_block[3] = 0;
+            } // for
+        } // for
+    }
+}
+
+// --------------------------------------------------------------
+
+/**
+    expand sub-blocks by digest (rank expansion)
+    \param t_block - target block
+    \param block - src bit block
+    \param digest - digest to use for copy
+    \param zero_subs - flag to zero the non-digest sub waves
+
+   @ingroup bitfunc
+   @internal
+ */
+
+inline
+void block_expand_by_digest(bm::word_t*   t_block,
+                       const bm::word_t*   block,
+                       bm::id64_t          digest,
+                       bool zero_subs) BMNOEXCEPT
+{
+    unsigned s_wave = 0;
+    bm::id64_t d = digest;
+
+    bm::id64_t mask1 = 1ULL;
+    for (unsigned wave = 0; wave < bm::block_waves; ++wave)
+    {
+        unsigned s_off = s_wave * bm::set_block_digest_wave_size;
+        const bm::word_t* sub_block = block + s_off;
+        const bm::word_t* sub_block_end =
+                    sub_block + bm::set_block_digest_wave_size;
+        bm::word_t* t_sub_block =
+            t_block + (wave * bm::set_block_digest_wave_size);
+        if (d & mask1)
+        {
+            for (; sub_block < sub_block_end; t_sub_block+=4, sub_block+=4)
+            {
+                t_sub_block[0] = sub_block[0];
+                t_sub_block[1] = sub_block[1];
+                t_sub_block[2] = sub_block[2];
+                t_sub_block[3] = sub_block[3];
+            } // for
+
+            ++s_wave;
+        }
+        else
+        {
+            if (zero_subs)
+            {
+                const bm::word_t* t_sub_block_end =
+                            t_sub_block + bm::set_block_digest_wave_size;
+                for (; t_sub_block < t_sub_block_end; t_sub_block+=4)
+                {
+                    t_sub_block[0] = 0; t_sub_block[1] = 0;
+                    t_sub_block[2] = 0; t_sub_block[3] = 0;
+                } // for
+            }
+        }
+        mask1 <<= 1;
+    } // for i
+}
+
+
+// --------------------------------------------------------------
+
 
 /// Returns true if set operation is constant (bitcount)
 inline
@@ -1228,7 +1355,7 @@ template<bool T> struct all_set
         bm::word_t BM_VECT_ALIGN  _p[bm::set_block_size] BM_VECT_ALIGN_ATTR;
         bm::word_t* _p_fullp;
 
-        all_set_block()
+        all_set_block() BMNOEXCEPT
         {
             ::memset(_p, 0xFF, sizeof(_p)); // set FULL BLOCK content (all 1s)
             if (bm::conditional<sizeof(void*) == 8>::test())
@@ -1285,15 +1412,6 @@ template<bool T> struct all_set
 
 template<bool T> typename all_set<T>::all_set_block all_set<T>::_block;
 
-/// XOR swap two scalar variables
-template<typename W> 
-void xor_swap(W& x, W& y) BMNOEXCEPT
-{
-    BM_ASSERT(&x != &y);
-    x ^= y;
-    y ^= x;
-    x ^= y;
-}
 
 /*!
     Fini not NULL position
@@ -1376,7 +1494,7 @@ bool find_not_null_ptr(bm::word_t*** arr, N start, N size, N* pos) BMNOEXCEPT
 
    @ingroup bitfunc 
 */
-template<typename T> int wordcmp0(T w1, T w2)
+template<typename T> int wordcmp0(T w1, T w2) BMNOEXCEPT
 {
     while (w1 != w2)
     {
@@ -1405,7 +1523,7 @@ template<typename T> int wordcmp(T w1, T w2)
 
    @ingroup bitfunc 
 */
-template<typename T> int wordcmp(T a, T b)
+template<typename T> int wordcmp(T a, T b) BMNOEXCEPT
 {
     T diff = a ^ b;
     return diff? ( (a & diff & -diff)? 1 : -1 ) : 0;
@@ -2822,80 +2940,6 @@ void gap_buff_op(T*         BMRESTRICT dest,
 }
 
 
-/*!
-   \brief Abstract operation for GAP buffers (predicts legth)
-          Receives functor F as a template argument
-   \param vect1 - operand 1 GAP encoded buffer.
-   \param vect2 - operand 2 GAP encoded buffer.
-   \param dlen - destination length after the operation
-   \param limit - maximum target length limit,
-                  returns false if limit is reached
-   \return true if operation would be successfull or 
-           false if limit reached
-
-   \note Internal function.
-   @internal
-
-   @ingroup gapfunc
-*/
-/*
-template<typename T, class F>
-bool gap_buff_dry_op(const T*   BMRESTRICT vect1,
-                     const T*   BMRESTRICT vect2,
-                     unsigned&  dlen,
-                     unsigned limit) BMNOEXCEPT2
-{
-    const T*  cur1 = vect1;
-    const T*  cur2 = vect2;
-
-    T bitval1 = (T)((*cur1++ & 1));
-    T bitval2 = (T)((*cur2++ & 1));
-
-    T bitval = (T)F::op(bitval1, bitval2);
-    T bitval_prev = bitval;
-
-    unsigned len = 1;
-
-    T c1 = *cur1; T c2 = *cur2;
-    while (1)
-    {
-        bitval = (T) F::op(bitval1, bitval2);
-
-        // Check if GAP value changes and we need to
-        // start the next one
-        //
-        len += (bitval != bitval_prev);
-        if (len > limit)
-            return false;
-        bitval_prev = bitval;
-        if (c1 < c2) 
-        {
-            ++cur1; c1 = *cur1;
-            bitval1 ^= 1;
-        }
-        else // >=
-        {
-            if (c2 < c1) // (*cur2 < *cur1)
-            {
-                bitval2 ^= 1;
-            }
-            else  // equal
-            {
-                if (c2 == (bm::gap_max_bits - 1))
-                    break;
-
-                ++cur1; c1 = *cur1;
-                bitval1 ^= 1; bitval2 ^= 1;
-            }
-            ++cur2; c2 = *cur2;
-        }
-
-    } // while
-
-    dlen = len;
-    return true;
-}
-*/
 
 /*!
    \brief Abstract distance test operation for GAP buffers. 
@@ -4941,7 +4985,8 @@ bm::id_t bit_count_change(bm::word_t w) BMNOEXCEPT
     @internal
 */
 inline
-unsigned bit_block_change32(const bm::word_t* block, unsigned size) BMNOEXCEPT
+unsigned bit_block_change32(const bm::word_t* BMRESTRICT block,
+                            unsigned                     size) BMNOEXCEPT
 {
     unsigned gap_count = 1;
 
@@ -4978,6 +5023,49 @@ unsigned bit_block_change32(const bm::word_t* block, unsigned size) BMNOEXCEPT
     return gap_count;
 }
 
+/*!
+    Function calculates number of times when bit value changed
+    @internal
+*/
+inline
+unsigned bit_block_change64(const bm::word_t* BMRESTRICT in_block,
+                            unsigned size) BMNOEXCEPT
+{
+    unsigned gap_count = 1;
+    const bm::id64_t* BMRESTRICT block = (const bm::id64_t*) in_block;
+
+    bm::id64_t  w, w0, w_prev, w_l;
+    w = w0 = *block;
+
+    const int w_shift = int(sizeof(w) * 8 - 1);
+    w ^= (w >> 1);
+    gap_count += bm::word_bitcount64(w);
+    gap_count -= unsigned(w_prev = (w0 >> w_shift)); // negative value correction
+
+    const bm::id64_t* block_end = block + (size/2);
+    for (++block; block < block_end; ++block)
+    {
+        w = w0 = *block;
+        ++gap_count;
+        if (!w)
+        {
+            gap_count -= !w_prev;
+            w_prev = 0;
+        }
+        else
+        {
+            w ^= (w >> 1);
+            gap_count += bm::word_bitcount64(w);
+            w_l = w0 & 1;
+            gap_count -= unsigned(w0 >> w_shift);  // negative value correction
+            gap_count -= !(w_prev ^ w_l);  // word border correction
+            w_prev = (w0 >> w_shift);
+        }
+    } // for
+    return gap_count;
+}
+
+
 
 /*!
     Function calculates basic bit-block statistics
@@ -4999,7 +5087,11 @@ void bit_block_change_bc(const bm::word_t* BMRESTRICT block,
         VECT_BLOCK_CHANGE_BC(block, gc, bc);
     #else
         // TODO: one pass algo
-        *gc = bm::bit_block_change32(block, bm::set_block_size);
+        #ifdef BM64OPT
+            *gc = bm::bit_block_change64(block, bm::set_block_size);
+        #else
+            *gc = bm::bit_block_change32(block, bm::set_block_size);
+        #endif
         *bc = bm::bit_block_count(block);
     #endif
 }
@@ -5021,7 +5113,11 @@ unsigned bit_block_calc_change(const bm::word_t* block) BMNOEXCEPT
 #if defined(VECT_BLOCK_CHANGE)
     return VECT_BLOCK_CHANGE(block, bm::set_block_size);
 #else
-    return bm::bit_block_change32(block, bm::set_block_size);
+    #ifdef BM64OPT
+        return bm::bit_block_change64(block, bm::set_block_size);
+    #else
+        return bm::bit_block_change32(block, bm::set_block_size);
+    #endif
 #endif
 }
 
@@ -5096,7 +5192,6 @@ bool bit_block_is_all_one_range(const bm::word_t* const BMRESTRICT block,
             return false;
     } // for
     BM_ASSERT(bitcount < 32);
-
     if (bitcount)  // we have a tail to count
     {
         unsigned mask_l = bm::mask_l_u32(bitcount-1);
@@ -5104,7 +5199,6 @@ bool bit_block_is_all_one_range(const bm::word_t* const BMRESTRICT block,
         if (temp != mask_l)
             return false;
     }
-
     return true;
 }
 
@@ -9470,7 +9564,7 @@ unsigned min_delta_u32(const unsigned* arr, size_t arr_size)
     @internal
  */
 inline
-void min_delta_apply(unsigned* arr, size_t arr_size, unsigned delta)
+void min_delta_apply(unsigned* arr, size_t arr_size, unsigned delta) BMNOEXCEPT
 {
     BM_ASSERT(delta > 0);
     --delta;
@@ -9487,7 +9581,7 @@ void min_delta_apply(unsigned* arr, size_t arr_size, unsigned delta)
     @internal
  */
 template<typename VT, typename SZ>
-bool find_max_nz(const VT* arr, SZ arr_size, SZ* found_idx)
+bool find_max_nz(const VT* arr, SZ arr_size, SZ* found_idx) BMNOEXCEPT
 {
     bool found = false;
     VT max_v = 0;
@@ -9508,7 +9602,7 @@ bool find_max_nz(const VT* arr, SZ arr_size, SZ* found_idx)
     @internal
  */
 template<typename VT, typename SZ>
-bool find_first_nz(const VT* arr, SZ arr_size, SZ* found_idx)
+bool find_first_nz(const VT* arr, SZ arr_size, SZ* found_idx) BMNOEXCEPT
 {
     for (SZ i = 0; i < arr_size; ++i)
     {
@@ -9527,13 +9621,90 @@ bool find_first_nz(const VT* arr, SZ arr_size, SZ* found_idx)
     @internal
  */
 template<typename VT, typename SZ>
-SZ count_nz(const VT* arr, SZ arr_size)
+SZ count_nz(const VT* arr, SZ arr_size) BMNOEXCEPT
 {
     SZ cnt = 0;
     for (SZ i = 0; i < arr_size; ++i)
         cnt += (arr[i] != 0);
     return cnt;
 }
+
+// --------------------------------------------------------------
+// Best representation
+// --------------------------------------------------------------
+
+/// Possible representations for bit sets
+///
+/// @internal
+enum bit_representation
+{
+    e_bit_GAP = 0, ///< GAPs
+    e_bit_INT,     ///< Int list
+    e_bit_IINT,    ///< Inverted int list
+    e_bit_1,       ///< all 1s
+    e_bit_0,       ///< all 0s (empty block)
+    e_bit_bit,   ///< uncompressed bit-block
+    e_bit_end
+};
+
+/**
+    Detect best representation for serialization for a block or sub-block
+    @param gc - gap count
+    @param bc - bit count
+    @param max_bits - total number of bits in block
+    @param bie_bits_per_int - number of bits per int in the compression scheme
+    @param best_metric - [out] - best metric (number of bits or gaps)
+
+    @return representation metric
+ */
+inline
+bm::bit_representation best_representation(unsigned gc,
+                                           unsigned bc,
+                                           unsigned max_bits,
+                                           float bie_bits_per_int,
+                                           unsigned* best_metric) BMNOEXCEPT
+{
+    if (!bc)
+    {
+        *best_metric = bc;
+        return e_bit_0;
+    }
+    if (bc == max_bits)
+    {
+        *best_metric = 0;
+        return e_bit_1;
+    }
+
+    unsigned ibc = max_bits - bc;
+    if (gc < bc) // GC < BC
+    {
+        if (gc <= ibc)
+        {
+            *best_metric = gc;
+            float cost_in_bits = float(gc) * bie_bits_per_int;
+            if (cost_in_bits >= float(max_bits))
+                return e_bit_bit;
+            return e_bit_GAP;
+        }
+    }
+    else // GC >= BC
+    {
+        if (bc <= ibc)
+        {
+            *best_metric = bc;
+            float cost_in_bits = float(bc) * bie_bits_per_int;
+            if (cost_in_bits >= float(max_bits))
+                return e_bit_bit;
+            return e_bit_INT;
+        }
+    }
+    *best_metric = ibc;
+    float cost_in_bits = float(ibc) * bie_bits_per_int;
+    if (cost_in_bits >= float(max_bits))
+        return e_bit_bit;
+    return e_bit_IINT;
+}
+
 
 // --------------------------------------------------------------
 // Functions to work with int values stored in 64-bit pointers

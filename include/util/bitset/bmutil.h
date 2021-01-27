@@ -525,6 +525,16 @@ unsigned mask_l_u32(unsigned nbit) BMNOEXCEPT
     return m;
 }
 
+/// XOR swap two variables
+///
+/// @internal
+template<typename W>
+BMFORCEINLINE void xor_swap(W& x, W& y) BMNOEXCEPT
+{
+    BM_ASSERT(&x != &y);
+    x ^= y; y ^= x; x ^= y;
+}
+
 
 #ifdef __GNUG__
 #pragma GCC diagnostic pop
@@ -532,6 +542,26 @@ unsigned mask_l_u32(unsigned nbit) BMNOEXCEPT
 #ifdef _MSC_VER
 #pragma warning( pop )
 #endif
+
+/**
+    Сompute mask of bytes presense in 64-bit word
+
+    @param w - [in] input 64-bit word
+    @return mask with 8 bits
+    @internal
+ */
+inline
+unsigned compute_h64_mask(unsigned long long w)
+{
+    unsigned h_mask = 0;
+    for (unsigned i = 0; w && (i < 8); ++i, w >>= 8)
+    {
+        if ((unsigned char) w)
+            h_mask |= (1u<<i);
+    } // for
+    return h_mask;
+}
+
 
 
 } // bm

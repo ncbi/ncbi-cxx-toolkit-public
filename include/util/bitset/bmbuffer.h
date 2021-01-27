@@ -22,6 +22,7 @@ For more information please visit:  http://bitmagic.io
 #include <type_traits>
 
 #include "bmdef.h"
+#include "bmutil.h"
 
 namespace bm
 {
@@ -58,7 +59,11 @@ public:
     /// Get write access to buffer memory
     unsigned char* data() BMNOEXCEPT { return byte_buf_; }
 
-    bool operator==(const byte_buffer_ptr& lhs) const BMNOEXCEPT { return equal(lhs); }
+    /// const access to buffer memory
+    const unsigned char* data() const BMNOEXCEPT { return byte_buf_; }
+
+    bool operator==(const byte_buffer_ptr& lhs) const BMNOEXCEPT
+        { return equal(lhs); }
     
     /// return true if content and size is the same
     bool equal(const byte_buffer_ptr& lhs) const BMNOEXCEPT
@@ -206,7 +211,12 @@ public:
         
         this->size_ = new_size;
     }
-    
+    /// adjust current size (no need to reallocate)
+    void resize_no_check(size_t new_size) BMNOEXCEPT
+    {
+        this->size_ = new_size;
+    }
+
     /// reserve new capacity (buffer content preserved)
     void reserve(size_t new_capacity)
     {
@@ -371,17 +381,13 @@ public:
     const value_type& operator[](size_type pos) const BMNOEXCEPT
     {
         BM_ASSERT(pos < size());
-        size_type v_size = value_size();
-        const unsigned char *p = buffer_.buf() + (pos * v_size);
-        return *reinterpret_cast<const value_type*>(p);
+        return reinterpret_cast<const value_type*>(buffer_.data())[pos];
     }
 
     value_type& operator[](size_type pos) BMNOEXCEPT
     {
         BM_ASSERT(pos < size());
-        size_type v_size = value_size();
-        unsigned char *p = buffer_.data() + (pos * v_size);
-        return *reinterpret_cast<value_type*>(p);
+        return reinterpret_cast<value_type*>(buffer_.data())[pos];
     }
 
     value_type& at(size_type pos)
@@ -389,12 +395,17 @@ public:
         size_type sz = size();
         if (pos >= sz)
             throw_range_error("out of range access");
-
-        size_type v_size = value_size();
-        unsigned char *p = buffer_.data() + (pos * v_size);
-        return *reinterpret_cast<value_type*>(p);
+        return reinterpret_cast<value_type*>(buffer_.data())[pos];
     }
-    
+
+    const value_type& at(size_type pos) const
+    {
+        size_type sz = size();
+        if (pos >= sz)
+            throw_range_error("out of range access");
+        return reinterpret_cast<const value_type*>(buffer_.data())[pos];
+    }
+
     const value_type* begin() const BMNOEXCEPT
     {
         return (const value_type*) buffer_.buf();
@@ -464,6 +475,10 @@ public:
         }
     }
 
+    /**
+        @brief Add element to the end of the vector, return reference
+        @return reference the the last element
+     */
     value_type& add()
     {
         size_type v_size = value_size();
@@ -474,6 +489,9 @@ public:
         return *v;
     }
 
+    /**
+        @brief push new element to the back of the vector
+     */
     void push_back(const value_type& v)
     {
         size_type v_size = value_size();
@@ -482,6 +500,21 @@ public:
         unsigned char *p = buffer_.data() + (sz * v_size);
         new(p) value_type(v);
     }
+
+    /**
+        Push back value without capacity check
+     */
+    void push_back_no_check(const value_type& v) BMNOEXCEPT
+    {
+        size_type v_size = value_size();
+        size_type sz = size();
+
+        buffer_.resize_no_check((sz+1) * v_size);
+
+        unsigned char *p = buffer_.data() + (sz * v_size);
+        new(p) value_type(v);
+    }
+
 
 protected:
 
@@ -621,9 +654,9 @@ public:
     }
 
     /** Get low-level buffer access */
-    buffer_type& get_buffer() { return buffer_; }
+    buffer_type& get_buffer() BMNOEXCEPT { return buffer_; }
     /** Get low-level buffer access */
-    const buffer_type& get_buffer() const { return buffer_; }
+    const buffer_type& get_buffer() const BMNOEXCEPT { return buffer_; }
 
     /*! remapping: vect[idx] = matrix[idx, vect[idx] ]
     */
@@ -740,6 +773,14 @@ public:
         return r[col_idx];
     }
 
+    const value_type& get(size_type row_idx, size_type col_idx) const BMNOEXCEPT
+    {
+        BM_ASSERT(row_idx < rows_);
+        BM_ASSERT(col_idx < cols_);
+        const value_type* r = row(row_idx);
+        return r[col_idx];
+    }
+
     void set(size_type row_idx, size_type col_idx, value_type v) BMNOEXCEPT
     {
         BM_ASSERT(row_idx < rows_);
@@ -792,6 +833,31 @@ public:
             }
         }
     }
+
+    /**
+        Check if two matrix objects matches on the content
+    */
+    bool equal(const dynamic_heap_matrix<Val, BVAlloc>& dhm) const BMNOEXCEPT
+    {
+        if (cols() != dhm.cols())
+            return false;
+        if (rows() != dhm.rows())
+            return false;
+        for (size_type i = 0; i < rows_; ++i)
+        {
+            for (size_type j = i+1; j < cols_; ++j)
+            {
+                const value_type& v1 = get(i,j);
+                const value_type& v2 = dhm.get(i, j);
+                if (!(v1 == v2))
+                {
+                    return false;
+                }
+            } // j
+        } // i
+        return true;
+    }
+
     /**
         Sum of row elements
      */
@@ -822,6 +888,91 @@ protected:
     size_type       cols_;
     buffer_type     buffer_;
 };
+
+
+/**
+    Simple queue based on memory controlled dynamic vector.
+    Intent: better control memory allocations and exceptions than STL variant
+
+    Important assumption: value_type is simple and not throwing exceptions
+    @internal
+ */
+template<typename Value, typename BVAlloc, bool trivial_type>
+class simple_queue
+{
+public:
+    typedef Value         value_type;
+    typedef BVAlloc       bv_allocator_type;
+    typedef
+    bm::heap_vector<Value, bv_allocator_type, trivial_type>   heap_vector_type;
+    typedef typename heap_vector_type::size_type size_type;
+
+public:
+    simple_queue() {}
+
+    /**
+        Capacity reservation
+    */
+    void reserve(size_type capacity)
+    {
+        queue_vector_.reserve(capacity);
+    }
+
+    size_type size() const BMNOEXCEPT
+    {
+        return queue_vector_.size();
+    }
+
+    /**
+        Return true if queue has no elements
+    */
+    bool empty() const BMNOEXCEPT
+    {
+        return !queue_vector_.size();
+    }
+
+    /**
+        Try push into the queue if capacity allows
+    */
+    bool try_push(const value_type& v) BMNOEXCEPT
+    {
+        size_type cap = queue_vector_.capacity();
+        size_type sz = queue_vector_.size();
+        if (cap <= sz)
+            return false;
+        queue_vector_.push_back_no_check(v);
+        return true;
+    }
+
+    /**
+        Return front element
+     */
+    const value_type& front() const BMNOEXCEPT
+    {
+        BM_ASSERT(queue_vector_.size());
+        return queue_vector_[front_idx_];
+    }
+
+    /**
+        Pop the front element
+     */
+    void pop() BMNOEXCEPT
+    {
+        BM_ASSERT(front_idx_ < queue_vector_.size());
+        ++front_idx_;
+        if (front_idx_ == queue_vector_.size())
+            queue_vector_.resize(front_idx_ = 0); // reset the queue
+    }
+
+private:
+    simple_queue(const simple_queue&) = delete;
+    simple_queue& operator=(const simple_queue&) = delete;
+
+protected:
+    heap_vector_type  queue_vector_;
+    size_type         front_idx_ = 0; ///< index of the front element
+};
+
 
 
 } // namespace bm

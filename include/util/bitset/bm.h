@@ -96,6 +96,12 @@ namespace bm
 
 
 
+#ifdef BM64ADDR
+    typedef bm::id64_t   bvector_size_type;
+#else
+    typedef bm::id_t     bvector_size_type;
+#endif
+
 
 /*!
    @brief Bitvector
@@ -111,11 +117,7 @@ public:
     typedef typename allocator_type::allocator_pool_type allocator_pool_type;
     typedef blocks_manager<Alloc>                        blocks_manager_type;
     typedef typename blocks_manager_type::block_idx_type block_idx_type;
-#ifdef BM64ADDR
-    typedef bm::id64_t                                   size_type;
-#else
-    typedef bm::id_t                                     size_type;
-#endif
+    typedef bvector_size_type                            size_type;
 
     /** Statistical information about bitset's memory allocation details. */
     struct statistics : public bv_statistics
@@ -823,6 +825,7 @@ public:
     friend class enumerator;
     template<class BV> friend class aggregator;
     template<class BV> friend class operation_deserializer;
+    template<class BV, class DEC> friend class deserializer;
 
 public:
     /*! @brief memory allocation policy
@@ -1321,8 +1324,28 @@ public:
        \param right - index of last bit
 
        \return population count in the diapason
+       @sa count_range_no_check
     */
     size_type count_range(size_type left, size_type right) const BMNOEXCEPT;
+
+    /*!
+        Returns count of 1 bits in the given range [left..right]
+        Function expects that caller guarantees that left < right
+
+        @sa count_range
+    */
+    size_type count_range_no_check(size_type left, size_type right) const BMNOEXCEPT;
+
+
+    /*!
+        Returns count of 1 bits in the given range [left..right]
+        Function expects that caller guarantees that left < right
+
+        @sa count_range
+    */
+    size_type count_range_no_check(size_type left,
+                                   size_type right,
+                                const rs_index_type&  rs_idx) const BMNOEXCEPT;
 
     /*!
        \brief Returns true if all bits in the range are 1s (saturated interval)
@@ -1882,6 +1905,15 @@ public:
         @internal
     */
     bool is_init() const BMNOEXCEPT { return blockman_.is_init(); }
+
+    /**
+        Calculate blocks digest vector (for diagnostics purposes)
+        1 is added if NB is a real, allocated block
+
+        @param bv_blocks - [out] bvector of blocks statistics
+        @internal
+     */
+    void fill_alloc_digest(bvector<Alloc>& bv_blocks) const;
     
     //@}
     
@@ -1980,7 +2012,7 @@ protected:
     void import_block(const size_type* ids,
                       block_idx_type nblock, size_type start, size_type stop);
 
-private:
+//private:
 
     size_type check_or_next(size_type prev) const BMNOEXCEPT;
     
@@ -2719,7 +2751,15 @@ bvector<Alloc>::count_range(size_type left, size_type right) const BMNOEXCEPT
         bm::xor_swap(left, right);
     if (right == bm::id_max)
         --right;
+    return count_range_no_check(left, right);
+}
 
+// -----------------------------------------------------------------------
+
+template<typename Alloc>
+typename bvector<Alloc>::size_type
+bvector<Alloc>::count_range_no_check(size_type left, size_type right) const BMNOEXCEPT
+{
     if (!blockman_.is_init())
         return 0;
 
@@ -2984,24 +3024,29 @@ bvector<Alloc>::count_range(size_type left,
                             size_type right,
                             const rs_index_type&  rs_idx) const BMNOEXCEPT
 {
-    BM_ASSERT(left <= right);
-
     if (left > right)
         bm::xor_swap(left, right);
-
     BM_ASSERT_THROW(right < bm::id_max, BM_ERR_RANGE);
+    return count_range_no_check(left, right, rs_idx);
+}
 
+// -----------------------------------------------------------------------
+
+template<typename Alloc>
+typename bvector<Alloc>::size_type
+bvector<Alloc>::count_range_no_check(size_type left,
+                                     size_type right,
+                               const rs_index_type&  rs_idx) const BMNOEXCEPT
+{
+    BM_ASSERT(left <= right);
     if (left == right)
         return this->test(left);
-
     size_type cnt_l, cnt_r;
     if (left)
         cnt_l = this->count_to(left-1, rs_idx);
     else
         cnt_l = left; // == 0
-    
     cnt_r = this->count_to(right, rs_idx);
-    
     return cnt_r - cnt_l;
 }
 
@@ -3484,6 +3529,35 @@ void bvector<Alloc>::calc_stat(
     st->memory_used += blocks_mem;
     st->bv_count = 1;
 
+}
+
+// -----------------------------------------------------------------------
+
+template<typename Alloc>
+void bvector<Alloc>::fill_alloc_digest(bvector<Alloc>& bv_blocks) const
+{
+    bv_blocks.init();
+
+    unsigned top_size = blockman_.top_block_size();
+    bm::word_t*** blk_root = blockman_.top_blocks_root();
+    if (blk_root)
+    {
+        for (unsigned i = 0; i < top_size; ++i)
+        {
+            const bm::word_t* const* blk_blk = blk_root[i];
+            if (!blk_blk || ((bm::word_t*)blk_blk == FULL_BLOCK_FAKE_ADDR))
+                continue;
+            for (unsigned j = 0; j < bm::set_sub_array_size; ++j)
+            {
+                const bm::word_t* blk = blk_blk[j];
+                if (IS_VALID_ADDR(blk))
+                {
+                    size_type nb = i * bm::set_sub_array_size + j;
+                    bv_blocks.set_bit_no_check(nb);
+                }
+            } // for j
+        } // for i
+    } // if blk_root
 }
 
 // -----------------------------------------------------------------------
