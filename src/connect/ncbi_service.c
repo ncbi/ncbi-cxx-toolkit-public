@@ -614,7 +614,7 @@ static int/*bool*/ x_ConsistencyCheck(SERV_ITER iter, const SSERV_Info* info)
     for (n = 0;  n < iter->n_skip;  ++n) {
         if (SERV_EqualInfo(info, iter->skip[n])) {
             CORE_LOGF(eLOG_Critical,
-                      ("[%s]  Entry must be skipped:\n%s",
+                      ("[%s]  Entry is a duplicate and must be skipped:\n%s",
                        iter->name, str ? str : "<NULL>"));
             RETURN(0/*failure*/);
         }
