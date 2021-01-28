@@ -163,7 +163,7 @@ static string s_ReadLine(CPipe& pipe)
         size_t n;
         EIO_Status status = pipe.Read(&c, 1, &n);
         if (!n) {
-            _ASSERT(status != eIO_Success);
+            assert(status != eIO_Success);
             break;
         }
         if (c == '\n') {
@@ -248,6 +248,8 @@ enum ETestCase {
     ePipe,
     eStreamRead,
     eStream,
+    eStreamStderr,
+    eStreamErrOut,
     eFlagsOnClose
 };
 
@@ -314,8 +316,7 @@ int CTest::Run(void)
 
 
     // Unidirectional pipe (read from istream)
-    args.clear();
-    args.push_back(NStr::IntToString(eStreamRead));
+    args.back() = NStr::IntToString(eStreamRead);
     ERR_POST(Info << "TEST:  Unidirectional stream read");
     CConn_PipeStream is(app.c_str(), args,
                         CPipe::fStdIn_Close | share, 0, &timeout);
@@ -328,8 +329,7 @@ int CTest::Run(void)
 
 
     // Unidirectional pipe (write to pipe)
-    args.clear();
-    args.push_back(NStr::IntToString(ePipeWrite));
+    args.back() = NStr::IntToString(ePipeWrite);
     ERR_POST(Info << "TEST:  Unidirectional pipe write");
     assert(pipe.Open(app.c_str(), args,
                      CPipe::fStdOut_Close | share) == eIO_Success);
@@ -349,8 +349,7 @@ int CTest::Run(void)
 
 
     // Bidirectional pipe (pipe)
-    args.clear();
-    args.push_back(NStr::IntToString(ePipe));
+    args.back() = NStr::IntToString(ePipe);
     ERR_POST(Info << "TEST:  Bidirectional pipe");
     assert(pipe.Open(app.c_str(), args, share) == eIO_Success);
 
@@ -379,8 +378,7 @@ int CTest::Run(void)
 
 
     // Bidirectional pipe (iostream)
-    args.clear();
-    args.push_back(NStr::IntToString(eStream));
+    args.back() = NStr::IntToString(eStream);
     ERR_POST(Info << "TEST:  Bidirectional stream");
     CConn_PipeStream ps(app.c_str(), args, share, 0, &timeout);
 
@@ -398,9 +396,7 @@ int CTest::Run(void)
     ps >> str;
     NcbiCout << str << endl << flush;
     assert(str == "Done.");
-    ps.GetPipe().SetReadHandle(CPipe::eStdErr);
-    ps >> str;
-    assert(!str.empty());
+    assert(!(ps >> str));
 
     status = ps.GetPipe().Close(&exitcode); 
     ERR_POST(Info << "Command completed with status " << IO_StatusStr(status)
@@ -408,14 +404,59 @@ int CTest::Run(void)
     assert(status == eIO_Success  &&  exitcode == kTestResult);
 
 
+    // Stdout / stderr separation
+    ps.clear();
+    args.back() = NStr::IntToString(eStreamStderr);
+    ERR_POST(Info << "TEST:  Stdout / stderr separation");
+    status = ps.GetPipe().Open(app.c_str(), args, CPipe::fStdErr_Open);
+    assert(status == eIO_Success);
+    ps >> str;
+    assert(str == "stdout");
+    assert(!(ps >> str));
+    ps.clear();
+    ps.GetPipe().SetReadHandle(CPipe::eStdErr);
+    ps >> str;
+    assert(str == "stderr");
+    assert(!(ps >> str));
+    
+    assert(ps.GetPipe().Open(app.c_str(), args) != eIO_Success);
+
+    status = ps.GetPipe().Close(&exitcode); 
+    ERR_POST(Info << "Command completed with status " << IO_StatusStr(status)
+             << " and exitcode " << exitcode);
+    assert(status == eIO_Success  &&  exitcode == kTestResult);
+
+
+    // Stderr > stdout redirection
+    ps.clear();
+    args.back() = NStr::IntToString(eStreamErrOut);
+    ERR_POST(Info << "TEST:  Stderr > stdout redirection");
+    status = ps.GetPipe().Open(app.c_str(), args, CPipe::fStdErr_StdOut);
+    assert(status == eIO_Success);
+    ps.GetPipe().SetReadHandle(CPipe::eStdOut);
+    ps >> str;
+    assert(str == "stdout");
+    ps >> str;
+    assert(str == "stderr");
+    assert(!(ps >> str));
+
+    status = ps.GetPipe().Close(&exitcode); 
+    ERR_POST(Info << "Command completed with status " << IO_StatusStr(status)
+             << " and exitcode " << exitcode);
+    assert(status == eIO_Success  &&  exitcode == kTestResult);
+
+    status = ps.Close();
+    assert(status == eIO_Success  ||  status == eIO_Closed);
+
+
     // f*OnClose flags tests
-    args.clear();
-    args.push_back(NStr::IntToString(eFlagsOnClose));
+    args.back() = NStr::IntToString(eFlagsOnClose);
 
     ERR_POST(Info << "TEST:  Checking timeout");
-    assert(pipe.Open(app.c_str(), args,
-                     CPipe::fStdIn_Close | CPipe::fStdOut_Close
-                     | CPipe::fKeepOnClose) == eIO_Success);
+    status = pipe.Open(app.c_str(), args,
+                       CPipe::fStdIn_Close | CPipe::fStdOut_Close
+                       | CPipe::fKeepOnClose);
+    assert(status == eIO_Success);
     handle = pipe.GetProcessHandle();
     assert(handle > 0);
 
@@ -429,11 +470,14 @@ int CTest::Run(void)
         assert(process.Kill((DEFAULT_TIMEOUT / 2) * 1000));
         assert(!process.IsAlive());
     }}
+    status = pipe.Close();
+    ERR_POST(Info << "Pipe closed: " << IO_StatusStr(status));
 
     ERR_POST(Info << "Checking kill-on-close");
-    assert(pipe.Open(app.c_str(), args,
-                     CPipe::fStdIn_Close | CPipe::fStdOut_Close
-                     | CPipe::fKillOnClose | CPipe::fNewGroup) == eIO_Success);
+    status = pipe.Open(app.c_str(), args,
+                       CPipe::fStdIn_Close | CPipe::fStdOut_Close
+                       | CPipe::fKillOnClose | CPipe::fNewGroup);
+    assert(status == eIO_Success);
     handle = pipe.GetProcessHandle();
     assert(handle > 0);
 
@@ -447,9 +491,10 @@ int CTest::Run(void)
     }}
 
     ERR_POST(Info << "TEST:  Checking extended timeout/kill");
-    assert(pipe.Open(app.c_str(), args,
-                     CPipe::fStdIn_Close | CPipe::fStdOut_Close
-                     | CPipe::fKeepOnClose) == eIO_Success);
+    status = pipe.Open(app.c_str(), args,
+                       CPipe::fStdIn_Close | CPipe::fStdOut_Close
+                       | CPipe::fKeepOnClose);
+    assert(status == eIO_Success);
     handle = pipe.GetProcessHandle();
     assert(handle > 0);
 
@@ -465,7 +510,7 @@ int CTest::Run(void)
         string infostr;
         if (exitinfo.IsPresent()) {
             if (exitinfo.IsExited()) {
-                _ASSERT(exitinfo.GetExitCode() == exitcode);
+                assert(exitinfo.GetExitCode() == exitcode);
                 infostr = "code=" + NStr::IntToString(exitcode);
             } else if (exitinfo.IsSignaled())
                 infostr = "signal=" + NStr::IntToString(exitinfo.GetSignal());
@@ -480,7 +525,8 @@ int CTest::Run(void)
         assert(exitcode == kTestResult);
         assert(!process.IsAlive());
     }}
-
+    status = pipe.Close();
+    ERR_POST(Info << "Pipe closed: " << IO_StatusStr(status));
 
     // Done
     ERR_POST(Info << "TEST completed successfully");
@@ -526,8 +572,8 @@ int main(int argc, const char* argv[])
         const int kLength = (int)::log10((double)kXMax * kYTo) + 2;
         for (int i = kYFrom;  i <= kYTo;  ++i) {
             for (int j = 1;  j <= kXMax;  ++j)
-                cout << setw(kLength) << i * j;
-            cout << endl;
+                NcbiCout << setw(kLength) << i * j;
+            NcbiCout << endl;
         }
         ERR_POST(Info << "--- CPipe unidirectional test (1) done ---");
         return kTestResult;
@@ -558,12 +604,26 @@ int main(int argc, const char* argv[])
         ERR_POST(Info << "--- CPipe bidirectional test (iostream) ---");
         for (int i = 5;  i <= 10;  ++i) {
             int value;
-            cin >> value;
+            NcbiCin >> value;
             assert(value == i);
             NcbiCout << value * value << endl << flush;
         }
         NcbiCout << "Done." << endl;
         ERR_POST(Info << "--- CPipe bidirectional test (iostream) done ---");
+        return kTestResult;
+    }
+    // Check stdout / stderr separation
+    case eStreamStderr:
+    {
+        NcbiCout << "stdout" << endl << flush;
+        NcbiCerr << "stderr" << endl << flush;
+        return kTestResult;
+    }
+    // Check stderr > stdout redirection
+    case eStreamErrOut:
+    {
+        NcbiCout << "stdout" << endl << flush;
+        NcbiCerr << "stderr" << endl << flush;
         return kTestResult;
     }
     // Test for fKeepOnClose && fKillOnClose flags
