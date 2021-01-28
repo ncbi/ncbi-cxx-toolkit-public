@@ -220,6 +220,11 @@ public:
     /// Default constructor.
     CNamedPipeClient(size_t pipesize = 0/*use default*/);
 
+    enum EFlags {
+        fNoLogIfClosed = 1        ///< Do not log error if server end is closed
+    };
+    typedef unsigned int TFlags;  // Bit-wise OR of EFlags
+
     /// Constructor.
     ///
     /// This constructor just calls Open().
@@ -227,13 +232,15 @@ public:
     ///       See CNamedPipe class description about pipe names.
     CNamedPipeClient(const string&   pipename,
                      const STimeout* timeout  = kDefaultTimeout,
-                     size_t          pipesize = 0/*use default*/);
+                     size_t          pipesize = 0/*use default*/,
+                     TFlags          flags    = 0);
 
     /// Open a client-side pipe connection.
     /// If the server-end does not exist, return eIO_Closed.
     EIO_Status Open(const string&   pipename,
                     const STimeout* timeout  = kDefaultTimeout,
-                    size_t          pipesize = 0/*use default*/);
+                    size_t          pipesize = 0/*use default*/,
+                    TFlags          flags    = 0);
 };
  
 

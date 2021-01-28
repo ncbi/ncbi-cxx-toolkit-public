@@ -163,7 +163,7 @@ public:
     // client-side
 
     EIO_Status Open(const string& pipename, const STimeout* timeout,
-                    size_t pipesize);
+                    size_t pipesize, CNamedPipeClient::TFlags flags);
 
     // server-side
 
@@ -208,9 +208,10 @@ CNamedPipeHandle::~CNamedPipeHandle()
 }
 
 
-EIO_Status CNamedPipeHandle::Open(const string&   pipename,
-                                  const STimeout* timeout,
-                                  size_t          /*pipesize*/)
+EIO_Status CNamedPipeHandle::Open(const string&            pipename,
+                                  const STimeout*          timeout,
+                                  size_t                   /*pipesize*/,
+                                  CNamedPipeClient::TFlags flags)
 {
     EIO_Status status = eIO_Unknown;
 
@@ -262,7 +263,10 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
                  &&  error != ERROR_PIPE_NOT_CONNECTED)) {
                 if (pipe == INVALID_HANDLE_VALUE
                     &&  error == ERROR_FILE_NOT_FOUND) {
-                    return eIO_Closed;
+                    status = eIO_Closed;
+                    if (flags & CNamedPipeClient::fNoLogIfClosed) {
+                        return status;
+                    }
                 }
                 NAMEDPIPE_THROW(error,
                                 "Named pipe \"" + pipename
@@ -765,8 +769,8 @@ public:
 
     // client-side
 
-    EIO_Status Open(const string& pipename,
-                    const STimeout* timeout, size_t pipesize);
+    EIO_Status Open(const string& pipename, const STimeout* timeout,
+                    size_t pipesize, CNamedPipeClient::TFlags flags);
 
     // server-side
 
@@ -811,9 +815,10 @@ CNamedPipeHandle::~CNamedPipeHandle()
 }
 
 
-EIO_Status CNamedPipeHandle::Open(const string&   pipename,
-                                  const STimeout* timeout,
-                                  size_t          pipesize)
+EIO_Status CNamedPipeHandle::Open(const string&            pipename,
+                                  const STimeout*          timeout,
+                                  size_t                   pipesize,
+                                  CNamedPipeClient::TFlags flags)
 {
     EIO_Status status = eIO_Unknown;
 
@@ -826,12 +831,14 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
 
         status = SOCK_CreateUNIX(pipename.c_str(), timeout, &m_IoSocket,
                                  NULL, 0, 0/*flags*/);
-        if (status == eIO_Closed)
-            return eIO_Closed;
+        if (status == eIO_Closed
+            &&  (flags & CNamedPipeClient::fNoLogIfClosed)) {
+            return status;
+        }
         if (status != eIO_Success) {
             NAMEDPIPE_THROW(0,
                             "Named pipe \""
-                            + pipename + "\" failed to create UNIX socket: "
+                            + pipename + "\" failed to open UNIX socket: "
                             + string(IO_StatusStr(status)));
         }
         SOCK_SetTimeout(m_IoSocket, eIO_Close, timeout);
@@ -1306,19 +1313,21 @@ CNamedPipeClient::CNamedPipeClient(size_t pipesize)
 }
 
 
-CNamedPipeClient::CNamedPipeClient(const string&   pipename,
-                                   const STimeout* timeout, 
-                                   size_t          pipesize)
+CNamedPipeClient::CNamedPipeClient(const string&            pipename,
+                                   const STimeout*          timeout, 
+                                   size_t                   pipesize,
+                                   CNamedPipeClient::TFlags flags)
     : CNamedPipe(pipesize)
 {
     m_IsClientSide = true;
-    Open(pipename, timeout);
+    Open(pipename, timeout, flags);
 }
 
 
-EIO_Status CNamedPipeClient::Open(const string&   pipename,
-                                  const STimeout* timeout,
-                                  size_t          pipesize)
+EIO_Status CNamedPipeClient::Open(const string&            pipename,
+                                  const STimeout*          timeout,
+                                  size_t                   pipesize,
+                                  CNamedPipeClient::TFlags flags)
 {
     _ASSERT(m_NamedPipeHandle  &&  m_IsClientSide);
     if (pipesize) {
@@ -1327,7 +1336,8 @@ EIO_Status CNamedPipeClient::Open(const string&   pipename,
     x_SetName(pipename);
 
     SetTimeout(eIO_Open, timeout);
-    return m_NamedPipeHandle->Open(m_PipeName, m_OpenTimeout, m_PipeSize);
+    return m_NamedPipeHandle->Open(m_PipeName, m_OpenTimeout,
+                                   m_PipeSize, flags);
 }
 
 

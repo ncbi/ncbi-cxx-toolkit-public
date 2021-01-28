@@ -244,7 +244,8 @@ void CTest::Client(int num)
     CDeadline timeout(g_STimeoutToCTimeout(&m_Timeout));
     for (;;) {
         // Wait for server to come up online
-        status = pipe.Open(m_PipeName, kDefaultTimeout, kSubBlobSize);
+        status = pipe.Open(m_PipeName, kDefaultTimeout, kSubBlobSize,
+                           CNamedPipeClient::fNoLogIfClosed);
         if (status == eIO_Success) {
             break;
         }
