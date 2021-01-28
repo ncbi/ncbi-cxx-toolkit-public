@@ -169,7 +169,7 @@ public:
 void
 CMergeyApp::Init(void)
 {
-    auto_ptr<CArgDescriptions> argList(new CArgDescriptions());
+    unique_ptr<CArgDescriptions> argList(new CArgDescriptions());
 
     //argList->SetUsageContext(GetArguments().GetProgramBasename(), "Mergey Test App");
 
