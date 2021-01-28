@@ -161,9 +161,6 @@ void CPSGS_OSGProcessorBase::Process()
         
         try {
             caller.SendRequest(*this);
-            if ( m_Canceled ) {
-                return;
-            }
             caller.WaitForReplies(*this);
         }
         catch ( exception& exc ) {

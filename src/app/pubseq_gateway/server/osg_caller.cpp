@@ -190,20 +190,21 @@ void COSGCaller::WaitForReplies(CPSGS_OSGProcessorBase& processor)
     _ASSERT(m_RequestPacket);
     size_t waiting_count = m_RequestPacket->Get().size();
     while ( waiting_count > 0 ) {
-        if ( processor.IsCanceled() ) {
-            return;
-        }
         CRef<CID2_Reply> reply = m_Connection->ReceiveReply();
         size_t index = GetRequestIndex(*reply);
         m_Fetches[index]->AddReply(move(reply));
         if ( m_Fetches[index]->EndOfReplies() ) {
             --waiting_count;
         }
-        processor.NotifyOSGCallReply(*reply);
+        if ( !processor.IsCanceled() ) {
+            processor.NotifyOSGCallReply(*reply);
+        }
     }
     m_ConnectionPool->ReleaseConnection(m_Connection);
     _ASSERT(!m_Connection);
-    processor.NotifyOSGCallEnd();
+    if ( !processor.IsCanceled() ) {
+        processor.NotifyOSGCallEnd();
+    }
 }
 
 
