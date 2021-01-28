@@ -2108,88 +2108,6 @@ void CAlignCollapser::GetCollapsedAlgnments(TAlignModelClusterSet& clsset) {
             ++total;
     }
 
-    /* this will find peaks before chaining
-    size_t cap_peaks = 0;
-    size_t polya_peaks = 0;
-    for(auto& key : m_special_aligns) { // separated for 4 different cap/polya and strand
-        double min_pos_weight = MIN_POSITION_WEIGHT_CAGE;
-        double min_blob_weight = MIN_BLOB_WEIGHT_CAGE;
-        if(get<1>(key.first)&CGeneModel::ePolyA) {
-            min_pos_weight = MIN_POSITION_WEIGHT_POLY;
-            min_blob_weight = MIN_BLOB_WEIGHT_POLY;
-        }
-        int max_empty_dist =  MAX_EMPTY_DIST;
-
-        map<int, CAlignModel*> position_align;
-        for(auto& align : key.second) {
-            if(align.Limits().GetFrom() < 0 || align.Limits().GetTo() >= m_contig.FullLength())
-                continue;
-            int pos = (align.Status()&CGeneModel::eRightFlexible) ? align.Limits().GetFrom() : align.Limits().GetTo();
-            auto rslt = position_align.emplace(pos, &align);
-            if(!rslt.second) {
-                CAlignModel* existingp = rslt.first->second;
-                existingp->SetWeight(existingp->Weight()+align.Weight());
-            }
-        }
-        for(auto it_loop = position_align.begin(); it_loop != position_align.end(); ) {
-            auto it = it_loop++;
-            if(it->second->Weight() < min_pos_weight)
-                position_align.erase(it);
-        }
-        if(position_align.empty())
-            continue;
-
-        CAlignModel* peakp = position_align.begin()->second; // peak alignments in the blob
-        double w = peakp->Weight();                          // total blob weight
-        int left = position_align.begin()->first;
-        int right = left;
-        int pos = left;
-        for(auto it = next(position_align.begin()); it != position_align.end(); ++it) {
-            double aw = it->second->Weight();
-            if(it->first > prev(it)->first+1+max_empty_dist) {           // next blob
-                if(w >= min_blob_weight) {
-                    peakp->SetWeight(w);
-                    if(CheckAndInsert(*peakp, clsset)) {
-                        if(peakp->Status()&CGeneModel::eCap) {
-                            ++cap_peaks;
-                            cerr << "CapPeak: " << m_contig_name << " " << (pos+1) << " " << w << " " << (peakp->Strand() == ePlus ? " + " : " - ") << " " << (left+1) << " " << (right+1) << endl;
-                        } else {
-                            ++polya_peaks;
-                            cerr << "PolyAPeak: " << m_contig_name << " " << (pos+1) << " " << w << " " << (peakp->Strand() == ePlus ? " + " : " - ") << " " << (left+1) << " " << (right+1) << endl;
-                        }
-                    }
-                }
-                   
-                peakp = it->second;
-                w = aw;
-                left = it->first;
-                right = left;
-                pos = left;
-            } else {
-                w += aw;
-                right = it->first;
-                if(((peakp->Status()&CGeneModel::eLeftFlexible) && aw > peakp->Weight()) ||   // first if equal
-                   ((peakp->Status()&CGeneModel::eRightFlexible) && aw >= peakp->Weight())) { // last if equal
-                    peakp = it->second;
-                    pos = it->first;
-                }
-            }
-        }
-        if(w >= min_blob_weight) {
-            peakp->SetWeight(w);
-            if(CheckAndInsert(*peakp, clsset)) {
-                if(peakp->Status()&CGeneModel::eCap) {
-                    ++cap_peaks;
-                    cerr << "CapPeak: " << m_contig_name << " " << (pos+1) << " " << w << " " << (peakp->Strand() == ePlus ? " + " : " - ") << " " << (left+1) << " " << (right+1) << endl;
-                } else {
-                    ++polya_peaks;
-                    cerr << "PolyAPeak: " << m_contig_name << " " << (pos+1) << " " << w << " " << (peakp->Strand() == ePlus ? " + " : " - ") << " " << (left+1) << " " << (right+1) << endl;
-                }
-            }
-        }        
-    }
-    */
-
     size_t flex_cap = 0;
     size_t flex_polya = 0;
     for(auto& status_align : m_special_aligns) {
@@ -2200,21 +2118,6 @@ void CAlignCollapser::GetCollapsedAlgnments(TAlignModelClusterSet& clsset) {
                 ++flex_polya;
         }
     }
-
-    /*
-    if(flex_cap > 0 || flex_polya > 0) { // drop cap/polya from normal alignments if there are flexible
-        for(auto& cluster : clsset) {
-            for(const CAlignModel& align : cluster) {
-                if(align.Status()&(CGeneModel::eLeftFlexible|CGeneModel::eRightFlexible))
-                    continue;
-                if(flex_cap > 0)
-                    const_cast<CAlignModel&>(align).Status() &= ~CGeneModel::eCap;
-                if(flex_polya > 0)
-                    const_cast<CAlignModel&>(align).Status() &= ~CGeneModel::ePolyA;
-            }
-        }
-    }
-    */
     
     cerr << "After collapsing: " << total << " alignments " << flex_cap << " Flexible caps " << flex_polya << " Flexible polyas" << endl;
 }
@@ -2380,33 +2283,6 @@ void CAlignCollapser::AddAlignment(CAlignModel& a) {
         }
         return;
     }
-
-    /*
-    if(acc.find("CAPINFO") != string::npos) {
-        a.Status() |= CGeneModel::eCap;
-        a.SetType(CGeneModel::eSR);
-        if(a.Strand() == ePlus) {
-            a.Status() |= CGeneModel::eRightFlexible;
-            m_special_aligns[make_tuple(CGeneModel::eRightFlexible, CGeneModel::eCap)].push_back(a);
-        } else {
-            a.Status() |= CGeneModel::eLeftFlexible;
-            m_special_aligns[make_tuple(CGeneModel::eLeftFlexible, CGeneModel::eCap)].push_back(a);
-        }
-        return;
-    }
-    if(acc.find("POLYAINFO") != string::npos) {
-        a.Status() |= CGeneModel::ePolyA;
-        a.SetType(CGeneModel::eSR);
-        if(a.Strand() == ePlus) {
-            a.Status() |= CGeneModel::eLeftFlexible;
-            m_special_aligns[make_tuple(CGeneModel::eLeftFlexible, CGeneModel::ePolyA)].push_back(a);
-        } else {
-            a.Status() |= CGeneModel::eRightFlexible;
-            m_special_aligns[make_tuple(CGeneModel::eRightFlexible, CGeneModel::ePolyA)].push_back(a);
-        }
-        return;
-    }
-    */
 
     if((a.Type()&CGeneModel::eSR) && !a.Continuous())   // ignore SR with internal gaps
         return;
