@@ -324,7 +324,7 @@ namespace {
         }
         void Add(const CID2S_Gi_Range& gi_range) {
             for ( TIntId i = 0; i < gi_range.GetCount(); ++i ) {
-                Add(GI_FROM(TIntId, gi_range.GetStart()+i));
+                Add(GI_FROM(TIntId, GI_TO(TIntId, gi_range.GetStart())+i));
             }
         }
         void Add(const CID2S_Gi_Interval& interval) {
