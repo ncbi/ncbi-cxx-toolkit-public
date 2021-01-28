@@ -48,13 +48,14 @@ BEGIN_NCBI_SCOPE
 static inline bool x_IsThrowable(EIO_Status status)
 {
     _ASSERT(status != eIO_Success);
-#if defined(NCBI_COMPILER_GCC)  &&  NCBI_COMPILER_VERSION < 700
-    // GCC C++ STL has a bug that sentry ctor does not include try/catch, so it
-    // leaks the exceptions instead of setting badbit as the standard requires.
+#if (defined(NCBI_COMPILER_GCC)  &&  NCBI_COMPILER_VERSION < 700)  \
+    ||  defined(NCBI_COMPILER_LLVM_CLANG)
+    // For C++ STLs that have a bug that sentry ctor does not include try/catch
+    // so exceptions leak instead of setting badbit as the standard requires.
     return false;
 #else
     return status != eIO_Timeout ? true : false;
-#endif // NCBI_COMPILER_GCC && NCBI_COMPILER_VERSION<700
+#endif
 }
 
 
