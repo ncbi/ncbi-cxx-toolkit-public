@@ -386,7 +386,7 @@ SPsgBioseqInfo::SPsgBioseqInfo(const CPSG_BioseqInfo& bioseq_info)
       molecule_type(CSeq_inst::eMol_not_set),
       length(0),
       state(0),
-      tax_id(ZERO_TAX_ID),
+      tax_id(INVALID_TAX_ID),
       hash(0),
       deadline(kMaxCacheLifespanSeconds)
 {

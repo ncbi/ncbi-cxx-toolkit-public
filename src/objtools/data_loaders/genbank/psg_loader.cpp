@@ -222,7 +222,8 @@ CPSGDataLoader::GetAccVerFound(const CSeq_id_Handle& idh)
 
 TTaxId CPSGDataLoader::GetTaxId(const CSeq_id_Handle& idh)
 {
-    return m_Impl->GetTaxId(idh);
+    auto taxid = m_Impl->GetTaxId(idh);
+    return taxid != INVALID_TAX_ID ? taxid : CDataLoader::GetTaxId(idh);
 }
 
 
