@@ -246,11 +246,6 @@ void CMakeBlastDBApp::Init()
                       "Create index of sequence hash values.",
                       true);
 
-    arg_desc->AddFlag("allow_big_gis",
-                      "Allow gi values greater then 2147483647.",
-                      true);
-
-
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
     arg_desc->SetCurrentGroup("Sequence masking options");
@@ -1129,7 +1124,6 @@ void CMakeBlastDBApp::x_BuildDatabase()
     bool parse_seqids = x_ShouldParseSeqIds();
     bool hash_index = args["hash_index"];
     bool use_gi_mask = args["gi_mask"];
-    bool allow_big_gis = args["allow_big_gis"];
 
     CWriteDB::TIndexType indexing = CWriteDB::eNoIndex;
     indexing |= (hash_index ? CWriteDB::eAddHash : 0);
@@ -1182,8 +1176,6 @@ void CMakeBlastDBApp::x_BuildDatabase()
 //    m_DB->SetLinkouts(no_bits, true);     // DEPRECATED
     m_DB->SetMembBits(no_bits, true);
 
-    // Allow large gis ( default: false )  SB-2994
-    m_DB->SetSkipLargeGis( !allow_big_gis ); 
 
     // Max file size
 

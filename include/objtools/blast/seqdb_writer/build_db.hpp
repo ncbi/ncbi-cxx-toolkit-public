@@ -452,14 +452,6 @@ public:
     /// @param dbname output blast db name (with path)
     static void CreateDirectories(const string& dbname);
 
-    /// Allow large gi's in seqid
-    ///
-    /// @param skip_flag, false: allow gi's with value greater then 2147483647
-    ///  
-    void SetSkipLargeGis(bool skip_flag)
-    {
-	m_SkipLargeGis = skip_flag;
-    }
 private:
     /// Get a scope for remote loading of objects.
     objects::CScope & x_GetScope();
