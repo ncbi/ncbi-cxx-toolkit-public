@@ -380,6 +380,7 @@ private:
     unique_ptr<COperationTiming>        m_Timing;
 
     EPSGS_StartupDataState              m_StartupDataState;
+    CNcbiLogFields                      m_LogFields;
 
     // Serialized JSON introspection message
     string                              m_HelpMessage;

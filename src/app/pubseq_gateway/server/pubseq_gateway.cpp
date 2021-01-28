@@ -139,7 +139,8 @@ CPubseqGatewayApp::CPubseqGatewayApp() :
     m_TestSeqId(kDefaultTestSeqId),
     m_TestSeqIdIgnoreError(kDefaultTestSeqIdIgnoreError),
     m_ExcludeBlobCache(nullptr),
-    m_StartupDataState(ePSGS_NoCassConnection)
+    m_StartupDataState(ePSGS_NoCassConnection),
+    m_LogFields("http")
 {
     sm_PubseqApp = this;
     m_HelpMessage = GetIntrospectionNode().Repr(CJsonNode::fStandardJson);
@@ -921,6 +922,7 @@ CRef<CRequestContext> CPubseqGatewayApp::x_CreateRequestContext(
             extra.Print(kUserAgentApplog, user_agent);
 
         req.PrintParams(extra);
+        req.PrintLogFields(m_LogFields);
 
         // If extra is not flushed then it picks read-only even though it is
         // done after...

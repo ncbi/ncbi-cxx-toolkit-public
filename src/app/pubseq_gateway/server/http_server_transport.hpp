@@ -927,6 +927,7 @@ public:
 
     // Used in PrintRequeststart() to have all the incoming parameters logged
     CDiagContext_Extra &  PrintParams(CDiagContext_Extra &  extra);
+    void  PrintLogFields(const CNcbiLogFields &  log_fields);
 
     string GetPath(void);
     string GetHeaderValue(const string &  name);

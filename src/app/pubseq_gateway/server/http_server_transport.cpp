@@ -284,6 +284,23 @@ CDiagContext_Extra &  CHttpRequest::PrintParams(CDiagContext_Extra &  extra)
 }
 
 
+void  CHttpRequest::PrintLogFields(const CNcbiLogFields &  log_fields)
+{
+    map<string, string>     env;
+
+    for (size_t  index = 0; index < m_Req->headers.size; ++index) {
+        string      name(m_Req->headers.entries[index].name->base,
+                         m_Req->headers.entries[index].name->len);
+        NStr::ToLower(name);
+        NStr::ReplaceInPlace(name, "_", "-");
+        env[name] = string(m_Req->headers.entries[index].value.base,
+                           m_Req->headers.entries[index].value.len);
+    }
+
+    log_fields.LogFields(env);
+}
+
+
 string CHttpRequest::GetPath(void)
 {
     return string(m_Req->path_normalized.base,
