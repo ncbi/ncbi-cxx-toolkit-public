@@ -42,6 +42,7 @@
 #include <objects/id2/ID2_Request.hpp>
 #include <objects/id2/ID2_Request_Packet.hpp>
 #include <objects/id2/ID2_Reply.hpp>
+#include <objects/id2/ID2_Error.hpp>
 #include <objects/id2/ID2_Param.hpp>
 #include <objects/id2/ID2_Params.hpp>
 
@@ -188,20 +189,33 @@ void COSGCaller::WaitForReplies(CPSGS_OSGProcessorBase& processor)
 {
     _ASSERT(m_Connection);
     _ASSERT(m_RequestPacket);
+    CRef<CID2_Error> failed;
     size_t waiting_count = m_RequestPacket->Get().size();
     while ( waiting_count > 0 ) {
         CRef<CID2_Reply> reply = m_Connection->ReceiveReply();
+        if ( reply->IsSetError() ) {
+            for ( auto& error : reply->GetError() ) {
+                if ( error->GetSeverity() == CID2_Error::eSeverity_failed_command ) {
+                    failed = error;
+                    break;
+                }
+            }
+        }
         size_t index = GetRequestIndex(*reply);
         m_Fetches[index]->AddReply(move(reply));
         if ( m_Fetches[index]->EndOfReplies() ) {
             --waiting_count;
         }
-        if ( !processor.IsCanceled() ) {
+        if ( !failed && !processor.IsCanceled() ) {
             processor.NotifyOSGCallReply(*reply);
         }
     }
     m_ConnectionPool->ReleaseConnection(m_Connection);
     _ASSERT(!m_Connection);
+    if ( failed ) {
+        NCBI_THROW_FMT(CPubseqGatewayException, eOutputNotInReadyState,
+                       "OSG error reply: "<<MSerial_AsnText<<*failed);
+    }
     if ( !processor.IsCanceled() ) {
         processor.NotifyOSGCallEnd();
     }
