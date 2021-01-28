@@ -788,7 +788,7 @@ bool CBuildDatabase::AddSequences(IBioseqSource & src, bool add_pig)
 
     CStopWatch sw(CStopWatch::eStart);
     int count = 0;
-    CSeq_id::TGi max_gi32_val = CSeq_id::TGi(0xFFFFFFFFU) ;
+    CSeq_id::TGi max_gi32_val = CSeq_id::TGi(GI_CONST(0xFFFFFFFFU)) ;
 
     CConstRef<CBioseq> bs = src.GetNext();
 
