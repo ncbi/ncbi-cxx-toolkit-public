@@ -86,7 +86,7 @@ class CGene;
 class CChainer::CChainerImpl {
 
 private:
-    CChainerImpl(CRef<CHMMParameters>& hmm_params, unique_ptr<CGnomonEngine>& gnomon);
+    CChainerImpl(CRef<CHMMParameters>& hmm_params, unique_ptr<CGnomonEngine>& gnomon, const CAlignMap& edited_contig_map, const TSignedSeqRange& limits, const string& m_contig_acc);
     void SetGenomicRange(const TAlignModelList& alignments);
     void SetConfirmedStartStopForProteinAlignments(TAlignModelList& alignments);
 
@@ -133,6 +133,9 @@ private:
 
     CRef<CHMMParameters>& m_hmm_params;
     unique_ptr<CGnomonEngine>& m_gnomon;
+    const CAlignMap& m_edited_contig_map;
+    const TSignedSeqRange& m_limits;
+    const string& m_contig_acc;
 
 
     SMinScor minscor;
@@ -141,9 +144,19 @@ private:
     map<string,TSignedSeqRange> mrnaCDS;
     map<string, pair<bool,bool> > prot_complet;
     double mininframefrac;
-    int minpolya;
     bool no5pextension;
 
+    int min_cap_weight;
+    int min_cap_blob;
+    int min_polya_weight;
+    int min_polya_blob;
+    int max_dist;
+    double secondary_peak;
+    double tertiary_peak;
+    double tertiary_peak_coverage;
+    int min_flank_exon;
+
+    int minpolya;
     bool use_confirmed_ends;
     TIntMap confirmed_ends; // [splice], end    
 
@@ -185,15 +198,15 @@ void CGnomonAnnotator_Base::EnableSeqMasking()
 
 CChainer::CChainer()
 {
-    m_data.reset( new CChainerImpl(m_hmm_params, m_gnomon) );
+    m_data.reset( new CChainerImpl(m_hmm_params, m_gnomon, m_edited_contig_map, m_limits, m_contig_acc) );
 }
 
 CChainer::~CChainer()
 {
 }
 
-CChainer::CChainerImpl::CChainerImpl(CRef<CHMMParameters>& hmm_params, unique_ptr<CGnomonEngine>& gnomon)
-    :m_hmm_params(hmm_params), m_gnomon(gnomon), m_idnext(1), m_idinc(1)
+CChainer::CChainerImpl::CChainerImpl(CRef<CHMMParameters>& hmm_params, unique_ptr<CGnomonEngine>& gnomon,  const CAlignMap& edited_contig_map, const TSignedSeqRange& limits, const string& contig_acc)
+    :m_hmm_params(hmm_params), m_gnomon(gnomon), m_edited_contig_map(edited_contig_map), m_limits(limits), m_contig_acc(contig_acc), m_idnext(1), m_idinc(1)
 {
 }
 
@@ -218,7 +231,7 @@ struct SChainMember
         m_left_num(0), m_right_num(0), m_num(0),
         m_splice_weight(0), m_left_splice_num(0), m_right_splice_num(0), m_splice_num(0),
         m_type(eCDS), m_left_cds(0), m_right_cds(0), m_cds(0), m_included(false),  m_postponed(false),
-        m_marked_for_deletion(false), m_marked_for_retention(false), 
+        m_marked_for_deletion(false), m_marked_for_retention(false), m_restricted_to_start(false),
         m_gapped_connection(false), m_fully_connected_to_part(-1), m_not_for_chaining(false),
         m_rlimb(numeric_limits<int>::max()),  m_llimb(numeric_limits<int>::max()), m_orig_align(0), m_unmd_align(0), m_mem_id(0) {}
 
@@ -246,6 +259,7 @@ struct SChainMember
     bool m_postponed;
     bool m_marked_for_deletion;
     bool m_marked_for_retention;
+    bool m_restricted_to_start;
     bool m_gapped_connection;          // used for gapped proteins
     int m_fully_connected_to_part;     // used for gapped proteins
     bool m_not_for_chaining;           // included in other alignmnet(s) or supressed and can't trigger a different chain
@@ -258,6 +272,10 @@ struct SChainMember
 
 class CChain : public CGeneModel
 {
+private:
+    typedef map<int, double> TIDMap;
+    tuple<TIDMap, TSignedSeqRange> PeaksAndLimits(EStatus determinant, int min_blob_weight, int max_empty_dist, int min_splice_dist);
+    tuple<TIVec, TSignedSeqRange> MainPeaks(TIDMap& peak_weights, double secondary_peak, double tertiary_peak, double tertiary_peak_coverage, bool right_end);
 public:
     CChain(SChainMember& mbr, CGeneModel* gapped_helper = 0, bool keep_all_evidence = false);
 
@@ -265,8 +283,18 @@ public:
     void RemoveFshiftsFromUTRs();
     void RestoreReasonableConfirmedStart(const CGnomonEngine& gnomon, TOrigAligns& orig_aligns);
     void SetOpenForPartialyAlignedProteins(map<string, pair<bool,bool> >& prot_complet);
-    bool ValidPolyA(int pos, int strand, const CResidueVec& contig);
-    void ClipToCompleteAlignment(EStatus determinant, const CResidueVec& contig); // determinant - cap or polya
+    pair<bool,bool> ValidPolyA(int pos, const CResidueVec& contig);
+    void ClipToCap(int min_cap_blob, int max_dist, int min_flank_exon, double secondary_peak);
+    void ClipToPolyA(const CResidueVec& contig, int min_polya_blob, int max_dist, int min_flank_exon, double secondary_peak, double tertiary_peak, double tertiary_peak_coverage);
+    void ClipToCompleteAlignment(EStatus determinant, 
+                                 const CResidueVec& contig,
+                                 int min_cap_blob,
+                                 int min_polya_blob,
+                                 int max_dist,
+                                 double secondary_peak,
+                                 double tertiary_peak,
+                                 double tertiary_peak_coverage,
+                                 int min_flank_exon); // determinant - cap or polya
     void CheckSecondaryCapPolyAEnds();
     void ClipLowCoverageUTR(double utr_clip_threshold);
     void CalculateDropLimits();
@@ -296,6 +324,8 @@ public:
     double m_splice_weight;
     CGeneModel m_gapped_helper_align;
     TSignedSeqRange m_supported_range;
+    TIVec m_cap_peaks;
+    TIVec m_polya_peaks;
 };
 
 
@@ -2229,6 +2259,7 @@ void CChainer::CChainerImpl::Duplicate5pendsAndShortCDSes(CChainMembers& pointer
 
                 TSignedSeqPos start = (algn.Strand() == ePlus) ? acdsinfo.Start().GetFrom() : acdsinfo.Start().GetTo();            
                 acdsinfo.Set5PrimeCdsLimit(start);
+                mbr.m_restricted_to_start = true;
 
                 if(algn.Strand() == ePlus) {
                     int full_rf_left = algn.FShiftedMove(algn.Limits().GetFrom(),(algn.FShiftedLen(algn.Limits().GetFrom(), cdsinfo.Start().GetFrom(), false)-1)%3);
@@ -3004,42 +3035,12 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust, bool co
         }
 
         //remove below threshold
-        for(auto it_loop = special_aligns.begin(); it_loop != special_aligns.end(); ) {
-            auto it = it_loop++;
-            auto ialign = it->second;
-            double min_pos_weight = ((ialign->Status()&CGeneModel::eCap) ? MIN_POSITION_WEIGHT_CAGE : MIN_POSITION_WEIGHT_POLY);
-            if(ialign->Weight() < min_pos_weight) {
-                //                special_aligns.erase(it);
-                clust.erase(ialign);
-            }
+        for(auto& sa : special_aligns) {
+            auto ialign = sa.second;
+            double min_pos_weight = ((ialign->Status()&CGeneModel::eCap) ? min_cap_weight : min_polya_weight);
+            if(ialign->Weight() < min_pos_weight)
+                clust.erase(ialign);            
         }
-
-        /* doesn't substantially reduce timing
-           to activate uncomment special_aligns.erase(it) above
-        //reduce the number by compressiing flexaligns into mini-blobs
-        int span = MAX_EMPTY_DIST/5;         //span for mini-blob
-        if(span > 0) {
-            for(auto it = special_aligns.begin(); it != special_aligns.end(); ) {
-                auto keyb = it->first;
-                get<1>(keyb) += span;
-                auto itb = next(it);
-                auto ipeak = it->second;     //peak position in mini-blob
-                double w = ipeak->Weight();  //total weight of mini-blob
-                for( ; itb != special_aligns.end() && itb->first <= keyb; ++itb) { // same status and position in range
-                    auto ialign = itb->second;
-                    w += ialign->Weight();
-                    if(ialign->Weight() > ipeak->Weight())
-                        ipeak = ialign;
-                }
-                ipeak->SetWeight(w);
-                for( ; it != itb; ++it) {
-                    auto ialign = it->second;
-                    if(ialign != ipeak)
-                       clust.erase(ialign); 
-                }
-            }
-        }
-        */
 
         clust.sort(GModelOrder(orig_aligns));
     }
@@ -3145,6 +3146,8 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust, bool co
 
     TChainList tmp_chains;
 
+    set<tuple<int,int,int>> coding_splices; // position, strand, donor/acceptor
+
     NON_CONST_ITERATE(TContained, i, coding_pointers) {
         SChainMember& mi = **i;
         mi.m_cds = mi.m_left_cds+mi.m_right_cds-mi.m_cds;
@@ -3187,6 +3190,16 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust, bool co
                (cdslen < minscor.m_minlen || (chain.Score() < 2*minscor.m_min && cdslen <  2*minscor.m_cds_len)))
                 continue;
 
+            TSignedSeqRange real_cds = chain.RealCdsLimits();
+            for(int i = 1; i < (int)chain.Exons().size(); ++ i) {
+                int donor = chain.Exons()[i-1].GetTo();
+                if(Include(real_cds, donor))
+                    coding_splices.emplace(donor, chain.Strand(), 0);
+                int acceptor = chain.Exons()[i].GetFrom();
+                if(Include(real_cds, acceptor))
+                    coding_splices.emplace(acceptor, chain.Strand(), 1);
+            }
+
             TSignedSeqRange n_rf = chain.ReadingFrame();
             if(!i_rf.IntersectingWith(n_rf))
                 continue;
@@ -3204,6 +3217,30 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust, bool co
             mi.MarkUnwantedCopiesForChain(chain.RealCdsLimits());
         }
     }
+
+    for(auto ip : pointers) {        
+        if(ip->m_align->Type()&CGeneModel::eSR)
+            continue;
+        
+        TSignedSeqRange cds = ip->m_cds_info->Cds();
+        int strand = ip->m_align->Strand();
+        for(int i = 1; i < (int)ip->m_align->Exons().size(); ++ i) {
+            int donor = ip->m_align->Exons()[i-1].GetTo();
+            if(coding_splices.count(make_tuple(donor, ip->m_align->Strand(), 0)) && !Include(cds, donor)) {
+                if(ip->m_restricted_to_start && ((strand == ePlus && donor < cds.GetFrom()) || (strand == eMinus && donor > cds.GetTo())))
+                    continue;
+                ip->m_marked_for_deletion = true;
+                break;
+            }
+            int acceptor = ip->m_align->Exons()[i].GetFrom();
+            if(coding_splices.count(make_tuple(acceptor, ip->m_align->Strand(), 1)) && !Include(cds, acceptor)) {
+                if(ip->m_restricted_to_start && ((strand == ePlus && acceptor < cds.GetFrom()) || (strand == eMinus && acceptor > cds.GetTo())))
+                    continue;
+                ip->m_marked_for_deletion = true;
+                break;
+            }
+        }
+    }    
 
     if(coding_estimates_only) {
         TGeneModelList chains;
@@ -3267,8 +3304,13 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust, bool co
         chain.RemoveFshiftsFromUTRs();
         chain.RestoreReasonableConfirmedStart(*m_gnomon, orig_aligns);
         const CResidueVec& contig = m_gnomon->GetSeq();
-        chain.ClipToCompleteAlignment(CGeneModel::eCap, contig);   // alignments clipped below might not be in any chain; clipping may produce redundant chains
-        chain.ClipToCompleteAlignment(CGeneModel::ePolyA, contig);
+        // alignments clipped below might not be in any chain; clipping may produce redundant chains
+        chain.ClipToCap(min_cap_blob, max_dist, min_flank_exon, secondary_peak);
+        chain.ClipToPolyA(contig, min_polya_blob, max_dist, min_flank_exon, secondary_peak, tertiary_peak, tertiary_peak_coverage);
+        /*
+        chain.ClipToCompleteAlignment(CGeneModel::eCap, contig, min_cap_blob, min_polya_blob, max_dist, secondary_peak, tertiary_peak, tertiary_peak_coverage, min_flank_exon);
+        chain.ClipToCompleteAlignment(CGeneModel::ePolyA, contig, min_cap_blob, min_polya_blob, max_dist, secondary_peak, tertiary_peak, tertiary_peak_coverage, min_flank_exon);
+        */
         chain.ClipLowCoverageUTR(minscor.m_utr_clip_threshold);
         if(!chain.SetConfirmedEnds(*m_gnomon, confirmed_ends))
             continue;
@@ -3350,8 +3392,12 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust, bool co
         chain.RemoveFshiftsFromUTRs();
         mi.MarkIncludedForChain();
         const CResidueVec& contig = m_gnomon->GetSeq();
-        chain.ClipToCompleteAlignment(CGeneModel::eCap, contig);
-        chain.ClipToCompleteAlignment(CGeneModel::ePolyA, contig);
+        chain.ClipToCap(min_cap_blob, max_dist, min_flank_exon, secondary_peak);
+        chain.ClipToPolyA(contig, min_polya_blob, max_dist, min_flank_exon, secondary_peak, tertiary_peak, tertiary_peak_coverage);
+        /*
+        chain.ClipToCompleteAlignment(CGeneModel::eCap, contig, min_cap_blob, min_polya_blob, max_dist, secondary_peak, tertiary_peak, tertiary_peak_coverage, min_flank_exon);
+        chain.ClipToCompleteAlignment(CGeneModel::ePolyA, contig, min_cap_blob, min_polya_blob, max_dist, secondary_peak, tertiary_peak, tertiary_peak_coverage, min_flank_exon);
+        */
         chain.ClipLowCoverageUTR(minscor.m_utr_clip_threshold);
         if(!chain.SetConfirmedEnds(*m_gnomon, confirmed_ends))
             continue;
@@ -3391,6 +3437,47 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust, bool co
         it->RestoreTrimmedEnds(trim);
         chains.push_back(*it);
     }
+
+    enum { eFirstPeak = 1, eSecondPeak = 2, eThirdPeak = 4, eAs = 8};
+    map<tuple<int, int, int>, int> cap_polya_info; // [cap/polya strand position]
+    const CResidueVec& contig = m_gnomon->GetSeq();
+    for(auto& chain : tmp_chains) {
+        if(chain.Status()&CGeneModel::eSkipped)
+            continue;
+        if(chain.Status()&CGeneModel::eCap) {
+            for(int i = 0; i < (int)chain.m_cap_peaks.size(); ++i) {
+                int pos = chain.m_cap_peaks[i];
+                if(pos >= 0) 
+                    cap_polya_info[make_tuple(CGeneModel::eCap, chain.Strand(), pos)] |= (1 << i);
+            }
+        }
+        if(chain.Status()&CGeneModel::ePolyA) {
+            for(int i = 0; i < (int)chain.m_polya_peaks.size(); ++i) {
+                int pos = chain.m_polya_peaks[i];
+                if(pos >= 0) {
+                    cap_polya_info[make_tuple(CGeneModel::ePolyA, chain.Strand(), pos)] |= (1 << i);
+                    if(chain.ValidPolyA(pos, contig).second)
+                        cap_polya_info[make_tuple(CGeneModel::ePolyA, chain.Strand(), pos)] |= eAs;
+                }
+            }
+        }
+    }
+    for(auto& info : cap_polya_info) {
+        string determinant = get<0>(info.first) == CGeneModel::eCap ? "Cap" : "PolyA";
+        char strand = get<1>(info.first) == ePlus ? '+' : '-';
+        int pos = m_edited_contig_map.MapEditedToOrig(get<2>(info.first))+m_limits.GetFrom()+1;
+        cerr << m_contig_acc << ' ' << determinant << ' ' << strand << ' ' << pos << ' ';
+        if(info.second&eFirstPeak)
+            cerr << ":FirstPeak";
+        if(info.second&eSecondPeak)
+            cerr << ":SecondPeak";
+        if(info.second&eThirdPeak)
+            cerr << ":ThirdPeak";
+        if(info.second&eAs)
+            cerr << ":As";
+        cerr << ":\n";
+    }
+
 
     return chains;
 }
@@ -3852,8 +3939,12 @@ void CChainer::CChainerImpl::CreateChainsForPartialProteins(TChainList& chains, 
         chain.RemoveFshiftsFromUTRs();
         chain.RestoreReasonableConfirmedStart(*m_gnomon, orig_aligns);
         const CResidueVec& contig = m_gnomon->GetSeq();
-        chain.ClipToCompleteAlignment(CGeneModel::eCap, contig);
-        chain.ClipToCompleteAlignment(CGeneModel::ePolyA, contig);
+        chain.ClipToCap(min_cap_blob, max_dist, min_flank_exon, secondary_peak);
+        chain.ClipToPolyA(contig, min_polya_blob, max_dist, min_flank_exon, secondary_peak, tertiary_peak, tertiary_peak_coverage);
+        /*
+        chain.ClipToCompleteAlignment(CGeneModel::eCap, contig, min_cap_blob, min_polya_blob, max_dist, secondary_peak, tertiary_peak, tertiary_peak_coverage, min_flank_exon);
+        chain.ClipToCompleteAlignment(CGeneModel::ePolyA, contig, min_cap_blob, min_polya_blob, max_dist, secondary_peak, tertiary_peak, tertiary_peak_coverage, min_flank_exon);
+        */
         chain.ClipLowCoverageUTR(minscor.m_utr_clip_threshold);
         if(!chain.SetConfirmedEnds(*m_gnomon, confirmed_ends))
             continue;
@@ -4075,7 +4166,7 @@ void CChainer::CChainerImpl::RemovePoorCds(CGeneModel& algn, double minscor)
 
 #define SCAN_WINDOW 49            // odd number!!!
 
-CChain::CChain(SChainMember& mbr, CGeneModel* gapped_helper, bool keep_all_evidence) : m_coverage_drop_left(-1), m_coverage_drop_right(-1), m_coverage_bump_left(-1), m_coverage_bump_right(-1), m_core_coverage(0), m_splice_weight(0)
+CChain::CChain(SChainMember& mbr, CGeneModel* gapped_helper, bool keep_all_evidence) : m_coverage_drop_left(-1), m_coverage_drop_right(-1), m_coverage_bump_left(-1), m_coverage_bump_right(-1), m_core_coverage(0), m_splice_weight(0), m_cap_peaks(3, -1), m_polya_peaks(3, -1)
 {
     m_members = mbr.CollectContainedForChain();
     _ASSERT(m_members.size()>0);
@@ -5040,13 +5131,14 @@ bool CChain::SetConfirmedEnds(const CGnomonEngine& gnomon, CGnomonAnnotator_Base
     return true;
 }
 
-bool CChain::ValidPolyA(int pos, int strand, const CResidueVec& contig) {
+// valid, found As
+pair<bool, bool> CChain::ValidPolyA(int pos, const CResidueVec& contig) {
     string motif1 = "AATAAA";
     string motif2 = "ATTAAA";
     string motif3 = "AGTAAA";
     int block_of_As_len = 6;
     CResidueVec block_of_As;
-    if(strand == ePlus)
+    if(Strand() == ePlus)
         block_of_As.assign(block_of_As_len, 'A');
     else
         block_of_As.assign(block_of_As_len, 'T');
@@ -5054,11 +5146,11 @@ bool CChain::ValidPolyA(int pos, int strand, const CResidueVec& contig) {
     int a = max(0, pos-block_of_As_len);
     int b = min((int)contig.size()-1, pos+block_of_As_len);
     if(b-a+1 < block_of_As_len)
-        return false;
+        return make_pair(false, false);
     if(search(contig.begin()+a, contig.begin()+b+1, block_of_As.begin(), block_of_As.end()) != contig.begin()+b+1) {  // found As
         int left;
         int right;
-        if(strand == ePlus) {
+        if(Strand() == ePlus) {
             left = pos-35;
             right = pos-18;
         } else {
@@ -5066,22 +5158,285 @@ bool CChain::ValidPolyA(int pos, int strand, const CResidueVec& contig) {
             right = pos+35;
         }
         if(left < 0 || right >= (int)contig.size())
-            return false;
+            return make_pair(false, false);
 
         string segment(contig.begin()+left, contig.begin()+right+1);
-        if(strand == eMinus)
+        if(Strand() == eMinus)
             ReverseComplement(segment.begin(), segment.end());
 
-        return (segment.find(motif1) != string::npos) ||  (segment.find(motif2) != string::npos) ||  (segment.find(motif3) != string::npos);
+        if(segment.find(motif1) != string::npos || segment.find(motif2) != string::npos || segment.find(motif3) != string::npos)
+            return make_pair(true, true);
+        else
+            return make_pair(false, true);
     } else {
-        return true;
+        return make_pair(true, false);
     }
 }
 
-void CChain::ClipToCompleteAlignment(EStatus determinant, const CResidueVec& contig)
-{
-    bool right_end = (determinant == CGeneModel::ePolyA && Strand() == ePlus) || (determinant == CGeneModel::eCap && Strand() == eMinus); // determinant is on the right gene side
-    
+#define MIN_UTR_EXON 15
+
+tuple<CChain::TIDMap, TSignedSeqRange> CChain::PeaksAndLimits(EStatus determinant, int min_blob_weight, int max_empty_dist, int min_splice_dist) {
+    bool right_end = (determinant == ePolyA && Strand() == ePlus) || (determinant == eCap && Strand() == eMinus); // determinant is on the right gene side
+    bool coding = ReadingFrame().NotEmpty();
+
+    TIDMap peak_weights;
+    TSignedSeqRange real_limits;
+
+    int flex_len = 0;
+    TIDMap raw_weights;
+    for(auto& mi : m_members) {        
+        const CGeneModel& align = *mi->m_align;        
+        if(align.Status()&determinant) {
+            if(right_end) {
+                int rlimit = (coding ? RealCdsLimits().GetTo() : Exons().back().Limits().GetFrom());      // look in the last exon of notcoding or right UTR of coding
+                bool belong_to_exon = false;
+                int pos = align.Limits().GetTo();
+                for(auto& exon : Exons()) {
+                    if(pos >= exon.Limits().GetFrom()+min_splice_dist && pos <= exon.Limits().GetTo()) {
+                        belong_to_exon = true;
+                        break;
+                    }
+                }
+                if(rlimit < pos && belong_to_exon)
+                    raw_weights[align.Limits().GetTo()] += align.Weight();
+            } else {
+                int llimit = (coding ? RealCdsLimits().GetFrom() : Exons().front().Limits().GetTo());     // look in the first exon of notcoding or left UTR of coding
+                bool belong_to_exon = false;
+                int pos = align.Limits().GetFrom();
+                for(auto& exon : Exons()) {
+                    if(pos >= exon.Limits().GetFrom() && pos <= exon.Limits().GetTo()-min_splice_dist) {
+                        belong_to_exon = true;
+                        break;
+                    }
+                }
+                if(llimit > pos && belong_to_exon)
+                    raw_weights[-align.Limits().GetFrom()] += align.Weight();                             // negative position, so the map is in convinient order
+            }
+        }
+        if(align.Status()&(eLeftFlexible|eRightFlexible))
+            flex_len = max(flex_len, align.Limits().GetLength());
+        else
+            real_limits += (align.Limits()&Limits());
+    }
+    if(raw_weights.empty())
+        return make_tuple(peak_weights,real_limits);
+
+    int last_allowed = right_end ? real_limits.GetTo()+flex_len : -(real_limits.GetFrom()-flex_len);
+    auto ipeak = raw_weights.begin();
+    double w = ipeak->second;
+    for(auto it = next(raw_weights.begin()); it != raw_weights.end(); ++it) {
+        if(it->first > prev(it)->first+1+max_empty_dist) {           // next blob
+            if(ipeak->first > last_allowed)
+                break;
+            if(w >= min_blob_weight)
+                peak_weights.emplace(ipeak->first, w);      // peak position, blob weight    
+            ipeak = it;
+            w = it->second;
+        } else {
+            w += it->second;
+            if(it->second > ipeak->second)            // new peak position; first for equals
+                ipeak = it;
+        }
+    }
+    if(ipeak->first <= last_allowed && w >= min_blob_weight)  // last peak
+        peak_weights.emplace(ipeak->first, w);      // peak position, blob weight
+
+    return make_tuple(peak_weights,real_limits);
+}
+
+tuple<TIVec, TSignedSeqRange> CChain::MainPeaks(TIDMap& peak_weights, double secondary_peak, double tertiary_peak, double tertiary_peak_coverage, bool right_end) {
+    TIVec peaks(3, -1);
+    auto limits = Limits();
+    auto ifirst_peak = max_element(peak_weights.begin(), peak_weights.end(), [](const TIDMap::value_type& a, const TIDMap::value_type& b) { return a.second < b.second; });
+    peaks[0] = abs(ifirst_peak->first);
+    if(right_end) {
+        int first_peak = ifirst_peak->first;
+        limits.SetTo(first_peak);
+        m_polya_cap_right_soft_limit = first_peak;
+    } else {
+        int first_peak = -ifirst_peak->first;
+        limits.SetFrom(first_peak);
+        m_polya_cap_left_soft_limit = first_peak;
+    }
+    auto isecond_peak = prev(peak_weights.end());
+    for( ; isecond_peak != ifirst_peak && isecond_peak->second < secondary_peak*ifirst_peak->second; --isecond_peak);
+    if(isecond_peak != ifirst_peak) 
+        peaks[1] = abs(isecond_peak->first);
+
+    if(tertiary_peak > 0) {
+        CAlignMap amap = GetAlignMap();
+        TSignedSeqRange genome_core_lim = RealCdsLimits();
+        if(genome_core_lim.Empty()) {
+            genome_core_lim = Limits();
+            if(Exons().size() > 1) {
+                if(Exons().front().Limits().GetLength() >= MIN_UTR_EXON)
+                    genome_core_lim.SetFrom(Exons().front().Limits().GetTo()-MIN_UTR_EXON+1);
+                if(Exons().back().Limits().GetLength() >= MIN_UTR_EXON)
+                    genome_core_lim.SetTo(Exons().back().Limits().GetFrom()+MIN_UTR_EXON-1);
+            }            
+        }
+        genome_core_lim = amap.ShrinkToRealPoints(genome_core_lim);
+        TSignedSeqRange core_lim = amap.MapRangeOrigToEdited(genome_core_lim);
+        double core_coverage = 0;
+        for (int i = core_lim.GetFrom(); i <= core_lim.GetTo(); ++i) {
+            core_coverage += m_coverage[i];
+        }
+        core_coverage /= core_lim.GetLength();
+
+        TSignedSeqRange fpeak_exon;
+        for(auto& exon : Exons()) {
+            if(Include(exon.Limits(), abs(ifirst_peak->first))) {
+                fpeak_exon = exon.Limits();
+                break;
+            }
+        }
+
+        auto ithird_peak = prev(peak_weights.end());
+        for( ; ithird_peak != isecond_peak; --ithird_peak) {
+            if(Include(fpeak_exon, abs(ithird_peak->first))) {
+                int p = amap.MapOrigToEdited(abs(ithird_peak->first));
+                if(p < 0)
+                    continue;
+                if(ithird_peak->second >= tertiary_peak*ifirst_peak->second && m_coverage[p] > tertiary_peak_coverage*core_coverage)
+                    break;
+            }
+        }
+        if(ithird_peak != isecond_peak) 
+            peaks[2] = abs(ithird_peak->first);
+        isecond_peak = ithird_peak;
+    }
+
+    if(isecond_peak != ifirst_peak) {
+        if(right_end) {
+            int second_peak = isecond_peak->first;
+            limits.SetTo(second_peak);
+        } else {
+            int second_peak = -isecond_peak->first;
+            limits.SetFrom(second_peak);
+        }
+    }
+
+    return make_tuple(peaks, limits);
+}
+
+void CChain::ClipToCap(int min_cap_blob, int max_dist, int min_flank_exon, double secondary_peak) {
+    bool right_end = Strand() == eMinus; // cap is on the right gene side
+    if((Status()&eLeftConfirmed) && !right_end)
+        return;
+    if((Status()&eRightConfirmed) && right_end)
+        return;
+
+    bool coding = ReadingFrame().NotEmpty();
+    if(!HasStart() && coding)
+        return;
+
+    auto rslt = PeaksAndLimits(eCap, min_cap_blob, max_dist, min_flank_exon);
+    TIDMap& peak_weights(get<0>(rslt));
+    TSignedSeqRange real_limits(get<1>(rslt));
+
+    if(peak_weights.empty()) {
+        TSignedSeqRange limits = Limits();
+        Status() &= ~eCap;
+        if(right_end && real_limits.GetTo() < Limits().GetTo())
+            limits.SetTo(real_limits.GetTo());
+        else if(!right_end && real_limits.GetFrom() > Limits().GetFrom())
+            limits.SetFrom(real_limits.GetFrom());
+
+        if (limits != Limits()) {
+            if(!coding || Include(limits,RealCdsLimits())) {
+                AddComment("capsupressed");
+                ClipChain(limits);
+            } else {
+                AddComment("capoverlapcds");
+            }
+        } 
+
+        if(right_end)
+            m_polya_cap_right_soft_limit = Limits().GetFrom()-1;
+        else
+            m_polya_cap_left_soft_limit = Limits().GetTo()+1;
+        
+        return;
+    }
+
+    Status() |= eCap;
+    auto rslt1 = MainPeaks(peak_weights, secondary_peak, 0., 0., right_end);
+    m_cap_peaks = get<0>(rslt1);
+    TSignedSeqRange limits = get<1>(rslt1);
+
+    if (limits != Limits()) {
+        AddComment("capclip");
+        ClipChain(limits);
+    } 
+}
+void CChain::ClipToPolyA(const CResidueVec& contig, int min_polya_blob, int max_dist, int min_flank_exon, double secondary_peak, double tertiary_peak, double tertiary_peak_coverage) {
+    bool right_end = Strand() == ePlus; // polya is on the right gene side
+    if((Status()&eLeftConfirmed) && !right_end)
+        return;
+    if((Status()&eRightConfirmed) && right_end)
+        return;
+
+    bool coding = ReadingFrame().NotEmpty();
+    if(!HasStop() && coding)
+        return;
+
+    auto rslt = PeaksAndLimits(ePolyA, min_polya_blob, max_dist, min_flank_exon);
+    TIDMap& peak_weights(get<0>(rslt));
+    TSignedSeqRange real_limits(get<1>(rslt));
+    //check for As
+    for(auto ip_loop = peak_weights.begin(); ip_loop != peak_weights.end(); ) {
+        auto ip = ip_loop++;
+        if(!ValidPolyA(abs(ip->first), contig).first)
+            peak_weights.erase(ip); 
+    }
+
+    if(peak_weights.empty()) {
+        TSignedSeqRange limits = Limits();
+        Status() &= ~ePolyA;
+        if(right_end && real_limits.GetTo() < Limits().GetTo())
+            limits.SetTo(real_limits.GetTo());
+        else if(!right_end && real_limits.GetFrom() > Limits().GetFrom())
+            limits.SetFrom(real_limits.GetFrom());
+
+        if (limits != Limits()) {
+            if(!coding || Include(limits,RealCdsLimits())) {
+                AddComment("polyasupressed");
+                ClipChain(limits);
+            } else {
+                AddComment("polyaoverlapcds");
+            }
+        } 
+
+        if(right_end)
+            m_polya_cap_right_soft_limit = Limits().GetFrom()-1;
+        else
+            m_polya_cap_left_soft_limit = Limits().GetTo()+1;
+        
+        return;
+    }
+
+    Status() |= ePolyA;
+    auto rslt1 = MainPeaks(peak_weights, secondary_peak, tertiary_peak, tertiary_peak_coverage, right_end);
+    m_polya_peaks = get<0>(rslt1);
+    TSignedSeqRange limits = get<1>(rslt1);
+
+    if (limits != Limits()) {
+        AddComment("polyaclip");
+        ClipChain(limits);
+    } 
+}
+
+void CChain::ClipToCompleteAlignment(EStatus determinant, 
+                                     const CResidueVec& contig,
+                                     int min_cap_blob,
+                                     int min_polya_blob,
+                                     int max_dist,
+                                     double secondary_peak,
+                                     double tertiary_peak,
+                                     double tertiary_peak_coverage,
+                                     int min_flank_exon) {
+
+    bool right_end = (determinant == ePolyA && Strand() == ePlus) || (determinant == eCap && Strand() == eMinus); // determinant is on the right gene side
     if((Status()&eLeftConfirmed) && !right_end)
         return;
     if((Status()&eRightConfirmed) && right_end)
@@ -5090,10 +5445,10 @@ void CChain::ClipToCompleteAlignment(EStatus determinant, const CResidueVec& con
     string  name;
     bool complete = false;
     bool coding = ReadingFrame().NotEmpty();
-    if (determinant == CGeneModel::ePolyA) {
+    if (determinant == ePolyA) {
         name  = "polya";
         complete = HasStop() || !coding;
-    } else if (determinant == CGeneModel::eCap) {
+    } else if (determinant == eCap) {
         name = "cap";
         complete = HasStart() || !coding;
     } else {
@@ -5103,12 +5458,10 @@ void CChain::ClipToCompleteAlignment(EStatus determinant, const CResidueVec& con
     if(!complete)
         return;
 
-    double min_blob_weight = (determinant == CGeneModel::eCap ? MIN_BLOB_WEIGHT_CAGE : MIN_BLOB_WEIGHT_POLY);
-    //    double min_pos_weight = (determinant == CGeneModel::eCap ? MIN_POSITION_WEIGHT_CAGE : MIN_POSITION_WEIGHT_POLY);
-    int max_empty_dist =  MAX_EMPTY_DIST;
-    int min_splice_dist = MIN_SPLICE_DIST;
+    double min_blob_weight = (determinant == eCap ? min_cap_blob : min_polya_blob);
+    int max_empty_dist =  max_dist;
+    int min_splice_dist = min_flank_exon;
     
-    typedef map<int, double> TIDMap;
     TIDMap raw_weights;
     TSignedSeqRange real_limits;
     int flex_len = 0;
@@ -5141,7 +5494,7 @@ void CChain::ClipToCompleteAlignment(EStatus determinant, const CResidueVec& con
                     raw_weights[-align.Limits().GetFrom()] += align.Weight();                             // negative position, so the map is in convinient order
             }
         }
-        if(align.Status()&(CGeneModel::eLeftFlexible|CGeneModel::eRightFlexible))
+        if(align.Status()&(eLeftFlexible|eRightFlexible))
             flex_len = max(flex_len, align.Limits().GetLength());
         else
             real_limits += (align.Limits()&Limits());
@@ -5157,10 +5510,8 @@ void CChain::ClipToCompleteAlignment(EStatus determinant, const CResidueVec& con
         if(it->first > prev(it)->first+1+max_empty_dist) {           // next blob
             if(ipeak->first > last_allowed)
                 break;
-            if(w >= min_blob_weight) {
-                if(determinant == eCap || ValidPolyA(abs(ipeak->first), Strand(), contig))
-                    peak_weights.emplace(ipeak->first, w); // peak position, blob weight    
-            }
+            if(w >= min_blob_weight && (determinant == eCap || ValidPolyA(abs(ipeak->first), contig).first))
+                peak_weights.emplace(ipeak->first, w);      // peak position, blob weight    
             ipeak = it;
             w = it->second;
         } else {
@@ -5169,8 +5520,8 @@ void CChain::ClipToCompleteAlignment(EStatus determinant, const CResidueVec& con
                 ipeak = it;
         }
     }
-    if(ipeak->first <= last_allowed && w >= min_blob_weight && (determinant == eCap || ValidPolyA(abs(ipeak->first), Strand(), contig)))
-        peak_weights.emplace(ipeak->first, w);       // last peak
+    if(ipeak->first <= last_allowed && w >= min_blob_weight && (determinant == eCap || ValidPolyA(abs(ipeak->first), contig).first))  // last peak
+        peak_weights.emplace(ipeak->first, w);      // peak position, blob weight
 
     if(peak_weights.empty()) {
         TSignedSeqRange limits = Limits();
@@ -5198,9 +5549,11 @@ void CChain::ClipToCompleteAlignment(EStatus determinant, const CResidueVec& con
     }
 
     Status() |= determinant;
+    auto& peaks = (determinant == eCap) ? m_cap_peaks : m_polya_peaks;
 
     auto limits = Limits();
     auto ifirst_peak = max_element(peak_weights.begin(), peak_weights.end(), [](const TIDMap::value_type& a, const TIDMap::value_type& b) { return a.second < b.second; });
+    peaks[0] = abs(ifirst_peak->first);
     if(right_end) {
         int first_peak = ifirst_peak->first;
         limits.SetTo(first_peak);
@@ -5210,8 +5563,55 @@ void CChain::ClipToCompleteAlignment(EStatus determinant, const CResidueVec& con
         limits.SetFrom(first_peak);
         m_polya_cap_left_soft_limit = first_peak;
     }
-    auto isecond_peak = max_element(next(ifirst_peak), peak_weights.end(), [](const TIDMap::value_type& a, const TIDMap::value_type& b) { return a.second <= b.second; });
-    if(isecond_peak != peak_weights.end() && isecond_peak->second > SECOND_PEAK*ifirst_peak->second) {
+    auto isecond_peak = prev(peak_weights.end());
+    for( ; isecond_peak != ifirst_peak && isecond_peak->second < secondary_peak*ifirst_peak->second; --isecond_peak);
+    if(isecond_peak != ifirst_peak) 
+        peaks[1] = abs(isecond_peak->first);
+
+    if(determinant == ePolyA) {
+        CAlignMap amap = GetAlignMap();
+        TSignedSeqRange genome_core_lim = RealCdsLimits();
+        if(genome_core_lim.Empty()) {
+            genome_core_lim = Limits();
+            if(Exons().size() > 1) {
+                if(Exons().front().Limits().GetLength() >= MIN_UTR_EXON)
+                    genome_core_lim.SetFrom(Exons().front().Limits().GetTo()-MIN_UTR_EXON+1);
+                if(Exons().back().Limits().GetLength() >= MIN_UTR_EXON)
+                    genome_core_lim.SetTo(Exons().back().Limits().GetFrom()+MIN_UTR_EXON-1);
+            }            
+        }
+        genome_core_lim = amap.ShrinkToRealPoints(genome_core_lim);
+        TSignedSeqRange core_lim = amap.MapRangeOrigToEdited(genome_core_lim);
+        double core_coverage = 0;
+        for (int i = core_lim.GetFrom(); i <= core_lim.GetTo(); ++i) {
+            core_coverage += m_coverage[i];
+        }
+        core_coverage /= core_lim.GetLength();
+
+        TSignedSeqRange fpeak_exon;
+        for(auto& exon : Exons()) {
+            if(Include(exon.Limits(), abs(ifirst_peak->first))) {
+                fpeak_exon = exon.Limits();
+                break;
+            }
+        }
+
+        auto ithird_peak = prev(peak_weights.end());
+        for( ; ithird_peak != isecond_peak; --ithird_peak) {
+            if(Include(fpeak_exon, abs(ithird_peak->first))) {
+                int p = amap.MapOrigToEdited(abs(ithird_peak->first));
+                if(p < 0)
+                    continue;
+                if(ithird_peak->second >= tertiary_peak*ifirst_peak->second && m_coverage[p] > tertiary_peak_coverage*core_coverage)
+                    break;
+            }
+        }
+        if(ithird_peak != isecond_peak) 
+            peaks[2] = abs(ithird_peak->first);
+        isecond_peak = ithird_peak;
+    }
+
+    if(isecond_peak != ifirst_peak) {
         if(right_end) {
             int second_peak = isecond_peak->first;
             limits.SetTo(second_peak);
@@ -5220,6 +5620,7 @@ void CChain::ClipToCompleteAlignment(EStatus determinant, const CResidueVec& con
             limits.SetFrom(second_peak);
         }
     }
+
     if (limits != Limits()) {
         AddComment(name+"clip");
         ClipChain(limits);
@@ -5235,7 +5636,6 @@ void CChain::CheckSecondaryCapPolyAEnds() {
         m_polya_cap_right_soft_limit = Limits().GetTo();
 }
 
-#define MIN_UTR_EXON 15
 #define COVERAGE_DROP 0.1
 #define COVERAGE_BUMP 3
 #define SMALL_GAP_UTR 100
@@ -6749,6 +7149,7 @@ void CChainer::CChainerImpl::SetGenomicRange(const TAlignModelList& alignments)
     _ASSERT(m_gnomon.get() != NULL);
     m_gnomon->ResetRange(range);
 
+    confirmed_ends.clear();
     orig_aligns.clear();
     unmodified_aligns.clear();
     mrna_count.clear();
@@ -6944,9 +7345,6 @@ void CChainerArgUtil::SetupArgDescriptions(CArgDescriptions* arg_desc)
                             "If it is possible, the trimming will be reversed for the 5'/3' ends of the final chain. Must be < minex and "
                             "multiple of 3",
                             CArgDescriptions::eInteger, "6");
-    arg_desc->AddDefaultKey("minpolya", "minpolya",
-                            "Minimal accepted polyA tale. The default (large) value forces chainer to ignore PolyA",
-                            CArgDescriptions::eInteger, "10000");
 
     arg_desc->SetCurrentGroup("Additional information about sequences");
     arg_desc->AddOptionalKey("mrnaCDS", "mrnaCDS",
@@ -6984,7 +7382,7 @@ void CChainerArgUtil::SetupArgDescriptions(CArgDescriptions* arg_desc)
                             CArgDescriptions::eDouble, "0.05");
     arg_desc->AddDefaultKey("oep", "oep",
                             "Minimal overlap length for chaining alignments which don't have introns in the ovrlapping regions",
-                            CArgDescriptions::eInteger, "100");
+                            CArgDescriptions::eInteger, "10");
     arg_desc->AddDefaultKey("minsupport", "minsupport",
                             "Minimal number of mRNA/EST for valid noncoding models",
                             CArgDescriptions::eInteger, "3");
@@ -7004,7 +7402,6 @@ void CChainerArgUtil::SetupArgDescriptions(CArgDescriptions* arg_desc)
     arg_desc->AddFlag("partialalts","Allows partial alternative variants. In combination with -nognomon will allow partial genes");
     arg_desc->AddDefaultKey("tolerance","tolerance","if models exon boundary differ only this much only one model will survive",CArgDescriptions::eInteger,"5");
     arg_desc->AddFlag("no5pextension","Don't extend chain CDS to the leftmost start");
-    arg_desc->AddFlag("use_confirmed_ends","Use confirmed end exons for clippig/extension");
 
     arg_desc->SetCurrentGroup("Heuristic parameters for score evaluation");
     arg_desc->AddDefaultKey("i5p", "i5p",
@@ -7022,6 +7419,45 @@ void CChainerArgUtil::SetupArgDescriptions(CArgDescriptions* arg_desc)
     arg_desc->AddDefaultKey("utrclipthreshold", "utrclipthreshold",
                             "Relative coverage for clipping low support UTRs",
                             CArgDescriptions::eDouble, "0.01");
+
+    arg_desc->SetCurrentGroup("CAGE/PolyA arguments");
+
+    arg_desc->AddDefaultKey("min-cap-weight", "MinCapWeight",
+                            "Minimal accepted weight for a capped alignment",
+                            CArgDescriptions::eInteger, "5");
+    arg_desc->AddDefaultKey("min-cap-blob", "MinCapBlob",
+                            "Minimal cap blob weight for accepted peak",
+                            CArgDescriptions::eInteger, "50");
+
+    arg_desc->AddDefaultKey("min-polya-weight", "MinPolyaWeight",
+                            "Minimal accepted weight for polya alignment",
+                            CArgDescriptions::eInteger, "3");
+    arg_desc->AddDefaultKey("min-polya-blob", "MinPolyaBlob",
+                            "Minimal polya blob weight for accepted peak",
+                            CArgDescriptions::eInteger, "5");
+
+    arg_desc->AddDefaultKey("max-dist", "MaxDist",
+                            "Maximal distance between individual cap/polya positions in a blob",
+                            CArgDescriptions::eInteger, "20");
+    arg_desc->AddDefaultKey("secondary-peak", "SecondaryPeak",
+                            "Minimal weight fraction for a secondary cap/polya peak",
+                            CArgDescriptions::eDouble, "0.5");
+    arg_desc->AddDefaultKey("tertiary-peak", "TertiaryPeak",
+                            "Last 5' exon is extended to low weight polya peak if there is sufficient rnaseq coverage",
+                            CArgDescriptions::eDouble, "0.2");
+    arg_desc->AddDefaultKey("tertiary-peak-coverage", "TertiaryPeakCoverage",
+                            "Minimal relative rnaseq coverage for tertiary peak",
+                            CArgDescriptions::eDouble, "0.05");
+
+    arg_desc->AddDefaultKey("min-flank-exon", "MinFlankExon",
+                            "The minimal distance of cap/polya to a splice",
+                            CArgDescriptions::eInteger, "25");
+
+
+    arg_desc->AddDefaultKey("minpolya", "minpolya",
+                            "Minimal accepted polyA tale length in transcript alignments",
+                            CArgDescriptions::eInteger, "6");
+    arg_desc->AddFlag("use_confirmed_ends","Use end exons of trusted transcripts for clippig/extension");
 
 }
 
@@ -7067,7 +7503,6 @@ void CChainerArgUtil::ArgsToChainer(CChainer* chainer, const CArgs& args, CScope
     
     chainer->SetIntersectLimit(args["oep"].AsInteger());
     chainer->SetTrim(args["trim"].AsInteger());
-    chainer->SetMinPolyA(args["minpolya"].AsInteger());
 
     SMinScor& minscor = chainer->SetMinScor();
     minscor.m_min = args["minscor"].AsDouble();
@@ -7093,7 +7528,18 @@ void CChainerArgUtil::ArgsToChainer(CChainer* chainer, const CArgs& args, CScope
     chainer->m_data->allow_partialalts = args["partialalts"];
     chainer->m_data->tolerance = args["tolerance"].AsInteger();
     chainer->m_data->no5pextension =  args["no5pextension"];
-    chainer->m_data->use_confirmed_ends =  args["use_confirmed_ends"];
+ 
+    chainer->m_data->min_cap_weight = args["min-cap-weight"].AsInteger();
+    chainer->m_data->min_cap_blob = args["min-cap-blob"].AsInteger();
+    chainer->m_data->min_polya_weight = args["min-polya-weight"].AsInteger();
+    chainer->m_data->min_polya_blob = args["min-polya-blob"].AsInteger();
+    chainer->m_data->max_dist = args["max-dist"].AsInteger();
+    chainer->m_data->secondary_peak = args["secondary-peak"].AsDouble();
+    chainer->m_data->tertiary_peak = args["tertiary-peak"].AsDouble();
+    chainer->m_data->tertiary_peak_coverage = args["tertiary-peak-coverage"].AsDouble();
+    chainer->m_data->min_flank_exon = args["min-flank-exon"].AsInteger();
+    chainer->SetMinPolyA(args["minpolya"].AsInteger());
+    chainer->m_data->use_confirmed_ends = args["use_confirmed_ends"];
 
 
     
