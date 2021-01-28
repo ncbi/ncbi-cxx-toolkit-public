@@ -334,7 +334,7 @@ CRef<CDense_seg> s_DoNWalign (const CRange<TSeqPos>& desired_align_range,
                                     hit_strand, 
                                     av.GetSeqId(1));
     
-    /* auto_ptr<CObjectOStream> out(CObjectOStream::Open(eSerial_AsnText, cerr)); 
+    /* unique_ptr<CObjectOStream> out(CObjectOStream::Open(eSerial_AsnText, cerr)); 
     cerr << "original denseg:" << endl;
     *out << *den_ref; 
     cerr << endl;*/
@@ -445,7 +445,7 @@ CRef<CDense_seg> s_DoNWalign (const CRange<TSeqPos>& desired_align_range,
     fmt.AsText(&text, CNWFormatter::eFormatType2);
     cerr << text << endl;
 
-    auto_ptr<CObjectOStream> out(CObjectOStream::Open(eSerial_AsnText, cerr)); 
+    unique_ptr<CObjectOStream> out(CObjectOStream::Open(eSerial_AsnText, cerr)); 
     cerr << "final denseg:" << endl;
     *out << *den_ref; 
     cerr << endl;*/
@@ -466,7 +466,7 @@ CRef<CDense_seg> COligoSpecificityCheck::x_NW_alignment(const CRange<TSeqPos>& d
                                                         TSeqPos master_local_stop,
                                                         ENa_strand hit_strand,
                                                         bool& nw_align_modified) {
-    /*   auto_ptr<CObjectOStream> out(CObjectOStream::Open(eSerial_AsnText, cerr)); 
+    /*   unique_ptr<CObjectOStream> out(CObjectOStream::Open(eSerial_AsnText, cerr)); 
     cerr << endl << "input_hit:" << endl;       
     *out << input_hit;
     cerr << endl;*/
@@ -819,7 +819,7 @@ x_FillGlobalAlignInfo(const CRange<TSeqPos>& desired_align_range,
                         
                     aln_ref->SetSegs().SetDenseg(*den_ref);
                     
-                    // auto_ptr<CObjectOStream> out(CObjectOStream::Open(eSerial_AsnText, cout));                                                       
+                    // unique_ptr<CObjectOStream> out(CObjectOStream::Open(eSerial_AsnText, cout));                                                       
                     //     *out << *aln_ref;
                         
                     global_align = aln_ref;
