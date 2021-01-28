@@ -184,3 +184,10 @@ March 27, 2019
 version 2.20.0, CXX-10563
 Corrected code generation for elements and attributes with various XML form defaults.
 Added code generation for CStringId64 data type.
+
+January 28, 2021
+version 2.21.0, CXX-11695
+Added support of CStrictId
+Corrected RPC client code generation to fully honor named reply types
+Fixed processing line endings in data specifications comments on Cygwin.
+Corrected reading JSON data files.
