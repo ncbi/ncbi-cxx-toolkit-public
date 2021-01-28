@@ -1,9 +1,0 @@
-# $Id$
-
-APP_PROJ = blastfmt_unit_test
-PROJ_TAG = test
-
-REQUIRES = algo objects gui PNG Boost.Test.Included wxWidgets MESA
-
-srcdir = @srcdir@
-include @builddir@/Makefile.meta
