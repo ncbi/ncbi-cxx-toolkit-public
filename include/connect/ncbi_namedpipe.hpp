@@ -75,15 +75,15 @@ class CNamedPipeHandle;
 ///
 ///    where "machine_name" is a network name of the PC and can be "." for
 ///    access to the pipe on the same machine.  The "pipe_name" part of the
-///    name can contain any character other than a backslash, including
+///    name can contain any characters other than a backslash, including
 ///    numbers and special characters.  The entire pipe name string can be up
 ///    to 256 characters long.  Pipe names are not case sensitive. 
 ///
-/// For UNIXs the pipe name is a generic file name (with or without path).
+/// For UNIXs the pipe name is a generic file name (with or without a path).
 ///
-/// If pipe name is specified as base file name, for example "pipe_name",
-/// without path, then CNamedPipe* classes automaticaly convert it to
-/// OS-specific default pipe name:
+/// If the pipe name is specified as a base file name only, for example just
+/// "pipe_name", without path component, then the CNamedPipe* classes
+/// automatically convert it to an OS-specific default full pipe name:
 //      \\.\pipe\pipe_name,       (MS Windows)
 //      [/var]/tmp/pipe_name,     (UNIX; will use "." as last-resort fallback)
 ///
@@ -230,6 +230,7 @@ public:
                      size_t          pipesize = 0/*use default*/);
 
     /// Open a client-side pipe connection.
+    /// If the server-end does not exist, return eIO_Closed.
     EIO_Status Open(const string&   pipename,
                     const STimeout* timeout  = kDefaultTimeout,
                     size_t          pipesize = 0/*use default*/);
@@ -258,7 +259,7 @@ public:
     /// NOTES:
     ///   - See CNamedPipe class description about pipe names;
     ///   - Timeout from the argument becomes new timeout for listening;
-    ///   - The "pipesize" specify a maxium size of data block that can
+    ///   - The "pipesize" specifies maximum size of data block that can
     ///     be transmitted through the pipe.  The actual buffer size reserved
     ///     for each end of the named pipe is the specified size rounded
     ///     up to the next allocation boundary (usually).
@@ -271,9 +272,9 @@ public:
                       const STimeout* timeout  = kDefaultTimeout,
                       size_t          pipesize = 0/*use default*/);
 
-    /// Listen a pipe for new client connection.
+    /// Listen on a pipe for new client connection.
     ///
-    /// Wait until new client is connected or open timeout has expired.
+    /// Wait until a new client is connected or open timeout has expired.
     /// Return eIO_Success when a client is connected and I/O may begin.
     /// Return eIO_Timeout, if open timeout had expired before any client
     /// initiated connection.  Any other return code indicates some failure.
@@ -282,7 +283,7 @@ public:
     /// Disconnect the client.
     ///
     /// Disconnect the server end of a named pipe instance from the client.
-    /// Reinitialize the pipe for waiting for another new client.
+    /// Reinitialize the pipe for waiting for the another (next) new client.
     /// Return eIO_Success if client is disconnected and pipe is reset.
     /// Any other return code indicates some failure.
     EIO_Status Disconnect(void);

@@ -262,7 +262,7 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
                  &&  error != ERROR_PIPE_NOT_CONNECTED)) {
                 if (pipe == INVALID_HANDLE_VALUE
                     &&  error == ERROR_FILE_NOT_FOUND) {
-                    status = eIO_Closed;
+                    return eIO_Closed;
                 }
                 NAMEDPIPE_THROW(error,
                                 "Named pipe \"" + pipename
@@ -826,6 +826,8 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
 
         status = SOCK_CreateUNIX(pipename.c_str(), timeout, &m_IoSocket,
                                  NULL, 0, 0/*flags*/);
+        if (status == eIO_Closed)
+            return eIO_Closed;
         if (status != eIO_Success) {
             NAMEDPIPE_THROW(0,
                             "Named pipe \""

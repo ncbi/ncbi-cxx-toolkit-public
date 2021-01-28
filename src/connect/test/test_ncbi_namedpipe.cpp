@@ -252,6 +252,7 @@ void CTest::Client(int num)
             ERR_POST(Error << IO_StatusStr(status));
             _TROUBLE;
         }
+        ERR_POST(Info << "Waiting for server...");
         SleepMilliSec(500);
     }
 
