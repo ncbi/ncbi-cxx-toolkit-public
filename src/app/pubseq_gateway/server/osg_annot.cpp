@@ -161,7 +161,7 @@ void CPSGS_OSGAnnot::NotifyOSGCallStart()
 {
     if ( m_ApplyCDDFix ) {
         m_CDDReceived = false;
-        m_RequestTime.Start();
+        m_RequestTime.Restart();
     }
 }
 
