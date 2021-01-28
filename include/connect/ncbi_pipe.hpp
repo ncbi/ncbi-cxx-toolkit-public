@@ -411,7 +411,8 @@ public:
         /// @param pid
         ///   Process Id to monitor
         /// @return
-        ///   eStop if the process should be killed, eContinue otherwise
+        ///   eContinue to continue with the process; other code to kill the
+        ///   process and to return from ExecWait() with eCanceled.
         virtual EAction OnStart(TProcessHandle /*pid*/) { return eContinue; }
 
         /// This method is getting called periodically during
@@ -420,17 +421,19 @@ public:
         /// @param pid
         ///   Process Id to monitor
         /// @return
-        ///   eStop if the process should be killed, eContinue otherwise
+        ///   eContinue to keep the process running; eStop to kill the process;
+        ///   or eExit to bail from ExecWait() with eCanceled (the process is
+        ///   not killed, but all I/O is severed with it)
         virtual EAction Watch(TProcessHandle /*pid*/) = 0;
     };
 
     /// ExecWait return code
     enum EFinish {
         eDone,     ///< Process finished normally
-        eCanceled  ///< Watcher requested process termination
+        eCanceled  ///< Watcher requested to bail out
     };
 
-    /// Execute a command with a vector of arguments and wait for its
+    /// Execute a command with a vector of arguments, and wait for its
     /// completion.
     /// 
     /// @param cmd

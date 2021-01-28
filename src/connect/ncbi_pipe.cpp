@@ -2107,14 +2107,15 @@ CPipe::EFinish CPipe::ExecWait(const string&           cmd,
     }
 
     CPipe pipe(pipe_size);
-    EIO_Status st = pipe.Open(cmd, args, 
-                              fStdErr_Open | fSigPipe_Restore
-                              | fNewGroup | fKillOnClose,
-                              current_dir, env);
-    if (st != eIO_Success) {
+    EIO_Status status = pipe.Open(cmd, args, 
+                                  fStdErr_Open | fSigPipe_Restore
+                                  | fNewGroup | fKillOnClose,
+                                  current_dir, env);
+    if (status != eIO_Success) {
         NCBI_THROW(CPipeException, eOpen,
                    "[CPipe::ExecWait]  Cannot execute \"" + cmd + '"');
     }
+    _ASSERT(pipe.m_PipeHandle);
 
     TProcessHandle pid = pipe.GetProcessHandle();
 
@@ -2125,39 +2126,45 @@ CPipe::EFinish CPipe::ExecWait(const string&           cmd,
     }
 
     EFinish finish = eDone;
-    bool out_done = false;
-    bool err_done = false;
-    bool in_done  = false;
-    
-#ifndef NCBI_OS_LINUX
-    const size_t buf_size = 16 * 1024;
-#else
-    const size_t buf_size = 192 * 1024;
-#endif
-    size_t total_bytes_written = 0;
-    size_t bytes_in_inbuf = 0;
-    char   inbuf[buf_size];
-    char   buf[buf_size];
-
-    TChildPollMask mask = fStdIn | fStdOut | fStdErr;
     try {
-        STimeout wait_time = {1, 0};
-        while (!(in_done  &&  out_done  &&  err_done)) {
-            size_t bytes_read;
-            EIO_Status status;
+#ifndef NCBI_OS_LINUX
+        const size_t buf_size = 16 * 1024;
+#else
+        const size_t buf_size = 192 * 1024;
+#endif // NCBI_OS_LINUX
+        AutoPtr< char, ArrayDeleter<char> > inbuf(new char[buf_size]);
+        AutoPtr< char, ArrayDeleter<char> >   buf(new char[buf_size]);
 
-            TChildPollMask rmask = pipe.Poll(mask, &wait_time);
-            if (bytes_in_inbuf  ||  ((rmask & fStdIn)  &&  !in_done)) {
+        size_t bytes_in_inbuf = 0;
+        size_t bytes_written = 0;
+
+        bool in_done  = false;
+        bool out_done = false;
+        bool err_done = false;
+    
+        TChildPollMask mask = fStdIn | fStdOut | fStdErr;
+
+        while (!(in_done  &&  out_done  &&  err_done)) {
+            static const STimeout kNoWait = {0, 0};
+            static const STimeout kWait   = {1, 0};
+
+            TChildPollMask rmask = pipe.Poll(mask, in_done  ||  bytes_in_inbuf
+                                             ? &kWait : &kNoWait);
+
+            if (!in_done  &&  ((rmask & fStdIn)  ||  !bytes_in_inbuf)) {
                 if (bytes_in_inbuf == 0  &&  in.good()) {
-                    bytes_in_inbuf  =
-                        (size_t) CStreamUtils::Readsome(in, inbuf, buf_size);
-                    total_bytes_written = 0;
+                    bytes_in_inbuf  = (size_t)
+                        CStreamUtils::Readsome(in, inbuf.get(), buf_size);
+                    if (bytes_in_inbuf)
+                        bytes_written = 0;
+                    else if (!in.good())
+                        in_done = true;
                 }
 
-                if (bytes_in_inbuf > 0) {
-                    size_t bytes_written;
-                    status = pipe.Write(inbuf + total_bytes_written,
-                                        bytes_in_inbuf, &bytes_written);
+                if ((rmask & fStdIn)  &&  bytes_in_inbuf) {
+                    size_t x_written;
+                    status = pipe.Write(inbuf.get() + bytes_written,
+                                        bytes_in_inbuf, &x_written);
                     if (status != eIO_Success) {
                         ERR_POST_X(5,
                                    s_FormatErrorMessage
@@ -2166,27 +2173,29 @@ CPipe::EFinish CPipe::ExecWait(const string&           cmd,
                                     + string(IO_StatusStr(status))));
                         in_done = true;
                     }
-                    total_bytes_written += bytes_written;
-                    bytes_in_inbuf      -= bytes_written;
+                    bytes_in_inbuf -= x_written;
+                    bytes_written  += x_written;
                 }
 
-                if ((bytes_in_inbuf == 0  &&  !in.good())  ||  in_done) {
+                if (in_done) {
                     pipe.CloseHandle(eStdIn);
-                    in_done = true;
                     mask &= ~fStdIn;
                 }
             }
-            if ((rmask & fStdOut)  &&  !out_done) {
-                status = pipe.Read(buf, buf_size, &bytes_read);
-                out.write(buf, bytes_read);
+            size_t x_read;
+            if (rmask & fStdOut) {
+                _ASSERT(!out_done);
+                status = pipe.Read(buf.get(), buf_size, &x_read);
+                out.write(buf.get(), x_read);
                 if (status != eIO_Success) {
                     out_done = true;
                     mask &= ~fStdOut;
                 }
             }
-            if ((rmask & fStdErr)  &&  !err_done) {
-                status = pipe.Read(buf, buf_size, &bytes_read, eStdErr);
-                err.write(buf, bytes_read);
+            if (rmask & fStdErr) {
+                _ASSERT(!err_done);
+                status = pipe.Read(buf.get(), buf_size, &x_read, eStdErr);
+                err.write(buf.get(), x_read);
                 if (status != eIO_Success) {
                     err_done = true;
                     mask &= ~fStdErr;
@@ -2201,12 +2210,9 @@ CPipe::EFinish CPipe::ExecWait(const string&           cmd,
                 case IProcessWatcher::eStop:
                     break;
                 case IProcessWatcher::eExit:
-                    if (pipe.m_PipeHandle) {
-                        pipe.m_PipeHandle->Release();
-                    }
+                    pipe.m_PipeHandle->Release();
                     return eCanceled;
                 }
-
                 // IProcessWatcher::eStop
                 pipe.SetTimeout(eIO_Close, &ktm);
                 finish = eCanceled;
