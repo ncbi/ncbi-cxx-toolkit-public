@@ -85,7 +85,7 @@ BEGIN_NCBI_SCOPE
 
 const unsigned long CProcessBase::kDefaultKillTimeout = 1000;
 const unsigned long CProcessBase::kInfiniteTimeoutMs  = kMax_ULong;
-const unsigned long               kWaitPrecision      = 100;
+const unsigned long               kWaitPrecisionMs    = 100;
 
 
 
@@ -619,7 +619,7 @@ bool CProcess::Kill(unsigned long timeout)
     // Check process termination within the timeout
     unsigned long x_timeout = timeout;
     for (;;) {
-        TPid reap = waitpid(pid, static_cast<int*>(NULL), WNOHANG);
+        TPid reap = waitpid(pid, 0, WNOHANG);
         if (reap) {
             if (reap != (TPid)(-1)) {
                 _ASSERT(reap == pid);
@@ -632,7 +632,7 @@ bool CProcess::Kill(unsigned long timeout)
             if (kill(pid, 0) < 0)
                 return true;
         }
-        unsigned long x_sleep = kWaitPrecision;
+        unsigned long x_sleep = kWaitPrecisionMs;
         if (x_sleep > x_timeout) {
             x_sleep = x_timeout;
         }
@@ -649,9 +649,9 @@ bool CProcess::Kill(unsigned long timeout)
     if ( !timeout ) {
         return res <= 0;
     }
-    SleepMilliSec(kWaitPrecision);
+    SleepMilliSec(kWaitPrecisionMs);
     // Reap the zombie (if child) up from the system
-    waitpid(pid, static_cast<int*>(NULL), WNOHANG);
+    waitpid(pid, 0, WNOHANG);
 
     // Check whether the process cannot be killed
     // (most likely due to a kernel problem)
@@ -808,7 +808,7 @@ bool CProcess::Kill(unsigned long timeout)
                 terminated = true;
                 break;
             }
-            unsigned long x_sleep = kWaitPrecision;
+            unsigned long x_sleep = kWaitPrecisionMs;
             if (x_sleep > linger_timeout) {
                 x_sleep = linger_timeout;
             }
@@ -941,7 +941,7 @@ bool CProcess::KillGroupById(TPid pgid, unsigned long timeout)
     unsigned long x_timeout = timeout;
     for (;;) {
         // Reap the zombie (if group leader is a child) up from the system
-        TPid reap = waitpid(pgid, static_cast<int*>(NULL), WNOHANG);
+        TPid reap = waitpid(pgid, 0, WNOHANG);
         if (reap) {
             if (reap != (TPid)(-1)) {
                 _ASSERT(reap == pgid);
@@ -955,7 +955,7 @@ bool CProcess::KillGroupById(TPid pgid, unsigned long timeout)
                 return true;
             }
         }
-        unsigned long x_sleep = kWaitPrecision;
+        unsigned long x_sleep = kWaitPrecisionMs;
         if (x_sleep > x_timeout) {
             x_sleep = x_timeout;
         }
@@ -972,9 +972,9 @@ bool CProcess::KillGroupById(TPid pgid, unsigned long timeout)
     if ( !timeout ) {
         return res <= 0;
     }
-    SleepMilliSec(kWaitPrecision);
+    SleepMilliSec(kWaitPrecisionMs);
     // Reap the zombie (if group leader is a child) up from the system
-    waitpid(pgid, static_cast<int*>(NULL), WNOHANG);
+    waitpid(pgid, 0, WNOHANG);
     // Check whether the process cannot be killed
     // (most likely due to a kernel problem)
     return kill(-pgid, 0) < 0;
@@ -1024,7 +1024,7 @@ int CProcess::Wait(unsigned long timeout, CExitInfo* info) const
                 }
                 break;
             }
-            unsigned long x_sleep = kWaitPrecision;
+            unsigned long x_sleep = kWaitPrecisionMs;
             if (x_sleep > timeout) {
                 x_sleep = timeout;
             }
