@@ -788,6 +788,7 @@ bool CBuildDatabase::AddSequences(IBioseqSource & src, bool add_pig)
 
     CStopWatch sw(CStopWatch::eStart);
     int count = 0;
+    CSeq_id::TGi max_gi32_val = CSeq_id::TGi(0xFFFFFFFFU) ;
 
     CConstRef<CBioseq> bs = src.GetNext();
 
@@ -805,14 +806,15 @@ bool CBuildDatabase::AddSequences(IBioseqSource & src, bool add_pig)
 			CSeq_id::EAccessionInfo info = (*it)->IdentifyAccession();
 			if( info == CSeq_id::EAccessionInfo::eAcc_gi ){
 			    check_gi = (*it)->GetGi();
-			    if( check_gi > 0x7FFFFFFF ) {
+			    if( check_gi > max_gi32_val )
+			    {
 				skip_this = true;
 			    }
 			}
 		    }
 		}
 		if( skip_this ){
-		    m_LogFile << "Ignoring gi '" << check_gi << "' as it has value larger then " << 0x7FFFFFFF<< endl;
+		    m_LogFile << "Ignoring gi '" << check_gi << "' as it has value larger then " << 0xFFFFFFFF<< endl;
 		    bs = src.GetNext();
 		    continue;
 		}
