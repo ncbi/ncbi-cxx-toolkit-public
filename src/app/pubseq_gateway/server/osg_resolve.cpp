@@ -77,17 +77,26 @@ void CPSGS_OSGResolve::CreateRequests()
 {
     auto& psg_req = GetRequest()->GetRequest<SPSGS_ResolveRequest>();
     if ( psg_req.m_IncludeDataFlags &
-         (psg_req.fPSGS_AllBioseqFields & ~psg_req.fPSGS_BlobId) ) {
+         (psg_req.fPSGS_SeqIds |
+          psg_req.fPSGS_CanonicalId |
+          psg_req.fPSGS_Gi) ) {
+        // actual sequence ids
+        CRef<CID2_Request> osg_req(new CID2_Request);
+        auto& req = osg_req->SetRequest().SetGet_seq_id();
+        SetSeqId(req.SetSeq_id().SetSeq_id(), psg_req.m_SeqIdType, psg_req.m_SeqId);
+        req.SetSeq_id_type(CID2_Request_Get_Seq_id::eSeq_id_type_all);
+        AddRequest(osg_req);
+    }
+    if ( psg_req.m_IncludeDataFlags &
+         (psg_req.fPSGS_MoleculeType |
+          psg_req.fPSGS_Length |
+          psg_req.fPSGS_TaxId |
+          psg_req.fPSGS_Hash) ) {
+        // artificial ids for special info requests
         CRef<CID2_Request> osg_req(new CID2_Request);
         auto& req = osg_req->SetRequest().SetGet_seq_id();
         SetSeqId(req.SetSeq_id().SetSeq_id(), psg_req.m_SeqIdType, psg_req.m_SeqId);
         req.SetSeq_id_type(0);
-        if ( psg_req.m_IncludeDataFlags & psg_req.fPSGS_Gi ) {
-            req.SetSeq_id_type() |= CID2_Request_Get_Seq_id::eSeq_id_type_gi;
-        }
-        if ( psg_req.m_IncludeDataFlags & (psg_req.fPSGS_CanonicalId | psg_req.fPSGS_SeqIds) ) {
-            req.SetSeq_id_type() |= CID2_Request_Get_Seq_id::eSeq_id_type_all;
-        }
         if ( psg_req.m_IncludeDataFlags & psg_req.fPSGS_MoleculeType ) {
             req.SetSeq_id_type() |= CID2_Request_Get_Seq_id::eSeq_id_type_seq_mol;
         }
@@ -100,17 +109,27 @@ void CPSGS_OSGResolve::CreateRequests()
         if ( psg_req.m_IncludeDataFlags & psg_req.fPSGS_Hash ) {
             req.SetSeq_id_type() |= CID2_Request_Get_Seq_id::eSeq_id_type_hash;
         }
-        /*
-          TODO
-          fPSGS_State = (1 << 5),
-          fPSGS_SeqState = (1 << 12),
-        */
         AddRequest(osg_req);
     }
-    if ( psg_req.m_IncludeDataFlags & psg_req.fPSGS_BlobId ) {
+    /*
+      TODO
+      fPSGS_SeqState = (1 << 12),
+    */
+    if ( psg_req.m_IncludeDataFlags &
+         (psg_req.fPSGS_BlobId |
+          psg_req.fPSGS_State) ) {
+        // blob id or state
         CRef<CID2_Request> osg_req(new CID2_Request);
         auto& req = osg_req->SetRequest().SetGet_blob_id();
         SetSeqId(req.SetSeq_id().SetSeq_id().SetSeq_id(), psg_req.m_SeqIdType, psg_req.m_SeqId);
+        AddRequest(osg_req);
+    }
+    if ( GetFetches().empty() ) {
+        // resolve only, no any other information to return
+        CRef<CID2_Request> osg_req(new CID2_Request);
+        auto& req = osg_req->SetRequest().SetGet_seq_id();
+        SetSeqId(req.SetSeq_id().SetSeq_id(), psg_req.m_SeqIdType, psg_req.m_SeqId);
+        req.SetSeq_id_type(CID2_Request_Get_Seq_id::eSeq_id_type_any);
         AddRequest(osg_req);
     }
 }
@@ -150,6 +169,11 @@ void CPSGS_OSGResolve::ProcessReplies()
         FinalizeResult(ePSGS_NotFound);
     }
     else {
+        auto& psg_req = GetRequest()->GetRequest<SPSGS_ResolveRequest>();
+        if ( !psg_req.m_IncludeDataFlags ) {
+            // only resolution is requested
+            m_BioseqInfoFlags = 0;
+        }
         SendBioseqInfo(GetRequest()->GetRequest<SPSGS_ResolveRequest>().m_OutputFormat);
         FinalizeResult(ePSGS_Found);
     }

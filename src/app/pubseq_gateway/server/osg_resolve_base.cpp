@@ -42,6 +42,7 @@
 #include "pubseq_gateway_convert_utils.hpp"
 #include "osg_connection.hpp"
 #include "osg_getblob_base.hpp"
+#include "insdc_utils.hpp"
 
 BEGIN_NCBI_NAMESPACE;
 BEGIN_NAMESPACE(psg);
@@ -62,8 +63,24 @@ CPSGS_OSGResolveBase::~CPSGS_OSGResolveBase()
 void CPSGS_OSGResolveBase::SetSeqId(CSeq_id& id, int seq_id_type, const string& seq_id)
 {
     // TODO: seq_id_type
-    id.Set(seq_id);
     //id.Set(CSeq_id::eFasta_AsTypeAndContent, CSeq_id_Base::E_Choice(seq_id_type), seq_id);
+    id.Set(seq_id);
+    if ( seq_id_type <= 0 ) {
+        // no type check
+        return;
+    }
+    if ( id.Which() == seq_id_type ) {
+        // type matches
+        return;
+    }
+    if ( IsINSDCSeqIdType(id.Which()) && IsINSDCSeqIdType(seq_id_type) ) {
+        // TODO
+        // what to do if request types mismatch
+        return;
+    }
+    NCBI_THROW_FMT(CPubseqGatewayException, eSeqIdMismatch,
+                   "Requested Seq-id type mismatch "<<id.AsFastaString()<<
+                   " type "<<id.Which()<<" <> "<<seq_id_type);
 }
 
 
@@ -152,7 +169,7 @@ void CPSGS_OSGResolveBase::ProcessResolveReply(const CID2_Reply& reply)
                 seq_ids.insert(make_tuple(gi_id.Which(), move(content)));
             }
         }
-        if ( (req_id.GetSeq_id_type() & req_id.eSeq_id_type_all) == req_id.eSeq_id_type_all &&
+        if ( req_id.GetSeq_id_type() == req_id.eSeq_id_type_all &&
              !seq_ids.empty() ) {
             m_BioseqInfo.SetSeqIds(move(seq_ids));
             // all ids are requested, so we should get GI and acc.ver too if they exist
