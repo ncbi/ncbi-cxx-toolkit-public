@@ -116,8 +116,10 @@ static const char* x_TypeStr(ns_type atype, void* buf)
         return "OPT";
     case ns_t_any:
         return "ANY";
+#ifdef T_URI
     case ns_t_uri:
         return "URI";
+#endif /*T_URI*/
     default:
         break;
     }
