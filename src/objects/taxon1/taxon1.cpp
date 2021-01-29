@@ -1387,9 +1387,16 @@ CTaxon1::GetTaxId4GI(TGi gi, TTaxId& tax_id_out )
             // Correct response, return object
             tax_id_out = resp.GetId4gi();
             return true;
+        } else if( resp.IsError() && resp.GetError().IsSetLevel() && resp.GetError().GetLevel() == CTaxon1_error::eLevel_error &&
+                   resp.GetError().IsSetMsg() && resp.GetError().GetMsg() == "id4gi: No taxid for this gi" ) {
+            tax_id_out = ZERO_TAX_ID;
+            return true;
         } else { // Internal: wrong respond type
             SetLastError( "INTERNAL: TaxService response type is not Id4gi" );
         }
+    } else if( GetLastError() != NULL && NStr::EqualNocase( GetLastError(), "ERROR: id4gi: No taxid for this gi") ) {
+        tax_id_out = ZERO_TAX_ID;
+        return true;
     }
     return false;
 }
