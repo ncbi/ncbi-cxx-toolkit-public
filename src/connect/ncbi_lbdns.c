@@ -37,7 +37,6 @@
 
 #ifdef NCBI_OS_UNIX
 
-#include "ncbi_priv.h"
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #ifdef NCBI_OS_DARWIN
