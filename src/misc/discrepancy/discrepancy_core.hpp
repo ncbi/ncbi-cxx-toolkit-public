@@ -204,7 +204,7 @@ public:
     TNodeMap& GetMap() { return m_Map; }
     size_t GetCount() { return m_Count ? m_Count : m_Objs.size(); }
     void SetCount(size_t n) { m_Count = n; }
-    CRef<CReportItem> Export(CDiscrepancyCase& test, bool unique = true);
+    CRef<CReportItem> Export(CDiscrepancyCase& test, bool unique = true) const;
     void Copy(CRef<CReportNode> other);
     bool Promote();
 

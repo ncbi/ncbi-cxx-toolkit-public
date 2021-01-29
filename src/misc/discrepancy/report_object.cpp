@@ -156,14 +156,14 @@ CConstRef<CSeq_id> GetBestId(const CBioseq& bioseq)
     const CBioseq::TId& seq_id_ls = bioseq.GetId();
     CConstRef<CSeq_id> best_seq_id;
     int best_score = CSeq_id::kMaxScore;
-    ITERATE (CBioseq::TId, it, seq_id_ls) {
-        if (IsAccession(**it)) {
-            return *it;
+    for (const auto& it : seq_id_ls) {
+        if (IsAccession(*it)) {
+            return it;
         }
         else {
-            int score = (*it)->BaseBestRankScore();
+            int score = it->BaseBestRankScore();
             if (best_score > score) {
-                best_seq_id = *it;
+                best_seq_id = it;
                 best_score = score;
             }
         }
@@ -212,8 +212,8 @@ void UpgradeSeqLocId(CSeq_loc& loc, CScope& scope)
             }
             break;
         case CSeq_loc::e_Equiv:
-            NON_CONST_ITERATE (CSeq_loc::TEquiv::Tdata, it, loc.SetEquiv().Set()) {
-                UpgradeSeqLocId(**it, scope);
+            for (auto& it : loc.SetEquiv().Set()) {
+                UpgradeSeqLocId(*it, scope);
             }
             break;
         case CSeq_loc::e_Int:
@@ -221,13 +221,13 @@ void UpgradeSeqLocId(CSeq_loc& loc, CScope& scope)
             break;
 
         case CSeq_loc::e_Mix:
-            NON_CONST_ITERATE (CSeq_loc::TMix::Tdata, it, loc.SetMix().Set()) {
-                UpgradeSeqLocId(**it, scope);
+            for (auto& it : loc.SetMix().Set()) {
+                UpgradeSeqLocId(*it, scope);
             }
             break;
         case CSeq_loc::e_Packed_int:
-            NON_CONST_ITERATE (CSeq_loc::TPacked_int::Tdata, it, loc.SetPacked_int().Set()) {
-                UpgradeSeqLocId(**it, scope);
+            for (auto& it : loc.SetPacked_int().Set()) {
+                UpgradeSeqLocId(*it, scope);
             }
             break;
         case CSeq_loc::e_Packed_pnt:
@@ -459,9 +459,9 @@ string CDiscrepancyObject::GetTextObjectDescription(const CSeqdesc& sd)
             label = (ENUM_METHOD_NAME(EGIBB_mol)()->FindName(sd.GetMol_type(), true));
             break;
         case CSeqdesc::e_Modif:
-            ITERATE (list <EGIBB_mod>, it, sd.GetModif()) {
-                label 
-                  += ENUM_METHOD_NAME(EGIBB_mod)()->FindName(*it, true) + ", ";
+            for (const EGIBB_mod& it : sd.GetModif()) {
+                label
+                  += ENUM_METHOD_NAME(EGIBB_mod)()->FindName(it, true) + ", ";
             }
             label = label.substr(0, label.size()-2);
             break;

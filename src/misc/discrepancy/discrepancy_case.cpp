@@ -185,7 +185,7 @@ DISCREPANCY_CASE(N_RUNS, SEQUENCE, eDisc | eSubmitter | eSmart | eBig | eFatal, 
         const CSeqSummary& sum = context.GetSeqSummary();
         if (!sum.HasRef && sum.NRuns.size()) { // !context.SequenceHasFarPointers()
             string details;
-            for (auto& p: sum.NRuns) {
+            for (const auto& p: sum.NRuns) {
                 details += (details.empty() ? " " : ", ") + to_string(p.first) + "-" + to_string(p.second);
             }
             m_Objs["[n] sequence[s] [has] runs of 10 or more Ns"][sum.Label + " has runs of Ns at the following locations: " + details].Ext().Fatal().Add(*context.BioseqObjRef());
@@ -227,7 +227,7 @@ static const size_t kRRNASpacer_len = sizeof(kRRNASpacer) / sizeof(kRRNASpacer[0
 
 DISCREPANCY_CASE(INTERNAL_TRANSCRIBED_SPACER_RRNA, FEAT, eOncaller, "Look for rRNAs that contain either 'internal', 'transcribed' or 'spacer'")
 {
-    for (auto& feat : context.GetFeat()) {
+    for (const CSeq_feat& feat : context.GetFeat()) {
         if (feat.IsSetData() && feat.GetData().IsRna() && feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_rRNA) {
             const string rna_name = feat.GetData().GetRna().GetRnaProductName();
             for (size_t i = 0; i < kRRNASpacer_len; ++i) {
@@ -344,7 +344,7 @@ DISCREPANCY_CASE(OVERLAPPING_CDS, SEQUENCE, eDisc, "Overlapping CDs")
 {
     const CBioseq& bioseq = context.CurrentBioseq();
     if (bioseq.IsSetInst() && bioseq.GetInst().IsNa()) {
-        auto& cds = context.FeatCDS();
+        const auto& cds = context.FeatCDS();
         map<const CSeq_feat*, string> products;
         for (size_t i = 0; i < cds.size(); i++) {
             const CSeq_loc& loc_i = cds[i]->GetLocation();
@@ -397,7 +397,7 @@ DISCREPANCY_AUTOFIX(OVERLAPPING_CDS)
 
 DISCREPANCY_CASE(PARTIAL_CDS_COMPLETE_SEQUENCE, FEAT, eDisc | eOncaller | eSubmitter | eSmart, "Partial CDSs in Complete Sequences")
 {
-    for (auto& feat : context.GetFeat()) {
+    for (const CSeq_feat& feat : context.GetFeat()) {
         if (feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_cdregion) {
             // leave if this CDS is not at least in some way marked as partial
             if (!GET_FIELD_OR_DEFAULT(feat, Partial, false) && !(feat.IsSetLocation() && feat.GetLocation().IsPartialStart(eExtreme_Biological)) && !(feat.IsSetLocation() && feat.GetLocation().IsPartialStop(eExtreme_Biological))) {
@@ -423,7 +423,7 @@ DISCREPANCY_SUMMARIZE(PARTIAL_CDS_COMPLETE_SEQUENCE)
 
 DISCREPANCY_CASE(RNA_NO_PRODUCT, FEAT, eDisc | eOncaller | eSubmitter | eSmart, "Find RNAs without Products")
 {
-    for (auto& feat : context.GetFeat()) {
+    for (const CSeq_feat& feat : context.GetFeat()) {
         if (feat.GetData().IsRna() && !context.IsPseudo(feat)) {
             // for the given RNA subtype, see whether a product is required
             switch (feat.GetData().GetSubtype()) {
@@ -522,7 +522,7 @@ DISCREPANCY_CASE(CONTAINED_CDS, SEQUENCE, eDisc | eSubmitter | eSmart | eFatal, 
     if (bioseq.IsSetInst() && bioseq.GetInst().IsNa()) {
         const CSeqdesc* biosrc = context.GetBiosource();
         if (!context.IsEukaryotic(biosrc ? &biosrc->GetSource() : 0)) {
-            auto& cds = context.FeatCDS();
+            const auto& cds = context.FeatCDS();
             for (size_t i = 0; i < cds.size(); i++) {
                 const CSeq_loc& loc_i = cds[i]->GetLocation();
                 ENa_strand strand_i = loc_i.GetStrand();
@@ -753,7 +753,7 @@ DISCREPANCY_AUTOFIX(POSSIBLE_LINKER)
 
 DISCREPANCY_CASE(ORDERED_LOCATION, FEAT, eDisc | eOncaller | eSmart, "Location is ordered (intervals interspersed with gaps)")
 {
-    for (auto& feat : context.GetFeat()) {
+    for (const CSeq_feat& feat : context.GetFeat()) {
         if (feat.IsSetLocation()) {
             CSeq_loc_CI loc_ci(feat.GetLocation(), CSeq_loc_CI::eEmpty_Allow);
             for (; loc_ci; ++loc_ci) {
@@ -803,7 +803,7 @@ DISCREPANCY_CASE(MISSING_LOCUS_TAGS, SEQUENCE, eDisc | eSubmitter | eSmart | eFa
 {
     const CBioseq& bioseq = context.CurrentBioseq();
     if (bioseq.IsSetInst() && bioseq.GetInst().IsNa()) {
-        for (auto feat : context.FeatGenes()) {
+        for (const CSeq_feat* feat : context.FeatGenes()) {
             const CGene_ref& gene_ref = feat->GetData().GetGene();
             if (!gene_ref.IsSetPseudo() || !gene_ref.GetPseudo()) {
                 if (!gene_ref.IsSetLocus_tag() || NStr::IsBlank(gene_ref.GetLocus_tag())) {
@@ -831,7 +831,7 @@ DISCREPANCY_SUMMARIZE(MISSING_LOCUS_TAGS)
 
 DISCREPANCY_CASE(NO_LOCUS_TAGS, FEAT, eDisc | eSubmitter | eSmart | eFatal, "No locus tags at all")
 {
-    for (auto& feat : context.GetFeat()) {
+    for (const CSeq_feat& feat : context.GetFeat()) {
         if (feat.IsSetData() && feat.GetData().IsGene()) {
             const CGene_ref& gene_ref = feat.GetData().GetGene();
             if (gene_ref.IsSetPseudo() && gene_ref.GetPseudo()) {
@@ -860,7 +860,7 @@ DISCREPANCY_SUMMARIZE(NO_LOCUS_TAGS)
 
 DISCREPANCY_CASE(INCONSISTENT_LOCUS_TAG_PREFIX, FEAT, eDisc | eSubmitter | eSmart, "Inconsistent locus tag prefix")
 {
-    for (auto& feat : context.GetFeat()) {
+    for (const CSeq_feat& feat : context.GetFeat()) {
         if (feat.IsSetData() && feat.GetData().Which() == CSeqFeatData::e_Gene) {
             const CGene_ref& gene_ref = feat.GetData().GetGene();
             // Skip pseudo-genes
@@ -935,7 +935,7 @@ DISCREPANCY_CASE(BAD_LOCUS_TAG_FORMAT, SEQUENCE, eDisc | eSubmitter | eSmart, "B
 {
     const CBioseq& bioseq = context.CurrentBioseq();
     if (bioseq.IsSetId()) {
-        for (auto& id : bioseq.GetId()) {
+        for (const auto& id : bioseq.GetId()) {
             switch (id->Which()) {
                 case CSeq_id::e_Genbank:
                 case CSeq_id::e_Embl:
@@ -950,8 +950,8 @@ DISCREPANCY_CASE(BAD_LOCUS_TAG_FORMAT, SEQUENCE, eDisc | eSubmitter | eSmart, "B
             }
         }
     }
-    auto& genes = context.FeatGenes();
-    for (auto gene : genes) {
+    const auto& genes = context.FeatGenes();
+    for (const CSeq_feat* gene : genes) {
         const CGene_ref& gene_ref = gene->GetData().GetGene();
         if (gene_ref.IsSetPseudo() && gene_ref.GetPseudo() == true) {
             continue;
@@ -998,7 +998,7 @@ DISCREPANCY_CASE(QUALITY_SCORES, SEQUENCE, eDisc | eSmart, "Check for quality sc
     if (bioseq.IsSetInst() && bioseq.IsNa()) {
         m_Objs["t"].Incr(); // total num
         if (bioseq.CanGetAnnot()) {
-            for (auto& ann : bioseq.GetAnnot()) {
+            for (const auto& ann : bioseq.GetAnnot()) {
                 if (ann->IsGraph()) {
                     m_Objs["q"].Incr();
                     return;
@@ -1027,7 +1027,7 @@ DISCREPANCY_CASE(BACTERIA_SHOULD_NOT_HAVE_MRNA, FEAT, eDisc | eOncaller | eSubmi
 {
     const CSeqdesc* biosrc = context.GetBiosource();
     if (biosrc && context.IsBacterial(&biosrc->GetSource())) {
-        for (auto& feat : context.GetFeat()) {
+        for (const CSeq_feat& feat : context.GetFeat()) {
             if (feat.IsSetData() && feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA) {
                 m_Objs["[n] bacterial sequence[s] [has] mRNA features"].Add(*context.SeqFeatObjRef(feat));
             }
@@ -1049,7 +1049,7 @@ static const string kDiscMessage = "[n] feature[s] contain[S] invalid BGPIPE qua
 DISCREPANCY_CASE(BAD_BGPIPE_QUALS, SEQUENCE, eDisc | eSmart, "Bad BGPIPE qualifiers")
 {
     if (!context.IsRefseq() && context.IsBGPipe()) {
-        for (auto& feat : context.GetAllFeat()) {
+        for (const CSeq_feat& feat : context.GetAllFeat()) {
             if (STRING_FIELD_NOT_EMPTY(feat, Except_text)) {
                 if (feat.GetExcept_text() == "ribosomal slippage" && feat.IsSetComment() && feat.GetComment().find("programmed frameshift") != string::npos) {
                     continue;
@@ -1103,7 +1103,7 @@ DISCREPANCY_SUMMARIZE(BAD_BGPIPE_QUALS)
 
 DISCREPANCY_CASE(GENE_PRODUCT_CONFLICT, SEQUENCE, eDisc | eSubmitter | eSmart, "Gene Product Conflict")
 {
-    for (auto& feat : context.GetAllFeat()) {
+    for (const CSeq_feat& feat : context.GetAllFeat()) {
         if (feat.IsSetData() && feat.GetData().IsCdregion()) {
             CConstRef<CSeq_feat> gene_feat(context.GetGeneForFeature(feat));
             if (gene_feat && gene_feat->IsSetData() && gene_feat->GetData().IsGene()) {
@@ -1123,12 +1123,12 @@ DISCREPANCY_CASE(GENE_PRODUCT_CONFLICT, SEQUENCE, eDisc | eSubmitter | eSmart, "
 DISCREPANCY_SUMMARIZE(GENE_PRODUCT_CONFLICT)
 {
     TGeneLocusMap& genes = context.GetGeneLocusMap();
-    NON_CONST_ITERATE (TGeneLocusMap, gene, genes) {
-        if (gene->second.size() > 1) {
-            TGenesList::const_iterator cur_gene = gene->second.begin();
+    for (auto& gene : genes) {
+        if (gene.second.size() > 1) {
+            TGenesList::const_iterator cur_gene = gene.second.cbegin();
             const string& product = cur_gene->second;
             bool diff = false;
-            for (++cur_gene; cur_gene != gene->second.end(); ++cur_gene) {
+            for (++cur_gene; cur_gene != gene.second.cend(); ++cur_gene) {
                 const string& cur_product = cur_gene->second;
                 if (product != cur_product) {
                     diff = true;
@@ -1136,9 +1136,9 @@ DISCREPANCY_SUMMARIZE(GENE_PRODUCT_CONFLICT)
                 }
             }
             if (diff) {
-                string sub = "[n] coding regions have the same gene name (" + gene->first + ") as another coding region but a different product";
-                NON_CONST_ITERATE (TGenesList, cur_gene, gene->second) {
-                    m_Objs["[n] coding region[s] [has] the same gene name as another coding region but a different product"][sub].Ext().Add(*cur_gene->first, false);
+                string sub = "[n] coding regions have the same gene name (" + gene.first + ") as another coding region but a different product";
+                for (auto& cur_gene : gene.second) {
+                    m_Objs["[n] coding region[s] [has] the same gene name as another coding region but a different product"][sub].Ext().Add(*cur_gene.first, false);
                 }
             }
         }

@@ -52,10 +52,10 @@ DISCREPANCY_MODULE(biosource_tests);
 static unsigned int AutofixBiosrc(TReportObjectList& list, CScope& scope, bool (*call)(CBioSource& src))
 {
     unsigned int n = 0;
-    NON_CONST_ITERATE (TReportObjectList, it, list) {
-        if ((*it)->CanAutofix()) {
-            const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
-            const CSeqdesc* csd = dynamic_cast<const CSeqdesc*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
+    for (auto& it : list) {
+        if (it->CanAutofix()) {
+            const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>(it.GetNCPointer())->GetObject().GetPointer());
+            const CSeqdesc* csd = dynamic_cast<const CSeqdesc*>(dynamic_cast<CDiscrepancyObject*>(it.GetNCPointer())->GetObject().GetPointer());
             if (sf) {
                 if (sf->IsSetData() && sf->GetData().IsBiosrc()) {
                     CRef<CSeq_feat> new_feat(new CSeq_feat());
@@ -64,7 +64,7 @@ static unsigned int AutofixBiosrc(TReportObjectList& list, CScope& scope, bool (
                         CSeq_feat_EditHandle feh(scope.GetSeq_featHandle(*sf));
                         feh.Replace(*new_feat);
                         n++;
-                        dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->SetFixed();
+                        dynamic_cast<CDiscrepancyObject*>(it.GetNCPointer())->SetFixed();
                     }
                 }
             }
@@ -73,7 +73,7 @@ static unsigned int AutofixBiosrc(TReportObjectList& list, CScope& scope, bool (
                     CSeqdesc* sd = const_cast<CSeqdesc*>(csd);
                     if (call(sd->SetSource())) {
                         n++;
-                        dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->SetFixed();
+                        dynamic_cast<CDiscrepancyObject*>(it.GetNCPointer())->SetFixed();
                     }
                 }
             }
@@ -92,7 +92,7 @@ DISCREPANCY_CASE(MAP_CHROMOSOME_CONFLICT, BIOSRC, eDisc | eOncaller | eSmart | e
     if (src.IsSetSubtype() && context.IsEukaryotic(&src)) {
         bool has_map = false;
         bool has_chromosome = false;
-        for (auto& it : src.GetSubtype()) {
+        for (const auto& it : src.GetSubtype()) {
             if (it->IsSetSubtype()) {
                 if (it->GetSubtype() == CSubSource::eSubtype_map) {
                     has_map = true;
@@ -120,11 +120,11 @@ DISCREPANCY_SUMMARIZE(MAP_CHROMOSOME_CONFLICT)
 
 DISCREPANCY_CASE(INFLUENZA_DATE_MISMATCH, BIOSRC, eOncaller, "Influenza Strain/Collection Date Mismatch")
 {
-    for (auto biosrc : context.GetBiosources()) {
+    for (const CBioSource* biosrc : context.GetBiosources()) {
         if (biosrc->IsSetOrg() && biosrc->IsSetSubtype() && biosrc->GetOrg().IsSetOrgname() && biosrc->GetOrg().GetOrgname().IsSetMod() && biosrc->GetOrg().IsSetTaxname() && NStr::StartsWith(biosrc->GetOrg().GetTaxname(), "Influenza ")) {
             int strain_year = 0;
             int collection_year = 0;
-            for (auto& it : biosrc->GetOrg().GetOrgname().GetMod()) {
+            for (const auto& it : biosrc->GetOrg().GetOrgname().GetMod()) {
                 if (it->IsSetSubtype() && it->GetSubtype() == COrgMod::eSubtype_strain) {
                     string s = it->GetSubname();
                     size_t pos = s.rfind('/');
@@ -146,7 +146,7 @@ DISCREPANCY_CASE(INFLUENZA_DATE_MISMATCH, BIOSRC, eOncaller, "Influenza Strain/C
                     break;
                 }
             }
-            for (auto& it : biosrc->GetSubtype()) {
+            for (const auto& it : biosrc->GetSubtype()) {
                 if (it->IsSetSubtype() && it->GetSubtype() == CSubSource::eSubtype_collection_date) {
                     try {
                         CRef<CDate> date = CSubSource::DateFromCollectionDate(it->GetName());
@@ -176,14 +176,14 @@ DISCREPANCY_SUMMARIZE(INFLUENZA_DATE_MISMATCH)
 
 DISCREPANCY_CASE(INFLUENZA_QUALS, BIOSRC, eOncaller, "Influenza must have strain, host, isolation_source, country, collection_date")
 {
-    for (auto biosrc : context.GetBiosources()) {
+    for (const CBioSource* biosrc : context.GetBiosources()) {
         if (biosrc->IsSetOrg() && biosrc->GetOrg().IsSetTaxname() && NStr::StartsWith(biosrc->GetOrg().GetTaxname(), "Influenza ")) {
             bool found_strain = false;
             bool found_host = false;
             bool found_country = false;
             bool found_collection_date = false;
             if (biosrc->IsSetSubtype()) {
-                for (auto& it : biosrc->GetSubtype()) {
+                for (const auto& it : biosrc->GetSubtype()) {
                     if (it->IsSetSubtype()) {
                         switch (it->GetSubtype()) {
                         case CSubSource::eSubtype_country:
@@ -197,7 +197,7 @@ DISCREPANCY_CASE(INFLUENZA_QUALS, BIOSRC, eOncaller, "Influenza must have strain
                 }
             }
             if (biosrc->GetOrg().IsSetOrgname() && biosrc->GetOrg().GetOrgname().IsSetMod()) {
-                for (auto& it : biosrc->GetOrg().GetOrgname().GetMod()) {
+                for (const auto& it : biosrc->GetOrg().GetOrgname().GetMod()) {
                     if (it->IsSetSubtype()) {
                         switch (it->GetSubtype()) {
                         case COrgMod::eSubtype_strain:
@@ -237,10 +237,10 @@ DISCREPANCY_SUMMARIZE(INFLUENZA_QUALS)
 
 DISCREPANCY_CASE(INFLUENZA_SEROTYPE, BIOSRC, eOncaller, "Influenza A virus must have serotype")
 {
-    for (auto biosrc : context.GetBiosources()) {
+    for (const CBioSource* biosrc : context.GetBiosources()) {
         if (biosrc->IsSetOrg() && biosrc->GetOrg().IsSetTaxname() && NStr::StartsWith(biosrc->GetOrg().GetTaxname(), "Influenza A virus ") && biosrc->GetOrg().IsSetOrgname() && biosrc->GetOrg().GetOrgname().IsSetMod()) {
             bool found = false;
-            for (auto& it : biosrc->GetOrg().GetOrgname().GetMod()) {
+            for (const auto& it : biosrc->GetOrg().GetOrgname().GetMod()) {
                 if (it->IsSetSubtype() && it->GetSubtype() == COrgMod::eSubtype_serotype) {
                     found = true;
                     break;
@@ -264,11 +264,11 @@ DISCREPANCY_SUMMARIZE(INFLUENZA_SEROTYPE)
 
 DISCREPANCY_CASE(INFLUENZA_SEROTYPE_FORMAT, BIOSRC, eOncaller, "Influenza A virus serotype must match /^H[1-9]\\d*$|^N[1-9]\\d*$|^H[1-9]\\d*N[1-9]\\d*$|^mixed$/")
 {
-    for (auto biosrc : context.GetBiosources()) {
+    for (const CBioSource* biosrc : context.GetBiosources()) {
         if (biosrc->IsSetOrg() && biosrc->GetOrg().IsSetTaxname() && NStr::StartsWith(biosrc->GetOrg().GetTaxname(), "Influenza A virus ")) {
             static CRegexp rx("^H[1-9]\\d*$|^N[1-9]\\d*$|^H[1-9]\\d*N[1-9]\\d*$|^mixed$");
             if (biosrc->GetOrg().IsSetOrgname() && biosrc->GetOrg().GetOrgname().IsSetMod()) {
-                for (auto& it : biosrc->GetOrg().GetOrgname().GetMod()) {
+                for (const auto& it : biosrc->GetOrg().GetOrgname().GetMod()) {
                     if (it->IsSetSubtype() && it->GetSubtype() == COrgMod::eSubtype_serotype && !rx.IsMatch(it->GetSubname())) {
                         m_Objs["[n] Influenza A virus serotype[s] [has] incorrect format"].Add(*context.BiosourceObjRef(*biosrc));
                     }
@@ -289,9 +289,9 @@ DISCREPANCY_SUMMARIZE(INFLUENZA_SEROTYPE_FORMAT)
 
 DISCREPANCY_CASE(UNCULTURED_NOTES, BIOSRC, eOncaller | eFatal, "Uncultured Notes")
 {
-    for (auto biosrc : context.GetBiosources()) {
+    for (const CBioSource* biosrc : context.GetBiosources()) {
         if (biosrc->IsSetSubtype()) {
-            for (auto& it : biosrc->GetSubtype()) {
+            for (const auto& it : biosrc->GetSubtype()) {
                 if (it->IsSetSubtype() && it->GetSubtype() == CSubSource::eSubtype_other && it->IsSetName() && CSubSource::HasCultureNotes(it->GetName())) {
                     m_Objs["[n] bio-source[s] [has] uncultured note[s]"].Add(*context.BiosourceObjRef(*biosrc)).Fatal();
                     break;
@@ -316,12 +316,12 @@ DISCREPANCY_CASE(MISSING_VIRAL_QUALS, BIOSRC, eOncaller, "Viruses should specify
 {
     const CSeqdesc* src = context.GetBiosource();
     if (context.HasLineage(src ? &src->GetSource() : 0, "Viruses")) {
-        for (auto biosrc : context.GetBiosources()) {
+        for (const CBioSource* biosrc : context.GetBiosources()) {
             bool has_collection_date = false;
             bool has_country = false;
             bool has_specific_host = false;
             if (biosrc->IsSetSubtype()) {
-                for (auto& it : biosrc->GetSubtype()) {
+                for (const auto& it : biosrc->GetSubtype()) {
                     if (it->IsSetSubtype()) {
                         if (it->GetSubtype() == CSubSource::eSubtype_collection_date) {
                             has_collection_date = true;
@@ -336,7 +336,7 @@ DISCREPANCY_CASE(MISSING_VIRAL_QUALS, BIOSRC, eOncaller, "Viruses should specify
                 }
             }
             if (biosrc->IsSetOrg() && biosrc->GetOrg().IsSetOrgname() && biosrc->GetOrg().GetOrgname().IsSetMod()) {
-                for (auto& it : biosrc->GetOrg().GetOrgname().GetMod()) {
+                for (const auto& it : biosrc->GetOrg().GetOrgname().GetMod()) {
                     if (it->IsSetSubtype() && it->GetSubtype() == COrgMod::eSubtype_nat_host) {
                         has_specific_host = true;
                     }
@@ -372,7 +372,7 @@ bool HasCultureCollectionForATCCStrain(const COrgName::TMod& mods, const string&
         return true;
     }
     bool found = false;
-    for (auto& m : mods) {
+    for (const auto& m : mods) {
         if (m->IsSetSubtype() && m->GetSubtype() == COrgMod::eSubtype_culture_collection && m->IsSetSubname() && NStr::StartsWith(m->GetSubname(), "ATCC:")) {
             string cmp = m->GetSubname().substr(5);
             NStr::TruncateSpacesInPlace(cmp);
@@ -396,7 +396,7 @@ bool HasStrainForATCCCultureCollection(const COrgName::TMod& mods, const string&
         return true;
     }
     bool found = false;
-    for (auto& m : mods) {
+    for (const auto& m : mods) {
         if (m->IsSetSubtype() && m->GetSubtype() == COrgMod::eSubtype_strain && m->IsSetSubname() && NStr::StartsWith(m->GetSubname(), "ATCC ")) {
             string cmp = m->GetSubname().substr(5);
             NStr::TruncateSpacesInPlace(cmp);
@@ -416,10 +416,10 @@ bool HasStrainForATCCCultureCollection(const COrgName::TMod& mods, const string&
 
 DISCREPANCY_CASE(ATCC_CULTURE_CONFLICT, BIOSRC, eDisc | eOncaller, "ATCC strain should also appear in culture collection")
 {
-    for (auto biosrc : context.GetBiosources()) {
+    for (const CBioSource* biosrc : context.GetBiosources()) {
         if (biosrc->IsSetOrg() && biosrc->GetOrg().IsSetOrgname() && biosrc->GetOrg().GetOrgname().IsSetMod()) {
             bool report = false;
-            for (auto& m : biosrc->GetOrg().GetOrgname().GetMod()) {
+            for (const auto& m : biosrc->GetOrg().GetOrgname().GetMod()) {
                 if (m->IsSetSubtype() && m->IsSetSubname()) {
                     if (m->GetSubtype() == COrgMod::eSubtype_strain && NStr::StartsWith(m->GetSubname(), "ATCC ") && !HasCultureCollectionForATCCStrain(biosrc->GetOrg().GetOrgname().GetMod(), m->GetSubname().substr(5))) {
                         report = true;
@@ -451,7 +451,7 @@ static bool SetCultureCollectionFromStrain(CBioSource& src)
         return false;
     }
     vector<string> add;
-    for (auto m : src.GetOrg().GetOrgname().GetMod()) {
+    for (const auto& m : src.GetOrg().GetOrgname().GetMod()) {
         if (m->IsSetSubtype() && m->IsSetSubname()) {
             if (m->GetSubtype() == COrgMod::eSubtype_strain && NStr::StartsWith(m->GetSubname(), "ATCC ") &&
                 !HasCultureCollectionForATCCStrain(src.GetOrg().GetOrgname().GetMod(), m->GetSubname().substr(5))) {
@@ -460,7 +460,7 @@ static bool SetCultureCollectionFromStrain(CBioSource& src)
         }
     }
     if (!add.empty()) {
-        for (auto& s : add) {
+        for (const string& s : add) {
             CRef<COrgMod> m(new COrgMod(COrgMod::eSubtype_culture_collection, s));
             src.SetOrg().SetOrgname().SetMod().push_back(m);
         }
@@ -498,12 +498,12 @@ DISCREPANCY_CASE(BACTERIA_SHOULD_NOT_HAVE_ISOLATE, BIOSRC, eDisc | eOncaller | e
 {
     const CSeqdesc* src = context.GetBiosource();
     if (context.HasLineage(src ? &src->GetSource() : 0, "Bacteria") || context.HasLineage(src ? &src->GetSource() : 0, "Archaea")) {
-        for (auto biosrc : context.GetBiosources()) {
+        for (const CBioSource* biosrc : context.GetBiosources()) {
             bool has_bad_isolate = false;
             bool is_metagenomic = false;
             bool is_env_sample = false;
             if (biosrc->IsSetSubtype()) {
-                for (auto s : biosrc->GetSubtype()) {
+                for (const auto& s : biosrc->GetSubtype()) {
                     if (s->IsSetSubtype()) {
                         if (s->GetSubtype() == CSubSource::eSubtype_environmental_sample) {
                             is_env_sample = true;
@@ -524,7 +524,7 @@ DISCREPANCY_CASE(BACTERIA_SHOULD_NOT_HAVE_ISOLATE, BIOSRC, eDisc | eOncaller | e
                 }
             }
             if (biosrc->IsSetOrg() && biosrc->GetOrg().IsSetOrgname() && biosrc->GetOrg().GetOrgname().IsSetMod()) {
-                for (auto m : biosrc->GetOrg().GetOrgname().GetMod()) {
+                for (const auto& m : biosrc->GetOrg().GetOrgname().GetMod()) {
                     if (m->IsSetSubtype()) {
                         if (m->GetSubtype() == CSubSource::eSubtype_other && m->IsSetSubname() && NStr::Equal(m->GetSubname(), kAmplifiedWithSpeciesSpecificPrimers)) {
                             return;
@@ -558,11 +558,11 @@ DISCREPANCY_CASE(MAG_SHOULD_NOT_HAVE_STRAIN, BIOSRC, eDisc | eSmart, "Organism a
 {
     const CSeqdesc* src = context.GetBiosource();
     if (context.HasLineage(src ? &src->GetSource() : 0, "Bacteria") || context.HasLineage(src ? &src->GetSource() : 0, "Archaea")) {
-        for (auto biosrc : context.GetBiosources()) {
+        for (const CBioSource* biosrc : context.GetBiosources()) {
             bool is_metagenomic = false;
             bool is_env_sample = false;
             if (biosrc->IsSetSubtype()) {
-                for (auto s : biosrc->GetSubtype()) {
+                for (const auto& s : biosrc->GetSubtype()) {
                     if (s->IsSetSubtype()) {
                         if (s->GetSubtype() == CSubSource::eSubtype_environmental_sample) {
                             is_env_sample = true;
@@ -574,7 +574,7 @@ DISCREPANCY_CASE(MAG_SHOULD_NOT_HAVE_STRAIN, BIOSRC, eDisc | eSmart, "Organism a
                 }
             }
             if (is_metagenomic && is_env_sample && biosrc->IsSetOrg() && biosrc->GetOrg().IsSetOrgname() && biosrc->GetOrg().GetOrgname().IsSetMod()) {
-                for (auto m : biosrc->GetOrg().GetOrgname().GetMod()) {
+                for (const auto& m : biosrc->GetOrg().GetOrgname().GetMod()) {
                     if (m->IsSetSubtype() && m->GetSubtype() == COrgMod::eSubtype_strain) {
                         m_Objs["[n] organism[s] assembled from metagenome [has] strain"].Add(*context.BiosourceObjRef(*biosrc));
                         break;
@@ -598,12 +598,12 @@ DISCREPANCY_CASE(MAG_MISSING_ISOLATE, BIOSRC, eDisc | eSmart, "Organism assemble
 {
     const CSeqdesc* src = context.GetBiosource();
     if (context.HasLineage(src ? &src->GetSource() : 0, "Bacteria") || context.HasLineage(src ? &src->GetSource() : 0, "Archaea")) {
-        for (auto biosrc : context.GetBiosources()) {
+        for (const CBioSource* biosrc : context.GetBiosources()) {
             bool is_metagenomic = false;
             bool is_env_sample = false;
             bool has_isolate = false;
             if (biosrc->IsSetSubtype()) {
-                for (auto s : biosrc->GetSubtype()) {
+                for (const auto& s : biosrc->GetSubtype()) {
                     if (s->IsSetSubtype()) {
                         if (s->GetSubtype() == CSubSource::eSubtype_environmental_sample) {
                             is_env_sample = true;
@@ -618,7 +618,7 @@ DISCREPANCY_CASE(MAG_MISSING_ISOLATE, BIOSRC, eDisc | eSmart, "Organism assemble
                 continue;
             }
             if (biosrc->IsSetOrg() && biosrc->GetOrg().IsSetOrgname() && biosrc->GetOrg().GetOrgname().IsSetMod()) {
-                for (auto m : biosrc->GetOrg().GetOrgname().GetMod()) {
+                for (const auto& m : biosrc->GetOrg().GetOrgname().GetMod()) {
                     if (m->IsSetSubtype() && m->GetSubtype() == COrgMod::eSubtype_isolate) {
                         has_isolate = true;
                         break;
@@ -643,10 +643,10 @@ DISCREPANCY_SUMMARIZE(MAG_MISSING_ISOLATE)
 
 DISCREPANCY_CASE(MULTISRC, BIOSRC, eDisc | eOncaller, "Comma or semicolon appears in strain or isolate")
 {
-    for (auto biosrc : context.GetBiosources()) {
+    for (const CBioSource* biosrc : context.GetBiosources()) {
         if (biosrc->IsSetOrg() && biosrc->GetOrg().IsSetOrgname() && biosrc->GetOrg().GetOrgname().IsSetMod()) {
             bool report = false;
-            for (auto& m : biosrc->GetOrg().GetOrgname().GetMod()) {
+            for (const auto& m : biosrc->GetOrg().GetOrgname().GetMod()) {
                 if (m->IsSetSubtype() && (m->GetSubtype() == COrgMod::eSubtype_isolate || m->GetSubtype() == COrgMod::eSubtype_strain) && m->IsSetSubname() && (NStr::Find(m->GetSubname(), ",") != string::npos || NStr::Find(m->GetSubname(), ";") != string::npos)) {
                     report = true;
                     break;
@@ -670,10 +670,10 @@ DISCREPANCY_SUMMARIZE(MULTISRC)
 
 DISCREPANCY_CASE(MULTIPLE_CULTURE_COLLECTION, BIOSRC, eOncaller, "Multiple culture-collection quals")
 {
-    for (auto biosrc : context.GetBiosources()) {
+    for (const CBioSource* biosrc : context.GetBiosources()) {
         if (biosrc->IsSetOrg() && biosrc->GetOrg().IsSetOrgname() && biosrc->GetOrg().GetOrgname().IsSetMod()) {
             bool found = false;
-            for (auto& m : biosrc->GetOrg().GetOrgname().GetMod()) {
+            for (const auto& m : biosrc->GetOrg().GetOrgname().GetMod()) {
                 if (m->IsSetSubtype() && m->GetSubtype() == COrgMod::eSubtype_culture_collection) {
                     if (found) {
                         m_Objs["[n] organism[s] [has] multiple culture-collection qualifiers"].Add(*context.BiosourceObjRef(*biosrc));
@@ -699,11 +699,11 @@ DISCREPANCY_CASE(REQUIRED_STRAIN, BIOSRC, eDisc | eSubmitter | eSmart, "Bacteria
 {
     const CSeqdesc* src = context.GetBiosource();
     if (context.HasLineage(src ? &src->GetSource() : 0, "Bacteria") || context.HasLineage(src ? &src->GetSource() : 0, "Archaea")) {
-        for (auto biosrc : context.GetBiosources()) {
+        for (const CBioSource* biosrc : context.GetBiosources()) {
             if (biosrc->IsSetSubtype()) {
                 bool is_metagenomic = false;
                 bool is_env_sample = false;
-                for (auto s : biosrc->GetSubtype()) {
+                for (const auto& s : biosrc->GetSubtype()) {
                     if (s->IsSetSubtype()) {
                         if (s->GetSubtype() == CSubSource::eSubtype_environmental_sample) {
                             is_env_sample = true;
@@ -725,7 +725,7 @@ DISCREPANCY_CASE(REQUIRED_STRAIN, BIOSRC, eDisc | eSubmitter | eSmart, "Bacteria
             }
             if (biosrc->IsSetOrg() && biosrc->GetOrg().IsSetOrgname() && biosrc->GetOrg().GetOrgname().IsSetMod()) {
                 bool skip = false;
-                for (auto& m : biosrc->GetOrg().GetOrgname().GetMod()) {
+                for (const auto& m : biosrc->GetOrg().GetOrgname().GetMod()) {
                     if (m->IsSetSubtype() && m->GetSubtype() == COrgMod::eSubtype_strain) {
                         skip = true;
                         break;
@@ -771,10 +771,10 @@ static bool MatchExceptSpaceColon(const string& a, const string& b)
 
 DISCREPANCY_CASE(STRAIN_CULTURE_COLLECTION_MISMATCH, BIOSRC, eOncaller | eSmart, "Strain and culture-collection values conflict")
 {
-    for (auto biosrc : context.GetBiosources()) {
+    for (const CBioSource* biosrc : context.GetBiosources()) {
         if (biosrc->IsSetOrg() && biosrc->GetOrg().IsSetOrgname() && biosrc->GetOrg().GetOrgname().IsSetMod()) {
             vector<const COrgMod*> OrgMods;
-            for (auto& m : biosrc->GetOrg().GetOrgname().GetMod()) {
+            for (const auto& m : biosrc->GetOrg().GetOrgname().GetMod()) {
                 OrgMods.push_back(&*m);
             }
             bool match = false;
@@ -815,7 +815,7 @@ DISCREPANCY_SUMMARIZE(STRAIN_CULTURE_COLLECTION_MISMATCH)
 
 DISCREPANCY_CASE(SP_NOT_UNCULTURED, BIOSRC, eOncaller, "Organism ending in sp. needs tax consult")
 {
-    for (auto biosrc : context.GetBiosources()) {
+    for (const CBioSource* biosrc : context.GetBiosources()) {
         if (biosrc->IsSetOrg() && biosrc->GetOrg().CanGetTaxname()) {
             const string& s = biosrc->GetOrg().GetTaxname();
             if (s.length() > 4 && s.substr(s.length() - 4) == " sp." && s.substr(0, 11) != "uncultured ") {
@@ -840,7 +840,7 @@ DISCREPANCY_CASE(FIND_STRAND_TRNAS, SEQUENCE, eDisc, "Find tRNAs on the same str
     if (biosrc && biosrc->GetSource().IsSetGenome() && (biosrc->GetSource().GetGenome() == CBioSource::eGenome_mitochondrion || biosrc->GetSource().GetGenome() == CBioSource::eGenome_chloroplast || biosrc->GetSource().GetGenome() == CBioSource::eGenome_plastid)) {
         bool strand_plus = false;
         bool strand_minus = false;
-        for (auto& feat : context.FeatTRNAs()) {
+        for (const auto& feat : context.FeatTRNAs()) {
             if (feat->GetLocation().GetStrand() == eNa_strand_minus) {
                 strand_minus = true;
             }
@@ -851,7 +851,7 @@ DISCREPANCY_CASE(FIND_STRAND_TRNAS, SEQUENCE, eDisc, "Find tRNAs on the same str
                 return;
             }
         }
-        for (auto& feat : context.FeatTRNAs()) {
+        for (const auto& feat : context.FeatTRNAs()) {
             m_Objs[strand_plus ? "[n] tRNA[s] on plus strand" : "[n] tRNA[s] on minus strand"].Add(*context.SeqFeatObjRef(*feat));
         }
     }
@@ -869,14 +869,14 @@ DISCREPANCY_SUMMARIZE(FIND_STRAND_TRNAS)
 bool HasAmplifiedWithSpeciesSpecificPrimerNote(const CBioSource& src)
 {
     if (src.IsSetSubtype()) {
-        for (auto& s : src.GetSubtype()) {
+        for (const auto& s : src.GetSubtype()) {
             if (s->IsSetSubtype() && s->GetSubtype() == CSubSource::eSubtype_other && s->IsSetName() && NStr::Equal(s->GetName(), kAmplifiedWithSpeciesSpecificPrimers)) {
                 return true;
             }
         }
     }
     if (src.IsSetOrg() && src.GetOrg().IsSetOrgname() && src.GetOrg().GetOrgname().IsSetMod()) {
-        for (auto& m : src.GetOrg().GetOrgname().GetMod()) {
+        for (const auto& m : src.GetOrg().GetOrgname().GetMod()) {
             if (m->IsSetSubtype() && m->GetSubtype() == CSubSource::eSubtype_other && m->IsSetSubname() && NStr::Equal(m->GetSubname(), kAmplifiedWithSpeciesSpecificPrimers)) {
                 return true;
             }
@@ -895,7 +895,7 @@ static bool IsMissingRequiredClone(const CBioSource& biosource)
     bool needs_clone = biosource.IsSetOrg() && biosource.GetOrg().IsSetTaxname() && NStr::StartsWith(biosource.GetOrg().GetTaxname(), "uncultured", NStr::eNocase);
     bool has_clone = false;
     if (biosource.IsSetSubtype()) {
-        for (auto& subtype_it : biosource.GetSubtype()) {
+        for (const auto& subtype_it : biosource.GetSubtype()) {
             if (subtype_it->IsSetSubtype()) {
                 CSubSource::TSubtype subtype = subtype_it->GetSubtype();
                 if (subtype == CSubSource::eSubtype_environmental_sample) {
@@ -911,7 +911,7 @@ static bool IsMissingRequiredClone(const CBioSource& biosource)
         // look for gel band isolate
         bool has_gel_band_isolate = false;
         if (biosource.IsSetOrg() && biosource.GetOrg().IsSetOrgname() && biosource.GetOrg().GetOrgname().IsSetMod()) {
-            for (auto& mod_it : biosource.GetOrg().GetOrgname().GetMod()) {
+            for (const auto& mod_it : biosource.GetOrg().GetOrgname().GetMod()) {
                 if (mod_it->IsSetSubtype() && mod_it->GetSubtype() == COrgMod::eSubtype_isolate) {
                     if (mod_it->IsSetSubname() && NStr::FindNoCase(mod_it->GetSubname(), "gel band") != NPOS) {
                         has_gel_band_isolate = true;
@@ -930,7 +930,7 @@ static bool IsMissingRequiredClone(const CBioSource& biosource)
 
 DISCREPANCY_CASE(REQUIRED_CLONE, BIOSRC, eOncaller, "Uncultured or environmental sources should have clone")
 {
-    for (auto biosrc : context.GetBiosources()) {
+    for (const CBioSource* biosrc : context.GetBiosources()) {
         if (IsMissingRequiredClone(*biosrc)) {
             m_Objs["[n] biosource[s] [is] missing required clone value"].Add(*context.BiosourceObjRef(*biosrc));
         }
@@ -948,9 +948,9 @@ DISCREPANCY_SUMMARIZE(REQUIRED_CLONE)
 
 DISCREPANCY_CASE(STRAIN_TAXNAME_MISMATCH, BIOSRC, eDisc | eOncaller, "BioSources with the same strain should have the same taxname")
 {
-    for (auto biosrc : context.GetBiosources()) {
+    for (const CBioSource* biosrc : context.GetBiosources()) {
         if (biosrc->IsSetOrg() && biosrc->GetOrg().IsSetOrgname() && biosrc->GetOrg().GetOrgname().IsSetMod()) {
-            for (auto& om : biosrc->GetOrg().GetOrgname().GetMod()) {
+            for (const auto& om : biosrc->GetOrg().GetOrgname().GetMod()) {
                 if (om->IsSetSubtype() && om->GetSubtype() == COrgMod::eSubtype_strain && om->IsSetSubname()) {
                     const string strain = om->GetSubname();
                     if (!strain.empty()) {
@@ -986,9 +986,9 @@ DISCREPANCY_SUMMARIZE(STRAIN_TAXNAME_MISMATCH)
 
 DISCREPANCY_CASE(SPECVOUCHER_TAXNAME_MISMATCH, BIOSRC, eOncaller | eSmart, "BioSources with the same specimen voucher should have the same taxname")
 {
-    for (auto biosrc : context.GetBiosources()) {
+    for (const CBioSource* biosrc : context.GetBiosources()) {
         if (biosrc->IsSetOrg() && biosrc->GetOrg().IsSetOrgname() && biosrc->GetOrg().GetOrgname().IsSetMod()) {
-            for (auto& om : biosrc->GetOrg().GetOrgname().GetMod()) {
+            for (const auto& om : biosrc->GetOrg().GetOrgname().GetMod()) {
                 if (om->IsSetSubtype() && om->GetSubtype() == COrgMod::eSubtype_specimen_voucher && om->IsSetSubname()) {
                     const string strain = om->GetSubname();
                     if (!strain.empty()) {
@@ -1023,9 +1023,9 @@ DISCREPANCY_SUMMARIZE(SPECVOUCHER_TAXNAME_MISMATCH)
 
 DISCREPANCY_CASE(CULTURE_TAXNAME_MISMATCH, BIOSRC, eOncaller, "Test BioSources with the same culture collection but different taxname")
 {
-    for (auto biosrc : context.GetBiosources()) {
+    for (const CBioSource* biosrc : context.GetBiosources()) {
         if (biosrc->IsSetOrg() && biosrc->GetOrg().IsSetOrgname() && biosrc->GetOrg().GetOrgname().IsSetMod()) {
-            for (auto& om : biosrc->GetOrg().GetOrgname().GetMod()) {
+            for (const auto& om : biosrc->GetOrg().GetOrgname().GetMod()) {
                 if (om->IsSetSubtype() && om->GetSubtype() == COrgMod::eSubtype_culture_collection && om->IsSetSubname()) {
                     const string strain = om->GetSubname();
                     if (!strain.empty()) {
@@ -1060,9 +1060,9 @@ DISCREPANCY_SUMMARIZE(CULTURE_TAXNAME_MISMATCH)
 
 DISCREPANCY_CASE(BIOMATERIAL_TAXNAME_MISMATCH, BIOSRC, eOncaller | eSmart, "Test BioSources with the same biomaterial but different taxname")
 {
-    for (auto biosrc : context.GetBiosources()) {
+    for (const CBioSource* biosrc : context.GetBiosources()) {
         if (biosrc->IsSetOrg() && biosrc->GetOrg().IsSetOrgname() && biosrc->GetOrg().GetOrgname().IsSetMod()) {
-            for (auto& om : biosrc->GetOrg().GetOrgname().GetMod()) {
+            for (const auto& om : biosrc->GetOrg().GetOrgname().GetMod()) {
                 if (om->IsSetSubtype() && om->GetSubtype() == COrgMod::eSubtype_bio_material && om->IsSetSubname()) {
                     const string strain = om->GetSubname();
                     if (!strain.empty()) {
@@ -1115,7 +1115,7 @@ DISCREPANCY_CASE(ORGANELLE_ITS, SEQUENCE, eOncaller, "Test Bioseqs for suspect r
                 || genome == CBioSource::eGenome_chromoplast || genome == CBioSource::eGenome_cyanelle || genome == CBioSource::eGenome_hydrogenosome
                 || genome == CBioSource::eGenome_kinetoplast || genome == CBioSource::eGenome_leucoplast || genome == CBioSource::eGenome_mitochondrion
                 || genome == CBioSource::eGenome_plastid || genome == CBioSource::eGenome_proplastid) {
-            for (auto& feat : context.GetFeat()) {
+            for (const CSeq_feat& feat : context.GetFeat()) {
                 if (feat.IsSetData() && feat.GetData().IsRna()) {
                     const CRNA_ref& rna = feat.GetData().GetRna();
                     if (rna.IsSetType() && (rna.GetType() == CRNA_ref::eType_rRNA || rna.GetType() == CRNA_ref::eType_miscRNA)) {
@@ -1123,7 +1123,7 @@ DISCREPANCY_CASE(ORGANELLE_ITS, SEQUENCE, eOncaller, "Test Bioseqs for suspect r
                         // The Owls Are Not What They Seem!
                         // if (NStr::FindNoCase(suspectable_products, product) != nullptr) {
                         if (!product.empty()) {
-                            for (auto& pattern : suspectable_products) {
+                            for (const string& pattern : suspectable_products) {
                                 if (NStr::FindNoCase(product, pattern) != NPOS) {
                                     m_Objs[msg].Add(*context.BioseqObjRef());
                                     return;
@@ -1135,7 +1135,7 @@ DISCREPANCY_CASE(ORGANELLE_ITS, SEQUENCE, eOncaller, "Test Bioseqs for suspect r
                             // The Owls Are Not What They Seem!
                             // if (!comment.empty() && NStr::FindNoCase(suspectable_products, comment) != nullptr) {
                             if (!comment.empty()) {
-                                for (auto& pattern : suspectable_products) {
+                                for (const string& pattern : suspectable_products) {
                                     if (NStr::FindNoCase(comment, pattern) != NPOS) {
                                         m_Objs[msg].Add(*context.BioseqObjRef());
                                         return;
@@ -1396,12 +1396,12 @@ DISCREPANCY_SUMMARIZE(INCONSISTENT_BIOSOURCE)
 {
     auto& M = m_Objs.GetMap();
     string subtype;
-    for (auto a = M.begin(); a != M.end(); ++a) {
+    for (auto a = M.cbegin(); a != M.cend(); ++a) {
         stringstream ss(a->first);
         CBioSource bs_a;
         ss >> MSerial_AsnBinary >> bs_a;
         auto b = a;
-        for (++b; b != M.end(); ++b) {
+        for (++b; b != M.cend(); ++b) {
             stringstream ss(b->first);
             CBioSource bs_b;
             ss >> MSerial_AsnBinary >> bs_b;
@@ -1436,7 +1436,7 @@ DISCREPANCY_SUMMARIZE(INCONSISTENT_BIOSOURCE)
 
 DISCREPANCY_CASE(TAX_LOOKUP_MISMATCH, BIOSRC, eDisc, "Find Tax Lookup Mismatches")
 {
-    for (auto biosrc : context.GetBiosources()) {
+    for (const CBioSource* biosrc : context.GetBiosources()) {
         if (biosrc->IsSetOrg()) {
             stringstream ss;
             ss << MSerial_AsnBinary << biosrc->GetOrg();
@@ -1449,7 +1449,7 @@ DISCREPANCY_CASE(TAX_LOOKUP_MISMATCH, BIOSRC, eDisc, "Find Tax Lookup Mismatches
 static const CDbtag* GetTaxonTag(const COrg_ref& org)
 {
     if (org.IsSetDb()) {
-        for (auto& db : org.GetDb()) {
+        for (const auto& db : org.GetDb()) {
             if (db->IsSetDb() && NStr::EqualNocase(db->GetDb(), "taxon")) {
                 return db;
             }
@@ -1496,8 +1496,8 @@ DISCREPANCY_SUMMARIZE(TAX_LOOKUP_MISMATCH)
         }
         CRef<CTaxon3_reply> reply = GetOrgRefs(org_refs);
         if (reply) {
-            auto& replies = reply->GetReply();
-            auto rit = replies.begin();
+            const auto& replies = reply->GetReply();
+            auto rit = replies.cbegin();
             for (auto& it : m_Objs.GetMap()) {
                 CRef<COrg_ref> oref(new COrg_ref());
                 stringstream ss(it.first);
@@ -1517,7 +1517,7 @@ DISCREPANCY_SUMMARIZE(TAX_LOOKUP_MISMATCH)
 
 DISCREPANCY_CASE(TAX_LOOKUP_MISSING, BIOSRC, eDisc, "Find Missing Tax Lookup")
 {
-    for (auto biosrc : context.GetBiosources()) {
+    for (const CBioSource* biosrc : context.GetBiosources()) {
         if (biosrc->IsSetOrg()) {
             stringstream ss;
             ss << MSerial_AsnBinary << biosrc->GetOrg();
@@ -1540,8 +1540,8 @@ DISCREPANCY_SUMMARIZE(TAX_LOOKUP_MISSING)
         }
         CRef<CTaxon3_reply> reply = GetOrgRefs(org_refs);
         if (reply) {
-            auto& replies = reply->GetReply();
-            auto rit = replies.begin();
+            const auto& replies = reply->GetReply();
+            auto rit = replies.cbegin();
             for (auto& it : m_Objs.GetMap()) {
                 if (!(*rit)->IsData() || (*rit)->IsError()) {
                     rep["[n] tax name[s] [is] missing in taxonomy lookup"].Add(it.second->GetObjects());
@@ -1558,11 +1558,11 @@ DISCREPANCY_SUMMARIZE(TAX_LOOKUP_MISSING)
 
 DISCREPANCY_CASE(UNNECESSARY_ENVIRONMENTAL, BIOSRC, eOncaller, "Unnecessary environmental qualifier present")
 {
-    for (auto biosrc : context.GetBiosources()) {
+    for (const CBioSource* biosrc : context.GetBiosources()) {
         if (biosrc->IsSetSubtype()) {
             bool skip = false;
             bool found = false;
-            for (auto& subtype : biosrc->GetSubtype()) {
+            for (const auto& subtype : biosrc->GetSubtype()) {
                 if (subtype->IsSetSubtype()) {
                     CSubSource::TSubtype st = subtype->GetSubtype();
                     if (st == CSubSource::eSubtype_metagenomic) {
@@ -1588,7 +1588,7 @@ DISCREPANCY_CASE(UNNECESSARY_ENVIRONMENTAL, BIOSRC, eOncaller, "Unnecessary envi
                         }
                     }
                     if (biosrc->GetOrg().IsSetOrgname() && biosrc->GetOrg().GetOrgname().IsSetMod()) {
-                        for (auto& it : biosrc->GetOrg().GetOrgname().GetMod()) {
+                        for (const auto& it : biosrc->GetOrg().GetOrgname().GetMod()) {
                             if (it->IsSetSubtype() && it->GetSubtype() == COrgMod::eSubtype_other && it->IsSetSubname() && NStr::FindNoCase(it->GetSubname(), "amplified with species-specific primers") != NPOS) {
                                 skip = true;
                                 break;
@@ -1615,9 +1615,9 @@ DISCREPANCY_SUMMARIZE(UNNECESSARY_ENVIRONMENTAL)
 
 DISCREPANCY_CASE(END_COLON_IN_COUNTRY, BIOSRC, eOncaller, "Country name end with colon")
 {
-    for (auto biosrc : context.GetBiosources()) {
+    for (const CBioSource* biosrc : context.GetBiosources()) {
         if (biosrc->IsSetSubtype()) {
-            for (auto& subtype : biosrc->GetSubtype()) {
+            for (const auto& subtype : biosrc->GetSubtype()) {
                 if (subtype->IsSetSubtype() && subtype->GetSubtype() == CSubSource::eSubtype_country) {
                     const string& s = subtype->GetName();
                     if (s.length() && s[s.length() - 1] == ':') {
@@ -1642,7 +1642,7 @@ static bool RemoveCountryColon(CBioSource& src)
         return false;
     }
     bool fixed = false;
-    for (auto subtype : src.GetSubtype()) {
+    for (const auto& subtype : src.GetSubtype()) {
         if (subtype->IsSetSubtype() && subtype->GetSubtype() == CSubSource::eSubtype_country) {
             CSubSource& ss = const_cast<CSubSource&>(*subtype);
             string& s = ss.SetName();
@@ -1680,9 +1680,9 @@ DISCREPANCY_AUTOFIX(END_COLON_IN_COUNTRY)
 
 DISCREPANCY_CASE(COUNTRY_COLON, BIOSRC, eOncaller, "Country description should only have 1 colon")
 {
-    for (auto biosrc : context.GetBiosources()) {
+    for (const CBioSource* biosrc : context.GetBiosources()) {
         if (biosrc->IsSetSubtype()) {
-            for (auto& subtype : biosrc->GetSubtype()) {
+            for (const auto& subtype : biosrc->GetSubtype()) {
                 if (subtype->IsSetSubtype() && subtype->GetSubtype() == CSubSource::eSubtype_country) {
                     const string& s = subtype->GetName();
                     int count = 0;
@@ -1714,7 +1714,7 @@ static bool ChangeCountryColonToComma(CBioSource& src)
         return false;
     }
     bool fixed = false;
-    for (auto subtype : src.GetSubtype()) {
+    for (const auto& subtype : src.GetSubtype()) {
         if (subtype->IsSetSubtype() && subtype->GetSubtype() == CSubSource::eSubtype_country) {
             CSubSource& ss = const_cast<CSubSource&>(*subtype);
             string& s = ss.SetName();
@@ -1758,9 +1758,9 @@ DISCREPANCY_AUTOFIX(COUNTRY_COLON)
 
 DISCREPANCY_CASE(HUMAN_HOST, BIOSRC, eDisc | eOncaller, "\'Human\' in host should be \'Homo sapiens\'")
 {
-    for (auto biosrc : context.GetBiosources()) {
+    for (const CBioSource* biosrc : context.GetBiosources()) {
         if (biosrc->IsSetOrg() && biosrc->GetOrg().CanGetOrgname() && biosrc->GetOrg().GetOrgname().CanGetMod()) {
-            for (auto& it : biosrc->GetOrg().GetOrgname().GetMod()) {
+            for (const auto& it : biosrc->GetOrg().GetOrgname().GetMod()) {
                 if (it->CanGetSubtype() && it->GetSubtype() == COrgMod::eSubtype_nat_host && NStr::FindNoCase(it->GetSubname(), "human") != NPOS) {
                     m_Objs["[n] organism[s] [has] \'human\' host qualifiers"].Add(*context.BiosourceObjRef(*biosrc, true));
                 }
@@ -1782,7 +1782,7 @@ static bool FixHumanHost(CBioSource& src)
         return false;
     }
     bool fixed = false;
-    for (auto it : src.GetOrg().GetOrgname().GetMod()) {
+    for (const auto& it : src.GetOrg().GetOrgname().GetMod()) {
         if (it->CanGetSubtype() && it->GetSubtype() == COrgMod::eSubtype_nat_host && NStr::FindNoCase(it->GetSubname(), "human") != NPOS) {
             COrgMod& om = const_cast<COrgMod&>(*it);
             NStr::ReplaceInPlace(om.SetSubname(), "human", "Homo sapiens");
@@ -1817,19 +1817,19 @@ DISCREPANCY_AUTOFIX(HUMAN_HOST)
 
 DISCREPANCY_CASE(CHECK_AUTHORITY, BIOSRC, eDisc | eOncaller, "Authority and Taxname should match first two words")
 {
-    for (auto biosrc : context.GetBiosources()) {
+    for (const CBioSource* biosrc : context.GetBiosources()) {
         if (biosrc->IsSetOrg() && biosrc->GetOrg().CanGetOrgname() && biosrc->GetOrg().GetOrgname().CanGetMod() && biosrc->GetOrg().CanGetTaxname() && biosrc->GetOrg().GetTaxname().length()) {
             string tax1, tax2;
-            for (auto& it : biosrc->GetOrg().GetOrgname().GetMod()) {
+            for (const auto& it : biosrc->GetOrg().GetOrgname().GetMod()) {
                 if (it->CanGetSubtype() && it->GetSubtype() == COrgMod::eSubtype_authority) {
                     if (tax1.empty()) {
                         list<CTempString> tmp;
                         NStr::Split(biosrc->GetOrg().GetTaxname(), " ", tmp, NStr::fSplit_Tokenize);
-                        list<CTempString>::iterator p = tmp.begin();
-                        if (p != tmp.end()) {
+                        list<CTempString>::const_iterator p = tmp.cbegin();
+                        if (p != tmp.cend()) {
                             tax1 = *p;
                             p++;
-                            if (p != tmp.end()) {
+                            if (p != tmp.cend()) {
                                 tax2 = *p;
                             }
                         }
@@ -1837,11 +1837,11 @@ DISCREPANCY_CASE(CHECK_AUTHORITY, BIOSRC, eDisc | eOncaller, "Authority and Taxn
                     string aut1, aut2;
                     list<CTempString> tmp;
                     NStr::Split(it->GetSubname(), " ", tmp, NStr::fSplit_Tokenize);
-                    list<CTempString>::iterator p = tmp.begin();
-                    if (p != tmp.end()) {
+                    list<CTempString>::const_iterator p = tmp.cbegin();
+                    if (p != tmp.cend()) {
                         aut1 = *p;
                         p++;
-                        if (p != tmp.end()) {
+                        if (p != tmp.cend()) {
                             aut2 = *p;
                         }
                     }
@@ -1877,7 +1877,7 @@ static const size_t srcqual_keywords_sz = sizeof(srcqual_keywords) / sizeof(srcq
 static string GetSrcQual(const CBioSource& bs, int qual)
 {
     if (bs.GetOrg().CanGetOrgname() && bs.GetOrg().GetOrgname().CanGetMod()) {
-        for (auto& it : bs.GetOrg().GetOrgname().GetMod()) {
+        for (const auto& it : bs.GetOrg().GetOrgname().GetMod()) {
             if (it->CanGetSubtype() && it->GetSubtype() == qual) {
                 return it->GetSubname();
             }
@@ -1889,7 +1889,7 @@ static string GetSrcQual(const CBioSource& bs, int qual)
 
 DISCREPANCY_CASE(TRINOMIAL_SHOULD_HAVE_QUALIFIER, BIOSRC, eDisc | eOncaller | eSmart, "Trinomial sources should have corresponding qualifier")
 {
-    for (auto biosrc : context.GetBiosources()) {
+    for (const CBioSource* biosrc : context.GetBiosources()) {
         if (biosrc->IsSetOrg() && biosrc->GetOrg().CanGetTaxname() && biosrc->GetOrg().GetTaxname().length() && NStr::FindNoCase(biosrc->GetOrg().GetTaxname(), " x ") == NPOS && !CDiscrepancyContext::HasLineage(*biosrc, context.GetLineage(), "Viruses")) {
             const string& taxname = biosrc->GetOrg().GetTaxname();
             for (size_t i = 0; i < srcqual_keywords_sz; i++) {
@@ -1925,11 +1925,11 @@ DISCREPANCY_SUMMARIZE(TRINOMIAL_SHOULD_HAVE_QUALIFIER)
 
 DISCREPANCY_CASE(AMPLIFIED_PRIMERS_NO_ENVIRONMENTAL_SAMPLE, BIOSRC, eOncaller, "Species-specific primers, no environmental sample")
 {
-    for (auto biosrc : context.GetBiosources()) {
+    for (const CBioSource* biosrc : context.GetBiosources()) {
         if (!biosrc->HasSubtype(CSubSource::eSubtype_environmental_sample)) {
             bool has_primer_note = false;
             if (biosrc->CanGetSubtype()) {
-                for (auto& it : biosrc->GetSubtype()) {
+                for (const auto& it : biosrc->GetSubtype()) {
                     if (it->GetSubtype() == CSubSource::eSubtype_other && NStr::FindNoCase(it->GetName(), "amplified with species-specific primers") != NPOS) {
                         has_primer_note = true;
                         break;
@@ -1937,7 +1937,7 @@ DISCREPANCY_CASE(AMPLIFIED_PRIMERS_NO_ENVIRONMENTAL_SAMPLE, BIOSRC, eOncaller, "
                 }
             }
             if (!has_primer_note && biosrc->IsSetOrg() && biosrc->GetOrg().CanGetOrgname() && biosrc->GetOrg().GetOrgname().CanGetMod()) {
-                for (auto& it : biosrc->GetOrg().GetOrgname().GetMod()) {
+                for (const auto& it : biosrc->GetOrg().GetOrgname().GetMod()) {
                     if (it->CanGetSubtype() && it->GetSubtype() == COrgMod::eSubtype_other && it->IsSetSubname() && NStr::FindNoCase(it->GetSubname(), "amplified with species-specific primers") != NPOS) {
                         has_primer_note = true;
                         break;
@@ -1965,9 +1965,9 @@ static bool SetEnvSampleFixAmplifiedPrimers(CBioSource& src)
         src.SetSubtype().push_back(CRef<CSubSource>(new CSubSource(CSubSource::eSubtype_environmental_sample, " ")));
         change = true;
     }
-    for (auto s : src.SetSubtype()) {
+    for (auto& s : src.SetSubtype()) {
         if (s->GetSubtype() == CSubSource::eSubtype_other && s->IsSetName()) {
-            string orig = s->GetName();
+            const string orig = s->GetName();
             NStr::ReplaceInPlace(s->SetName(), "[amplified with species-specific primers", "amplified with species-specific primers");
             NStr::ReplaceInPlace(s->SetName(), "amplified with species-specific primers]", "amplified with species-specific primers");
             if (!NStr::Equal(orig, s->GetName())) {
@@ -2005,10 +2005,10 @@ DISCREPANCY_AUTOFIX(AMPLIFIED_PRIMERS_NO_ENVIRONMENTAL_SAMPLE)
 
 DISCREPANCY_CASE(MISSING_PRIMER, BIOSRC, eOncaller, "Missing values in primer set")
 {
-    for (auto biosrc : context.GetBiosources()) {
+    for (const CBioSource* biosrc : context.GetBiosources()) {
         if (biosrc->CanGetPcr_primers() && biosrc->GetPcr_primers().CanGet()) {
             bool report = false;
-            for (auto& pr : biosrc->GetPcr_primers().Get()) {
+            for (const auto& pr : biosrc->GetPcr_primers().Get()) {
                 if (pr->CanGetForward() != pr->CanGetReverse()) {
                     report = true;
                     break;
@@ -2016,9 +2016,9 @@ DISCREPANCY_CASE(MISSING_PRIMER, BIOSRC, eOncaller, "Missing values in primer se
                 if (pr->CanGetForward()) {
                     const CPCRPrimerSet& fwdset = pr->GetForward();
                     const CPCRPrimerSet& revset = pr->GetReverse();
-                    CPCRPrimerSet::Tdata::const_iterator fwd = fwdset.Get().begin();
-                    CPCRPrimerSet::Tdata::const_iterator rev = revset.Get().begin();
-                    while (fwd != fwdset.Get().end() && rev != revset.Get().end()) {
+                    CPCRPrimerSet::Tdata::const_iterator fwd = fwdset.Get().cbegin();
+                    CPCRPrimerSet::Tdata::const_iterator rev = revset.Get().cbegin();
+                    while (fwd != fwdset.Get().cend() && rev != revset.Get().cend()) {
                         if (((*fwd)->CanGetName() && !(*fwd)->GetName().Get().empty()) != ((*rev)->CanGetName() && !(*rev)->GetName().Get().empty()) || ((*fwd)->CanGetSeq() && !(*fwd)->GetSeq().Get().empty()) != ((*rev)->CanGetSeq() && !(*rev)->GetSeq().Get().empty())) {
                             report = true;
                             break;
@@ -2051,25 +2051,25 @@ static bool EqualPrimerSets(const CPCRPrimerSet::Tdata& a, const CPCRPrimerSet::
 {
     size_t count_a = 0;
     size_t count_b = 0;
-    for (CPCRPrimerSet::Tdata::const_iterator it = a.begin(); it != a.end(); it++) {
+    for (const auto& it : a) {
         count_a++;
     }
-    for (CPCRPrimerSet::Tdata::const_iterator jt = b.begin(); jt != b.end(); jt++) {
+    for (const auto& jt : b) {
         count_b++;
     }
     if (count_a != count_b) {
         return false;
     }
-    for (CPCRPrimerSet::Tdata::const_iterator it = a.begin(); it != a.end(); it++) {
-        CPCRPrimerSet::Tdata::const_iterator jt = b.begin();
-        for (; jt != b.end(); jt++) {
+    for (CPCRPrimerSet::Tdata::const_iterator it = a.cbegin(); it != a.cend(); it++) {
+        CPCRPrimerSet::Tdata::const_iterator jt = b.cbegin();
+        for (; jt != b.cend(); jt++) {
             if ((*it)->CanGetName() == (*jt)->CanGetName() && (*it)->CanGetSeq() == (*jt)->CanGetSeq()
                     && (!(*it)->CanGetName() || (*it)->GetName().Get() == (*jt)->GetName().Get())
                     && (!(*it)->CanGetSeq() || (*it)->GetSeq().Get() == (*jt)->GetSeq().Get())) {
                 break;
             }
         }
-        if (jt == b.end()) {
+        if (jt == b.cend()) {
             return false;
         }
     }
@@ -2087,13 +2087,13 @@ static bool inline FindDuplicatePrimers(const CPCRReaction& a, const CPCRReactio
 
 DISCREPANCY_CASE(DUPLICATE_PRIMER_SET, BIOSRC, eOncaller, "Duplicate PCR primer pair")
 {
-    for (auto biosrc : context.GetBiosources()) {
+    for (const CBioSource* biosrc : context.GetBiosources()) {
         if (biosrc->CanGetPcr_primers() && biosrc->GetPcr_primers().CanGet()) {
             bool done = false;
             const CPCRReactionSet::Tdata data = biosrc->GetPcr_primers().Get();
-            for (CPCRReactionSet::Tdata::const_iterator it = data.begin(); !done && it != data.end(); it++) {
+            for (CPCRReactionSet::Tdata::const_iterator it = data.cbegin(); !done && it != data.cend(); it++) {
                 CPCRReactionSet::Tdata::const_iterator jt = it;
-                for (jt++; !done && jt != data.end(); jt++) {
+                for (jt++; !done && jt != data.cend(); jt++) {
                     if (FindDuplicatePrimers(**it, **jt)) {
                         m_Objs["[n] BioSource[s] [has] duplicate primer pairs."].Add(*context.BiosourceObjRef(*biosrc));
                         done = true;
@@ -2116,9 +2116,9 @@ DISCREPANCY_SUMMARIZE(DUPLICATE_PRIMER_SET)
 
 DISCREPANCY_CASE(METAGENOMIC, BIOSRC, eDisc | eOncaller | eSmart, "Source has metagenomic qualifier")
 {
-    for (auto biosrc : context.GetBiosources()) {
+    for (const CBioSource* biosrc : context.GetBiosources()) {
         if (biosrc->CanGetSubtype()) {
-            for (auto& it : biosrc->GetSubtype()) {
+            for (const auto& it : biosrc->GetSubtype()) {
                 if (it->GetSubtype() == CSubSource::eSubtype_metagenomic) {
                     m_Objs["[n] biosource[s] [has] metagenomic qualifier"].Add(*context.BiosourceObjRef(*biosrc));
                     break;
@@ -2139,9 +2139,9 @@ DISCREPANCY_SUMMARIZE(METAGENOMIC)
 
 DISCREPANCY_CASE(METAGENOME_SOURCE, BIOSRC, eDisc | eOncaller | eSmart, "Source has metagenome_source qualifier")
 {
-    for (auto biosrc : context.GetBiosources()) {
+    for (const CBioSource* biosrc : context.GetBiosources()) {
         if (biosrc->IsSetOrg() && biosrc->GetOrg().CanGetOrgname() && biosrc->GetOrg().GetOrgname().CanGetMod() && biosrc->GetOrg().IsSetTaxname() && !biosrc->GetOrg().GetTaxname().empty()) {
-            for (auto& it : biosrc->GetOrg().GetOrgname().GetMod()) {
+            for (const auto& it : biosrc->GetOrg().GetOrgname().GetMod()) {
                 if (it->CanGetSubtype() && it->GetSubtype() == COrgMod::eSubtype_metagenome_source) {
                     m_Objs["[n] biosource[s] [has] metagenome_source qualifier"].Add(*context.BiosourceObjRef(*biosrc));
                     break;
@@ -2179,12 +2179,12 @@ static const char* kDupSrc = "[n] source[s] [has] two or more qualifiers with th
 
 DISCREPANCY_CASE(DUP_SRC_QUAL, BIOSRC, eDisc | eOncaller | eSmart, "Each qualifier on a source should have different value")
 {
-    for (auto biosrc : context.GetBiosources()) {
+    for (const CBioSource* biosrc : context.GetBiosources()) {
         map<string, vector<string> > Map;
         string collected_by;
         string identified_by;
         if (biosrc->CanGetSubtype()) {
-            for (auto& it : biosrc->GetSubtype()) {
+            for (const auto& it : biosrc->GetSubtype()) {
                 if (it->CanGetName()) {
                     const string& s = it->GetName();
                     if (it->CanGetSubtype()) {
@@ -2202,7 +2202,7 @@ DISCREPANCY_CASE(DUP_SRC_QUAL, BIOSRC, eDisc | eOncaller | eSmart, "Each qualifi
             }
         }
         if (biosrc->IsSetOrg() && biosrc->GetOrg().CanGetOrgname() && biosrc->GetOrg().GetOrgname().CanGetMod()) {
-            for (auto& it : biosrc->GetOrg().GetOrgname().GetMod()) {
+            for (const auto& it : biosrc->GetOrg().GetOrgname().GetMod()) {
                 if (it->IsSetSubname()) {
                     const string& s = it->GetSubname();
                     if (it->CanGetSubtype()) {
@@ -2226,9 +2226,9 @@ DISCREPANCY_CASE(DUP_SRC_QUAL, BIOSRC, eDisc | eOncaller | eSmart, "Each qualifi
             }
         }
         if (biosrc->CanGetPcr_primers()) {
-            for (auto& it : biosrc->GetPcr_primers().Get()) {
+            for (const auto& it : biosrc->GetPcr_primers().Get()) {
                 if (it->CanGetForward()) {
-                    for (auto& pr : it->GetForward().Get()) {
+                    for (const auto& pr : it->GetForward().Get()) {
                         if (pr->CanGetName()) {
                             Map[pr->GetName()].push_back("fwd-primer-name");
                         }
@@ -2238,7 +2238,7 @@ DISCREPANCY_CASE(DUP_SRC_QUAL, BIOSRC, eDisc | eOncaller | eSmart, "Each qualifi
                     }
                 }
                 if (it->CanGetReverse()) {
-                    for (auto& pr : it->GetReverse().Get()) {
+                    for (const auto& pr : it->GetReverse().Get()) {
                         if (pr->CanGetName()) {
                             Map[pr->GetName()].push_back("rev-primer-name");
                         }
@@ -2250,7 +2250,7 @@ DISCREPANCY_CASE(DUP_SRC_QUAL, BIOSRC, eDisc | eOncaller | eSmart, "Each qualifi
             }
         }
         bool bad = false;
-        for (auto& it : Map) {
+        for (const auto& it : Map) {
             if (it.second.size() > 1) {
                 if (it.second.size() == 2 && it.first == collected_by && collected_by == identified_by) {
                     continue; // there is no error if collected_by equals to identified_by
@@ -2290,7 +2290,7 @@ DISCREPANCY_CASE(UNUSUAL_ITS, SEQUENCE, eDisc | eOncaller, "Test Bioseqs for unu
     const CSeqdesc* biosrc = context.GetBiosource();
     if (context.HasLineage(biosrc ? &biosrc->GetSource() : 0, "Microsporidia")) {
         bool has_unusual = false;
-        for (auto& feat : context.GetFeat()) {
+        for (const CSeq_feat& feat : context.GetFeat()) {
             if (feat.IsSetComment() && feat.IsSetData() && feat.GetData().IsRna()) {
                 const CRNA_ref& rna = feat.GetData().GetRna();
                 if (rna.IsSetType() && rna.GetType() == CRNA_ref::eType_miscRNA) {
@@ -2320,10 +2320,10 @@ DISCREPANCY_SUMMARIZE(UNUSUAL_ITS)
 
 DISCREPANCY_CASE(SARS_QUALS, BIOSRC, eOncaller, "SARS-CoV-2 isolate must have correct format")
 {
-    for (auto biosrc : context.GetBiosources()) {
+    for (const CBioSource* biosrc : context.GetBiosources()) {
         if (biosrc->IsSetOrg() && biosrc->GetOrg().CanGetDb()) {
             bool sars = false;
-            for (auto db : biosrc->GetOrg().GetDb()) {
+            for (const auto& db : biosrc->GetOrg().GetDb()) {
                 if (db->CanGetTag() && db->GetTag().IsId() && db->GetTag().GetId() == SARS_TAX_ID && db->CanGetDb() && db->GetDb() == "taxon") {
                     sars = true;
                     break;
@@ -2333,7 +2333,7 @@ DISCREPANCY_CASE(SARS_QUALS, BIOSRC, eOncaller, "SARS-CoV-2 isolate must have co
                 string isolate;
                 bool good = true;
                 if (biosrc->IsSetOrg() && biosrc->GetOrg().IsSetOrgname() && biosrc->GetOrg().GetOrgname().IsSetMod()) {
-                    for (auto m : biosrc->GetOrg().GetOrgname().GetMod()) {
+                    for (const auto& m : biosrc->GetOrg().GetOrgname().GetMod()) {
                         if (m->IsSetSubtype() && m->GetSubtype() == COrgMod::eSubtype_isolate && m->IsSetSubname()) {
                             isolate = m->GetSubname();
                             break;
@@ -2361,7 +2361,7 @@ DISCREPANCY_CASE(SARS_QUALS, BIOSRC, eOncaller, "SARS-CoV-2 isolate must have co
                 if (good) {
                     string date, date0, date1;
                     if (biosrc->IsSetSubtype()) {
-                        for (auto it : biosrc->GetSubtype()) {
+                        for (const auto& it : biosrc->GetSubtype()) {
                             if (it->IsSetSubtype() && it->GetSubtype() == CSubSource::eSubtype_collection_date && it->IsSetName()) {
                                 date = it->GetName();
                                 break;

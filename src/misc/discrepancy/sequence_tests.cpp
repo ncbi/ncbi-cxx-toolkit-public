@@ -667,16 +667,16 @@ const string kDBLinkCollect = "DBLink Collection";
 
 string GetFieldValueAsString(const CUser_field& field)
 {
-    string value = kEmptyStr;
+    string value;
 
     if (field.GetData().IsStr()) {
         value = field.GetData().GetStr();
     } else if (field.GetData().IsStrs()) {
-        ITERATE (CUser_field::TData::TStrs, s, field.GetData().GetStrs()) {
+        for (const string& s : field.GetData().GetStrs()) {
             if (!NStr::IsBlank(value)) {
                 value += "; ";
             }
-            value += *s;
+            value += s;
         }
     }
     return value;
@@ -719,7 +719,7 @@ void AddUserObjectFieldItems
             // add missing field to all previous objects that do not have this field
             if (already_seen && !collector.Exist(field_name)) {
                 //ITERATE(TReportObjectList, ro, previously_seen[kPreviouslySeenObjects][object_name].GetObjects()) {
-                for (auto ro: previously_seen[kPreviouslySeenObjects][object_name].GetObjects()) {
+                for (auto& ro: previously_seen[kPreviouslySeenObjects][object_name].GetObjects()) {
                     string missing_label = "[n] " + object_name + "[s] [is] missing field " + field_name;
                     //CRef<CDiscrepancyObject> seq_disc_obj(dynamic_cast<CDiscrepancyObject*>(ro->GetNCPointer()));
                     //collector[field_name][missing_label].Add(*seq_disc_obj, false);

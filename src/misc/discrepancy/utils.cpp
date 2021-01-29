@@ -75,9 +75,9 @@ string GetProductName(const CSeq_feat& feat, objects::CScope& scope)
         }
     }
     else if (feat.IsSetXref()) {
-        ITERATE (CSeq_feat::TXref, it, feat.GetXref()) {
-            if ((*it)->IsSetData() && (*it)->GetData().IsProt()) {
-                return GetProductName((*it)->GetData().GetProt());
+        for (const auto& it : feat.GetXref()) {
+            if (it->IsSetData() && it->GetData().IsProt()) {
+                return GetProductName(it->GetData().GetProt());
             }
         }
     }

@@ -114,8 +114,8 @@ string GetAuthorString(const CAuth_list& auth_list)
     if (auth_list.IsSetNames()) {
         switch (auth_list.GetNames().Which()) {
             case CAuth_list::C_Names::e_Std:
-                ITERATE (CAuth_list::C_Names::TStd, it, auth_list.GetNames().GetStd()) {
-                    string a = GetAuthorString(**it);
+                for (const auto& it : auth_list.GetNames().GetStd()) {
+                    string a = GetAuthorString(*it);
                     if (!NStr::IsBlank(a)) {
                         if (!NStr::IsBlank(authors)) {
                             authors += ", ";
@@ -125,22 +125,22 @@ string GetAuthorString(const CAuth_list& auth_list)
                 }
                 break;
             case CAuth_list::C_Names::e_Ml:
-                ITERATE (CAuth_list::C_Names::TMl, it, auth_list.GetNames().GetMl()) {
-                    if (!NStr::IsBlank(*it)) {
+                for (const string& it : auth_list.GetNames().GetMl()) {
+                    if (!NStr::IsBlank(it)) {
                         if (!NStr::IsBlank(authors)) {
                             authors += ", ";
                         }
-                        authors += *it;
+                        authors += it;
                     }
                 }
                 break;
             case CAuth_list::C_Names::e_Str:
-                ITERATE (CAuth_list::C_Names::TStr, it, auth_list.GetNames().GetStr()) {
-                    if (!NStr::IsBlank(*it)) {
+                for (const string& it : auth_list.GetNames().GetStr()) {
+                    if (!NStr::IsBlank(it)) {
                         if (!NStr::IsBlank(authors)) {
                             authors += ", ";
                         }
-                        authors += *it;
+                        authors += it;
                     }
                 }
                 break;
@@ -208,8 +208,8 @@ void GetPubTitleAndAuthors(const CPubdesc& pubdesc, string& title, string& autho
     title = kEmptyStr;
     authors = kEmptyStr;
     if (pubdesc.IsSetPub()) {
-        ITERATE (CPubdesc::TPub::Tdata, it, pubdesc.GetPub().Get()) {
-            GetPubTitleAndAuthors(**it, title, authors);
+        for (const auto& it : pubdesc.GetPub().Get()) {
+            GetPubTitleAndAuthors(*it, title, authors);
             if (!NStr::IsBlank(title)) {
                 break;
             }
@@ -220,7 +220,7 @@ void GetPubTitleAndAuthors(const CPubdesc& pubdesc, string& title, string& autho
 
 DISCREPANCY_CASE(TITLE_AUTHOR_CONFLICT, DESC, eDisc | eOncaller | eSmart | eFatal, "Publications with the same titles should have the same authors")
 {
-    for (auto& desc : context.GetSeqdesc()) {
+    for (const auto& desc : context.GetSeqdesc()) {
         if (desc.IsPub()) {
             string title;
             string authors;
@@ -240,12 +240,12 @@ DISCREPANCY_SUMMARIZE(TITLE_AUTHOR_CONFLICT)
     if (m_Objs.empty()) {
         return;
     }
-    for (auto it: m_Objs[kEmptyStr].GetMap()) {
+    for (auto& it : m_Objs[kEmptyStr].GetMap()) {
         if (it.second->GetMap().size() > 1) {
             string top = "[n] articles have title [(]'" + it.first + "'[)] but do not have the same author list";
-            for (auto aa: it.second->GetMap()) {
+            for (auto& aa : it.second->GetMap()) {
                 string label = "[n] article[s] [has] title [(]'" + it.first + "'[)] and author list [(]'" + aa.first + "'";
-                for (auto obj: aa.second->GetObjects()) {
+                for (auto& obj: aa.second->GetObjects()) {
                     m_Objs[kTitleAuthorConflict][top][label].Add(*obj).Fatal();
                 }
             }
@@ -253,7 +253,7 @@ DISCREPANCY_SUMMARIZE(TITLE_AUTHOR_CONFLICT)
     }
     m_Objs.GetMap().erase(kEmptyStr);
     if (m_Objs.Exist(kTitleAuthorConflict) && m_Objs[kTitleAuthorConflict].GetMap().size() == 1) {
-        m_ReportItems = m_Objs.GetMap().begin()->second->Export(*this)->GetSubitems();
+        m_ReportItems = m_Objs.GetMap().cbegin()->second->Export(*this)->GetSubitems();
     }
     else {
         m_ReportItems = m_Objs.Export(*this)->GetSubitems();
@@ -362,7 +362,7 @@ bool HasUnpubWithoutTitle(const CPubdesc& pubdesc)
     if (!pubdesc.IsSetPub()) {
         return false;
     }
-    for (auto it: pubdesc.GetPub().Get()) {
+    for (const auto& it : pubdesc.GetPub().Get()) {
         if (IsPubUnpublished(*it)) {
             string title = kEmptyStr;
             string authors = kEmptyStr;
@@ -378,7 +378,7 @@ bool HasUnpubWithoutTitle(const CPubdesc& pubdesc)
 
 DISCREPANCY_CASE(UNPUB_PUB_WITHOUT_TITLE, PUBDESC, eDisc | eOncaller | eSubmitter | eSmart | eBig | eFatal, "Unpublished pubs should have titles")
 {
-    for (auto& pubdesc : context.GetPubdescs()) {
+    for (const CPubdesc* pubdesc : context.GetPubdescs()) {
         if (HasUnpubWithoutTitle(*pubdesc)) {
             m_Objs["[n] unpublished pub[s] [has] no title"].Add(*context.PubdescObjRef(*pubdesc)).Fatal();
         }
@@ -419,7 +419,7 @@ bool IsCitSubMissingAffiliation(const CPubdesc& pubdesc)
         return false;
     }
     bool rval = false;
-    for (auto& it : pubdesc.GetPub().Get()) {
+    for (const auto& it : pubdesc.GetPub().Get()) {
         if (it->IsSub()) {
             if (!it->GetSub().IsSetAuthors() || 
                 !it->GetSub().GetAuthors().IsSetAffil() ||
@@ -542,19 +542,19 @@ DISCREPANCY_SUMMARIZE(CITSUBAFFIL_CONFLICT)
         out[kCitSubSummary]["No citsubs were found!"].Fatal();
     }
     if (m_Objs[kSummaries].GetMap().size() > 1) {
-        ITERATE (CReportNode::TNodeMap, it, m_Objs[kSummaries].GetMap()) {
-            string two = NStr::IsBlank(it->first) ? "[*0*][n] Cit-sub[s] [has] no affiliation" : "[*1*][n] CitSub[s] [has] affiliation " + it->first;
-            NON_CONST_ITERATE (TReportObjectList, robj, m_Objs[kSummaries][it->first].GetObjects()) {
-                out[kCitSubSummary][two].Add(**robj, false);
+        for (const auto& it : m_Objs[kSummaries].GetMap()) {
+            string two = NStr::IsBlank(it.first) ? "[*0*][n] Cit-sub[s] [has] no affiliation" : "[*1*][n] CitSub[s] [has] affiliation " + it.first;
+            for (auto& robj : m_Objs[kSummaries][it.first].GetObjects()) {
+                out[kCitSubSummary][two].Add(*robj, false);
             }
         }
     }
 #define REPORT_CITSUBAFFIL_CONFLICT(order, field, alias) \
     if (m_Objs[#field].GetMap().size() > 1) {\
-        ITERATE (CReportNode::TNodeMap, it, m_Objs[#field].GetMap()) {\
-            string two = "[n] affiliation[s] [has] "#alias" value '" + it->first + "'";\
-            NON_CONST_ITERATE (TReportObjectList, robj, m_Objs[#field][it->first].GetObjects()) {\
-                out[kCitSubSummary]["[*"#order"*]Affiliations have different values for "#alias][two].Ext().Add(**robj, false);\
+        for (const auto& it : m_Objs[#field].GetMap()) {\
+            string two = "[n] affiliation[s] [has] "#alias" value '" + it.first + "'";\
+            for (auto& robj : m_Objs[#field][it.first].GetObjects()) {\
+                out[kCitSubSummary]["[*"#order"*]Affiliations have different values for "#alias][two].Ext().Add(*robj, false);\
             }\
         }\
     }
@@ -1106,14 +1106,14 @@ static bool IsCapNameCorrect(const string& name)
                 if (need_cap) {
                     if (islower(name[i])) {
                         // check if it is a short name
-                        string::const_iterator start = name.begin() + i;
+                        string::const_iterator start = name.cbegin() + i;
                         string::const_iterator end = start + 1;
-                        while (end != name.end() && *end != ' ') {
+                        while (end != name.cend() && *end != ' ') {
                             ++end;
                         }
                         string short_name(start, end);
                         set<string>::const_iterator it = kShortNames.find(short_name);
-                        if (it == kShortNames.end()) {
+                        if (it == kShortNames.cend()) {
                             ret = false;
                             break;
                         }

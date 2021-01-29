@@ -333,7 +333,7 @@ void CDiscrepancyContext::ParseObject(const CBioseq_set& root)
     PushNode(type);
     m_CurrentNode->m_Obj.Reset((CObject*)&root);
     if (root.CanGetSeq_set()) {
-        for (auto entry : root.GetSeq_set()) {
+        for (const auto& entry : root.GetSeq_set()) {
             ParseObject(*entry);
         }
     }
@@ -358,7 +358,7 @@ void CDiscrepancyContext::ParseObject(const CSeq_submit& root)
     PushNode(eSubmit);
     m_CurrentNode->m_Obj.Reset((CObject*)&root);
     if (root.CanGetData() && root.GetData().IsEntrys()) {
-        for (auto entry : root.GetData().GetEntrys()) {
+        for (const auto& entry : root.GetData().GetEntrys()) {
             ParseObject(*entry);
         }
     }
@@ -369,7 +369,7 @@ void CDiscrepancyContext::ParseObject(const CSeq_submit& root)
 void CDiscrepancyContext::ParseAll(CParseNode& node)
 {
     Populate(node);
-    for (auto item : node.m_Children) {
+    for (auto& item : node.m_Children) {
         ParseAll(*item);
     }
     m_CurrentNode.Reset(&node);
@@ -417,7 +417,7 @@ void CDiscrepancyContext::PopulateBioseq(CParseNode& node)
 {
     const CBioseq& bioseq = dynamic_cast<const CBioseq&>(*node.m_Obj);
     if (bioseq.CanGetDescr() && bioseq.GetDescr().CanGet()) {
-        for (auto& desc : bioseq.GetDescr().Get()) {
+        for (const auto& desc : bioseq.GetDescr().Get()) {
             node.AddDescriptor(*desc);
             if (desc->IsMolinfo()) {
                 node.m_Molinfo.Reset(desc);
@@ -431,9 +431,9 @@ void CDiscrepancyContext::PopulateBioseq(CParseNode& node)
         }
     }
     if (bioseq.IsSetAnnot()) {
-        for (auto& annot : bioseq.GetAnnot()) {
+        for (const auto& annot : bioseq.GetAnnot()) {
             if (annot->IsFtable()) {
-                for (auto& feat : annot->GetData().GetFtable()) {
+                for (const auto& feat : annot->GetData().GetFtable()) {
                     node.AddFeature(*feat);
                 }
             }
@@ -464,7 +464,7 @@ void CDiscrepancyContext::PopulateSeqSet(CParseNode& node)
 {
     const CBioseq_set& seqset = dynamic_cast<const CBioseq_set&>(*node.m_Obj);
     if (seqset.CanGetDescr() && seqset.GetDescr().CanGet()) {
-        for (auto& desc : seqset.GetDescr().Get()) {
+        for (const auto& desc : seqset.GetDescr().Get()) {
             node.AddDescriptor(*desc);
             if (desc->IsMolinfo()) {
                 node.m_Molinfo.Reset(desc);
@@ -478,9 +478,9 @@ void CDiscrepancyContext::PopulateSeqSet(CParseNode& node)
         }
     }
     if (seqset.IsSetAnnot()) {
-        for (auto& annot : seqset.GetAnnot()) {
+        for (const auto& annot : seqset.GetAnnot()) {
             if (annot->IsFtable()) {
-                for (auto& feat : annot->GetData().GetFtable()) {
+                for (const auto& feat : annot->GetData().GetFtable()) {
                     node.AddFeature(*feat);
                 }
             }
@@ -1054,7 +1054,7 @@ void CDiscrepancyContext::AutofixBioseq_set()
         }
     }
 
-    for (auto se : bss->GetSeq_set()) {
+    for (auto& se : bss->GetSeq_set()) {
         if (se->IsSet()) {
             PushNode(CDiscrepancyContext::eSeqSet);
             m_CurrentNode->m_Obj.Reset(&se->GetSet());

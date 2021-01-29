@@ -66,7 +66,7 @@ static bool Has4Numbers(const string& s)
 
 DISCREPANCY_CASE(BAD_GENE_NAME, FEAT, eDisc | eSubmitter | eSmart, "Bad gene name")
 {
-    for (auto& feat : context.GetFeat()) {
+    for (const CSeq_feat& feat : context.GetFeat()) {
         if (feat.IsSetData() && feat.GetData().IsGene() && feat.GetData().GetGene().CanGetLocus()) {
             string locus = feat.GetData().GetGene().GetLocus();
             string word;
@@ -107,7 +107,7 @@ DISCREPANCY_CASE(BAD_BACTERIAL_GENE_NAME, FEAT, eDisc | eOncaller | eSubmitter |
     if (biosrc) {
         const CBioSource* src = &biosrc->GetSource();
         if ((src->IsSetLineage() || !context.GetLineage().empty()) && !context.HasLineage(src, "Eukaryota") && !context.IsViral(src)) {
-            for (auto& feat : context.GetFeat()) {
+            for (const CSeq_feat& feat : context.GetFeat()) {
                 if (feat.IsSetData() && feat.GetData().IsGene() && feat.GetData().GetGene().CanGetLocus()) {
                     string locus = feat.GetData().GetGene().GetLocus();
                     if (!isalpha(locus[0]) || !islower(locus[0])) {
@@ -143,7 +143,7 @@ DISCREPANCY_AUTOFIX(BAD_BACTERIAL_GENE_NAME)
 
 DISCREPANCY_CASE(EC_NUMBER_ON_UNKNOWN_PROTEIN, FEAT, eDisc | eSubmitter | eSmart | eFatal, "EC number on unknown protein")
 {
-    for (auto& feat : context.GetFeat()) {
+    for (const CSeq_feat& feat : context.GetFeat()) {
         if (feat.IsSetData() && feat.GetData().IsProt() && feat.GetData().GetProt().CanGetName() && feat.GetData().GetProt().CanGetEc() && !feat.GetData().GetProt().GetEc().empty()) {
             const list <string>& names = feat.GetData().GetProt().GetName();
             if (!names.empty()) {
@@ -181,7 +181,7 @@ DISCREPANCY_AUTOFIX(EC_NUMBER_ON_UNKNOWN_PROTEIN)
 
 DISCREPANCY_CASE(SHOW_HYPOTHETICAL_CDS_HAVING_GENE_NAME, FEAT, eDisc | eSubmitter | eSmart | eFatal, "Hypothetical CDS with gene names")
 {
-    for (auto& feat : context.GetFeat()) {
+    for (const CSeq_feat& feat : context.GetFeat()) {
         if (feat.IsSetData() && feat.GetData().IsCdregion() && feat.CanGetProduct()) {
             const CSeq_feat* gene = context.GetGeneForFeature(feat);
             if (gene && gene->GetData().GetGene().CanGetLocus() && !gene->GetData().GetGene().GetLocus().empty()) {
@@ -191,7 +191,7 @@ DISCREPANCY_CASE(SHOW_HYPOTHETICAL_CDS_HAVING_GENE_NAME, FEAT, eDisc | eSubmitte
                     if (feat_it) {
                         const CProt_ref& prot = feat_it->GetOriginalFeature().GetData().GetProt();
                         if (prot.CanGetName()) {
-                            auto& names = prot.GetName();
+                            const auto& names = prot.GetName();
                             if (!names.empty() && NStr::FindNoCase(names.front(), "hypothetical protein") != string::npos) {
                                 m_Objs["[n] hypothetical coding region[s] [has] a gene name"].Fatal().Add(*context.SeqFeatObjRef(feat, gene));
                             }
@@ -231,10 +231,10 @@ const string kDuplicateAdjacent = "[n] gene[s] [is] adjacent to another gene wit
 
 DISCREPANCY_CASE(DUPLICATE_LOCUS_TAGS, SEQUENCE, eDisc | eOncaller | eSubmitter | eSmart, "Duplicate Locus Tags")
 {
-    auto& genes = context.FeatGenes();
+    const auto& genes = context.FeatGenes();
     string last_locus_tag = kEmptyStr;
     CRef<CDiscrepancyObject> last_disc_obj;
-    for (auto gene: genes) {
+    for (const CSeq_feat* gene : genes) {
         if (gene->GetData().GetGene().IsSetLocus_tag()) {
             CRef<CDiscrepancyObject> this_disc_obj(context.SeqFeatObjRef(*gene));
             const string& this_locus_tag = gene->GetData().GetGene().GetLocus_tag();
@@ -255,10 +255,10 @@ DISCREPANCY_CASE(DUPLICATE_LOCUS_TAGS, SEQUENCE, eDisc | eOncaller | eSubmitter 
 
 DISCREPANCY_SUMMARIZE(DUPLICATE_LOCUS_TAGS)
 {
-    for (auto it: m_Objs[kEmptyStr].GetMap()) {
+    for (auto& it : m_Objs[kEmptyStr].GetMap()) {
         if (it.second->GetObjects().size() > 1) {
             string label = kDuplicateLocusTagsStart + it.first + ".";
-            for (auto obj: it.second->GetObjects()) {
+            for (auto& obj : it.second->GetObjects()) {
                 m_Objs[kDuplicateLocusTagsTop][label].Add(*obj);
             }
         }

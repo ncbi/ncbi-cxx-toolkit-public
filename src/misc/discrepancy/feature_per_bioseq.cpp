@@ -55,7 +55,7 @@ DISCREPANCY_CASE(COUNT_RRNAS, SEQUENCE, eDisc, "Count rRNAs")
     if (biosrc && biosrc->GetSource().IsSetGenome() && (biosrc->GetSource().GetGenome() == CBioSource::eGenome_mitochondrion || biosrc->GetSource().GetGenome() == CBioSource::eGenome_chloroplast || biosrc->GetSource().GetGenome() == CBioSource::eGenome_plastid)) {
         size_t total = 0;
         CReportNode tmp;
-        for (auto& feat : context.FeatRRNAs()) {
+        for (const CSeq_feat* feat : context.FeatRRNAs()) {
             tmp[rRnaLabel(feat->GetData())].Add(*context.SeqFeatObjRef(*feat));
             total++;
         }
@@ -134,7 +134,7 @@ DISCREPANCY_CASE(COUNT_TRNAS, SEQUENCE, eDisc, "Count tRNAs")
     if (biosrc && biosrc->GetSource().IsSetGenome() && (biosrc->GetSource().GetGenome() == CBioSource::eGenome_mitochondrion || biosrc->GetSource().GetGenome() == CBioSource::eGenome_chloroplast || biosrc->GetSource().GetGenome() == CBioSource::eGenome_plastid)) {
         size_t total = 0;
         CReportNode tmp;
-        for (auto& feat : context.FeatTRNAs()) {
+        for (const CSeq_feat* feat : context.FeatTRNAs()) {
             tmp[context.GetAminoacidName(*feat)].Add(*context.SeqFeatObjRef(*feat));
             total++;
         }

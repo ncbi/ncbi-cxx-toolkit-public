@@ -67,7 +67,7 @@ const string kPseudoMismatch = "[n] CDSs, RNAs, and genes have mismatching pseud
 
 DISCREPANCY_CASE(PSEUDO_MISMATCH, FEAT, eDisc | eOncaller | eSubmitter | eSmart | eFatal, "Pseudo Mismatch")
 {
-    for (auto& feat : context.GetFeat()) {
+    for (const CSeq_feat& feat : context.GetFeat()) {
         if (feat.IsSetPseudo() && feat.GetPseudo() && (feat.GetData().IsCdregion() || feat.GetData().IsRna())) {
             const CSeq_feat* gene = context.GetGeneForFeature(feat);
             if (gene && !context.IsPseudo(*gene)) {
@@ -101,7 +101,7 @@ DISCREPANCY_AUTOFIX(PSEUDO_MISMATCH)
 
 DISCREPANCY_CASE(SHORT_RRNA, FEAT, eDisc | eOncaller | eSubmitter | eSmart | eFatal, "Short rRNA Features")
 {
-    for (auto& feat : context.GetFeat()) {
+    for (const CSeq_feat& feat : context.GetFeat()) {
         if (feat.IsSetData() && feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_rRNA && !feat.IsSetPartial() && IsShortrRNA(feat, &(context.GetScope()))) {
             m_Objs["[n] rRNA feature[s] [is] too short"].Add(*context.SeqFeatObjRef(feat)).Fatal();
         }
@@ -128,7 +128,7 @@ static bool IsRBS(const CSeq_feat& f)
     if (!f.IsSetQual()) {
         return false;
     }
-    for (auto& it: f.GetQual()) {
+    for (const auto& it : f.GetQual()) {
         if (it->IsSetQual() && NStr::Equal(it->GetQual(), "regulatory_class") &&
             CSeqFeatData::GetRegulatoryClass(it->GetVal()) == CSeqFeatData::eSubtype_RBS) {
             return true;
@@ -141,14 +141,14 @@ static bool IsRBS(const CSeq_feat& f)
 DISCREPANCY_CASE(RBS_WITHOUT_GENE, FEAT, eOncaller | eFatal, "RBS features should have an overlapping gene")
 {
     bool has_genes = false;
-    for (auto& feat : context.GetAllFeat()) {
+    for (const CSeq_feat& feat : context.GetAllFeat()) {
         if (feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_gene) {
             has_genes = true;
             break;
         }
     }
     if (has_genes) {
-        for (auto& feat : context.GetFeat()) {
+        for (const CSeq_feat& feat : context.GetFeat()) {
             if (IsRBS(feat) && !context.GetGeneForFeature(feat)) {
                 m_Objs["[n] RBS feature[s] [does] not have overlapping gene[s]"].Add(*context.SeqFeatObjRef(feat)).Fatal();
             }
@@ -184,7 +184,7 @@ bool ReportGeneMissing(const CSeq_feat& f)
 
 DISCREPANCY_CASE(MISSING_GENES, FEAT, eDisc | eSubmitter | eSmart | eFatal, "Missing Genes")
 {
-    for (auto& feat : context.GetFeat()) {
+    for (const CSeq_feat& feat : context.GetFeat()) {
         if (!feat.GetGeneXref() && feat.IsSetData() && ReportGeneMissing(feat)) {
             const CSeq_feat* gene_feat = context.GetGeneForFeature(feat);
             if (!gene_feat) {
@@ -209,16 +209,16 @@ const string kExtraGeneNonPseudoNonFrameshift = "[n] non-pseudo gene feature[s] 
 
 bool IsGeneInXref(const CSeq_feat& gene, const CSeq_feat& feat, bool& have_gene_ref)
 {
-    ITERATE (CSeq_feat::TXref, it, feat.GetXref ()) {
-        if ((*it)->IsSetId()) {
-            const CFeat_id& id = (*it)->GetId();
+    for (const auto& it : feat.GetXref()) {
+        if (it->IsSetId()) {
+            const CFeat_id& id = it->GetId();
             if (gene.CanGetId() && gene.GetId().Equals(id)) {
                 return true;
             }
         }
-        if ((*it)->IsSetData() && (*it)->GetData().IsGene ()) {
+        if (it->IsSetData() && it->GetData().IsGene()) {
             have_gene_ref = true;
-            const CGene_ref& gene_ref = (*it)->GetData().GetGene();
+            const CGene_ref& gene_ref = it->GetData().GetGene();
             const string& locus = gene.GetData().GetGene().IsSetLocus() ? gene.GetData().GetGene().GetLocus() : kEmptyStr;
             const string& locus_tag = gene.GetData().GetGene().IsSetLocus_tag() ? gene.GetData().GetGene().GetLocus_tag() : kEmptyStr;
             if ((gene_ref.IsSetLocus() || gene_ref.IsSetLocus_tag())
@@ -237,15 +237,15 @@ bool IsGeneInXref(const CSeq_feat& gene, const CSeq_feat& feat, bool& have_gene_
 DISCREPANCY_CASE(EXTRA_GENES, SEQUENCE, eDisc | eSubmitter | eSmart, "Extra Genes")
 {
     // TODO: Do not collect if mRNA sequence in Gen-prod set
-    auto& genes = context.FeatGenes();
-    auto& all = context.FeatAll();
-    for (auto& gene : genes) {
+    const auto& genes = context.FeatGenes();
+    const auto& all = context.FeatAll();
+    for (const CSeq_feat* gene : genes) {
         if ((gene->IsSetComment() && !gene->GetComment().empty()) || (gene->GetData().GetGene().IsSetDesc() && !gene->GetData().GetGene().GetDesc().empty())) {
             continue;
         }
         const CSeq_loc& loc = gene->GetLocation();
         bool found = false;
-        for (auto& feat : all) {
+        for (const CSeq_feat* feat : all) {
             if (feat->GetData().IsCdregion() || feat->GetData().IsRna()) {
                 const CSeq_loc& loc_f = feat->GetLocation();
                 sequence::ECompare cmp = context.Compare(loc, loc_f);
@@ -282,8 +282,8 @@ DISCREPANCY_SUMMARIZE(EXTRA_GENES)
 
 DISCREPANCY_CASE(SUPERFLUOUS_GENE, SEQUENCE, eDisc | eOncaller, "Superfluous Genes")
 {
-    auto& genes = context.FeatGenes();
-    auto& feats = context.FeatAll();
+    const auto& genes = context.FeatGenes();
+    const auto& feats = context.FeatAll();
     for (size_t i = 0; i < genes.size(); i++) {
         if (genes[i]->IsSetPseudo() && genes[i]->GetPseudo()) {
             continue;
@@ -338,7 +338,7 @@ EExtensibe IsExtendableLeft(TSeqPos left, const CBioseq& seq, CScope* scope, TSe
         TSeqPos offset = 0;
         TSeqPos last_gap_stop = 0;
         bool gap = false;
-        for (auto& it : seq.GetInst().GetExt().GetDelta().Get()) {
+        for (const auto& it : seq.GetInst().GetExt().GetDelta().Get()) {
             if (it->IsLiteral()) {
                 offset += it->GetLiteral().GetLength();
                 if (!it->GetLiteral().IsSetSeq_data()) {
@@ -406,7 +406,7 @@ EExtensibe IsExtendableRight(TSeqPos right, const CBioseq& seq, CScope* scope, T
         TSeqPos offset = 0;
         TSeqPos next_gap_start = 0;
         bool gap = false;
-        for (auto& it : seq.GetInst().GetExt().GetDelta().Get()) {
+        for (const auto& it : seq.GetInst().GetExt().GetDelta().Get()) {
             if (it->IsLiteral()) {
                 if (!it->GetLiteral().IsSetSeq_data()) {
                     next_gap_start = offset;
@@ -495,7 +495,7 @@ DISCREPANCY_CASE(BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS, SEQUENCE, eDisc | eSu
     if (!biosrc || context.IsEukaryotic(&biosrc->GetSource()) || context.IsOrganelle(&biosrc->GetSource()) || bioseq.IsAa()) {
         return;
     }
-    for (auto& feat : context.GetAllFeat()) {
+    for (const CSeq_feat& feat : context.GetAllFeat()) {
         if (feat.IsSetData() && feat.GetData().IsCdregion() && IsNonExtendable(feat.GetLocation(), bioseq, &(context.GetScope()))) {
             m_Objs["[n] feature[s] [has] partial ends that do not abut the end of the sequence or a gap, and cannot be extended by 3 or fewer nucleotides to do so"].Add(*context.SeqFeatObjRef(feat, &feat)).Fatal();
         }
@@ -541,7 +541,7 @@ DISCREPANCY_CASE(BACTERIAL_PARTIAL_NONEXTENDABLE_EXCEPTION, SEQUENCE, eDisc | eS
     if (!biosrc || context.IsEukaryotic(&biosrc->GetSource()) || context.IsOrganelle(&biosrc->GetSource()) || bioseq.IsAa()) {
         return;
     }
-    for (auto& feat : context.GetAllFeat()) {
+    for (const CSeq_feat& feat : context.GetAllFeat()) {
         if (feat.IsSetData() && feat.GetData().IsCdregion() && feat.IsSetExcept_text() && NStr::FindNoCase(feat.GetExcept_text(), kNonExtendableException) != string::npos && IsNonExtendable(feat.GetLocation(), bioseq, &(context.GetScope()))) {
             m_Objs["[n] feature[s] [has] partial ends that do not abut the end of the sequence or a gap, and cannot be extended by 3 or fewer nucleotides to do so, but [has] the correct exception"].Add(*context.SeqFeatObjRef(feat));
         }
@@ -565,7 +565,7 @@ DISCREPANCY_CASE(PARTIAL_PROBLEMS, SEQUENCE, eDisc | eOncaller | eSubmitter | eS
         return;
     }
     //bool circular = bioseq.IsSetInst() && bioseq.GetInst().GetTopology() == CSeq_inst::eTopology_circular;
-    for (auto& feat : context.GetAllFeat()) {
+    for (const CSeq_feat& feat : context.GetAllFeat()) {
         if (feat.IsSetData() && feat.GetData().IsCdregion()) {
             if (feat.IsSetPseudo() && feat.GetPseudo() == true && !context.IsRefseq()) continue;
             bool add_this = false;
@@ -717,7 +717,7 @@ DISCREPANCY_CASE(EUKARYOTE_SHOULD_HAVE_MRNA, SEQUENCE, eDisc | eSubmitter | eSma
     if (!context.IsEukaryotic(biosrc ? &biosrc->GetSource() : 0)) {
         return;
     }
-    for (auto& feat : context.GetAllFeat()) {
+    for (const CSeq_feat& feat : context.GetAllFeat()) {
         if (feat.IsSetData() && feat.GetData().IsCdregion() && !context.IsPseudo(feat)) {
             CConstRef<CSeq_feat> mrna = sequence::GetmRNAforCDS(feat, context.GetScope());
             if (mrna) {
@@ -748,9 +748,9 @@ DISCREPANCY_SUMMARIZE(EUKARYOTE_SHOULD_HAVE_MRNA)
 
 DISCREPANCY_CASE(NON_GENE_LOCUS_TAG, FEAT, eDisc | eOncaller | eSubmitter | eSmart, "Nongene Locus Tag")
 {
-    for (auto& feat : context.GetFeat()) {
+    for (const CSeq_feat& feat : context.GetFeat()) {
         if (feat.IsSetQual() && (!feat.IsSetData() || !feat.GetData().IsGene())) {
-            for (auto& it : feat.GetQual()) {
+            for (const auto& it : feat.GetQual()) {
                 if (it->IsSetQual() && NStr::EqualNocase(it->GetQual(), "locus_tag")) {
                     m_Objs["[n] non-gene feature[s] [has] locus tag[s]."].Add(*context.SeqFeatObjRef(feat));
                     break;
@@ -771,7 +771,7 @@ DISCREPANCY_SUMMARIZE(NON_GENE_LOCUS_TAG)
 
 DISCREPANCY_CASE(FIND_BADLEN_TRNAS, FEAT, eDisc | eOncaller | eSubmitter | eSmart, "Find short and long tRNAs")
 {
-    for (auto& feat : context.GetFeat()) {
+    for (const CSeq_feat& feat : context.GetFeat()) {
         if (feat.IsSetData() && feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_tRNA) {
             TSeqPos len = sequence::GetLength(feat.GetLocation(), &(context.GetScope()));
             if (!feat.IsSetPartial() && len < 50) {
@@ -795,7 +795,7 @@ DISCREPANCY_SUMMARIZE(FIND_BADLEN_TRNAS)
 
 DISCREPANCY_CASE(ORG_TRNAS, FEAT, eDisc | eOncaller, "Find long tRNAs > 90nt except Ser/Leu/Sec")
 {
-    for (auto& feat : context.GetFeat()) {
+    for (const CSeq_feat& feat : context.GetFeat()) {
         if (feat.IsSetData() && feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_tRNA) {
             TSeqPos len = sequence::GetLength(feat.GetLocation(), &(context.GetScope()));
             if (len > 90) {
@@ -857,8 +857,8 @@ DISCREPANCY_CASE(GENE_PARTIAL_CONFLICT, SEQUENCE, eOncaller | eSubmitter | eSmar
     bool is_mrna = molinfo && molinfo->GetMolinfo().IsSetBiomol() && molinfo->GetMolinfo().GetBiomol() == CMolInfo::eBiomol_mRNA;
     bool is_eukaryotic = context.IsEukaryotic(biosrc ? &biosrc->GetSource() : 0);
 
-    auto& all = context.FeatAll();
-    for (auto feat : all) {
+    const auto& all = context.FeatAll();
+    for (const CSeq_feat* feat : all) {
         if (!feat->IsSetData()) {
             continue;
         }
@@ -881,7 +881,7 @@ DISCREPANCY_CASE(GENE_PARTIAL_CONFLICT, SEQUENCE, eOncaller | eSubmitter | eSmar
                     bool gene_start_partial = gene->GetLocation().IsPartialStart(eExtreme_Biological);
                     bool found_start = false;
                     bool found_utr5 = false;
-                    for (auto fi : all) {
+                    for (const CSeq_feat* fi : all) {
                         if (fi->IsSetData() && fi->GetData().GetSubtype() == CSeqFeatData::eSubtype_5UTR) {
                             found_utr5 = true;
                             if (fi->GetLocation().GetStart(eExtreme_Biological) == gene_start && fi->GetLocation().IsPartialStart(eExtreme_Biological) == gene_start_partial) {
@@ -899,7 +899,7 @@ DISCREPANCY_CASE(GENE_PARTIAL_CONFLICT, SEQUENCE, eOncaller | eSubmitter | eSmar
                     bool gene_stop_partial = gene->GetLocation().IsPartialStop(eExtreme_Biological);
                     bool found_stop = false;
                     bool found_utr3 = false;
-                    for (auto fi : all) {
+                    for (const CSeq_feat* fi : all) {
                         if (fi->IsSetData() && fi->GetData().GetSubtype() == CSeqFeatData::eSubtype_3UTR) {
                             found_utr3 = true;
                             if (fi->GetLocation().GetStop(eExtreme_Biological) == gene_stop && fi->GetLocation().IsPartialStop(eExtreme_Biological) == gene_stop_partial) {
@@ -975,8 +975,8 @@ const string kBadGeneStrand = "[n/2] feature location[s] conflict with gene loca
 DISCREPANCY_CASE(BAD_GENE_STRAND, SEQUENCE, eOncaller | eSubmitter | eSmart, "Genes and features that share endpoints should be on the same strand")
 {
     // note - use positional instead of biological, because we are *looking* for objects on the opposite strand
-    auto& genes = context.FeatGenes();
-    auto& feats = context.FeatAll();
+    const auto& genes = context.FeatGenes();
+    const auto& feats = context.FeatAll();
 
     for (size_t j = 0; j < feats.size(); j++) {
         CSeqFeatData::ESubtype subtype = feats[j]->GetData().GetSubtype();
@@ -1042,12 +1042,12 @@ DISCREPANCY_SUMMARIZE(BAD_GENE_STRAND)
 
 DISCREPANCY_CASE(MICROSATELLITE_REPEAT_TYPE, FEAT, eOncaller | eFatal, "Microsatellites must have repeat type of tandem")
 {
-    for (auto& feat : context.GetFeat()) {
+    for (const CSeq_feat& feat : context.GetFeat()) {
         if (feat.IsSetData() && feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_repeat_region && feat.IsSetQual()) {
             bool is_microsatellite = false;
             bool is_tandem = false;
             const CSeq_feat::TQual& quals = feat.GetQual();
-            for (auto it = quals.begin(); it != quals.end() && (!is_microsatellite || !is_tandem); ++it) {
+            for (auto it = quals.cbegin(); it != quals.cend() && (!is_microsatellite || !is_tandem); ++it) {
                 const CGb_qual& qual = **it;
                 if (NStr::EqualCase(qual.GetQual(), "satellite")) {
                     if (NStr::EqualNocase(qual.GetVal(), "microsatellite") ||
@@ -1120,7 +1120,7 @@ static void FindSuspiciousNotePhrases(const string& s, CDiscrepancyContext& cont
 
 DISCREPANCY_CASE(SUSPICIOUS_NOTE_TEXT, FEAT, eOncaller, "Find Suspicious Phrases in Note Text")
 {
-    for (auto& feat : context.GetFeat()) {
+    for (const CSeq_feat& feat : context.GetFeat()) {
         if (feat.IsSetData()) {
             switch (feat.GetData().GetSubtype()) {
                 case CSeqFeatData::eSubtype_gene:
@@ -1171,7 +1171,7 @@ static const string kNewExceptions[] =
 DISCREPANCY_CASE(CDS_HAS_NEW_EXCEPTION, FEAT, eDisc | eOncaller | eSmart, "Coding region has new exception")
 {
     static const size_t max = sizeof(kNewExceptions) / sizeof(string);
-    for (auto& feat : context.GetFeat()) {
+    for (const CSeq_feat& feat : context.GetFeat()) {
         if (feat.IsSetData() && feat.GetData().IsCdregion() && feat.IsSetExcept_text()) {
             for (size_t i = 0; i < max; i++) {
                 if (NStr::FindNoCase(feat.GetExcept_text(), kNewExceptions[i]) != string::npos) {
@@ -1194,7 +1194,7 @@ DISCREPANCY_SUMMARIZE(CDS_HAS_NEW_EXCEPTION)
 
 DISCREPANCY_CASE(SHORT_LNCRNA, FEAT, eDisc | eOncaller | eSubmitter | eSmart, "Short lncRNA sequences")
 {
-    for (auto& feat : context.GetFeat()) {
+    for (const CSeq_feat& feat : context.GetFeat()) {
         if (feat.IsSetData() && feat.GetData().IsRna() && feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_ncRNA
                 && feat.GetData().GetRna().IsSetExt() && feat.GetData().GetRna().GetExt().IsGen() && feat.GetData().GetRna().GetExt().GetGen().IsSetClass()
                 && NStr::EqualNocase(feat.GetData().GetRna().GetExt().GetGen().GetClass(), "lncrna") // only looking at lncrna features
@@ -1223,7 +1223,7 @@ DISCREPANCY_CASE(JOINED_FEATURES, FEAT, eDisc | eSubmitter | eSmart, "Joined Fea
 {
     const CSeqdesc* biosrc = context.GetBiosource();
     if (biosrc && !context.IsEukaryotic(&biosrc->GetSource()) && !context.IsOrganelle(&biosrc->GetSource())) {
-        for (auto& feat : context.GetFeat()) {
+        for (const CSeq_feat& feat : context.GetFeat()) {
             if (feat.IsSetLocation()) {
                 if (feat.GetLocation().IsMix() || feat.GetLocation().IsPacked_int()) {
                     if (feat.IsSetExcept_text()) {
@@ -1261,7 +1261,7 @@ DISCREPANCY_CASE(BACTERIAL_JOINED_FEATURES_NO_EXCEPTION, SEQUENCE, eDisc | eSubm
     if (biosrc && (context.IsEukaryotic(&biosrc->GetSource()) || context.IsOrganelle(&biosrc->GetSource()))) {
         return;
     }
-    for (auto& feat : context.GetAllFeat()) {
+    for (const CSeq_feat& feat : context.GetAllFeat()) {
         if (feat.IsSetLocation() && feat.CanGetData() && feat.GetData().IsCdregion() && !context.IsPseudo(feat)) {
             if (feat.GetLocation().IsMix() || feat.GetLocation().IsPacked_int()) {
                 if ((feat.IsSetExcept_text() && !feat.GetExcept_text().empty()) || (feat.IsSetExcept() && feat.GetExcept())) {
@@ -1314,7 +1314,7 @@ DISCREPANCY_CASE(RIBOSOMAL_SLIPPAGE, FEAT, eDisc | eSmart | eFatal, " Only a sel
 {
     const CSeqdesc* biosrc = context.GetBiosource();
     if (biosrc && !context.IsEukaryotic(&biosrc->GetSource()) && !context.IsOrganelle(&biosrc->GetSource())) {
-        for (auto& feat : context.GetFeat()) {
+        for (const CSeq_feat& feat : context.GetFeat()) {
             if (feat.IsSetLocation() && feat.CanGetData() && feat.GetData().IsCdregion() && feat.IsSetExcept_text() && (feat.GetLocation().IsMix() || feat.GetLocation().IsPacked_int())) {
                 if (feat.GetExcept_text().find("ribosomal slippage") != string::npos) {
                     //string product = GetProductForCDS(feat, context.GetScope()); // sema: may need to change when we start using CFeatTree
@@ -1354,7 +1354,7 @@ const string kShortIntronExcept = "[n] intron[s] [is] shorter than 11 nt and [ha
 
 DISCREPANCY_CASE(SHORT_INTRON, FEAT, eDisc | eOncaller | eSubmitter | eSmart, "Introns shorter than 10 nt")
 {
-    for (auto& feat : context.GetFeat()) {
+    for (const CSeq_feat& feat : context.GetFeat()) {
         if (feat.IsSetData() && feat.GetData().IsCdregion() && feat.IsSetLocation() && !feat.IsSetExcept() && !context.IsPseudo(feat)) {
             CSeq_loc_CI li(feat.GetLocation());
             if (li) {
@@ -1572,7 +1572,7 @@ DISCREPANCY_CASE(UNNECESSARY_VIRUS_GENE, FEAT, eOncaller, "Unnecessary gene feat
     if (biosrc) {
         const CBioSource* src = &biosrc->GetSource();
         if (context.HasLineage(src, "Picornaviridae") || context.HasLineage(src, "Potyviridae") || context.HasLineage(src, "Flaviviridae") || context.HasLineage(src, "Togaviridae")) {
-            for (auto& feat : context.GetFeat()) {
+            for (const CSeq_feat& feat : context.GetFeat()) {
                 if (feat.IsSetData() && feat.GetData().IsGene()) {
                     m_Objs["[n] virus gene[s] need to be removed"].Add(*context.SeqFeatObjRef(feat));
                 }
@@ -1592,7 +1592,7 @@ DISCREPANCY_SUMMARIZE(UNNECESSARY_VIRUS_GENE)
 
 DISCREPANCY_CASE(CDS_HAS_CDD_XREF, FEAT, eDisc | eOncaller, "CDS has CDD Xref")
 {
-    for (auto& feat : context.GetFeat()) {
+    for (const CSeq_feat& feat : context.GetFeat()) {
         if (feat.IsSetData() && feat.GetData().IsCdregion() && feat.IsSetDbxref()) {
             for (auto& x : feat.GetDbxref()) {
                 if (x->IsSetDb() && NStr::EqualNocase(x->GetDb(), "CDD")) {
@@ -1615,7 +1615,7 @@ DISCREPANCY_SUMMARIZE(CDS_HAS_CDD_XREF)
 
 DISCREPANCY_CASE(SHOW_TRANSL_EXCEPT, FEAT, eDisc | eSubmitter | eSmart, "Show translation exception")
 {
-    for (auto& feat : context.GetFeat()) {
+    for (const CSeq_feat& feat : context.GetFeat()) {
         if (feat.IsSetData() && feat.GetData().IsCdregion() && feat.GetData().GetCdregion().IsSetCode_break()) {
              m_Objs["[n] coding region[s] [has] a translation exception"].Add(*context.SeqFeatObjRef(feat));
         }
@@ -1635,7 +1635,7 @@ static const string kNoProductStr = "[n] product[s] [has] \"no product string in
 
 DISCREPANCY_CASE(NO_PRODUCT_STRING, FEAT, eDisc, "Product has string \"no product string in file\"")
 {
-    for (auto& feat : context.GetFeat()) {
+    for (const CSeq_feat& feat : context.GetFeat()) {
         if (feat.IsSetData() && feat.GetData().IsProt()) {
             const CProt_ref& prot = feat.GetData().GetProt();
             if (prot.IsSetName()) {
@@ -1680,7 +1680,7 @@ DISCREPANCY_CASE(UNWANTED_SPACER, FEAT, eOncaller, "Intergenic spacer without pl
     if (biosrc && biosrc->GetSource().IsSetOrg() && biosrc->GetSource().GetOrg().IsSetTaxname() && CDiscrepancyContext::IsUnculturedNonOrganelleName(biosrc->GetSource().GetOrg().GetTaxname())) {
         return;
     }
-    for (auto& feat : context.GetFeat()) {
+    for (const CSeq_feat& feat : context.GetFeat()) {
         if (feat.IsSetData() && feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_misc_feature) {
             for (size_t i = 0; i < kIntergenicSpacerNames_len; i++) {
                 if (NStr::FindNoCase(feat.GetComment(), kIntergenicSpacerNames[i]) != string::npos) {
@@ -1703,7 +1703,7 @@ DISCREPANCY_SUMMARIZE(UNWANTED_SPACER)
 
 DISCREPANCY_CASE(CHECK_RNA_PRODUCTS_AND_COMMENTS, FEAT, eOncaller, "Check for gene or genes in rRNA and tRNA products and comments")
 {
-    for (auto& feat : context.GetFeat()) {
+    for (const CSeq_feat& feat : context.GetFeat()) {
         if (feat.IsSetData() && feat.GetData().IsRna()) {
             const CRNA_ref& rna = feat.GetData().GetRna();
             if ((rna.IsSetType() && rna.GetType() == CRNA_ref::eType_rRNA) || rna.GetType() == CRNA_ref::eType_tRNA) {
@@ -1895,7 +1895,7 @@ bool IsGeneLocationOk(const CSeq_loc& feat_loc, const CSeq_loc& gene_loc, ENa_st
         rbs_search->SetInt().SetTo(feat_start - 1);
     }
     TSeqPos rbs_start = rbs_search->GetStart(eExtreme_Biological);
-    for (auto& feat : features) {
+    for (const CSeq_feat* feat : features) {
         if (feat->GetLocation().GetStart(eExtreme_Biological) == rbs_start && IsRBS(*feat)) {
             return true;
         }
@@ -1936,8 +1936,8 @@ DISCREPANCY_CASE(FEATURE_LOCATION_CONFLICT, SEQUENCE, eDisc | eSubmitter | eSmar
     }
     const CSeqdesc* biosrc = context.GetBiosource();
     bool eucariotic = context.IsEukaryotic(biosrc ? &biosrc->GetSource() : 0);
-    auto& all = context.FeatAll();
-    for (auto& feat : all) {
+    const auto& all = context.FeatAll();
+    for (const CSeq_feat* feat : all) {
         if (feat->IsSetData() && feat->IsSetLocation() && (feat->GetData().IsRna() || (!eucariotic && feat->GetData().IsCdregion()))) {
             ENa_strand feat_strand = feat->GetLocation().GetStrand();
             const CGene_ref* gx = feat->GetGeneXref();
@@ -1994,7 +1994,7 @@ const string suspect_phrases[] =
 
 DISCREPANCY_CASE(SUSPECT_PHRASES, FEAT, eDisc | eSubmitter | eSmart, "Suspect Phrases")
 {
-    for (auto& feat : context.GetFeat()) {
+    for (const CSeq_feat& feat : context.GetFeat()) {
         if (feat.IsSetData()) {
             string check;
             if (feat.GetData().IsCdregion() && feat.IsSetComment()) {
@@ -2026,7 +2026,7 @@ DISCREPANCY_SUMMARIZE(SUSPECT_PHRASES)
 
 DISCREPANCY_CASE(UNUSUAL_MISC_RNA, FEAT, eDisc | eSubmitter | eSmart, "Unexpected misc_RNA features")
 {
-    for (auto& feat : context.GetFeat()) {
+    for (const CSeq_feat& feat : context.GetFeat()) {
         if (feat.IsSetData() && feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_otherRNA) {
             const CRNA_ref& rna = feat.GetData().GetRna();
             string product = rna.GetRnaProductName();
@@ -2213,7 +2213,7 @@ DISCREPANCY_AUTOFIX(CDS_WITHOUT_MRNA)
 
 DISCREPANCY_CASE(PROTEIN_NAMES, FEAT, eDisc | eSubmitter | eSmart, "Frequently appearing proteins")
 {
-    for (auto& feat : context.GetFeat()) {
+    for (const CSeq_feat& feat : context.GetFeat()) {
         if (feat.IsSetData() && feat.GetData().IsProt()) {
             const CProt_ref& prot = feat.GetData().GetProt();
             if (prot.IsSetName() && !prot.GetName().empty()) {
@@ -2243,14 +2243,14 @@ static bool IsmRnaQualsPresent(const CSeq_feat::TQual& quals)
     bool protein_id = false,
          transcript_id = false;
 
-    ITERATE(CSeq_feat::TQual, qual, quals) {
-        if ((*qual)->IsSetQual()) {
+    for (const auto& qual : quals) {
+        if (qual->IsSetQual()) {
 
-            if ((*qual)->GetQual() == "orig_protein_id") {
+            if (qual->GetQual() == "orig_protein_id") {
                 protein_id = true;
             }
 
-            if ((*qual)->GetQual() == "orig_transcript_id") {
+            if (qual->GetQual() == "orig_transcript_id") {
                 transcript_id = true;
             }
 
@@ -2269,7 +2269,7 @@ DISCREPANCY_CASE(MRNA_SHOULD_HAVE_PROTEIN_TRANSCRIPT_IDS, SEQUENCE, eDisc | eSub
     const CBioseq& bioseq = context.CurrentBioseq();
     const CSeqdesc* biosrc = context.GetBiosource();
     if (biosrc && context.IsEukaryotic(&biosrc->GetSource()) && bioseq.GetInst().IsSetMol() && bioseq.GetInst().GetMol() == CSeq_inst::eMol_dna) {
-        for (auto& feat : context.GetAllFeat()) {
+        for (const CSeq_feat& feat : context.GetAllFeat()) {
             if (feat.IsSetData() && feat.GetData().IsCdregion() && !context.IsPseudo(feat)) {
                 CConstRef<CSeq_feat> mRNA = sequence::GetmRNAforCDS(feat, context.GetScope());
                 if (mRNA && (!mRNA->IsSetQual() || !IsmRnaQualsPresent(mRNA->GetQual()))) {
@@ -2297,7 +2297,7 @@ static const string kFeatureList = "Feature List";
 
 DISCREPANCY_CASE(FEATURE_LIST, FEAT, eDisc | eSubmitter, "Feature List")
 {
-    for (auto& feat : context.GetFeat()) {
+    for (const CSeq_feat& feat : context.GetFeat()) {
         if (feat.IsSetData() && feat.GetData().GetSubtype() != CSeqFeatData::eSubtype_gap && feat.GetData().GetSubtype() != CSeqFeatData::eSubtype_prot) {
             string subitem = "[n] " + feat.GetData().GetKey();
             subitem += " feature[s]";
@@ -2317,10 +2317,10 @@ DISCREPANCY_SUMMARIZE(FEATURE_LIST)
 
 DISCREPANCY_CASE(MULTIPLE_QUALS, FEAT, eDisc | eOncaller, "Multiple qualifiers")
 {
-    for (auto& feat : context.GetFeat()) {
+    for (const CSeq_feat& feat : context.GetFeat()) {
         if (feat.IsSetQual()) {
             size_t num_of_number_quals = 0;
-            for (auto& qual : feat.GetQual()) {
+            for (const auto& qual : feat.GetQual()) {
                 if (qual->IsSetQual() && qual->GetQual() == "number") {
                     ++num_of_number_quals;
                     if (num_of_number_quals > 1) {
@@ -2345,9 +2345,9 @@ DISCREPANCY_SUMMARIZE(MULTIPLE_QUALS)
 
 DISCREPANCY_CASE(MISC_FEATURE_WITH_PRODUCT_QUAL, FEAT, eDisc | eOncaller | eSubmitter | eSmart, "Misc features containing a product qualifier")
 {
-    for (auto& feat : context.GetFeat()) {
+    for (const CSeq_feat& feat : context.GetFeat()) {
         if (feat.IsSetData() && feat.IsSetQual() && feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_misc_feature) {
-            for (auto& qual : feat.GetQual()) {
+            for (const auto& qual : feat.GetQual()) {
                 if (qual->IsSetQual() && qual->GetQual() == "product") {
                     m_Objs["[n] feature[s] [has] a product qualifier"].Add(*context.SeqFeatObjRef(feat));
                 }
@@ -2396,8 +2396,8 @@ DISCREPANCY_CASE(CDS_HAS_NO_ADJACENT_TRNA, SEQUENCE, eDisc, "CDSs should have ad
     if (!biosrc || biosrc->GetSource().GetGenome() != CBioSource::eGenome_mitochondrion) {
         return;
     }
-    auto& cds = context.FeatCDS();
-    auto& trnas = context.FeatTRNAs();
+    const auto& cds = context.FeatCDS();
+    const auto& trnas = context.FeatTRNAs();
     for (size_t i = 0; i < cds.size(); i++) {
         if (!cds[i]->GetData().GetCdregion().IsSetCode_break()) {
             continue;
@@ -2410,7 +2410,7 @@ DISCREPANCY_CASE(CDS_HAS_NO_ADJACENT_TRNA, SEQUENCE, eDisc, "CDSs should have ad
         TSeqPos stop = cds[i]->GetLocation().GetStop(eExtreme_Biological);
         const CSeq_feat* nearest_trna = nullptr;
         TSeqPos diff = UINT_MAX;
-        for (auto& trna : trnas) {
+        for (const CSeq_feat* trna : trnas) {
             if (trna->IsSetLocation()) {
                 TSeqPos start = trna->GetLocation().GetStart(eExtreme_Biological);
                 TSeqPos cur_diff = UINT_MAX;
@@ -2453,7 +2453,7 @@ DISCREPANCY_CASE(MITO_RRNA, SEQUENCE, eOncaller, "Non-mitochondrial rRNAs with 1
 {
     const CSeqdesc* biosrc = context.GetBiosource();
     if (context.IsEukaryotic(biosrc ? &biosrc->GetSource() : 0)) {
-        auto& rnas = context.Feat_RNAs();
+        const auto& rnas = context.Feat_RNAs();
         for (size_t i = 0; i < rnas.size(); i++) {
             if (rnas[i]->GetData().GetSubtype() == CSeqFeatData::eSubtype_rRNA && rnas[i]->GetData().GetRna().IsSetExt() && rnas[i]->GetData().GetRna().GetExt().IsName()) {
                 const string& name = rnas[i]->GetData().GetRna().GetExt().GetName();

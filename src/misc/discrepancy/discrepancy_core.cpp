@@ -99,7 +99,7 @@ vector<string> GetDiscrepancyNames(TGroup group)
     map<string, CDiscrepancyConstructor*>& Table = CDiscrepancyConstructor::GetTable();
     map<string, TGroup>& Group = CDiscrepancyConstructor::GetGroupTable();
     vector<string> V;
-    for (auto J: Table) {
+    for (const auto& J : Table) {
         if (J.first[0] != '_' && (Group[J.first] & group) == group) {
             V.push_back(J.first);
         }
@@ -137,8 +137,8 @@ void CReportNode::Add(TReportObjectList& list, TReportObjectSet& hash, CReportOb
 
 void CReportNode::Add(TReportObjectList& list, TReportObjectSet& hash, TReportObjectList& objs, bool unique)
 {
-    NON_CONST_ITERATE (TReportObjectList, it, objs) {
-        Add(list, hash, **it, unique);
+    for (auto& it : objs) {
+        Add(list, hash, *it, unique);
     }
 }
 
@@ -166,7 +166,7 @@ bool CReportNode::Promote()
 }
 
 
-CRef<CReportItem> CReportNode::Export(CDiscrepancyCase& test, bool unique)
+CRef<CReportItem> CReportNode::Export(CDiscrepancyCase& test, bool unique) const
 {
     TReportObjectList objs = m_Objs;
     TReportObjectSet hash = m_Hash;
@@ -174,7 +174,7 @@ CRef<CReportItem> CReportNode::Export(CDiscrepancyCase& test, bool unique)
     bool autofix = false;
     CReportItem::ESeverity severity = m_Severity;
     string unit;
-    for (auto& it : m_Map) {
+    for (const auto& it : m_Map) {
         CRef<CReportItem> sub = it.second->Export(test, unique);
         if (severity < it.second->m_Severity) {
             severity = it.second->m_Severity;
@@ -270,7 +270,7 @@ TReportObjectList CDiscrepancyCore::GetObjects(void) const
     TReportObjectList ret;
     TReportObjectSet hash;
     TReportItemList items = GetReport();
-    for (auto& rep : items) {
+    for (const auto& rep : items) {
         TReportObjectList objs = rep->GetDetails();
         for (auto& obj : objs) {
             CReportNode::Add(ret, hash, *obj);
@@ -438,7 +438,7 @@ unsigned CDiscrepancyContext::Summarize()
     for (auto& tt : m_Tests) {
         CDiscrepancyCore& test = static_cast<CDiscrepancyCore&>(*tt.second);
         test.Summarize(*this);
-        for (auto& rep : test.GetReport()) {
+        for (const auto& rep : test.GetReport()) {
             unsigned sev = rep->GetSeverity();
             severity = sev > severity ? sev : severity;
         }
@@ -449,7 +449,7 @@ unsigned CDiscrepancyContext::Summarize()
 
 void CDiscrepancyContext::TestString(const string& str)
 {
-    for (auto& it : m_All_string) {
+    for (auto* it : m_All_string) {
         Call(*it, str);
     }
 }
@@ -458,15 +458,15 @@ void CDiscrepancyContext::TestString(const string& str)
 TReportItemList CDiscrepancyGroup::Collect(TDiscrepancyCaseMap& tests, bool all) const
 {
     TReportItemList out;
-    for (auto it: m_List) {
+    for (const auto& it : m_List) {
         TReportItemList tmp = it->Collect(tests, false);
-        for (auto tt: tmp) {
+        for (const auto& tt : tmp) {
             out.push_back(tt);
         }
     }
     if (!m_Test.empty() && tests.find(m_Test) != tests.end()) {
         TReportItemList tmp = tests[m_Test]->GetReport();
-        for (auto tt: tmp) {
+        for (const auto& tt : tmp) {
             out.push_back(tt);
         }
         tests.erase(m_Test);
@@ -477,12 +477,12 @@ TReportItemList CDiscrepancyGroup::Collect(TDiscrepancyCaseMap& tests, bool all)
         CRef<CDiscrepancyItem> di(new CDiscrepancyItem(m_Name));
         di->m_Subs = out;
         bool empty = true;
-        for (auto tt: out) {
+        for (const auto& tt : out) {
             TReportObjectList details = tt->GetDetails();
             if (!details.empty() || tt->GetCount()) {
                 empty = false;
             }
-            for (auto ob: details) {
+            for (auto& ob : details) {
                 CReportNode::Add(objs, hash, *ob);
             }
             if (tt->CanAutofix()) {
@@ -502,9 +502,9 @@ TReportItemList CDiscrepancyGroup::Collect(TDiscrepancyCaseMap& tests, bool all)
         }
     }
     if (all) {
-        for (auto it: tests) {
+        for (const auto& it : tests) {
             TReportItemList list = it.second->GetReport();
-            for (auto it: list) {
+            for (const auto& it : list) {
                 out.push_back(it);
             }
         }
@@ -526,68 +526,68 @@ void CDiscrepancyContext::RunTests()
     STRING dummy_string;
     if (m_CurrentNode->m_Type == eBioseq) {
         ClearFeatureList();
-        for (auto& feat : GetAllFeat()) {
+        for (const auto& feat : GetAllFeat()) {
             CollectFeature(feat);
         }
-        for (auto test : m_All_SEQUENCE) {
+        for (auto* test : m_All_SEQUENCE) {
             Call(*test, dummy_seq);
         }
-        for (auto test : m_All_FEAT) {
+        for (auto* test : m_All_FEAT) {
             Call(*test, dummy_feat);
         }
-        for (auto test : m_All_DESC) {
+        for (auto* test : m_All_DESC) {
             Call(*test, dummy_desc);
         }
         if (!m_CurrentNode->m_Pubdescs.empty()) {
-            for (auto test : m_All_PUBDESC) {
+            for (auto* test : m_All_PUBDESC) {
                 Call(*test, dummy_pubdesc);
             }
-            for (auto test : m_All_AUTHORS) {
+            for (auto* test : m_All_AUTHORS) {
                 Call(*test, dummy_authors);
             }
         }
         if (m_CurrentNode->m_Biosource) {
-            for (auto test : m_All_BIOSRC) {
+            for (auto* test : m_All_BIOSRC) {
                 Call(*test, dummy_biosrc);
             }
         }
     }
     else if (IsSeqSet(m_CurrentNode->m_Type)) {
-        for (auto test : m_All_SEQ_SET) {
+        for (auto* test : m_All_SEQ_SET) {
             Call(*test, dummy_set);
         }
-        for (auto test : m_All_FEAT) {
+        for (auto* test : m_All_FEAT) {
             Call(*test, dummy_feat);
         }
-        for (auto test : m_All_DESC) {
+        for (auto* test : m_All_DESC) {
             Call(*test, dummy_desc);
         }
         if (!m_CurrentNode->m_Pubdescs.empty()) {
-            for (auto test : m_All_PUBDESC) {
+            for (auto* test : m_All_PUBDESC) {
                 Call(*test, dummy_pubdesc);
             }
-            for (auto test : m_All_AUTHORS) {
+            for (auto* test : m_All_AUTHORS) {
                 Call(*test, dummy_authors);
             }
         }
         if (m_CurrentNode->m_Biosource) {
-            for (auto test : m_All_BIOSRC) {
+            for (auto* test : m_All_BIOSRC) {
                 Call(*test, dummy_biosrc);
             }
         }
     }
     else if (m_CurrentNode->m_Type == eSubmit) {
-        for (auto test : m_All_SUBMIT) {
+        for (auto* test : m_All_SUBMIT) {
             Call(*test, dummy_submit);
         }
         if (!m_CurrentNode->m_Authors.empty()) {
-            for (auto test : m_All_AUTHORS) {
+            for (auto* test : m_All_AUTHORS) {
                 Call(*test, dummy_authors);
             }
         }
     }
     else if (m_CurrentNode->m_Type == eString) {
-        for (auto test : m_All_STRING) {
+        for (auto* test : m_All_STRING) {
             Call(*test, dummy_string);
         }
     }

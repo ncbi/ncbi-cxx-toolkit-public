@@ -107,7 +107,7 @@ static void AddObjToQualMap(const string& qual, const string& val, CReportObj& o
 
 DISCREPANCY_CASE(SOURCE_QUALS, BIOSRC, eDisc | eOncaller | eSubmitter | eSmart | eBig | eFatal, "Some animals are more equal than others...")
 {
-    for (auto biosrc : context.GetBiosources()) {
+    for (const CBioSource* biosrc : context.GetBiosources()) {
         CRef<CDiscrepancyObject> disc_obj(context.BiosourceObjRef(*biosrc));
         m_Objs["all"].Add(*disc_obj);
         if (biosrc->CanGetGenome() && biosrc->GetGenome() != CBioSource::eGenome_unknown) {
