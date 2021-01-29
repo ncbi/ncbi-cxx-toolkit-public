@@ -54,7 +54,7 @@ namespace objects
     class IObjtoolsListener;
 };
 
-class Parser;
+struct Parser;
 
 NCBI_DEPRECATED Int2 fta_main(Parser* pp, bool already);
 

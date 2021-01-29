@@ -38,7 +38,7 @@
 
 BEGIN_NCBI_SCOPE
 
-class Parser;
+struct Parser;
 
 Parser*   init_pp(Parser* pp);
 
