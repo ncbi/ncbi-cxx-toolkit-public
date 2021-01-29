@@ -311,13 +311,29 @@ set(NCBI_COMPONENT_VDB_INCLUDE
     ${NCBI_ThirdParty_VDB}/interfaces/cc/vc++/${NCBI_ThirdParty_VDB_ARCH_INC}
     ${NCBI_ThirdParty_VDB}/interfaces/cc/vc++
     ${NCBI_ThirdParty_VDB}/interfaces/os/win)
-set(NCBI_COMPONENT_VDB_BINPATH
-    ${NCBI_ThirdParty_VDB}/win/release/${NCBI_ThirdParty_VDB_ARCH}/bin)
+
+if("${NCBI_CONFIGURATION_TYPES_COUNT}" EQUAL 1)
+    NCBI_util_Cfg_ToStd(${NCBI_CONFIGURATION_TYPES} _std_cfg)
+    set(NCBI_COMPONENT_VDB_BINPATH
+        ${NCBI_ThirdParty_VDB}/win/${_std_cfg}/${NCBI_ThirdParty_VDB_ARCH}/bin)
+else()
+    set(NCBI_COMPONENT_VDB_BINPATH
+        ${NCBI_ThirdParty_VDB}/win/$<IF:$<OR:$<CONFIG:DebugDLL>,$<CONFIG:DebugMT>,$<CONFIG:Debug>>,debug,release>/${NCBI_ThirdParty_VDB_ARCH}/bin)
+    foreach(_cfg IN LISTS NCBI_CONFIGURATION_TYPES)
+        if("${_cfg}" MATCHES "Debug")
+            set(NCBI_COMPONENT_VDB_BINPATH_${_cfg}
+                ${NCBI_ThirdParty_VDB}/win/debug/${NCBI_ThirdParty_VDB_ARCH}/bin)
+        else()
+            set(NCBI_COMPONENT_VDB_BINPATH_${_cfg}
+                ${NCBI_ThirdParty_VDB}/win/release/${NCBI_ThirdParty_VDB_ARCH}/bin)
+        endif()
+    endforeach()
+endif()
 set(NCBI_COMPONENT_VDB_LIBS
     ${NCBI_COMPONENT_VDB_BINPATH}/ncbi-vdb-md.lib)
 
 set(_found YES)
-foreach(_inc IN LISTS NCBI_COMPONENT_VDB_INCLUDE NCBI_COMPONENT_VDB_LIBS)
+foreach(_inc IN LISTS NCBI_COMPONENT_VDB_INCLUDE)
     if(NOT EXISTS ${_inc})
         message("NOT FOUND VDB: ${_inc} not found")
         set(_found NO)
