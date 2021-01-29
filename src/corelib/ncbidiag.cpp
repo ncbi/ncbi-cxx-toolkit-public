@@ -285,6 +285,13 @@ NCBI_PARAM_DEF_EX(long, Diag, Log_Size_Limit, 0, eParam_NoThread,
                   DIAG_LOG_SIZE_LIMIT);
 static CSafeStatic<NCBI_PARAM_TYPE(Diag, Log_Size_Limit)> s_LogSizeLimit;
 
+// Limit max line length, zero = no limit (default).
+NCBI_PARAM_DECL(size_t, Diag, Max_Line_Length);
+NCBI_PARAM_DEF_EX(size_t, Diag, Max_Line_Length, 0, eParam_NoThread,
+    DIAG_MAX_LINE_LENGTH);
+static CSafeStatic<NCBI_PARAM_TYPE(Diag, Max_Line_Length)> s_MaxLineLength;
+
+
 ///////////////////////////////////////////////////////
 //  Output rate control parameters
 
@@ -5746,6 +5753,10 @@ CNcbiOstream& SDiagMessage::x_NewWrite(CNcbiOstream& out_str,
     string buf = os.str();
     // Line merging in new (applog) format is unconditional.
     s_EscapeNewlines(buf);
+    auto max_len = s_MaxLineLength->Get();
+    if (max_len > 0 && buf.size() > max_len) {
+        buf.resize(max_len);
+    }
     out_str << buf;
 
     // Endl
