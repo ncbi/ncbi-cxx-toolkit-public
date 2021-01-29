@@ -405,8 +405,8 @@ static int/*bool*/ x_ResolveType(SERV_ITER           iter,
         int herr = h_errno, serr = errno;
         const char* herrstr = strherror(herr);
         if (!herrstr  ||  !*herrstr) {
-            sprintf(msg, "Error %d", herr);
-            herrstr = msg;
+            sprintf((char*) msg, "Error %d", herr);
+            herrstr = (char*) msg;
         }
         CORE_LOGF_ERRNO(eLOG_Error, serr,
                         ("Error looking up \"%s\" in DNS: %s", fqdn, herrstr));
