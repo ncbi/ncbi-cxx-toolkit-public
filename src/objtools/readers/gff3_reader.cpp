@@ -397,21 +397,19 @@ bool CGff3Reader::xUpdateAnnotFeature(
 
     CRef< CSeq_feat > pFeature(new CSeq_feat);
 
-    string type = gffRecord.Type();
-    NStr::ToLower(type);
-    if (type == "exon" || type == "five_prime_utr" || type == "three_prime_utr") {
+    if (recType == "exon" || recType == "five_prime_utr" || recType == "three_prime_utr") {
         return xUpdateAnnotExon(gffRecord, pFeature, annot, pEC);
     }
-    if (type == "cds") {
+    if (recType == "cds") {
         return xUpdateAnnotCds(gffRecord, pFeature, annot, pEC);
     }
-    if (type == "gene") {
+    if (recType == "gene") {
          return xUpdateAnnotGene(gffRecord, pFeature, annot, pEC);
     }
-    if (type == "mrna") {
+    if (recType == "mrna") {
         return xUpdateAnnotMrna(gffRecord, pFeature, annot, pEC);
     }
-    if (type == "region") {
+    if (recType == "region") {
         return xUpdateAnnotRegion(gffRecord, pFeature, annot, pEC);
     }
     if (!xUpdateAnnotGeneric(gffRecord, pFeature, annot, pEC)) {

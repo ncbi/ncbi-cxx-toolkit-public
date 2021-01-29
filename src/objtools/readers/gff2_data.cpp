@@ -1133,6 +1133,7 @@ bool CGff2Record::xInitFeatureData(
 //  ----------------------------------------------------------------------------
 {
     auto recognizedType = Type();
+    NStr::ToLower(recognizedType);
 
     if (recognizedType == "region"  ||  recognizedType == "biological_region") {
         string gbkey;
@@ -1141,12 +1142,12 @@ bool CGff2Record::xInitFeatureData(
                 pFeature->SetData().SetBiosrc();
                 return true;
             }
-            // regardless of gbkey (rw-1062)
-            string name = "";
-            GetAttribute("Name", name);
-            pFeature->SetData().SetRegion(name);
-            return true;
-        }
+         }
+        // regardless of gbkey (rw-1062)
+        string name = "";
+        GetAttribute("Name", name);
+        pFeature->SetData().SetRegion(name);
+        return true;
     }
 
     if (recognizedType == "start_codon"  || recognizedType == "stop_codon") {
@@ -1155,8 +1156,8 @@ bool CGff2Record::xInitFeatureData(
 
     bool invalidFeaturesToRegion = !(flags & CGff2Reader::fGenbankMode);
     if (!CSoMap::SoTypeToFeature(
-        recognizedType, *pFeature, invalidFeaturesToRegion)) {
-        string message = "Bad data line: Invalid feature type \"" + recognizedType + "\"";
+        Type(), *pFeature, invalidFeaturesToRegion)) {
+        string message = "Bad data line: Invalid feature type \"" + Type() + "\"";
         CReaderMessage error(
             eDiag_Error,
             0,
