@@ -40,6 +40,9 @@
 #include "ncbi_priv.h"
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#ifdef NCBI_OS_DARWIN
+#  define BIND_8_COMPAT  1
+#endif /*NCBI_OS_DARWIN*/
 #include <arpa/nameser.h>
 #include <ctype.h>
 #include <errno.h>
@@ -52,7 +55,15 @@
 #define NCBI_USE_ERRCODE_X   Connect_LBSM  /* errors: 31 and up */
 
 
-#define SizeOf(a)            (sizeof(a) / sizeof(a[0]))
+#ifndef NS_DEFAULTPORT
+#  ifdef NAMESERVER_PORT
+#    define NS_DEFAULTPORT   NAMESERVER_PORT
+#  else
+#    define NS_DEFAULTPORT   53
+#  endif /*NAMESERVER_PORT*/
+#endif /*NS_DEFAULTPORT*/
+
+#define SizeOf(a)            (sizeof(a) / sizeof((a)[0]))
 #define LBDNS_INITIAL_ALLOC  32
 #define LBDNS_DEBUG          1
 
@@ -187,13 +198,13 @@ static int unpack_rr(const unsigned char* msg, const unsigned char* eom,
 
     memset(rr, 0, sizeof(*rr));
     if ((len = dn_expand(msg, eom, ptr, rr->name, sizeof(rr->name))) < 0) {
-        CORE_LOGF(eLOG_Error, ("Error parsing %s", what));
+        CORE_LOGF(eLOG_Error, ("Error expanding %s name", what));
         return -1;
     }
     ptr += len;
     size = qn ? NS_QFIXEDSZ : NS_RRFIXEDSZ;
     if (ptr + size > eom) {
-        CORE_LOGF(eLOG_Error, ("Cannot parse %s fields", what));
+        CORE_LOGF(eLOG_Error, ("Cannot access %s fields", what));
         return -1;
     }
     assert(NS_QFIXEDSZ  == NS_INT16SZ*2);
@@ -204,7 +215,7 @@ static int unpack_rr(const unsigned char* msg, const unsigned char* eom,
         GETLONG (rr->ttl,      ptr);
         GETSHORT(rr->rdlength, ptr);
         if (ptr + rr->rdlength > eom) {
-            CORE_LOG(eLOG_Error, "Cannot parse RR data");
+            CORE_LOG(eLOG_Error, "Cannot access RR data");
             return -1;
         }
         rr->rdata = ptr;
@@ -391,9 +402,10 @@ static int/*bool*/ x_ResolveType(SERV_ITER           iter,
                                  struct SLBDNS_Data* data,
                                  ns_type             type)
 {
-    unsigned char msg[4096];
+    unsigned char msg[2048];
     char fqdn[NS_MAXDNAME];
     int rv;
+
     if (!x_FormFQDN(fqdn, iter->name, type, data->domain)) {
         CORE_LOGF(eLOG_Error,
                   ("Cannot form FQDN for \"%s\" in \"%s\": Name too long",
@@ -401,6 +413,7 @@ static int/*bool*/ x_ResolveType(SERV_ITER           iter,
         return 0/*failure*/;
     }
     CORE_TRACEF(("LBDNS %s query \"%s\"", x_TypeStr(type, msg), fqdn));
+
     errno = 0;
     rv = res_search(fqdn, ns_c_in, type, msg, sizeof(msg));
     if (rv < 0) {
@@ -414,6 +427,7 @@ static int/*bool*/ x_ResolveType(SERV_ITER           iter,
                         ("Error looking up \"%s\" in DNS: %s", fqdn, herrstr));
         return 0/*failure*/;
     }
+
     if (data->flags & LBDNS_DEBUG)
         x_DumpMsg(msg, msg + rv);
     return 1/*success*/;
@@ -422,7 +436,7 @@ static int/*bool*/ x_ResolveType(SERV_ITER           iter,
 
 static int/*bool*/ x_Resolve(SERV_ITER iter, struct SLBDNS_Data* data)
 {
-    int rv = 0/*false*/;
+    int/*bool*/ rv = 0/*false*/;
 
     assert((void*) data == iter->data);
     if (!iter->types  ||  (iter->types & fSERV_Standalone))
@@ -469,7 +483,7 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
          * provided answer size) to the server -- that's a good thing!  But the
          * current glibc behavior for this option is to always override with
          * 1200 -- and that's bad! -- because servnsd would comply.  If nothing
-         * is specified, servnsd uses 2048 (per the RFC) by default...
+         * is specified, servnsd uses 2048 (per RFC3226, 3) by default...
          */
         r->options |= RES_USE_EDNS0;
 #  endif
