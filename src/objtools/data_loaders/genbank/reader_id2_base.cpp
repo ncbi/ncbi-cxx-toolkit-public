@@ -2601,7 +2601,9 @@ void CId2ReaderBase::x_ProcessGetSeqIdSeqId(
                 }
             }
         }
-        SetAndSaveSeq_idTaxId(result, seq_id, taxid);
+        if ( taxid != INVALID_TAX_ID ) {
+            SetAndSaveSeq_idTaxId(result, seq_id, taxid);
+        }
     }
     if ( req.GetSeq_id_type() & req.eSeq_id_type_hash ) {
         TSequenceHash hash;
