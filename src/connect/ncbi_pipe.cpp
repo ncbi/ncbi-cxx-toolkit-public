@@ -2178,7 +2178,7 @@ CPipe::EFinish CPipe::ExecWait(const string&           cmd,
                     } else if (!bytes_in_inbuf) {
                         load_in = true;
                     } else {
-                        bytes_written  += x_written;
+                        bytes_written += x_written;
                     }
                 }
                 if (done_in) {
