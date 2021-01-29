@@ -3,7 +3,7 @@
 NCBI_begin_lib(connect)
   NCBI_sources(${SRC_C})
   NCBI_headers(*.h)
-  NCBI_uses_external_libraries(${ORIG_LIBS})
+  NCBI_uses_external_libraries(${NETWORK_LIBS} ${ORIG_LIBS})
   NCBI_project_tags(core mod_loadinfo mod_caf)
   NCBI_project_watchers(lavr)
 NCBI_end_lib()
