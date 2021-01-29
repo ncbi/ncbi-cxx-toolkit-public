@@ -974,7 +974,7 @@ extern EIO_Status SOCK_ShutdownAPI(void)
     if (s_Initialized < 0)
         return eIO_Success;
 
-    CORE_TRACE("[SOCK::ShutdownAPI]  Begin");
+    CORE_TRACE("[SOCK::ShutdownAPI]  Enter");
 
     CORE_LOCK_WRITE;
 
@@ -1004,7 +1004,7 @@ extern EIO_Status SOCK_ShutdownAPI(void)
     CORE_UNLOCK;
 #endif /*NCBI_OS_MSWIN*/
 
-    CORE_TRACE("[SOCK::ShutdownAPI]  End");
+    CORE_TRACE("[SOCK::ShutdownAPI]  Leave");
     return eIO_Success;
 }
 
