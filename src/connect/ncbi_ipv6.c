@@ -181,8 +181,8 @@ extern int/*bool*/ NcbiIPv4ToIPv6(TNCBI_IPv6Addr* addr,
 }
 
 
-/* Parse "str" as an IP address, and return 0 if failed, otherwise a pointer to
- * the first non-parsed char (which is neither a digit nor a dot) and "dst"
+/* Parse "str" as an IPv4 address, and return 0 if failed, otherwise a pointer
+ * to the first non-parsed char (which is neither a digit nor a dot) and "dst"
  * updated with the just read IPv4 address in network byte order.
  */
 static const char* x_StringToIPv4(unsigned int* dst,
