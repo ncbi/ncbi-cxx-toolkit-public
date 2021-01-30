@@ -2,7 +2,7 @@
 
 NCBI_begin_app(http_connector_hit)
   NCBI_sources(http_connector_hit)
-  NCBI_uses_toolkit_libraries(xxconnect)
+  NCBI_uses_toolkit_libraries(connssl)
   NCBI_begin_test(http_connector_hit)
     NCBI_set_test_command(http_connector_hit www.ncbi.nlm.nih.gov 443 /Service/bounce.cgi 'arg1+arg2+arg3' + 'CAF-CHECK: YES!')
   NCBI_end_test()
