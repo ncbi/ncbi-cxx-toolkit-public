@@ -5,7 +5,7 @@ SRC = test_ncbi_service
 LIB = connssl connect $(NCBIATOMIC_LIB)
 
 LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
-#LINK = purify $(ORIG_LINK)
+LINK = $(C_LINK)
 
 CHECK_CMD = test_ncbi_service bounce
 

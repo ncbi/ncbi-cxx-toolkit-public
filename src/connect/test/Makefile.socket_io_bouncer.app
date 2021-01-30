@@ -5,6 +5,6 @@ SRC = socket_io_bouncer
 LIB = connect $(NCBIATOMIC_LIB)
 
 LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
-#LINK = purify $(ORIG_LINK)
+LINK = $(C_LINK)
 
 WATCHERS = lavr

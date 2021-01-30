@@ -8,6 +8,7 @@ SRC = test_ncbi_linkerd
 
 LIB = connssl connect $(NCBIATOMIC_LIB)
 LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
+LINK = $(C_LINK)
 
 CHECK_REQUIRES = in-house-resources
 CHECK_CMD = test_ncbi_linkerd.sh /CHECK_NAME=test_ncbi_linkerd

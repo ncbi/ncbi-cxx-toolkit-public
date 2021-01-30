@@ -5,7 +5,8 @@ SRC = test_ncbi_disp
 LIB = connssl connect $(NCBIATOMIC_LIB)
 
 LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
-#LINK = purify $(ORIG_LINK)
+LINK = $(C_LINK)
+#LINK = purify $(C_LINK)
 
 CHECK_CMD =
 CHECK_TIMEOUT = 30

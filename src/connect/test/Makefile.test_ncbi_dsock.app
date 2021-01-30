@@ -5,7 +5,7 @@ SRC = test_ncbi_dsock
 LIB = connect $(NCBIATOMIC_LIB)
 
 LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
-#LINK = purify $(ORIG_LINK)
+LINK = $(C_LINK)
 
 CHECK_CMD = test_ncbi_dsock.sh /CHECK_NAME=test_ncbi_dsock
 CHECK_COPY = test_ncbi_dsock.sh
