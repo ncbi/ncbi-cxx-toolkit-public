@@ -7,7 +7,7 @@ NCBI_begin_lib(xthrserv)
     thread_pool_for_server.hpp connection_pool.hpp
   )
   NCBI_enable_pch()
-  NCBI_uses_toolkit_libraries(xconnect xutil)
+  NCBI_uses_toolkit_libraries(xconnect)
   NCBI_project_tags(core)
   NCBI_project_watchers(vakatov)
 NCBI_end_lib()
