@@ -2,7 +2,7 @@
 
 NCBI_begin_app(test_ncbi_disp)
   NCBI_sources(test_ncbi_disp)
-  NCBI_uses_toolkit_libraries(xxconnect)
+  NCBI_uses_toolkit_libraries(connssl)
   NCBI_set_test_timeout(30)
   NCBI_add_test()
   NCBI_project_watchers(lavr)
