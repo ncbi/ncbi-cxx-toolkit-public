@@ -208,7 +208,6 @@ blaststoreasncpp_g needs bl2seqasn_g
 blastxml needs xser
 blastxml2 needs xser
 bob_g needs splitdbasn_g
-bob_g needs xncbi
 bob_g needs3party netblast
 boost_filesystem-gcc73-mt-d-64 needs3party $(BOOST_SYSTEM_LIBS)
 boost_filesystem-gcc73-mt-d-64 needs3party $(ORIG_LIBS)
@@ -509,7 +508,7 @@ gpipe_align_format needs $(BLAST_FORMATTER_MINIMAL_LIBS)
 gpipe_align_format needs gpipe_objutil
 gpipe_align_format needs prosplign
 gpipe_align_format needs xobjwrite
-gpipe_alloc needs xncbi
+gpipe_alloc needs3party $(ORIG_LIBS)
 gpipe_alnutil needs gpipe_objutil
 gpipe_alnutil needs xalnmgr
 gpipe_an_base needs gencoll_client
