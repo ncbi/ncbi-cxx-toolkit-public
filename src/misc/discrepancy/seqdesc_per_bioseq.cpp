@@ -330,7 +330,7 @@ DISCREPANCY_AUTOFIX(MISMATCHED_COMMENTS)
         obj->SetFixed();
         return CRef<CAutofixReport>(new CAutofixReport("MISMATCHED_COMMENTS: Replaced [n] coment[s] with " + data->Value, 1));
     }
-    return CRef<CAutofixReport>(0);
+    return CRef<CAutofixReport>();
 }
 
 

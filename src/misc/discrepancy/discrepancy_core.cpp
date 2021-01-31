@@ -70,7 +70,7 @@ string CDiscrepancyConstructor::GetDiscrepancyCaseName(const string& name)
 const CDiscrepancyConstructor* CDiscrepancyConstructor::GetDiscrepancyConstructor(const string& name)
 {
     string str = GetDiscrepancyCaseName(name);
-    return str.empty() ? 0 : GetTable()[str];
+    return str.empty() ? nullptr : GetTable()[str];
 }
 
 

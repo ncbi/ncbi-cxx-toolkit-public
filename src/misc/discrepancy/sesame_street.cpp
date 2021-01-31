@@ -249,7 +249,7 @@ public:
     vector<string> m_Choice;
     mutable bool m_Ask;
     void* m_User;
-    CSourseQualsAutofixData() : m_Ask(0), m_User(0) {}
+    CSourseQualsAutofixData() : m_Ask(false), m_User(nullptr) {}
 };
 typedef map<const CReportObj*, CRef<CReportObj> > TReportObjPtrMap;
 typedef map<string, vector<CRef<CReportObj> > > TStringObjVectorMap;
@@ -530,11 +530,11 @@ DISCREPANCY_AUTOFIX(SOURCE_QUALS)
     else if (added) {
         return CRef<CAutofixReport>(new CAutofixReport("SOURCE_QUALS: [n] missing qualifier[s] " + qual + " (" + val + ") added", added));
     }
-    return CRef<CAutofixReport>(0);
+    return CRef<CAutofixReport>();
 
 #if 0
     TReportObjectList list = item->GetDetails();
-    const CSourseQualsAutofixData* fix = 0;
+    const CSourseQualsAutofixData* fix = nullptr;
     size_t added = 0;
     size_t changed = 0;
     string qual;
@@ -586,7 +586,7 @@ DISCREPANCY_AUTOFIX(SOURCE_QUALS)
         return CRef<CAutofixReport>(new CAutofixReport("SOURCE_QUALS: [n] missing qualifier[s] " + qual + " (" + val + ") added", added));
     }
 #endif
-    return CRef<CAutofixReport>(0);
+    return CRef<CAutofixReport>();
 }
 
 

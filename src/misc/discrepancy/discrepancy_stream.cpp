@@ -519,7 +519,7 @@ CDiscrepancyContext::CParseNode* CDiscrepancyContext::FindNode(const CRefNode& r
             return m_NodeMap[&ref];
         }
     }
-    return 0;
+    return nullptr;
 }
 
 
@@ -527,7 +527,7 @@ const CSerialObject* CDiscrepancyContext::FindObject(CReportObj& obj, bool alt)
 {
     CDiscrepancyObject* p = static_cast<CDiscrepancyObject*>(&obj);
     CParseNode* node = FindNode(alt ? *p->m_Fix : *p->m_Ref);
-    return node ? dynamic_cast<const CSerialObject*>(&*node->m_Obj) : 0;
+    return node ? dynamic_cast<const CSerialObject*>(&*node->m_Obj) : nullptr;
 }
 
 

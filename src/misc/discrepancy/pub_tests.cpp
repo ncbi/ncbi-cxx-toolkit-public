@@ -668,7 +668,7 @@ DISCREPANCY_AUTOFIX(CONSORTIUM)
         // we don't autofix in the cit_sub->contact
     }
     obj->SetFixed();
-    return CRef<CAutofixReport>(n ? new CAutofixReport("CONSORTIUM: [n] Consortium[s] [is] removed", n) : 0);
+    return CRef<CAutofixReport>(n ? new CAutofixReport("CONSORTIUM: [n] Consortium[s] [is] removed", n) : nullptr);
 }
 
 
@@ -770,7 +770,7 @@ DISCREPANCY_CASE(CITSUB_AFFIL_DUP_TEXT, PUBDESC, eOncaller, "Cit-sub affiliation
 {
     for (auto& pubdesc : context.GetPubdescs()) {
         if (pubdesc->IsSetPub()) {
-            const CCit_sub* cit_sub = 0;
+            const CCit_sub* cit_sub = nullptr;
             for (auto& it : pubdesc->GetPub().Get()) {
                 cit_sub = GetCitSubFromPub(*it);
                 if (cit_sub) {
@@ -847,7 +847,7 @@ DISCREPANCY_AUTOFIX(CITSUB_AFFIL_DUP_TEXT)
     }
     if (desc && desc->IsPub() && desc->GetPub().CanGetPub() && desc->GetPub().GetPub().CanGet()) {
         CPub_equiv::Tdata& data = desc->SetPub().SetPub().Set();
-        CCit_sub* cit_sub = 0;
+        CCit_sub* cit_sub = nullptr;
         for (auto pub : data) {
             cit_sub = const_cast<CCit_sub*>(GetCitSubFromPub(*pub));
             if (cit_sub) {
@@ -862,7 +862,7 @@ DISCREPANCY_AUTOFIX(CITSUB_AFFIL_DUP_TEXT)
             }
         }
     }
-    return CRef<CAutofixReport>(n ? new CAutofixReport("CITSUB_AFFIL_DUP_TEXT: [n] Cit-sub affiliation street duplication[s] [is] removed", n) : 0);
+    return CRef<CAutofixReport>(n ? new CAutofixReport("CITSUB_AFFIL_DUP_TEXT: [n] Cit-sub affiliation street duplication[s] [is] removed", n) : nullptr);
 }
 
 
@@ -1046,7 +1046,7 @@ DISCREPANCY_AUTOFIX(USA_STATE)
     }
     if (desc && desc->IsPub() && desc->GetPub().CanGetPub() && desc->GetPub().GetPub().CanGet()) {
         CPub_equiv::Tdata& data = desc->SetPub().SetPub().Set();
-        CCit_sub* cit_sub = 0;
+        CCit_sub* cit_sub = nullptr;
         for (auto pub : data) {
             cit_sub = const_cast<CCit_sub*>(GetCitSubFromPub(*pub));
             if (cit_sub) {
@@ -1071,7 +1071,7 @@ DISCREPANCY_AUTOFIX(USA_STATE)
             }
         }
     }
-    return CRef<CAutofixReport>(n ? new CAutofixReport("USA_STATE: [n] Cit-sub[s] [is] changed to contain a correct US state abbreviation", n) : 0);
+    return CRef<CAutofixReport>(n ? new CAutofixReport("USA_STATE: [n] Cit-sub[s] [is] changed to contain a correct US state abbreviation", n) : nullptr);
 }
 
 
@@ -1275,7 +1275,7 @@ DISCREPANCY_AUTOFIX(CHECK_AUTH_CAPS)
             }
         }
     }
-    return CRef<CAutofixReport>(n ? new CAutofixReport("CHECK_AUTH_CAPS: capitalization of [n] author[s] is fixed", n) : 0);
+    return CRef<CAutofixReport>(n ? new CAutofixReport("CHECK_AUTH_CAPS: capitalization of [n] author[s] is fixed", n) : nullptr);
 }
 
 

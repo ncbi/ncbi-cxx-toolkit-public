@@ -183,7 +183,7 @@ DISCREPANCY_AUTOFIX(_CDS_TRNA_OVERLAP)
         }
         return CRef<CAutofixReport>(new CAutofixReport("CDS_TRNA_OVERLAP: [n] CDS trimmed", 1));
     }
-    return CRef<CAutofixReport>(0);
+    return CRef<CAutofixReport>();
 }
 
 
@@ -240,7 +240,7 @@ const string kCDSRNAOverlapNoContainOppStrand = "[n/2] coding region[s] overlap 
 DISCREPANCY_CASE(RNA_CDS_OVERLAP, SEQUENCE, eDisc | eSubmitter | eSmart | eFatal, "CDS RNA Overlap")
 {
     const CSeqdesc* biosrc = context.GetBiosource();
-    bool is_eukariotic = context.IsEukaryotic(biosrc ? &biosrc->GetSource() : 0);
+    bool is_eukariotic = context.IsEukaryotic(biosrc ? &biosrc->GetSource() : nullptr);
 
     const auto& cds = context.FeatCDS();
     const auto& rnas = context.Feat_RNAs();

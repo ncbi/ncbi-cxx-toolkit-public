@@ -528,7 +528,7 @@ DISCREPANCY_AUTOFIX(BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS)
         obj->SetFixed();
         return CRef<CAutofixReport>(new CAutofixReport("BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS: Set exception for [n] feature[s]", 1));
     }
-    return CRef<CAutofixReport>(0);
+    return CRef<CAutofixReport>();
 }
 
 
@@ -698,7 +698,7 @@ DISCREPANCY_AUTOFIX(PARTIAL_PROBLEMS)
         obj->SetFixed();
         return CRef<CAutofixReport>(new CAutofixReport("PARTIAL_PROBLEMS: [n] feature[s] [is] extended to end or gap", 1));
     }
-    return CRef<CAutofixReport>(0);
+    return CRef<CAutofixReport>();
 }
 
 
@@ -714,7 +714,7 @@ DISCREPANCY_CASE(EUKARYOTE_SHOULD_HAVE_MRNA, SEQUENCE, eDisc | eSubmitter | eSma
         return;
     }
     const CSeqdesc* biosrc = context.GetBiosource();
-    if (!context.IsEukaryotic(biosrc ? &biosrc->GetSource() : 0)) {
+    if (!context.IsEukaryotic(biosrc ? &biosrc->GetSource() : nullptr)) {
         return;
     }
     for (const CSeq_feat& feat : context.GetAllFeat()) {
@@ -855,7 +855,7 @@ DISCREPANCY_CASE(GENE_PARTIAL_CONFLICT, SEQUENCE, eOncaller | eSubmitter | eSmar
     const CSeqdesc* molinfo = context.GetMolinfo();
     const CSeqdesc* biosrc = context.GetBiosource();
     bool is_mrna = molinfo && molinfo->GetMolinfo().IsSetBiomol() && molinfo->GetMolinfo().GetBiomol() == CMolInfo::eBiomol_mRNA;
-    bool is_eukaryotic = context.IsEukaryotic(biosrc ? &biosrc->GetSource() : 0);
+    bool is_eukaryotic = context.IsEukaryotic(biosrc ? &biosrc->GetSource() : nullptr);
 
     const auto& all = context.FeatAll();
     for (const CSeq_feat* feat : all) {
@@ -1560,7 +1560,7 @@ DISCREPANCY_AUTOFIX(SHORT_INTRON)
         bioseq_edit.Remove();
     }
     obj->SetFixed();
-    return CRef<CAutofixReport>(n ? new CAutofixReport("SHORT_INTRON: Set exception for [n] feature[s]", n) : 0);
+    return CRef<CAutofixReport>(n ? new CAutofixReport("SHORT_INTRON: Set exception for [n] feature[s]", n) : nullptr);
 }
 
 
@@ -1935,7 +1935,7 @@ DISCREPANCY_CASE(FEATURE_LOCATION_CONFLICT, SEQUENCE, eDisc | eSubmitter | eSmar
         return;
     }
     const CSeqdesc* biosrc = context.GetBiosource();
-    bool eucariotic = context.IsEukaryotic(biosrc ? &biosrc->GetSource() : 0);
+    bool eucariotic = context.IsEukaryotic(biosrc ? &biosrc->GetSource() : nullptr);
     const auto& all = context.FeatAll();
     for (const CSeq_feat* feat : all) {
         if (feat->IsSetData() && feat->IsSetLocation() && (feat->GetData().IsRna() || (!eucariotic && feat->GetData().IsCdregion()))) {
@@ -2071,7 +2071,7 @@ DISCREPANCY_CASE(CDS_WITHOUT_MRNA, SEQUENCE, eDisc | eOncaller | eSmart, "Coding
 {
     const CBioseq& bioseq = context.CurrentBioseq();
     const CSeqdesc* biosrc = context.GetBiosource();
-    const CBioSource* src = biosrc ? &biosrc->GetSource() : 0;
+    const CBioSource* src = biosrc ? &biosrc->GetSource() : nullptr;
     if (!context.IsEukaryotic(src) || context.IsOrganelle(src) || !bioseq.GetInst().IsSetMol() || bioseq.GetInst().GetMol() != CSeq_inst::eMol_dna) {
         return;
     }
@@ -2084,7 +2084,7 @@ DISCREPANCY_CASE(CDS_WITHOUT_MRNA, SEQUENCE, eDisc | eOncaller | eSmart, "Coding
             cds_it = cds.erase(cds_it);
             continue;
         }
-        const CSeq_feat* mrna = 0;
+        const CSeq_feat* mrna = nullptr;
         if ((*cds_it)->IsSetXref()) {
             auto rna_it = mrnas.cbegin();
             while (rna_it != mrnas.end()) {
@@ -2452,7 +2452,7 @@ DISCREPANCY_SUMMARIZE(CDS_HAS_NO_ADJACENT_TRNA)
 DISCREPANCY_CASE(MITO_RRNA, SEQUENCE, eOncaller, "Non-mitochondrial rRNAs with 12S/16S")
 {
     const CSeqdesc* biosrc = context.GetBiosource();
-    if (context.IsEukaryotic(biosrc ? &biosrc->GetSource() : 0)) {
+    if (context.IsEukaryotic(biosrc ? &biosrc->GetSource() : nullptr)) {
         const auto& rnas = context.Feat_RNAs();
         for (size_t i = 0; i < rnas.size(); i++) {
             if (rnas[i]->GetData().GetSubtype() == CSeqFeatData::eSubtype_rRNA && rnas[i]->GetData().GetRna().IsSetExt() && rnas[i]->GetData().GetRna().GetExt().IsName()) {

@@ -105,7 +105,7 @@ static const CSeq_id* GetProteinId(const CBioseq& seq)
             return &seq_id;
         }
     }
-    return 0;
+    return nullptr;
 }
 
 
@@ -391,7 +391,7 @@ DISCREPANCY_AUTOFIX(OVERLAPPING_CDS)
         obj->SetFixed();
         return CRef<CAutofixReport>(new CAutofixReport("OVERLAPPING_CDS: Set note[s] for [n] coding region[s]", 1));
     }
-    return CRef<CAutofixReport>(0);
+    return CRef<CAutofixReport>();
 }
 
 
@@ -521,7 +521,7 @@ DISCREPANCY_CASE(CONTAINED_CDS, SEQUENCE, eDisc | eSubmitter | eSmart | eFatal, 
     const CBioseq& bioseq = context.CurrentBioseq();
     if (bioseq.IsSetInst() && bioseq.GetInst().IsNa()) {
         const CSeqdesc* biosrc = context.GetBiosource();
-        if (!context.IsEukaryotic(biosrc ? &biosrc->GetSource() : 0)) {
+        if (!context.IsEukaryotic(biosrc ? &biosrc->GetSource() : nullptr)) {
             const auto& cds = context.FeatCDS();
             for (size_t i = 0; i < cds.size(); i++) {
                 const CSeq_loc& loc_i = cds[i]->GetLocation();
@@ -534,10 +534,10 @@ DISCREPANCY_CASE(CONTAINED_CDS, SEQUENCE, eDisc | eSubmitter | eSmart | eFatal, 
                         bool has_note = HasContainedNote(*cds[i]);
                         new CSimpleTypeObject<string>(context.GetProdForFeature(*cds[i]));
                         bool autofix = compare == sequence::eContained && !has_note;
-                        m_Objs[kContained][has_note ? kContainedNote : strand].Fatal().Add(*context.SeqFeatObjRef(*cds[i], autofix ? cds[i] : 0, autofix ? new CSimpleTypeObject<string>(context.GetProdForFeature(*cds[i])) : 0));
+                        m_Objs[kContained][has_note ? kContainedNote : strand].Fatal().Add(*context.SeqFeatObjRef(*cds[i], autofix ? cds[i] : nullptr, autofix ? new CSimpleTypeObject<string>(context.GetProdForFeature(*cds[i])) : nullptr));
                         has_note = HasContainedNote(*cds[j]);
                         autofix = compare == sequence::eContains && !has_note;
-                        m_Objs[kContained][has_note ? kContainedNote : strand].Fatal().Add(*context.SeqFeatObjRef(*cds[j], autofix ? cds[j] : 0, autofix ? new CSimpleTypeObject<string>(context.GetProdForFeature(*cds[j])) : 0));
+                        m_Objs[kContained][has_note ? kContainedNote : strand].Fatal().Add(*context.SeqFeatObjRef(*cds[j], autofix ? cds[j] : nullptr, autofix ? new CSimpleTypeObject<string>(context.GetProdForFeature(*cds[j])) : nullptr));
                     }
                 }
             }
@@ -704,7 +704,7 @@ DISCREPANCY_CASE(POSSIBLE_LINKER, SEQUENCE, eOncaller, "Detect linker sequence a
             }
             if (cut) {
                 cut = TAIL - cut;
-                m_Objs["[n] bioseq[s] may have linker sequence after the poly-A tail"].Add(*context.BioseqObjRef(cut > 0 ? CDiscrepancyContext::eFixSelf : CDiscrepancyContext::eFixNone, cut ? new CSimpleTypeObject<size_t>(cut) : 0));
+                m_Objs["[n] bioseq[s] may have linker sequence after the poly-A tail"].Add(*context.BioseqObjRef(cut > 0 ? CDiscrepancyContext::eFixSelf : CDiscrepancyContext::eFixNone, cut ? new CSimpleTypeObject<size_t>(cut) : nullptr));
             }
         }
     }
@@ -786,7 +786,7 @@ DISCREPANCY_AUTOFIX(ORDERED_LOCATION)
         }
     }
     if (!new_loc_creator.HasChanges()) {
-        return CRef<CAutofixReport>(0);
+        return CRef<CAutofixReport>();
     }
     CRef<CSeq_loc> new_seq_feat_loc = new_loc_creator.MakeSeq_loc(CSeq_loc_I::eMake_PreserveType);
     CRef<CSeq_feat> new_feat(SerialClone(*sf));

@@ -550,7 +550,7 @@ bool CDiscrepancyContext::IsBGPipe()
 const CSeq_feat* CDiscrepancyContext::GetGeneForFeature(const CSeq_feat& feat)
 {
     auto gene = GeneForFeature(*FindNode(feat));
-    return gene ? dynamic_cast<const CSeq_feat*>(&*gene->m_Obj) : 0;
+    return gene ? dynamic_cast<const CSeq_feat*>(&*gene->m_Obj) : nullptr;
 }
 
 
@@ -568,7 +568,7 @@ const CDiscrepancyContext::CParseNode* CDiscrepancyContext::GeneForFeature(const
     node.m_Info |= CParseNode::eKnownGene;
     const CSeq_feat& feat = dynamic_cast<const CSeq_feat&>(*node.m_Obj);
     auto gene = sequence::GetGeneForFeature(feat, *m_Scope);
-    node.m_Gene = gene ? FindNode(*gene) : 0;
+    node.m_Gene = gene ? FindNode(*gene) : nullptr;
     return node.m_Gene;
 }
 
@@ -713,7 +713,7 @@ const CPerson_id* CDiscrepancyContext::GetPerson_id()
             return &sub->GetSub().GetContact().GetContact().GetName();
         }
     }
-    return 0;
+    return nullptr;
 }
 
 
@@ -725,7 +725,7 @@ const CSubmit_block* CDiscrepancyContext::GetSubmit_block()
             return &sub->GetSub();
         }
     }
-    return 0;
+    return nullptr;
 }
 
 
@@ -748,14 +748,14 @@ CDiscrepancyContext::CParseNode* CDiscrepancyContext::FindNode(const CObject* ob
             }
         }
     }
-    return 0;
+    return nullptr;
 }
 
 
 CDiscrepancyContext::CParseNode* CDiscrepancyContext::FindLocalNode(const CParseNode& node, const CSeq_feat& feat) const
 {
     auto it = node.m_FeatureMap.find(&feat);
-    return it == node.m_FeatureMap.end() ? 0 : it->second;
+    return it == node.m_FeatureMap.end() ? nullptr : it->second;
 }
 
 
@@ -775,7 +775,7 @@ CDiscrepancyContext::CParseNode* CDiscrepancyContext::FindNode(const CSeq_feat& 
             }
         }
     }
-    return 0;
+    return nullptr;
 }
 
 
@@ -787,13 +787,13 @@ CDiscrepancyContext::CParseNode* CDiscrepancyContext::FindNode(const CSeqdesc& d
             return it->second;
         }
     }
-    return 0;
+    return nullptr;
 }
 
 
 CDiscrepancyContext::CRefNode* CDiscrepancyContext::ContainingSet(CDiscrepancyContext::CRefNode& ref)
 {
-    CRefNode* ret = 0;
+    CRefNode* ret = nullptr;
     for (CRefNode* r = ref.m_Parent.GetPointer(); r; r = r->m_Parent.GetPointer()) {
         if (!ret && IsSeqSet(r->m_Type)) {
             ret = r;
@@ -808,7 +808,7 @@ CDiscrepancyContext::CRefNode* CDiscrepancyContext::ContainingSet(CDiscrepancyCo
 
 CRef<CDiscrepancyObject> CDiscrepancyContext::BioseqObjRef(EFixType fix, const CObject* more)
 {
-    CRefNode* fixref = 0;
+    CRefNode* fixref = nullptr;
     if (fix == eFixSelf) {
         fixref = &*m_CurrentNode->m_Ref;
     }
@@ -825,7 +825,7 @@ CRef<CDiscrepancyObject> CDiscrepancyContext::BioseqObjRef(EFixType fix, const C
 
 CRef<CDiscrepancyObject> CDiscrepancyContext::BioseqSetObjRef(bool fix, const CObject* more)
 {
-    CRef<CDiscrepancyObject> obj(new CDiscrepancyObject(m_CurrentNode->m_Ref, fix ? &*m_CurrentNode->m_Ref : 0, more));
+    CRef<CDiscrepancyObject> obj(new CDiscrepancyObject(m_CurrentNode->m_Ref, fix ? &*m_CurrentNode->m_Ref : nullptr, more));
     return obj;
 }
 
@@ -833,7 +833,7 @@ CRef<CDiscrepancyObject> CDiscrepancyContext::BioseqSetObjRef(bool fix, const CO
 CRef<CDiscrepancyObject> CDiscrepancyContext::SubmitBlockObjRef(bool fix, const CObject* more)
 {
     _ASSERT(m_CurrentNode->m_Type == eSubmit);
-    CRef<CDiscrepancyObject> obj(new CDiscrepancyObject(m_CurrentNode->m_Ref, fix ? &*m_CurrentNode->m_Ref : 0, more));
+    CRef<CDiscrepancyObject> obj(new CDiscrepancyObject(m_CurrentNode->m_Ref, fix ? &*m_CurrentNode->m_Ref : nullptr, more));
     return obj;
 }
 
@@ -846,7 +846,7 @@ CRef<CDiscrepancyObject> CDiscrepancyContext::SeqFeatObjRef(const CSeq_feat& fea
         if (node->m_Ref->m_Text.empty()) {
             node->m_Ref->m_Text = CDiscrepancyObject::GetTextObjectDescription(feat, *m_Scope);
         }
-        CRefNode* fixref = 0;
+        CRefNode* fixref = nullptr;
         if (fix == eFixSelf) {
             fixref = &*node->m_Ref;
         }
@@ -870,7 +870,7 @@ CRef<CDiscrepancyObject> CDiscrepancyContext::SeqFeatObjRef(const CSeq_feat& fea
         if (node->m_Ref->m_Text.empty()) {
             node->m_Ref->m_Text = CDiscrepancyObject::GetTextObjectDescription(feat, *m_Scope);
         }
-        obj.Reset(new CDiscrepancyObject(node->m_Ref, fix ? FindNode(fix)->m_Ref.GetPointer() : 0, more));
+        obj.Reset(new CDiscrepancyObject(node->m_Ref, fix ? FindNode(fix)->m_Ref.GetPointer() : nullptr, more));
     }
     return obj;
 }
@@ -884,7 +884,7 @@ CRef<CDiscrepancyObject> CDiscrepancyContext::SeqdescObjRef(const CSeqdesc& desc
         if (node->m_Ref->m_Text.empty()) {
             node->m_Ref->m_Text = CDiscrepancyObject::GetTextObjectDescription(desc);
         }
-        obj.Reset(new CDiscrepancyObject(node->m_Ref, fix ? &*FindNode(fix)->m_Ref : 0, more));
+        obj.Reset(new CDiscrepancyObject(node->m_Ref, fix ? &*FindNode(fix)->m_Ref : nullptr, more));
     }
     return obj;
 }
@@ -904,7 +904,7 @@ CRef<CDiscrepancyObject> CDiscrepancyContext::BiosourceObjRef(const CBioSource& 
                     it->second->m_Ref->m_Text = CDiscrepancyObject::GetTextObjectDescription(static_cast<const CSeqdesc&>(*it->second->m_Obj));
                 }
             }
-            obj.Reset(new CDiscrepancyObject(it->second->m_Ref, fix ? &*it->second->m_Ref : 0, more));
+            obj.Reset(new CDiscrepancyObject(it->second->m_Ref, fix ? &*it->second->m_Ref : nullptr, more));
             return obj;
         }
     }
@@ -925,7 +925,7 @@ CRef<CDiscrepancyObject> CDiscrepancyContext::PubdescObjRef(const CPubdesc& pubd
             it->second->m_Ref->m_Text = CDiscrepancyObject::GetTextObjectDescription(static_cast<const CSeqdesc&>(*it->second->m_Obj));
         }
     }
-    obj.Reset(new CDiscrepancyObject(it->second->m_Ref, fix ? &*it->second->m_Ref : 0, more));
+    obj.Reset(new CDiscrepancyObject(it->second->m_Ref, fix ? &*it->second->m_Ref : nullptr, more));
     return obj;
 }
 
@@ -946,7 +946,7 @@ CRef<CDiscrepancyObject> CDiscrepancyContext::AuthorsObjRef(const CAuth_list& au
             //cout << "===============================================!\n";
         }
     }
-    obj.Reset(new CDiscrepancyObject(it->second->m_Ref, fix ? &*it->second->m_Ref : 0, more));
+    obj.Reset(new CDiscrepancyObject(it->second->m_Ref, fix ? &*it->second->m_Ref : nullptr, more));
     return obj;
 }
 
@@ -954,7 +954,7 @@ CRef<CDiscrepancyObject> CDiscrepancyContext::AuthorsObjRef(const CAuth_list& au
 CRef<CDiscrepancyObject> CDiscrepancyContext::StringObjRef(const CObject* fix, const CObject* more)
 {
     CRef<CDiscrepancyObject> obj;
-    obj.Reset(new CDiscrepancyObject(m_CurrentNode->m_Ref, fix ? &*FindNode(fix)->m_Ref : 0, more));
+    obj.Reset(new CDiscrepancyObject(m_CurrentNode->m_Ref, fix ? &*FindNode(fix)->m_Ref : nullptr, more));
     return obj;
 }
 

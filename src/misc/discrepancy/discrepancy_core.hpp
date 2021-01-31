@@ -95,7 +95,7 @@ inline void CDiscrepancyConstructor::Register(const string& name, const string& 
 class CDiscrepancyAlias : public CDiscrepancyConstructor
 {
 protected:
-    CRef<CDiscrepancyCase> Create(void) const { return CRef<CDiscrepancyCase>(0);}
+    CRef<CDiscrepancyCase> Create(void) const { return CRef<CDiscrepancyCase>(); }
     static void Register(const string& name, const string& alias)
     {
         map<string, string>& AliasTable = GetAliasTable();
@@ -232,7 +232,7 @@ public:
     virtual void Summarize(CDiscrepancyContext& context){}
     virtual TReportItemList GetReport(void) const { return m_ReportItems;}
     virtual TReportObjectList GetObjects(void) const;
-    virtual CRef<CAutofixReport> Autofix(CDiscrepancyObject* obj, CDiscrepancyContext& context) const { return CRef<CAutofixReport>(0); }
+    virtual CRef<CAutofixReport> Autofix(CDiscrepancyObject* obj, CDiscrepancyContext& context) const { return CRef<CAutofixReport>(); }
 protected:
     CReportNode m_Objs;
     TReportItemList m_ReportItems;
@@ -247,7 +247,7 @@ protected:
 //        m_Autofix = false;
 //        return ret;
 //    }
-//    return CRef<CAutofixReport>(0);
+//    return CRef<CAutofixReport>();
 //}
 
 
@@ -447,18 +447,18 @@ INIT_DISCREPANCY_TYPE(STRING)
     };
 
     CRefNode* ContainingSet(CRefNode& ref);
-    CRef<CDiscrepancyObject> BioseqObjRef(EFixType fix = eFixNone, const CObject* more = 0);
-    CRef<CDiscrepancyObject> BioseqSetObjRef(bool fix = false, const CObject* more = 0);
-    CRef<CDiscrepancyObject> SubmitBlockObjRef(bool fix = false, const CObject* more = 0);
-    CRef<CDiscrepancyObject> SeqFeatObjRef(const CSeq_feat& feat, EFixType fix = eFixNone, const CObject* more = 0);
-    CRef<CDiscrepancyObject> SeqFeatObjRef(const CSeq_feat& feat, const CObject* fix, const CObject* more = 0);
-    CRef<CDiscrepancyObject> SeqdescObjRef(const CSeqdesc& desc, const CObject* fix = 0, const CObject* more = 0);
-    CRef<CDiscrepancyObject> BiosourceObjRef(const CBioSource& biosrc, bool fix = false, const CObject* more = 0);
-    CRef<CDiscrepancyObject> PubdescObjRef(const CPubdesc& pubdesc, bool fix = false, const CObject* more = 0);
-    CRef<CDiscrepancyObject> AuthorsObjRef(const CAuth_list& authors, bool fix = false, const CObject* more = 0);
-    CRef<CDiscrepancyObject> StringObjRef(const CObject* fix = 0, const CObject* more = 0);
+    CRef<CDiscrepancyObject> BioseqObjRef(EFixType fix = eFixNone, const CObject* more = nullptr);
+    CRef<CDiscrepancyObject> BioseqSetObjRef(bool fix = false, const CObject* more = nullptr);
+    CRef<CDiscrepancyObject> SubmitBlockObjRef(bool fix = false, const CObject* more = nullptr);
+    CRef<CDiscrepancyObject> SeqFeatObjRef(const CSeq_feat& feat, EFixType fix = eFixNone, const CObject* more = nullptr);
+    CRef<CDiscrepancyObject> SeqFeatObjRef(const CSeq_feat& feat, const CObject* fix, const CObject* more = nullptr);
+    CRef<CDiscrepancyObject> SeqdescObjRef(const CSeqdesc& desc, const CObject* fix = nullptr, const CObject* more = nullptr);
+    CRef<CDiscrepancyObject> BiosourceObjRef(const CBioSource& biosrc, bool fix = false, const CObject* more = nullptr);
+    CRef<CDiscrepancyObject> PubdescObjRef(const CPubdesc& pubdesc, bool fix = false, const CObject* more = nullptr);
+    CRef<CDiscrepancyObject> AuthorsObjRef(const CAuth_list& authors, bool fix = false, const CObject* more = nullptr);
+    CRef<CDiscrepancyObject> StringObjRef(const CObject* fix = nullptr, const CObject* more = nullptr);
     bool IsBioseq() const { return m_CurrentNode->m_Type == eBioseq; }
-    const CPub* AuthPub(const CAuth_list* a) const { auto& apm = m_CurrentNode->m_AuthorPubMap; auto it = apm.find(a); return it == apm.end() ? 0 : it->second; }
+    const CPub* AuthPub(const CAuth_list* a) const { auto& apm = m_CurrentNode->m_AuthorPubMap; auto it = apm.find(a); return it == apm.end() ? nullptr : it->second; }
 
     // GENE_PRODUCT_CONFLICT
     TGeneLocusMap& GetGeneLocusMap() { return m_GeneLocusMap;}
@@ -525,7 +525,7 @@ INIT_DISCREPANCY_TYPE(STRING)
             const CSeqdesc& operator*() { return static_cast<const CSeqdesc&>(*(*it)->m_Obj); }
         };
         iterator begin() { return iterator(&node); }
-        iterator end() { return iterator(0); }
+        iterator end() { return iterator(nullptr); }
     };
 
     struct CSeq_feat_run
@@ -541,14 +541,14 @@ INIT_DISCREPANCY_TYPE(STRING)
                 while (node) {
                     it = node->m_Features.begin();
                     if (it != node->m_Features.end()) return;
-                    node = follow ? node->m_Parent : 0;
+                    node = follow ? node->m_Parent : nullptr;
                 }
             }
             void operator++() {
                 ++it;
                 while (node) {
                     if (it != node->m_Features.end()) return;
-                    node = follow ? node->m_Parent : 0;
+                    node = follow ? node->m_Parent : nullptr;
                     if (node) it = node->m_Features.begin();
                 }
             }
@@ -557,7 +557,7 @@ INIT_DISCREPANCY_TYPE(STRING)
             const CSeq_feat& operator*() { return static_cast<const CSeq_feat&>(*(*it)->m_Obj); }
         };
         iterator begin() { return iterator(&node); }
-        iterator end() { return iterator(0); }
+        iterator end() { return iterator(nullptr); }
     };
     CSeqdesc_vec GetSeqdesc() { return CSeqdesc_vec(*m_CurrentNode); }
     CSeq_feat_vec GetFeat() { return CSeq_feat_vec(*m_CurrentNode); }
@@ -750,7 +750,7 @@ friend class CCopyHook_Submit_block;
             eKnownProduct = 1 << 3
         };
 
-        CParseNode(EObjType type, unsigned index, CParseNode* parent = 0) : m_Type(type), m_Index(index), m_Repeat(false), m_Info(0), m_Flags(0), m_Parent(parent) {
+        CParseNode(EObjType type, unsigned index, CParseNode* parent = nullptr) : m_Type(type), m_Index(index), m_Repeat(false), m_Info(0), m_Flags(0), m_Parent(parent) {
             m_Ref.Reset(new CRefNode(type, index));
             if (parent) {
                 m_Ref->m_Parent.Reset(parent->m_Ref);
@@ -879,7 +879,7 @@ friend class CDiscrepancyObject;
 class CDiscrepancyObject : public CReportObj
 {
 protected:
-    CDiscrepancyObject(CDiscrepancyContext::CRefNode* ref, CDiscrepancyContext::CRefNode* fix = 0, const CObject* more = 0) : m_Ref(ref), m_Fix(fix), m_More(more), m_Fixed(false) {}
+    CDiscrepancyObject(CDiscrepancyContext::CRefNode* ref, CDiscrepancyContext::CRefNode* fix = nullptr, const CObject* more = nullptr) : m_Ref(ref), m_Fix(fix), m_More(more), m_Fixed(false) {}
 
 public:
     const string GetText() const { return m_Ref->GetText(); }
@@ -946,13 +946,13 @@ inline const CObject* CDiscrepancyContext::GetMore(CReportObj& obj) { return sta
 // The following two macros are required to make sure all modules get loaded from the library
 // Use this in discrepancy_core.cpp when adding a new module
 #define DISCREPANCY_LINK_MODULE(name) \
-    struct CDiscrepancyModule_##name { static void* dummy; CDiscrepancyModule_##name(void){ dummy=0;} };            \
+    struct CDiscrepancyModule_##name { static void* dummy; CDiscrepancyModule_##name(){ dummy=nullptr; } };         \
     static CDiscrepancyModule_##name module_##name;
 
 // Use this in the new module
 #define DISCREPANCY_MODULE(name) \
-    struct CDiscrepancyModule_##name { static void* dummy; CDiscrepancyModule_##name(void){ dummy=0;} };            \
-    void* CDiscrepancyModule_##name::dummy=0;
+    struct CDiscrepancyModule_##name { static void* dummy; CDiscrepancyModule_##name(){ dummy=nullptr; } };         \
+    void* CDiscrepancyModule_##name::dummy=nullptr;
 
 
 #define DISCREPANCY_CASE(name, type, group, descr, ...) \

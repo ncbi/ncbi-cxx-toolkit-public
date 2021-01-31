@@ -315,7 +315,7 @@ const string kMissingViralQualsTop = "[n] virus organism[s] [is] missing require
 DISCREPANCY_CASE(MISSING_VIRAL_QUALS, BIOSRC, eOncaller, "Viruses should specify collection-date, country, and specific-host")
 {
     const CSeqdesc* src = context.GetBiosource();
-    if (context.HasLineage(src ? &src->GetSource() : 0, "Viruses")) {
+    if (context.HasLineage(src ? &src->GetSource() : nullptr, "Viruses")) {
         for (const CBioSource* biosrc : context.GetBiosources()) {
             bool has_collection_date = false;
             bool has_country = false;
@@ -486,7 +486,7 @@ DISCREPANCY_AUTOFIX(ATCC_CULTURE_CONFLICT)
             return CRef<CAutofixReport>(new CAutofixReport("ATCC_CULTURE_CONFLICT: Set culture collection for [n] source[s]", 1));
         }
     }
-    return CRef<CAutofixReport>(0);
+    return CRef<CAutofixReport>();
 }
 
 
@@ -497,7 +497,7 @@ const string kAmplifiedWithSpeciesSpecificPrimers = "amplified with species-spec
 DISCREPANCY_CASE(BACTERIA_SHOULD_NOT_HAVE_ISOLATE, BIOSRC, eDisc | eOncaller | eSmart, "Bacterial sources should not have isolate")
 {
     const CSeqdesc* src = context.GetBiosource();
-    if (context.HasLineage(src ? &src->GetSource() : 0, "Bacteria") || context.HasLineage(src ? &src->GetSource() : 0, "Archaea")) {
+    if (context.HasLineage(src ? &src->GetSource() : nullptr, "Bacteria") || context.HasLineage(src ? &src->GetSource() : nullptr, "Archaea")) {
         for (const CBioSource* biosrc : context.GetBiosources()) {
             bool has_bad_isolate = false;
             bool is_metagenomic = false;
@@ -557,7 +557,7 @@ DISCREPANCY_SUMMARIZE(BACTERIA_SHOULD_NOT_HAVE_ISOLATE)
 DISCREPANCY_CASE(MAG_SHOULD_NOT_HAVE_STRAIN, BIOSRC, eDisc | eSmart, "Organism assembled from metagenome reads should not have strain")
 {
     const CSeqdesc* src = context.GetBiosource();
-    if (context.HasLineage(src ? &src->GetSource() : 0, "Bacteria") || context.HasLineage(src ? &src->GetSource() : 0, "Archaea")) {
+    if (context.HasLineage(src ? &src->GetSource() : nullptr, "Bacteria") || context.HasLineage(src ? &src->GetSource() : nullptr, "Archaea")) {
         for (const CBioSource* biosrc : context.GetBiosources()) {
             bool is_metagenomic = false;
             bool is_env_sample = false;
@@ -597,7 +597,7 @@ DISCREPANCY_SUMMARIZE(MAG_SHOULD_NOT_HAVE_STRAIN)
 DISCREPANCY_CASE(MAG_MISSING_ISOLATE, BIOSRC, eDisc | eSmart, "Organism assembled from metagenome reads should have isolate")
 {
     const CSeqdesc* src = context.GetBiosource();
-    if (context.HasLineage(src ? &src->GetSource() : 0, "Bacteria") || context.HasLineage(src ? &src->GetSource() : 0, "Archaea")) {
+    if (context.HasLineage(src ? &src->GetSource() : nullptr, "Bacteria") || context.HasLineage(src ? &src->GetSource() : nullptr, "Archaea")) {
         for (const CBioSource* biosrc : context.GetBiosources()) {
             bool is_metagenomic = false;
             bool is_env_sample = false;
@@ -698,7 +698,7 @@ DISCREPANCY_SUMMARIZE(MULTIPLE_CULTURE_COLLECTION)
 DISCREPANCY_CASE(REQUIRED_STRAIN, BIOSRC, eDisc | eSubmitter | eSmart, "Bacteria should have strain")
 {
     const CSeqdesc* src = context.GetBiosource();
-    if (context.HasLineage(src ? &src->GetSource() : 0, "Bacteria") || context.HasLineage(src ? &src->GetSource() : 0, "Archaea")) {
+    if (context.HasLineage(src ? &src->GetSource() : nullptr, "Bacteria") || context.HasLineage(src ? &src->GetSource() : nullptr, "Archaea")) {
         for (const CBioSource* biosrc : context.GetBiosources()) {
             if (biosrc->IsSetSubtype()) {
                 bool is_metagenomic = false;
@@ -1455,7 +1455,7 @@ static const CDbtag* GetTaxonTag(const COrg_ref& org)
             }
         }
     }
-    return 0;
+    return nullptr;
 }
 
 
@@ -1672,7 +1672,7 @@ DISCREPANCY_AUTOFIX(END_COLON_IN_COUNTRY)
             return CRef<CAutofixReport>(new CAutofixReport("END_COLON_IN_COUNTRY: [n] country name[s] fixed", 1));
         }
     }
-    return CRef<CAutofixReport>(0);
+    return CRef<CAutofixReport>();
 }
 
 
@@ -1750,7 +1750,7 @@ DISCREPANCY_AUTOFIX(COUNTRY_COLON)
             return CRef<CAutofixReport>(new CAutofixReport("COUNTRY_COLON: [n] country name[s] fixed", 1));
         }
     }
-    return CRef<CAutofixReport>(0);
+    return CRef<CAutofixReport>();
 }
 
 
@@ -1809,7 +1809,7 @@ DISCREPANCY_AUTOFIX(HUMAN_HOST)
             return CRef<CAutofixReport>(new CAutofixReport("HUMAN_HOST: [n] host qualifier[s] fixed", 1));
         }
     }
-    return CRef<CAutofixReport>(0);
+    return CRef<CAutofixReport>();
 }
 
 
@@ -1997,7 +1997,7 @@ DISCREPANCY_AUTOFIX(AMPLIFIED_PRIMERS_NO_ENVIRONMENTAL_SAMPLE)
             return CRef<CAutofixReport>(new CAutofixReport("AMPLIFIED_PRIMERS_NO_ENVIRONMENTAL_SAMPLE: Set environmental_sample, fixed amplified primers note for [n] source[s]", 1));
         }
     }
-    return CRef<CAutofixReport>(0);
+    return CRef<CAutofixReport>();
 }
 
 
@@ -2288,7 +2288,7 @@ DISCREPANCY_ALIAS(DUP_SRC_QUAL, DUP_SRC_QUAL_DATA)
 DISCREPANCY_CASE(UNUSUAL_ITS, SEQUENCE, eDisc | eOncaller, "Test Bioseqs for unusual rRNA / ITS")
 {
     const CSeqdesc* biosrc = context.GetBiosource();
-    if (context.HasLineage(biosrc ? &biosrc->GetSource() : 0, "Microsporidia")) {
+    if (context.HasLineage(biosrc ? &biosrc->GetSource() : nullptr, "Microsporidia")) {
         bool has_unusual = false;
         for (const CSeq_feat& feat : context.GetFeat()) {
             if (feat.IsSetComment() && feat.IsSetData() && feat.GetData().IsRna()) {

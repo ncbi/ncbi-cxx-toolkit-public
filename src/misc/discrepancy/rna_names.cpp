@@ -101,7 +101,7 @@ DISCREPANCY_CASE(RRNA_NAME_CONFLICTS, FEAT, eDisc | eSubmitter | eSmart | eFatal
                 }
             }
             if (report) {
-                m_Objs["[n] rRNA product name[s] [is] not standard. Correct the names to the standard format, eg \"16S ribosomal RNA\""].Add(*context.SeqFeatObjRef(feat, autofix ? &feat : 0)).Fatal();
+                m_Objs["[n] rRNA product name[s] [is] not standard. Correct the names to the standard format, eg \"16S ribosomal RNA\""].Add(*context.SeqFeatObjRef(feat, autofix ? &feat : nullptr)).Fatal();
             }
         }
     }

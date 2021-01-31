@@ -84,7 +84,7 @@ string GetTwoFieldSubfield(const string& str, unsigned subfield)
 }
 
 
-static string GetFirstGBQualMatch (const vector <CRef <CGb_qual> >& quals, const string& qual_name, unsigned subfield = 0, const CString_constraint* str_cons = 0)
+static string GetFirstGBQualMatch (const vector <CRef <CGb_qual> >& quals, const string& qual_name, unsigned subfield = 0, const CString_constraint* str_cons = nullptr)
 {
     string str;
     for (auto it : quals) {
@@ -675,7 +675,7 @@ static void s_InitializeOrganelleProductRules(const string& name)
         in.reset(CObjectIStream::Open(name, eSerial_AsnText));
         string header = in->ReadFileHeader();
         in->Read(ObjectInfo(*s_OrganelleProductRules), CObjectIStream::eNoFileHeader);
-        s_OrganelleProductRules->SetPrecompiledData(0, 0, 0);
+        s_OrganelleProductRules->SetPrecompiledData(nullptr, nullptr, nullptr);
     }
     if (!s_OrganelleProductRules->IsSet()) {
         //LOG_POST("Falling back on built-in data for organelle products");
@@ -720,7 +720,7 @@ static void s_InitializeProductRules(const string& name)
         in.reset(CObjectIStream::Open(name, eSerial_AsnText));
         string header = in->ReadFileHeader();
         in->Read(ObjectInfo(*s_ProductRules), CObjectIStream::eNoFileHeader);
-        s_ProductRules->SetPrecompiledData(0, 0, 0);
+        s_ProductRules->SetPrecompiledData(nullptr, nullptr, nullptr);
     }
     if (!s_ProductRules->IsSet()) {
         //LOG_POST("Falling back on built-in data for suspect product rules");

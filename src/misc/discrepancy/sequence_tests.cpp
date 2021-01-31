@@ -220,7 +220,7 @@ DISCREPANCY_CASE(GAPS, SEQUENCE, eDisc | eSubmitter | eSmart | eBig, "Sequences 
         const CSeqSummary& sum = context.GetSeqSummary();
         bool has_gaps = !!sum.Gaps;
         if (!has_gaps) {
-            const CSeq_annot* annot = 0;
+            const CSeq_annot* annot = nullptr;
             for (auto it : bioseq.GetAnnot()) {
                 if (it->IsFtable()) {
                     annot = it;
@@ -464,7 +464,7 @@ DISCREPANCY_AUTOFIX(EXON_ON_MRNA)
         }
     }
     obj->SetFixed();
-    return CRef<CAutofixReport>(n ? new CAutofixReport("EXON_ON_MRNA: [n] exon[s] removed", n) : 0);
+    return CRef<CAutofixReport>(n ? new CAutofixReport("EXON_ON_MRNA: [n] exon[s] removed", n) : nullptr);
 }
 
 
@@ -650,7 +650,7 @@ DISCREPANCY_AUTOFIX(FEATURE_MOLTYPE_MISMATCH)
         descrs.Set().push_back(new_descr);
     }
     if (molinfo == nullptr) {
-        return CRef<CAutofixReport>(0);
+        return CRef<CAutofixReport>();
     }
     molinfo->SetBiomol(CMolInfo::eBiomol_genomic);
     obj->SetFixed();
@@ -766,7 +766,7 @@ DISCREPANCY_CASE(INCONSISTENT_DBLINK, SEQUENCE, eDisc | eSubmitter | eSmart | eB
         }
         if (!found) {
             m_Objs[kMissingDBLink].Add(*rep_seq);
-            AddUserObjectFieldItems(0, *rep_seq, m_Objs[kDBLinkCollect], m_Objs[kDBLinkObjectList], context, "DBLink object");
+            AddUserObjectFieldItems(nullptr, *rep_seq, m_Objs[kDBLinkCollect], m_Objs[kDBLinkObjectList], context, "DBLink object");
         }
     }
 }
@@ -948,7 +948,7 @@ DISCREPANCY_CASE(INCONSISTENT_STRUCTURED_COMMENTS, SEQUENCE, eDisc | eSubmitter 
         for (auto& it : m_Objs[kStructuredCommentObservedPrefixes].GetMap()) {
             if (!m_Objs[kStructuredCommentObservedPrefixesThis].Exist(it.first)) {
                 m_Objs["[n] Bioseq[s] [is] missing " + it.first + " structured comment"].Add(*rep_seq);
-                AddUserObjectFieldItems(0, *rep_seq, m_Objs[kStructuredCommentReport], m_Objs[kStructuredCommentPrevious], context, it.first + " structured comment", kStructuredCommentFieldPrefix);
+                AddUserObjectFieldItems(nullptr, *rep_seq, m_Objs[kStructuredCommentReport], m_Objs[kStructuredCommentPrevious], context, it.first + " structured comment", kStructuredCommentFieldPrefix);
             }
         }
         // report prefixes found on this sequence but not on previous sequences
@@ -956,7 +956,7 @@ DISCREPANCY_CASE(INCONSISTENT_STRUCTURED_COMMENTS, SEQUENCE, eDisc | eSubmitter 
             if (!m_Objs[kStructuredCommentObservedPrefixes].Exist(it.first)) {
                 for (auto ro : m_Objs[kStructuredCommentsSeqs].GetObjects()) {
                     m_Objs["[n] Bioseq[s] [is] missing " + it.first + " structured comment"].Add(*ro);
-                    AddUserObjectFieldItems(0, *ro, m_Objs[kStructuredCommentReport], m_Objs[kStructuredCommentPrevious], context, it.first + " structured comment", kStructuredCommentFieldPrefix);
+                    AddUserObjectFieldItems(nullptr, *ro, m_Objs[kStructuredCommentReport], m_Objs[kStructuredCommentPrevious], context, it.first + " structured comment", kStructuredCommentFieldPrefix);
                 }
             }
             m_Objs[kStructuredCommentObservedPrefixes][it.first].Add(*context.BioseqObjRef());
@@ -1357,7 +1357,7 @@ DISCREPANCY_AUTOFIX(MRNA_SEQUENCE_MINUS_STRAND_FEATURES)
         edit::ReverseComplementFeature(*feat, context.GetScope());
     }
     obj->SetFixed();
-    return CRef<CAutofixReport>(n ? new CAutofixReport("MRNA_SEQUENCE_MINUS_STRAND_FEATURES: [n] sequence[s] [is] converted to reverse complement[s]", n) : 0);
+    return CRef<CAutofixReport>(n ? new CAutofixReport("MRNA_SEQUENCE_MINUS_STRAND_FEATURES: [n] sequence[s] [is] converted to reverse complement[s]", n) : nullptr);
 }
 
 
@@ -1464,7 +1464,7 @@ DISCREPANCY_AUTOFIX(MITOCHONDRION_REQUIRED)
         obj->SetFixed();
         return CRef<CAutofixReport>(new CAutofixReport("MITOCHONDRION_REQUIRED: Genome was set to mitochondrion for [n] bioseq[s]", 1));
     }
-    return CRef<CAutofixReport>(0);
+    return CRef<CAutofixReport>();
 }
 
 
