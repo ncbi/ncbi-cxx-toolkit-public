@@ -1,0 +1,6 @@
+LIB = pcassay2
+SRC = pcassay2__ pcassay2___
+
+
+USES_LIBRARIES =  \
+    $(SEQ_LIBS) pcsubstance
