@@ -2556,6 +2556,7 @@ HCCV	s	Hastings College, Collection of Vertebrates
 HCDAL	s	Universidade Regional do Cariri			
 HCEN	s	Universidad Nacional del Centro del Peru			
 HCF	s	Universidade Tecnologica Federal do Parana			
+HCFC	s	Centro de Investigacion y Extension Forestal Andino Patagonico			
 HCH	s	Lewis-Clark State College, Natural Sciences Department			
 HCHM	s	Hope College, Biology Department			
 HCIB	s	Centro de Investigaciones Biologicas del Noroeste, S. C.			

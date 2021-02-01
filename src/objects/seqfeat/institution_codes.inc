@@ -2589,6 +2589,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "HCDAL\ts\tUniversidade Regional do Cariri\t\t\t",
 "HCEN\ts\tUniversidad Nacional del Centro del Peru\t\t\t",
 "HCF\ts\tUniversidade Tecnologica Federal do Parana\t\t\t",
+"HCFC\ts\tCentro de Investigacion y Extension Forestal Andino Patagonico\t\t\t",
 "HCH\ts\tLewis-Clark State College, Natural Sciences Department\t\t\t",
 "HCHM\ts\tHope College, Biology Department\t\t\t",
 "HCIB\ts\tCentro de Investigaciones Biologicas del Noroeste, S. C.\t\t\t",
