@@ -3502,7 +3502,9 @@ special  LN901194-LN901210  embl_tpa_nuc
 special  LN901386-LN901412  embl_est
 
 # Nominally embl_dirsub.
+special  LR130242-LR130508  embl_tpa_nuc
 special  LR594708-LR594709  embl_tpa_nuc
+special  LR760818-LR761312  embl_tpa_nuc
 
 # Nominally embl_dirsub.
 special  LT159851-LT159865  embl_est
