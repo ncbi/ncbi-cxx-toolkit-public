@@ -371,6 +371,7 @@ static ETokenClass GetQualifierClass(objects::CSeqFeatData::EQualifier qual_type
         { objects::CSeqFeatData::eQual_macronuclear, eClass_none },
         { objects::CSeqFeatData::eQual_map, eClass_text },
         { objects::CSeqFeatData::eQual_mating_type, eClass_text },
+        { objects::CSeqFeatData::eQual_metagenome_source, eClass_text },
         { objects::CSeqFeatData::eQual_metagenomic, eClass_none },
         { objects::CSeqFeatData::eQual_mitochondrion, eClass_none },
         { objects::CSeqFeatData::eQual_mobile_element, eClass_text },

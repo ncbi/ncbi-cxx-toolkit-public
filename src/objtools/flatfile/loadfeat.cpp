@@ -437,6 +437,7 @@ static const char *EmptyQuals[] = {
     "germline",
     "kinetoplast",
     "macronuclear",
+    "metagenomic",
     "mitochondrion",
     "mobile_element_type",              /* Fake. Put here to catch
                                            it's empty */

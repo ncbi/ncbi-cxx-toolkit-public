@@ -275,7 +275,7 @@ static const char *SourceSubSources[] = {
     "",                                 /* 34 */
     "",                                 /* 35 */
     "",                                 /* 36 */
-    "",                                 /* 37 */
+    "metagenomic",                      /* 37 */
     "mating_type",                      /* 38 */
     NULL
 };
@@ -295,6 +295,7 @@ static CharUInt1 SourceOrgMods[] = {
     {"ecotype",            27},
     {"culture_collection", 35},
     {"bio_material",       36},
+    {"metagenome_source",  37},
     {"type_material",      38},
     {NULL,                  0}
 };
