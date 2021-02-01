@@ -128,21 +128,21 @@ class CDiscrepancyItem : public CReportItem
 public:
     CDiscrepancyItem(const string& s) : m_Msg(s), m_Count(0), m_Autofix(false), m_Severity(eSeverity_warning), m_Ext(false), m_Summ(false) {}
     CDiscrepancyItem(CDiscrepancyCase& t, const string& s, const string& m, const string& x, const string& o, size_t n) : m_Str(s), m_Msg(m), m_Xml(x), m_Unit(o), m_Count(n), m_Autofix(false), m_Severity(eSeverity_warning), m_Ext(false), m_Summ(false), m_Test(&t) {}
-    string GetTitle(void) const { return m_Test ? m_Test->GetName() : kEmptyStr; }
-    string GetStr(void) const { return m_Str; }
-    string GetMsg(void) const { return m_Msg; }
-    string GetXml(void) const { return m_Xml; }
-    string GetUnit(void) const { return m_Unit; }
-    size_t GetCount(void) const { return m_Count; }
-    TReportObjectList GetDetails(void) const { return m_Objs; }
-    TReportItemList GetSubitems(void) const { return m_Subs;}
-    bool CanAutofix(void) const { return m_Autofix; }
-    ESeverity GetSeverity() const { return m_Severity; }
-    bool IsFatal(void) const { return m_Severity == eSeverity_error; }
-    bool IsInfo(void) const { return m_Severity == eSeverity_info; }
-    bool IsExtended(void) const { return m_Ext; }
-    bool IsSummary(void) const { return m_Summ; }
-    bool IsReal(void) const { return !m_Test.Empty(); }
+    string GetTitle() const override { return m_Test ? m_Test->GetName() : kEmptyStr; }
+    string GetStr() const override { return m_Str; }
+    string GetMsg() const override { return m_Msg; }
+    string GetXml() const override { return m_Xml; }
+    string GetUnit() const override { return m_Unit; }
+    size_t GetCount() const override { return m_Count; }
+    TReportObjectList GetDetails() const override { return m_Objs; }
+    TReportItemList GetSubitems() const override { return m_Subs;}
+    bool CanAutofix() const override { return m_Autofix; }
+    ESeverity GetSeverity() const override { return m_Severity; }
+    bool IsFatal() const override { return m_Severity == eSeverity_error; }
+    bool IsInfo() const override { return m_Severity == eSeverity_info; }
+    bool IsExtended() const override { return m_Ext; }
+    bool IsSummary() const override { return m_Summ; }
+    bool IsReal() const override { return !m_Test.Empty(); }
 
 protected:
     string m_Str;
@@ -230,8 +230,8 @@ class CDiscrepancyCore : public CDiscrepancyCase
 public:
     CDiscrepancyCore() : m_Count(0) {}
     virtual void Summarize(CDiscrepancyContext& context){}
-    virtual TReportItemList GetReport(void) const { return m_ReportItems;}
-    virtual TReportObjectList GetObjects(void) const;
+    TReportItemList GetReport() const override { return m_ReportItems;}
+    TReportObjectList GetObjects() const override;
     virtual CRef<CAutofixReport> Autofix(CDiscrepancyObject* obj, CDiscrepancyContext& context) const { return CRef<CAutofixReport>(); }
 protected:
     CReportNode m_Objs;
@@ -357,26 +357,26 @@ INIT_DISCREPANCY_TYPE(SUBMIT),
 INIT_DISCREPANCY_TYPE(STRING)
     { }
 
-    bool AddTest(const string& name);
-    void Push(const CSerialObject& root, const string& fname);
-    void Parse() { ParseAll(*m_RootNode); }
-    //void Parse(const CSerialObject& root, const string& fname);
+    bool AddTest(const string& name) override;
+    void Push(const CSerialObject& root, const string& fname) override;
+    void Parse() override { ParseAll(*m_RootNode); }
+    //void Parse(const CSerialObject& root, const string& fname) override;
     void ParseObject(const CBioseq& root);
     void ParseObject(const CBioseq_set& root);
     void ParseObject(const CSeq_entry& root);
     void ParseObject(const CSeq_submit& root);
-    void ParseStream(CObjectIStream& stream, const string& fname, bool skip, const string& default_header = kEmptyStr);
-    void ParseStrings(const string& fname);
-    void TestString(const string& str);
-    unsigned Summarize(void);
-    void Autofix(TReportObjectList& tofix, map<string, size_t>& rep, const string& default_header = kEmptyStr);
+    void ParseStream(CObjectIStream& stream, const string& fname, bool skip, const string& default_header = kEmptyStr) override;
+    void ParseStrings(const string& fname) override;
+    void TestString(const string& str) override;
+    unsigned Summarize() override;
+    void Autofix(TReportObjectList& tofix, map<string, size_t>& rep, const string& default_header = kEmptyStr) override;
     void AutofixFile(vector<CDiscrepancyObject*>&fixes, const string& default_header);
-    const TDiscrepancyCaseMap& GetTests(void){ return m_Tests; }
-    void OutputText(CNcbiOstream& out, unsigned short flags, char group);
-    void OutputXML(CNcbiOstream& out, unsigned short flags);
+    const TDiscrepancyCaseMap& GetTests() override { return m_Tests; }
+    void OutputText(CNcbiOstream& out, unsigned short flags, char group) override;
+    void OutputXML(CNcbiOstream& out, unsigned short flags) override;
     CParseNode* FindNode(const CRefNode& obj);
     const CObject* GetMore(CReportObj& obj);
-    const CSerialObject* FindObject(CReportObj& obj, bool alt = false);
+    const CSerialObject* FindObject(CReportObj& obj, bool alt = false) override;
     void ReplaceObject(CReportObj& obj, CSerialObject*, bool alt = false);
     void ReplaceSeq_feat(CReportObj& obj, const CSeq_feat& old_feat, CSeq_feat& new_feat, bool alt = false);
     CBioseq_set_Handle GetBioseq_setHandle(const CBioseq_set& bss) { return m_Scope->GetBioseq_setHandle(bss); }
@@ -394,7 +394,7 @@ INIT_DISCREPANCY_TYPE(STRING)
     objects::CScope& GetScope(void) const { return const_cast<objects::CScope&>(*m_Scope);}
 
     void SetFile(const string& fname);
-    void SetSuspectRules(const string& name, bool read = true);
+    void SetSuspectRules(const string& name, bool read = true) override;
     CConstRef<CSuspect_rule_set> GetProductRules(void);
     CConstRef<CSuspect_rule_set> GetOrganelleProductRules(void);
 
@@ -882,14 +882,14 @@ protected:
     CDiscrepancyObject(CDiscrepancyContext::CRefNode* ref, CDiscrepancyContext::CRefNode* fix = nullptr, const CObject* more = nullptr) : m_Ref(ref), m_Fix(fix), m_More(more), m_Fixed(false) {}
 
 public:
-    const string GetText() const { return m_Ref->GetText(); }
-    const string GetPath() const { for (auto ref = m_Ref; ref; ref = ref->m_Parent) if (ref->m_Type == CDiscrepancyContext::eFile) return ref->m_Text; return kEmptyStr; }
-    const string GetFeatureType() const;
-    const string GetProductName() const;
-    const string GetLocation() const;
-    const string GetLocusTag() const;
-    const string GetShort() const { return m_Ref->GetBioseqLabel(); }
-    virtual void SetMoreInfo(CObject* data) { m_More.Reset(data); }
+    const string GetText() const override { return m_Ref->GetText(); }
+    const string GetPath() const override { for (auto ref = m_Ref; ref; ref = ref->m_Parent) if (ref->m_Type == CDiscrepancyContext::eFile) return ref->m_Text; return kEmptyStr; }
+    const string GetFeatureType() const override;
+    const string GetProductName() const override;
+    const string GetLocation() const override;
+    const string GetLocusTag() const override;
+    const string GetShort() const override { return m_Ref->GetBioseqLabel(); }
+    void SetMoreInfo(CObject* data) override { m_More.Reset(data); }
 
     EType GetType(void) const // Can we use the same enum?
     {
@@ -959,10 +959,10 @@ inline const CObject* CDiscrepancyContext::GetMore(CReportObj& obj) { return sta
     class CDiscrepancyCase_##name : public CDiscrepancyVisitor<type>                                                \
     {                                                                                                               \
     public:                                                                                                         \
-        void Visit(const type&, CDiscrepancyContext&);                                                              \
-        void Summarize(CDiscrepancyContext&);                                                                       \
-        string GetName(void) const { return #name;}                                                                 \
-        string GetType(void) const { return #type;}                                                                 \
+        void Visit(const type&, CDiscrepancyContext&) override;                                                     \
+        void Summarize(CDiscrepancyContext&) override;                                                              \
+        string GetName() const override { return #name; }                                                           \
+        string GetType() const override { return #type; }                                                           \
     protected:                                                                                                      \
         __VA_ARGS__;                                                                                                \
     };                                                                                                              \

@@ -57,7 +57,7 @@ class CReadHook_Bioseq_set : public CReadObjectHook
 {
 public:
     CReadHook_Bioseq_set(CDiscrepancyContext* context) : m_Context(context) {}
-    virtual void ReadObject(CObjectIStream& stream, const CObjectInfo& passed_info)
+    void ReadObject(CObjectIStream& stream, const CObjectInfo& passed_info) override
     {
         if (m_Context->Skip()) {
             m_Context->PushNode(CDiscrepancyContext::eSeqSet);
@@ -92,7 +92,7 @@ class CReadHook_Bioseq : public CReadObjectHook
 {
 public:
     CReadHook_Bioseq(CDiscrepancyContext* context) : m_Context(context) {}
-    virtual void ReadObject(CObjectIStream& stream, const CObjectInfo& passed_info)
+    void ReadObject(CObjectIStream& stream, const CObjectInfo& passed_info) override
     {
         if (m_Context->Skip()) {
             m_Context->PushNode(CDiscrepancyContext::eBioseq);
@@ -124,7 +124,7 @@ class CReadHook_Bioseq_set_class : public CReadClassMemberHook
 {
 public:
     CReadHook_Bioseq_set_class(CDiscrepancyContext* context) : m_Context(context) {}
-    virtual void ReadClassMember(CObjectIStream& stream, const CObjectInfoMI& passed_info)
+    void ReadClassMember(CObjectIStream& stream, const CObjectInfoMI& passed_info) override
     {
         DefaultRead(stream, passed_info);
         const CBioseq_set::TClass& cl = *(const CBioseq_set::TClass*)passed_info.GetMember().GetObjectPtr();
@@ -563,7 +563,7 @@ class CCopyHook_Bioseq_set : public CCopyObjectHook
 {
 public:
     CCopyHook_Bioseq_set(CDiscrepancyContext* context) : m_Context(context) {}
-    virtual void CopyObject(CObjectStreamCopier& copier, const CObjectTypeInfo& passed_info)
+    void CopyObject(CObjectStreamCopier& copier, const CObjectTypeInfo& passed_info) override
     {
         m_Context->PushNode(CDiscrepancyContext::eSeqSet);
         if (m_Context->CanFixBioseq_set()) {
@@ -592,7 +592,7 @@ class CCopyHook_Bioseq : public CCopyObjectHook
 {
 public:
     CCopyHook_Bioseq(CDiscrepancyContext* context) : m_Context(context) {}
-    virtual void CopyObject(CObjectStreamCopier& copier, const CObjectTypeInfo& passed_info)
+    void CopyObject(CObjectStreamCopier& copier, const CObjectTypeInfo& passed_info) override
     {
         m_Context->PushNode(CDiscrepancyContext::eBioseq);
         if (m_Context->CanFixBioseq()) {
@@ -621,7 +621,7 @@ class CCopyHook_Seq_descr : public CCopyObjectHook
 {
 public:
     CCopyHook_Seq_descr(CDiscrepancyContext* context) : m_Context(context) {}
-    virtual void CopyObject(CObjectStreamCopier& copier, const CObjectTypeInfo& passed_info)
+    void CopyObject(CObjectStreamCopier& copier, const CObjectTypeInfo& passed_info) override
     {
         if (m_Context->CanFixSeqdesc()) {
             m_Context->m_AF_Seq_descr.Reset(new CSeq_descr);
@@ -643,7 +643,7 @@ class CCopyHook_Seq_annot : public CCopyObjectHook
 {
 public:
     CCopyHook_Seq_annot(CDiscrepancyContext* context) : m_Context(context) {}
-    virtual void CopyObject(CObjectStreamCopier& copier, const CObjectTypeInfo& passed_info)
+    void CopyObject(CObjectStreamCopier& copier, const CObjectTypeInfo& passed_info) override
     {
         if (m_Context->CanFixSeq_annot()) {
             m_Context->m_AF_Seq_annot.Reset(new CSeq_annot);
@@ -665,9 +665,9 @@ class CCopyHook_Submit_block : public CCopyObjectHook
 {
 public:
     CCopyHook_Submit_block(CDiscrepancyContext* context) : m_Context(context) {}
-    virtual void CopyObject(CObjectStreamCopier& copier, const CObjectTypeInfo& passed_info)
+    void CopyObject(CObjectStreamCopier& copier, const CObjectTypeInfo& passed_info) override
     {
-    if (m_Context->CanFixSubmit_block()) {
+        if (m_Context->CanFixSubmit_block()) {
             m_Context->m_AF_Submit_block.Reset(new CSubmit_block);
             copier.In().ReadObject(m_Context->m_AF_Submit_block, passed_info.GetTypeInfo());
             m_Context->AutofixSubmit_block();
