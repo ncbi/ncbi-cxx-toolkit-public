@@ -1159,10 +1159,9 @@ void CSeqDBImpl::FlushSeqMemory()
 bool CSeqDBImpl::PigToOid(int pig, int & oid) const
 {
     CHECK_MARKER();
-    CSeqDBLockHold locked(m_Atlas);
 
     for(int i = 0; i < m_VolSet.GetNumVols(); i++) {
-        if (m_VolSet.GetVol(i)->PigToOid(pig, oid, locked)) {
+        if (m_VolSet.GetVol(i)->PigToOid(pig, oid)) {
             oid += m_VolSet.GetVolOIDStart(i);
             return true;
         }
@@ -1836,15 +1835,13 @@ void CSeqDBImpl::GetStringBounds(string * low_id,
                                  string * high_id,
                                  int    * count)
 {
-    CSeqDBLockHold locked(m_Atlas);
-
     bool found = false;
 
     for(int i = 0; i < m_VolSet.GetNumVols(); i++) {
         string vlow, vhigh;
         int vcount(0);
 
-        m_VolSet.GetVol(i)->GetStringBounds(vlow, vhigh, vcount, locked);
+        m_VolSet.GetVol(i)->GetStringBounds(vlow, vhigh, vcount);
 
         if (vcount) {
             s_AccumulateMinMaxCount(vlow,

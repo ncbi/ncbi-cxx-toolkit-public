@@ -87,9 +87,6 @@ CSeqDBVol::CSeqDBVol(CSeqDBAtlas        & atlas,
       m_HaveColumns  (false),
       m_SeqFileOpened(false),
       m_HdrFileOpened(false),
-      m_PigFileOpened(false),
-      m_StrFileOpened(false),
-      m_TiFileOpened (false),
       m_HashFileOpened(false),
       m_OidFileOpened(false)
 {
@@ -115,8 +112,7 @@ CSeqDBVol::OpenSeqFile(CSeqDBLockHold & locked) const{
 
 void
 CSeqDBVol::x_OpenSeqFile(void) const {
-    static CFastMutex mtx;
-    CFastMutexGuard mtx_gurad(mtx);
+    CFastMutexGuard mtx_gurad(m_MtxSeq);
     if (!m_SeqFileOpened && m_Idx->GetNumOIDs() != 0) {
         m_Seq.Reset(new CSeqDBSeqFile(m_Atlas, m_VolName, (m_IsAA?'p':'n')));
     }
@@ -125,8 +121,7 @@ CSeqDBVol::x_OpenSeqFile(void) const {
 
 void
 CSeqDBVol::x_OpenHdrFile(void) const {
-    static CFastMutex mtx;
-    CFastMutexGuard mtx_gurad(mtx);
+    CFastMutexGuard mtx_gurad(m_MtxHdr);
     if (!m_HdrFileOpened && m_Idx->GetNumOIDs() != 0) {
         m_Hdr.Reset(new CSeqDBHdrFile(m_Atlas, m_VolName, (m_IsAA?'p':'n')));
     }
@@ -135,19 +130,27 @@ CSeqDBVol::x_OpenHdrFile(void) const {
 
 void
 CSeqDBVol::x_OpenPigFile(void) const{
-    static CFastMutex mtx;
-    CFastMutexGuard mtx_gurad(mtx);
-    if (!m_PigFileOpened &&
-         CSeqDBIsam::IndexExists(m_VolName, (m_IsAA?'p':'n'), 'p') &&
-         m_Idx->GetNumOIDs() != 0) {
-        m_IsamPig =
-            new CSeqDBIsam(m_Atlas,
-                           m_VolName,
-                           (m_IsAA?'p':'n'),
-                           'p',
-                           ePigId);
+    CFastMutexGuard mtx_gurad(m_MtxPig);
+    if (m_IsamPig.NotEmpty()) {
+    	m_IsamPig->AddReference();
     }
-    m_PigFileOpened = true;
+    else if (CSeqDBIsam::IndexExists(m_VolName, (m_IsAA?'p':'n'), 'p') &&
+             m_Idx->GetNumOIDs() != 0) {
+        m_IsamPig = new CSeqDBIsam(m_Atlas, m_VolName, (m_IsAA?'p':'n'), 'p', ePigId);
+    }
+}
+
+void
+CSeqDBVol::x_UnleasePigFile(void) const{
+    CFastMutexGuard mtx_gurad(m_MtxPig);
+    if (m_IsamPig.NotEmpty()) {
+    	if (m_IsamPig->ReferencedOnlyOnce()) {
+    		m_IsamPig.Reset();
+    	}
+    	else {
+    		m_IsamPig->RemoveReference();
+    	}
+    }
 }
 
 void
@@ -155,7 +158,6 @@ CSeqDBVol::x_OpenGiFile(void) const{
     CFastMutexGuard mtx_gurad(m_MtxGi);
     if (m_IsamGi.NotEmpty()) {
     	m_IsamGi->AddReference();
-    	return;
     }
     else if (CSeqDBIsam::IndexExists(m_VolName, (m_IsAA?'p':'n'), 'n') &&
 			   m_Idx->GetNumOIDs() != 0) {
@@ -178,36 +180,52 @@ CSeqDBVol::x_UnleaseGiFile(void) const{
 
 void
 CSeqDBVol::x_OpenStrFile(void) const{
-    static CFastMutex mtx;
-    CFastMutexGuard mtx_gurad(mtx);
-    if (!m_StrFileOpened &&
-         CSeqDBIsam::IndexExists(m_VolName, (m_IsAA?'p':'n'), 's') &&
-         m_Idx->GetNumOIDs() != 0) {
-        m_IsamStr =
-            new CSeqDBIsam(m_Atlas,
-                           m_VolName,
-                           (m_IsAA?'p':'n'),
-                           's',
-                           eStringId);
+    CFastMutexGuard mtx_gurad(m_MtxStr);
+    if (m_IsamStr.NotEmpty()) {
+    	m_IsamStr->AddReference();
     }
-    m_StrFileOpened = true;
+    else if(CSeqDBIsam::IndexExists(m_VolName, (m_IsAA?'p':'n'), 's') &&
+            m_Idx->GetNumOIDs() != 0) {
+        m_IsamStr = new CSeqDBIsam(m_Atlas, m_VolName, (m_IsAA?'p':'n'), 's', eStringId);
+    }
+}
+
+void
+CSeqDBVol::x_UnleaseStrFile(void) const{
+    CFastMutexGuard mtx_gurad(m_MtxStr);
+    if (m_IsamStr.NotEmpty()) {
+    	if (m_IsamStr->ReferencedOnlyOnce()) {
+    		m_IsamStr.Reset();
+    	}
+    	else {
+    		m_IsamStr->RemoveReference();
+    	}
+    }
 }
 
 void
 CSeqDBVol::x_OpenTiFile(void) const{
-    static CFastMutex mtx;
-    CFastMutexGuard mtx_gurad(mtx);
-    if (!m_TiFileOpened &&
-         CSeqDBIsam::IndexExists(m_VolName, (m_IsAA?'p':'n'), 't') &&
-         m_Idx->GetNumOIDs() != 0) {
-        m_IsamTi =
-            new CSeqDBIsam(m_Atlas,
-                           m_VolName,
-                           (m_IsAA?'p':'n'),
-                           't',
-                           eTiId);
+    CFastMutexGuard mtx_gurad(m_MtxTi);
+    if (m_IsamTi.NotEmpty()) {
+    	m_IsamTi->AddReference();
     }
-    m_TiFileOpened = true;
+    else if (CSeqDBIsam::IndexExists(m_VolName, (m_IsAA?'p':'n'), 't') &&
+             m_Idx->GetNumOIDs() != 0) {
+        m_IsamTi = new CSeqDBIsam(m_Atlas, m_VolName, (m_IsAA?'p':'n'), 't', eTiId);
+    }
+}
+
+void
+CSeqDBVol::x_UnleaseTiFile(void) const{
+    CFastMutexGuard mtx_gurad(m_MtxTi);
+    if (m_IsamTi.NotEmpty()) {
+    	if (m_IsamTi->ReferencedOnlyOnce()) {
+    		m_IsamTi.Reset();
+    	}
+    	else {
+    		m_IsamTi->RemoveReference();
+    	}
+    }
 }
 
 void
@@ -2356,14 +2374,15 @@ int CSeqDBVol::GetMinLength() const
     return m_Idx->GetMinLength();
 }
 
-bool CSeqDBVol::PigToOid(int pig, int & oid, CSeqDBLockHold & locked) const
+bool CSeqDBVol::PigToOid(int pig, int & oid) const
 {
-    if (!m_PigFileOpened) x_OpenPigFile();
-    if (m_IsamPig.Empty()) {
-        return false;
+	bool rv = false;
+    x_OpenPigFile();
+    if (m_IsamPig.NotEmpty()) {
+    	rv = m_IsamPig->PigToOid(pig, oid);
+    	x_UnleasePigFile();
     }
-
-    return m_IsamPig->PigToOid(pig, oid);
+    return rv;
 }
 
 bool CSeqDBVol::GetPig(int oid, int & pig, CSeqDBLockHold & locked) const
@@ -2406,7 +2425,7 @@ bool CSeqDBVol::TiToOid(Int8                   ti,
     // this point (in the call stack) uses int; code above this level,
     // up to the user level, uses Int8.
 
-    if (!m_TiFileOpened) x_OpenTiFile();
+    x_OpenTiFile();
     if (m_IsamTi.Empty()) {
         // If the "nti/ntd" files become ubiquitous, this could be
         // removed.  For now, I will look up trace IDs in the string
@@ -2421,11 +2440,14 @@ bool CSeqDBVol::TiToOid(Int8                   ti,
         if (oids.size()) {
             oid = oids[0];
         }
-
         return ! oids.empty();
     }
-
-    return m_IsamTi->IdToOid(ti, oid);
+    else {
+    	bool rv = false;
+    	rv = m_IsamTi->IdToOid(ti, oid);
+    	x_UnleaseTiFile();
+    	return rv;
+    }
 }
 
 bool CSeqDBVol::GiToOid(TGi gi, int & oid, CSeqDBLockHold & locked) const
@@ -2456,9 +2478,10 @@ void CSeqDBVol::IdsToOids(CSeqDBGiList   & ids,
     }
 
     if (ids.GetNumTis()) {
-        if (!m_TiFileOpened) x_OpenTiFile();
+        x_OpenTiFile();
         if (m_IsamTi.NotEmpty()) {
             m_IsamTi->IdsToOids(m_VolStart, m_VolEnd, ids);
+            x_UnleaseTiFile();
         } else {
             NCBI_THROW(CSeqDBException,
                        eArgErr,
@@ -2467,9 +2490,10 @@ void CSeqDBVol::IdsToOids(CSeqDBGiList   & ids,
     }
 
     if (ids.GetNumPigs()) {
-        if (!m_PigFileOpened) x_OpenPigFile();
+        x_OpenPigFile();
         if (m_IsamPig.NotEmpty()) {
             m_IsamPig->IdsToOids(m_VolStart, m_VolEnd, ids);
+            x_UnleasePigFile();
         } else {
             NCBI_THROW(CSeqDBException,
                        eArgErr,
@@ -2478,9 +2502,10 @@ void CSeqDBVol::IdsToOids(CSeqDBGiList   & ids,
     }
 
     if (ids.GetNumSis() && (GetLMDBFileName() == kEmptyStr)) {
-        if (!m_StrFileOpened) x_OpenStrFile();
+        x_OpenStrFile();
         if (m_IsamStr.NotEmpty()) {
             m_IsamStr->IdsToOids(m_VolStart, m_VolEnd, ids);
+            x_UnleaseStrFile();
         } else {
             NCBI_THROW(CSeqDBException,
                        eArgErr,
@@ -2507,9 +2532,10 @@ void CSeqDBVol::IdsToOids(CSeqDBNegativeList & ids,
     }
 
     if (ids.GetNumTis()) {
-        if (!m_TiFileOpened) x_OpenTiFile();
+        x_OpenTiFile();
         if (m_IsamTi.NotEmpty()) {
             m_IsamTi->IdsToOids(m_VolStart, m_VolEnd, ids);
+            x_UnleaseTiFile();
         } else {
             NCBI_THROW(CSeqDBException,
                        eArgErr,
@@ -2518,9 +2544,10 @@ void CSeqDBVol::IdsToOids(CSeqDBNegativeList & ids,
     }
 
     if (ids.GetNumSis()) {
-        if (!m_StrFileOpened) x_OpenStrFile();
+        x_OpenStrFile();
         if (m_IsamStr.NotEmpty()) {
             m_IsamStr->IdsToOids(m_VolStart, m_VolEnd, ids);
+            x_UnleaseStrFile();
         } else {
             NCBI_THROW(CSeqDBException,
                        eArgErr,
@@ -2585,23 +2612,25 @@ void CSeqDBVol::x_StringToOids(const string          & acc,
 
     switch(id_type) {
     case eStringId:
-        if (!m_StrFileOpened) x_OpenStrFile();
+        x_OpenStrFile();
         if (! m_IsamStr.Empty()) {
             // Not simplified
             vcheck = true;
             m_IsamStr->StringToOids(str_id, oids, simpler, vcheck);
+            x_UnleaseStrFile();
         }
         break;
 
     case ePigId:
         // Converted to PIG type.
-        if (!m_PigFileOpened) x_OpenPigFile();
+        x_OpenPigFile();
         if (! m_IsamPig.Empty()) {
             int oid(-1);
 
             if (m_IsamPig->PigToOid((int) ident, oid)) {
                 oids.push_back(oid);
             }
+            x_UnleasePigFile();
         }
         break;
 
@@ -2620,23 +2649,27 @@ void CSeqDBVol::x_StringToOids(const string          & acc,
 
     case eTiId:
         // Converted to TI type.
-        if (!m_TiFileOpened) x_OpenTiFile();
-        if (!m_StrFileOpened) x_OpenStrFile();
+         x_OpenTiFile();
         if (! m_IsamTi.Empty()) {
             int oid(-1);
 
             if (m_IsamTi->IdToOid(ident, oid)) {
                 oids.push_back(oid);
             }
-        } else if (m_IsamStr) {
-            // Not every database with TIs has a TI index, so fall
-            // back to a string comparison if the first attempt fails.
-            //
-            // 1. TI's don't have versions.
-            // 2. Specify "adjusted" as true, because lookup of
-            //    "gb|.." and similar tricks are not needed for TIs.
-
-            m_IsamStr->StringToOids(acc, oids, true, vcheck);
+            x_UnleaseTiFile();
+        }
+        else {
+        	x_OpenStrFile();
+        	if (m_IsamStr.NotEmpty()) {
+            	// Not every database with TIs has a TI index, so fall
+            	// back to a string comparison if the first attempt fails.
+            	//
+            	// 1. TI's don't have versions.
+            	// 2. Specify "adjusted" as true, because lookup of
+            	//    "gb|.." and similar tricks are not needed for TIs.
+        		m_IsamStr->StringToOids(acc, oids, true, vcheck);
+        		x_UnleaseStrFile();
+        	}
         }
         break;
 
@@ -2745,25 +2778,6 @@ void CSeqDBVol::SeqidToOids(CSeq_id              & seqid,
 
     x_StringToOids(seqid.AsFastaString(), id_type, ident, str_id, simpler, oids);
 
-}
-
-void CSeqDBVol::x_UnLeaseIsam(void) const
-{
-    if (m_IsamPig.NotEmpty()) {
-        m_PigFileOpened = false;
-        m_IsamPig->UnLease();
-    }
-    if (m_IsamGi.NotEmpty()) {
-        m_IsamGi->UnLease();
-    }
-    if (m_IsamStr.NotEmpty()) {
-        m_StrFileOpened = false;
-        m_IsamStr->UnLease();
-    }
-    if (m_IsamTi.NotEmpty()) {
-        m_TiFileOpened = false;
-        m_IsamTi->UnLease();
-    }
 }
 
 void CSeqDBVol::UnLease()
@@ -3066,7 +3080,7 @@ void CSeqDBVol::GetPigBounds(int            & low_id,
                              CSeqDBLockHold & locked) const
 {
     //m_Atlas.Lock(locked);
-    if (!m_PigFileOpened) x_OpenPigFile();
+    x_OpenPigFile();
     low_id = high_id = count = 0;
 
     if (m_IsamPig.NotEmpty()) {
@@ -3079,22 +3093,22 @@ void CSeqDBVol::GetPigBounds(int            & low_id,
 
         s_SeqDBFitsInFour(L);
         s_SeqDBFitsInFour(H);
+        x_UnleasePigFile();
     }
 }
 
 void CSeqDBVol::GetStringBounds(string         & low_id,
                                 string         & high_id,
-                                int            & count,
-                                CSeqDBLockHold & locked) const
+                                int            & count) const
 {
-    //m_Atlas.Lock(locked);
-    if (!m_StrFileOpened) x_OpenStrFile();
+    x_OpenStrFile();
     count = 0;
     low_id.erase();
     high_id.erase();
 
     if (m_IsamStr.NotEmpty()) {
         m_IsamStr->GetIdBounds(low_id, high_id, count);
+        x_UnleaseStrFile();
     }
 }
 
