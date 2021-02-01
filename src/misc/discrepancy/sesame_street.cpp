@@ -497,7 +497,7 @@ DISCREPANCY_AUTOFIX(SOURCE_QUALS)
 {
     CSeqdesc* desc = const_cast<CSeqdesc*>(dynamic_cast<const CSeqdesc*>(context.FindObject(*obj)));
     CRef<CBioSource> bs(&desc->SetSource());
-    auto fix = dynamic_cast<const CSourseQualsAutofixData*>(obj->GetMoreInfo().GetPointer());
+    auto* fix = dynamic_cast<const CSourseQualsAutofixData*>(obj->GetMoreInfo().GetPointer());
     string qual = fix->m_Qualifier;
     string val = fix->m_Value;
     size_t added = 0;
@@ -525,10 +525,10 @@ DISCREPANCY_AUTOFIX(SOURCE_QUALS)
     }
 
     if (changed) {
-        return CRef<CAutofixReport>(new CAutofixReport("SOURCE_QUALS: [n] qualifier[s] " + qual + " (" + val + ") fixed", added + changed));
+        return CRef<CAutofixReport>(new CAutofixReport("SOURCE_QUALS: [n] qualifier[s] " + qual + " (" + val + ") fixed", (unsigned)(added + changed)));
     }
     else if (added) {
-        return CRef<CAutofixReport>(new CAutofixReport("SOURCE_QUALS: [n] missing qualifier[s] " + qual + " (" + val + ") added", added));
+        return CRef<CAutofixReport>(new CAutofixReport("SOURCE_QUALS: [n] missing qualifier[s] " + qual + " (" + val + ") added", (unsigned)added));
     }
     return CRef<CAutofixReport>();
 

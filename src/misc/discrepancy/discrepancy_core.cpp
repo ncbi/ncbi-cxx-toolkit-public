@@ -365,8 +365,8 @@ bool CDiscrepancyContext::AddTest(const string& name)
     m_Tests[str] = test;
 
 #define REGISTER_DISCREPANCY_TYPE(type) \
-    if (dynamic_cast<CDiscrepancyVisitor<type>* >(test.GetPointer())) {                         \
-        m_All_##type.push_back(dynamic_cast<CDiscrepancyVisitor<type>* >(test.GetPointer()));   \
+    if (auto* p = dynamic_cast<CDiscrepancyVisitor<type>*>(test.GetPointer())) {                \
+        m_All_##type.push_back(p);                                                              \
         m_Enable_##type = true;                                                                 \
         return true;                                                                            \
     }

@@ -159,7 +159,7 @@ protected:
 
 void CDiscrepancyContext::PushNode(EObjType type)
 {
-    CRef<CParseNode> new_node(new CParseNode(type, m_CurrentNode->m_Children.size(), m_CurrentNode));
+    CRef<CParseNode> new_node(new CParseNode(type, (unsigned)m_CurrentNode->m_Children.size(), m_CurrentNode));
     m_CurrentNode->m_Children.push_back(new_node);
     m_CurrentNode.Reset(new_node);
 }
@@ -178,7 +178,7 @@ void CDiscrepancyContext::ParseStrings(const string& fname)
     m_RootNode->m_Ref->m_Text = fname;
     m_CurrentNode.Reset(m_RootNode);
 
-    CNcbiIfstream istr(fname.c_str());
+    CNcbiIfstream istr(fname);
     CStreamLineReader line_reader(istr);
     do {
         PushNode(eString);
@@ -685,7 +685,7 @@ protected:
 
 unique_ptr<CObjectIStream> OpenUncompressedStream(const string& fname, bool& compressed) // One more copy!!!
 {
-    unique_ptr<CNcbiIstream> InputStream(new CNcbiIfstream(fname.c_str(), ios::binary));
+    unique_ptr<CNcbiIstream> InputStream(new CNcbiIfstream(fname, ios::binary));
     CCompressStream::EMethod method;
 
     CFormatGuess::EFormat format = CFormatGuess::Format(*InputStream);
@@ -773,8 +773,8 @@ void CDiscrepancyContext::AutofixFile(vector<CDiscrepancyObject*>&fixes, const s
     unique_ptr<CObjectIStream> in = OpenUncompressedStream(path, compressed);
 cout << "Autofixing " << path << "\n";
 
-    int dot = path.find_last_of('.');
-    int slash = path.find_last_of("/\\");
+    size_t dot = path.find_last_of('.');
+    size_t slash = path.find_last_of("/\\");
     string fixed_path = !compressed && dot > slash ? path.substr(0, dot) + ".autofix" + path.substr(dot) : path + ".autofix.sqn";
 
     string header = in->ReadFileHeader();

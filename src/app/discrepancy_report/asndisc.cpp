@@ -565,7 +565,7 @@ int main(int argc, const char* argv[])
     if (argc==2 && argv && argv[1] && strchr(argv[1], ' '))
     {
         NStr::Split(argv[1], " ", split_args);
-        argc = 1 + split_args.size();
+        argc = 1 + (int)split_args.size();
         new_argv.reserve(argc);
         new_argv.push_back(argv[0]);
         for (auto& s: split_args)

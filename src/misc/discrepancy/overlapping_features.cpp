@@ -218,7 +218,7 @@ bool IsShortrRNA(const CSeq_feat& f, CScope* scope) // used in feature_tests.cpp
     string rrna_name = f.GetData().GetRna().GetRnaProductName();
     for (const auto& it : kTrnaLengthMap) {
         SIZE_TYPE pos = NStr::FindNoCase(rrna_name, it.first);
-        if (pos != string::npos && len < it.second.first && !(it.second.second && f.IsSetPartial() && f.GetPartial()) ) {
+        if (pos != NPOS && len < it.second.first && !(it.second.second && f.IsSetPartial() && f.GetPartial()) ) {
             is_bad = true;
             break;
         }
@@ -255,7 +255,7 @@ DISCREPANCY_CASE(RNA_CDS_OVERLAP, SEQUENCE, eDisc | eSubmitter | eSmart | eFatal
             string rrna_name = rnas[i]->GetData().GetRna().GetRnaProductName();
             bool is_bad = false;
             for (const auto& it : kTrnaLengthMap) {
-                if (NStr::FindNoCase(rrna_name, it.first) != string::npos && len < it.second.first && (!it.second.second || (rnas[i]->IsSetPartial() && rnas[i]->GetPartial())) ) {
+                if (NStr::FindNoCase(rrna_name, it.first) != NPOS && len < it.second.first && (!it.second.second || (rnas[i]->IsSetPartial() && rnas[i]->GetPartial())) ) {
                     is_bad = true;
                     break;
                 }

@@ -758,7 +758,7 @@ friend class CCopyHook_Submit_block;
         }
 
         CParseNode& AddDescriptor(const CSeqdesc& seqdesc) {
-            CRef<CParseNode> new_node(new CParseNode(eSeqDesc, m_Descriptors.size(), this));
+            CRef<CParseNode> new_node(new CParseNode(eSeqDesc, (unsigned)m_Descriptors.size(), this));
             new_node->m_Obj = &seqdesc;
             m_Descriptors.push_back(new_node);
             m_DescriptorMap[&seqdesc] = new_node;
@@ -786,7 +786,7 @@ friend class CCopyHook_Submit_block;
         }
 
         CParseNode& AddFeature(const CSeq_feat& feat) {
-            CRef<CParseNode> new_node(new CParseNode(eSeqFeat, m_Features.size(), this));
+            CRef<CParseNode> new_node(new CParseNode(eSeqFeat, (unsigned)m_Features.size(), this));
             new_node->m_Obj = &feat;
             m_Features.push_back(new_node);
             m_FeatureMap[&feat] = new_node;

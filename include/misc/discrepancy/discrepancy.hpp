@@ -72,8 +72,8 @@ class NCBI_DISCREPANCY_EXPORT CAutofixReport : public CObject
 public:
     CAutofixReport(const string&s, unsigned int n) : S(s), N(n) {}
     void AddSubitems(const vector<CRef<CAutofixReport>>& v) { copy(v.begin(), v.end(), back_inserter(V)); }
-    string GetS(void) { return S; }
-    unsigned int GetN(void) { return N; }
+    string GetS() const { return S; }
+    unsigned int GetN() const { return N; }
     const vector<CRef<CAutofixReport>>& GetSubitems() { return V; }
 protected:
     string S;
@@ -126,7 +126,7 @@ typedef map<string, CRef<CDiscrepancyCase> > TDiscrepancyCaseMap;
 class NCBI_DISCREPANCY_EXPORT CDiscrepancySet : public CObject
 {
 public:
-    CDiscrepancySet(void) : m_SesameStreetCutoff(0.75), m_Eucariote(false), m_Gui(false), m_UserData(0) {}
+    CDiscrepancySet() : m_SesameStreetCutoff(0.75), /*m_Eucariote(false),*/ m_Gui(false), m_UserData(nullptr) {}
     virtual ~CDiscrepancySet(void){}
 
     template<typename Container>
@@ -163,7 +163,7 @@ public:
     void* GetUserData(void) const { return m_UserData; }
     //virtual void SetFile(const string& fname) = 0;
     void SetLineage(const string& s) { m_Lineage = s; }
-    void SetEucariote(bool b){ m_Eucariote = b; }
+    //void SetEucariote(bool b){ m_Eucariote = b; }
     void SetSesameStreetCutoff(float f){ m_SesameStreetCutoff = f; }
     virtual void SetSuspectRules(const string& name, bool read = true) = 0;
     void SetGui(bool b){ m_Gui = b; }
@@ -175,7 +175,7 @@ public:
 protected:
     string m_Lineage;
     float m_SesameStreetCutoff;
-    bool m_Eucariote;
+    //bool m_Eucariote;
     bool m_Gui;
     void* m_UserData;
 };

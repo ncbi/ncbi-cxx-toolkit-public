@@ -365,7 +365,7 @@ EExtensibe IsExtendableLeft(TSeqPos left, const CBioseq& seq, CScope* scope, TSe
     if (rval == eExtensibe_abut) return rval;
     CSeqVector svec(seq, scope, CBioseq_Handle::CBioseq_Handle::eCoding_Iupac);
     string codon;
-    size_t count = extend_len ? extend_len : 1;
+    TSeqPos count = extend_len ? extend_len : 1;
     svec.GetSeqData(left - count, left, codon);
     for (unsigned i = 0; i < count; i++) {
         if (codon[i] == 'N') {
@@ -433,7 +433,7 @@ EExtensibe IsExtendableRight(TSeqPos right, const CBioseq& seq, CScope* scope, T
     if (rval == eExtensibe_abut) return rval;
     CSeqVector svec(seq, scope, CBioseq_Handle::CBioseq_Handle::eCoding_Iupac);
     string codon;
-    size_t count = extend_len ? extend_len : 1;
+    TSeqPos count = extend_len ? extend_len : 1;
     svec.GetSeqData(right + 1, right + count + 1, codon);
     for (unsigned i = 0; i < count; i++) {
         if (codon[i] == 'N') {
@@ -1640,9 +1640,9 @@ DISCREPANCY_CASE(NO_PRODUCT_STRING, FEAT, eDisc, "Product has string \"no produc
             const CProt_ref& prot = feat.GetData().GetProt();
             if (prot.IsSetName()) {
                 const string* no_prot_str = NStr::FindNoCase(prot.GetName(), "no product string in file");
-                if (no_prot_str != nullptr) {
+                if (no_prot_str) {
                     const CSeq_feat* product = sequence::GetCDSForProduct(context.CurrentBioseq(), &context.GetScope());
-                    if (product != nullptr) {
+                    if (product) {
                         m_Objs[kNoProductStr].Add(*context.SeqFeatObjRef(*product), false);
                     }
                 }
