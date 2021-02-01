@@ -14,7 +14,7 @@ MY_LIB=$(XCONNEXT) xconnect connext psg_cassandra psg_diag $(COMPRESS_LIBS) \
     xobjutil id2 seqsplit seqset $(SEQ_LIBS) pub medline biblio general xser xutil
 LIB=$(MY_LIB:%=%$(STATIC)) $(LOCAL_LIB) xncbi
 
-LIBS= -lconnect $(GMOCK_LIBS) $(CASSANDRA_STATIC_LIBS) $(ORIG_LIBS)
+LIBS = $(NETWORK_LIBS) -lconnect $(GMOCK_LIBS) $(CASSANDRA_STATIC_LIBS) $(ORIG_LIBS)
 
 LDFLAGS = $(ORIG_LDFLAGS) $(FAST_LDFLAGS) $(COVERAGE_FLAGS) $(LOCAL_LDFLAGS)
 
