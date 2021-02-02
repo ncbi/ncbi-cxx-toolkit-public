@@ -47,10 +47,17 @@ enum class TChangelogOperation : TChangelogOperationBase {
     eUpdated = 1,
     eDeleted = 2,
     eChangeLogPartitionUpdated = 3,
+    eStatusHistoryInserted = 4,
+    eStatusHistoryDeleted = 5,
 };
 
 class CBlobChangelogRecord {
  public:
+    static bool IsOperationValid(TChangelogOperation op)
+    {
+        return op > TChangelogOperation::eUndefined && op <= TChangelogOperation::eStatusHistoryDeleted;
+    }
+
     static CTime GetUpdatedTimePartition(CTime updated_time, uint64_t partition_seconds);
 
     static uint64_t GetPartitionSize();

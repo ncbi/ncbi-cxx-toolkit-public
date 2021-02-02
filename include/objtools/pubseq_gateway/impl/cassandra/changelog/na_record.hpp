@@ -44,6 +44,11 @@ USING_NCBI_SCOPE;
 
 class CNAnnotChangelogRecord {
  public:
+    static bool IsOperationValid(TChangelogOperation op)
+    {
+        return op > TChangelogOperation::eUndefined && op <= TChangelogOperation::eChangeLogPartitionUpdated;
+    }
+
     CNAnnotChangelogRecord()
         : CNAnnotChangelogRecord("", "", 0, 0, 0, TChangelogOperation::eUndefined)
     {}
