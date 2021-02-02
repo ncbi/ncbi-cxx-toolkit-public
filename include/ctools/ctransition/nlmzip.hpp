@@ -1,6 +1,14 @@
 #ifndef __nlmzip__
 #define __nlmzip__
 
+// Ignore warnings for ncbi included code
+#ifdef __GNUC__ // if gcc or g++
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wunused-function"
+#endif //__GNUC__
+
+
+
 /* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     NOTE: NLMZIP is have very bad MT-safety !!! 
@@ -285,5 +293,11 @@ bool CT_DecompressBuffer(
 END_CTRANSITION_SCOPE
 
 /* @} */
+
+// Re-enable warnings
+#ifdef __GNUC__ // if gcc or g++
+#  pragma GCC diagnostic pop
+#endif //__GNUC__
+
 
 #endif /* __nlmzip__ */

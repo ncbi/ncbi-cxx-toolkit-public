@@ -63,13 +63,22 @@
  * ==========================================================================
  */
 
+
 #include <ncbi_pch.hpp>
 #include <ctools/ctransition/ncbimem.hpp>
 #include <ctools/ctransition/ncbierr.hpp>
 #include <assert.h>
 #include "ct_nlmzip_i.h"
 
+// Ignore warnings for ncbi included code
+#ifdef __GNUC__ // if gcc or g++
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wunused-function"
+#endif //__GNUC__
+
+
 BEGIN_CTRANSITION_SCOPE
+
 
 
 /*
@@ -599,3 +608,10 @@ asnio2fci_open(int read, fci_t stream)
 
 
 END_CTRANSITION_SCOPE
+
+
+// Re-enable warnings
+#ifdef __GNUC__ // if gcc or g++
+#  pragma GCC diagnostic pop
+#endif //__GNUC__
+

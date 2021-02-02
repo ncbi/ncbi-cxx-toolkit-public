@@ -342,7 +342,7 @@ huft_build ( /*FCN*/
              break;
          }
     }                      
-    if ( (Uint4)l < (k = j) ) {  /* minimum code length */
+    if ( (Uint4)l < (Uint4)(k = j) ) {  /* minimum code length */
         l = j;
     }
     for ( i = BMAX; i; i-- ) {
@@ -350,7 +350,7 @@ huft_build ( /*FCN*/
              break;
          }
     }
-    if ( (Uint4)l > (g = i) ) {  /* maximum code length */
+    if ( (Uint4)l > (Uint4)(g = i) ) {  /* maximum code length */
         l = i;
     }
     *m = l;
