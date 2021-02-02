@@ -39,6 +39,8 @@
 #include <connect/ncbi_socket.hpp>
 #include <stdlib.h>
 
+#include <common/ncbi_sanitizers.h>
+
 #include "test_assert.h"  // This header must go last
 
 
@@ -263,7 +265,9 @@ void CTest::Server(void)
 
     // Spawn test thread to activate the trigger
     // (allow thread to run even in a single-thread environment).
+    NCBI_LSAN_DISABLE;
     CTriggerThread* thr = new CTriggerThread(m_Delay);
+    NCBI_LSAN_ENABLE;
     thr->Run(CThread::fRunAllowST);
 
     vector<CSocketAPI::SPoll> polls;

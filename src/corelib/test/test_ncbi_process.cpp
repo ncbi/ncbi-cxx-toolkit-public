@@ -37,6 +37,7 @@
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbi_process.hpp>
 
+#include <common/ncbi_sanitizers.h>
 #include <common/test_assert.h>  /* This header must go last */
 
 
@@ -197,6 +198,7 @@ static void Test_PIDGuard(int ppid, string lockfile)
         }
     } else if (ppid == -1) {
         // Deliberate leak -- just create lockfile
+        NCBI_LSAN_DISABLE_GUARD;
         new CPIDGuard(lockfile);
         LOG_POST("Left stale lock.");
     } else if (ppid == -2) {

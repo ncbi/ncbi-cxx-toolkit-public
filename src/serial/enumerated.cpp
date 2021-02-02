@@ -39,6 +39,8 @@
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 #include <serial/objcopy.hpp>
+#include <common/ncbi_sanitizers.h>
+
 
 BEGIN_NCBI_SCOPE
 
@@ -218,6 +220,7 @@ CEnumeratedTypeValues::ValueToName(void) const
         CFastMutexGuard GUARD(s_EnumValuesMutex);
         m = m_ValueToName.get();
         if ( !m ) {
+            NCBI_LSAN_DISABLE_GUARD;  
             shared_ptr<TValueToName> keep(m = new TValueToName);
             ITERATE ( TValues, i, m_Values ) {
                 (*m)[i->second] = &i->first;
@@ -236,6 +239,7 @@ CEnumeratedTypeValues::NameToValue(void) const
         CFastMutexGuard GUARD(s_EnumValuesMutex);
         m = m_NameToValue.get();
         if ( !m ) {
+            NCBI_LSAN_DISABLE_GUARD;
             shared_ptr<TNameToValue> keep(m = new TNameToValue);
             ITERATE ( TValues, i, m_Values ) {
                 const string& s = i->first;

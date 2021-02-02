@@ -40,6 +40,7 @@
 #include <db/error_codes.hpp>
 
 #include <connect/server_monitor.hpp>
+#include <common/ncbi_sanitizers.h>
 
 #include <db.h>
 
@@ -420,6 +421,8 @@ bool CBDB_Env::Remove()
     }
     Close();
 
+    // for db_env_create()
+    NCBI_LSAN_DISABLE_GUARD;
     int ret = db_env_create(&m_Env, 0);
     BDB_CHECK(ret, "DB_ENV::create");
 

@@ -49,6 +49,7 @@
 #include "datatool.hpp"
 #include <serial/error_codes.hpp>
 #include <algorithm>
+#include <common/ncbi_sanitizers.h>
 
 
 #define NCBI_USE_ERRCODE_X   Serial_DTType
@@ -79,6 +80,7 @@ private:
 
 TTypeInfo CAnyTypeSource::GetTypeInfo(void)
 {
+    NCBI_LSAN_DISABLE_GUARD;
     return m_Type->GetAnyTypeInfo();
 }
 

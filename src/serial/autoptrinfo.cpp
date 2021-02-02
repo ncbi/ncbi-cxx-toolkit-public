@@ -38,6 +38,7 @@
 #include <serial/objostr.hpp>
 #include <serial/objcopy.hpp>
 #include <serial/serialutil.hpp>
+#include <common/ncbi_sanitizers.h>
 
 BEGIN_NCBI_SCOPE
 
@@ -65,6 +66,7 @@ TTypeInfo CAutoPointerTypeInfo::GetTypeInfo(TTypeInfo base)
 
 CTypeInfo* CAutoPointerTypeInfo::CreateTypeInfo(TTypeInfo base)
 {
+    NCBI_LSAN_DISABLE_GUARD;
     return new CAutoPointerTypeInfo(base);
 }
 

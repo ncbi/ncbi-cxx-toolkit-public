@@ -951,6 +951,11 @@ CDiagContextThreadData& CDiagContextThreadData::GetThreadData(void)
     static CStaticTls<CDiagContextThreadData>
         s_ThreadData(s_ThreadDataSafeStaticCleanup,
         CSafeStaticLifeSpan(CSafeStaticLifeSpan::eLifeSpan_Long, 1));
+
+    // Deliberate leak for 'data'-- for both cases: 
+    // GetValue() and new CDiagContextThreadData.
+    NCBI_LSAN_DISABLE_GUARD;
+    
     CDiagContextThreadData* data = s_ThreadData.GetValue();
     if ( !data ) {
         // Cleanup data set to null for any thread except the main one.
@@ -7944,8 +7949,10 @@ extern void SetDiagStream(CNcbiOstream* os,
             str_name =  kLogName_Stream;
         }
     }
-    SetDiagHandler(new CCompatStreamDiagHandler(os, quick_flush,
-        cleanup, cleanup_data, str_name));
+    NCBI_LSAN_DISABLE_GUARD; // new CCompatStreamDiagHandler
+    SetDiagHandler(
+        new CCompatStreamDiagHandler(os, quick_flush, cleanup, cleanup_data, str_name)
+    );
 }
 
 

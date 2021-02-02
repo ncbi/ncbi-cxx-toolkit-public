@@ -37,6 +37,7 @@
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbi_safe_static.hpp>
 #include <corelib/error_codes.hpp>
+#include <common/ncbi_sanitizers.h>
 #include <algorithm>
 #include <stdarg.h>
 #include "ncbisys.hpp"
@@ -145,7 +146,13 @@ void CNcbiEnvironment::Enumerate(list<string>& names, const string& prefix)
 
 void CNcbiEnvironment::Set(const string& name, const string& value)
 {
-    TXChar* str = NcbiSys_strdup(_T_XCSTRING(name + "=" + value));
+
+    TXChar* str = nullptr;
+    {{
+        // Deliberate leak
+        NCBI_LSAN_DISABLE_GUARD;
+        str = NcbiSys_strdup(_T_XCSTRING(name + "=" + value));
+    }}
     if ( !str ) {
         throw bad_alloc();
     }

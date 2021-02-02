@@ -38,8 +38,11 @@
 #include "srcutil.hpp"
 #include <serial/impl/enumerated.hpp>
 #include "stdstr.hpp"
+#include <common/ncbi_sanitizers.h>
+
 
 BEGIN_NCBI_SCOPE
+
 
 CEnumDataType::CEnumDataType(void)
 {
@@ -443,6 +446,7 @@ string CEnumDataType::GetXmlValueName(const string& value) const
 
 CTypeInfo* CEnumDataType::CreateTypeInfo(void)
 {
+    NCBI_LSAN_DISABLE_GUARD;
     AutoPtr<CEnumeratedTypeValues>
         info(new CEnumeratedTypeValues(GlobalName(), IsInteger()));
     ITERATE ( TValues, i, m_Values ) {

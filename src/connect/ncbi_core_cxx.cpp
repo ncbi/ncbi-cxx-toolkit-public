@@ -44,6 +44,7 @@
 #include <connect/error_codes.hpp>
 #include <connect/ncbi_core_cxx.hpp>
 #include <connect/ncbi_monkey.hpp>
+#include <common/ncbi_sanitizers.h>
 
 #define NCBI_USE_ERRCODE_X   Connect_Core
 
@@ -633,6 +634,7 @@ static void s_Init(const IRWRegistry* reg  = 0,
 
     TCORE_Set set = 0;
     if (!(g_CORE_Set & eCORE_SetLOCK)) {
+        NCBI_LSAN_DISABLE_GUARD;  
         CORE_SetLOCK(MT_LOCK_cxx2c(lock, !!(flag & eConnectInit_OwnLock)));
         set |= eCORE_SetLOCK;
     }

@@ -35,6 +35,7 @@
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbiapp_api.hpp>
 #include <corelib/error_codes.hpp>
+#include <common/ncbi_sanitizers.h>
 #include "ncbisys.hpp"
 
 
@@ -290,7 +291,12 @@ bool CDllResolver::TryCandidate(const string& file_name,
                                 const string& driver_name)
 {
     try {
-        CDll* dll = new CDll(file_name, CDll::fLoadNow | CDll::fNoAutoUnload);
+        CDll* dll = nullptr;
+        {{
+            // Deliberate leak to avoid automatic unloading DLL from a memory
+            NCBI_LSAN_DISABLE_GUARD;
+            dll = new CDll(file_name, CDll::fLoadNow | CDll::fNoAutoUnload);
+        }}
         CDll::TEntryPoint p;
 
         SResolvedEntry entry_point(dll);

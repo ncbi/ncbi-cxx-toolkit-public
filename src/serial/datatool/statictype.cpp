@@ -42,8 +42,11 @@
 #include <serial/impl/autoptrinfo.hpp>
 #include <typeinfo>
 #include <vector>
+#include <common/ncbi_sanitizers.h>
+
 
 BEGIN_NCBI_SCOPE
+
 
 TObjectPtr CStaticDataType::CreateDefault(const CDataValue& ) const
 {
@@ -851,6 +854,7 @@ TTypeInfo COctetStringDataType::GetRealTypeInfo(void)
     if (x_AsBitString()) {
         return CBitStringDataType::GetRealTypeInfo();
     }
+    NCBI_LSAN_DISABLE_GUARD;
     if ( HaveModuleName() )
         return UpdateModuleName(CStdTypeInfo<vector<char> >::CreateTypeInfo());
     return CStdTypeInfo< vector<char> >::GetTypeInfo();
