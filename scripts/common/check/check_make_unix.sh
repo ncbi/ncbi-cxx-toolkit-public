@@ -343,6 +343,8 @@ LSAN_OPTIONS="suppressions=\${script_dir}/common/check/lsan.supp:exitcode=0"
 export LSAN_OPTIONS
 TSAN_OPTIONS="suppressions=\${script_dir}/common/check/tsan.supp"
 export TSAN_OPTIONS
+# There also ASAN_OPTIONS, that we don't use right now
+# https://github.com/google/sanitizers/wiki/AddressSanitizerFlags
 
 # Disable BOOST tests to catch asynchronous system failures
 # (signals on *NIX platforms or structured exceptions on Windows)

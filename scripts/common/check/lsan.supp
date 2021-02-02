@@ -1,16 +1,5 @@
-leak:/libpython
-leak:::CreateTypeInfo(
+# Linux libstdc++-v3 issue
 leak:^d_growable_string_callback_adapter$
-leak:^ncbi::CBDB_Env::Remove(
-leak:^ncbi::CDataType::GetAnyTypeInfo()$
-leak:^ncbi::CDiagContextThreadData::GetThreadData()$
-leak:^ncbi::CDiagContext::SetupDiag(
-leak:^ncbi::CEnumeratedTypeValues::NameToValue
-leak:^ncbi::CEnumeratedTypeValues::ValueToName
-leak:^ncbi::CNcbiEnvironment::Set(
-leak:^ncbi::CPluginManager_DllResolver::ResolveFile(
-leak:^ncbi::InitDiagHandler()$
-leak:^ncbi::objects::CSeq_id_Mapper::GetInstance()$
-leak:^NcbiError_GetOrCreate$
-leak:^NodeTest06c::test_method()$
-leak:^void test_static_tls<
+
+# ???
+leak:/libpython
