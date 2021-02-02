@@ -771,11 +771,16 @@ void CDiscrepancyContext::AutofixFile(vector<CDiscrepancyObject*>&fixes, const s
     }
     bool compressed = false;
     unique_ptr<CObjectIStream> in = OpenUncompressedStream(path, compressed);
-cout << "Autofixing " << path << "\n";
+    cout << "Autofixing " << path << "\n";
 
     size_t dot = path.find_last_of('.');
-    size_t slash = path.find_last_of("/\\");
-    string fixed_path = !compressed && dot > slash ? path.substr(0, dot) + ".autofix" + path.substr(dot) : path + ".autofix.sqn";
+    if (dot != string::npos) {
+        size_t slash = path.find_last_of("/\\");
+        if (slash != string::npos && slash >= dot) {
+            dot = string::npos;
+        }
+    }
+    string fixed_path = !compressed && (dot != string::npos) ? path.substr(0, dot) + ".autofix" + path.substr(dot) : path + ".autofix.sqn";
 
     string header = in->ReadFileHeader();
     in = OpenUncompressedStream(path, compressed);
