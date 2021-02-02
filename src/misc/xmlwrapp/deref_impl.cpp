@@ -43,6 +43,8 @@
 // libxml2 includes
 #include <libxml/tree.h>
 
+#include <common/ncbi_sanitizers.h>
+
 namespace xml
 {
     namespace impl
@@ -96,6 +98,9 @@ namespace xml
                 throw xml::exception("Dereferencing non-initialized iterator");
 
             xmlNodePtr      raw_node = static_cast<xmlNodePtr>(xmlnode);
+
+            NCBI_LSAN_DISABLE_GUARD; // for 'data'
+            
             if (raw_node->_private == NULL) {
                 node_private_data *     data = new node_private_data;
 

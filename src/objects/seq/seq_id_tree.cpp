@@ -35,6 +35,7 @@
 #include <corelib/ncbi_param.hpp>
 #include "seq_id_tree.hpp"
 #include <objects/seq/seq_id_mapper.hpp>
+#include <common/ncbi_sanitizers.h>
 
 
 #define NCBI_USE_ERRCODE_X   Objects_SeqIdMap
@@ -247,6 +248,8 @@ CSeq_id_Handle CSeq_id_Which_Tree::GetGiHandle(TGi /*gi*/)
 void CSeq_id_Which_Tree::Initialize(CSeq_id_Mapper* mapper,
                                     vector<CRef<CSeq_id_Which_Tree> >& v)
 {
+    NCBI_LSAN_DISABLE_GUARD;
+
     v.resize(CSeq_id::e_MaxChoice);
     v[CSeq_id::e_not_set].Reset(new CSeq_id_not_set_Tree(mapper));
     v[CSeq_id::e_Local].Reset(new CSeq_id_Local_Tree(mapper));
