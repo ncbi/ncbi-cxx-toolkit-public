@@ -140,15 +140,3 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
 }
 
 
-BOOST_AUTO_TEST_CASE(tiny_islands)
-{
-    string seq =
-        "ANNNNNNNNNNNNANNNNNNNNNNNNAANNNNNNNNNNNNAA"
-        "ANNNNNNNNNNNNATGTGANNNNNNNNNNNNATGTGAANNNNNNNNNNNNAA";
-    vector<string> allowable_starts = {{"ATG"}};
-    COrf::TLocVec loc_vec;
-    BOOST_CHECK_NO_THROW(
-        COrf::FindOrfs(seq, loc_vec, 0, 1, allowable_starts, false, 10)
-        );
-    BOOST_CHECK_EQUAL(loc_vec.size(), 2);
-}
