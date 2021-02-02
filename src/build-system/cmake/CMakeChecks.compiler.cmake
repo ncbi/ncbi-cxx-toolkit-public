@@ -8,7 +8,9 @@
 set(NCBI_DEFAULT_PCH "ncbi_pch.hpp")
 set(NCBI_DEFAULT_HEADERS "*.h*;*impl/*.h*;*.inl;*impl/*.inl")
 
-set(CMAKE_CXX_STANDARD 14)
+if(NOT DEFINED CMAKE_CXX_STANDARD)
+    set(CMAKE_CXX_STANDARD 14)
+endif()
 set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
 if (BUILD_SHARED_LIBS)
     set(NCBI_DLL_BUILD 1)
