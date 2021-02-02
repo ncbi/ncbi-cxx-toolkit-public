@@ -203,7 +203,7 @@ END_STD_SCOPE
 
 #endif
 
-#ifdef NCBI_HAVE_CXX11
+#if defined(NCBI_HAVE_CXX11) && !defined(NCBI_TEST_CXX17)
 // Avoid (copious) warnings from using auto_ptr in C++ '11.
 #  if defined(_GLIBCXX_DEPRECATED_ATTR)
 #    include <string>
