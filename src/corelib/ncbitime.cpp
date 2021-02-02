@@ -2315,7 +2315,7 @@ CTimeSpan CTime::DiffTimeSpan(const CTime& t) const
 
 void CTimeSpan::Set(double seconds)
 {
-    if (seconds < kMin_Long  || seconds > kMax_Long) {
+    if (seconds < (double)kMin_Long  || seconds > (double)kMax_Long) {
         NCBI_THROW(CTimeException, eConvert, 
                   "Value " + NStr::DoubleToString(seconds) +
                   " is too big to convert to CTimeSpan");
