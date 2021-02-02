@@ -10,6 +10,7 @@ NCBI_begin_lib(psg_cassandra)
     si2csi/record si2csi_task/fetch si2csi_task/update si2csi_task/delete
     bioseq_info/record bioseq_info_task/fetch bioseq_info_task/update bioseq_info_task/delete
     id2_split_task/insert status_history/insert status_history/delete status_history/get_public_comment
+    status_history/fetch
   )
   NCBI_uses_toolkit_libraries(connect xncbi)
   NCBI_requires(CASSANDRA)

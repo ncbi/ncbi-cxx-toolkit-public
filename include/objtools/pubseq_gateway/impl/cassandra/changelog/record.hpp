@@ -47,7 +47,7 @@ enum class TChangelogOperation : TChangelogOperationBase {
     eUpdated = 1,
     eDeleted = 2,
     eChangeLogPartitionUpdated = 3,
-    eStatusHistoryInserted = 4,
+    eStatusHistoryUpdated = 4,
     eStatusHistoryDeleted = 5,
 };
 

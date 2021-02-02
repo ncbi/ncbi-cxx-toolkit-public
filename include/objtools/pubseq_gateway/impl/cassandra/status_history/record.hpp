@@ -102,6 +102,11 @@ class CBlobStatusHistoryRecord {
         return *this;
     }
 
+    CBlobStatusHistoryRecord& SetFlags(TBlobStatusFlagsBase value) {
+        m_Flags = value;
+        return *this;
+    }
+
     int32_t GetSatKey() const {
         return m_SatKey;
     }
