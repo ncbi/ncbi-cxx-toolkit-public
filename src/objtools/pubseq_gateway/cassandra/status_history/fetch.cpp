@@ -123,4 +123,11 @@ void CCassStatusHistoryTaskFetch::Wait1(void)
         } while(need_repeat);
 }
 
+unique_ptr<CBlobStatusHistoryRecord> CCassStatusHistoryTaskFetch::Consume()
+{
+    unique_ptr<CBlobStatusHistoryRecord> tmp;
+    swap(tmp, m_Record);
+    return tmp;
+}
+
 END_IDBLOB_SCOPE
