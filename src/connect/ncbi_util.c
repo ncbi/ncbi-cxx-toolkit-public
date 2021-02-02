@@ -251,25 +251,21 @@ extern char* UTIL_PrintableString(const char* data, size_t size,
             break;
         default:
             if (!isascii(*s)  ||  !isprint(*s)) {
-                int/*bool*/ reduce;
                 unsigned char v;
-                if (flags & eUTIL_PrintableFullOctal)
-                    reduce = 0/*false*/;
-                else {
-                    reduce = (size == 1  ||
-                              s[1] < '0' || s[1] > '7' ? 1/*T*/ : 0/*F*/);
-                }
+                int/*bool*/ reduce = !(flags & eUTIL_PrintableFullOctal)
+                    &&  (size == 1  ||  s[1] < '0'  ||  '7' < s[1])
+                    ? 1/*true*/ : 0/*false*/;
                 *d++     = '\\';
                 v =  *s >> 6;
                 if (v  ||  !reduce) {
                     *d++ = (unsigned char)('0' + v);
-                    reduce = 0;
+                    reduce = 0/*false*/;
                 }
                 v = (*s >> 3) & 7;
                 if (v  ||  !reduce)
                     *d++ = (unsigned char)('0' + v);
-                v = *s & 7;
-                *d++ = (unsigned char)('0' + v);
+                v =  *s       & 7;
+                *d++     = (unsigned char)('0' + v);
                 continue;
             }
             break;
