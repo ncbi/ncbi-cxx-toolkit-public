@@ -22,7 +22,8 @@ case "`uname -s`" in
    test $test_cpu -eq 255  -o  $test_cpu -eq 158  ||  exit 1
    ;;
  Linux )
-   test $test_mem -eq 0    -o  $test_mem -eq 66  -o  $test_mem -eq 255  ||  exit 1
+   # exit code 1 if run under GCC memory sanitizer
+   test $test_mem -eq 0    -o  $test_mem -eq 1    -o  $test_mem -eq 66   -o  $test_mem -eq 255  ||  exit 1
    test $test_cpu -eq 255  -o  $test_cpu -eq 137  ||  exit 1
    ;;
  Darwin | FreeBSD )
