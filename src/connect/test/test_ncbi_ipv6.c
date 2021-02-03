@@ -43,8 +43,8 @@
 int main(int argc, const char* argv[])
 {
     TNCBI_IPv6Addr addr, a, b, temp;
+    unsigned int n, m;
     const char *str;
-    unsigned int n;
     char buf[150];
 
     g_NCBI_ConnectRandomSeed
@@ -56,30 +56,36 @@ int main(int argc, const char* argv[])
     } else
         memset(&addr, 0, sizeof(addr));
     if (rand() % 11)
-        n = rand() % (sizeof(addr.octet) * 8 + 1);
+        m = rand() % (sizeof(addr.octet) * 8 + 1);
     else
-        n = (rand() & 1) * 0xFF;
+        m = (rand() & 1) * 0xFF;
     if (!NcbiAddrToString(buf, sizeof(buf), &addr))
-        *buf = '\0';
-    printf("Address  = %s/%u\n", buf, n);
+        assert(*buf == '\0');
+    printf("Address  = %s/%u\n", buf, m);
     a = addr;
-    NcbiIPv6Subnet(&a,                          n);
+    NcbiIPv6Subnet(&a,                          m);
     if (!NcbiAddrToString(buf, sizeof(buf), &a))
-        *buf = '\0';
+        assert(*buf == '\0');
     printf("Subnet   = %s\n", buf);
     b = addr;
-    NcbiIPv6Suffix(&b, sizeof(addr.octet) * 8 - n);
+    NcbiIPv6Suffix(&b, sizeof(addr.octet) * 8 - m);
     if (!NcbiAddrToString(buf, sizeof(buf), &b))
-        *buf = '\0';
+        assert(*buf == '\0');
     printf("Suffix   = %s\n", buf);
     for (n = 0;  n < sizeof(addr.octet);  ++n) {
         /* XOR here (instead of OR) to test that there's no overlap */
         temp.octet[n] = a.octet[n] ^ b.octet[n];
     }
     if (!NcbiAddrToString(buf, sizeof(buf), &temp))
-        *buf = '\0';
+        assert(*buf == '\0');
     printf("Combined = %s\n", buf);
-    assert(memcmp(&temp, &addr, sizeof(addr)) == 0);
+    if (m > sizeof(addr.octet) * 8) {
+        /* Because "first" and "last" bit are the same in this case */
+        assert(memcmp(&a, &addr, sizeof(addr)) == 0);
+        assert(memcmp(&b, &addr, sizeof(addr)) == 0);
+        assert(NcbiIsEmptyIPv6(&temp));
+    } else
+        assert(memcmp(&temp, &addr, sizeof(addr)) == 0);
 
     if (!(str = NcbiStringToAddr(&addr, argv[1], 0))) {
         printf("\"%s\" is not a valid IPv6 address\n", argv[1]);
