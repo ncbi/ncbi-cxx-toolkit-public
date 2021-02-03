@@ -1100,6 +1100,8 @@ pathogen_target_loader needs gpinit_register
 pathogen_target_loader needs pathogen_ctl
 pcassay needs $(SEQ_LIBS)
 pcassay needs pcsubstance
+pcassay2 needs $(SEQ_LIBS)
+pcassay2 needs pcsubstance
 pcre needs3party $(ORIG_LIBS)
 pcsubstance needs pub
 pdt_common needs pathogen_ctl
