@@ -42,6 +42,7 @@
 #include <objtools/pubseq_gateway/impl/cassandra/cass_blob_op.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_driver.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/IdCassScope.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/changelog/writer.hpp>
 
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
@@ -78,6 +79,8 @@ void CCassStatusHistoryTaskInsert::Wait1()
                 string sql = "INSERT INTO " + GetKeySpace() + ".blob_status_history "
                       "(sat_key, done_when, flags, username, comment, public_comment, replaces)"
                       "VALUES(?, ?, ?, ?, ?, ?, ?)";
+
+                qry->NewBatch();
                 qry->SetSQL(sql, 7);
                 qry->BindInt32(0, m_Record->GetSatKey());
                 qry->BindInt64(1, m_Record->GetDoneWhen());
@@ -90,7 +93,13 @@ void CCassStatusHistoryTaskInsert::Wait1()
                 UpdateLastActivity();
                 qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
 
+                CBlobChangelogWriter().WriteChangelogEvent(
+                    qry.get(),
+                    GetKeySpace(),
+                    CBlobChangelogRecord(m_Record->GetSatKey(), m_Record->GetDoneWhen(), TChangelogOperation::eStatusHistoryUpdated)
+                );
                 SetupQueryCB3(qry);
+                qry->RunBatch();
 
                 m_State = eWaitingRecordInserted;
                 break;
