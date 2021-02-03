@@ -133,6 +133,10 @@ protected:
         CGffFeatureContext&,
         const CMappedFeat&,
         const string& ="" );
+    virtual bool xWriteRecordsCds(
+        CGffFeatureContext&,
+        const CMappedFeat&,
+        const string& ="" );
     virtual bool xWriteFeatureExons(
         CGffFeatureContext&,
         const CMappedFeat&,
@@ -145,15 +149,20 @@ protected:
 		const CSeq_loc&,
         const CMappedFeat& ); //mRNA parent
 
-    virtual bool xAssignFeatures(
+    virtual bool xAssignFeaturesGene(
         list<CRef<CGtfRecord>>&,
         CGffFeatureContext&,
         const CMappedFeat&);
-    virtual bool xAssignTranscriptFeatures(
+    virtual bool xAssignFeaturesTranscript(
         list<CRef<CGtfRecord>>&,
         CGffFeatureContext&,
         const CMappedFeat&,
         const string&); //transcript ID
+    virtual bool xAssignFeaturesCds(
+        list<CRef<CGtfRecord>>&,
+        CGffFeatureContext&,
+        const CMappedFeat&,
+        const string& = ""); //transcript ID
 
     bool xSplitCdsLocation(
         const CMappedFeat&,

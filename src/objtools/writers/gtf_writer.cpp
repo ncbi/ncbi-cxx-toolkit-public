@@ -233,9 +233,9 @@ bool CGtfWriter::xWriteFeature(
     auto subtype = mf.GetFeatSubtype();
 
     //const auto& feat = mf.GetMappedFeature();
-    //if (subtype == CSeqFeatData::eSubtype_gene) {
+    //if (subtype == CSeqFeatData::eSubtype_tRNA) {
     //    auto from = feat.GetLocation().GetStart(ESeqLocExtremes::eExtreme_Biological);
-    //    if (from == 2991447) {
+    //    if (from == 48738) {
     //        cerr << "";
     //    }
     //}
@@ -255,7 +255,7 @@ bool CGtfWriter::xWriteFeature(
         case CSeqFeatData::eSubtype_gene: 
             return xWriteRecordsGene(context, mf);
         case CSeqFeatData::eSubtype_cdregion:
-            return xWriteFeatureCds(context, mf);
+            return xWriteRecordsCds(context, mf);
     }
     return false;
 }
@@ -272,7 +272,7 @@ bool CGtfWriter::xWriteRecordsGene(
     }
 
     list<CRef<CGtfRecord>> records;
-    if (!xAssignFeatures(records, context, mf)) {
+    if (!xAssignFeaturesGene(records, context, mf)) {
         return false;
     }
 
@@ -285,7 +285,64 @@ bool CGtfWriter::xWriteRecordsGene(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGtfWriter::xAssignFeatures(
+bool CGtfWriter::xWriteRecordsCds(
+    CGffFeatureContext& context,
+    const CMappedFeat& mf,
+    const string& transcriptIdPreAssigned)
+//  ----------------------------------------------------------------------------
+{
+    string transcriptId(transcriptIdPreAssigned);
+    //if (transcriptId.empty()) {
+    //    transcriptId = CGtfIdGenerator::NextId("unassigned_transcript");
+    //}
+
+    CMappedFeat tf = xGenerateMissingTranscript(context, mf);
+    if (tf) {
+        if (!xWriteRecordsTranscript(context, tf, transcriptId)) {
+            return false;
+        }
+    }
+
+    list<CRef<CGtfRecord>> records;
+    if (!xAssignFeaturesCds(records, context, mf, transcriptId)) {
+        return false;
+    }
+
+    for (const auto record: records) {
+        if (!xWriteRecord(record)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGtfWriter::xWriteRecordsTranscript(
+    CGffFeatureContext& context,
+    const CMappedFeat& mf,
+    const string& transcriptIdPreAssigned )
+//  ----------------------------------------------------------------------------
+{
+    string transcriptId(transcriptIdPreAssigned);
+    //if (transcriptId.empty()) {
+    //    transcriptId = CGtfIdGenerator::NextId("unassigned_transcript");
+    //}
+
+    list<CRef<CGtfRecord>> records;
+    if (!xAssignFeaturesTranscript(records, context, mf, transcriptId)) {
+        return false;
+    }
+
+    for (const auto record: records) {
+        if (!xWriteRecord(record)) {
+            return false;
+        }
+    }
+    return xWriteFeatureExons(context, mf, transcriptId);
+}
+
+//  ----------------------------------------------------------------------------
+bool CGtfWriter::xAssignFeaturesGene(
     list<CRef<CGtfRecord>>& recordList,
     CGffFeatureContext& context,
     const CMappedFeat& mf)
@@ -319,7 +376,7 @@ bool CGtfWriter::xAssignFeatures(
 
 
 //  ----------------------------------------------------------------------------
-bool CGtfWriter::xAssignTranscriptFeatures(
+bool CGtfWriter::xAssignFeaturesTranscript(
     list<CRef<CGtfRecord>>& recordList,
     CGffFeatureContext& context,
     const CMappedFeat& mf,
@@ -400,25 +457,171 @@ bool CGtfWriter::xAssignTranscriptFeatures(
     return true;
 }
 
-//  ----------------------------------------------------------------------------
-bool CGtfWriter::xWriteRecordsTranscript(
-    CGffFeatureContext& context,
-    const CMappedFeat& mf,
-    const string& transcriptId )
-//  ----------------------------------------------------------------------------
+//  ---------------------------------------------------------------------------
+bool CdsNeedsExonNumbers(
+    const CMappedFeat& cdsMf)
+//  ---------------------------------------------------------------------------
 {
-    list<CRef<CGtfRecord>> records;
-    if (!xAssignTranscriptFeatures(records, context, mf, transcriptId)) {
-        return false;
+    CSeq_loc cdsLocation;
+    cdsLocation.Assign(cdsMf.GetLocation());
+    cdsLocation.ChangeToPackedInt();
+    if (cdsLocation.GetPacked_int().Get().size() > 1) {
+        return true;
     }
 
-    for (const auto record: records) {
-        if (!xWriteRecord(record)) {
+    CMappedFeat rna = feature::GetBestMrnaForCds(cdsMf);
+    if (!rna) {
+        return false;
+    }
+    CSeq_loc rnaLocation;
+    rnaLocation.Assign(rna.GetLocation());
+    rnaLocation.ChangeToPackedInt();
+    return (rnaLocation.GetPacked_int().Get().size() > 1);
+}
+
+//  ---------------------------------------------------------------------------
+unsigned int FindExonNumberForCdsPart(
+    const CMappedFeat& mf,
+    const CGtfRecord& record)
+//  ---------------------------------------------------------------------------
+{
+    CMappedFeat rna = feature::GetBestMrnaForCds(mf);
+    if (!rna) {
+        return 0;
+    }
+    CSeq_loc rnaLocation;
+    rnaLocation.Assign(rna.GetLocation());
+    rnaLocation.ChangeToPackedInt();
+    unsigned int exonNumber = 1;
+    auto recordFrom = record.SeqStart();
+    auto recordTo = record.SeqStop();
+    for (const auto pExonLocation: rnaLocation.GetPacked_int().Get()) {
+        auto exonFrom = pExonLocation->GetFrom();
+        auto exonTo = pExonLocation->GetTo();
+        if (recordFrom >= exonFrom  &&  recordTo <= exonTo) {
+            return exonNumber;
+        }
+        ++exonNumber;
+    }
+    return 0; 
+}
+
+//  ----------------------------------------------------------------------------
+bool CGtfWriter::xAssignFeaturesCds(
+    list<CRef<CGtfRecord>>& recordList,
+    CGffFeatureContext& context,
+    const CMappedFeat& mf,
+    const string& transcriptId)
+//  ----------------------------------------------------------------------------
+{
+    const auto& mfLoc = mf.GetLocation();
+    auto mfStrand = mfLoc.IsSetStrand() ? mfLoc.GetStrand() : eNa_strand_plus;
+
+    CSeq_loc mfLocAsPackedInt;
+    mfLocAsPackedInt.Assign(mfLoc);
+    mfLocAsPackedInt.ChangeToPackedInt();
+    const auto& sublocs = mfLocAsPackedInt.GetPacked_int().Get();
+
+    bool needsPartNumbers = (sublocs.size() > 1);
+    unsigned int partNum = 1;
+    for ( auto it = sublocs.begin(); it != sublocs.end(); it++ ) {
+        const CSeq_interval& intv = **it;
+        CRef<CGtfRecord> pRecord( 
+            new CGtfRecord(context, (m_uFlags & fNoExonNumbers)));
+        if (!xAssignFeature(*pRecord, context, mf)) {
             return false;
         }
+        pRecord->SetEndpoints(intv.GetFrom(), intv.GetTo(), mfStrand);
+        if (needsPartNumbers) {
+            pRecord->SetAttribute("part", NStr::NumericToString(partNum++));
+        }
+        if (!transcriptId.empty()) {
+            pRecord->SetTranscriptId(transcriptId);
+        }
+        pRecord->SetCdsPhase(sublocs, mfStrand);
+        recordList.push_back(pRecord);
     }
-    return xWriteFeatureExons(context, mf, transcriptId);
+    // correct endpoint of last record:
+    auto pLastRecord = recordList.back();
+    if (mfLoc.GetStrand() == eNa_strand_minus) {
+        pLastRecord->SetEndpoints(
+            pLastRecord->SeqStart() + 3, pLastRecord->SeqStop(), mfStrand);
+    }
+    else {
+        pLastRecord->SetEndpoints(
+            pLastRecord->SeqStart(), pLastRecord->SeqStop() - 3, mfStrand);
+    }
+
+    // generate start codon:
+    const CSeq_interval& first = *sublocs.front();
+    if (!first.IsPartialStart(eExtreme_Biological)) {
+        CRef<CGtfRecord> pRecord( 
+            new CGtfRecord(context, (m_uFlags & fNoExonNumbers)));
+        if (!xAssignFeature(*pRecord, context, mf)) {
+            return false;
+        }
+        pRecord->SetType("start_codon");
+        if (mfStrand == eNa_strand_minus) {
+            pRecord->SetEndpoints(first.GetTo() - 2, first.GetTo(),  mfStrand);
+        }
+        else {
+            pRecord->SetEndpoints(first.GetFrom(), first.GetFrom() + 2, mfStrand);
+        }
+        if (!transcriptId.empty()) {
+            pRecord->SetTranscriptId(transcriptId);
+        }
+        pRecord->SetCdsPhase(sublocs, mfStrand);
+        recordList.push_back(pRecord);
+    }
+
+    // generate stop codon:
+    const CSeq_interval& last = *sublocs.back();
+    if (!last.IsPartialStop(eExtreme_Biological)) {
+        CRef<CGtfRecord> pRecord( 
+            new CGtfRecord(context, (m_uFlags & fNoExonNumbers)));
+        if (!xAssignFeature(*pRecord, context, mf)) {
+            return false;
+        }
+        pRecord->SetType("stop_codon");
+        if (mfStrand == eNa_strand_minus) {
+            pRecord->SetEndpoints(last.GetFrom(), last.GetFrom() + 2, mfStrand); 
+        }
+        else {
+            pRecord->SetEndpoints(last.GetTo() - 2, last.GetTo(), mfStrand);
+        }
+        if (!transcriptId.empty()) {
+            pRecord->SetTranscriptId(transcriptId);
+        }
+        pRecord->SetCdsPhase(sublocs, mfStrand);
+        recordList.push_back(pRecord);
+    }
+
+    // assign exon numbers:
+    bool needsExonNumbers = CdsNeedsExonNumbers(mf);
+    if (needsExonNumbers) {
+        unsigned int assignedExon = 1;
+        for (auto& pRecord: recordList) {
+            unsigned int impliedExon = FindExonNumberForCdsPart(mf, *pRecord);
+            if (impliedExon != 0) {
+                pRecord->SetExonNumber(impliedExon);
+                continue;
+            }
+            // if we can't compute the exon number then go with the most
+            //  reasonable assignment
+            if (pRecord->StrType() == "start_codon") {
+                pRecord->SetExonNumber(1);
+                continue;
+            }
+            if (pRecord->StrType() == "stop_codon") {
+                pRecord->SetExonNumber(sublocs.size());
+                continue;
+            }
+            pRecord->SetExonNumber(assignedExon++);
+        }
+    }
+    return true;
 }
+
 
 //  ----------------------------------------------------------------------------
 bool CGtfWriter::xWriteFeatureExons(
@@ -534,7 +737,7 @@ bool CGtfWriter::xWriteFeatureCdsFragments(
 			count++;
 			const CSeq_interval& cdsExon = **cdsIt;
 			CRef<CGtfRecord> pRecord(new CGtfRecord(record));
-			pRecord->MakeChildRecord( record, cdsExon);
+			pRecord->MakeChildRecord( record, cdsExon, count);
 			pRecord->SetCdsPhase(cdsExons, cdsLoc.GetStrand());
 			xWriteRecord(pRecord.GetPointer());
 		}
@@ -558,7 +761,7 @@ bool CGtfWriter::xWriteFeatureCdsFragments(
             }
         }
         CRef<CGtfRecord> pRecord(new CGtfRecord(record));
-        pRecord->MakeChildRecord( record, cdsExon, uExonNumber );
+        pRecord->MakeChildRecord( record, cdsExon, count );
         pRecord->SetCdsPhase( cdsExons, cdsLoc.GetStrand() );
         xWriteRecord( pRecord.GetPointer() );
     }
@@ -887,17 +1090,29 @@ bool CGtfWriter::xAssignFeatureAttributeTranscriptId(
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
+    using FEAT_ID = string;
+    using FEAT_MAP = map<CMappedFeat, FEAT_ID>;
+    using FEAT_IDS = list<FEAT_ID>;
+
+    static FEAT_MAP featMap;
+    static FEAT_IDS usedFeatIds;
+
     if (!record.TranscriptId().empty()) {
         return true; //special case hence already assigned
     }
+
+    const auto mfIt = featMap.find(mf);
+    if (featMap.end() != mfIt) {
+        record.SetTranscriptId(mfIt->second);
+        return true;
+    }
+
     CMappedFeat mrnaFeat;
     auto featSubtype = mf.GetFeatSubtype();
     switch(featSubtype) {
         default:
-            if (mf.GetFeatType() == CSeqFeatData::e_Rna) {
-                mrnaFeat = mf;
-                break;
-            }   
+            mrnaFeat = mf;
+            break;
         case CSeq_feat::TData::eSubtype_mRNA:
         case CSeq_feat::TData::eSubtype_C_region:
         case CSeq_feat::TData::eSubtype_D_segment:
@@ -909,63 +1124,63 @@ bool CGtfWriter::xAssignFeatureAttributeTranscriptId(
             if (HasAccaptableTranscriptParent(fc, mf)) {
                 mrnaFeat = feature::GetParentFeature(mf);
             }
+            else {
+                mrnaFeat = mf; 
+                //there must be one somewhere, and that's the closest we can
+                // get to it.
+            }
             break;
         case CSeq_feat::TData::eSubtype_gene:
             return true;
     }
+
     if (!mrnaFeat) {
         record.SetTranscriptId(xGenericTranscriptId(mf));
         return true;
     }
 
-    using RNA_ID = string;
-    using RNA_MAP = map<CMappedFeat, RNA_ID>;
-    using RNA_IDS = list<RNA_ID>;
-
-    static RNA_MAP rnaMap;
-    const auto rnaIt = rnaMap.find(mrnaFeat);
-    if (rnaMap.end() != rnaIt) {
-        record.SetTranscriptId(rnaIt->second);
+    const auto featIt = featMap.find(mrnaFeat);
+    if (featMap.end() != featIt) {
+        record.SetTranscriptId(featIt->second);
         return true;
     }
 
-    static RNA_IDS usedRnaIds;
-    RNA_ID rnaId = mf.GetNamedQual("transcript_id");
-    if (rnaId.empty()  &&  mf.IsSetProduct()) {
+    FEAT_ID featId = mf.GetNamedQual("transcript_id");
+    if (featId.empty()  &&  mf.GetData().IsRna()  &&  mf.IsSetProduct()) {
         if (!CGenbankIdResolve::Get().GetBestId(
-                mf.GetProductId(), mf.GetScope(), rnaId)) {
-            rnaId.clear();
+                mf.GetProductId(), mf.GetScope(), featId)) {
+            featId.clear();
         }
     }
-    if (rnaId.empty()) {
-        rnaId = mf.GetNamedQual("orig_transcript_id");
+    if (featId.empty()) {
+        featId = mf.GetNamedQual("orig_transcript_id");
     }
 
-    if (rnaId.empty()) {
-        rnaId = xGenericTranscriptId(mf);
+    if (featId.empty()) {
+        featId = xGenericTranscriptId(mf);
         //we know the ID is going to be unique if we get it this way
         // not point in further checking
-        usedRnaIds.push_back(rnaId);
-        rnaMap[mf] = rnaId;
-        record.SetTranscriptId(rnaId);
+        usedFeatIds.push_back(featId);
+        featMap[mf] = featId;
+        record.SetTranscriptId(featId);
         return true;
     }
     //uniquify the ID we came up with
-    auto cit = find(usedRnaIds.begin(), usedRnaIds.end(), rnaId);
-    if (usedRnaIds.end() == cit) {
-        usedRnaIds.push_back(rnaId);
-        rnaMap[mf] = rnaId;
-        record.SetTranscriptId(rnaId);
+    auto cit = find(usedFeatIds.begin(), usedFeatIds.end(), featId);
+    if (usedFeatIds.end() == cit) {
+        usedFeatIds.push_back(featId);
+        featMap[mf] = featId;
+        record.SetTranscriptId(featId);
         return true;
     }     
     unsigned int suffix = 1;
-    rnaId += "_";
+    featId += "_";
     while (true) {
-        auto qualifiedId = rnaId + NStr::UIntToString(suffix);   
-        cit = find(usedRnaIds.begin(), usedRnaIds.end(), qualifiedId);
-        if (usedRnaIds.end() == cit) {
-            usedRnaIds.push_back(qualifiedId);
-            rnaMap[mf] = qualifiedId;
+        auto qualifiedId = featId + NStr::UIntToString(suffix);   
+        cit = find(usedFeatIds.begin(), usedFeatIds.end(), qualifiedId);
+        if (usedFeatIds.end() == cit) {
+            usedFeatIds.push_back(qualifiedId);
+            featMap[mf] = qualifiedId;
             record.SetTranscriptId(qualifiedId);
             return true;
         }
@@ -981,6 +1196,9 @@ bool CGtfWriter::xAssignFeatureAttributeGeneId(
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
+    if (!record.GeneId().empty()) {
+        return true;
+    }
     CMappedFeat geneFeat = mf;
     if (mf.GetFeatSubtype() != CSeq_feat::TData::eSubtype_gene) {
         geneFeat = feature::GetBestGeneForFeat(mf, &fc.FeatTree());

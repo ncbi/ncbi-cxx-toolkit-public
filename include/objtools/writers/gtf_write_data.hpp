@@ -68,6 +68,11 @@ public:
         const std::string& geneId) { m_strGeneId = geneId; };
     void SetTranscriptId(
         const std::string& transcriptId) { m_strTranscriptId = transcriptId; };
+    void SetExonNumber(
+        unsigned int exonNumber) 
+    {
+        SetAttribute("exon_number", NStr::NumericToString(exonNumber));
+    };
 
     string StrAttributes() const;
     string StrStructibutes() const;

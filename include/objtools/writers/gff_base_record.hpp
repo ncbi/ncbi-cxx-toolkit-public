@@ -115,7 +115,8 @@ public:
     bool CanGetLocation() const { return 0 != m_pLoc; };
     const CSeq_loc& GetLocation() const {
         return *m_pLoc; };
-
+    unsigned int SeqStart() const {return mSeqStart; };
+    unsigned int SeqStop() const {return mSeqStop; };
 
 protected:
     // xEscapedValue returns either reference to unmodified string
