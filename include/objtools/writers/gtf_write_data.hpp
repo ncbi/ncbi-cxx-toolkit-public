@@ -73,6 +73,11 @@ public:
     {
         SetAttribute("exon_number", NStr::NumericToString(exonNumber));
     };
+    void SetPartNumber(
+        unsigned int partNumber) 
+    {
+        SetAttribute("part", NStr::NumericToString(partNumber));
+    };
 
     string StrAttributes() const;
     string StrStructibutes() const;

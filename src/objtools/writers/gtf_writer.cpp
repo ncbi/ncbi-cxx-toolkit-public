@@ -457,45 +457,79 @@ bool CGtfWriter::xAssignFeaturesTranscript(
     return true;
 }
 
+//  ===========================================================================
+class CExonNumberAssigner
+//  ===========================================================================
+{
+public:
+    CExonNumberAssigner(
+        CMappedFeat mf) { xInitialize(mf); };
+
+    bool CdsNeedsExonNumbers() const;
+
+    unsigned int CdsGetExonNumberFor(
+        const CGtfRecord&) const;
+
+    void AssignExonNumberTo(
+        CGtfRecord& gtfRecord) const;
+
+private:
+    void xInitialize(
+        CMappedFeat cdsMf);
+
+    unsigned xGetIndexInLocation(
+        const CGtfRecord&,
+        const CSeq_loc&) const;
+
+    CMappedFeat mCdsMf;
+    CSeq_loc mCdsLoc;
+    CMappedFeat mRnaMf;
+    CSeq_loc mRnaLoc;
+};
+
 //  ---------------------------------------------------------------------------
-bool CdsNeedsExonNumbers(
-    const CMappedFeat& cdsMf)
+void CExonNumberAssigner::xInitialize(
+    CMappedFeat cdsMf)
 //  ---------------------------------------------------------------------------
 {
-    CSeq_loc cdsLocation;
-    cdsLocation.Assign(cdsMf.GetLocation());
-    cdsLocation.ChangeToPackedInt();
-    if (cdsLocation.GetPacked_int().Get().size() > 1) {
-        return true;
+    mCdsMf = cdsMf;
+    mCdsLoc.Assign(cdsMf.GetLocation());
+    mCdsLoc.ChangeToPackedInt();
+    
+    mRnaMf = feature::GetBestMrnaForCds(mCdsMf);
+    if (mRnaMf) {
+        mRnaLoc.Assign(mRnaMf.GetLocation());
+        mRnaLoc.ChangeToPackedInt();
     }
-
-    CMappedFeat rna = feature::GetBestMrnaForCds(cdsMf);
-    if (!rna) {
-        return false;
+    else {
+        mRnaLoc.Reset();
     }
-    CSeq_loc rnaLocation;
-    rnaLocation.Assign(rna.GetLocation());
-    rnaLocation.ChangeToPackedInt();
-    return (rnaLocation.GetPacked_int().Get().size() > 1);
 }
 
 //  ---------------------------------------------------------------------------
-unsigned int FindExonNumberForCdsPart(
-    const CMappedFeat& mf,
-    const CGtfRecord& record)
+bool CExonNumberAssigner::CdsNeedsExonNumbers() const
 //  ---------------------------------------------------------------------------
 {
-    CMappedFeat rna = feature::GetBestMrnaForCds(mf);
-    if (!rna) {
-        return 0;
+    if (!mRnaMf) {
+        return (mCdsLoc.GetPacked_int().Get().size() > 1);
     }
-    CSeq_loc rnaLocation;
-    rnaLocation.Assign(rna.GetLocation());
-    rnaLocation.ChangeToPackedInt();
+    return (mRnaLoc.GetPacked_int().Get().size() > 1);
+}
+
+//  ---------------------------------------------------------------------------
+unsigned int CExonNumberAssigner::xGetIndexInLocation(
+    const CGtfRecord& gtfRecord,
+    const CSeq_loc& location) const
+//  ---------------------------------------------------------------------------
+{
+    _ASSERT(location.IsPacked_int());
     unsigned int exonNumber = 1;
-    auto recordFrom = record.SeqStart();
-    auto recordTo = record.SeqStop();
-    for (const auto pExonLocation: rnaLocation.GetPacked_int().Get()) {
+    auto recordFrom = gtfRecord.SeqStart();
+    auto recordTo = gtfRecord.SeqStop();
+    if (recordFrom == 14408) {
+        cerr << "";
+    }
+    for (const auto pExonLocation: location.GetPacked_int().Get()) {
         auto exonFrom = pExonLocation->GetFrom();
         auto exonTo = pExonLocation->GetTo();
         if (recordFrom >= exonFrom  &&  recordTo <= exonTo) {
@@ -503,7 +537,28 @@ unsigned int FindExonNumberForCdsPart(
         }
         ++exonNumber;
     }
-    return 0; 
+    return 0; // invalid exon number
+}
+
+//  ---------------------------------------------------------------------------
+unsigned int CExonNumberAssigner::CdsGetExonNumberFor(
+    const CGtfRecord& gtfRecord) const
+//  ---------------------------------------------------------------------------
+{
+    if (!mRnaMf) {
+        return xGetIndexInLocation(gtfRecord, mCdsLoc);
+    }
+    return xGetIndexInLocation(gtfRecord, mRnaLoc);
+}
+
+//  ----------------------------------------------------------------------------
+void CExonNumberAssigner::AssignExonNumberTo(
+    CGtfRecord& gtfRecord) const
+//  ----------------------------------------------------------------------------
+{
+    auto exonNumber = CdsGetExonNumberFor(gtfRecord);
+    _ASSERT(exonNumber); // indicator of faulty assignment logic
+    gtfRecord.SetExonNumber(exonNumber); 
 }
 
 //  ----------------------------------------------------------------------------
@@ -553,72 +608,154 @@ bool CGtfWriter::xAssignFeaturesCds(
     }
 
     // generate start codon:
-    const CSeq_interval& first = *sublocs.front();
-    if (!first.IsPartialStart(eExtreme_Biological)) {
-        CRef<CGtfRecord> pRecord( 
-            new CGtfRecord(context, (m_uFlags & fNoExonNumbers)));
-        if (!xAssignFeature(*pRecord, context, mf)) {
-            return false;
-        }
-        pRecord->SetType("start_codon");
+    if (!mfLoc.IsPartialStart(eExtreme_Biological)) {
         if (mfStrand == eNa_strand_minus) {
-            pRecord->SetEndpoints(first.GetTo() - 2, first.GetTo(),  mfStrand);
+            int basePairsNeeded = 3;
+            const auto currentIt = sublocs.begin(); 
+            unsigned int partNumber = 1;
+            while (basePairsNeeded > 0) {
+                const CSeq_interval& currentLoc = **currentIt;
+                auto currentFrom = currentLoc.GetFrom();
+                auto currentTo = currentLoc.GetTo();
+
+                CRef<CGtfRecord> pRecord( 
+                    new CGtfRecord(context, (m_uFlags & fNoExonNumbers)));
+                if (!xAssignFeature(*pRecord, context, mf)) {
+                    return false;
+                }
+                pRecord->SetType("start_codon");
+
+                if (currentFrom <= currentTo - basePairsNeeded + 1) {
+                    pRecord->SetEndpoints(currentTo - basePairsNeeded + 1, currentTo,  mfStrand);
+                    basePairsNeeded = 0;
+                }
+                else { //really ???
+                    pRecord->SetEndpoints(currentFrom, currentTo, mfStrand);
+                    basePairsNeeded = basePairsNeeded - (currentTo - currentFrom + 1);
+                }
+
+                if (!transcriptId.empty()) {
+                    pRecord->SetTranscriptId(transcriptId);
+                }
+                pRecord->SetCdsPhase(sublocs, mfStrand);
+                recordList.push_back(pRecord);
+            }
         }
         else {
-            pRecord->SetEndpoints(first.GetFrom(), first.GetFrom() + 2, mfStrand);
+            int basePairsNeeded = 3;
+            auto currentIt = sublocs.begin(); 
+            unsigned int partNumber = 1;
+            while (basePairsNeeded > 0) {
+                const CSeq_interval& currentLoc = **currentIt;
+                auto currentFrom = currentLoc.GetFrom();
+                auto currentTo = currentLoc.GetTo();
+
+                CRef<CGtfRecord> pRecord( 
+                    new CGtfRecord(context, (m_uFlags & fNoExonNumbers)));
+                if (!xAssignFeature(*pRecord, context, mf)) {
+                    return false;
+                }
+                pRecord->SetType("start_codon");
+
+                if (currentTo >= currentFrom + basePairsNeeded -1) {
+                    pRecord->SetEndpoints(currentFrom, currentFrom + basePairsNeeded -1, mfStrand);
+                    basePairsNeeded = 0;
+                }
+                else {// intelligent design strikes again!
+                    pRecord->SetEndpoints(currentFrom, currentTo, mfStrand);
+                    basePairsNeeded = basePairsNeeded - (currentTo - currentFrom + 1);
+                }
+                if (partNumber > 1  || basePairsNeeded > 0) {
+                    pRecord->SetPartNumber(partNumber++);
+                }
+                if (!transcriptId.empty()) {
+                    pRecord->SetTranscriptId(transcriptId);
+                }
+                pRecord->SetCdsPhase(sublocs, mfStrand);
+                recordList.push_back(pRecord);
+                currentIt++;
+            }
         }
-        if (!transcriptId.empty()) {
-            pRecord->SetTranscriptId(transcriptId);
-        }
-        pRecord->SetCdsPhase(sublocs, mfStrand);
-        recordList.push_back(pRecord);
     }
 
     // generate stop codon:
-    const CSeq_interval& last = *sublocs.back();
-    if (!last.IsPartialStop(eExtreme_Biological)) {
-        CRef<CGtfRecord> pRecord( 
-            new CGtfRecord(context, (m_uFlags & fNoExonNumbers)));
-        if (!xAssignFeature(*pRecord, context, mf)) {
-            return false;
-        }
-        pRecord->SetType("stop_codon");
+    if (!mfLoc.IsPartialStop(eExtreme_Biological)) {
         if (mfStrand == eNa_strand_minus) {
-            pRecord->SetEndpoints(last.GetFrom(), last.GetFrom() + 2, mfStrand); 
+            int basePairsNeeded = 3;
+            const auto currentIt = sublocs.rbegin(); 
+            unsigned int partNumber = 1;
+            while (basePairsNeeded > 0) {
+                const CSeq_interval& currentLoc = **currentIt;
+                auto currentFrom = currentLoc.GetFrom();
+                auto currentTo = currentLoc.GetTo();
+
+                CRef<CGtfRecord> pRecord( 
+                    new CGtfRecord(context, (m_uFlags & fNoExonNumbers)));
+                if (!xAssignFeature(*pRecord, context, mf)) {
+                    return false;
+                }
+                pRecord->SetType("stop_codon");
+
+                if (currentTo >= currentFrom + basePairsNeeded - 1) {
+                    pRecord->SetEndpoints(currentFrom, currentFrom + basePairsNeeded - 1,  mfStrand);
+                    basePairsNeeded = 0;
+                }
+                else { //really ???
+                    pRecord->SetEndpoints(currentFrom, currentTo, mfStrand);
+                    basePairsNeeded = basePairsNeeded - (currentTo - currentFrom + 1);
+                }
+
+                if (!transcriptId.empty()) {
+                    pRecord->SetTranscriptId(transcriptId);
+                }
+                pRecord->SetCdsPhase(sublocs, mfStrand);
+                recordList.push_back(pRecord);
+            }
         }
         else {
-            pRecord->SetEndpoints(last.GetTo() - 2, last.GetTo(), mfStrand);
+            int basePairsNeeded = 3;
+            auto currentIt = sublocs.rbegin(); 
+            unsigned int partNumber = 1;
+            while (basePairsNeeded > 0) {
+                const CSeq_interval& currentLoc = **currentIt;
+                auto currentFrom = currentLoc.GetFrom();
+                auto currentTo = currentLoc.GetTo();
+
+                CRef<CGtfRecord> pRecord( 
+                    new CGtfRecord(context, (m_uFlags & fNoExonNumbers)));
+                if (!xAssignFeature(*pRecord, context, mf)) {
+                    return false;
+                }
+                pRecord->SetType("stop_codon");
+
+                if (currentFrom <= currentTo - basePairsNeeded + 1) {
+                    pRecord->SetEndpoints(currentTo - basePairsNeeded + 1, currentTo, mfStrand);
+                    basePairsNeeded = 0;
+                }
+                else {// intelligent design strikes again!
+                    pRecord->SetEndpoints(currentFrom, currentTo, mfStrand);
+                    basePairsNeeded = basePairsNeeded - (currentTo - currentFrom + 1);
+                }
+                if (partNumber > 1  || basePairsNeeded > 0) {
+                    pRecord->SetPartNumber(partNumber++);
+                }
+                if (!transcriptId.empty()) {
+                    pRecord->SetTranscriptId(transcriptId);
+                }
+                pRecord->SetCdsPhase(sublocs, mfStrand);
+                recordList.push_back(pRecord);
+                currentIt++;
+            }
         }
-        if (!transcriptId.empty()) {
-            pRecord->SetTranscriptId(transcriptId);
-        }
-        pRecord->SetCdsPhase(sublocs, mfStrand);
-        recordList.push_back(pRecord);
     }
 
     // assign exon numbers:
-    bool needsExonNumbers = CdsNeedsExonNumbers(mf);
-    if (needsExonNumbers) {
-        unsigned int assignedExon = 1;
+    CExonNumberAssigner exonNumberAssigner(mf);
+    if (exonNumberAssigner.CdsNeedsExonNumbers()) {
         for (auto& pRecord: recordList) {
-            unsigned int impliedExon = FindExonNumberForCdsPart(mf, *pRecord);
-            if (impliedExon != 0) {
-                pRecord->SetExonNumber(impliedExon);
-                continue;
-            }
-            // if we can't compute the exon number then go with the most
-            //  reasonable assignment
-            if (pRecord->StrType() == "start_codon") {
-                pRecord->SetExonNumber(1);
-                continue;
-            }
-            if (pRecord->StrType() == "stop_codon") {
-                pRecord->SetExonNumber(sublocs.size());
-                continue;
-            }
-            pRecord->SetExonNumber(assignedExon++);
+            exonNumberAssigner.AssignExonNumberTo(*pRecord);
         }
-    }
+    }   
     return true;
 }
 
