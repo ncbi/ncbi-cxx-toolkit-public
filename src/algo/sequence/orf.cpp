@@ -74,10 +74,10 @@ bool IsGapOrN(const char c)
 // return to_open iff not found.
 template<class TSeq>
 set<TSeqPos> FindStarts(const TSeq& seq, 
-                              TSeqPos from, TSeqPos to_open,
+                              TSeqPos from, TSeqPos to,
                               const vector<string>& allowable_starts)
 {
-    const TSeqPos inframe_to_open = from + ((to_open - from)/3 * 3);
+    const TSeqPos inframe_to_open = to+1;
 
     set<TSeqPos> starts;
     starts.insert(inframe_to_open);
@@ -167,9 +167,11 @@ inline void FindForwardOrfs(const TSeq& seq, TRangeVec& ranges,
             
             bool gap_after = (stop >= seq.size() || IsGapOrN(seq[stop]));
 
+            if (stop >= min_length_bp + from) {
+
             to = ((stop - from) / 3) * 3 + from - 1; // cerr << from << " " << to << " " << stop << endl;
             _ASSERT( gap_after || to+1==stop );
-            if (to - from +1 >= min_length_bp) {
+            if (to +1 >= min_length_bp + from) {
                 set<TSeqPos> starts; 
                 if (!allowable_starts.empty()) {
                     starts = FindStarts(seq, 
@@ -177,7 +179,7 @@ inline void FindForwardOrfs(const TSeq& seq, TRangeVec& ranges,
                                         allowable_starts);
                     from = *starts.begin();
                 }
-                if (to - from +1 >= min_length_bp) {
+                if (to +1 >= min_length_bp + from) {
                     if (from != from0 && stop_to_stop) {
                         AddInterval(ranges, from0, to,
                                     true, gap_after);
@@ -191,7 +193,7 @@ inline void FindForwardOrfs(const TSeq& seq, TRangeVec& ranges,
                         starts.erase(starts.begin());
                         for (auto s: starts) {
                             from = s;
-                            if (to - from +1 < min_length_bp)
+                            if (to +1 < min_length_bp + from)
                                 break;
                             AddInterval(ranges, from, to,
                                         false, gap_after);
@@ -205,12 +207,15 @@ inline void FindForwardOrfs(const TSeq& seq, TRangeVec& ranges,
                     }
             }
 
+            }
             if (gap_after) {
                 ++i;
-                to = ((stops[frame][i] - from) / 3) * 3 + from -1;
+                stop = stops[frame][i] +3;
+                from = ((stop - frame)/3)*3 + frame;
+            } else {
+                from = stop +3;
             }
             gap_before = gap_after;
-            from = to +4;
         }
     }
 }
@@ -230,6 +235,9 @@ static void s_FindOrfs(const TSeq& seq, COrf::TLocVec& results,
     if (seq.size() < 3) {
         return;
     }
+
+    if (min_length_bp < 3) min_length_bp = 3;
+    
     TRangeVec ranges;
 
     bool stop_to_stop = false;
