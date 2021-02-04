@@ -8,7 +8,7 @@ NCBI_begin_lib(xobjwrite)
     gff_writer gff2_write_data
     gff3_writer gff3_write_data gff3_alignment_data gff3_idgen
     gff3flybase_writer
-    gtf_writer gtf_write_data
+    gtf_writer gtf_write_data exon_number_assignment
     gvf_writer gvf_write_data
     wiggle_writer
     bed_writer bedgraph_writer bed_track_record bed_feature_record bed_graph_record

@@ -253,9 +253,9 @@ AP000423.1	DDBJ	gene	68512	68865	.	-	.	gene_id "rpl20"; transcript_id ""; gbkey 
 AP000423.1	DDBJ	CDS	68515	68865	.	-	0	gene_id "rpl20"; transcript_id "unassigned_transcript_66"; gbkey "CDS"; gene "rpl20"; product "ribosomal protein L20"; protein_id "BAA84408.1"; transl_table "11"; 
 AP000423.1	DDBJ	start_codon	68863	68865	.	-	0	gene_id "rpl20"; transcript_id "unassigned_transcript_66"; gbkey "CDS"; gene "rpl20"; product "ribosomal protein L20"; protein_id "BAA84408.1"; transl_table "11"; 
 AP000423.1	DDBJ	stop_codon	68512	68514	.	-	0	gene_id "rpl20"; transcript_id "unassigned_transcript_66"; gbkey "CDS"; gene "rpl20"; product "ribosomal protein L20"; protein_id "BAA84408.1"; transl_table "11"; 
-AP000423.1	DDBJ	gene	69611	69724	.	-	.	gene_id "rps12"; transcript_id ""; gbkey "Gene"; gene "rps12"; gene_biotype "protein_coding"; part "1"; 
+AP000423.1	DDBJ	gene	69611	69724	.	+	.	gene_id "rps12"; transcript_id ""; gbkey "Gene"; gene "rps12"; gene_biotype "protein_coding"; part "1"; 
 AP000423.1	DDBJ	gene	139856	140650	.	+	.	gene_id "rps12"; transcript_id ""; gbkey "Gene"; gene "rps12"; gene_biotype "protein_coding"; part "2"; 
-AP000423.1	DDBJ	gene	97999	98793	.	-	.	gene_id "rps12"; transcript_id ""; gbkey "Gene"; gene "rps12"; gene_biotype "protein_coding"; part "3"; 
+AP000423.1	DDBJ	gene	97999	98793	.	+	.	gene_id "rps12"; transcript_id ""; gbkey "Gene"; gene "rps12"; gene_biotype "protein_coding"; part "3"; 
 AP000423.1	DDBJ	CDS	69611	69724	.	-	0	gene_id "rps12"; transcript_id "unassigned_transcript_67"; exception "trans-splicing"; gbkey "CDS"; gene "rps12"; note "trans-spliced"; part "1"; product "ribosomal protein S12"; protein_id "BAA84432.1"; transl_table "11"; exon_number "1"; 
 AP000423.1	DDBJ	CDS	98562	98793	.	-	0	gene_id "rps12"; transcript_id "unassigned_transcript_67"; exception "trans-splicing"; gbkey "CDS"; gene "rps12"; note "trans-spliced"; part "2"; product "ribosomal protein S12"; protein_id "BAA84432.1"; transl_table "11"; exon_number "2"; 
 AP000423.1	DDBJ	CDS	98002	98024	.	-	2	gene_id "rps12"; transcript_id "unassigned_transcript_67"; exception "trans-splicing"; gbkey "CDS"; gene "rps12"; note "trans-spliced"; part "3"; product "ribosomal protein S12"; protein_id "BAA84432.1"; transl_table "11"; exon_number "3"; 

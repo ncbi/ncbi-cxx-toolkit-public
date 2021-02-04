@@ -62,6 +62,8 @@
 #include <objtools/writers/gtf_writer.hpp>
 #include <objtools/writers/genbank_id_resolve.hpp>
 
+#include "exon_number_assignment.hpp"
+
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
@@ -292,9 +294,6 @@ bool CGtfWriter::xWriteRecordsCds(
 //  ----------------------------------------------------------------------------
 {
     string transcriptId(transcriptIdPreAssigned);
-    //if (transcriptId.empty()) {
-    //    transcriptId = CGtfIdGenerator::NextId("unassigned_transcript");
-    //}
 
     CMappedFeat tf = xGenerateMissingTranscript(context, mf);
     if (tf) {
@@ -324,9 +323,6 @@ bool CGtfWriter::xWriteRecordsTranscript(
 //  ----------------------------------------------------------------------------
 {
     string transcriptId(transcriptIdPreAssigned);
-    //if (transcriptId.empty()) {
-    //    transcriptId = CGtfIdGenerator::NextId("unassigned_transcript");
-    //}
 
     list<CRef<CGtfRecord>> records;
     if (!xAssignFeaturesTranscript(records, context, mf, transcriptId)) {
@@ -349,7 +345,11 @@ bool CGtfWriter::xAssignFeaturesGene(
 //  ----------------------------------------------------------------------------
 {
     const auto& mfLoc = mf.GetLocation();
-    
+    auto mfStrand = mfLoc.IsSetStrand() ? mfLoc.GetStrand() : eNa_strand_plus;
+    if (mfStrand != eNa_strand_minus) {
+        mfStrand = eNa_strand_plus;
+    }
+
     CSeq_loc mfLocAsPackedInt;
     mfLocAsPackedInt.Assign(mfLoc);
     mfLocAsPackedInt.ChangeToPackedInt();
@@ -364,8 +364,7 @@ bool CGtfWriter::xAssignFeaturesGene(
         if (!xAssignFeature(*pRecord, context, mf)) {
             return false;
         }
-        pRecord->SetEndpoints(intv.GetFrom(), intv.GetTo(), 
-            (intv.IsSetStrand() ? intv.GetStrand() : eNa_strand_plus));
+        pRecord->SetEndpoints(intv.GetFrom(), intv.GetTo(), mfStrand);
         if (needsPartNumbers) {
             pRecord->SetAttribute("part", NStr::NumericToString(partNum++));
         }
@@ -383,6 +382,10 @@ bool CGtfWriter::xAssignFeaturesTranscript(
     const string& transcriptId)
 //  ----------------------------------------------------------------------------
 {
+    // note: GTF transcript locations are the minimum covering interval of all 
+    //  its exons. Hence it's either a single interval, or two intervals if the
+    //  covering interval wraps around the origin.
+
     const auto& mfLoc = mf.GetLocation();
     
     CSeq_loc mfLocAsPackedInt;
@@ -457,110 +460,6 @@ bool CGtfWriter::xAssignFeaturesTranscript(
     return true;
 }
 
-//  ===========================================================================
-class CExonNumberAssigner
-//  ===========================================================================
-{
-public:
-    CExonNumberAssigner(
-        CMappedFeat mf) { xInitialize(mf); };
-
-    bool CdsNeedsExonNumbers() const;
-
-    unsigned int CdsGetExonNumberFor(
-        const CGtfRecord&) const;
-
-    void AssignExonNumberTo(
-        CGtfRecord& gtfRecord) const;
-
-private:
-    void xInitialize(
-        CMappedFeat cdsMf);
-
-    unsigned xGetIndexInLocation(
-        const CGtfRecord&,
-        const CSeq_loc&) const;
-
-    CMappedFeat mCdsMf;
-    CSeq_loc mCdsLoc;
-    CMappedFeat mRnaMf;
-    CSeq_loc mRnaLoc;
-};
-
-//  ---------------------------------------------------------------------------
-void CExonNumberAssigner::xInitialize(
-    CMappedFeat cdsMf)
-//  ---------------------------------------------------------------------------
-{
-    mCdsMf = cdsMf;
-    mCdsLoc.Assign(cdsMf.GetLocation());
-    mCdsLoc.ChangeToPackedInt();
-    
-    mRnaMf = feature::GetBestMrnaForCds(mCdsMf);
-    if (mRnaMf) {
-        mRnaLoc.Assign(mRnaMf.GetLocation());
-        mRnaLoc.ChangeToPackedInt();
-    }
-    else {
-        mRnaLoc.Reset();
-    }
-}
-
-//  ---------------------------------------------------------------------------
-bool CExonNumberAssigner::CdsNeedsExonNumbers() const
-//  ---------------------------------------------------------------------------
-{
-    if (!mRnaMf) {
-        return (mCdsLoc.GetPacked_int().Get().size() > 1);
-    }
-    return (mRnaLoc.GetPacked_int().Get().size() > 1);
-}
-
-//  ---------------------------------------------------------------------------
-unsigned int CExonNumberAssigner::xGetIndexInLocation(
-    const CGtfRecord& gtfRecord,
-    const CSeq_loc& location) const
-//  ---------------------------------------------------------------------------
-{
-    _ASSERT(location.IsPacked_int());
-    unsigned int exonNumber = 1;
-    auto recordFrom = gtfRecord.SeqStart();
-    auto recordTo = gtfRecord.SeqStop();
-    if (recordFrom == 14408) {
-        cerr << "";
-    }
-    for (const auto pExonLocation: location.GetPacked_int().Get()) {
-        auto exonFrom = pExonLocation->GetFrom();
-        auto exonTo = pExonLocation->GetTo();
-        if (recordFrom >= exonFrom  &&  recordTo <= exonTo) {
-            return exonNumber;
-        }
-        ++exonNumber;
-    }
-    return 0; // invalid exon number
-}
-
-//  ---------------------------------------------------------------------------
-unsigned int CExonNumberAssigner::CdsGetExonNumberFor(
-    const CGtfRecord& gtfRecord) const
-//  ---------------------------------------------------------------------------
-{
-    if (!mRnaMf) {
-        return xGetIndexInLocation(gtfRecord, mCdsLoc);
-    }
-    return xGetIndexInLocation(gtfRecord, mRnaLoc);
-}
-
-//  ----------------------------------------------------------------------------
-void CExonNumberAssigner::AssignExonNumberTo(
-    CGtfRecord& gtfRecord) const
-//  ----------------------------------------------------------------------------
-{
-    auto exonNumber = CdsGetExonNumberFor(gtfRecord);
-    _ASSERT(exonNumber); // indicator of faulty assignment logic
-    gtfRecord.SetExonNumber(exonNumber); 
-}
-
 //  ----------------------------------------------------------------------------
 bool CGtfWriter::xAssignFeaturesCds(
     list<CRef<CGtfRecord>>& recordList,
@@ -596,15 +495,36 @@ bool CGtfWriter::xAssignFeaturesCds(
         pRecord->SetCdsPhase(sublocs, mfStrand);
         recordList.push_back(pRecord);
     }
-    // correct endpoint of last record:
-    auto pLastRecord = recordList.back();
+    // subtract stop_codon in the end:
     if (mfLoc.GetStrand() == eNa_strand_minus) {
-        pLastRecord->SetEndpoints(
-            pLastRecord->SeqStart() + 3, pLastRecord->SeqStop(), mfStrand);
+        int basesToLose = 3;
+        while (basesToLose > 0) {
+            auto pLastRecord = recordList.back();
+            auto lastSize = pLastRecord->SeqStop() - pLastRecord->SeqStart() + 1;
+            if (lastSize > basesToLose) {
+                pLastRecord->SetEndpoints(
+                    pLastRecord->SeqStart() + 3, pLastRecord->SeqStop(), mfStrand);
+                basesToLose = 0;
+            }
+            else {
+            }
+        }
     }
     else {
-        pLastRecord->SetEndpoints(
-            pLastRecord->SeqStart(), pLastRecord->SeqStop() - 3, mfStrand);
+        int basesToLose = 3;
+        while (basesToLose > 0) {
+            auto pLastRecord = recordList.back();
+            auto lastSize = pLastRecord->SeqStop() - pLastRecord->SeqStart() + 1;
+            if (lastSize > basesToLose) {
+                pLastRecord->SetEndpoints(
+                    pLastRecord->SeqStart(), pLastRecord->SeqStop() - 3, mfStrand);
+                basesToLose = 0;
+            }
+            else {
+                recordList.erase(--recordList.end());
+                basesToLose -= lastSize;
+            }
+        }
     }
 
     // generate start codon:
@@ -795,175 +715,6 @@ bool CGtfWriter::xWriteFeatureExons(
             xWriteRecord( pExon );
         }
     }
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
-bool CGtfWriter::xWriteFeatureCds(
-    CGffFeatureContext& context,
-    const CMappedFeat& mf )
-//  ----------------------------------------------------------------------------
-{
-    CMappedFeat tf = xGenerateMissingTranscript(context, mf);
-    string transcriptId;
-    if (tf) {
-        transcriptId = CGtfIdGenerator::NextId("unassigned_transcript");
-        if (!xWriteRecordsTranscript(context, tf, transcriptId)) {
-            return false;
-        }
-    }
-
-    CRef<CGtfRecord> pParent( 
-        new CGtfRecord( context, (m_uFlags & fNoExonNumbers) ) );
-    if (!transcriptId.empty()) {
-        pParent->SetTranscriptId(transcriptId);
-    }
-    if (!xAssignFeature(*pParent, context, mf)) {
-        return false;
-    }
-
-    CRef< CSeq_loc > pLocStartCodon;
-    CRef< CSeq_loc > pLocCode;
-    CRef< CSeq_loc > pLocStopCodon;
-    if (!xSplitCdsLocation( mf, pLocStartCodon, pLocCode, pLocStopCodon)) {
-        return false;
-    }
-
-    CMappedFeat mRna = tf;
-    if (!mRna) {
-	    feature::CFeatTree& featTree = context.FeatTree();
-	    mRna = feature::GetBestMrnaForCds(mf, &featTree);
-    }
-
-    if (pLocCode) {
-        pParent->CorrectType("CDS");
-        if (!xWriteFeatureCdsFragments(*pParent, *pLocCode, mRna)) {
-            return false;
-        }
-    }
-    if (pLocStartCodon) {
-        pParent->CorrectType("start_codon");
-        if (!xWriteFeatureCdsFragments(*pParent, *pLocStartCodon, mRna)) {
-            return false;
-        }
-    }
-    if (pLocStopCodon) {
-        pParent->CorrectType("stop_codon");
-        if (!xWriteFeatureCdsFragments(*pParent, *pLocStopCodon, mRna)) {
-            return false;
-        }
-    }
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
-bool CGtfWriter::xWriteFeatureCdsFragments(
-    CGtfRecord& record,
-	const CSeq_loc& cdsLoc,
-    const CMappedFeat& mRna)
-//  ----------------------------------------------------------------------------
-{
-    typedef list<CRef<CSeq_interval> > EXONS;
-	typedef EXONS::const_iterator EXONIT;
-
-    const EXONS& cdsExons = cdsLoc.GetPacked_int().Get();
-	int count = 0;
-
-	if (!mRna) {
-		for (EXONIT cdsIt = cdsExons.begin(); cdsIt != cdsExons.end(); ++cdsIt) {
-			count++;
-			const CSeq_interval& cdsExon = **cdsIt;
-			CRef<CGtfRecord> pRecord(new CGtfRecord(record));
-			pRecord->MakeChildRecord( record, cdsExon, count);
-			pRecord->SetCdsPhase(cdsExons, cdsLoc.GetStrand());
-			xWriteRecord(pRecord.GetPointer());
-		}
-		return true;
-	}
-
-	CRef<CSeq_loc> pRnaLoc(new CSeq_loc(CSeq_loc::e_Mix));
-	pRnaLoc->Add(mRna.GetLocation());
-	pRnaLoc->ChangeToPackedInt();
-	const EXONS& rnaExons = pRnaLoc->GetPacked_int().Get();
-
-    for ( EXONIT cdsIt = cdsExons.begin(); cdsIt != cdsExons.end(); ++cdsIt ) {
-		count++;
-        const CSeq_interval& cdsExon = **cdsIt;
-        unsigned int uExonNumber = 0;
-		for (EXONIT rnaIt = rnaExons.begin(); rnaIt != rnaExons.end(); ++rnaIt) {
-			const CSeq_interval& rnaExon = **rnaIt;
-			uExonNumber++;
-            if ( rnaExon.GetFrom() <= cdsExon.GetFrom()  &&  rnaExon.GetTo() >= cdsExon.GetTo() ) {
-                 break;
-            }
-        }
-        CRef<CGtfRecord> pRecord(new CGtfRecord(record));
-        pRecord->MakeChildRecord( record, cdsExon, count );
-        pRecord->SetCdsPhase( cdsExons, cdsLoc.GetStrand() );
-        xWriteRecord( pRecord.GetPointer() );
-    }
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
-bool CGtfWriter::xSplitCdsLocation(
-    const CMappedFeat& cds,
-    CRef< CSeq_loc >& pLocStartCodon,
-    CRef< CSeq_loc >& pLocCode,
-    CRef< CSeq_loc >& pLocStopCodon ) const
-//  ----------------------------------------------------------------------------
-{
-    //  Note: pLocCode will contain the location of the start codon but not the
-    //  stop codon.
-
-    const CSeq_loc& cdsLocation = cds.GetLocation();
-    if ( cdsLocation.GetTotalRange().GetLength() < 6 ) {
-        return false;
-    }
-    CSeq_id cdsLocId( cdsLocation.GetId()->AsFastaString() );
-
-    pLocStartCodon.Reset( new CSeq_loc( CSeq_loc::e_Mix ) ); 
-    pLocCode.Reset( new CSeq_loc( CSeq_loc::e_Mix ) ); 
-    pLocStopCodon.Reset( new CSeq_loc( CSeq_loc::e_Mix ) ); 
-
-    pLocCode->Add(cdsLocation);
-    CRef< CSeq_loc > pLocCode2( new CSeq_loc( CSeq_loc::e_Mix ) );
-    pLocCode2->Add(cdsLocation);
-
-    CSeq_loc interval;
-    interval.SetInt().SetId( cdsLocId );
-    interval.SetStrand( cdsLocation.GetStrand() );
-
-    for ( size_t u = 0; u < 3; ++u ) {
-
-        auto lowest = pLocCode2->GetStart(eExtreme_Positional);
-        interval.SetInt().SetFrom(lowest);
-        interval.SetInt().SetTo(lowest);
-        pLocStartCodon = pLocStartCodon->Add( 
-            interval, CSeq_loc::fSortAndMerge_All, 0 );
-        pLocCode2 = pLocCode2->Subtract( 
-            interval, CSeq_loc::fMerge_Contained, 0, 0 );    
-
-        auto highest = pLocCode->GetStop(eExtreme_Positional);
-        interval.SetInt().SetFrom(highest);
-        interval.SetInt().SetTo(highest);
-        pLocStopCodon = pLocStopCodon->Add( 
-            interval, CSeq_loc::fSortAndMerge_All, 0 );
-        pLocCode = pLocCode->Subtract( 
-            interval, CSeq_loc::fMerge_Contained, 0, 0 );    
-    }
-
-    if ( cdsLocation.GetStrand() == eNa_strand_minus ) {
-        pLocCode = pLocCode2;
-        pLocCode2 = pLocStartCodon;
-        pLocStartCodon = pLocStopCodon;
-        pLocStopCodon = pLocCode2;
-    }
-
-    pLocStartCodon->ChangeToPackedInt();
-    pLocCode->ChangeToPackedInt();
-    pLocStopCodon->ChangeToPackedInt();
-
     return true;
 }
 
