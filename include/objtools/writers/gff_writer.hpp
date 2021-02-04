@@ -340,10 +340,6 @@ protected:
         CGffFeatureRecord&,
         CGffFeatureContext&,
         const CMappedFeat&);
-    bool xAssignFeatureAttributeGbKey(
-        CGffFeatureRecord&,
-        CGffFeatureContext&,
-        const CMappedFeat&);
 
     virtual bool x_WriteSequenceHeader(
         CBioseq_Handle ) { return true; };

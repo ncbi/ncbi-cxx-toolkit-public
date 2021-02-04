@@ -33,6 +33,7 @@
 #ifndef OBJTOOLS_WRITERS___GFF_FEATURE_RECORD__HPP
 #define OBJTOOLS_WRITERS___GFF_FEATURE_RECORD__HPP
 
+#include <objmgr/mapped_feat.hpp>
 #include <objtools/writers/gff_base_record.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -60,10 +61,12 @@ public:
         unsigned int start,
         unsigned int stop,
         ENa_strand strand);
-
     const CSeq_loc& Location() const {
         return *m_pLoc;
     };
+    void SetGbKeyFrom(
+        CMappedFeat);
+
 protected:
 };
 

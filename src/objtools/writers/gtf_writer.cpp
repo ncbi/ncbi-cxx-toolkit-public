@@ -456,8 +456,7 @@ bool CGtfWriter::xAssignFeaturesTranscript(
             record->SetPartNumber(partNum++);
         }
         record->SetType("transcript");
-        record->SetAttribute(
-            "gbkey", CSeqFeatData::SubtypeValueToName(mf.GetFeatSubtype()));
+        record->SetGbKeyFrom(mf);
     }
     return true;
 }

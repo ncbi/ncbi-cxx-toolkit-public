@@ -141,8 +141,6 @@ protected:
         const CMappedFeat& );
     virtual bool x_AssignAttributeModelEvidence(
         const CMappedFeat& );
-    virtual bool x_AssignAttributeGbKey(
-        const CMappedFeat& );
     virtual bool x_AssignAttributeTranscriptId(
         const CMappedFeat& );
     virtual bool x_AssignAttributeProteinId(

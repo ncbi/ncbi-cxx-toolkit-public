@@ -405,9 +405,7 @@ bool CGff3WriteRecordFeature::x_AssignAttributesFromAsnExtended(
     // collection of feature attribute that we want to propagate to every feature
     //  type under the sun
     //
-    if ( ! x_AssignAttributeGbKey( mapped_feat ) ) {
-        return false;
-    }
+    SetGbKeyFrom(mapped_feat);
     return true;
 }
 
@@ -1117,15 +1115,6 @@ bool CGff3WriteRecordFeature::x_AssignAttributeModelEvidence(
             }
         }
     }
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
-bool CGff3WriteRecordFeature::x_AssignAttributeGbKey(
-    const CMappedFeat& mapped_feat )
-//  ----------------------------------------------------------------------------
-{
-    SetAttribute("gbkey", mapped_feat.GetData().GetKey());
     return true;
 }
 

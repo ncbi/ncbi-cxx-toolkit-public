@@ -606,8 +606,8 @@ bool CGff2Writer::xAssignFeatureAttributesFormatIndependent(
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
+    record.SetGbKeyFrom(mf);
     return( 
-        xAssignFeatureAttributeGbKey(record, fc, mf)  &&
         xAssignFeatureAttributesQualifiers(record, fc, mf)  &&
         xAssignFeatureAttributeDbxref(record, fc, mf)  &&
         xAssignFeatureAttributeNote(record, fc, mf)  &&
@@ -1298,18 +1298,6 @@ bool CGff2Writer::xAssignFeatureAttributeExonNumber(
     }
     return true; 
 }
-
-//  ----------------------------------------------------------------------------
-bool CGff2Writer::xAssignFeatureAttributeGbKey(
-    CGffFeatureRecord& record,
-    CGffFeatureContext&,
-    const CMappedFeat& mf )
-//  ----------------------------------------------------------------------------
-{
-    record.SetAttribute("gbkey", mf.GetData().GetKey());
-    return true; 
-}
-
 
 //  ----------------------------------------------------------------------------
 bool CGff2Writer::IsTranscriptType(
