@@ -345,10 +345,9 @@ bool CGtfWriter::xAssignFeaturesGene(
 //  ----------------------------------------------------------------------------
 {
     const auto& mfLoc = mf.GetLocation();
-    auto mfStrand = mfLoc.IsSetStrand() ? mfLoc.GetStrand() : eNa_strand_plus;
-    if (mfStrand != eNa_strand_minus) {
-        mfStrand = eNa_strand_plus;
-    }
+    auto mfStrand = (mfLoc.IsSetStrand() && mfLoc.GetStrand() == eNa_strand_minus) ?
+        eNa_strand_minus :
+        eNa_strand_plus;
 
     CSeq_loc mfLocAsPackedInt;
     mfLocAsPackedInt.Assign(mfLoc);
@@ -366,7 +365,7 @@ bool CGtfWriter::xAssignFeaturesGene(
         }
         pRecord->SetEndpoints(intv.GetFrom(), intv.GetTo(), mfStrand);
         if (needsPartNumbers) {
-            pRecord->SetAttribute("part", NStr::NumericToString(partNum++));
+            pRecord->SetPartNumber(partNum++);
         }
         recordList.push_back(pRecord);
     }
@@ -387,7 +386,10 @@ bool CGtfWriter::xAssignFeaturesTranscript(
     //  covering interval wraps around the origin.
 
     const auto& mfLoc = mf.GetLocation();
-    
+    auto mfStrand = (mfLoc.IsSetStrand() && mfLoc.GetStrand() == eNa_strand_minus) ?
+        eNa_strand_minus :
+        eNa_strand_plus;
+
     CSeq_loc mfLocAsPackedInt;
     mfLocAsPackedInt.Assign(mfLoc);
     mfLocAsPackedInt.ChangeToPackedInt();
@@ -407,7 +409,7 @@ bool CGtfWriter::xAssignFeaturesTranscript(
     for ( it++; it != sublocs.end(); it++ ) {
         const CSeq_interval& intv = **it;
 
-        if (intv.IsSetStrand()  &&  intv.GetStrand() == eNa_strand_minus) {
+        if (mfStrand == eNa_strand_minus) {
             if (intv.GetTo() <= lastFrom) {
                 lastFrom = intv.GetFrom();
             }
@@ -451,7 +453,7 @@ bool CGtfWriter::xAssignFeaturesTranscript(
     unsigned int partNum = 1;
     for (auto& record: recordList) {
         if (needPartNumbers) {
-            record->SetAttribute("part", NStr::NumericToString(partNum++));
+            record->SetPartNumber(partNum++);
         }
         record->SetType("transcript");
         record->SetAttribute(
@@ -469,7 +471,9 @@ bool CGtfWriter::xAssignFeaturesCds(
 //  ----------------------------------------------------------------------------
 {
     const auto& mfLoc = mf.GetLocation();
-    auto mfStrand = mfLoc.IsSetStrand() ? mfLoc.GetStrand() : eNa_strand_plus;
+    auto mfStrand = (mfLoc.IsSetStrand() && mfLoc.GetStrand() == eNa_strand_minus) ?
+        eNa_strand_minus :
+        eNa_strand_plus;
 
     CSeq_loc mfLocAsPackedInt;
     mfLocAsPackedInt.Assign(mfLoc);
@@ -495,177 +499,113 @@ bool CGtfWriter::xAssignFeaturesCds(
         pRecord->SetCdsPhase(sublocs, mfStrand);
         recordList.push_back(pRecord);
     }
+
     // subtract stop_codon in the end:
-    if (mfLoc.GetStrand() == eNa_strand_minus) {
-        int basesToLose = 3;
-        while (basesToLose > 0) {
-            auto pLastRecord = recordList.back();
-            auto lastSize = pLastRecord->SeqStop() - pLastRecord->SeqStart() + 1;
-            if (lastSize > basesToLose) {
+    unsigned int basesToLose = 3;
+    auto pLastRecord = recordList.back();
+    auto lastSize = pLastRecord->SeqStop() - pLastRecord->SeqStart() + 1;
+    while (basesToLose > 0) {
+        if (lastSize > basesToLose) {
+            if (mfLoc.GetStrand() == eNa_strand_minus) {
                 pLastRecord->SetEndpoints(
                     pLastRecord->SeqStart() + 3, pLastRecord->SeqStop(), mfStrand);
-                basesToLose = 0;
             }
             else {
-            }
-        }
-    }
-    else {
-        int basesToLose = 3;
-        while (basesToLose > 0) {
-            auto pLastRecord = recordList.back();
-            auto lastSize = pLastRecord->SeqStop() - pLastRecord->SeqStart() + 1;
-            if (lastSize > basesToLose) {
                 pLastRecord->SetEndpoints(
                     pLastRecord->SeqStart(), pLastRecord->SeqStop() - 3, mfStrand);
-                basesToLose = 0;
             }
-            else {
-                recordList.erase(--recordList.end());
-                basesToLose -= lastSize;
-            }
+            basesToLose = 0;
+        }
+        else {
+            recordList.erase(--recordList.end());
+            basesToLose -= lastSize;
         }
     }
 
     // generate start codon:
     if (!mfLoc.IsPartialStart(eExtreme_Biological)) {
-        if (mfStrand == eNa_strand_minus) {
-            int basePairsNeeded = 3;
-            const auto currentIt = sublocs.begin(); 
-            unsigned int partNumber = 1;
-            while (basePairsNeeded > 0) {
-                const CSeq_interval& currentLoc = **currentIt;
-                auto currentFrom = currentLoc.GetFrom();
-                auto currentTo = currentLoc.GetTo();
+        int basePairsNeeded = 3;
+        auto currentIt = sublocs.begin(); 
+        unsigned int partNumber = 1;
 
-                CRef<CGtfRecord> pRecord( 
-                    new CGtfRecord(context, (m_uFlags & fNoExonNumbers)));
-                if (!xAssignFeature(*pRecord, context, mf)) {
-                    return false;
-                }
-                pRecord->SetType("start_codon");
+        while (basePairsNeeded > 0) {
+            const CSeq_interval& currentLoc = **currentIt;
+            auto currentFrom = currentLoc.GetFrom();
+            auto currentTo = currentLoc.GetTo();
 
-                if (currentFrom <= currentTo - basePairsNeeded + 1) {
+            CRef<CGtfRecord> pRecord( 
+                new CGtfRecord(context, (m_uFlags & fNoExonNumbers)));
+            if (!xAssignFeature(*pRecord, context, mf)) {
+                return false;
+            }
+            pRecord->SetType("start_codon");
+
+            if (currentTo >= currentFrom + basePairsNeeded -1) {
+                if (mfStrand == eNa_strand_minus) {
                     pRecord->SetEndpoints(currentTo - basePairsNeeded + 1, currentTo,  mfStrand);
-                    basePairsNeeded = 0;
                 }
-                else { //really ???
-                    pRecord->SetEndpoints(currentFrom, currentTo, mfStrand);
-                    basePairsNeeded = basePairsNeeded - (currentTo - currentFrom + 1);
-                }
-
-                if (!transcriptId.empty()) {
-                    pRecord->SetTranscriptId(transcriptId);
-                }
-                pRecord->SetCdsPhase(sublocs, mfStrand);
-                recordList.push_back(pRecord);
-            }
-        }
-        else {
-            int basePairsNeeded = 3;
-            auto currentIt = sublocs.begin(); 
-            unsigned int partNumber = 1;
-            while (basePairsNeeded > 0) {
-                const CSeq_interval& currentLoc = **currentIt;
-                auto currentFrom = currentLoc.GetFrom();
-                auto currentTo = currentLoc.GetTo();
-
-                CRef<CGtfRecord> pRecord( 
-                    new CGtfRecord(context, (m_uFlags & fNoExonNumbers)));
-                if (!xAssignFeature(*pRecord, context, mf)) {
-                    return false;
-                }
-                pRecord->SetType("start_codon");
-
-                if (currentTo >= currentFrom + basePairsNeeded -1) {
+                else {
                     pRecord->SetEndpoints(currentFrom, currentFrom + basePairsNeeded -1, mfStrand);
-                    basePairsNeeded = 0;
                 }
-                else {// intelligent design strikes again!
-                    pRecord->SetEndpoints(currentFrom, currentTo, mfStrand);
-                    basePairsNeeded = basePairsNeeded - (currentTo - currentFrom + 1);
-                }
-                if (partNumber > 1  || basePairsNeeded > 0) {
-                    pRecord->SetPartNumber(partNumber++);
-                }
-                if (!transcriptId.empty()) {
-                    pRecord->SetTranscriptId(transcriptId);
-                }
-                pRecord->SetCdsPhase(sublocs, mfStrand);
-                recordList.push_back(pRecord);
-                currentIt++;
+                basePairsNeeded = 0;
             }
+            else {
+                pRecord->SetEndpoints(currentFrom, currentTo, mfStrand);
+                basePairsNeeded = basePairsNeeded - (currentTo - currentFrom + 1);
+            }
+
+            if (partNumber > 1  || basePairsNeeded > 0) {
+                pRecord->SetPartNumber(partNumber++);
+            }
+            if (!transcriptId.empty()) {
+                pRecord->SetTranscriptId(transcriptId);
+            }
+            pRecord->SetCdsPhase(sublocs, mfStrand);
+            recordList.push_back(pRecord);
+            currentIt++;
         }
     }
 
     // generate stop codon:
     if (!mfLoc.IsPartialStop(eExtreme_Biological)) {
-        if (mfStrand == eNa_strand_minus) {
-            int basePairsNeeded = 3;
-            const auto currentIt = sublocs.rbegin(); 
-            unsigned int partNumber = 1;
-            while (basePairsNeeded > 0) {
-                const CSeq_interval& currentLoc = **currentIt;
-                auto currentFrom = currentLoc.GetFrom();
-                auto currentTo = currentLoc.GetTo();
+        int basePairsNeeded = 3;
+        auto currentIt = sublocs.rbegin(); 
+        unsigned int partNumber = 1;
+        while (basePairsNeeded > 0) {
+            const CSeq_interval& currentLoc = **currentIt;
+            auto currentFrom = currentLoc.GetFrom();
+            auto currentTo = currentLoc.GetTo();
 
-                CRef<CGtfRecord> pRecord( 
-                    new CGtfRecord(context, (m_uFlags & fNoExonNumbers)));
-                if (!xAssignFeature(*pRecord, context, mf)) {
-                    return false;
-                }
-                pRecord->SetType("stop_codon");
+            CRef<CGtfRecord> pRecord( 
+                new CGtfRecord(context, (m_uFlags & fNoExonNumbers)));
+            if (!xAssignFeature(*pRecord, context, mf)) {
+                return false;
+            }
+            pRecord->SetType("stop_codon");
 
-                if (currentTo >= currentFrom + basePairsNeeded - 1) {
+            if (currentTo >= currentFrom + basePairsNeeded - 1) {
+                if (mfStrand == eNa_strand_minus) {
                     pRecord->SetEndpoints(currentFrom, currentFrom + basePairsNeeded - 1,  mfStrand);
-                    basePairsNeeded = 0;
                 }
-                else { //really ???
-                    pRecord->SetEndpoints(currentFrom, currentTo, mfStrand);
-                    basePairsNeeded = basePairsNeeded - (currentTo - currentFrom + 1);
-                }
-
-                if (!transcriptId.empty()) {
-                    pRecord->SetTranscriptId(transcriptId);
-                }
-                pRecord->SetCdsPhase(sublocs, mfStrand);
-                recordList.push_back(pRecord);
-            }
-        }
-        else {
-            int basePairsNeeded = 3;
-            auto currentIt = sublocs.rbegin(); 
-            unsigned int partNumber = 1;
-            while (basePairsNeeded > 0) {
-                const CSeq_interval& currentLoc = **currentIt;
-                auto currentFrom = currentLoc.GetFrom();
-                auto currentTo = currentLoc.GetTo();
-
-                CRef<CGtfRecord> pRecord( 
-                    new CGtfRecord(context, (m_uFlags & fNoExonNumbers)));
-                if (!xAssignFeature(*pRecord, context, mf)) {
-                    return false;
-                }
-                pRecord->SetType("stop_codon");
-
-                if (currentFrom <= currentTo - basePairsNeeded + 1) {
+                else {
                     pRecord->SetEndpoints(currentTo - basePairsNeeded + 1, currentTo, mfStrand);
-                    basePairsNeeded = 0;
                 }
-                else {// intelligent design strikes again!
-                    pRecord->SetEndpoints(currentFrom, currentTo, mfStrand);
-                    basePairsNeeded = basePairsNeeded - (currentTo - currentFrom + 1);
-                }
-                if (partNumber > 1  || basePairsNeeded > 0) {
-                    pRecord->SetPartNumber(partNumber++);
-                }
-                if (!transcriptId.empty()) {
-                    pRecord->SetTranscriptId(transcriptId);
-                }
-                pRecord->SetCdsPhase(sublocs, mfStrand);
-                recordList.push_back(pRecord);
-                currentIt++;
+                basePairsNeeded = 0;
             }
+            else {
+                pRecord->SetEndpoints(currentFrom, currentTo, mfStrand);
+                basePairsNeeded = basePairsNeeded - (currentTo - currentFrom + 1);
+            }
+
+            if (partNumber > 1  || basePairsNeeded > 0) {
+                pRecord->SetPartNumber(partNumber++);
+            }
+            if (!transcriptId.empty()) {
+                pRecord->SetTranscriptId(transcriptId);
+            }
+            pRecord->SetCdsPhase(sublocs, mfStrand);
+            recordList.push_back(pRecord);
+            currentIt++;
         }
     }
 
@@ -694,26 +634,26 @@ bool CGtfWriter::xWriteFeatureExons(
     if (!xAssignFeature(*pMrna, context, mf)) {
         return false;
     }
-    pMrna->CorrectType( "exon" );
+    pMrna->CorrectType("exon");
 
     const CSeq_loc& loc = mf.GetLocation();
     unsigned int uExonNumber = 1;
 
-    CRef< CSeq_loc > pLocMrna( new CSeq_loc( CSeq_loc::e_Mix ) );
+    CRef< CSeq_loc > pLocMrna(new CSeq_loc(CSeq_loc::e_Mix));
     pLocMrna->Add( loc );
     pLocMrna->ChangeToPackedInt();
+    if (!pLocMrna->GetPacked_int().CanGet()) {
+        return false;
+    }
 
-    if ( pLocMrna->IsPacked_int() && pLocMrna->GetPacked_int().CanGet() ) {
-        list< CRef< CSeq_interval > >& sublocs = pLocMrna->SetPacked_int().Set();
-        list< CRef< CSeq_interval > >::iterator it;
-        for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
-            CSeq_interval& subint = **it;
-            CRef<CGtfRecord> pExon( 
-                new CGtfRecord(context, (m_uFlags & fNoExonNumbers)));
-            pExon->MakeChildRecord( *pMrna, subint, uExonNumber++ );
-            pExon->DropAttributes("gbkey");
-            xWriteRecord( pExon );
-        }
+    const list<CRef<CSeq_interval>>& sublocs = pLocMrna->GetPacked_int().Get();
+    for (auto it = sublocs.begin(); it != sublocs.end(); ++it) {
+        const CSeq_interval& subint = **it;
+        CRef<CGtfRecord> pExon( 
+            new CGtfRecord(context, (m_uFlags & fNoExonNumbers)));
+        pExon->MakeChildRecord(*pMrna, subint, uExonNumber++);
+        pExon->DropAttributes("gbkey");
+        xWriteRecord(pExon);
     }
     return true;
 }
