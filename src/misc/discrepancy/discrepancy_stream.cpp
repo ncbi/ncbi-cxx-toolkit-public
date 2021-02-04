@@ -48,9 +48,7 @@ USING_SCOPE(objects);
 static size_t offset = 0;
 string Offset() // LCOV_EXCL_START
 {
-    string s;
-    for (size_t i = 0; i < offset; i++) s += "  ";
-    return s;
+    return string(offset<<1, ' ');
 } // LCOV_EXCL_STOP
 
 class CReadHook_Bioseq_set : public CReadObjectHook
@@ -859,7 +857,7 @@ bool CDiscrepancyContext::CanFixBioseq_set(CRefNode& refnode)
 
 bool CDiscrepancyContext::CanFixBioseq_set()
 {
-    for (auto fix : *m_Fixes) {
+    for (auto* fix : *m_Fixes) {
         if (CanFixBioseq_set(*fix->m_Fix)) {
             return true;
         }
@@ -891,7 +889,7 @@ bool CDiscrepancyContext::CanFixBioseq(CRefNode& refnode)
 
 bool CDiscrepancyContext::CanFixBioseq()
 {
-    for (auto fix : *m_Fixes) {
+    for (auto* fix : *m_Fixes) {
         if (CanFixBioseq(*fix->m_Fix)) {
             return true;
         }
@@ -922,7 +920,7 @@ bool CDiscrepancyContext::CanFixFeat(CRefNode& refnode)
 
 bool CDiscrepancyContext::CanFixSeq_annot()
 {
-    for (auto fix : *m_Fixes) {
+    for (auto* fix : *m_Fixes) {
         if (CanFixFeat(*fix->m_Fix)) {
             return true;
         }
@@ -953,7 +951,7 @@ bool CDiscrepancyContext::CanFixDesc(CRefNode& refnode)
 
 bool CDiscrepancyContext::CanFixSeqdesc()
 {
-    for (auto fix : *m_Fixes) {
+    for (auto* fix : *m_Fixes) {
         if (CanFixDesc(*fix->m_Fix)) {
             return true;
         }
@@ -984,7 +982,7 @@ bool CDiscrepancyContext::CanFixSubmit_block(CRefNode& refnode)
 
 bool CDiscrepancyContext::CanFixSubmit_block()
 {
-    for (auto fix : *m_Fixes) {
+    for (auto* fix : *m_Fixes) {
         if (CanFixSubmit_block(*fix->m_Fix)) {
             return true;
         }
@@ -1001,7 +999,7 @@ void CDiscrepancyContext::AutofixSeq_annot()
         }
     }
 
-    for (auto fix : *m_Fixes) {
+    for (auto* fix : *m_Fixes) {
         if (CanFixFeat(*fix->m_Fix) && fix->m_Fix->m_Index < m_CurrentNode->m_Features.size()) {
             m_NodeMap[&*fix->m_Fix] = m_CurrentNode->m_Features[fix->m_Fix->m_Index];
             CRef<CAutofixReport> result = static_cast<CDiscrepancyCore&>(*fix->m_Case).Autofix(fix, *this);
@@ -1018,7 +1016,7 @@ void CDiscrepancyContext::AutofixSeq_descr()
         }
     }
 
-    for (auto fix : *m_Fixes) {
+    for (auto* fix : *m_Fixes) {
         if (CanFixDesc(*fix->m_Fix) && fix->m_Fix->m_Index < m_CurrentNode->m_Descriptors.size()) {
             m_NodeMap[&*fix->m_Fix] = m_CurrentNode->m_Descriptors[fix->m_Fix->m_Index];
             CRef<CAutofixReport> result = static_cast<CDiscrepancyCore&>(*fix->m_Case).Autofix(fix, *this);
@@ -1032,7 +1030,7 @@ void CDiscrepancyContext::AutofixSubmit_block()
     CRef<CParseNode> sblock(new CParseNode(eSubmitBlock, 0));
     sblock->m_Obj.Reset(static_cast<CObject*>(&*m_AF_Submit_block));
 
-    for (auto fix : *m_Fixes) {
+    for (auto* fix : *m_Fixes) {
         if (CanFixSubmit_block(*fix->m_Fix)) {
             m_NodeMap[&*fix->m_Fix] = sblock;
             CRef<CAutofixReport> result = static_cast<CDiscrepancyCore&>(*fix->m_Case).Autofix(fix, *this);
@@ -1073,7 +1071,7 @@ void CDiscrepancyContext::AutofixBioseq_set()
         PopNode();
     }
 
-    for (auto fix : *m_Fixes) {
+    for (auto* fix : *m_Fixes) {
         if (CanFixBioseq_set(*fix->m_Fix)) {
             m_NodeMap[&*fix->m_Fix] = m_CurrentNode;
             CRef<CAutofixReport> result = static_cast<CDiscrepancyCore&>(*fix->m_Case).Autofix(fix, *this);
@@ -1100,7 +1098,7 @@ void CDiscrepancyContext::AutofixBioseq()
         }
     }
 
-    for (auto fix : *m_Fixes) {
+    for (auto* fix : *m_Fixes) {
         if (CanFixBioseq(*fix->m_Fix)) {
             m_NodeMap[&*fix->m_Fix] = m_CurrentNode;
             CRef<CAutofixReport> result = static_cast<CDiscrepancyCore&>(*fix->m_Case).Autofix(fix, *this);

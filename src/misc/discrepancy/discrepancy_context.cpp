@@ -55,7 +55,7 @@ BEGIN_SCOPE(NDiscrepancy)
 USING_SCOPE(objects);
 
 
-const CSeqSummary& CDiscrepancyContext::CurrentBioseqSummary(void) const
+const CSeqSummary& CDiscrepancyContext::CurrentBioseqSummary() const
 {
     return *m_CurrentNode->m_BioseqSummary;
 }
@@ -110,7 +110,7 @@ bool CDiscrepancyContext::HasLineage(const CBioSource& biosrc, const string& def
 }
 
 
-bool CDiscrepancyContext::HasLineage(const CBioSource* biosrc, const string& lineage)
+bool CDiscrepancyContext::HasLineage(const CBioSource* biosrc, const string& lineage) const
 {
     return biosrc ? HasLineage(*biosrc, GetLineage(), lineage) : false;
 }
@@ -136,7 +136,8 @@ bool CDiscrepancyContext::IsOrganelle(const CBioSource* biosrc) {
 }
 
 
-bool CDiscrepancyContext::IsEukaryotic(const CBioSource* biosrc) {
+bool CDiscrepancyContext::IsEukaryotic(const CBioSource* biosrc) const
+{
     if (biosrc) {
         int genome = biosrc->GetGenome();
         return genome != CBioSource::eGenome_mitochondrion
@@ -149,13 +150,13 @@ bool CDiscrepancyContext::IsEukaryotic(const CBioSource* biosrc) {
 }
 
 
-bool CDiscrepancyContext::IsBacterial(const CBioSource* biosrc)
+bool CDiscrepancyContext::IsBacterial(const CBioSource* biosrc) const
 {
     return biosrc ? HasLineage(biosrc, "Bacteria") : false;
 }
 
 
-bool CDiscrepancyContext::IsViral(const CBioSource* biosrc)
+bool CDiscrepancyContext::IsViral(const CBioSource* biosrc) const
 {
     return biosrc ? HasLineage(biosrc, "Viruses") : false;
 }
@@ -480,7 +481,7 @@ string CDiscrepancyContext::GetAminoacidName(const CSeq_feat& obj) // from tRNA
 }
 
 
-bool CDiscrepancyContext::IsBadLocusTagFormat(const string& locus_tag)
+bool CDiscrepancyContext::IsBadLocusTagFormat(const string& locus_tag) const
 {
     // Optimization:  compile regexp only once by making it static.
     static CRegexp regexp("^[A-Za-z][0-9A-Za-z]{2,}_[0-9A-Za-z]+$");
@@ -492,7 +493,7 @@ bool CDiscrepancyContext::IsBadLocusTagFormat(const string& locus_tag)
 }
 
 
-bool CDiscrepancyContext::IsRefseq()
+bool CDiscrepancyContext::IsRefseq() const
 {
     const CBioseq& bioseq = CurrentBioseq();
     if (bioseq.IsSetId()) {
@@ -635,7 +636,7 @@ bool CDiscrepancyContext::IsPseudo(const CParseNode& node)
 }
 
 
-void CDiscrepancyContext::ClearFeatureList(void)
+void CDiscrepancyContext::ClearFeatureList()
 {
     m_FeatAll.clear();
     m_FeatGenes.clear();
@@ -705,7 +706,7 @@ sequence::ECompare CDiscrepancyContext::Compare(const CSeq_loc& loc1, const CSeq
 }
 
 
-const CPerson_id* CDiscrepancyContext::GetPerson_id()
+const CPerson_id* CDiscrepancyContext::GetPerson_id() const
 {
     if (m_CurrentNode->m_Type == eSubmit) {
         const CSeq_submit* sub = static_cast<const CSeq_submit*>(&*m_CurrentNode->m_Obj);
@@ -717,7 +718,7 @@ const CPerson_id* CDiscrepancyContext::GetPerson_id()
 }
 
 
-const CSubmit_block* CDiscrepancyContext::GetSubmit_block()
+const CSubmit_block* CDiscrepancyContext::GetSubmit_block() const
 {
     if (m_CurrentNode->m_Type == eSubmit) {
         const CSeq_submit* sub = static_cast<const CSeq_submit*>(&*m_CurrentNode->m_Obj);

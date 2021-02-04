@@ -193,7 +193,7 @@ public:
     CReportNode& Incr() { m_Count++; return *this; }
 
     static bool Exist(TReportObjectList& list, TReportObjectSet& hash, CReportObj& obj) { return hash.find(&obj) != hash.end(); }
-    bool Exist(const string& name) { return m_Map.find(name) != m_Map.end(); }
+    bool Exist(const string& name) const { return m_Map.find(name) != m_Map.end(); }
     bool Exist(CReportObj& obj) { return Exist(m_Objs, m_Hash, obj); }
     static void Add(TReportObjectList& list, TReportObjectSet& hash, CReportObj& obj, bool unique = true);
     CReportNode& Add(CReportObj& obj, bool unique = true) { Add(m_Objs, m_Hash, obj, unique);  return *this; }
@@ -202,13 +202,13 @@ public:
 
     TReportObjectList& GetObjects() { return m_Objs; }
     TNodeMap& GetMap() { return m_Map; }
-    size_t GetCount() { return m_Count ? m_Count : m_Objs.size(); }
+    size_t GetCount() const { return m_Count ? m_Count : m_Objs.size(); }
     void SetCount(size_t n) { m_Count = n; }
     CRef<CReportItem> Export(CDiscrepancyCase& test, bool unique = true) const;
     void Copy(CRef<CReportNode> other);
     bool Promote();
 
-    bool empty() { return m_Map.empty() && m_Objs.empty(); }
+    bool empty() const { return m_Map.empty() && m_Objs.empty(); }
     void clear() { m_Map.clear(); m_Objs.clear(); m_Hash.clear(); }
     void clearObjs() { m_Objs.clear(); }
 protected:
@@ -401,11 +401,11 @@ INIT_DISCREPANCY_TYPE(STRING)
     // Lazy
     static bool IsUnculturedNonOrganelleName(const string& taxname);
     static bool HasLineage(const CBioSource& biosrc, const string& def_lineage, const string& type);
-    bool HasLineage(const CBioSource* biosrc, const string& lineage);
+    bool HasLineage(const CBioSource* biosrc, const string& lineage) const;
     static bool IsOrganelle(const CBioSource* biosrc);
-    bool IsEukaryotic(const CBioSource* biosrc);
-    bool IsBacterial(const CBioSource* biosrc);
-    bool IsViral(const CBioSource* biosrc);
+    bool IsEukaryotic(const CBioSource* biosrc) const;
+    bool IsBacterial(const CBioSource* biosrc) const;
+    bool IsViral(const CBioSource* biosrc) const;
     const CSeqSummary& GetSeqSummary(void) { return *m_CurrentNode->m_BioseqSummary; }
     void BuildSeqSummary(const CBioseq& bs, CSeqSummary& summary);
     bool InGenProdSet(void) const { return m_CurrentNode->InGenProdSet(); }
@@ -416,9 +416,9 @@ INIT_DISCREPANCY_TYPE(STRING)
 
     static string GetGenomeName(int n);
     static string GetAminoacidName(const CSeq_feat& feat); // from tRNA
-    bool IsBadLocusTagFormat(const string& locus_tag);
-    bool IsRefseq(void);
-    bool IsBGPipe(void);
+    bool IsBadLocusTagFormat(const string& locus_tag) const;
+    bool IsRefseq() const;
+    bool IsBGPipe();
     bool IsPseudo(const CSeq_feat& feat);
     const CSeq_feat* GetGeneForFeature(const CSeq_feat& feat);
     string GetProdForFeature(const CSeq_feat& feat);
@@ -563,11 +563,11 @@ INIT_DISCREPANCY_TYPE(STRING)
     CSeq_feat_vec GetFeat() { return CSeq_feat_vec(*m_CurrentNode); }
     CSeqdesc_run GetAllSeqdesc() { return CSeqdesc_run(*m_CurrentNode); }
     CSeq_feat_run GetAllFeat() { return CSeq_feat_run(*m_CurrentNode); }
-    vector<const CBioSource*>& GetBiosources() { return m_CurrentNode->m_Biosources; }
-    vector<const CPubdesc*>& GetPubdescs() { return m_CurrentNode->m_Pubdescs; }
-    vector<const CAuth_list*>& GetAuthors() { return m_CurrentNode->m_Authors; }
-    const CPerson_id* GetPerson_id();
-    const CSubmit_block* GetSubmit_block();
+    const vector<const CBioSource*>& GetBiosources() const { return m_CurrentNode->m_Biosources; }
+    const vector<const CPubdesc*>& GetPubdescs() const { return m_CurrentNode->m_Pubdescs; }
+    const vector<const CAuth_list*>& GetAuthors() const { return m_CurrentNode->m_Authors; }
+    const CPerson_id* GetPerson_id() const;
+    const CSubmit_block* GetSubmit_block() const;
 
 protected:
     CRef<objects::CScope> m_Scope;
@@ -891,7 +891,7 @@ public:
     const string GetShort() const override { return m_Ref->GetBioseqLabel(); }
     void SetMoreInfo(CObject* data) override { m_More.Reset(data); }
 
-    EType GetType(void) const // Can we use the same enum?
+    EType GetType() const override // Can we use the same enum?
     {
         //eType_feature,
         //eType_descriptor,
@@ -912,9 +912,9 @@ public:
         return eType_string;
     }
 
-    bool CanAutofix(void) const { return m_Fix && !m_Fixed; }
-    bool IsFixed(void) const { return m_Fixed; }
-    void SetFixed(void) { m_Fixed = true; }
+    bool CanAutofix() const override { return m_Fix && !m_Fixed; }
+    bool IsFixed() const override { return m_Fixed; }
+    void SetFixed() { m_Fixed = true; }
     CConstRef<CObject> GetMoreInfo() { return m_More; }
     CReportObj* Clone(bool fix, CConstRef<CObject> data) const;
 
@@ -947,12 +947,12 @@ inline const CObject* CDiscrepancyContext::GetMore(CReportObj& obj) { return sta
 // Use this in discrepancy_core.cpp when adding a new module
 #define DISCREPANCY_LINK_MODULE(name) \
     struct CDiscrepancyModule_##name { static void* dummy; CDiscrepancyModule_##name(){ dummy=nullptr; } };         \
-    static CDiscrepancyModule_##name module_##name;
+    static CDiscrepancyModule_##name module_##name
 
 // Use this in the new module
 #define DISCREPANCY_MODULE(name) \
     struct CDiscrepancyModule_##name { static void* dummy; CDiscrepancyModule_##name(){ dummy=nullptr; } };         \
-    void* CDiscrepancyModule_##name::dummy=nullptr;
+    void* CDiscrepancyModule_##name::dummy=nullptr
 
 
 #define DISCREPANCY_CASE(name, type, group, descr, ...) \
@@ -971,9 +971,9 @@ inline const CObject* CDiscrepancyContext::GetMore(CReportObj& obj) { return sta
     class CDiscrepancyConstructor_##name : public CDiscrepancyConstructor                                           \
     {                                                                                                               \
     public:                                                                                                         \
-        CDiscrepancyConstructor_##name(void){ Register(#name, descr_for_##name, group_for_##name, *this);}          \
+        CDiscrepancyConstructor_##name(){ Register(#name, descr_for_##name, group_for_##name, *this); }             \
     protected:                                                                                                      \
-        CRef<CDiscrepancyCase> Create(void) const { return CRef<CDiscrepancyCase>(new CDiscrepancyCase_##name);}    \
+        CRef<CDiscrepancyCase> Create() const { return CRef<CDiscrepancyCase>(new CDiscrepancyCase_##name); }       \
     };                                                                                                              \
     static CDiscrepancyConstructor_##name DiscrepancyConstructor_##name;                                            \
     void CDiscrepancyCase_##name::Visit(const type& obj, CDiscrepancyContext& context)
@@ -993,9 +993,9 @@ inline const CObject* CDiscrepancyContext::GetMore(CReportObj& obj) { return sta
     class CDiscrepancyCaseAConstructor_##name : public CDiscrepancyConstructor                                      \
     {                                                                                                               \
     public:                                                                                                         \
-        CDiscrepancyCaseAConstructor_##name(void){ Register(#name, descr_for_##name, group_for_##name | eAutofix, *this);}     \
+        CDiscrepancyCaseAConstructor_##name(){ Register(#name, descr_for_##name, group_for_##name | eAutofix, *this); }     \
     protected:                                                                                                      \
-        CRef<CDiscrepancyCase> Create(void) const { return CRef<CDiscrepancyCase>(new CDiscrepancyCaseA_##name);}   \
+        CRef<CDiscrepancyCase> Create() const { return CRef<CDiscrepancyCase>(new CDiscrepancyCaseA_##name); }      \
     };                                                                                                              \
     static CDiscrepancyCaseAConstructor_##name DiscrepancyCaseAConstructor_##name;                                  \
     CRef<CAutofixReport> CDiscrepancyCaseA_##name::Autofix(CDiscrepancyObject* obj, CDiscrepancyContext& context) const
@@ -1006,7 +1006,7 @@ inline const CObject* CDiscrepancyContext::GetMore(CReportObj& obj) { return sta
     class CDiscrepancyAlias_##alias : public CDiscrepancyAlias                                                      \
     {                                                                                                               \
     public:                                                                                                         \
-        CDiscrepancyAlias_##alias(void) { Register(#name, #alias);}                                                 \
+        CDiscrepancyAlias_##alias() { Register(#name, #alias); }                                                    \
     };                                                                                                              \
     static CDiscrepancyAlias_##alias DiscrepancyAlias_##alias;
 

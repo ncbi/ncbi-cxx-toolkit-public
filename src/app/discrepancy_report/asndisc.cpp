@@ -50,9 +50,9 @@ USING_SCOPE(objects);
 class CDiscRepApp : public CNcbiApplication
 {
 public:
-    CDiscRepApp(void);
-    virtual void Init(void);
-    virtual int  Run (void);
+    CDiscRepApp();
+    void Init() override;
+    int Run() override;
 
 protected:
     string x_ConstructOutputName(const string& input);
@@ -81,7 +81,7 @@ protected:
 };
 
 
-CDiscRepApp::CDiscRepApp(void)
+CDiscRepApp::CDiscRepApp()
 {
     SetVersion(CVersionInfo(1, NCBI_SC_VERSION_PROXY, NCBI_TEAMCITY_BUILD_NUMBER_PROXY));
 }
@@ -90,7 +90,7 @@ CDiscRepApp::CDiscRepApp(void)
 class CDiscRepArgDescriptions : public CArgDescriptions
 {
 public:
-    virtual string& PrintUsage(string& str, bool detailed = false) const;
+    string& PrintUsage(string& str, bool detailed = false) const override;
 };
 
 
@@ -98,13 +98,13 @@ string& CDiscRepArgDescriptions::PrintUsage(string& str, bool detailed) const
 {
     CArgDescriptions::PrintUsage(str, detailed);
     if (detailed) {
-        str+="TESTS\n";
-        const vector<string> Name = GetDiscrepancyNames();
-        for (auto& nm: Name) {
+        str += "TESTS\n";
+        const vector<string> names = GetDiscrepancyNames();
+        for (const string& nm : names) {
             str += "   ";
             str += nm;
-            const vector<string> Alias = GetDiscrepancyAliases(nm);
-            for (auto& al: Alias) {
+            const vector<string> aliases = GetDiscrepancyAliases(nm);
+            for (const string& al : aliases) {
                 str += " / ";
                 str += al;
             }
@@ -115,7 +115,7 @@ string& CDiscRepArgDescriptions::PrintUsage(string& str, bool detailed) const
 }
 
 
-void CDiscRepApp::Init(void)
+void CDiscRepApp::Init()
 {
     // Prepare command line descriptions
     unique_ptr<CArgDescriptions> arg_desc(new CDiscRepArgDescriptions);
@@ -241,8 +241,8 @@ void CDiscRepApp::x_ParseDirectory(const string& name, bool recursive)
     string autofixext = ".autofix" + ext;
 
     CDir::TEntries Entries = Dir.GetEntries();
-    for (auto& entry: Entries) {
-        auto name = entry->GetName();
+    for (const CDir::TEntry& entry : Entries) {
+        const string name = entry->GetName();
         if (name == "." || name == "..") continue;
         if (recursive && entry->IsDir()) x_ParseDirectory(entry->GetPath(), true);
         if (NStr::EndsWith(name, ext) && !NStr::EndsWith(name, autofixext))
@@ -265,7 +265,7 @@ unsigned CDiscRepApp::x_ProcessOne(const string& fname) // LCOV_EXCL_START
         severity = Tests->Summarize();
     }
     else {
-        for (auto& tname : m_Tests) {
+        for (const string& tname : m_Tests) {
             Tests->AddTest(tname);
         }
         Tests->SetLineage(m_Lineage);
@@ -292,7 +292,7 @@ unsigned CDiscRepApp::x_ProcessAll(const string& outname)
     Tests->SetSuspectRules(m_SuspectRules, false);
     if (m_SuspectProductNames) {
         Tests->AddTest("_SUSPECT_PRODUCT_NAMES");
-        for (auto& fname : m_Files) {
+        for (const string& fname : m_Files) {
             ++count;
             if (m_Files.size() > 1) {
                 LOG_POST("Processing file " + to_string(count) + " of " + to_string(m_Files.size()));
@@ -301,11 +301,11 @@ unsigned CDiscRepApp::x_ProcessAll(const string& outname)
         }
         severity = Tests->Summarize();
     } else if (m_AutoFix) {
-        for (auto& tname : m_Tests) {
+        for (const string& tname : m_Tests) {
             Tests->AddTest(tname);
         }
         Tests->SetLineage(m_Lineage);
-        for (auto& fname : m_Files) {
+        for (const string& fname : m_Files) {
             ++count;
             if (m_Files.size() > 1) {
                 LOG_POST("Processing file " + to_string(count) + " of " + to_string(m_Files.size()));
@@ -315,8 +315,8 @@ unsigned CDiscRepApp::x_ProcessAll(const string& outname)
             x_Autofix(*Tests);
         }
     } else {
-        for (auto& fname : m_Files) {
-            for (auto& tname : m_Tests) {
+        for (const string& fname : m_Files) {
+            for (const string& tname : m_Tests) {
                 Tests->AddTest(tname);
             }
             Tests->SetLineage(m_Lineage);
@@ -355,10 +355,10 @@ void CDiscRepApp::x_Autofix(CDiscrepancySet& tests)
 {
     TReportObjectList tofix;
     map<string, size_t> ignore;
-    for (auto& tst: tests.GetTests()) {
+    for (const auto& tst : tests.GetTests()) {
         const TReportItemList& list = tst.second->GetReport();
-        for (auto it: list) {
-            for (auto obj : it->GetDetails()) {
+        for (const auto& it : list) {
+            for (auto& obj : it->GetDetails()) {
                 if (obj->CanAutofix()) {
                     tofix.push_back(CRef<CReportObj>(&*obj));
                 }
@@ -369,30 +369,30 @@ void CDiscRepApp::x_Autofix(CDiscrepancySet& tests)
 }
 
 
-int CDiscRepApp::Run(void)
+int CDiscRepApp::Run()
 {
     const CArgs& args = GetArgs();
 
     if (args["P"]) {
         const string& s = args["P"].AsString();
-        for (size_t i = 0; i < s.length(); i++) {
-            if (s[i] == 't') {
+        for (char c : s) {
+            if (c == 't') {
                 m_Fat = true;
             }
-            else if (s[i] == 's') {
+            else if (c == 's') {
                 m_Ext = true;
                 m_Fat = true;
             }
-            else if (s[i] == 'q' || s[i] == 'b' || s[i] == 'u' || s[i] == 'f') {
-                if (m_Group && m_Group != s[i]) {
-                    ERR_POST(string("-P options are not compatible: ") + m_Group + " and " + s[i]);
+            else if (c == 'q' || c == 'b' || c == 'u' || c == 'f') {
+                if (m_Group && m_Group != c) {
+                    ERR_POST(string("-P options are not compatible: ") + m_Group + " and " + c);
                     return 1;
                 }
-                m_Group = s[i];
+                m_Group = c;
                 m_Fat = true;
             }
             else {
-                ERR_POST(string("Unrecognized character in -P argument: ") + s[i]);
+                ERR_POST(string("Unrecognized character in -P argument: ") + c);
                 return 1;
             }
         }
@@ -407,7 +407,7 @@ int CDiscRepApp::Run(void)
         }
         list<string> List;
         NStr::Split(args["e"].AsString(), ", ", List, NStr::fSplit_Tokenize);
-        for (auto& s: List) {
+        for (const string& s : List) {
             string name = GetDiscrepancyCaseName(s);
             if (name.empty()) {
                 ERR_POST("Test name not found: " + s);
@@ -448,7 +448,7 @@ int CDiscRepApp::Run(void)
         }
         list<string> List;
         NStr::Split(args["d"].AsString(), ", ", List, NStr::fSplit_Tokenize);
-        for (auto& s: List) {
+        for (const string& s : List) {
             string name = GetDiscrepancyCaseName(s);
             if (name.empty()) {
                 ERR_POST("Test name not found: " + s);
@@ -472,7 +472,7 @@ int CDiscRepApp::Run(void)
     if (args["X"]) {
         list<string> List;
         NStr::Split(args["X"].AsString(), ", ", List, NStr::fSplit_Tokenize);
-        for (auto& s: List) {
+        for (const string& s : List) {
             if (s != "ALL") {
                 ERR_POST("Unknown option: " + s);
                 return 1;
@@ -484,7 +484,7 @@ int CDiscRepApp::Run(void)
     }
 
     if (args["LIST"]) {
-        for (auto& t : m_Tests) {
+        for (const string& t : m_Tests) {
             cout << t << "\n";
         }
         return 0;
@@ -532,7 +532,7 @@ int CDiscRepApp::Run(void)
     }
     else { // LCOV_EXCL_START
         int count = 0;
-        for (auto& f : m_Files) {
+        for (const string& f : m_Files) {
             ++count;
             if (m_Files.size() > 1) {
                 LOG_POST("Processing file " + to_string(count) + " of " + to_string(m_Files.size()));
@@ -542,7 +542,7 @@ int CDiscRepApp::Run(void)
         }
     } // LCOV_EXCL_STOP
     if (args["R"]) {
-        auto r = args["R"].AsInteger();
+        int r = args["R"].AsInteger();
         if (r < 1 || (r < 2 && severity > 0) || severity > 1) {
             return 1;
         }
@@ -568,7 +568,7 @@ int main(int argc, const char* argv[])
         argc = 1 + (int)split_args.size();
         new_argv.reserve(argc);
         new_argv.push_back(argv[0]);
-        for (auto& s: split_args)
+        for (const string& s : split_args)
             new_argv.push_back(s.c_str());
 
         argv = new_argv.data();
