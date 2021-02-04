@@ -1,4 +1,4 @@
-Release 4.42.2 cloned from 4.41.1 (2021-02-04)
+Release 4.42.2 based on SC-25 (2021-02-04)
 
     * NetSchedule should allow anyone to read its configuraion (CXX-11655)
 
