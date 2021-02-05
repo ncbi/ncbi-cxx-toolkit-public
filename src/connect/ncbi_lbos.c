@@ -1861,9 +1861,15 @@ const SSERV_VTable* SERV_LBOS_Open(SERV_ITER           iter,
                                    const SConnNetInfo* net_info,
                                    SSERV_Info**        info)
 {
-    SLBOS_Data* data;
     char* new_name = NULL; /* if we need to add dbaf */
-    const char* orig_serv_name = iter->name; /* we may modify name with dbaf */
+    const char* orig_serv_name;
+    SLBOS_Data* data;
+
+    assert(iter  &&  net_info  &&  !iter->data  &&  !iter->op);
+    if (iter->ismask)
+        return 0;
+    assert(iter->name  &&  *iter->name);
+    orig_serv_name = iter->name; /* we may modify name with dbaf */
 
     CORE_LOG(eLOG_Error, "LBOS is deprecated, consider using LBSMD instead.");
 
@@ -1873,22 +1879,6 @@ const SSERV_VTable* SERV_LBOS_Open(SERV_ITER           iter,
     /*
      * First, we need to check arguments
      */
-    assert(iter != NULL);  /* we can do nothing if this happens */
-
-    /* Check that iter is not a mask - LBOS cannot work with masks */
-    if (iter->ismask) {
-        CORE_LOG(eLOG_Warning, "Mask was provided instead of service name. "
-            "Masks are not supported in LBOS.");
-        return NULL;
-    }
-
-    /* Check that service name is provided - otherwise there is nothing to 
-     * search for */
-    if (iter->name == NULL) {
-        CORE_LOG(eLOG_Warning, "\"iter->name\" is null, not able "
-                               "to continue SERV_LBOS_Open");
-        return NULL;
-    }
 
     /* If dbaf is defined, we construct new service name and assign it 
      * to iter */
@@ -1907,24 +1897,15 @@ const SSERV_VTable* SERV_LBOS_Open(SERV_ITER           iter,
             iter->name = new_name;
         }
     }
+
     /*
      * Arguments OK, start work
      */
-    if (info != NULL) {
-        *info = NULL;
-    }
     data = s_LBOS_ConstructData(kInitialCandidatesCount);
-    if(net_info == NULL) {
-        CORE_LOG(eLOG_Warning,
-                 "Parameter \"net_info\" is null, creating net info. "
-                 "Please, fix the code and provide net_info.");
-        data->net_info = ConnNetInfo_Clone(s_EmptyNetInfo);
-    } else {
-        data->net_info = ConnNetInfo_Clone(net_info);
-        if (data->net_info) {
-            data->net_info->scheme = eURL_Http;
-            data->net_info->req_method = eReqMethod_Any;
-        }
+    data->net_info = ConnNetInfo_Clone(net_info);
+    if (data->net_info) {
+        data->net_info->scheme = eURL_Http;
+        data->net_info->req_method = eReqMethod_Any;
     }
     // Check if CONNECT_Init() has been called before
     const char* request_dtab = 0;
@@ -1932,31 +1913,31 @@ const SSERV_VTable* SERV_LBOS_Open(SERV_ITER           iter,
         CORE_LOG(eLOG_Critical, 
                  "LBOS MAY FAIL! "
                  " Make sure to call CONNECT_Init() prior to using LBOS!");
-    } else
+    } else {
         request_dtab = g_CORE_GetRequestDtab();
+    }
     if (!g_LBOS_StringIsNullOrEmpty(request_dtab)) {
         /* Add a semicolon to separate DTabs */
         ConnNetInfo_ExtendUserHeader(data->net_info, "DTab-Local: ;");
         ConnNetInfo_ExtendUserHeader(data->net_info, request_dtab);
     }
     g_LBOS_UnitTesting_GetLBOSFuncs()->FillCandidates(data, iter->name);
-    /* Connect to LBOS, read what is needed, build iter, info, host_info
+    /* Connect to LBOS, read what is needed, build iter, info
      */
+    if (iter->name != orig_serv_name) {
+        iter->name  = orig_serv_name;
+        free(new_name);
+    }
     if (!data->n_cand) {
         s_LBOS_DestroyData(data);
-        if (iter->name != orig_serv_name) {
-            free(new_name);
-            iter->name = orig_serv_name;
-        }
         return NULL;
     }
-    /* Something was found, now we can use iter */
 
-    /*Just explicitly mention here to do something with it*/
+    /* Something was found, now we can use iter */
     iter->data = data;
-    if (iter->name != orig_serv_name) {
-        free(new_name);
-        iter->name = orig_serv_name;
+
+    if (info != NULL) {
+        *info = NULL;
     }
     return &s_lbos_op;
 }

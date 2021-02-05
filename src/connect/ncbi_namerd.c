@@ -1535,30 +1535,14 @@ extern const SSERV_VTable* SERV_NAMERD_Open(SERV_ITER           iter,
     char                    namerd_env[32];
     char                    namerd_args[(CONN_PATH_LEN+1)/2];
 
+    assert(iter  &&  net_info  &&  !iter->data  &&  !iter->op);
+    if (iter->ismask)
+        return NULL/*LINKERD doesn't support masks*/;
+    assert(iter->name  &&  *iter->name);
+
     CORE_TRACEF(("Entering SERV_NAMERD_Open(\"%s\")", iter->name));
 
     s_Init();
-
-    if ( ! iter) {
-        CORE_LOG_X(eNSub_Logic, eLOG_Critical,
-                   "Unexpected NULL 'iter' pointer.");
-        return NULL;
-    }
-
-    /* Check that service name is provided - otherwise there is nothing to
-     * search for. */
-    if ( ! iter->name) {
-        CORE_LOG_X(eNSub_BadData, eLOG_Error,
-                   "Unexpected NULL 'iter->name'.");
-        CORE_TRACE("Leaving SERV_NAMERD_Open() -- fail, no service name");
-        return NULL;
-    }
-    if ( ! *iter->name) {
-        CORE_LOG_X(eNSub_BadData, eLOG_Error,
-                   "Unexpected empty 'iter->name'.");
-        CORE_TRACE("Leaving SERV_NAMERD_Open() -- fail, empty service name");
-        return NULL;
-    }
 
     /* Prohibit catalog-prefixed services, e.g. "/lbsm/<svc>" */
     if (iter->name[0] == '/') {
@@ -1566,14 +1550,6 @@ extern const SSERV_VTable* SERV_NAMERD_Open(SERV_ITER           iter,
             ("Invalid service name \"%s\" - must not begin with '/'.",
              iter->name));
         CORE_TRACE("Leaving SERV_NAMERD_Open() -- fail, catalog prefix");
-        return NULL;
-    }
-
-    /* Check that iter is not a mask. */
-    if (iter->ismask) {
-        CORE_LOG_X(eNSub_BadData, eLOG_Error,
-            "NAMERD doesn't support masks.");
-        CORE_TRACE("Leaving SERV_NAMERD_Open() -- fail, iter is a mask");
         return NULL;
     }
 
@@ -1585,31 +1561,11 @@ extern const SSERV_VTable* SERV_NAMERD_Open(SERV_ITER           iter,
     }
     iter->data = data;
 
-    /* Make sure a net_info exists. */
-    SConnNetInfo* new_net_info = NULL;
-    if ( ! net_info) {
-        new_net_info = ConnNetInfo_CreateInternal(iter->name);
-        if ( ! new_net_info) {
-            CORE_LOG_X(eNSub_Alloc, eLOG_Critical, "Couldn't create net_info.");
-            s_Close(iter);
-            CORE_TRACE("Leaving SERV_NAMERD_Open() -- fail, no new net_info");
-            return NULL;
-        }
-        data->net_info = ConnNetInfo_Clone(new_net_info);
-    } else {
-        data->net_info = ConnNetInfo_Clone(net_info);
-    }
-    if ( ! data->net_info) {
+    if ( ! (data->net_info = ConnNetInfo_Clone(net_info))) {
         CORE_LOG_X(eNSub_Alloc, eLOG_Critical, "Couldn't clone net_info.");
-        if (new_net_info) {
-            ConnNetInfo_Destroy(new_net_info);
-        }
         s_Close(iter);
         CORE_TRACE("Leaving SERV_NAMERD_Open() -- fail, no net_info clone");
         return NULL;
-    }
-    if (new_net_info) {
-        ConnNetInfo_Destroy(new_net_info);
     }
 
     if ( ! ConnNetInfo_SetupStandardArgs(data->net_info, iter->name)) {
@@ -1692,7 +1648,6 @@ extern const SSERV_VTable* SERV_NAMERD_Open(SERV_ITER           iter,
     /* call GetNextInfo subsequently if info is actually needed */
     if (info)
         *info = NULL;
-
     CORE_TRACE("Leaving SERV_NAMERD_Open()");
     return &s_op;
 }

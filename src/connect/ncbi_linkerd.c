@@ -665,72 +665,40 @@ extern const SSERV_VTable* SERV_LINKERD_Open(SERV_ITER           iter,
     struct SLINKERD_Data*   data;
     SEndpoint endpoint;
 
-    /* Sanity checks */
-    {{
-        if ( ! iter) {
-            CORE_LOG_X(eLSub_Logic, eLOG_Critical,
-                       "Expected NULL 'iter' pointer.");
-            return NULL;
-        }
-        if ( ! net_info) {
-            CORE_LOG_X(eLSub_Logic, eLOG_Critical,
-                       "Expected NULL 'net_info' pointer.");
-            return NULL;
-        }
 
-        /* Check that a service name is provided - Linkerd cannot operate
-           without a service name. */
-        if (!iter->name  ||  !*iter->name) {
-            CORE_LOG_X(eLSub_BadData, eLOG_Error,
-                "Service name is NULL or empty: not able to continue "
-                "SERV_LINKERD_Open");
-            return NULL;
-        }
+    assert(iter  &&  net_info  &&  !iter->data  &&  !iter->op);
+    if (iter->ismask)
+        return NULL/*LINKERD doesn't support masks*/;
+    assert(iter->name  &&  *iter->name);
 
-        /* Linkerd only supports http or https (or unknown to be set later) */
-        if ( ! (net_info->scheme == eURL_Http   ||
-                net_info->scheme == eURL_Https  ||
-                net_info->scheme == eURL_Unspec))
-        {
-            CORE_LOGF_X(eLSub_Logic, eLOG_Critical,
-                ("Unexpected 'net_info->scheme' %d.", net_info->scheme));
-            return NULL;
-        }
+    if ( ! (net_info->scheme == eURL_Http   ||
+            net_info->scheme == eURL_Https  ||
+            net_info->scheme == eURL_Unspec)) {
+        return NULL/*Unsuppoered scheme*/;
+    }
 
-        /* Prohibit catalog-prefixed services (e.g. "/lbsm/<svc>") */
-        if (iter->name[0] == '/') {
-            CORE_LOGF_X(eLSub_BadData, eLOG_Error,
-                ("Invalid service name \"%s\" - must not begin with '/'.",
-                 iter->name));
-            return NULL;
-        }
+    /* Prohibit catalog-prefixed services (e.g. "/lbsm/<svc>") */
+    if (iter->name[0] == '/') {
+        CORE_LOGF_X(eLSub_BadData, eLOG_Error,
+                    ("Invalid service name \"%s\" - must not begin with '/'.",
+                     iter->name));
+        return NULL;
+    }
 
-        /* Check that iter is not a mask */
-        if (iter->ismask) {
-            CORE_LOG_X(eLSub_BadData, eLOG_Error,
-                "LINKERD doesn't support masks.");
-            return NULL;
-        }
-    }}
+    if ( ! (data = (struct SLINKERD_Data*) calloc(1, sizeof(*data)))) {
+        CORE_LOG_X(eLSub_Alloc, eLOG_Critical,
+                   "Could not allocate for SLINKERD_Data.");
+        return NULL;
+    }
+    iter->data = data;
+    data->cand.info = NULL; /* init in case of intermediate error */
 
-    /* Create SLINKERD_Data */
-    iter->op = NULL;
-    {{
-        if ( ! (data = (struct SLINKERD_Data*) calloc(1, sizeof(*data)))) {
-            CORE_LOG_X(eLSub_Alloc, eLOG_Critical,
-                "Could not allocate for SLINKERD_Data.");
-            return NULL;
-        }
-        iter->data = data;
-        data->cand.info = NULL; /* init in case of intermediate error */
-
-        if ( ! (data->net_info = ConnNetInfo_Clone(net_info))) {
-            CORE_LOG_X(eLSub_Alloc, eLOG_Critical, "Couldn't clone net_info.");
-            s_Close(iter);
-            return NULL;
-        }
-    }}
-
+    if ( ! (data->net_info = ConnNetInfo_Clone(net_info))) {
+        CORE_LOG_X(eLSub_Alloc, eLOG_Critical, "Couldn't clone net_info.");
+        s_Close(iter);
+        return NULL;
+    }
+ 
     /* Check for sufficient endpoint info in incoming net_info */
     endpoint.scheme = eURL_Unspec;
     if (s_EndpointFromNetInfo(&endpoint, net_info, 0) == eEndStat_Error) {
@@ -828,9 +796,7 @@ extern const SSERV_VTable* SERV_LINKERD_Open(SERV_ITER           iter,
     }
 
     /* call GetNextInfo subsequently if info is actually needed */
-    if (info) {
+    if (info)
         *info = NULL;
-    }
-
     return &s_op;
 }
