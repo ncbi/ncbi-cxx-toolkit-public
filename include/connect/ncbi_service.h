@@ -108,20 +108,23 @@ typedef unsigned short TSERV_TypeOnly;  /**<Server type only, w/o specials   */
  *  Connection information (NULL prevents use of the network dispatching via
  *  DISPD, still allowing use of LBOS/NAMERD/LINKERD).
  * @note If "net_info" is NULL, only the following mappers will be consulted:
- *          LOCAL(if enabled, see below), LBSMD, LBOS, NAMERD, LINKERD
- *       If "net_info" is not NULL, the above mappers are consulted first, and
- *       then DISPD is consulted last (using the connection information
- *       provided) but only if mapping with the above mappers (if any occurred)
- *       has failed.
+ *          LOCAL(if enabled, see below), LBSMD, and LBDNS.
+ *       If "net_info" is not NULL, the above mappers are consulted first,
+ *       followed by
+ *          LINKERD, NAMERD, LBOS, and DISPD
+ *       (using the connection information provided) but only if mapping with
+ *       the preceding mapper(s), if any occurred, has failed.
  * @note The registry section [CONN], keys:
- *          LOCAL_ENABLE, LBSMD_DISABLE, LBOS_DISABLE,
- *          NAMERD_DISABLE, LINKERD_DISABLED, DISPD_DISABLE
+ *          LOCAL_ENABLE, LBSMD_DISABLE, LBDNS_ENABLE, LINKERD_ENABLE,
+ *          NAMERD_ENABLE, LBOS_ENABLE, DISPD_DISABLE
  *       which can be overridden by the environment variables:
- *          CONN_LOCAL_ENABLE, CONN_LBSMD_DISABLE, CONN_LBOS_DISABLE,
- *          CONN_NAMERD_DISABLE, CONN_LINKERD_DISABLE, CONN_DISPD_DISABLE
- *       can be used to add(for LOCAL) or to skip(for other) the corresponding
- *       service mapper(s).  This scheme  permits to use any combination of the
- *       service mappers (local/lbsmd/lbos/namerd/linkerd/network-based).
+ *          CONN_LOCAL_ENABLE, CONN_LBSMD_DISABLE, CONN_LBDNS_ENABLE,
+ *          CONN_LINKERD_ENABLE, CONN_NAMERD_ENABLE, CONN_LBOS_ENABLE, and
+ *          CONN_DISPD_DISABLE
+ *       can be used to add(for LOCAL, LBDNS, LINKERD, NAMERD, and LBOS) or to
+ *       skip(for LBSMD and DISPD) the corresponding service mapper(s).  This
+ *       scheme  permits to use any combination of the service mappers (local/
+ *       lbsmd/lbdns/linkerd/namerd/lbos/dispd, network-aware or not).
  * @note If "net_info" is not NULL then a non-zero value of
  *       "net_info->stateless" forces "types" to get the "fSERV_Stateless" bit
  *       set implicitly.
