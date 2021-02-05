@@ -100,6 +100,7 @@ const char* SERV_NameOfInfo
  );
 
 
+/* Return VHost if available, 0 otherwise. */
 NCBI_XCONNECT_EXPORT
 const char* SERV_HostOfInfo
 (const SSERV_Info* info
