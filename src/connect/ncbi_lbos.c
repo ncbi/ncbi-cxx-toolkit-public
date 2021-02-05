@@ -1082,7 +1082,7 @@ static SSERV_Info** s_LBOS_ResolveIPPort(const char* lbos_address,
     /* Iterate through endpoints */
     for (j = 0;  j < x_json_array_get_count(serviceEndpoints);  j++) {
         const char *host, *rate, *extra, *type;
-        char* server_description;
+        char* server_descriptor;
         const char* descr_format = "%s %s:%u %s R=%s T=%lu";
         int port;
         serviceEndpoint = x_json_array_get_object(serviceEndpoints, j);
@@ -1112,7 +1112,7 @@ static SSERV_Info** s_LBOS_ResolveIPPort(const char* lbos_address,
            STANDALONE - aligndb_dbldd 
            HTTP_POST - taxservice3test
            NCBID - taxservice/mapviewaugust2011*/
-        size_t length; /* used to count size to allocate for server_description,
+        size_t length; /* used to count size to allocate for server_descriptor,
                           and then for g_LBOS_StringConcat*/
         /* Occasionally, we are not able to allocate memory */
         if (!*extra) {
@@ -1124,13 +1124,13 @@ static SSERV_Info** s_LBOS_ResolveIPPort(const char* lbos_address,
         length = strlen(descr_format) + strlen(type) + strlen(host) + 
                  5 /*length of port*/ + strlen(extra) + strlen(rate) +
                  40/*time*/;
-        server_description = (char*) malloc(sizeof(char) * length);
+        server_descriptor = (char*) malloc(sizeof(char) * length);
         if (!now)
             now = time(0);
-        sprintf(server_description, descr_format, type, host, 
+        sprintf(server_descriptor, descr_format, type, host, 
                 port, extra, rate, (unsigned long) now + 25);
-        SSERV_Info * info = SERV_ReadInfoEx(server_description, "", 0);
-        free(server_description);
+        SSERV_Info * info = SERV_ReadInfoEx(server_descriptor, "", 0);
+        free(server_descriptor);
         if (info == NULL) {
             continue;
         }
@@ -1861,15 +1861,14 @@ const SSERV_VTable* SERV_LBOS_Open(SERV_ITER           iter,
                                    const SConnNetInfo* net_info,
                                    SSERV_Info**        info)
 {
-    char* new_name = NULL; /* if we need to add dbaf */
-    const char* orig_serv_name;
+    const char* serv_name;
     SLBOS_Data* data;
 
     assert(iter  &&  net_info  &&  !iter->data  &&  !iter->op);
     if (iter->ismask)
         return 0;
     assert(iter->name  &&  *iter->name);
-    orig_serv_name = iter->name; /* we may modify name with dbaf */
+    serv_name = iter->name; /* we may modify name with dbaf */
 
     CORE_LOG(eLOG_Error, "LBOS is deprecated, consider using LBSMD instead.");
 
@@ -1884,17 +1883,18 @@ const SSERV_VTable* SERV_LBOS_Open(SERV_ITER           iter,
      * to iter */
     if ( iter->arg  &&  (strcmp(iter->arg, "dbaf") == 0)  &&  iter->val ) {
         size_t length = 0;
-        new_name = 
-            g_LBOS_StringConcat(g_LBOS_StringConcat(g_LBOS_StringConcat(
-                                NULL, iter->name, &length),
-                                      "/",        &length),
-                                      iter->val,  &length);
+        char* new_name = 
+            g_LBOS_StringConcat
+            (g_LBOS_StringConcat
+             (g_LBOS_StringConcat(NULL, serv_name, &length),
+                                        "/",       &length),
+                                        iter->val, &length);
         if (new_name == NULL) {
             CORE_LOG(eLOG_Warning, "Could not concatenate dbaf with service "
                                    "name, probably not enough RAM. Searching "
                                    "for service without dbaf");
         } else {
-            iter->name = new_name;
+            serv_name = new_name;
         }
     }
 
@@ -1921,12 +1921,11 @@ const SSERV_VTable* SERV_LBOS_Open(SERV_ITER           iter,
         ConnNetInfo_ExtendUserHeader(data->net_info, "DTab-Local: ;");
         ConnNetInfo_ExtendUserHeader(data->net_info, request_dtab);
     }
-    g_LBOS_UnitTesting_GetLBOSFuncs()->FillCandidates(data, iter->name);
+    g_LBOS_UnitTesting_GetLBOSFuncs()->FillCandidates(data, serv_name);
     /* Connect to LBOS, read what is needed, build iter, info
      */
-    if (iter->name != orig_serv_name) {
-        iter->name  = orig_serv_name;
-        free(new_name);
+    if (serv_name != iter->name) {
+        free((void*) serv_name);
     }
     if (!data->n_cand) {
         s_LBOS_DestroyData(data);

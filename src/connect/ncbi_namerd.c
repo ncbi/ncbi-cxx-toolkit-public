@@ -901,7 +901,7 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
             const char      *local;
             const char      *priv;
             const char      *stateful;
-            char            *server_description;
+            char            *server_descriptor;
             double          rate;
             int             port;
 
@@ -922,7 +922,7 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
             /*  NOTE: Some fields must not be included in certain situations
                 because SERV_ReadInfoEx() does not expect them in those
                 situations, and if they are present then SERV_ReadInfoEx()
-                will prematurely terminate processing the description.
+                will prematurely terminate processing the descriptor.
                 Specifically:
                     do not include      when
                     --------------      ---------------------
@@ -1108,39 +1108,37 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
                 }
             }
 
-            /* Prepare description */
+            /* Prepare descriptor */
             size_t length;
             length = strlen(descr_fmt) + strlen(srv_type) + strlen(host) +
                      5 /*length of port*/ + strlen(extra) + strlen(cpfx) +
                      strlen(ctype) + strlen(local) + strlen(priv) +
                      strlen(rate_str) + strlen(stateful) +
                      20/*length of timeval*/;
-            server_description = (char*)malloc(sizeof(char) * length);
-            if ( ! server_description) {
+            server_descriptor = (char*)malloc(sizeof(char) * length);
+            if ( ! server_descriptor) {
                 CORE_LOG_X(eNSub_Alloc, eLOG_Critical,
-                    "Couldn't alloc for server description.");
+                    "Couldn't alloc for server descriptor.");
                 goto out;
             }
-            sprintf(server_description, descr_fmt, srv_type, host,
+            sprintf(server_descriptor, descr_fmt, srv_type, host,
                     port, extra, cpfx, ctype, local, priv, rate_str, stateful,
                     timeval);
 
-            /* Parse description into SSERV_Info */
+            /* Parse descriptor into SSERV_Info */
             CORE_TRACEF(
-                ("Parsing server description: '%s'", server_description));
-            SSERV_Info* info = SERV_ReadInfoEx(server_description,
-                iter->ismask  ||  iter->reverse_dns ? iter->name : "", 0);
-            /*CORE_TRACEF(
-                ("Parsed server description; expires=%u", info->time));*/
+                ("Parsing server descriptor: '%s'", server_descriptor));
+            SSERV_Info* info = SERV_ReadInfoEx(server_descriptor,
+                iter->reverse_dns ? iter->name : "", 0);
 
             if ( ! info) {
                 CORE_LOGF_X(eNSub_BadData, eLOG_Warning,
-                    ("Unable to add server info with description '%s'.",
-                     server_description));
-                free(server_description);
+                    ("Unable to add server info with descriptor '%s'.",
+                     server_descriptor));
+                free(server_descriptor);
                 continue;
             }
-            free(server_description);
+            free(server_descriptor);
             CORE_TRACEF(("Created info: %p", info));
 
             /* Add new info to collection */
