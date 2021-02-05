@@ -152,16 +152,18 @@ static CNcbi_mime_asn1 * GetStructureViaHTTPAndAddToCache(
     if (assemblyId == 0)  {
         // construct URL [mmdbsrv.cgi]
 
+#ifdef _USE_TEST_MMDBSRV_
         // this is for a test release for Gabi for testing long pdb chain ids. Dave 10/19/20.
         // this is from Dachuan, showing what the test URL looks like, and an example.
         // https://dev.ncbi.nlm.nih.gov/Structure/pdbtest/[mmdb|cdd|vast|vastplus|wrbsp]/[*].cgi
         // https://dev.ncbi.nlm.nih.gov/Structure/pdbtest/mmdb/mmdbsrv.cgi
-        host = "dev.ncbi.nlm.nih.gov";                                                   // *
-        path = "/Structure/pdbtest/mmdb/mmdbsrv.cgi";                                    // *
-
+        host = "dev.ncbi.nlm.nih.gov";
+        path = "/Structure/pdbtest/mmdb/mmdbsrv.cgi";
+#else
         // this is the original, prior to making the test release for Gabi.
-        // host = "www.ncbi.nlm.nih.gov";
-        // path = "/Structure/mmdb/mmdbsrv.cgi";
+        host = "www.ncbi.nlm.nih.gov";
+        path = "/Structure/mmdb/mmdbsrv.cgi";
+#endif
 
         args = "save=Save&dopt=j&uid=";
         if (mmdbID > 0)
@@ -177,8 +179,10 @@ static CNcbi_mime_asn1 * GetStructureViaHTTPAndAddToCache(
                 args += "2"; break;
         }
 
+#ifdef _USE_TEST_MMDBSRV_
         // This is for long chain-id testing. This is for Gabi's test release.
-        // args += "&readfile=1";
+        args += "&readfile=1";
+#endif
     }
     
     else {
