@@ -16,7 +16,7 @@ from netschedule_tests_pack_4_10 import getClientInfo
 from netschedule_tests_pack_4_10 import getAffinityInfo
 from netschedule_tests_pack_4_10 import getNotificationInfo
 # Works for python 2.5. Python 2.7 has it in urlparse module
-from cgi import parse_qs
+from urllib.parse import parse_qs
 
 
 class Scenario1500( TestBase ):

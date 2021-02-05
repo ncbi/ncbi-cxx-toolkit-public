@@ -11,7 +11,7 @@ Netschedule server tests pack for the features appeared in NS-4.30.1 and up
 from netschedule_tests_pack import TestBase
 from netschedule_tests_pack_4_10 import execAny
 
-from cgi import parse_qs
+from urllib.parse import parse_qs
 import socket
 import time
 

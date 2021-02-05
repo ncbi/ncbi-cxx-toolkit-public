@@ -12,7 +12,7 @@ import time, socket
 from netschedule_tests_pack import TestBase
 
 # Works for python 2.5. Python 2.7 has it in urlparse module
-from cgi import parse_qs
+from urllib.parse import parse_qs
 
 
 NON_EXISTED_JOB = "JSID_01_777_130.14.24.83_9101"

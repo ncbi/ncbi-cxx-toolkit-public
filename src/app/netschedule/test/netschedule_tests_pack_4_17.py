@@ -14,7 +14,7 @@ from netschedule_tests_pack import TestBase
 from netschedule_tests_pack_4_10 import execAny
 
 # Works for python 2.5. Python 2.7 has it in urlparse module
-from cgi import parse_qs
+from urllib.parse import parse_qs
 
 
 class Scenario1300( TestBase ):

@@ -13,7 +13,7 @@ import re, socket, sys
 from optparse import OptionParser
 
 # Works for python 2.5. Python 2.7 has it in urlparse module
-from cgi import parse_qs
+from urllib.parse import parse_qs
 
 
 VERBOSE = False
