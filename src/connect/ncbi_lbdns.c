@@ -38,12 +38,6 @@
 #ifdef NCBI_OS_UNIX
 
 #include <connect/ncbi_ipv6.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#ifdef NCBI_OS_DARWIN
-#  define BIND_8_COMPAT  1
-#endif /*NCBI_OS_DARWIN*/
-#include <arpa/nameser.h>
 #include <ctype.h>
 #include <errno.h>
 #include <math.h>
@@ -52,6 +46,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+#ifdef NCBI_OS_DARWIN
+#  define BIND_8_COMPAT  1
+#endif /*NCBI_OS_DARWIN*/
+#include <arpa/nameser.h>
 
 #define NCBI_USE_ERRCODE_X   Connect_LBSM  /* errors: 31 and up */
 
@@ -101,8 +101,7 @@ struct SLBDNS_Data {
     unsigned       empty:1;  /* No more data       */ 
     unsigned           :14;  /* Reserved           */
     const char*    domain;   /* Domain name to use:
-                                no leading/trailing '.'
-                             */
+                                no lead/trail '.'  */
     size_t         domlen;   /* Domain name length */
     size_t         a_info;   /* Allocated pointers */
     size_t         n_info;   /* Used pointers      */
@@ -214,6 +213,42 @@ static const char* x_OpcodeStr(unsigned short opcode, char* buf)
 }
 
 
+static const char* strherror(int err)
+{
+    switch (err) {
+#ifdef NETDB_INTERNAL
+    case NETDB_INTERNAL:
+        return "Internal error";
+#endif /*NETDB_INTERNAL*/
+#ifdef HOST_NOT_FOUND
+    case HOST_NOT_FOUND:
+        return "Host not found";
+#endif /*HOST_NOT_FOUND*/
+#ifdef TRY_AGAIN
+    case TRY_AGAIN:
+        return "Server failure";
+#endif /*TRY_AGAIN*/
+#ifdef NO_RECOVERY
+    case NO_RECOVERY:
+        return "Unrecoverable error";
+#endif /*NO_RECOVERY*/
+#ifdef NO_ADDRESS
+#  if !defined(NO_DATA)  ||  NO_DATA != NO_ADDRESS
+     case NO_ADDRESS:
+        return "No address record found";
+#  endif /*!NO_DATA || NO_DATA!=NO_ADDRESS*/
+#endif /*NO_ADDRESS*/
+#ifdef NO_DATA
+    case NO_DATA:
+        return "No data of requested type";
+#endif /*NO_DATA*/
+    default:
+        break;
+    }
+    return hstrerror(err);
+}
+
+
 static const char* x_FlagsStr(const HEADER* hdr, char* buf)
 {
     char rcode[40];
@@ -276,42 +311,6 @@ static void x_DumpRR(const ns_rr* rr, const char* abbr, unsigned short n)
 }
 
 
-static const char* strherror(int err)
-{
-    switch (err) {
-#ifdef NETDB_INTERNAL
-    case NETDB_INTERNAL:
-        return "Internal error";
-#endif /*NETDB_INTERNAL*/
-#ifdef HOST_NOT_FOUND
-    case HOST_NOT_FOUND:
-        return "Host not found";
-#endif /*HOST_NOT_FOUND*/
-#ifdef TRY_AGAIN
-    case TRY_AGAIN:
-        return "Server failure";
-#endif /*TRY_AGAIN*/
-#ifdef NO_RECOVERY
-    case NO_RECOVERY:
-        return "Unrecoverable error";
-#endif /*NO_RECOVERY*/
-#ifdef NO_ADDRESS
-#  if !defined(NO_DATA)  ||  NO_DATA != NO_ADDRESS
-     case NO_ADDRESS:
-        return "No address record found";
-#  endif /*!NO_DATA || NO_DATA!=NO_ADDRESS*/
-#endif /*NO_ADDRESS*/
-#ifdef NO_DATA
-    case NO_DATA:
-        return "No data of requested type";
-#endif /*NO_DATA*/
-    default:
-        break;
-    }
-    return hstrerror(err);
-}
-
-
 static int unpack_rr(const unsigned char* msg, const unsigned char* eom,
                      const unsigned char* ptr, ns_rr* rr, int/*bool*/ qn,
                      ELOG_Level level)
@@ -321,28 +320,34 @@ static int unpack_rr(const unsigned char* msg, const unsigned char* eom,
 
     memset(rr, 0, sizeof(*rr));
     if ((len = dn_expand(msg, eom, ptr, rr->name, sizeof(rr->name))) <= 0) {
-        CORE_LOGF(level, ("Error expanding %s name", what));
+        CORE_LOGF(level, ("DNS %s cannot expand name", what));
         return -1;
     }
     ptr += len;
     size = qn ? NS_QFIXEDSZ : NS_RRFIXEDSZ;
     if (ptr + size > eom) {
-        CORE_LOGF(level, ("Cannot access %s fields", what));
+        CORE_LOGF(level, ("DNS %s overrun", what));
         return -1;
     }
     assert(NS_QFIXEDSZ  == NS_INT16SZ*2);
     assert(NS_RRFIXEDSZ == NS_INT16SZ*2 + NS_INT32SZ + NS_INT16SZ);
-    GETSHORT(rr->type,     ptr);
-    GETSHORT(rr->rr_class, ptr);
+    NS_GET16(rr->type,     ptr);
+    NS_GET16(rr->rr_class, ptr);
     if (!qn) {
-        GETLONG (rr->ttl,      ptr);
-        GETSHORT(rr->rdlength, ptr);
-        if (ptr + rr->rdlength > eom) {
-            CORE_LOG(level, "Cannot access RR data");
+        char buf[40];
+        NS_GET32(rr->ttl,      ptr);
+        NS_GET16(rr->rdlength, ptr);
+        if (!rr->rdlength) {
+            CORE_LOGF(level == eLOG_Trace ? eLOG_Trace : eLOG_Warning,
+                      ("DNS RR %s RDATA empty", x_TypeStr(rr->type, buf)));
+        } else if (ptr + rr->rdlength > eom) {
+            CORE_LOGF(level,
+                      ("DNS RR %s RDATA overrun",
+                       x_TypeStr(rr->type, buf)));
             return -1;
         }
-        rr->rdata = ptr;
         size += rr->rdlength;
+        rr->rdata = ptr;
     }
     return len + size;
 }
@@ -355,333 +360,26 @@ static int skip_rr(const unsigned char* ptr, const unsigned char* eom,
     int len, size;
 
     if ((len = dn_skipname(ptr, eom)) <= 0) {
-        CORE_LOGF(eLOG_Error, ("Error skipping %s name", what));
+        CORE_LOGF(eLOG_Error, ("DNS %s cannot skip name", what));
         return -1;
     }
     ptr += len;
     size = qn ? NS_QFIXEDSZ : NS_RRFIXEDSZ;
     if (ptr + size > eom) {
-        CORE_LOGF(eLOG_Error, ("Cannot skip %s fields", what));
+        CORE_LOGF(eLOG_Error, ("DNS %s overrun", what));
         return -1;
     }
     if (!qn) {
         unsigned short rdlen;
         ptr += NS_INT16SZ*2 + NS_INT32SZ;
-        GETSHORT(rdlen, ptr);
+        NS_GET16(rdlen, ptr);
         if (ptr + rdlen > eom) {
-            CORE_LOG(eLOG_Error, "Cannot skip RR data");
+            CORE_LOG(eLOG_Error, "DNS RR RDATA overrun");
             return -1;
         }
         size += rdlen;
     }
     return len + size;
-}
-
-
-static int/*bool*/ x_SameDomain(const char* a, const char* b)
-{
-    size_t lena = strlen(a);
-    size_t lenb = strlen(b);
-    if (lena  &&  a[lena - 1] == '.')
-        lena--;
-    if (lenb  &&  b[lenb - 1] == '.')
-        lenb--;
-    return lena == lenb  &&  strncasecmp(a, b, lena) == 0 ? 1/*T*/ : 0/*F*/;
-}
-
-
-static void x_BlankInfo(SSERV_Info* info, TSERV_TypeOnly type)
-{
-    assert(type == fSERV_Dns  ||  type == fSERV_Standalone);
-    memset(info, 0, sizeof(*info));
-    info->type   = type;
-    info->site   = fSERV_Local;
-    info->time   = LBSM_DEFAULT_TIME;
-    info->mime_t = eMIME_T_Undefined;
-    info->mime_s = eMIME_Undefined;
-    info->mime_e = eENCOD_None;
-    info->algo   = SERV_DEFAULT_ALGO;
-}
-
-
-static int/*bool*/ x_AddInfo(SERV_ITER iter, SSERV_Info* info)
-{
-    struct SLBDNS_Data* data = (struct SLBDNS_Data*) iter->data;
-    const char* name = SERV_NameOfInfo(info);
-    size_t n;
-
-    if (!name)
-        return 0/*failure*/;
-    assert(info);
-    for (n = 0;  n < data->n_info;  ++n) {
-        if (SERV_EqualInfo(info, data->info[n])
-            &&  strcasecmp(name, SERV_NameOfInfo(data->info[n])) == 0) {
-            char* infostr = SERV_WriteInfo(info);
-            CORE_LOGF(eLOG_Warning,
-                      ("LBDNS ignoring duplicate: %s%s%s %s",
-                       &"\""[!name], name ? name : "NULL",
-                       &"\""[!name], infostr ? infostr : "<NULL>"));
-            if (infostr)
-                free(infostr);
-            free(info);
-            return 1/*fake success*/;
-        }
-    }
-    if (data->n_info == data->a_info) {
-        n = data->a_info << 1;
-        data = (struct SLBDNS_Data*) realloc(iter->data, sizeof(*data)
-                                             + (n - 1) * sizeof(data->info));
-        if (!data) {
-            free(info);
-            return 0/*failure*/;
-        }
-        iter->data = data;
-        data->a_info = n;
-    }
-    assert(data->n_info < data->a_info);
-    data->info[data->n_info++] = info;
-    if (data->debug) {
-        char* infostr = SERV_WriteInfo(info);
-        CORE_LOGF(eLOG_Note,
-                  ("LBDNS adding %p %s%s%s %s", info,
-                   &"\""[!name], name ? name : "NULL",
-                   &"\""[!name], infostr ? infostr : "<NULL>"));
-        if (infostr)
-            free(infostr);
-    }
-    return 1/*success*/;
-}
-
-
-
-static void x_PatchInfo(SERV_ITER iter, const char* fqdn,
-                        const TNCBI_IPv6Addr* addr)
-{
-    struct SLBDNS_Data* data = (struct SLBDNS_Data*) iter->data;
-    int/*bool*/ done = 0/*false*/;
-    unsigned int ipv4;
-    size_t n;
-
-    assert(!NcbiIsEmptyIPv6(addr));
-    ipv4 = NcbiIPv6ToIPv4(addr, 0);
-    for (n = 0;  n < data->n_info;  ++n) {
-        char buf[INET6_ADDRSTRLEN];
-        SSERV_Info* info = data->info[n];
-        if (strcasecmp(fqdn, SERV_NameOfInfo(info)) != 0)
-            continue;
-        if (!info->host) {
-            assert(NcbiIsEmptyIPv6(&info->addr));
-            info->host = ipv4 ? ipv4 : (unsigned int)(-1);
-            info->addr = *addr;
-        } else if (!ipv4  &&  info->host == NcbiIPv6ToIPv4(&info->addr, 0)) {
-            info->addr = *addr;
-        } else if ( ipv4  &&  info->host == (unsigned int)(-1)) {
-            info->host = ipv4;
-        } else {
-            NcbiAddrToString(buf, sizeof(buf), addr);
-            CORE_LOGF(eLOG_Warning,
-                      ("LBDNS ignoring duplicate \"%s\": %s", fqdn, buf));
-            continue;
-        }
-        if (data->debug) {
-            NcbiAddrToString(buf, sizeof(buf), addr);
-            CORE_LOGF(eLOG_Note,
-                      ("LBDNS patching \"%s\": %s", fqdn, buf));
-        }
-        if (done) {
-            NcbiAddrToString(buf, sizeof(buf), addr);
-            CORE_LOGF(eLOG_Warning,
-                      ("LBDNS duplicate patch with %s", buf));
-        }
-        done = 1/*true*/;
-    }
-}
-
-
-static double x_RoundUp(double rate)
-{
-    double tens = floor(rate / 10.0);
-    return (tens + (rate - tens * 10.0 < 10.0 ? 1.0 : 0.0)) * 10.0;
-}
-
-
-typedef struct ns_rr_srv {
-    unsigned short priority;
-    unsigned short weight;
-    unsigned short port;
-} ns_rr_srv;
-
-
-static int/*bool*/ add_srv(SERV_ITER iter, const unsigned char* msg,
-                           const unsigned char* eom, const char* fqdn,
-                           unsigned short rdlen, const unsigned char* rdata)
-{
-    const unsigned char* start = rdata;
-    char target[NS_MAXDNAME];
-    SSERV_Info x_info;
-    ns_rr_srv srv;
-    int rv;
-
-    if (rdlen <= sizeof(ns_rr_srv)) {
-        CORE_LOGF(eLOG_Error,
-                  ("SRV record too short: %hu", rdlen));
-        return 0/*false*/;
-    }
-    memset(&srv, 0, sizeof(srv));
-    GETSHORT(srv.priority, rdata);
-    GETSHORT(srv.weight,   rdata);
-    GETSHORT(srv.port,     rdata);
-    rv = dn_expand(msg, eom, rdata, target, sizeof(target));
-    if (rv < 0) {
-        CORE_LOG(eLOG_Error, "Cannot expand SRV target");
-        return 0/*false*/;
-    }
-    if (rdata + rv < start + rdlen) {
-        CORE_LOGF(eLOG_Warning,
-                  ("DNS SRV RR has %lu/%hu byte(s) unparsed",
-                   (unsigned long)(&start[rdlen] - &rdata[rv]),
-                   rdlen));
-    } else
-        assert(&rdata[rv] == &start[rdlen]);
-    if (((const struct SLBDNS_Data*) iter->data)->debug) {
-        CORE_LOGF(eLOG_Note,
-                  ("DNS SRV %s -> %s:%hu %hu %hu", fqdn,
-                   *target ? target : ".",
-                   srv.port, srv.priority, srv.weight));
-    }
-    if (!target[0]  ||  (target[0] == '.'  &&  !target[1])) {
-        /* service down */
-        if (srv.port | srv.priority | srv.weight)
-            CORE_LOG(eLOG_Warning, "DNS SRV non-empty service down");
-        return -1/*true*/;
-    }
-    if (!srv.port) {
-        CORE_LOG(eLOG_Error, "DNS SRV zero port");
-        return 0/*false*/;
-    }
-    x_BlankInfo(&x_info, fSERV_Standalone);
-    x_info.port = srv.port;
-    x_info.rate = srv.priority
-        ? (11.0 - max(srv.priority, 10)) / LBSM_DEFAULT_RATE
-        : x_RoundUp((srv.weight * SERV_MAXIMAL_RATE) / 0xFFFF);
-    return x_AddInfo(iter, SERV_CopyInfoEx(&x_info, target));
-}
-
-
-static int/*bool*/ add_a(SERV_ITER iter, ns_type type, const char* fqdn,
-                         unsigned short rdlen, const unsigned char* rdata)
-{
-    const struct SLBDNS_Data* data = (const struct SLBDNS_Data*) iter->data;
-    char buf[INET6_ADDRSTRLEN];
-    TNCBI_IPv6Addr ipv6;
-    unsigned int ipv4;
-    SSERV_Info x_info;
-
-    assert(sizeof(ipv4) == NS_INADDRSZ);
-    assert(sizeof(ipv6) == NS_IN6ADDRSZ);
-    switch (rdlen) {
-    case NS_INADDRSZ:
-        memcpy(&ipv4, rdata, sizeof(ipv4));
-        if (data->debug) {
-            CORE_LOGF(eLOG_Note,
-                      ("DNS A %s @ %s", fqdn,
-                       inet_ntop(AF_INET, &ipv4,
-                                 buf, (TSOCK_socklen_t) sizeof(buf))));
-        }
-        if (!ipv4  ||  ipv4 == (unsigned int)(-1)) {
-            SOCK_ntoa(ipv4, buf, sizeof(buf));
-            CORE_LOGF(eLOG_Error,
-                      ("DNS A bad IPv4 ignored: %s", buf));
-            return 0/*failure*/;
-        }
-        verify(NcbiIPv4ToIPv6(&ipv6, ipv4, 0));
-        break;
-    case NS_IN6ADDRSZ:
-        memcpy(&ipv6, rdata, sizeof(ipv6));
-        if (data->debug) {
-            CORE_LOGF(eLOG_Note,
-                      ("DNS AAAA %s @ %s", fqdn,
-                       inet_ntop(AF_INET6, &ipv6,
-                                 buf, (TSOCK_socklen_t) sizeof(buf))));
-        }
-        if (NcbiIsEmptyIPv6(&ipv6)
-            ||  NcbiIPv6ToIPv4(&ipv6, 0) == (unsigned int)(-1)) {
-            NcbiIPv6ToString(buf, sizeof(buf), &ipv6);
-            CORE_LOGF(eLOG_Error,
-                      ("DNS AAAA bad IPv6 ignored: %s", buf));
-            return 0/*failure*/;
-        }
-        break;
-    default:
-        CORE_LOGF(eLOG_Error,
-                  ("DNS A/AAAA RR bad size %hu", rdlen));
-        return 0/*failure*/;
-    }
-    if (type == ns_t_srv) {
-        x_PatchInfo(iter, fqdn, &ipv6);
-        return 1/*success*/;
-    }
-    x_BlankInfo(&x_info, fSERV_Dns);
-    x_info.rate = LBSM_DEFAULT_RATE;
-    x_info.addr = ipv6;
-    if (!(x_info.host = NcbiIPv6ToIPv4(&ipv6, 0)))
-        x_info.host = (unsigned int)(-1);
-    return x_AddInfo(iter, SERV_CopyInfoEx(&x_info, fqdn));
-}
-
-
-static int/*bool*/ x_ProcessReply(SERV_ITER iter,
-                                  const char* fqdn, ns_type type,
-                                  const unsigned char* msg,
-                                  const unsigned char* eom,
-                                  const unsigned char* ptr,
-                                  unsigned short count[3])
-{
-    int/*bool*/ retval = 0/*false*/;
-    unsigned short c;
-    int n;
-
-    assert(count[0]/*ans*/  &&  (type == ns_t_srv  ||  type == ns_t_any));
-    for (n = 0;  n < 3;  ++n) {
-        for (c = 0;  c < count[n];  ++c) {
-            ns_rr rr;
-            int skip = n  &&  ((n & 1)/*auth*/  ||  type != ns_t_srv/*adtl*/);
-            int rv = (skip
-                      ? skip_rr(ptr, eom, 0)
-                      : unpack_rr(msg, eom, ptr, &rr, 0, eLOG_Error));
-            if (rv < 0)
-                return retval;
-            ptr += rv;
-            if (skip)
-                continue;
-            if (ns_rr_class(rr) != ns_c_in)
-                continue;
-            if (!n  &&  type != ns_t_any  &&  type != ns_rr_type(rr))
-                continue;
-            if (!n  &&  !x_SameDomain(fqdn, ns_rr_name(rr)))
-                continue;
-            if (!n  &&  type == ns_t_srv) {
-                rv = add_srv(iter, msg, eom,
-                             fqdn, ns_rr_rdlen(rr), ns_rr_rdata(rr));
-                if (rv) {
-                    if (rv < 0  &&  !c) {
-                        CORE_LOG(eLOG_Warning,
-                                 "DNS SRV empty RR misplaced, ignored");
-                    } else
-                        retval = 1/*true*/;
-                }
-                continue;
-            }
-            if (ns_rr_type(rr) != ns_t_a  &&  ns_rr_type(rr) != ns_t_aaaa)
-                continue;
-            assert((!n  &&  type == ns_t_any)  ||  (n  &&  type == ns_t_srv));
-            rv = add_a(iter, type,
-                       ns_rr_name(rr), ns_rr_rdlen(rr), ns_rr_rdata(rr));
-            if (rv)
-                retval = 1/*true*/;
-        }
-    }
-    return retval;
 }
 
 
@@ -718,7 +416,478 @@ static const unsigned char* x_DumpMsg(const unsigned char* msg,
 }
 
 
-static const unsigned char* x_VerifyReply(const char* fqdn, ns_type type,
+static int/*bool*/ x_AddInfo(SERV_ITER iter, SSERV_Info* info)
+{
+    const char* name = SERV_NameOfInfo(info); /*name==NULL iff info==NULL*/
+    struct SLBDNS_Data* data = (struct SLBDNS_Data*) iter->data;
+    size_t n;
+
+    if (!name) {
+        assert(!info);
+        CORE_LOGF_ERRNO(eLOG_Error, errno,
+                        ("LBDNS cannot create entry for \"%s\"", iter->name));
+        return 0/*failure(NULL info)*/;
+    }
+    assert(info);
+    assert(info->port  ||  info->type == fSERV_Dns);
+    assert(info->host  ||  info->type == fSERV_Standalone);
+    assert(info->type == fSERV_Dns  ||  info->type == fSERV_Standalone);
+    for (n = 0;  n < data->n_info;  ++n) {
+        if (SERV_EqualInfo(info, data->info[n])
+            &&  strcasecmp(name, SERV_NameOfInfo(data->info[n])) == 0) {
+            char* infostr = SERV_WriteInfo(info);
+            CORE_LOGF(eLOG_Warning,
+                      ("LBDNS ignoring duplicate entry: %s%s%s %s",
+                       &"\""[!name], name ? name : "NULL",
+                       &"\""[!name], infostr ? infostr : "<NULL>"));
+            if (infostr)
+                free(infostr);
+            free(info);
+            return 1/*fake success*/;
+        }
+    }
+    if (data->n_info == data->a_info) {
+        n = data->a_info << 1;
+        data = (struct SLBDNS_Data*) realloc(iter->data, sizeof(*data)
+                                             + (n - 1) * sizeof(data->info));
+        if (!data) {
+            CORE_LOGF_ERRNO(eLOG_Error, errno,
+                            ("LBDNS cannot add entry for \"%s\"", iter->name));
+            free(info);
+            return 0/*failure*/;
+        }
+        iter->data = data;
+        data->a_info = n;
+    }
+    assert(data->n_info < data->a_info);
+    data->info[data->n_info++] = info;
+    if (data->debug) {
+        char* infostr = SERV_WriteInfo(info);
+        CORE_LOGF(eLOG_Note,
+                  ("LBDNS adding %p %s%s%s %s", info,
+                   &"\""[!name], name ? name : "NULL",
+                   &"\""[!name], infostr ? infostr : "<NULL>"));
+        if (infostr)
+            free(infostr);
+    }
+    return 1/*success*/;
+}
+
+
+static int/*bool*/ x_UpdateHost(SERV_ITER iter, const char* fqdn,
+                                const TNCBI_IPv6Addr* addr)
+{
+    struct SLBDNS_Data* data = (struct SLBDNS_Data*) iter->data;
+    int/*bool*/ done = 0/*false*/;
+    unsigned int host;
+    size_t n;
+
+    assert(!NcbiIsEmptyIPv6(addr));
+    host = NcbiIPv6ToIPv4(addr, 0);
+    for (n = 0;  n < data->n_info;  ++n) {
+        SSERV_Info* x_info, *info = data->info[n];
+        const char* name = SERV_NameOfInfo(info);
+        char buf[INET6_ADDRSTRLEN];
+        if (strcasecmp(fqdn, name) != 0)
+            continue;
+        if (!info->host) {
+            assert(NcbiIsEmptyIPv6(&info->addr));
+            info->host = host ? host : (unsigned int)(-1);
+            info->addr = *addr;
+            x_info     = info;
+        } else if (!host  &&  info->host == NcbiIPv6ToIPv4(&info->addr, 0)) {
+            if ((x_info = SERV_CopyInfoEx(info, name)) != 0) {
+                x_info->host = (unsigned int)(-1);
+                x_info->addr = *addr;
+            }
+        } else if ( host  &&  info->host == (unsigned int)(-1)) {
+            if ((x_info = SERV_CopyInfoEx(info, name)) != 0) {
+                x_info->host = host;
+                NcbiIPv4ToIPv6(&x_info->addr, host, 0);
+            }
+        } else {
+            /* NB: "buf" is always '\0'-terminated, even on error */
+            NcbiAddrToString(buf, sizeof(buf), addr);
+            CORE_LOGF(eLOG_Warning,
+                      ("LBDNS cannot re-update entry @%p with host \"%s\": %s",
+                       info, fqdn, buf));
+            continue;
+        }
+        if (x_info != info) {
+            if (!x_AddInfo(iter, x_info))
+                x_info = 0;
+        } else if (data->debug) {
+            NcbiAddrToString(buf, sizeof(buf), addr);
+            CORE_LOGF(eLOG_Note,
+                      ("LBDNS updating entry @%p with host \"%s\": %s",
+                       info, fqdn, buf));
+        }
+        if (x_info) {
+            if (done) {
+                NcbiAddrToString(buf, sizeof(buf), addr);
+                CORE_LOGF(eLOG_Warning,
+                          ("LBDNS multiple entries updated with host \"%s\":"
+                           " %s", fqdn, buf));
+            } else
+                done = 1/*true*/;
+        }
+    }
+    return done;
+}
+
+
+static void x_UpdatePort(SERV_ITER iter, unsigned short port)
+{
+    struct SLBDNS_Data* data = (struct SLBDNS_Data*) iter->data;
+    size_t n;
+    for (n = 0;  n < data->n_info;  ++n) {
+        SSERV_Info* info = data->info[n];
+        if (!info->port) {
+            assert(info->host  &&  info->type == fSERV_Dns);
+            info->port = port;
+            if (data->debug) {
+                CORE_LOGF(eLOG_Note,
+                          ("LBDNS updating entry @%p with port \"%s\": %hu",
+                           info, SERV_NameOfInfo(info), port));
+            }
+        }
+    }
+}
+
+
+static void x_BlankInfo(SSERV_Info* info, TSERV_TypeOnly type)
+{
+    assert(type == fSERV_Dns  ||  type == fSERV_Standalone);
+    memset(info, 0, sizeof(*info));
+    info->type   = type;
+    info->site   = fSERV_Local;
+    info->time   = LBSM_DEFAULT_TIME;
+    info->mime_t = eMIME_T_Undefined;
+    info->mime_s = eMIME_Undefined;
+    info->mime_e = eENCOD_None;
+    info->algo   = SERV_DEFAULT_ALGO;
+}
+
+
+static double x_RoundUp(double rate)
+{
+    double tens = floor(rate / 10.0);
+    return (tens + (rate - tens * 10.0 < 10.0 ? 1.0 : 0.0)) * 10.0;
+}
+
+
+typedef struct ns_rr_srv {
+    unsigned short priority;
+    unsigned short weight;
+    unsigned short port;
+} ns_rr_srv;
+
+
+static int/*bool*/ add_srv(SERV_ITER iter, const unsigned char* msg,
+                           const unsigned char* eom, const char* fqdn,
+                           unsigned short rdlen, const unsigned char* rdata)
+{
+    const unsigned char* start = rdata;
+    char target[NS_MAXDNAME];
+    SSERV_Info x_info;
+    ns_rr_srv srv;
+    int rv;
+
+    if (rdlen <= sizeof(ns_rr_srv)) {
+        CORE_LOGF(eLOG_Error,
+                  ("DNS SRV RR RDATA too short: %hu", rdlen));
+        return 0/*false*/;
+    }
+    memset(&srv, 0, sizeof(srv));
+    NS_GET16(srv.priority, rdata);
+    NS_GET16(srv.weight,   rdata);
+    NS_GET16(srv.port,     rdata);
+    if ((rv = dn_expand(msg, eom, rdata, target, sizeof(target))) <= 0) {
+        CORE_LOG(eLOG_Error, "DNS SRV RR cannot expand target");
+        return 0/*false*/;
+    }
+    if (&rdata[rv] > &start[rdlen]) {
+        CORE_LOG(eLOG_Error, "DNS SRV RR target overrun");
+        return 0/*false*/;
+    }
+    if (((const struct SLBDNS_Data*) iter->data)->debug) {
+        CORE_LOGF(eLOG_Note,
+                  ("DNS SRV RR %s -> %s:%hu %hu %hu", fqdn,
+                   *target ? target : ".",
+                   srv.port, srv.priority, srv.weight));
+    }
+    if (&rdata[rv] != &start[rdlen]) {
+        assert(&rdata[rv] < &start[rdlen]);
+        CORE_LOGF(eLOG_Warning,
+                  ("DNS SRV RR %lu/%hu byte(s) remain unparsed",
+                   (unsigned long)(&start[rdlen] - &rdata[rv]), rdlen));
+    }
+    if (!target[0]  ||  (target[0] == '.'  &&  !target[1])) {
+        /* service down */
+        if (srv.port | srv.priority | srv.weight)
+            CORE_LOG(eLOG_Warning, "DNS SRV RR blank target dirty");
+        return -1/*true, special*/;
+    } else if (!srv.port) {
+        CORE_LOG(eLOG_Error, "DNS SRV RR zero port");
+        return 0/*false*/;
+    } else if (!srv.weight)
+        CORE_LOG(eLOG_Warning, "DNS SRV RR zero weight");
+    x_BlankInfo(&x_info, fSERV_Standalone);
+    x_info.time += iter->time;
+    x_info.port  = srv.port;
+    x_info.rate  = srv.priority
+        ? (11.0 - max(srv.priority, 10)) / LBSM_DEFAULT_RATE : srv.weight
+        ? x_RoundUp((srv.weight * SERV_MAXIMAL_RATE) / 0xFFFF) : 1.0;
+    return x_AddInfo(iter, SERV_CopyInfoEx(&x_info, target));
+}
+
+
+static void add_txt(SERV_ITER iter, const char* fqdn,
+                    unsigned short rdlen, const unsigned char* rdata)
+{
+    unsigned int len = 0;
+    while (len < rdlen) {
+        unsigned short slen = *rdata++;
+        if ((len += 1 + slen) > rdlen) {
+            CORE_LOG(eLOG_Error, "DNS TXT RR RDATA overrun");
+            return;
+        }
+        if (slen > 5  &&  isdigit(rdata[5])
+            &&  strncasecmp((const char*) rdata, "port=", 5) == 0) {
+            unsigned short port;
+            char buf[256];
+            int n;
+            if (((const struct SLBDNS_Data*) iter->data)->debug) {
+                CORE_LOGF(eLOG_Note,
+                          ("DNS TXT RR %s: \"%.*s\"", fqdn,
+                           (int) slen, (const char*) rdata));
+            }
+            rdata += 5;
+            slen  -= 5;
+            memcpy(buf, rdata, slen);
+            buf[slen] = '\0';
+            if (sscanf(buf, "%hu%n", &port, &n) > 0  &&  n == (int) slen)
+                x_UpdatePort(iter, port);
+        }
+        rdata += slen;
+    }
+}
+
+
+static int/*bool*/ add_a(SERV_ITER iter, ns_type qtype, ns_type rtype,
+                         const char* fqdn,
+                         unsigned short rdlen, const unsigned char* rdata)
+{
+    const struct SLBDNS_Data* data = (const struct SLBDNS_Data*) iter->data;
+    char buf[INET6_ADDRSTRLEN];
+    TNCBI_IPv6Addr ipv6;
+    unsigned short len;
+    unsigned int ipv4;
+    SSERV_Info x_info;
+
+    assert(sizeof(ipv4) == NS_INADDRSZ);
+    assert(sizeof(ipv6) == NS_IN6ADDRSZ);
+    if (rtype == ns_t_a  &&  NS_INADDRSZ <= rdlen) {
+        memcpy(&ipv4, rdata, sizeof(ipv4));
+        if (data->debug) {
+            CORE_LOGF(eLOG_Note,
+                      ("DNS A RR %s @ %s", fqdn,
+                       inet_ntop(AF_INET, &ipv4,
+                                 buf, (TSOCK_socklen_t) sizeof(buf))));
+        }
+        if (!ipv4  ||  ipv4 == (unsigned int)(-1)) {
+            SOCK_ntoa(ipv4, buf, sizeof(buf));
+            CORE_LOGF(eLOG_Error,
+                      ("DNS A RR bad IPv4 ignored: %s", buf));
+            return 0/*failure*/;
+        }
+        verify(NcbiIPv4ToIPv6(&ipv6, ipv4, 0));
+        len = NS_INADDRSZ;
+    } else if (rtype == ns_t_aaaa  &&  NS_IN6ADDRSZ <= rdlen) {
+        memcpy(&ipv6, rdata, sizeof(ipv6));
+        if (data->debug) {
+            CORE_LOGF(eLOG_Note,
+                      ("DNS AAAA RR %s @ %s", fqdn,
+                       inet_ntop(AF_INET6, &ipv6,
+                                 buf, (TSOCK_socklen_t) sizeof(buf))));
+        }
+        if (NcbiIsEmptyIPv6(&ipv6)
+            ||  NcbiIPv6ToIPv4(&ipv6, 0) == (unsigned int)(-1)) {
+            NcbiIPv6ToString(buf, sizeof(buf), &ipv6);
+            CORE_LOGF(eLOG_Error,
+                      ("DNS AAAA RR bad IPv6 ignored: %s", buf));
+            return 0/*failure*/;
+        }
+        len = NS_IN6ADDRSZ;
+    } else {
+        CORE_LOGF(eLOG_Error,
+                  ("DNS %s RR RDATA bad size: %hu",
+                   x_TypeStr(rtype, buf), rdlen));
+        return 0/*failure*/;
+    }
+    if (len < rdlen) {
+        CORE_LOGF(eLOG_Warning,
+                  ("DNS %s RR %u/%hu byte(s) remain unparsed",
+                   x_TypeStr(rtype, buf), rdlen - len, rdlen));
+    }
+    if (qtype == ns_t_srv)
+        return x_UpdateHost(iter, fqdn, &ipv6);
+    x_BlankInfo(&x_info, fSERV_Dns);
+    x_info.time += iter->time;
+    x_info.rate  = LBSM_DEFAULT_RATE;
+    x_info.addr  = ipv6;
+    if (!(x_info.host = NcbiIPv6ToIPv4(&ipv6, 0)))
+        x_info.host = (unsigned int)(-1);
+    return x_AddInfo(iter, SERV_CopyInfoEx(&x_info, fqdn));
+}
+
+
+static const char* add_cname(unsigned int/*bool*/ debug,
+                             const unsigned char* msg,
+                             const unsigned char* eom,
+                             const char*          fqdn,
+                             unsigned short       rdlen,
+                             const unsigned char* rdata)
+{
+    char cname[NS_MAXDNAME];
+    const char* retval;
+    int rv;
+    if ((rv = dn_expand(msg, eom, rdata, cname, sizeof(cname))) <= 0) {
+        CORE_LOG(eLOG_Error, "DNS CNAME RR cannot expand cname");
+        return 0/*failure*/;
+    }
+    if (rv > (int) rdlen) {
+        CORE_LOG(eLOG_Error, "DNS CNAME RR cname overrun");
+        return 0/*failure*/;
+    }
+    if (debug) {
+        CORE_LOGF(eLOG_Note,
+                  ("DNS CNAME RR %s -> %s",
+                   fqdn, cname));
+    }
+    if (rv != (int) rdlen) {
+        assert(rv < (int) rdlen);
+        CORE_LOGF(eLOG_Warning,
+                  ("DNS CNAME RR %d/%hu byte(s) remain unparsed",
+                   (int) rdlen - rv, rdlen));
+    }
+    if (!(retval = strdup(strlwr(cname)))) {
+        CORE_LOGF_ERRNO(eLOG_Error, errno,
+                        ("DNS CNAME RR cannot store cname \"%s\" for \"%s\"",
+                         cname, fqdn));
+        return 0/*failure*/;
+    }
+    return retval;
+}
+
+
+static int/*bool*/ x_SameDomain(const char* a, const char* b)
+{
+    size_t lena = strlen(a);
+    size_t lenb = strlen(b);
+    if (lena  &&  a[lena - 1] == '.')
+        lena--;
+    if (lenb  &&  b[lenb - 1] == '.')
+        lenb--;
+    return lena == lenb  &&  strncasecmp(a, b, lena) == 0 ? 1/*T*/ : 0/*F*/;
+}
+
+
+static const unsigned char* x_ProcessReply(SERV_ITER iter,
+                                           const struct SLBDNS_Data* data,
+                                           const char* fqdn, ns_type type,
+                                           const unsigned char* msg,
+                                           const unsigned char* eom,
+                                           const unsigned char* ptr,
+                                           unsigned short count[3])
+{
+    /* NB: we do not "check" authority section altogether, and cut corners on
+     * doing thorough checks in other sections of the reply, for efficiency. */
+    int/*bool*/ done = 0/*false*/;
+    const char* cname = 0;
+    int n;
+
+    assert(iter->data == data);
+    assert(count[0]/*ans*/  &&  (type == ns_t_srv  ||  type == ns_t_any));
+    for (n = 0;  n < 3;  ++n) {
+        unsigned short c;
+        for (c = 0;  c < count[n];  ++c) {
+            ns_rr rr;
+            int skip = n  &&  ((n & 1)/*auth*/  ||  type != ns_t_srv/*adtl*/);
+            int rv = (skip
+                      ? skip_rr(ptr, eom, 0)
+                      : unpack_rr(msg, eom, ptr, &rr, 0, eLOG_Error));
+            if (rv < 0)
+                goto out;
+            ptr += rv;
+            if (skip)
+                continue;
+            if (ns_rr_class(rr) != ns_c_in  ||  !ns_rr_rdlen(rr))
+                continue;
+            if (!n  &&  type == ns_t_srv  &&
+                ns_rr_type(rr) != ns_t_srv  &&  ns_rr_type(rr) != ns_t_cname) {
+                continue;
+            }
+            if (!n  &&  !x_SameDomain(fqdn, ns_rr_name(rr))) {
+                CORE_LOGF(eLOG_Warning,
+                          ("DNS reply AN %u \"%s\" mismatch QN \"%s\"",
+                           c + 1, ns_rr_name(rr), fqdn));
+                continue;
+            }
+            if (ns_rr_type(rr) == ns_t_cname) {
+                /* special CNAME processing: replace fqdn */
+                if (!(n | c)) {
+                    cname = add_cname(data->debug, msg, eom, ns_rr_name(rr),
+                                      ns_rr_rdlen(rr), ns_rr_rdata(rr));
+                    if (!cname) {
+                        assert(!done);
+                        return 0/*failed*/;
+                    }
+                    fqdn = cname;
+                    done = 1/*true*/;
+                } else {
+                    CORE_LOGF(eLOG_Warning,
+                              ("DNS CNAME RR misplaced @A%c %u",
+                               "RN"[!n], c + 1));
+                }
+                continue;
+            }
+            if (!n  &&  type == ns_t_srv) {
+                assert(ns_rr_type(rr) == ns_t_srv);
+                rv = add_srv(iter, msg, eom,
+                             ns_rr_name(rr), ns_rr_rdlen(rr), ns_rr_rdata(rr));
+                if (rv) {
+                    if (rv < 0  &&  data->n_info) {
+                        CORE_LOG(eLOG_Warning,
+                                 "DNS SRV RR blank target misplaced");
+                    } else
+                        done = 1/*true*/;
+                }
+                continue;
+            }
+            if (!n  &&  type == ns_t_any  &&  ns_rr_type(rr) == ns_t_txt) {
+                add_txt(iter,
+                        ns_rr_name(rr), ns_rr_rdlen(rr), ns_rr_rdata(rr));
+                continue;
+            }
+            if (ns_rr_type(rr) != ns_t_a  &&  ns_rr_type(rr) != ns_t_aaaa)
+                continue;
+            rv = add_a(iter, type, ns_rr_type(rr),
+                       ns_rr_name(rr), ns_rr_rdlen(rr), ns_rr_rdata(rr));
+            if (rv)
+                done = 1/*true*/;
+        }
+    }
+
+ out:
+    if (cname)
+        free((void*) cname);
+    assert(ptr  &&  ptr <= eom);
+    return done ? ptr : 0/*failed*/;
+}
+
+
+static const unsigned char* x_VerifyReply(const char* fqdn,
                                           const unsigned char* msg,
                                           const unsigned char* eom,
                                           unsigned short count[3])
@@ -726,7 +895,7 @@ static const unsigned char* x_VerifyReply(const char* fqdn, ns_type type,
     const HEADER* hdr = (const HEADER*) msg;
     const unsigned char* ptr;
     char buf[40];
-    ns_rr rr;
+    ns_rr qn;
     int rv;
 
     assert(eom - msg >= NS_HFIXEDSZ);
@@ -762,32 +931,31 @@ static const unsigned char* x_VerifyReply(const char* fqdn, ns_type type,
         CORE_LOG(eLOG_Error, "DNS reply has no records");
         return 0/*failed*/;
     }
-    rv = unpack_rr(msg, eom, ptr, &rr, 1/*QN*/, eLOG_Error);
+    rv = unpack_rr(msg, eom, ptr, &qn, 1/*QN*/, eLOG_Error);
     if (rv < 0)
         return 0/*failed*/;
-    if (ns_rr_class(rr) != ns_c_in) {
+    if (ns_rr_class(qn) != ns_c_in) {
         CORE_LOGF(eLOG_Error,
                   ("DNS reply for unsupported class: %s",
-                   x_ClassStr(ns_rr_class(rr), buf)));
+                   x_ClassStr(ns_rr_class(qn), buf)));
         return 0/*failed*/;
     }
-    if (ns_rr_type(rr) != type) {
-        char buf2[sizeof(buf)];
+    if (ns_rr_type(qn) != ns_t_any) {
         CORE_LOGF(eLOG_Error,
-                  ("DNS reply for unmatched type: %s vs. %s queried",
-                   x_ClassStr(ns_rr_type(rr), buf), x_ClassStr(type, buf2)));
+                  ("DNS reply for unmatching type: %s vs. ANY queried",
+                   x_TypeStr(ns_rr_type(qn), buf)));
         return 0/*failed*/;
     }
-    if (!x_SameDomain(ns_rr_name(rr), fqdn)) {
+    if (!x_SameDomain(ns_rr_name(qn), fqdn)) {
         CORE_LOGF(eLOG_Error,
-                  ("DNS reply for unmatched name: \"%s\" vs. \"%s\" queried",
-                   ns_rr_name(rr), fqdn));
+                  ("DNS reply for unmatching name: \"%s\" vs. \"%s\" queried",
+                   ns_rr_name(qn), fqdn));
         return 0/*failed*/;
     }
     ptr += rv;
     assert(ptr <= eom);
     if (ptr == eom) {
-        CORE_LOG(eLOG_Error, "DNS reply too short to have any RRs");
+        CORE_LOG(eLOG_Error, "DNS reply too short to include any RR(s)");
         return 0/*failed*/;
     }
     count[1] = ntohs(hdr->nscount);
@@ -800,17 +968,17 @@ static int/*bool*/ x_NoDataReply(const char* fqdn, ns_type type,
                                  const unsigned char* msg,
                                  const unsigned char* eom)
 {
-    ns_rr rr;
+    ns_rr qn;
     const HEADER* hdr = (const HEADER*) msg;
     if (hdr->rcode   ||  !(hdr->qr & hdr->aa)  ||  hdr->opcode != ns_o_query)
         return 0/*false*/;
     if (ntohs(hdr->qdcount) != 1  ||  hdr->ancount)
         return 0/*false*/;
-    if (unpack_rr(msg, eom, msg + NS_HFIXEDSZ, &rr, 1/*QN*/, eLOG_Trace) < 0)
+    if (unpack_rr(msg, eom, msg + NS_HFIXEDSZ, &qn, 1/*QN*/, eLOG_Trace) < 0)
         return 0/*false*/;
-    if (ns_rr_class(rr) != ns_c_in  ||  ns_rr_type(rr) != type)
+    if (ns_rr_class(qn) != ns_c_in  ||  ns_rr_type(qn) != type)
         return 0/*false*/;
-    return x_SameDomain(ns_rr_name(rr), fqdn);
+    return x_SameDomain(ns_rr_name(qn), fqdn);
 }
 
 
@@ -822,26 +990,27 @@ static const char* x_FormFQDN(char        fqdn[NS_MAXCDNAME + 1],
                               size_t      domlen)
 {
     const char* zone;
-    size_t zonlen;
+    size_t zlen;
     char* ptr;
 
+    assert(type == ns_t_srv  ||  type == ns_t_any);
     assert(pfxlen  &&  domlen);
     if (type == ns_t_srv) {
-        zone   = "._tcp.lb.";
-        zonlen = 9;
+        zone = "._tcp.lb.";
+        zlen = 9;
     } else {
-        zone   = ".lb.";
-        zonlen = 4;
+        zone = ".lb.";
+        zlen = 4;
     }
-    if ((type == ns_t_srv) + pfxlen + zonlen + domlen + 1 > NS_MAXCDNAME)
+    if ((type == ns_t_srv) + pfxlen + zlen + domlen + 1 > NS_MAXCDNAME)
         return 0/*failure*/;
     ptr = fqdn;
     if (type == ns_t_srv)
         *ptr++ = '_';
     memcpy(ptr, prefix, pfxlen);
     ptr += pfxlen;
-    memcpy(ptr, zone,   zonlen);
-    ptr += zonlen;
+    memcpy(ptr, zone,   zlen);
+    ptr += zlen;
     memcpy(ptr, domain, domlen);
     ptr += domlen;
     *ptr++ = '.';
@@ -864,6 +1033,7 @@ static int/*bool*/ x_ResolveType(SERV_ITER iter, ns_type type)
     char errbuf[40];
 
     assert(sizeof(msg) > NS_HFIXEDSZ);
+    assert(type == ns_t_srv  ||  type == ns_t_any);
 #if 0
     if (type != ns_t_srv
         &&  (len < 4  ||  strcasecmp(&iter->name[len -= 3], "_lb") != 0)) {
@@ -872,15 +1042,15 @@ static int/*bool*/ x_ResolveType(SERV_ITER iter, ns_type type)
 #endif
     if (!x_FormFQDN(fqdn, iter->name, len, type, data->domain, data->domlen)) {
         CORE_LOGF(eLOG_Error,
-                  ("Cannot form FQDN for \"%s\" in \"%s\": Name too long",
-                   iter->name, data->domain));
+                  ("LBDNS FQDN for %s \"%s\" in \"%s\": Name too long",
+                   x_TypeStr(type, errbuf), iter->name, data->domain));
         return 0/*failure*/;
     }
-    CORE_TRACEF(("LBDNS %s query \"%s\"", x_TypeStr(type, errbuf), fqdn));
+    CORE_TRACEF(("LBDNS query \"%s\"", fqdn));
 
     errno = h_errno = 0;
     memset(msg, 0, NS_HFIXEDSZ);
-    rv = res_query(fqdn, ns_c_in, type, msg, sizeof(msg));
+    rv = res_query(fqdn, ns_c_in, ns_t_any, msg, sizeof(msg));
     if (rv < 0) {
         int nodata;
         x_error = errno;
@@ -900,11 +1070,10 @@ static int/*bool*/ x_ResolveType(SERV_ITER iter, ns_type type)
         }
         err = nodata ? 1 : -1;
     } else {
-        CORE_TRACEF(("LBDNS %s reply \"%s\": %d byte(s)",
-                     x_TypeStr(type, errbuf), fqdn, rv));
+        CORE_TRACEF(("LBDNS reply \"%s\": %d byte(s)", fqdn, rv));
         if (rv < NS_HFIXEDSZ) {
             CORE_LOGF(eLOG_Error,
-                      ("DNS reply for \"%s\" too short %d", fqdn, rv));
+                      ("DNS reply for \"%s\" too short: %d", fqdn, rv));
             return 0/*failure*/;
         }
         if (rv >= (int) sizeof(msg)) {
@@ -915,38 +1084,147 @@ static int/*bool*/ x_ResolveType(SERV_ITER iter, ns_type type)
         eom = msg + rv;
         err = 0;
     }
-
     assert((size_t)(eom - msg) <= sizeof(msg));
-    if (data->debug  &&  rv  &&  (ptr = x_DumpMsg(msg, eom)) < eom  &&  !err) {
-        assert(msg < ptr);
-        CORE_LOGF(eLOG_Warning,
-                  ("DNS reply has %lu/%d byte(s) unparsed",
-                   (unsigned long)(eom - ptr), rv));
-    }
+
+    if (data->debug  &&  rv)
+        x_DumpMsg(msg, eom);
     if (err) {
         if (err > 0)
             err = 0/*false*/;
-        CORE_LOGF_ERRNO(err ? eLOG_Error : eLOG_Trace, err ? x_error : 0,
-                        ("Error looking up \"%s\" in DNS: %s", fqdn, errstr));
+        CORE_LOGF_ERRNO(eLOG_Trace, err ? x_error : 0,
+                        ("DNS lookup failure \"%s\": %s", fqdn, errstr));
         return !err/*failure/success(but nodata)*/;
     }
     assert(NS_HFIXEDSZ <= (size_t)(eom - msg));
 
-    if (!(ptr = x_VerifyReply(fqdn, type, msg, eom, count)))
+    if (!(ptr = x_VerifyReply(fqdn, msg, eom, count)))
         return 0/*failure*/;
+    assert(msg < ptr);
 
-    CORE_TRACE("LBDNS processing DNS reply...");
-    return x_ProcessReply(iter, fqdn, type, msg, eom, ptr, count);
+    CORE_TRACE("LBDNS processing DNS reply");
+    if (!(ptr = x_ProcessReply(iter, data, fqdn, type, msg, eom, ptr, count)))
+        return 0/*failure*/;
+    if (ptr < eom) {
+        assert(msg < ptr);
+        CORE_LOGF(eLOG_Warning,
+                  ("DNS reply %lu/%d byte(s) remain unparsed",
+                   (unsigned long)(eom - ptr), rv));
+    }
+    return 1/*success*/;
+}
+
+
+static void x_Finalize(SERV_ITER iter)
+{
+    struct SLBDNS_Data* data = (struct SLBDNS_Data*) iter->data;
+    size_t n = 0;
+
+    CORE_TRACEF(("LBDNS finalizing result-set for \"%s\"", iter->name));
+    while (n < data->n_info) {
+        const char* cull = 0;
+        SSERV_Info* info = data->info[n];
+        if (info->host) {
+            size_t s;
+            const char* name = SERV_NameOfInfo(info);
+            assert(name  &&  *name);
+            if (iter->reverse_dns) {
+                char* ptr;
+                if ((ptr = strchr(name, '.')) != 0)
+                    *ptr = '\0';
+                strupr((char*) name);
+                if (info->type == fSERV_Standalone) {
+                    assert(info->port);
+                    info->type  = fSERV_Dns;
+                    info->u.dns.name = 1/*true*/;
+                } else for (s = 0;  s < data->n_info;  ++s) {
+                    const SSERV_Info* skip = data->info[s];
+                    assert(skip->type == fSERV_Dns);
+                    if (SERV_EqualInfo(skip, info)) {
+                        cull = "duplicate";
+                        break;
+                    }
+                }
+                assert(*name);
+            } else
+                *((char*) name) = '\0';
+            if (!cull) {
+                for (s = 0;  s < iter->n_skip;  ++s) {
+                    const SSERV_Info* skip = iter->skip[s];
+                    if (*name) {
+                        assert(SERV_NameOfInfo(skip));
+                        if (strcasecmp(SERV_NameOfInfo(skip), name) == 0
+                            &&  ((skip->type == fSERV_Dns  &&  !skip->host)
+                                 ||  SERV_EqualInfo(skip, info))) {
+                            break;
+                        }
+                    } else if (SERV_EqualInfo(skip, info))
+                        break;
+                    if (iter->reverse_dns  &&  skip->type == fSERV_Dns
+                        &&  skip->host == info->host
+                        &&  (!skip->port  ||  skip->port == info->port)) {
+                        break;
+                    }
+                }
+                if (s >= iter->n_skip) {
+                    ++n;
+                    continue;
+                }
+                cull = "skipped";
+            }
+        } else {
+            assert(info->type == fSERV_Standalone);
+            cull = "incomplete";
+        }
+        verify(cull);
+        CORE_TRACEF(("LBDNS dropping @%p: %s", info, cull));
+        /* remove incomplete / skipped */
+        if (n < --data->n_info) {
+            memmove(data->info + n, data->info + n + 1,
+                    (data->n_info - n) * sizeof(data->info[0]));
+        }
+        free(info);
+    }
+
+    if (!data->n_info  &&  (iter->types & fSERV_Dns)
+        &&  !iter->last  &&  !iter->n_skip) {
+        SSERV_Info x_info;
+        x_BlankInfo(&x_info, fSERV_Dns);
+        x_info.time += iter->time;
+        if (!(data->info[0] = SERV_CopyInfoEx(&x_info, ""))) {
+            CORE_LOGF(eLOG_Error,
+                      ("LBDNS cannot create dummy entry for \"%s\"",
+                       iter->name));
+        } else {
+            if (data->debug) {
+                char* infostr = SERV_WriteInfo(data->info[0]);
+                CORE_LOGF(eLOG_Note,
+                          ("LBDNS adding dummy entry %p %s", data->info[0],
+                           infostr ? infostr : "<NULL>"));
+                if (infostr)
+                    free(infostr);
+            }
+            data->n_info = 1;
+        }
+    }
+    CORE_TRACEF(("LBDNS done finalizing result-set for \"%s\": %lu",
+                 iter->name, (unsigned long) data->n_info));
 }
 
 
 static int/*bool*/ x_Resolve(SERV_ITER iter)
 {
     int/*bool*/ rv = 0/*false*/;
+    CORE_TRACEF(("LBDNS resolving \"%s\"", iter->name));
     if (!iter->types  ||  (iter->types & fSERV_Standalone))
         rv |= x_ResolveType(iter, ns_t_srv);
     if (iter->types & fSERV_Dns)
         rv |= x_ResolveType(iter, ns_t_any);
+    CORE_TRACEF(("LBDNS returning \"%s\": %s", iter->name,
+                 rv ? "located" : "unknown"));
+    if (rv)
+        x_Finalize(iter);
+    else
+        assert(!((const struct SLBDNS_Data*) iter->data)->n_info);
     return rv;
 }
 
@@ -958,6 +1236,8 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
     int ns_count, ns_retry, rv;
     u_long ns_options;
     res_state r;
+
+    assert(!data->n_info  &&  !data->empty);
 
     if (data->host | data->port) {
         static void* /*bool*/ s_Init = 0/*false*/;
@@ -982,13 +1262,13 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
         r->options |= RES_IGNTC;
 #endif /*RES_IGNTC*/
 #ifdef RES_USE_EDNS0
-#  if 0
         /* This option, in general, should allow sending max payload size (our
          * provided answer size) to the server -- that's a good thing!  But the
          * current glibc behavior for this option is to always override with
          * 1200 -- and that's bad! -- because servnsd would comply.  If nothing
-         * is specified, servnsd uses 2048 (per RFC3226, 3) by default...
+         * is specified, servnsd uses 2048 (per RFC3226, 3) by default, so...
          */
+#  if 0
         r->options |= RES_USE_EDNS0;
 #  endif /*0*/
 #endif /*RES_USE_EDNS0*/
@@ -1011,6 +1291,9 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
         r->retry   = ns_retry;
         CORE_UNLOCK;
     }
+
+    if (!data->n_info)
+        ((struct SLBDNS_Data*) data)->empty = 1/*true*/;
     return rv;
 }
 
@@ -1020,12 +1303,14 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
     struct SLBDNS_Data* data = (struct SLBDNS_Data*) iter->data;
     SSERV_Info* info;
 
-    if (data->empty)
-        return 0/*EOF*/;
+    CORE_TRACEF(("LBDNS getnextinfo(\"%s\"): %lu%s", iter->name,
+                 (unsigned long) data->n_info, data->empty ? ", EOF" : ""));
     if (!data->n_info) {
-        s_Resolve(iter);
-        if (!data->n_info) {
-            data->empty = 1;
+        if (!data->empty)
+            s_Resolve(iter);
+        if ( data->empty) {
+            CORE_TRACEF(("LBDNS getnextinfo(\"%s\"): EOF", iter->name));
+            assert(!data->n_info);
             return 0/*EOF*/;
         }
     }
@@ -1038,6 +1323,7 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
         data->empty = 1;
     if (host_info)
         *host_info = 0;
+    CORE_TRACEF(("LBDNS getnextinfo(\"%s\"): %p", iter->name, info));
     return info;
 }
 
@@ -1045,6 +1331,8 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
 static void s_Reset(SERV_ITER iter)
 {
     struct SLBDNS_Data* data = (struct SLBDNS_Data*) iter->data;
+    CORE_TRACEF(("LBDNS reset(\"%s\"): %lu", iter->name,
+                 (unsigned long) data->n_info));
     assert(data);
     if (data->n_info) {
         size_t n;
@@ -1054,13 +1342,14 @@ static void s_Reset(SERV_ITER iter)
         }
         data->n_info = 0;
     }
-    data->empty = 0;
+    data->empty = 0/*false*/;
 }
 
 
 static void s_Close(SERV_ITER iter)
 {
     struct SLBDNS_Data* data = (struct SLBDNS_Data*) iter->data;
+    CORE_TRACEF(("LBDNS close(\"%s\")", iter->name));
     iter->data = 0;
     assert(data  &&  !data->n_info); /*s_Reset() had to be called before*/
     if (data->domain)
@@ -1146,15 +1435,25 @@ static int/*bool*/ x_CheckDomain(const char* domain)
 }
 
 
-/* Assumes domain has been verified.
- * Return a copy of "domain" stripped of leading and trailing dot(s), if any */
+/* Assumes domain has been verified.  Skips the initial "[.]lb." (if any).
+ * Return a copy of "domain" stripped of any leading and trailing dot(s). */
 static const char* x_CopyDomain(const char* domain)
 {
     size_t len;
-    if (domain[0] == '.')
+    assert(*domain);
+    if (*domain == '.')
         ++domain;
     len = strlen(domain);
-    assert(len);
+    if (len > 1  &&  strncasecmp(domain, "lb", 2) == 0
+        &&  (!domain[2]  ||  domain[2] == '.')) {
+        if (!domain[2]  ||  !(len -= 3)) {
+            errno = EINVAL;
+            return 0/*failure*/;
+        }
+        domain += 3;
+    } else
+        assert(len);
+    assert(*domain);
     if (domain[len - 1] == '.')
         --len;
     assert(len  &&  domain[0] != '.'  &&  domain[len - 1] != '.');
@@ -1174,6 +1473,7 @@ const SSERV_VTable* SERV_LBDNS_Open(SERV_ITER iter, SSERV_Info** info)
     const char* domain;
     unsigned long port;
 
+    assert(!iter->data);
     /* No wildcard procesing */
     if (iter->ismask)
         return 0;
@@ -1190,9 +1490,21 @@ const SSERV_VTable* SERV_LBDNS_Open(SERV_ITER iter, SSERV_Info** info)
             return 0;
     }
 
+    CORE_TRACEF(("LBDNS open(\"%s\")", iter->name));
+    if (iter->arg) {
+        assert(iter->arglen);
+        CORE_LOGF(eLOG_Warning,
+                  ("LBDNS argument affinity lookup %s%s%s%s%s unsupported"
+                   " for \"%s\"", iter->arg, &"="[!iter->val],
+                   &"\""[!iter->val], iter->val ? iter->val : "",
+                   &"\""[!iter->val], iter->name));
+        goto out;
+    }
     if (!(data = (struct SLBDNS_Data*) calloc(1, sizeof(*data)
                                               + (LBDNS_INITIAL_ALLOC - 1)
                                               * sizeof(data->info)))) {
+        CORE_LOG_ERRNO(eLOG_Error, errno,
+                       "LBDNS failed to create private data structure");
         return 0;
     }
     data->debug = ConnNetInfo_Boolean(ConnNetInfo_GetValue
@@ -1206,16 +1518,21 @@ const SSERV_VTable* SERV_LBDNS_Open(SERV_ITER iter, SSERV_Info** info)
     if (!*val) {
         domain = s_SysGetDomainName(val, sizeof(val));
         if (!x_CheckDomain(domain)) {
-            CORE_LOG(eLOG_Critical, "Cannot figure out system domain name");
+            CORE_LOG(eLOG_Critical,
+                     "LBDNS cannot figure out system domain name");
             goto out;
         }
+        CORE_TRACEF(("LBDNS found system domain \"%s\"", domain));
     } else if (!x_CheckDomain(val)) {
-        CORE_LOGF(eLOG_Error, ("Bad LBDNS domain name \"%s\"", val));
+        CORE_LOGF(eLOG_Error, ("LBDNS bad domain name \"%s\"", val));
         goto out;
     } else
         domain = val;
-    if (!(data->domain = x_CopyDomain(domain)))
+    if (!(data->domain = x_CopyDomain(domain))) {
+        CORE_LOGF_ERRNO(eLOG_Error, errno,
+                        ("LBDNS failed to store domain name \"%s\"", domain));
         goto out;
+    }
     data->domlen = strlen(data->domain);
     assert(1 < data->domlen  &&  data->domlen <= NS_MAXCDNAME);
     assert(data->domain[0] != '.'  &&  data->domain[data->domlen - 1] != '.');
@@ -1258,12 +1575,14 @@ const SSERV_VTable* SERV_LBDNS_Open(SERV_ITER iter, SSERV_Info** info)
         /* call GetNextInfo subsequently if info is actually needed */
         if (info)
             *info = 0;
+        CORE_TRACEF(("LBDNS open(\"%s\") okay", iter->name));
         return &s_op;
     }
 
  out:
     s_Reset(iter);
     s_Close(iter);
+    CORE_TRACEF(("LBDNS open(\"%s\") failed", iter->name));
     return 0/*failure*/;
 }
 
@@ -1277,7 +1596,7 @@ const SSERV_VTable* SERV_LBDNS_Open(SERV_ITER iter, SSERV_Info** info)
     /* NB: This should never be called on a non-UNIX platform */
     static void* /*bool*/ s_Once = 0/*false*/;
     if (CORE_Once(&s_Once))
-        CORE_LOG(eLOG_Critical, "LB DNS only available on UNIX platform(s)");
+        CORE_LOG(eLOG_Critical, "LBDNS only available on UNIX platform(s)");
     return 0;
 }
 
