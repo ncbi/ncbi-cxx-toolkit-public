@@ -38,6 +38,7 @@
  *
  */
 
+#error "<connect/ncbi_service_cxx.hpp> is out of service: please use <connect/ncbi_service.hpp> instead!"
 #include <connect/ncbi_service.hpp>
 
 
