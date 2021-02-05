@@ -42,6 +42,14 @@
 BEGIN_NCBI_SCOPE
 
 
+template<>
+struct Deleter<SConnNetInfo>
+{
+    static void Delete(SConnNetInfo* net_info)
+    { ConnNetInfo_Destroy(net_info); }
+};
+
+
 /////////////////////////////////////////////////////////////////////////////
 // SERV_GetServers implementation
 extern
@@ -57,7 +65,10 @@ vector<CSERV_Info> SERV_GetServers(const string& service,
 
     vector<CSERV_Info>  servers;
 
-    SERV_ITER iter = SERV_Open(service.c_str(), fSERV_All, SERV_ANYHOST, 0);
+    AutoPtr<SConnNetInfo> net_info(ConnNetInfo_Create(service.c_str()));
+
+    SERV_ITER iter = SERV_Open(service.c_str(), fSERV_All, SERV_ANYHOST,
+                               net_info.get());
     if (iter != 0) {
         const SSERV_Info * info;
         while ((info = SERV_GetNextInfo(iter)) != 0) {
