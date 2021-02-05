@@ -42,7 +42,6 @@
 #include <errno.h>
 #include <math.h>
 #include <netdb.h>
-#include <resolv.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -52,6 +51,8 @@
 #  define BIND_8_COMPAT  1
 #endif /*NCBI_OS_DARWIN*/
 #include <arpa/nameser.h>
+#include <netinet/in.h>
+#include <resolv.h>
 
 #define NCBI_USE_ERRCODE_X   Connect_LBSM  /* errors: 31 and up */
 
@@ -298,7 +299,7 @@ static void x_DumpRR(const ns_rr* rr, const char* abbr, unsigned short n)
     char clbuf[40], tybuf[40], ttlbuf[40], szbuf[40];
     if (abbr) {
         sprintf(ttlbuf, " %lu", (unsigned long) ns_rr_ttl(*rr));
-        sprintf(szbuf, " (%hu)", ns_rr_rdlen(*rr));
+        sprintf(szbuf, " (%u)", ns_rr_rdlen(*rr));
     } else 
         *ttlbuf = *szbuf = '\0';
     CORE_LOGF(eLOG_Note,
