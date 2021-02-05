@@ -788,7 +788,9 @@ bool CBuildDatabase::AddSequences(IBioseqSource & src, bool add_pig)
 
     CStopWatch sw(CStopWatch::eStart);
     int count = 0;
+#ifdef NCBI_INT8_GI
     CSeq_id::TGi max_gi32_val = CSeq_id::TGi(GI_CONST(0xFFFFFFFFU)) ;
+#endif
 
     CConstRef<CBioseq> bs = src.GetNext();
 
@@ -799,6 +801,7 @@ bool CBuildDatabase::AddSequences(IBioseqSource & src, bool add_pig)
             const list< CRef<CSeq_id> > & ids = bs->GetId();
 	    CSeq_id::TGi check_gi ;
 	    //BEGIN:SB-2994
+#ifdef NCBI_INT8_GI
 	    if ( m_SkipLargeGis && !ids.empty() && ids.front().NotEmpty()){
 		bool skip_this = false;
 		for(list< CRef<CSeq_id> >::const_iterator it = ids.begin(); it != ids.end(); it++  ){
@@ -819,6 +822,7 @@ bool CBuildDatabase::AddSequences(IBioseqSource & src, bool add_pig)
 		    continue;
 		}
 	    }
+#endif
 	    //END:SB-2994
             if (! ids.empty() && ids.front().NotEmpty()) {
                 bioseq_id.assign(ids.front()->AsFastaString());
