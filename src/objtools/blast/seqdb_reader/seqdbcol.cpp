@@ -154,12 +154,11 @@ CSeqDBColumn::~CSeqDBColumn()
 
 bool CSeqDBColumn::ColumnExists(const string   & basename,
                                 const string   & extn,
-                                CSeqDBAtlas    & atlas,
-                                CSeqDBLockHold & locked)
+                                CSeqDBAtlas    & atlas)
 {
     string fn(basename + "." + extn);
     
-    return ( atlas.DoesFileExist(fn, locked));
+    return ( atlas.DoesFileExist(fn));
 }
 
 const string & CSeqDBColumn::GetTitle() const

@@ -395,10 +395,8 @@ s_SeqDB_FindBlastDBPath(const string         & dbname,
 class CSeqDB_AtlasAccessor : public CSeqDB_FileExistence {
 public:
     /// Constructor.
-    CSeqDB_AtlasAccessor(CSeqDBAtlas    & atlas,
-                         CSeqDBLockHold & locked)
-        : m_Atlas  (atlas),
-          m_Locked (locked)
+    CSeqDB_AtlasAccessor(CSeqDBAtlas    & atlas)
+        : m_Atlas  (atlas)
     {
     }
 
@@ -407,12 +405,11 @@ public:
     /// @return True iff file exists.
     virtual bool DoesFileExist(const string & fname)
     {
-        return m_Atlas.DoesFileExist(fname, m_Locked);
+        return m_Atlas.DoesFileExist(fname);
     }
 
 private:
     CSeqDBAtlas    & m_Atlas;
-    CSeqDBLockHold & m_Locked;
 };
 
 
@@ -420,10 +417,9 @@ string SeqDB_FindBlastDBPath(const string   & dbname,
                              char             dbtype,
                              string         * sp,
                              bool             exact,
-                             CSeqDBAtlas    & atlas,
-                             CSeqDBLockHold & locked)
+                             CSeqDBAtlas    & atlas)
 {
-    CSeqDB_AtlasAccessor access(atlas, locked);
+    CSeqDB_AtlasAccessor access(atlas);
 
     return s_SeqDB_FindBlastDBPath(dbname,
                                    dbtype,

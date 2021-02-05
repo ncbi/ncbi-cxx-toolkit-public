@@ -1072,8 +1072,7 @@ string SeqDB_FindBlastDBPath(const string   & file_name,
                              char             dbtype,
                              string         * sp,
                              bool             exact,
-                             CSeqDBAtlas    & atlas,
-                             CSeqDBLockHold & locked);
+                             CSeqDBAtlas    & atlas);
 
 
 /// Join two strings with a delimiter

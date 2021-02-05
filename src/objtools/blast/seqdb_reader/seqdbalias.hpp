@@ -283,16 +283,14 @@ public:
     /// @param locked The lock holder object for this thread. [in]
     /// @return True if the path was found.
     bool FindBlastDBPath(const CSeqDB_Path & dbname,
-                         CSeqDB_Path       & resolved,
-                         CSeqDBLockHold    & locked)
+                         CSeqDB_Path       & resolved)
     {
         string resolved_str;
         
         if (x_FindBlastDBPath(dbname.GetPathS(),
                               '-',
                               true,
-                              resolved_str,
-                              locked)) {
+                              resolved_str)) {
             
             resolved.Assign(resolved_str);
             return true;
@@ -317,16 +315,14 @@ public:
     /// @return True if the path was found.
     bool FindBlastDBPath(const CSeqDB_BasePath & dbname,
                          char                    dbtype,
-                         CSeqDB_BasePath       & resolved,
-                         CSeqDBLockHold        & locked)
+                         CSeqDB_BasePath       & resolved)
     {
         string resolved_str;
         
         if (x_FindBlastDBPath(dbname.GetBasePathS(),
                               dbtype,
                               false,
-                              resolved_str,
-                              locked)) {
+                              resolved_str)) {
             
             resolved.Assign(resolved_str);
             return true;
@@ -355,8 +351,7 @@ private:
     bool x_FindBlastDBPath(const string   & dbname,
                            char             dbtype,
                            bool             exact,
-                           string         & resolved,
-                           CSeqDBLockHold & locked);
+                           string         & resolved);
     
     /// Find the path of a group index from an alias file name.
     ///

@@ -181,8 +181,7 @@ bool
 CSeqDBAliasSets::x_FindBlastDBPath(const string   & dbname,
                                    char             dbtype,
                                    bool             exact,
-                                   string         & resolved,
-                                   CSeqDBLockHold & locked)
+                                   string         & resolved)
 {
     map<string,string>::iterator i = m_PathLookup.find(dbname);
     
@@ -191,8 +190,7 @@ CSeqDBAliasSets::x_FindBlastDBPath(const string   & dbname,
                                          dbtype,
                                          0,
                                          exact,
-                                         m_Atlas,
-                                         locked);
+                                         m_Atlas);
         
         m_PathLookup[dbname] = resolved;
     } else {
@@ -215,7 +213,7 @@ CSeqDBAliasSets::FindAliasPath(const CSeqDB_Path & dbpath,
     
     CSeqDB_Path resolved_aset;
     
-    if (! FindBlastDBPath(aset_path, resolved_aset, locked)) {
+    if (! FindBlastDBPath(aset_path, resolved_aset)) {
         return false;
     }
     
@@ -269,7 +267,7 @@ void CSeqDBAliasNode::x_ResolveNames(char prot_nucl, CSeqDBLockHold & locked)
             CSeqDB_BasePath resolved_bp;
             
             // search for X/base.nal/nin
-            if (m_AliasSets.FindBlastDBPath(base, prot_nucl, resolved_bp, locked)) {
+            if (m_AliasSets.FindBlastDBPath(base, prot_nucl, resolved_bp)) {
                 resolved_path = CSeqDB_Path(resolved_bp, prot_nucl, 'a', 'l');
             }
         }
@@ -307,8 +305,7 @@ void CSeqDBAliasNode::x_ResolveNames(char prot_nucl, CSeqDBLockHold & locked)
                                   prot_nucl,
                                   & search_path,
                                   false,
-                                  m_Atlas,
-                                  locked);
+                                  m_Atlas);
             
             ostringstream oss;
             oss << "No alias or index file found for " << p_or_n
@@ -882,7 +879,7 @@ void CSeqDBAliasNode::x_ExpandAliases(const CSeqDB_BasePath & this_name,
         CSeqDB_BasePath result;
         CSeqDB_BasePath restart(m_DBList[i]);
         
-        if (m_AliasSets.FindBlastDBPath(restart, prot_nucl, result, locked)) {
+        if (m_AliasSets.FindBlastDBPath(restart, prot_nucl, result)) {
             // either alias or volume file exists for this entry
             CSeqDB_Path new_alias( result, prot_nucl, 'a', 'l' );
             CSeqDB_Path new_volume( result, prot_nucl, 'i', 'n' );

@@ -172,19 +172,15 @@ CMemoryFile* CSeqDBAtlas::ReturnMemoryFile(const string& fileName)
     return NULL;
 }
 
-bool CSeqDBAtlas::DoesFileExist(const string & fname, CSeqDBLockHold & locked)
+bool CSeqDBAtlas::DoesFileExist(const string & fname)
 {
     TIndx length(0);
-    return GetFileSize(fname, length, locked);
+    return GetFileSize(fname, length);
 }
 
 bool CSeqDBAtlas::GetFileSize(const string   & fname,
-                              TIndx          & length,
-                              CSeqDBLockHold & locked)
+                              TIndx          & length)
 {
-    Lock(locked);
-    
-
     return GetFileSizeL(fname, length);
 }
 

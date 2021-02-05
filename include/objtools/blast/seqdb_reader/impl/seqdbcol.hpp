@@ -102,8 +102,7 @@ public:
     ///   The lock holder object for this thread. [in]
     static bool ColumnExists(const string   & basename,
                              const string   & extn,
-                             CSeqDBAtlas    & atlas,
-                             CSeqDBLockHold & locked);
+                             CSeqDBAtlas    & atlas);
     
     /// Get the column title.
     /// @return The column title.

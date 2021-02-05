@@ -335,7 +335,7 @@ public:
     ///   The lock hold object for this thread.
     /// @return
     ///   True if the file exists.
-    bool DoesFileExist(const string & fname, CSeqDBLockHold & locked);
+    bool DoesFileExist(const string & fname);
 
     /// Check if file exists.
     ///
@@ -347,23 +347,11 @@ public:
     ///   The lock hold object for this thread.
     /// @return
     ///   True if the file exists.
-    bool DoesFileExist(const CSeqDB_Path & fname, CSeqDBLockHold & locked)
-    {
-        return DoesFileExist(fname.GetPathS(), locked);
-    }
-
-    bool DoesFileExist(const string & fname)
-    {
-        TIndx length(0);
-        return GetFileSizeL(fname, length);
-    }
-
     bool DoesFileExist(const CSeqDB_Path & fname)
     {
-        TIndx length(0);
-        return GetFileSizeL(fname.GetPathS(), length);
+        return DoesFileExist(fname.GetPathS());
     }
-  
+
     /// Get size of a file.
     ///
     /// Check whether a file exists and get the file's size.
@@ -377,8 +365,7 @@ public:
     /// @return
     ///   true if the file exists.
     bool GetFileSize(const string   & fname,
-                     TIndx          & length,
-                     CSeqDBLockHold & locked);
+                     TIndx          & length);
 
     /// Get size of a file.
     ///

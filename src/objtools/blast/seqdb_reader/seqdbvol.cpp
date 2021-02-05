@@ -3307,10 +3307,10 @@ void CSeqDBVol::x_OpenAllColumns(CSeqDBLockHold & locked)
     for(size_t i = 0; i < alpha.size(); i++) {
         ei[1] = ed[1] = ed2[1] = alpha[i];
 
-        if (CSeqDBColumn::ColumnExists(m_VolName, ei, m_Atlas, locked)) {
+        if (CSeqDBColumn::ColumnExists(m_VolName, ei, m_Atlas)) {
 
-            bool big   = CSeqDBColumn::ColumnExists(m_VolName, ed, m_Atlas, locked);
-            bool small = CSeqDBColumn::ColumnExists(m_VolName, ed2, m_Atlas, locked);
+            bool big   = CSeqDBColumn::ColumnExists(m_VolName, ed, m_Atlas);
+            bool small = CSeqDBColumn::ColumnExists(m_VolName, ed2, m_Atlas);
 
             if ( ! (big || small)) continue;
 
