@@ -370,7 +370,7 @@ private:
 // constructor
 CAsn2FlatApp::CAsn2FlatApp (void)
 {
-    const CVersionInfo vers (4,1,0);
+    const CVersionInfo vers (5,1,0);
     SetVersion (vers);
 }
 
@@ -573,7 +573,7 @@ int CAsn2FlatApp::Run(void)
 
     // create the flat-file generator
     m_FFGenerator.Reset(x_CreateFlatFileGenerator(args));
-    if (args["no-external"]) {
+    if ( args["no-external"] || args["policy"].AsString() == "internal" ) {
         m_FFGenerator->SetAnnotSelector().SetExcludeExternal(true);
     }
 //    else if (!m_Scope->GetKeepExternalAnnotsForEdit()) {
