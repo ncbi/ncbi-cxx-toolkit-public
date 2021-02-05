@@ -334,8 +334,12 @@ static SERV_ITER x_Open(const char*         service,
             iter->types |= fSERV_Stateless;
         if (net_info->lb_disable)
             do_lbsmd = 0/*false*/;
-    } else
-        do_dispd = 0/*false*/;
+    } else {
+#ifdef NCBI_CXX_TOOLKIT
+        do_linkerd = do_namerd = do_lbos =
+#endif /*NCBI_CXX_TOOLKIT*/
+            do_dispd = 0/*false*/;
+    }
     if (host_info)
         *host_info = 0;
     /* Ugly optimization not to access the registry more than necessary */
@@ -356,14 +360,17 @@ static SERV_ITER x_Open(const char*         service,
                                   (svc, REG_CONN_LBDNS_ENABLE))
 #  endif /*NCBI_OS_UNIX*/
                                 &&
-                                !(do_linkerd = s_IsMapperConfigured
-                                  (svc, REG_CONN_LINKERD_ENABLE))
+                                (!do_linkerd                                 ||
+                                 !(do_linkerd = s_IsMapperConfigured
+                                   (svc, REG_CONN_LINKERD_ENABLE)))
                                 &&
-                                !(do_namerd = s_IsMapperConfigured
-                                  (svc, REG_CONN_NAMERD_ENABLE))
+                                (!do_namerd                                  ||
+                                 !(do_namerd = s_IsMapperConfigured
+                                   (svc, REG_CONN_NAMERD_ENABLE)))
                                 &&
-                                !(do_lbos = s_IsMapperConfigured
-                                  (svc, REG_CONN_LBOS_ENABLE))
+                                (!do_lbos                                    ||
+                                 !(do_lbos = s_IsMapperConfigured
+                                   (svc, REG_CONN_LBOS_ENABLE)))
 #endif /*NCBI_CXX_TOOLKIT*/
                                 )))
 
