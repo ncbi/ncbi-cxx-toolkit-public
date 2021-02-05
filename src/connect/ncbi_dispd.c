@@ -399,11 +399,11 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER           iter,
 {
     struct SDISPD_Data* data;
 
+    assert(iter  &&  net_info  &&  !iter->data  &&  !iter->op);
     if (!(data = (struct SDISPD_Data*) calloc(1, sizeof(*data))))
         return 0;
     iter->data = data;
 
-    assert(net_info); /*must be non-NULL*/
     data->net_info = ConnNetInfo_Clone(net_info);
     if (!ConnNetInfo_SetupStandardArgs(data->net_info, iter->name)) {
         s_Close(iter);
