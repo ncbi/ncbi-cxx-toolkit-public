@@ -2040,6 +2040,7 @@ void CChainer::CChainerImpl::DuplicateNotOriented(CChainMembers& pointers, TGene
         if((algn.Status()&CGeneModel::eUnknownOrientation) != 0) {
             CGeneModel new_algn = algn;
             new_algn.ReverseComplementModel();
+            new_algn.Status() &= ~CGeneModel::eReversed;
             clust.push_back(new_algn);
             pointers.InsertMember(clust.back(), &mbr);    //reversed copy     
         }
@@ -3101,6 +3102,7 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust, bool co
                 if(align.Strand() == ePlus)
                     align.ReverseComplementModel();
             }
+            align.Status() &= ~CGeneModel::eReversed;
         }
     }
     
@@ -6126,6 +6128,7 @@ void CChainer::CChainerImpl::FilterOutChimeras(TGeneModelList& clust)
         }
 
         if(count > 1) {
+            cerr << "Chimeric alignment " << align.ID() << endl;
             SkipReason(orig_aligns[align.ID()],"Chimera");
             clust.erase(it);
         }
@@ -7326,6 +7329,8 @@ bool OverlappingIndel(int pos, const CInDelInfo& indl) {
         return pos < indl.InDelEnd();
 }
 
+//this just copies exona_indels unless genome corrections are used
+//extra_left/extra_right insertions at the ends of exon on Agenome
 TInDels CombineCorrectionsAndIndels(const TSignedSeqRange exona, int extra_left, int extra_right, const TSignedSeqRange exonb, const TInDels& editing_indels_frombtoa, const TInDels& exona_indels) {
     TInDels combined_indels;
 
@@ -7335,7 +7340,7 @@ TInDels CombineCorrectionsAndIndels(const TSignedSeqRange exona, int extra_left,
         return combined_indels;
 
     typedef list<char> TCharList;
-    TCharList edit;
+    TCharList edit; // edit for Bgenome->transceipt calculated in two steps: Bgenome->Agenome->transceipt
     // M match/mismatch
     // - skip one base
     // everything else insert this letter 
@@ -7353,7 +7358,7 @@ TInDels CombineCorrectionsAndIndels(const TSignedSeqRange exona, int extra_left,
                 if(pb == exonb.GetFrom())       // include extra_left part of deletion
                     s = s.substr(ic->Len()-extra_left);                                    
                 edit.insert(edit.end(),s.begin(),s.end());
-                edit.push_back('M');
+                edit.push_back('M');            // base before deletion
             }
             ++ic;
         } else {
@@ -7368,7 +7373,7 @@ TInDels CombineCorrectionsAndIndels(const TSignedSeqRange exona, int extra_left,
     _ASSERT(exonb.GetLength() == count(edit.begin(),edit.end(),'M')+count(edit.begin(),edit.end(),'-'));
     _ASSERT(exona.GetLength() == (int)edit.size()-count(edit.begin(),edit.end(),'-'));
 
-    // edit from B genome to transcript 
+    // adding changes from A to transcript 
     if(!exona_indels.empty()) {
         TInDels::const_iterator jleft = exona_indels.begin();
         int pa = exona.GetFrom()-1;
@@ -7405,7 +7410,7 @@ TInDels CombineCorrectionsAndIndels(const TSignedSeqRange exona, int extra_left,
                 --skipsome;                        
                 if(*ip == 'M')
                     *ip = '-';
-                else if(*ip != '-')
+                else if(*ip != '-') // looks like *ip is never '-'
                     edit.erase(ip);
             }
         }
@@ -7422,6 +7427,7 @@ TInDels CombineCorrectionsAndIndels(const TSignedSeqRange exona, int extra_left,
     }
     _ASSERT(exonb.GetLength() == count(edit.begin(),edit.end(),'M')+count(edit.begin(),edit.end(),'-'));
  
+    //TODO: combine +- indels separated by short spans of Ms
     pb = exonb.GetFrom();
     for(TCharList::iterator ip = edit.begin(); ip != edit.end(); ) {
         if(*ip == 'M') {
@@ -7432,7 +7438,7 @@ TInDels CombineCorrectionsAndIndels(const TSignedSeqRange exona, int extra_left,
             for( ;ip != edit.end() && *ip == '-'; ++ip, ++len);
             int pos = pb;
             pb += len;
-            for( ;len > 0 && ip != edit.end() && *ip != 'M'; ++ip, --len);   // we may have ----+++M but not +++---
+            for( ;len > 0 && ip != edit.end() && *ip != 'M'; ++ip, --len);   // we may have ----+++M but not +++--- (can't really happen unless corrections had adjacent -+)
             if(len > 0)
                 combined_indels.push_back(CInDelInfo(pos,len,CInDelInfo::eIns));
         } else {
@@ -7623,11 +7629,6 @@ void CGnomonAnnotator_Base::MapModelsToOrigContig(TGeneModelList& models) const 
     }
 }
 
-
-bool InDelEndOrder(int pos, const CInDelInfo& indl) {
-    return pos < indl.InDelEnd(); 
-}
-
 CAlignModel CGnomonAnnotator_Base::MapOneModelToEditedContig(const CGeneModel& align) const 
 {
     CAlignMap amap = align.GetAlignMap();
@@ -7638,8 +7639,11 @@ CAlignModel CGnomonAnnotator_Base::MapOneModelToEditedContig(const CGeneModel& a
 
     //mismatches are dropped at this point
     TInDels aindels = align.GetInDels(false);
+
+    //recalculate limits to contig chunk
     for(auto& indel : aindels)
         indel.SetLoc(indel.Loc()-m_limits.GetFrom());
+
     CGeneModel::TExons aexons = align.Exons();
     for(auto& e : aexons) {
         if(e.Limits().NotEmpty()) {
@@ -7665,12 +7669,12 @@ CAlignModel CGnomonAnnotator_Base::MapOneModelToEditedContig(const CGeneModel& a
                     exon_indels.push_back(*indl);
             }
 
-            int left = e.GetFrom();
-            int left_shrink = 0;
-            int right = e.GetTo();
-            int right_shrink = 0;
-            int left_extend = 0;
-            int right_extend = 0;
+            int left = e.GetFrom();  //projectable boundary
+            int left_shrink = 0;     //unprojectable touching insertion
+            int right = e.GetTo();   //projectable boundary
+            int right_shrink = 0;    //unprojectable touching insertion
+            int left_extend = 0;     //both alignment and correction indicate deletion of left_extend bases
+            int right_extend = 0;    //both alignment and correction indicate deletion of right_extend base
             CAlignMap::ERangeEnd lend = CAlignMap::eLeftEnd;
             CAlignMap::ERangeEnd rend = CAlignMap::eRightEnd;
 
@@ -7697,13 +7701,14 @@ CAlignModel CGnomonAnnotator_Base::MapOneModelToEditedContig(const CGeneModel& a
                 ++ileft;
             }
 
+            //adjust left end
             int ll = left;
             if(left_codon.GetLength() == 3)
                 ll = left_codon.GetTo();
             if(ileft != m_editing_indels.end() && ileft->Loc() <= ll) {  // left end is involved
                 if(e.m_fsplice) {  // move splice to projectable point, add indels to keep the texon length
                     _ASSERT(left_codon.Empty());
-                    left = ileft->Loc()+ileft->Len();
+                    left = ileft->Loc()+ileft->Len();  //could be only touching insertion
                     if(left > right)
                         return CAlignModel();
                     left_shrink = left-e.GetFrom();
@@ -7742,6 +7747,7 @@ CAlignModel CGnomonAnnotator_Base::MapOneModelToEditedContig(const CGeneModel& a
                 ++iright;
             }
 
+            //adjust right end
             int rr = right;
             if(right_codon.GetLength() == 3)
                 rr = right_codon.GetFrom();
@@ -7780,6 +7786,7 @@ CAlignModel CGnomonAnnotator_Base::MapOneModelToEditedContig(const CGeneModel& a
 
             TSignedSeqRange corrected_exon = m_edited_contig_map.MapRangeOrigToEdited(TSignedSeqRange(left, right), false);
             _ASSERT(corrected_exon.NotEmpty());
+            //TODO: account for left/right shrink? Whe projected back, this will move all isertion inside the exon
             corrected_exon.SetFrom(corrected_exon.GetFrom()-left_extend);
             corrected_exon.SetTo(corrected_exon.GetTo()+right_extend);
             editedmodel.AddExon(corrected_exon, e.m_fsplice_sig, e.m_ssplice_sig, e.m_ident);
@@ -8074,8 +8081,8 @@ void CGnomonAnnotator_Base::SetGenomic(const CSeq_id& contig, CScope& scope, con
     }
            
     ITERATE(TInDels, ig, m_editing_indels) {
-        TInDels::const_iterator next = ig;
-        if(next != m_editing_indels.end() && (++next)->GetSource().m_range.NotEmpty() && next->Loc() == ig->Loc())  // block of Ns
+        TInDels::const_iterator nexti = next(ig);
+        if(nexti != m_editing_indels.end() && nexti->GetSource().m_range.NotEmpty() && nexti->Loc() == ig->Loc())  // block of Ns
             continue;
 
         if(ig->GetSource().m_range.NotEmpty()) {  //ggap    
