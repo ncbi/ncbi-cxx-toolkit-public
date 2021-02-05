@@ -90,14 +90,14 @@ class NSDirectConnect:
 
     def login( self ):
         " Performs a direct login to NS "
-        self.__sock.send( "netschedule_admin client_node=commands_check "
-                          "client_session=commands_session\n" +
-                          self.__queue + "\n" )
+        self.__sock.send( b"netschedule_admin client_node=commands_check " +
+                          b"client_session=commands_session\n" +
+                          self.__queue.encode() + b"\n" )
         return
 
     def execute( self, cmd, multiline = False ):
         " Sends the given command to NS "
-        self.__sock.sendall( cmd + "\n" )
+        self.__sock.sendall( cmd.encode() + b"\n" )
         if multiline:
             return self.readMultiLineReply()
         return self.readSingleLineReply()
@@ -116,7 +116,7 @@ class NSDirectConnect:
                 if self.__readBuf:
                     return self.__readBuf.strip()
                 raise UnexpectedNSResponse( "Unexpected NS response: None" )
-            self.__readBuf += buf
+            self.__readBuf += buf.decode('latin1')
 
         if reply.startswith( "ERR:" ):
             if "shuttingdown" in reply.lower():
