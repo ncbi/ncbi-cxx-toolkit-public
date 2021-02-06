@@ -363,17 +363,15 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
 static void s_Reset(SERV_ITER iter)
 {
     struct SDISPD_Data* data = (struct SDISPD_Data*) iter->data;
-    if (data) {
-        data->eof = data->fail = 0/*false*/;
-        if (data->cand) {
-            size_t i;
-            assert(data->a_cand);
-            for (i = 0;  i < data->n_cand;  ++i)
-                free((void*) data->cand[i].info);
-            data->n_cand = 0;
-        }
-        data->n_skip = iter->n_skip;
+    data->eof = data->fail = 0/*false*/;
+    if (data->cand) {
+        size_t i;
+        assert(data->a_cand);
+        for (i = 0;  i < data->n_cand;  ++i)
+            free((void*) data->cand[i].info);
+        data->n_cand = 0;
     }
+    data->n_skip = iter->n_skip;
 }
 
 
