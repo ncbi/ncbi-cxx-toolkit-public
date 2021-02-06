@@ -307,8 +307,8 @@ static SERV_ITER x_Open(const char*         service,
             const char* name = (iter->ismask  ||  skip[i]->type == fSERV_Dns
                                 ? SERV_NameOfInfo(skip[i]) : "");
             SSERV_Info* temp = SERV_CopyInfoEx(skip[i],
-                                               !iter->reverse_dns  ||  *name ?
-                                               name : iter->name);
+                                               iter->reverse_dns  &&  !*name ?
+                                               iter->name             : name );
             if (temp) {
                 temp->time = NCBI_TIME_INFINITE;
                 if (!s_AddSkipInfo(iter, name, temp)) {
@@ -474,10 +474,24 @@ static int/*bool*/ x_Return(const char* str, int/*bool*/ retval)
 /* Do some basic set of consistency checks for the returned server info */
 static int/*bool*/ x_ConsistencyCheck(SERV_ITER iter, const SSERV_Info* info)
 {
+    const char* name = SERV_NameOfInfo(info);
     const char* str = SERV_WriteInfo(info);
     TSERV_TypeOnly types;
     size_t n;
 
+    if (!name) {
+        CORE_LOGF(eLOG_Critical,
+                  ("[%s]  NULL name\n%s", iter->name,
+                   str ? str : "<NULL>"));
+        RETURN(0/*failure*/);
+    }
+    if (!(iter->ismask | iter->reverse_dns) != !*name) {
+        CORE_LOGF(eLOG_Critical,
+                  ("[%s]  %s name\n%s", iter->name,
+                   *name ? "Unexpected" : "Empty",
+                   str ? str : "<NULL>"));
+        RETURN(0/*failure*/);
+    }
     if (!info->host  ||  !info->port) {
         if (info->type != fSERV_Dns) {
             CORE_LOGF(eLOG_Critical,
@@ -619,10 +633,13 @@ static int/*bool*/ x_ConsistencyCheck(SERV_ITER iter, const SSERV_Info* info)
     }
 
     for (n = 0;  n < iter->n_skip;  ++n) {
-        if (SERV_EqualInfo(info, iter->skip[n])) {
+        const SSERV_Info* skip = iter->skip[n];
+        if (strcasecmp(name, SERV_NameOfInfo(skip)) == 0
+            &&  SERV_EqualInfo(info, skip)) {
             CORE_LOGF(eLOG_Critical,
-                      ("[%s]  Entry is a duplicate and must be skipped:\n%s",
-                       iter->name, str ? str : "<NULL>"));
+                      ("[%s]  Entry is a duplicate and must be skipped:\n"
+                       "%s%s%s%s", iter->name, &"\""[!*name], name,
+                       *name ? "\" " : "", str ? str : "<NULL>"));
             RETURN(0/*failure*/);
         }
     }
