@@ -37,6 +37,7 @@
 
 #ifdef NCBI_OS_UNIX
 
+#include "ncbi_lb.h"
 #include <connect/ncbi_ipv6.h>
 #include <ctype.h>
 #include <errno.h>
@@ -99,14 +100,15 @@ struct SLBDNS_Data {
     unsigned int   host;     /* LB DNS server host */
     unsigned short port;     /* LB DNS server port */
     unsigned       debug:1;  /* Debug output       */
+    unsigned       plain:1;  /* Use plain svc name */
     unsigned       empty:1;  /* No more data       */ 
-    unsigned           :14;  /* Reserved           */
+    unsigned           :13;  /* Reserved           */
     const char*    domain;   /* Domain name to use:
                                 no lead/trail '.'  */
     size_t         domlen;   /* Domain name length */
-    size_t         a_info;   /* Allocated pointers */
-    size_t         n_info;   /* Used pointers      */
-    SSERV_Info*    info[1];  /* "a_info" pointers  */
+    size_t         a_cand;   /* Allocated elements */
+    size_t         n_cand;   /* Used elements      */
+    SLB_Candidate  cand[1];  /* "a_cand" elements  */
 };
 
 
@@ -433,9 +435,9 @@ static int/*bool*/ x_AddInfo(SERV_ITER iter, SSERV_Info* info)
     assert(info->port  ||  info->type == fSERV_Dns);
     assert(info->host  ||  info->type == fSERV_Standalone);
     assert(info->type == fSERV_Dns  ||  info->type == fSERV_Standalone);
-    for (n = 0;  n < data->n_info;  ++n) {
-        if (SERV_EqualInfo(info, data->info[n])
-            &&  strcasecmp(name, SERV_NameOfInfo(data->info[n])) == 0) {
+    for (n = 0;  n < data->n_cand;  ++n) {
+        if (SERV_EqualInfo(info, data->cand[n].info)
+            &&  strcasecmp(name, SERV_NameOfInfo(data->cand[n].info)) == 0) {
             char* infostr = SERV_WriteInfo(info);
             CORE_LOGF(eLOG_Warning,
                       ("LBDNS ignoring duplicate entry: %s%s%s %s",
@@ -447,10 +449,10 @@ static int/*bool*/ x_AddInfo(SERV_ITER iter, SSERV_Info* info)
             return 1/*fake success*/;
         }
     }
-    if (data->n_info == data->a_info) {
-        n = data->a_info << 1;
+    if (data->n_cand == data->a_cand) {
+        n = data->a_cand << 1;
         data = (struct SLBDNS_Data*) realloc(iter->data, sizeof(*data)
-                                             + (n - 1) * sizeof(data->info));
+                                             + (n - 1) * sizeof(data->cand));
         if (!data) {
             CORE_LOGF_ERRNO(eLOG_Error, errno,
                             ("LBDNS cannot add entry for \"%s\"", iter->name));
@@ -458,10 +460,10 @@ static int/*bool*/ x_AddInfo(SERV_ITER iter, SSERV_Info* info)
             return 0/*failure*/;
         }
         iter->data = data;
-        data->a_info = n;
+        data->a_cand = n;
     }
-    assert(data->n_info < data->a_info);
-    data->info[data->n_info++] = info;
+    assert(data->n_cand < data->a_cand);
+    data->cand[data->n_cand++].info = info;
     if (data->debug) {
         char* infostr = SERV_WriteInfo(info);
         CORE_LOGF(eLOG_Note,
@@ -485,8 +487,8 @@ static int/*bool*/ x_UpdateHost(SERV_ITER iter, const char* fqdn,
 
     assert(!NcbiIsEmptyIPv6(addr));
     host = NcbiIPv6ToIPv4(addr, 0);
-    for (n = 0;  n < data->n_info;  ++n) {
-        SSERV_Info* x_info, *info = data->info[n];
+    for (n = 0;  n < data->n_cand;  ++n) {
+        SSERV_Info* x_info, *info = (SSERV_Info*) data->cand[n].info;
         const char* name = SERV_NameOfInfo(info);
         char buf[INET6_ADDRSTRLEN];
         if (strcasecmp(fqdn, name) != 0)
@@ -541,8 +543,8 @@ static void x_UpdatePort(SERV_ITER iter, unsigned short port)
 {
     struct SLBDNS_Data* data = (struct SLBDNS_Data*) iter->data;
     size_t n;
-    for (n = 0;  n < data->n_info;  ++n) {
-        SSERV_Info* info = data->info[n];
+    for (n = 0;  n < data->n_cand;  ++n) {
+        SSERV_Info* info = (SSERV_Info*) data->cand[n].info;
         if (!info->port) {
             assert(info->host  &&  info->type == fSERV_Dns);
             info->port = port;
@@ -584,9 +586,9 @@ typedef struct ns_rr_srv {
 } ns_rr_srv;
 
 
-static int/*bool*/ add_srv(SERV_ITER iter, const unsigned char* msg,
-                           const unsigned char* eom, const char* fqdn,
-                           unsigned short rdlen, const unsigned char* rdata)
+static int/*bool*/ do_srv(SERV_ITER iter, const unsigned char* msg,
+                          const unsigned char* eom, const char* fqdn,
+                          unsigned short rdlen, const unsigned char* rdata)
 {
     const unsigned char* start = rdata;
     char target[NS_MAXDNAME];
@@ -643,8 +645,8 @@ static int/*bool*/ add_srv(SERV_ITER iter, const unsigned char* msg,
 }
 
 
-static void add_txt(SERV_ITER iter, const char* fqdn,
-                    unsigned short rdlen, const unsigned char* rdata)
+static void do_txt(SERV_ITER iter, const char* fqdn,
+                   unsigned short rdlen, const unsigned char* rdata)
 {
     unsigned int len = 0;
     while (len < rdlen) {
@@ -675,9 +677,9 @@ static void add_txt(SERV_ITER iter, const char* fqdn,
 }
 
 
-static int/*bool*/ add_a(SERV_ITER iter, ns_type qtype, ns_type rtype,
-                         const char* fqdn,
-                         unsigned short rdlen, const unsigned char* rdata)
+static int/*bool*/ do_a(SERV_ITER iter, ns_type qtype, ns_type rtype,
+                        const char* fqdn,
+                        unsigned short rdlen, const unsigned char* rdata)
 {
     const struct SLBDNS_Data* data = (const struct SLBDNS_Data*) iter->data;
     char buf[INET6_ADDRSTRLEN];
@@ -743,12 +745,12 @@ static int/*bool*/ add_a(SERV_ITER iter, ns_type qtype, ns_type rtype,
 }
 
 
-static const char* add_cname(unsigned int/*bool*/ debug,
-                             const unsigned char* msg,
-                             const unsigned char* eom,
-                             const char*          fqdn,
-                             unsigned short       rdlen,
-                             const unsigned char* rdata)
+static const char* do_cname(unsigned int/*bool*/ debug,
+                            const unsigned char* msg,
+                            const unsigned char* eom,
+                            const char*          fqdn,
+                            unsigned short       rdlen,
+                            const unsigned char* rdata)
 {
     char cname[NS_MAXDNAME];
     const char* retval;
@@ -782,7 +784,7 @@ static const char* add_cname(unsigned int/*bool*/ debug,
 }
 
 
-static int/*bool*/ x_SameDomain(const char* a, const char* b)
+static int/*bool*/ same_domain(const char* a, const char* b)
 {
     size_t lena = strlen(a);
     size_t lenb = strlen(b);
@@ -829,7 +831,7 @@ static const unsigned char* x_ProcessReply(SERV_ITER iter,
                 ns_rr_type(rr) != ns_t_srv  &&  ns_rr_type(rr) != ns_t_cname) {
                 continue;
             }
-            if (!n  &&  !x_SameDomain(fqdn, ns_rr_name(rr))) {
+            if (!n  &&  !same_domain(fqdn, ns_rr_name(rr))) {
                 CORE_LOGF(eLOG_Warning,
                           ("DNS reply AN %u \"%s\" mismatch QN \"%s\"",
                            c + 1, ns_rr_name(rr), fqdn));
@@ -838,8 +840,8 @@ static const unsigned char* x_ProcessReply(SERV_ITER iter,
             if (ns_rr_type(rr) == ns_t_cname) {
                 /* special CNAME processing: replace fqdn */
                 if (!(n | c)) {
-                    cname = add_cname(data->debug, msg, eom, ns_rr_name(rr),
-                                      ns_rr_rdlen(rr), ns_rr_rdata(rr));
+                    cname = do_cname(data->debug, msg, eom, ns_rr_name(rr),
+                                     ns_rr_rdlen(rr), ns_rr_rdata(rr));
                     if (!cname) {
                         assert(!done);
                         return 0/*failed*/;
@@ -855,10 +857,10 @@ static const unsigned char* x_ProcessReply(SERV_ITER iter,
             }
             if (!n  &&  type == ns_t_srv) {
                 assert(ns_rr_type(rr) == ns_t_srv);
-                rv = add_srv(iter, msg, eom,
-                             ns_rr_name(rr), ns_rr_rdlen(rr), ns_rr_rdata(rr));
+                rv = do_srv(iter, msg, eom,
+                            ns_rr_name(rr), ns_rr_rdlen(rr), ns_rr_rdata(rr));
                 if (rv) {
-                    if (rv < 0  &&  data->n_info) {
+                    if (rv < 0  &&  data->n_cand) {
                         CORE_LOG(eLOG_Warning,
                                  "DNS SRV RR blank target misplaced");
                     } else
@@ -867,14 +869,14 @@ static const unsigned char* x_ProcessReply(SERV_ITER iter,
                 continue;
             }
             if (!n  &&  type == ns_t_any  &&  ns_rr_type(rr) == ns_t_txt) {
-                add_txt(iter,
-                        ns_rr_name(rr), ns_rr_rdlen(rr), ns_rr_rdata(rr));
+                do_txt(iter,
+                       ns_rr_name(rr), ns_rr_rdlen(rr), ns_rr_rdata(rr));
                 continue;
             }
             if (ns_rr_type(rr) != ns_t_a  &&  ns_rr_type(rr) != ns_t_aaaa)
                 continue;
-            rv = add_a(iter, type, ns_rr_type(rr),
-                       ns_rr_name(rr), ns_rr_rdlen(rr), ns_rr_rdata(rr));
+            rv = do_a(iter, type, ns_rr_type(rr),
+                      ns_rr_name(rr), ns_rr_rdlen(rr), ns_rr_rdata(rr));
             if (rv)
                 done = 1/*true*/;
         }
@@ -947,7 +949,7 @@ static const unsigned char* x_VerifyReply(const char* fqdn,
                    x_TypeStr(ns_rr_type(qn), buf)));
         return 0/*failed*/;
     }
-    if (!x_SameDomain(ns_rr_name(qn), fqdn)) {
+    if (!same_domain(ns_rr_name(qn), fqdn)) {
         CORE_LOGF(eLOG_Error,
                   ("DNS reply for unmatching name: \"%s\" vs. \"%s\" queried",
                    ns_rr_name(qn), fqdn));
@@ -979,7 +981,7 @@ static int/*bool*/ x_NoDataReply(const char* fqdn, ns_type type,
         return 0/*false*/;
     if (ns_rr_class(qn) != ns_c_in  ||  ns_rr_type(qn) != type)
         return 0/*false*/;
-    return x_SameDomain(ns_rr_name(qn), fqdn);
+    return same_domain(ns_rr_name(qn), fqdn);
 }
 
 
@@ -1035,12 +1037,13 @@ static int/*bool*/ x_ResolveType(SERV_ITER iter, ns_type type)
 
     assert(sizeof(msg) > NS_HFIXEDSZ);
     assert(type == ns_t_srv  ||  type == ns_t_any);
-#if 0
-    if (type != ns_t_srv
-        &&  (len < 4  ||  strcasecmp(&iter->name[len -= 3], "_lb") != 0)) {
-        return 0/*failure*/;
+
+    if (!data->plain) {
+        if (type != ns_t_srv
+            &&  (len < 4  ||  strcasecmp(&iter->name[len -= 3], "_lb") != 0)) {
+            return 0/*failure*/;
+        }
     }
-#endif
     if (!x_FormFQDN(fqdn, iter->name, len, type, data->domain, data->domlen)) {
         CORE_LOGF(eLOG_Error,
                   ("LBDNS FQDN for %s \"%s\" in \"%s\": Name too long",
@@ -1092,7 +1095,7 @@ static int/*bool*/ x_ResolveType(SERV_ITER iter, ns_type type)
     if (err) {
         if (err > 0)
             err = 0/*false*/;
-        CORE_LOGF_ERRNO(eLOG_Trace, err ? x_error : 0,
+        CORE_LOGF_ERRNO(rv ? eLOG_Trace : eLOG_Error, err ? x_error : 0,
                         ("DNS lookup failure \"%s\": %s", fqdn, errstr));
         return !err/*failure/success(but nodata)*/;
     }
@@ -1121,9 +1124,9 @@ static void x_Finalize(SERV_ITER iter)
     size_t n = 0;
 
     CORE_TRACEF(("LBDNS finalizing result-set for \"%s\"", iter->name));
-    while (n < data->n_info) {
-        const char* cull = 0;
-        SSERV_Info* info = data->info[n];
+    while (n < data->n_cand) {
+        SSERV_Info* info = (SSERV_Info*) data->cand[n].info;
+        const char* drop = 0/*reason*/;
         if (info->host) {
             size_t s;
             const char* name = SERV_NameOfInfo(info);
@@ -1134,25 +1137,25 @@ static void x_Finalize(SERV_ITER iter)
                     *ptr = '\0';
                 strupr((char*) name);
                 if (info->type == fSERV_Standalone) {
-                    assert(info->port);
                     info->type  = fSERV_Dns;
                     info->u.dns.name = 1/*true*/;
-                } else for (s = 0;  s < data->n_info;  ++s) {
-                    const SSERV_Info* skip = data->info[s];
+                    assert(info->port);
+                } else for (s = 0;  s < data->n_cand;  ++s) {
+                    const SSERV_Info* skip = data->cand[s].info;
                     assert(skip->type == fSERV_Dns);
                     if (SERV_EqualInfo(skip, info)) {
-                        cull = "duplicate";
+                        drop = "duplicate";
                         break;
                     }
                 }
                 assert(*name);
             } else
                 *((char*) name) = '\0';
-            if (!cull) {
+            if (!drop) {
                 for (s = 0;  s < iter->n_skip;  ++s) {
                     const SSERV_Info* skip = iter->skip[s];
                     if (*name) {
-                        assert(SERV_NameOfInfo(skip));
+                        assert(iter->reverse_dns  &&  SERV_NameOfInfo(skip));
                         if (strcasecmp(SERV_NameOfInfo(skip), name) == 0
                             &&  ((skip->type == fSERV_Dns  &&  !skip->host)
                                  ||  SERV_EqualInfo(skip, info))) {
@@ -1167,48 +1170,49 @@ static void x_Finalize(SERV_ITER iter)
                     }
                 }
                 if (s >= iter->n_skip) {
-                    ++n;
+                    data->cand[n++].status = info->rate; /*FIXME, temp*/
                     continue;
                 }
-                cull = "skipped";
+                drop = "excluded";
             }
         } else {
             assert(info->type == fSERV_Standalone);
-            cull = "incomplete";
+            drop = "incomplete";
         }
-        verify(cull);
-        CORE_TRACEF(("LBDNS dropping @%p: %s", info, cull));
-        /* remove incomplete / skipped */
-        if (n < --data->n_info) {
-            memmove(data->info + n, data->info + n + 1,
-                    (data->n_info - n) * sizeof(data->info[0]));
+        verify(drop);
+        CORE_TRACEF(("LBDNS dropping @%p: %s", info, drop));
+        if (n < --data->n_cand) {
+            memmove(data->cand + n, data->cand + n + 1,
+                    (data->n_cand - n) * sizeof(data->cand));
         }
         free(info);
     }
 
-    if (!data->n_info  &&  (iter->types & fSERV_Dns)
+    if (!data->n_cand  &&  (iter->types & fSERV_Dns)
         &&  !iter->last  &&  !iter->n_skip) {
         SSERV_Info x_info;
         x_BlankInfo(&x_info, fSERV_Dns);
         x_info.time += iter->time;
-        if (!(data->info[0] = SERV_CopyInfoEx(&x_info, ""))) {
+        if (!(data->cand[0].info = SERV_CopyInfoEx(&x_info, ""))) {
             CORE_LOGF(eLOG_Error,
                       ("LBDNS cannot create dummy entry for \"%s\"",
                        iter->name));
         } else {
+            data->cand[0].status = 0.0;
             if (data->debug) {
-                char* infostr = SERV_WriteInfo(data->info[0]);
+                char* infostr = SERV_WriteInfo(data->cand[0].info);
                 CORE_LOGF(eLOG_Note,
-                          ("LBDNS adding dummy entry %p %s", data->info[0],
+                          ("LBDNS adding dummy entry %p %s",
+                           data->cand[0].info,
                            infostr ? infostr : "<NULL>"));
                 if (infostr)
                     free(infostr);
             }
-            data->n_info = 1;
+            data->n_cand = 1;
         }
     }
     CORE_TRACEF(("LBDNS done finalizing result-set for \"%s\": %lu",
-                 iter->name, (unsigned long) data->n_info));
+                 iter->name, (unsigned long) data->n_cand));
 }
 
 
@@ -1225,7 +1229,7 @@ static int/*bool*/ x_Resolve(SERV_ITER iter)
     if (rv)
         x_Finalize(iter);
     else
-        assert(!((const struct SLBDNS_Data*) iter->data)->n_info);
+        assert(!((const struct SLBDNS_Data*) iter->data)->n_cand);
     return rv;
 }
 
@@ -1238,7 +1242,7 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
     u_long ns_options;
     res_state r;
 
-    assert(!data->n_info  &&  !data->empty);
+    assert(!data->n_cand  &&  !data->empty);
 
     if (data->host | data->port) {
         static void* /*bool*/ s_Init = 0/*false*/;
@@ -1267,8 +1271,7 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
          * provided answer size) to the server -- that's a good thing!  But the
          * current glibc behavior for this option is to always override with
          * 1200 -- and that's bad! -- because servnsd would comply.  If nothing
-         * is specified, servnsd uses 2048 (per RFC3226, 3) by default, so...
-         */
+         * is specified, servnsd uses 2048 (per RFC3226, 3) by default, so...*/
 #  if 0
         r->options |= RES_USE_EDNS0;
 #  endif /*0*/
@@ -1293,7 +1296,7 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
         CORE_UNLOCK;
     }
 
-    if (!data->n_info)
+    if (!data->n_cand)
         ((struct SLBDNS_Data*) data)->empty = 1/*true*/;
     return rv;
 }
@@ -1305,21 +1308,21 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
     SSERV_Info* info;
 
     CORE_TRACEF(("LBDNS getnextinfo(\"%s\"): %lu%s", iter->name,
-                 (unsigned long) data->n_info, data->empty ? ", EOF" : ""));
-    if (!data->n_info) {
+                 (unsigned long) data->n_cand, data->empty ? ", EOF" : ""));
+    if (!data->n_cand) {
         if (!data->empty)
             s_Resolve(iter);
         if ( data->empty) {
             CORE_TRACEF(("LBDNS getnextinfo(\"%s\"): EOF", iter->name));
-            assert(!data->n_info);
+            assert(!data->n_cand);
             return 0/*EOF*/;
         }
     }
-    info = data->info[0];
-    assert(info);
-    if (--data->n_info) {
-        memmove(data->info, data->info + 1,
-                data->n_info * sizeof(data->info[0]));
+    info = (SSERV_Info*) data->cand[0].info;
+    info->rate = data->cand[0].status;
+    if (--data->n_cand) {
+        memmove(data->cand, data->cand + 1,
+                data->n_cand * sizeof(data->cand));
     } else
         data->empty = 1;
     if (host_info)
@@ -1333,15 +1336,15 @@ static void s_Reset(SERV_ITER iter)
 {
     struct SLBDNS_Data* data = (struct SLBDNS_Data*) iter->data;
     CORE_TRACEF(("LBDNS reset(\"%s\"): %lu", iter->name,
-                 (unsigned long) data->n_info));
+                 (unsigned long) data->n_cand));
     assert(data);
-    if (data->n_info) {
+    if (data->n_cand) {
         size_t n;
-        for (n = 0;  n < data->n_info;  ++n) {
-            assert(data->info[n]);
-            free(data->info[n]);
+        for (n = 0;  n < data->n_cand;  ++n) {
+            assert(data->cand[n].info);
+            free((void*) data->cand[n].info);
         }
-        data->n_info = 0;
+        data->n_cand = 0;
     }
     data->empty = 0/*false*/;
 }
@@ -1352,7 +1355,7 @@ static void s_Close(SERV_ITER iter)
     struct SLBDNS_Data* data = (struct SLBDNS_Data*) iter->data;
     CORE_TRACEF(("LBDNS close(\"%s\")", iter->name));
     iter->data = 0;
-    assert(data  &&  !data->n_info); /*s_Reset() had to be called before*/
+    assert(data  &&  !data->n_cand); /*s_Reset() had to be called before*/
     if (data->domain)
         free((void*) data->domain);
     free(data);
@@ -1474,10 +1477,11 @@ const SSERV_VTable* SERV_LBDNS_Open(SERV_ITER iter, SSERV_Info** info)
     const char* domain;
     unsigned long port;
 
-    assert(!iter->data);
+    assert(iter  &&  !iter->data  &&  !iter->op);
     /* No wildcard procesing */
     if (iter->ismask)
         return 0;
+    assert(iter->name  &&  *iter->name);
     /* Can process fSERV_Any (basically meaning fSERV_Standalone), and explicit
      * fSERV_Standalone and/or fSERV_Dns only */
     if  (iter->types != fSERV_Any
@@ -1503,7 +1507,7 @@ const SSERV_VTable* SERV_LBDNS_Open(SERV_ITER iter, SSERV_Info** info)
     }
     if (!(data = (struct SLBDNS_Data*) calloc(1, sizeof(*data)
                                               + (LBDNS_INITIAL_ALLOC - 1)
-                                              * sizeof(data->info)))) {
+                                              * sizeof(data->cand)))) {
         CORE_LOG_ERRNO(eLOG_Error, errno,
                        "LBDNS failed to create private data structure");
         return 0;
@@ -1511,7 +1515,10 @@ const SSERV_VTable* SERV_LBDNS_Open(SERV_ITER iter, SSERV_Info** info)
     data->debug = ConnNetInfo_Boolean(ConnNetInfo_GetValue
                                       (0, REG_CONN_LBDNS_DEBUG,
                                        val, sizeof(val), 0));
-    data->a_info = LBDNS_INITIAL_ALLOC;
+    data->plain = ConnNetInfo_Boolean(ConnNetInfo_GetValue
+                                      (0, "CONN_LBDNS_PLAIN", /*private*/
+                                       val, sizeof(val), 0));
+    data->a_cand = LBDNS_INITIAL_ALLOC;
     iter->data = data;
 
     if (!ConnNetInfo_GetValue(0, REG_CONN_LBDNS_DOMAIN, val, sizeof(val), 0))
