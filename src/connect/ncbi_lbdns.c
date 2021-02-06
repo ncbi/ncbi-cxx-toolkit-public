@@ -1220,7 +1220,7 @@ static int/*bool*/ x_Resolve(SERV_ITER iter)
 {
     int/*bool*/ rv = 0/*false*/;
     CORE_TRACEF(("LBDNS resolving \"%s\"", iter->name));
-    if (!iter->types  ||  (iter->types & fSERV_Standalone))
+    if (!(iter->types & ~fSERV_Stateless) || (iter->types & fSERV_Standalone))
         rv |= x_ResolveType(iter, ns_t_srv);
     if (iter->types & fSERV_Dns)
         rv |= x_ResolveType(iter, ns_t_any);
@@ -1474,6 +1474,7 @@ const SSERV_VTable* SERV_LBDNS_Open(SERV_ITER iter, SSERV_Info** info)
 {
     char val[CONN_HOST_LEN + 1];
     struct SLBDNS_Data* data;
+    TSERV_TypeOnly types;
     const char* domain;
     unsigned long port;
 
@@ -1484,11 +1485,10 @@ const SSERV_VTable* SERV_LBDNS_Open(SERV_ITER iter, SSERV_Info** info)
     assert(iter->name  &&  *iter->name);
     /* Can process fSERV_Any (basically meaning fSERV_Standalone), and explicit
      * fSERV_Standalone and/or fSERV_Dns only */
-    if  (iter->types != fSERV_Any
-         &&  !(iter->types & (fSERV_Standalone | fSERV_Dns))) {
+    types = iter->types & ~fSERV_Stateless;
+    if (types != fSERV_Any/*0*/  &&  !(types & (fSERV_Standalone | fSERV_Dns)))
         return 0;
-    }
-    if (iter->types == fSERV_Dns) {
+    if (types == fSERV_Dns) {
         /* DNS-only lookups are for the *_lb services */
         size_t len = strlen(iter->name);
         if (len < 4  ||  strcasecmp(&iter->name[len - 3], "_lb") != 0)
