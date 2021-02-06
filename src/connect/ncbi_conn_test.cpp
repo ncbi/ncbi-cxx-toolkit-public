@@ -569,7 +569,11 @@ EIO_Status CConnTest::ServiceOkay(string* reason)
             free(str);
             str = 0;
         }
+        string mapper;
         SERV_ITER iter = SERV_OpenSimple(kService);
+        const char* x_mapper = SERV_MapperName(iter);
+        if (x_mapper)
+            mapper = x_mapper;
         if (!iter  ||  !SERV_GetNextInfo(iter)) {
             // Service not found
             SERV_Close(iter);
@@ -602,12 +606,16 @@ EIO_Status CConnTest::ServiceOkay(string* reason)
                 temp += "; please contact " + HELP_EMAIL + '\n';
         }
         if (status != eIO_Timeout) {
-            const char* mapper = SERV_MapperName(iter);
-            if (!mapper  ||  NStr::CompareNocase(mapper, "DISPD") != 0) {
+            x_mapper = SERV_MapperName(iter);
+            if (!x_mapper  ||  NStr::CompareNocase(x_mapper, "DISPD") != 0) {
                 temp += "Network dispatcher is not enabled as a service"
                     " locator;  please review your configuration to purge any"
                     " occurrences of [" DEF_CONN_REG_SECTION "]"
                     REG_CONN_DISPD_DISABLE " from your settings\n";
+                if (!mapper.empty()  &&  mapper != (x_mapper ? x_mapper : "")){
+                    temp += "It appears that \"" + mapper + "\" is currently"
+                        " set as your default service locator\n";
+                }
             }
         } else
             temp += x_TimeoutMsg();
