@@ -982,9 +982,10 @@ extern EIO_Status SOCK_ShutdownAPI(void)
         CORE_UNLOCK;
         return eIO_Success;
     }
-    s_Initialized = -1/*deinited*/;
 
     x_ShutdownSSL();
+
+    s_Initialized = -1/*deinited*/;
 
 #ifdef NCBI_OS_MSWIN
     {{
