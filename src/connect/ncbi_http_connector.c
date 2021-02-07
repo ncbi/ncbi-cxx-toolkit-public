@@ -2581,7 +2581,7 @@ static EIO_Status s_VT_Read
     SHttpConnector*  uuu = (SHttpConnector*) connector->handle;
     EExtractMode extract = BUF_Size(uuu->r_buf) ? eEM_Flush : eEM_Read;
     EIO_Status    status = uuu->can_connect & fCC_Once
-        ? s_PreRead(uuu, timeout, extract) : eIO_Closed;
+        ? s_PreRead(uuu, timeout, extract) : eIO_Unknown;
     size_t        x_read = BUF_Read(uuu->r_buf, buf, size);
 
     assert(n_read  &&  !*n_read);
