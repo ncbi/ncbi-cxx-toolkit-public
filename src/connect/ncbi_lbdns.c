@@ -58,20 +58,15 @@
 #define NCBI_USE_ERRCODE_X   Connect_LBSM  /* errors: 31 and up */
 
 
-#ifndef NS_DEFAULTPORT
-#  ifdef NAMESERVER_PORT
-#    define NS_DEFAULTPORT   NAMESERVER_PORT
-#  else
-#    define NS_DEFAULTPORT   53
-#  endif /*NAMESERVER_PORT*/
-#endif /*NS_DEFAULTPORT*/
-
-#define SizeOf(a)            (sizeof(a) / sizeof((a)[0]))
-#define LBDNS_INITIAL_ALLOC  32
+#define SizeOf(a)                (sizeof(a) / sizeof((a)[0]))
 #ifdef  max
 #undef  max
 #endif/*max*/
-#define max(a, b)            ((a) > (b) ? (a) : (b))
+#define max(a, b)                ((a) > (b) ? (a) : (b))
+
+#define SERVNSD_TXT_RR_PORT_LEN  (sizeof(SERVNSD_TXT_RR_PORT)-1)
+
+#define LBDNS_INITIAL_ALLOC      32
 
 
 #if defined(HAVE_SOCKLEN_T)  ||  defined(_SOCKLEN_T)
@@ -100,7 +95,7 @@ struct SLBDNS_Data {
     unsigned int   host;     /* LB DNS server host */
     unsigned short port;     /* LB DNS server port */
     unsigned       debug:1;  /* Debug output       */
-    unsigned       plain:1;  /* Use plain svc name */
+    unsigned       check:1;  /* Private check mode */
     unsigned       empty:1;  /* No more data       */ 
     unsigned           :13;  /* Reserved           */
     const char*    domain;   /* Domain name to use:
@@ -543,6 +538,7 @@ static void x_UpdatePort(SERV_ITER iter, unsigned short port)
 {
     struct SLBDNS_Data* data = (struct SLBDNS_Data*) iter->data;
     size_t n;
+    assert(port);
     for (n = 0;  n < data->n_cand;  ++n) {
         SSERV_Info* info = (SSERV_Info*) data->cand[n].info;
         if (!info->port) {
@@ -586,9 +582,9 @@ typedef struct ns_rr_srv {
 } ns_rr_srv;
 
 
-static int/*bool*/ do_srv(SERV_ITER iter, const unsigned char* msg,
-                          const unsigned char* eom, const char* fqdn,
-                          unsigned short rdlen, const unsigned char* rdata)
+static int/*bool*/ dns_srv(SERV_ITER iter, const unsigned char* msg,
+                           const unsigned char* eom, const char* fqdn,
+                           unsigned short rdlen, const unsigned char* rdata)
 {
     const unsigned char* start = rdata;
     char target[NS_MAXDNAME];
@@ -633,43 +629,46 @@ static int/*bool*/ do_srv(SERV_ITER iter, const unsigned char* msg,
     } else if (!srv.port) {
         CORE_LOG(eLOG_Error, "DNS SRV RR zero port");
         return 0/*false*/;
-    } else if (!srv.weight)
-        CORE_LOG(eLOG_Warning, "DNS SRV RR zero weight");
+    }
     x_BlankInfo(&x_info, fSERV_Standalone);
     x_info.time += iter->time;
     x_info.port  = srv.port;
     x_info.rate  = srv.priority
-        ? (11.0 - max(srv.priority, 10)) / LBSM_DEFAULT_RATE : srv.weight
+        ? (11.0 - max(srv.priority, 10)) / LBSM_DEFAULT_RATE   : srv.weight
         ? x_RoundUp((srv.weight * SERV_MAXIMAL_RATE) / 0xFFFF) : 1.0;
     return x_AddInfo(iter, SERV_CopyInfoEx(&x_info, target));
 }
 
 
-static void do_txt(SERV_ITER iter, const char* fqdn,
-                   unsigned short rdlen, const unsigned char* rdata)
+static void dns_txt(SERV_ITER iter, const char* fqdn,
+                    unsigned short rdlen, const unsigned char* rdata)
 {
     unsigned int len = 0;
     while (len < rdlen) {
+        char buf[40];
         unsigned short slen = *rdata++;
         if ((len += 1 + slen) > rdlen) {
             CORE_LOG(eLOG_Error, "DNS TXT RR RDATA overrun");
             return;
         }
-        if (slen > 5  &&  isdigit(rdata[5])
-            &&  strncasecmp((const char*) rdata, "port=", 5) == 0) {
+        if (slen > SERVNSD_TXT_RR_PORT_LEN 
+            &&  slen - SERVNSD_TXT_RR_PORT_LEN < sizeof(buf)
+            &&  isdigit(rdata[SERVNSD_TXT_RR_PORT_LEN])
+            &&  strncasecmp((const char*) rdata, SERVNSD_TXT_RR_PORT,
+                            SERVNSD_TXT_RR_PORT_LEN) == 0) {
             unsigned short port;
-            char buf[256];
             int n;
             if (((const struct SLBDNS_Data*) iter->data)->debug) {
                 CORE_LOGF(eLOG_Note,
                           ("DNS TXT RR %s: \"%.*s\"", fqdn,
                            (int) slen, (const char*) rdata));
             }
-            rdata += 5;
-            slen  -= 5;
+            rdata += SERVNSD_TXT_RR_PORT_LEN;
+            slen  -= SERVNSD_TXT_RR_PORT_LEN;
             memcpy(buf, rdata, slen);
             buf[slen] = '\0';
-            if (sscanf(buf, "%hu%n", &port, &n) > 0  &&  n == (int) slen)
+            assert(strlen(buf) < sizeof(buf));
+            if (sscanf(buf, "%hu%n", &port, &n) > 0 && n == (int) slen && port)
                 x_UpdatePort(iter, port);
         }
         rdata += slen;
@@ -677,9 +676,9 @@ static void do_txt(SERV_ITER iter, const char* fqdn,
 }
 
 
-static int/*bool*/ do_a(SERV_ITER iter, ns_type qtype, ns_type rtype,
-                        const char* fqdn,
-                        unsigned short rdlen, const unsigned char* rdata)
+static int/*bool*/ dns_a(SERV_ITER iter, ns_type qtype, ns_type rtype,
+                         const char* fqdn,
+                         unsigned short rdlen, const unsigned char* rdata)
 {
     const struct SLBDNS_Data* data = (const struct SLBDNS_Data*) iter->data;
     char buf[INET6_ADDRSTRLEN];
@@ -745,12 +744,12 @@ static int/*bool*/ do_a(SERV_ITER iter, ns_type qtype, ns_type rtype,
 }
 
 
-static const char* do_cname(unsigned int/*bool*/ debug,
-                            const unsigned char* msg,
-                            const unsigned char* eom,
-                            const char*          fqdn,
-                            unsigned short       rdlen,
-                            const unsigned char* rdata)
+static const char* dns_cname(unsigned int/*bool*/ debug,
+                             const unsigned char* msg,
+                             const unsigned char* eom,
+                             const char*          fqdn,
+                             unsigned short       rdlen,
+                             const unsigned char* rdata)
 {
     char cname[NS_MAXDNAME];
     const char* retval;
@@ -840,8 +839,8 @@ static const unsigned char* x_ProcessReply(SERV_ITER iter,
             if (ns_rr_type(rr) == ns_t_cname) {
                 /* special CNAME processing: replace fqdn */
                 if (!(n | c)) {
-                    cname = do_cname(data->debug, msg, eom, ns_rr_name(rr),
-                                     ns_rr_rdlen(rr), ns_rr_rdata(rr));
+                    cname = dns_cname(data->debug, msg, eom, ns_rr_name(rr),
+                                      ns_rr_rdlen(rr), ns_rr_rdata(rr));
                     if (!cname) {
                         assert(!done);
                         return 0/*failed*/;
@@ -857,8 +856,8 @@ static const unsigned char* x_ProcessReply(SERV_ITER iter,
             }
             if (!n  &&  type == ns_t_srv) {
                 assert(ns_rr_type(rr) == ns_t_srv);
-                rv = do_srv(iter, msg, eom,
-                            ns_rr_name(rr), ns_rr_rdlen(rr), ns_rr_rdata(rr));
+                rv = dns_srv(iter, msg, eom,
+                             ns_rr_name(rr), ns_rr_rdlen(rr), ns_rr_rdata(rr));
                 if (rv) {
                     if (rv < 0  &&  data->n_cand) {
                         CORE_LOG(eLOG_Warning,
@@ -868,15 +867,15 @@ static const unsigned char* x_ProcessReply(SERV_ITER iter,
                 }
                 continue;
             }
-            if (!n  &&  type == ns_t_any  &&  ns_rr_type(rr) == ns_t_txt) {
-                do_txt(iter,
-                       ns_rr_name(rr), ns_rr_rdlen(rr), ns_rr_rdata(rr));
+            if (!n  &&  type != ns_t_srv  &&  ns_rr_type(rr) == ns_t_txt) {
+                dns_txt(iter,
+                        ns_rr_name(rr), ns_rr_rdlen(rr), ns_rr_rdata(rr));
                 continue;
             }
             if (ns_rr_type(rr) != ns_t_a  &&  ns_rr_type(rr) != ns_t_aaaa)
                 continue;
-            rv = do_a(iter, type, ns_rr_type(rr),
-                      ns_rr_name(rr), ns_rr_rdlen(rr), ns_rr_rdata(rr));
+            rv = dns_a(iter, type, ns_rr_type(rr),
+                       ns_rr_name(rr), ns_rr_rdlen(rr), ns_rr_rdata(rr));
             if (rv)
                 done = 1/*true*/;
         }
@@ -1038,7 +1037,7 @@ static int/*bool*/ x_ResolveType(SERV_ITER iter, ns_type type)
     assert(sizeof(msg) > NS_HFIXEDSZ);
     assert(type == ns_t_srv  ||  type == ns_t_any);
 
-    if (!data->plain) {
+    if (!data->check) {
         if (type != ns_t_srv
             &&  (len < 4  ||  strcasecmp(&iter->name[len -= 3], "_lb") != 0)) {
             return 0/*failure*/;
@@ -1211,7 +1210,7 @@ static void x_Finalize(SERV_ITER iter)
             data->n_cand = 1;
         }
     }
-    CORE_TRACEF(("LBDNS done finalizing result-set for \"%s\": %lu",
+    CORE_TRACEF(("LBDNS done ready result-set for \"%s\": %lu",
                  iter->name, (unsigned long) data->n_cand));
 }
 
@@ -1479,10 +1478,12 @@ const SSERV_VTable* SERV_LBDNS_Open(SERV_ITER iter, SSERV_Info** info)
     unsigned long port;
 
     assert(iter  &&  !iter->data  &&  !iter->op);
-    /* No wildcard procesing */
+    /* No wildcard or external processing */
     if (iter->ismask)
         return 0;
     assert(iter->name  &&  *iter->name);
+    if (iter->external)
+        return 0;
     /* Can process fSERV_Any (basically meaning fSERV_Standalone), and explicit
      * fSERV_Standalone and/or fSERV_Dns only */
     types = iter->types & ~fSERV_Stateless;
@@ -1499,10 +1500,10 @@ const SSERV_VTable* SERV_LBDNS_Open(SERV_ITER iter, SSERV_Info** info)
     if (iter->arg) {
         assert(iter->arglen);
         CORE_LOGF(eLOG_Warning,
-                  ("LBDNS argument affinity lookup %s%s%s%s%s unsupported"
-                   " for \"%s\"", iter->arg, &"="[!iter->val],
+                  ("[%s]  Argument affinity lookup not supported by LBDNS:"
+                   " %s%s%s%s%s", iter->name, iter->arg, &"="[!iter->val],
                    &"\""[!iter->val], iter->val ? iter->val : "",
-                   &"\""[!iter->val], iter->name));
+                   &"\""[!iter->val]));
         goto out;
     }
     if (!(data = (struct SLBDNS_Data*) calloc(1, sizeof(*data)
@@ -1515,8 +1516,8 @@ const SSERV_VTable* SERV_LBDNS_Open(SERV_ITER iter, SSERV_Info** info)
     data->debug = ConnNetInfo_Boolean(ConnNetInfo_GetValue
                                       (0, REG_CONN_LBDNS_DEBUG,
                                        val, sizeof(val), 0));
-    data->plain = ConnNetInfo_Boolean(ConnNetInfo_GetValue
-                                      (0, "CONN_LBDNS_PLAIN", /*private*/
+    data->check = ConnNetInfo_Boolean(ConnNetInfo_GetValue
+                                      (0, "CONN_LBDNS_CHECK", /*private*/
                                        val, sizeof(val), 0));
     data->a_cand = LBDNS_INITIAL_ALLOC;
     iter->data = data;
