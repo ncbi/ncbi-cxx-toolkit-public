@@ -208,6 +208,7 @@ extern MT_LOCK MT_LOCK_Create
         lk->handler = handler;
         lk->cleanup = cleanup;
         lk->magic   = kMT_LOCK_magic;
+        // CORE_TRACEF(("MT_LOCK_Create(%p)", lk));
     }
     return lk;
 }
@@ -218,9 +219,12 @@ extern MT_LOCK MT_LOCK_AddRef(MT_LOCK lk)
     if (lk) {
         MT_LOCK_VALID;
         if (lk != &g_CORE_MT_Lock_default) {
+            // CORE_DEBUG_ARG(unsigned int count;)
             MT_LOCK_Do(lk, eMT_Lock);
-            lk->count++;
+            // CORE_DEBUG_ARG(count =)
+            ++lk->count;
             MT_LOCK_Do(lk, eMT_Unlock);
+            // CORE_TRACEF(("MT_LOCK_AddRef(%p) = %u", lk, count));
         }
     }
     return lk;
@@ -238,6 +242,7 @@ extern MT_LOCK MT_LOCK_Delete(MT_LOCK lk)
             count = --lk->count;
             if (lk->handler)
                 verify(lk->handler(lk->data, eMT_Unlock));
+            // CORE_TRACEF(("MT_LOCK_Delete(%p) = %u", lk, count));
             if (!count) {
                 if (lk->cleanup)
                     lk->cleanup(lk->data);
