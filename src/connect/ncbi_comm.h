@@ -30,7 +30,7 @@
  *
  * File Description:
  *   Common part of internal communication protocol used by both sides
- *   (client and server) of firewall daemon and service dispatcher.
+ *   (client and server) of firewall daemon and service dispatchers.
  *
  */
 
@@ -55,6 +55,7 @@
 #define CONN_FWD_LINK           CONN_FWD_BASE "/dispatcher.html#Firewalling"
 #define CONN_FWD_URL            CONN_FWD_BASE "/firewall.html#Settings"
 #define NCBI_EXTERNAL           "NCBI-External"
+#define SERVNSD_TXT_RR_PORT     "_PORT="
 
 
 #ifdef __cplusplus
