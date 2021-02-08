@@ -190,7 +190,6 @@ public:
         struct SBlobOnly
         {
             const bool enabled;
-            const TTypeInfo input_type;
             const ESerialDataFormat output_format;
         };
 

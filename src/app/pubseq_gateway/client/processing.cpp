@@ -418,7 +418,7 @@ struct SBlobOnlyCopy
     string compression;
     string format;
 
-    void operator()(istream& is, ostream& os, const CProcessing::SParams::SBlobOnly& params);
+    void operator()(shared_ptr<CPSG_BlobData> blob_data, ostream& os, const CProcessing::SParams::SBlobOnly& params);
 };
 
 ESerialDataFormat s_GetInputFormat(const string& format)
@@ -444,22 +444,21 @@ ESerialDataFormat s_GetOutputFormat(const CArgs& args)
     return eSerial_None;
 }
 
-TTypeInfo s_GetInputType(const CArgs& args)
+TTypeInfo s_GetInputType(const shared_ptr<CPSG_BlobData>& blob_data)
 {
-    if (args.Exist("blob-type")) {
-        const auto& type = args["blob-type"].AsString();
+    using namespace objects;
 
-        if (type == "seqentry")  return objects::CSeq_entry::GetTypeInfo();
-        if (type == "seqannot")  return objects::CSeq_annot::GetTypeInfo();
-        if (type == "splitinfo") return objects::CID2S_Split_Info::GetTypeInfo();
-        if (type == "chunk")     return objects::CID2S_Chunk::GetTypeInfo();
+    if (auto chunk_id = blob_data->GetId<CPSG_ChunkId>()) {
+        return chunk_id->GetId2Chunk() == 999999999 ? CID2S_Split_Info::GetTypeInfo() : CID2S_Chunk::GetTypeInfo();
     }
 
-    return objects::CID2S_Chunk::GetTypeInfo();
+    return CSeq_entry::GetTypeInfo();
 }
 
-void SBlobOnlyCopy::operator()(istream& is, ostream& os, const CProcessing::SParams::SBlobOnly& params)
+void SBlobOnlyCopy::operator()(shared_ptr<CPSG_BlobData> blob_data, ostream& os, const CProcessing::SParams::SBlobOnly& params)
 {
+    auto& is = blob_data->GetStream();
+
     if (params.output_format == eSerial_None) {
         os << is.rdbuf();
         return;
@@ -482,7 +481,15 @@ void SBlobOnlyCopy::operator()(istream& is, ostream& os, const CProcessing::SPar
     stringstream ss;
     unique_ptr<CObjectOStream> out(CObjectOStream::Open(params.output_format, ss));
     CObjectStreamCopier copier(*in, *out);
-    copier.Copy(params.input_type);
+
+    try {
+        copier.Copy(s_GetInputType(blob_data));
+    }
+    catch (CException& ex) {
+        cerr << "Failed to process blob '" << blob_data->GetId()->Repr() << "': " << ex.ReportThis() << endl;
+        return;
+    }
+
     os << ss.rdbuf();
 }
 
@@ -493,7 +500,7 @@ bool s_GetBlobOnly(const CArgs& args)
 
 CProcessing::SParams::SParams(const CArgs& args) :
     latency({args["latency"].HasValue(), args["debug-printout"].HasValue()}),
-    blob_only({s_GetBlobOnly(args), s_GetInputType(args), s_GetOutputFormat(args)})
+    blob_only({s_GetBlobOnly(args), s_GetOutputFormat(args)})
 {
 }
 
@@ -573,8 +580,7 @@ int CProcessing::OneRequest(const string& service, shared_ptr<CPSG_Request> requ
                     blob_only_copy.format = blob_info->GetFormat();
 
                 } else if (reply_item->GetType() == CPSG_ReplyItem::eBlobData) {
-                    auto blob_data = static_pointer_cast<CPSG_BlobData>(reply_item);
-                    blob_only_copy(blob_data->GetStream(), cout, params.blob_only);
+                    blob_only_copy(static_pointer_cast<CPSG_BlobData>(reply_item), cout, params.blob_only);
                 }
             } else {
                 ++it;
