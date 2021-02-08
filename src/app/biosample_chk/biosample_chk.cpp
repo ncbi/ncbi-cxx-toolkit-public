@@ -981,6 +981,47 @@ void CBiosampleChkApp::PrintResults(biosample_util::TBiosampleFieldDiffList & di
 }
 
 
+// RAII idiom to make sure we sign out of MyNCBI even when exceptions are thrown
+class CMyNCBISession
+{
+public:     
+    CMyNCBISession() {};
+    
+    virtual ~CMyNCBISession() {
+        // MyNCBI signout
+        m_session.Get(kSign_out_url);        
+    };
+    
+    CHttpRequest Sign_in() {
+        return m_session.NewRequest(kSign_in_url, CHttpSession::ePost);
+    }
+    
+    CHttpCookies& Cookies(void) { 
+        return m_session.Cookies(); 
+    };
+    
+    CHttpResponse Post(const CUrl&     url,
+                       CTempString     data,
+                       CTempString     content_type = CTempString(),
+                       const CTimeout& timeout = CTimeout(CTimeout::eDefault),
+                       THttpRetries    retries = null) 
+    {
+        return m_session.Post(url, data, content_type, timeout, retries);
+    }
+    
+private:
+    CHttpSession m_session;
+    
+private:
+    static const string kSign_in_url;
+    static const string kSign_out_url;
+};
+
+
+const string CMyNCBISession::kSign_in_url = "https://www.ncbi.nlm.nih.gov/portal/signin.cgi?js";
+const string CMyNCBISession::kSign_out_url = "https://www.ncbi.nlm.nih.gov/account/signout/";
+
+
 void CBiosampleChkApp::CreateBiosampleUpdateWebService(biosample_util::TBiosampleFieldDiffList & diffs, bool del_okay)
 {
     if (diffs.empty()) {
@@ -1085,16 +1126,14 @@ void CBiosampleChkApp::CreateBiosampleUpdateWebService(biosample_util::TBiosampl
 
     NcbiCout << sData << endl;
 
-    CHttpSession session;
-
     if (m_Username == "" || m_Password == "") {
         *m_LogStream << "ERROR: Username and password are needed with -m 7." << endl;
         exit(6);
     }
 
     // MyNCBI signin
-    string sUrl = "https://www.ncbi.nlm.nih.gov/portal/signin.cgi?js";
-    CHttpRequest request = session.NewRequest(sUrl, CHttpSession::ePost);
+    CMyNCBISession session;
+    CHttpRequest request = session.Sign_in();
     request.SetRetries(0);
 
     CHttpFormData& data = request.FormData();
@@ -1114,10 +1153,9 @@ void CBiosampleChkApp::CreateBiosampleUpdateWebService(biosample_util::TBiosampl
     }
 
     // BioSample update
+    string sUrl = "https://api-int.ncbi.nlm.nih.gov/biosample/update/";
     if (m_UseDevServer) {
         sUrl = "https://dev-api-int.ncbi.nlm.nih.gov/biosample/update/";
-    } else {
-        sUrl = "https://api-int.ncbi.nlm.nih.gov/biosample/update/";
     }
     string sContentType = "application/json; charset=utf-8";
 
@@ -1145,10 +1183,6 @@ void CBiosampleChkApp::CreateBiosampleUpdateWebService(biosample_util::TBiosampl
         NcbiStreamCopy(cout, response.ContentStream());
         cout << endl;
     }
-
-    // MyNCBI signout
-    sUrl = "https://www.ncbi.nlm.nih.gov/account/signout/";
-    session.Get(sUrl);
 }
 
 
