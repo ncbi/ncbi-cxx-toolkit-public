@@ -413,7 +413,15 @@ void s_ReportErrors(ostream& os, EPSG_Status status, TItem item, TStr prefix, co
     os << '\n';
 }
 
-ESerialDataFormat SBlobOnly::SInput::GetFormat()
+struct SBlobOnlyCopy
+{
+    string compression;
+    string format;
+
+    void operator()(istream& is, ostream& os, const CProcessing::SParams::SBlobOnly& params);
+};
+
+ESerialDataFormat s_GetInputFormat(const string& format)
 {
     if (format == "asn1-text") return eSerial_AsnText;
     if (format == "xml")       return eSerial_Xml;
@@ -422,40 +430,45 @@ ESerialDataFormat SBlobOnly::SInput::GetFormat()
     return eSerial_AsnBinary;
 }
 
-ESerialDataFormat SBlobOnly::SOutput::GetFormat()
+ESerialDataFormat s_GetOutputFormat(const CArgs& args)
 {
-    if (!format)           return eSerial_None;
-    if (*format == "asn")  return eSerial_AsnText;
-    if (*format == "asnb") return eSerial_AsnBinary;
-    if (*format == "xml")  return eSerial_Xml;
-    if (*format == "json") return eSerial_Json;
+    if (args.Exist("output-fmt") && args["output-fmt"].HasValue()) {
+        const auto& format = args["output-fmt"].AsString();
+
+        if (format == "asn")  return eSerial_AsnText;
+        if (format == "asnb") return eSerial_AsnBinary;
+        if (format == "xml")  return eSerial_Xml;
+        if (format == "json") return eSerial_Json;
+    }
 
     return eSerial_None;
 }
 
-TTypeInfo SBlobOnly::SOutput::GetType()
+TTypeInfo s_GetInputType(const CArgs& args)
 {
-    if (!type)                return objects::CID2S_Chunk::GetTypeInfo();
-    if (*type == "seqentry")  return objects::CSeq_entry::GetTypeInfo();
-    if (*type == "seqannot")  return objects::CSeq_annot::GetTypeInfo();
-    if (*type == "splitinfo") return objects::CID2S_Split_Info::GetTypeInfo();
+    if (args.Exist("blob-type")) {
+        const auto& type = args["blob-type"].AsString();
+
+        if (type == "seqentry")  return objects::CSeq_entry::GetTypeInfo();
+        if (type == "seqannot")  return objects::CSeq_annot::GetTypeInfo();
+        if (type == "splitinfo") return objects::CID2S_Split_Info::GetTypeInfo();
+        if (type == "chunk")     return objects::CID2S_Chunk::GetTypeInfo();
+    }
 
     return objects::CID2S_Chunk::GetTypeInfo();
 }
 
-void SBlobOnly::Copy(istream& is, ostream& os)
+void SBlobOnlyCopy::operator()(istream& is, ostream& os, const CProcessing::SParams::SBlobOnly& params)
 {
-    auto output_format = output.GetFormat();
-
-    if (output_format == eSerial_None) {
+    if (params.output_format == eSerial_None) {
         os << is.rdbuf();
         return;
     }
 
-    auto input_format = input.GetFormat();
+    auto input_format = s_GetInputFormat(format);
     unique_ptr<CObjectIStream> in;
 
-    if (input.compression.find("zip") == string::npos) {
+    if (compression.find("zip") == string::npos) {
         in.reset(CObjectIStream::Open(input_format, is));
     } else {
         unique_ptr<CZipStreamDecompressor> zip(new CZipStreamDecompressor);
@@ -467,19 +480,26 @@ void SBlobOnly::Copy(istream& is, ostream& os)
     in->UseMemoryPool();
 
     stringstream ss;
-    unique_ptr<CObjectOStream> out(CObjectOStream::Open(output_format, ss));
+    unique_ptr<CObjectOStream> out(CObjectOStream::Open(params.output_format, ss));
     CObjectStreamCopier copier(*in, *out);
-    copier.Copy(output.GetType());
+    copier.Copy(params.input_type);
     os << ss.rdbuf();
 }
 
+bool s_GetBlobOnly(const CArgs& args)
+{
+    return args.Exist("blob-only") && args["blob-only"].HasValue();
+}
+
 CProcessing::SParams::SParams(const CArgs& args) :
-    latency({args["latency"].HasValue(), args["debug-printout"].HasValue()})
+    latency({args["latency"].HasValue(), args["debug-printout"].HasValue()}),
+    blob_only({s_GetBlobOnly(args), s_GetInputType(args), s_GetOutputFormat(args)})
 {
 }
 
-int CProcessing::OneRequest(const string& service, shared_ptr<CPSG_Request> request, SParams params, SBlobOnly* blob_only)
+int CProcessing::OneRequest(const string& service, shared_ptr<CPSG_Request> request, SParams params)
 {
+    SBlobOnlyCopy blob_only_copy;
     CLogLatencyReport latency_report{
         R"(\d+/\d+/\d+/P  \S+ \d+/\d+ (\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})\.(\d{6}) .+ ncbi::SDebugPrintout::Print\(\) --- \S+: (\S+:[0-9]+)/\S+?\S+&client_id=\S+)",
         R"(\d+/\d+/\d+/P  \S+ \d+/\d+ (\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})\.(\d{6}) .+ ncbi::SDebugPrintout::Print\(\) --- \S+: Closed with status \S+)"
@@ -512,7 +532,7 @@ int CProcessing::OneRequest(const string& service, shared_ptr<CPSG_Request> requ
                 case EPSG_Status::eSuccess:    break;
                 case EPSG_Status::eInProgress: break;
                 default:
-                    if (blob_only) {
+                    if (params.blob_only.enabled) {
                         stringstream ss;
                         s_ReportErrors(ss, status, reply, "Reply error: ");
                         cerr << ss.rdbuf();
@@ -539,7 +559,7 @@ int CProcessing::OneRequest(const string& service, shared_ptr<CPSG_Request> requ
             if (reply_item_status != EPSG_Status::eInProgress) {
                 it = reply_items.erase(it);
 
-                if (!blob_only) {
+                if (!params.blob_only.enabled) {
                     json_out << CJsonResponse(reply_item_status, reply_item);
 
                 } else if (reply_item_status != EPSG_Status::eSuccess) {
@@ -549,12 +569,12 @@ int CProcessing::OneRequest(const string& service, shared_ptr<CPSG_Request> requ
 
                 } else if (reply_item->GetType() == CPSG_ReplyItem::eBlobInfo) {
                     auto blob_info = static_pointer_cast<CPSG_BlobInfo>(reply_item);
-                    blob_only->input.compression = blob_info->GetCompression();
-                    blob_only->input.format = blob_info->GetFormat();
+                    blob_only_copy.compression = blob_info->GetCompression();
+                    blob_only_copy.format = blob_info->GetFormat();
 
                 } else if (reply_item->GetType() == CPSG_ReplyItem::eBlobData) {
                     auto blob_data = static_pointer_cast<CPSG_BlobData>(reply_item);
-                    blob_only->Copy(blob_data->GetStream(), cout);
+                    blob_only_copy(blob_data->GetStream(), cout, params.blob_only);
                 }
             } else {
                 ++it;

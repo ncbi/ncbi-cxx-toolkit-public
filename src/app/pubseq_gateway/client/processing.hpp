@@ -176,31 +176,6 @@ private:
     list<SThread> m_Threads;
 };
 
-struct SBlobOnly
-{
-    struct SInput
-    {
-        string compression;
-        string format;
-
-        ESerialDataFormat GetFormat();
-    };
-
-    struct SOutput
-    {
-        const string* format = nullptr;
-        const string* type = nullptr;
-
-        ESerialDataFormat GetFormat();
-        TTypeInfo GetType();
-    };
-
-    SInput input;
-    SOutput output;
-
-    void Copy(istream& is, ostream& os);
-};
-
 class CProcessing
 {
 public:
@@ -212,12 +187,20 @@ public:
             const bool debug;
         };
 
+        struct SBlobOnly
+        {
+            const bool enabled;
+            const TTypeInfo input_type;
+            const ESerialDataFormat output_format;
+        };
+
         SLatency latency;
+        SBlobOnly blob_only;
 
         SParams(const CArgs& args);
     };
 
-    static int OneRequest(const string& service, shared_ptr<CPSG_Request> request, SParams params, SBlobOnly* blob_only = nullptr);
+    static int OneRequest(const string& service, shared_ptr<CPSG_Request> request, SParams params);
     static int ParallelProcessing(const string& service, const CArgs& args, bool batch_resolve, bool echo);
     static int Performance(const string& service, size_t user_threads, double delay, bool local_queue, ostream& os);
     static int Report(istream& is, ostream& os, double percentage);

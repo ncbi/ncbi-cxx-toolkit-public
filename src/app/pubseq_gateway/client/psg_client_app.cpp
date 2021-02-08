@@ -325,22 +325,7 @@ template <class TRequest>
 int CPsgClientApp::RunRequest(const string& service, const CArgs& args)
 {
     auto request = SRequestBuilder::Build<TRequest>(args);
-
-    if (!args.Exist("blob-only") || !args["blob-only"].HasValue()) {
-        return CProcessing::OneRequest(service, request, args);
-    }
-
-    SBlobOnly blob_only;
-
-    if (args.Exist("output-fmt") && args["output-fmt"].HasValue()) {
-        blob_only.output.format = &args["output-fmt"].AsString();
-
-        if (args.Exist("blob-type")) {
-            blob_only.output.type = &args["blob-type"].AsString();
-        }
-    }
-
-    return CProcessing::OneRequest(service, request, args, &blob_only);
+    return CProcessing::OneRequest(service, request, args);
 }
 
 template<>
