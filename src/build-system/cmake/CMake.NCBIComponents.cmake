@@ -49,7 +49,7 @@ include(${NCBI_TREE_CMAKECFG}/CMake.NCBIComponentsCheck.cmake)
 
 #############################################################################
 # local_lbsm
-if(WIN32 OR CYGWIN)
+if(WIN32 OR CYGWIN OR NCBI_COMPONENT_local_lbsm_DISABLED)
     set(NCBI_COMPONENT_local_lbsm_FOUND NO)
 else()
     if (EXISTS ${NCBITK_SRC_ROOT}/connect/ncbi_lbsm.c)
@@ -63,7 +63,7 @@ endif()
 
 #############################################################################
 # LocalPCRE
-if (EXISTS ${NCBITK_INC_ROOT}/util/regexp)
+if (EXISTS ${NCBITK_INC_ROOT}/util/regexp AND NOT NCBI_COMPONENT_LocalPCRE_DISABLED)
   set(NCBI_COMPONENT_LocalPCRE_FOUND YES)
   list(APPEND NCBI_ALL_REQUIRES LocalPCRE)
   set(NCBI_COMPONENT_LocalPCRE_INCLUDE ${NCBITK_INC_ROOT}/util/regexp)
@@ -74,7 +74,7 @@ endif()
 
 #############################################################################
 # LocalZ
-if (EXISTS ${NCBITK_INC_ROOT}/util/compress/zlib)
+if (EXISTS ${NCBITK_INC_ROOT}/util/compress/zlib AND NOT NCBI_COMPONENT_LocalZ_DISABLED)
   set(NCBI_COMPONENT_LocalZ_FOUND YES)
   list(APPEND NCBI_ALL_REQUIRES LocalZ)
   set(NCBI_COMPONENT_LocalZ_INCLUDE ${NCBITK_INC_ROOT}/util/compress/zlib)
@@ -85,7 +85,7 @@ endif()
 
 #############################################################################
 # LocalBZ2
-if (EXISTS ${NCBITK_INC_ROOT}/util/compress/bzip2)
+if (EXISTS ${NCBITK_INC_ROOT}/util/compress/bzip2 AND NOT NCBI_COMPONENT_LocalBZ2_DISABLED)
   set(NCBI_COMPONENT_LocalBZ2_FOUND YES)
   list(APPEND NCBI_ALL_REQUIRES LocalBZ2)
   set(NCBI_COMPONENT_LocalBZ2_INCLUDE ${NCBITK_INC_ROOT}/util/compress/bzip2)
@@ -96,7 +96,7 @@ endif()
 
 #############################################################################
 # LocalLMDB
-if (EXISTS ${NCBITK_INC_ROOT}/util/lmdb AND NOT CYGWIN)
+if (EXISTS ${NCBITK_INC_ROOT}/util/lmdb AND NOT CYGWIN AND NOT NCBI_COMPONENT_LocalLMDB_DISABLED)
   set(NCBI_COMPONENT_LocalLMDB_FOUND YES)
   list(APPEND NCBI_ALL_REQUIRES LocalLMDB)
   set(NCBI_COMPONENT_LocalLMDB_INCLUDE ${NCBITK_INC_ROOT}/util/lmdb)
@@ -107,7 +107,7 @@ endif()
 
 #############################################################################
 # connext
-if (EXISTS ${NCBITK_SRC_ROOT}/connect/ext/CMakeLists.txt)
+if (EXISTS ${NCBITK_SRC_ROOT}/connect/ext/CMakeLists.txt AND NOT NCBI_COMPONENT_connext_DISABLED)
   set(NCBI_REQUIRE_connext_FOUND YES)
   set(HAVE_LIBCONNEXT 1)
   list(APPEND NCBI_ALL_REQUIRES connext)
@@ -115,7 +115,8 @@ endif()
 
 #############################################################################
 # PubSeqOS
-if (EXISTS ${NCBITK_SRC_ROOT}/objtools/data_loaders/genbank/pubseq/CMakeLists.txt)
+if (EXISTS ${NCBITK_SRC_ROOT}/objtools/data_loaders/genbank/pubseq/CMakeLists.txt
+    AND NOT NCBI_COMPONENT_PubSeqOS_DISABLED)
   set(NCBI_REQUIRE_PubSeqOS_FOUND YES)
   list(APPEND NCBI_ALL_REQUIRES PubSeqOS)
 endif()
@@ -125,11 +126,13 @@ endif()
 set(FTDS95_INCLUDE  ${NCBITK_INC_ROOT}/dbapi/driver/ftds95  ${NCBITK_INC_ROOT}/dbapi/driver/ftds95/freetds)
 set(FTDS100_INCLUDE ${NCBITK_INC_ROOT}/dbapi/driver/ftds100 ${NCBITK_INC_ROOT}/dbapi/driver/ftds100/freetds)
 
-set(NCBI_COMPONENT_FreeTDS_FOUND   YES)
-set(HAVE_LIBFTDS 1)
-list(APPEND NCBI_ALL_REQUIRES FreeTDS)
-set(NCBI_COMPONENT_FreeTDS_INCLUDE ${FTDS100_INCLUDE})
+if(NOT NCBI_COMPONENT_FreeTDS_DISABLED)
+    set(NCBI_COMPONENT_FreeTDS_FOUND   YES)
+    set(HAVE_LIBFTDS 1)
+    list(APPEND NCBI_ALL_REQUIRES FreeTDS)
+    set(NCBI_COMPONENT_FreeTDS_INCLUDE ${FTDS100_INCLUDE})
 #set(NCBI_COMPONENT_FreeTDS_LIBS    ct_ftds100)
+endif()
 
 #############################################################################
 set(NCBI_COMPONENT_Boost.Test.Included_NCBILIB test_boost)
