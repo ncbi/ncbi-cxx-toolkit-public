@@ -605,7 +605,7 @@ public:
     /// Get ID2 info
     string GetId2Info() const;
 
-    /// Get number of chunks
+    /// Get number of Cassandra data chunks that constitute this blob data.
     Uint8 GetNChunks() const;
 
 private:
