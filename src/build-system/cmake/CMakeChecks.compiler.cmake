@@ -46,6 +46,10 @@ endif()
 
 if(StaticComponents IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
     set(NCBI_PTBCFG_COMPONENT_StaticComponents ON)
+endif()
+
+if(BinRelease IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
+    set(NCBI_PTBCFG_COMPONENT_StaticComponents ON)
     set(NCBI_COMPONENT_local_lbsm_DISABLED TRUE)
     set(NCBI_COMPONENT_ncbi_crypt_DISABLED TRUE)
     set(NCBI_COMPONENT_connext_DISABLED TRUE)
