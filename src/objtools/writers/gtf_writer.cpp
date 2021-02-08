@@ -501,9 +501,9 @@ bool CGtfWriter::xAssignFeaturesCds(
 
     // subtract stop_codon in the end:
     unsigned int basesToLose = 3;
-    auto pLastRecord = recordList.back();
-    auto lastSize = pLastRecord->SeqStop() - pLastRecord->SeqStart() + 1;
     while (basesToLose > 0) {
+        auto pLastRecord = recordList.back();
+        auto lastSize = pLastRecord->SeqStop() - pLastRecord->SeqStart() + 1;
         if (lastSize > basesToLose) {
             if (mfLoc.GetStrand() == eNa_strand_minus) {
                 pLastRecord->SetEndpoints(
