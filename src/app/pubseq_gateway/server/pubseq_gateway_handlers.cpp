@@ -633,7 +633,7 @@ int CPubseqGatewayApp::OnGetTSEChunk(CHttpRequest &  req,
             req(new SPSGS_TSEChunkRequest(
                         id2_chunk_value, id2_info_param.m_Value,
                         use_cache, hops, trace,
-                        enabled_processors, enabled_processors, now));
+                        enabled_processors, disabled_processors, now));
         shared_ptr<CPSGS_Request>
             request(new CPSGS_Request(move(req), context));
 
