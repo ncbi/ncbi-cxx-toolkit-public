@@ -508,7 +508,6 @@ static int/*bool*/ x_ConsistencyCheck(SERV_ITER iter, const SSERV_Info* info)
             RETURN(0/*failure*/);
         }
     }
-
     if (info->type == fSERV_Firewall) {
         if (info->u.firewall.type == fSERV_Dns) {
             CORE_LOGF(eLOG_Critical,
@@ -551,7 +550,6 @@ static int/*bool*/ x_ConsistencyCheck(SERV_ITER iter, const SSERV_Info* info)
                    str ? str : "<NULL>"));
         RETURN(0/*failure*/);
     }
-
     if (!(types = iter->types &
           (TSERV_TypeOnly)(~(fSERV_Stateless | fSERV_Firewall)))) {
         if (info->type == fSERV_Dns  &&  !iter->reverse_dns) {
@@ -574,7 +572,6 @@ static int/*bool*/ x_ConsistencyCheck(SERV_ITER iter, const SSERV_Info* info)
             RETURN(0/*failure*/);
         }
     }
-
     if (iter->external  &&  (info->site & (fSERV_Local | fSERV_Private))) {
         CORE_LOGF(eLOG_Critical,
                   ("[%s]  Local/private entry for external:\n%s", iter->name,
@@ -594,7 +591,6 @@ static int/*bool*/ x_ConsistencyCheck(SERV_ITER iter, const SSERV_Info* info)
                    str ? str : "<NULL>"));
         RETURN(0/*failure*/);
     }
-
     if (info->type != fSERV_Dns  ||  info->host) {
         if (!info->time  &&  !info->rate) {
             CORE_LOGF(eLOG_Critical,
@@ -631,7 +627,6 @@ static int/*bool*/ x_ConsistencyCheck(SERV_ITER iter, const SSERV_Info* info)
             }
         }
     }
-
     for (n = 0;  n < iter->n_skip;  ++n) {
         const SSERV_Info* skip = iter->skip[n];
         if (strcasecmp(name, SERV_NameOfInfo(skip)) == 0
