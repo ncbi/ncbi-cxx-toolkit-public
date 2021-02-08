@@ -473,21 +473,21 @@ void SBlobOnly::Copy(istream& is, ostream& os)
     os << ss.rdbuf();
 }
 
-CProcessing::SLatency::SLatency(const CArgs& args) :
-    pair<bool, bool>((args["latency"].HasValue()), args["debug-printout"].HasValue())
+CProcessing::SParams::SParams(const CArgs& args) :
+    latency({args["latency"].HasValue(), args["debug-printout"].HasValue()})
 {
 }
 
-int CProcessing::OneRequest(const string& service, shared_ptr<CPSG_Request> request, SLatency latency, SBlobOnly* blob_only)
+int CProcessing::OneRequest(const string& service, shared_ptr<CPSG_Request> request, SParams params, SBlobOnly* blob_only)
 {
     CLogLatencyReport latency_report{
         R"(\d+/\d+/\d+/P  \S+ \d+/\d+ (\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})\.(\d{6}) .+ ncbi::SDebugPrintout::Print\(\) --- \S+: (\S+:[0-9]+)/\S+?\S+&client_id=\S+)",
         R"(\d+/\d+/\d+/P  \S+ \d+/\d+ (\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})\.(\d{6}) .+ ncbi::SDebugPrintout::Print\(\) --- \S+: Closed with status \S+)"
     };
 
-    if (latency.first) {
+    if (params.latency.enabled) {
         latency_report.Start();
-        latency_report.SetDebug(latency.second);
+        latency_report.SetDebug(params.latency.debug);
         TPSG_DebugPrintout::SetDefault(TPSG_DebugPrintout::TValue::eSome);
     }
 
