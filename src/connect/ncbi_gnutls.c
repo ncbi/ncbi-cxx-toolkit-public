@@ -171,7 +171,7 @@ static const int kGnuTlsCompPrio[] = {
 #  endif /*LIBGNUTLS_VERSION_NUMBER<3.3.6*/
 
 
-static int                              s_GnuTlsLogLevel;
+static volatile int                     s_GnuTlsLogLevel;
 static gnutls_anon_client_credentials_t s_GnuTlsCredAnon;
 static gnutls_certificate_credentials_t s_GnuTlsCredCert;
 static volatile FSSLPull                s_Pull;
@@ -317,8 +317,10 @@ static int x_StatusToError(EIO_Status status, SOCK sock, EIO_Event direction)
 
     {{
         int x_err = error ? error : errno;
-        CORE_TRACEF(("CONNECT GNUTLS status %s -> %s %d",
-                     IO_StatusStr(status), error ? "error" : "errno", x_err));
+        CORE_DEBUG_ARG(if (s_GnuTlsLogLevel))
+            CORE_TRACEF(("CONNECT GNUTLS status %s -> %s %d",
+                         IO_StatusStr(status),
+                         error ? "error" : "errno", x_err));
         if (!error)
             errno = x_err; /* restore errno that might have been clobbered */
     }}
@@ -360,6 +362,9 @@ static void* s_GnuTlsCreate(ESOCK_Side side, SNcbiSSLctx* ctx, int* error)
         *error = 0;
         return 0;
     }
+
+    CORE_DEBUG_ARG(if (s_GnuTlsLogLevel))
+        CORE_TRACE("GnuTlsCreate(): Enter");
 
     if ((err = gnutls_init(&session, end)) != GNUTLS_E_SUCCESS/*0*/) {
         *error = err;
@@ -403,6 +408,9 @@ static void* s_GnuTlsCreate(ESOCK_Side side, SNcbiSSLctx* ctx, int* error)
     gnutls_handshake_set_timeout(session, 0);
 #  endif /*LIBGNUTLS_VERSION_NUMBER>=3.0.0*/
 
+    CORE_DEBUG_ARG(if (s_GnuTlsLogLevel))
+        CORE_TRACEF(("GnuTlsCreate(%p): Leave", session));
+
     return session;
 }
 
@@ -411,6 +419,9 @@ static EIO_Status s_GnuTlsOpen(void* session, int* error, char** desc)
 {
     EIO_Status status;
     int x_error;
+
+    CORE_DEBUG_ARG(if (s_GnuTlsLogLevel))
+        CORE_TRACEF(("GnuTlsOpen(%p): Enter", session));
 
     do {
         x_error = gnutls_handshake((gnutls_session_t) session);
@@ -436,6 +447,9 @@ static EIO_Status s_GnuTlsOpen(void* session, int* error, char** desc)
         }
         status = eIO_Success;
     }
+
+    CORE_DEBUG_ARG(if (s_GnuTlsLogLevel))
+        CORE_TRACEF(("GnuTlsOpen(%p): Leave", session));
 
     return status;
 }
@@ -615,10 +629,16 @@ static EIO_Status s_GnuTlsClose(void* session, int how, int* error)
 
     assert(session);
 
+    CORE_DEBUG_ARG(if (s_GnuTlsLogLevel))
+        CORE_TRACEF(("GnuTlsClose(%p): Enter", session));
+
     x_error = gnutls_bye((gnutls_session_t) session,
                          how == SOCK_SHUTDOWN_RDWR
                          ? GNUTLS_SHUT_RDWR
                          : GNUTLS_SHUT_WR);
+
+    CORE_DEBUG_ARG(if (s_GnuTlsLogLevel))
+        CORE_TRACEF(("GnuTlsClose(%p): Leave", session));
 
     if (x_error != GNUTLS_E_SUCCESS) {
         *error = x_error;
@@ -632,7 +652,13 @@ static void s_GnuTlsDelete(void* session)
 {
     assert(session);
 
+    CORE_DEBUG_ARG(if (s_GnuTlsLogLevel))
+        CORE_TRACEF(("GnuTlsDelete(%p): Enter", session));
+
     gnutls_deinit((gnutls_session_t) session);
+
+    CORE_DEBUG_ARG(if (s_GnuTlsLogLevel))
+        CORE_TRACEF(("GnuTlsDelete(%p): Leave", session));
 }
 
 
@@ -701,6 +727,8 @@ static EIO_Status s_GnuTlsInit(FSSLPull pull, FSSLPush push)
         assert(0);
     }
 
+    CORE_TRACE("GnuTlsInit(): Enter");
+
     if (!pull  ||  !push)
         return eIO_InvalidArg;
 
@@ -731,6 +759,9 @@ static EIO_Status s_GnuTlsInit(FSSLPull pull, FSSLPush push)
     } else
         CORE_UNLOCK;
 
+    CORE_DEBUG_ARG(if (s_GnuTlsLogLevel))
+        CORE_TRACE("GnuTlsInit(): Go-on");
+
     if ((status = x_InitLocking()) != eIO_Success)
         goto out;
 
@@ -756,6 +787,9 @@ static EIO_Status s_GnuTlsInit(FSSLPull pull, FSSLPush push)
     s_Pull           = pull;
     s_Push           = push;
 
+    CORE_DEBUG_ARG(if (s_GnuTlsLogLevel))
+        CORE_TRACE("GnuTlsInit(): Leave");
+
     return eIO_Success;
 
  out:
@@ -773,6 +807,9 @@ static void s_GnuTlsExit(void)
 
     assert(acred);
 
+    CORE_DEBUG_ARG(if (s_GnuTlsLogLevel))
+        CORE_TRACE("GnuTlsExit(): Enter");
+
     s_Push           = 0;
     s_Pull           = 0;
     s_GnuTlsCredCert = 0;
@@ -788,6 +825,8 @@ static void s_GnuTlsExit(void)
     /* If GNUTLS is loaded as a DLL, it still has init count 1, so make sure
      * cleanup worked completely (MSVC2015 ReleaseDLL build breaks if not) */
     gnutls_global_deinit();
+
+    CORE_TRACE("GnuTlsExit(): Leave");
 }
 
  

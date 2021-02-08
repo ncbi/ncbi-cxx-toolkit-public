@@ -148,7 +148,7 @@ static int         x_MbedTlsPush  (void*, const unsigned char*, size_t);
 #  endif /*__cplusplus*/
 
 
-static int                      s_MbedTlsLogLevel;
+static volatile int             s_MbedTlsLogLevel;
 static mbedtls_entropy_context  s_MbedTlsEntropy;
 static mbedtls_ctr_drbg_context s_MbedTlsCtrDrbg;
 static mbedtls_ssl_config       s_MbedTlsConf;
@@ -253,8 +253,9 @@ static EIO_Status x_ErrorToStatus(int error, mbedtls_ssl_context* session,
     }
 
     assert(status != eIO_Success);
-    CORE_TRACEF(("MBEDTLS error %d -> CONNECT MBEDTLS status %s",
-                 error, IO_StatusStr(status)));
+    CORE_DEBUG_ARG(if (s_MbedTlsLogLevel))
+        CORE_TRACEF(("MBEDTLS error %d -> CONNECT MBEDTLS status %s",
+                     error, IO_StatusStr(status)));
     return status;
 }
 
@@ -293,8 +294,10 @@ static int x_StatusToError(EIO_Status status, SOCK sock, EIO_Event direction)
 
     {{
         int x_err = error ? error : errno;
-        CORE_TRACEF(("CONNECT MBEDTLS status %s -> %s %d",
-                     IO_StatusStr(status), error ? "error" : "errno", x_err));
+        CORE_DEBUG_ARG(if (s_MbedTlsLogLevel))
+            CORE_TRACEF(("CONNECT MBEDTLS status %s -> %s %d",
+                         IO_StatusStr(status),
+                         error ? "error" : "errno", x_err));
         if (!error)
             errno = x_err; /* restore errno that might have been clobbered */
     }}
@@ -347,6 +350,9 @@ static void* s_MbedTlsCreate(ESOCK_Side side, SNcbiSSLctx* ctx, int* error)
         CORE_LOG(eLOG_Critical, "MBEDTLS credentials not implemented");
     }
 
+    CORE_DEBUG_ARG(if (s_MbedTlsLogLevel))
+        CORE_TRACE("MbedTlsCreate(): Enter");
+
     if (!(session = (mbedtls_ssl_context*) malloc(sizeof(*session)))) {
         *error = errno;
         return 0;
@@ -364,6 +370,9 @@ static void* s_MbedTlsCreate(ESOCK_Side side, SNcbiSSLctx* ctx, int* error)
 
     mbedtls_ssl_set_bio(session, ctx, x_MbedTlsPush, x_MbedTlsPull, 0);
  
+    CORE_DEBUG_ARG(if (s_MbedTlsLogLevel))
+        CORE_TRACEF(("MbedTlsCreate(%p): Leave", session));
+
     return session;
 }
 
@@ -372,6 +381,9 @@ static EIO_Status s_MbedTlsOpen(void* session, int* error, char** desc)
 {
     EIO_Status status;
     int x_error;
+
+    CORE_DEBUG_ARG(if (s_MbedTlsLogLevel))
+        CORE_TRACEF(("MbedTlsOpen(%p): Enter", session));
 
     x_error = mbedtls_ssl_handshake((mbedtls_ssl_context*) session);
 
@@ -421,6 +433,9 @@ static EIO_Status s_MbedTlsOpen(void* session, int* error, char** desc)
         }
         status = eIO_Success;
     }
+
+    CORE_DEBUG_ARG(if (s_MbedTlsLogLevel))
+        CORE_TRACEF(("MbedTlsOpen(%p): Leave(%d)", session, status));
 
     return status;
 }
@@ -573,7 +588,13 @@ static EIO_Status s_MbedTlsClose(void* session, int how/*unused*/, int* error)
 
     assert(session);
 
+    CORE_DEBUG_ARG(if (s_MbedTlsLogLevel))
+        CORE_TRACEF(("MbedTlsClose(%p): Enter", session));
+
     x_error = mbedtls_ssl_close_notify((mbedtls_ssl_context*) session);
+
+    CORE_DEBUG_ARG(if (s_MbedTlsLogLevel))
+        CORE_TRACEF(("MbedTlsClose(%p): Leave", session));
 
     if (x_error) {
         *error = x_error;
@@ -587,7 +608,13 @@ static void s_MbedTlsDelete(void* session)
 {
     assert(session);
 
+    CORE_DEBUG_ARG(if (s_MbedTlsLogLevel))
+        CORE_TRACEF(("MbedTlsDelete(%p): Enter", session));
+
     mbedtls_ssl_free((mbedtls_ssl_context*) session);
+
+    CORE_DEBUG_ARG(if (s_MbedTlsLogLevel))
+        CORE_TRACEF(("MbedTlsDelete(%p): Leave", session));
 
     free(session);
 }
@@ -669,6 +696,8 @@ static EIO_Status s_MbedTlsInit(FSSLPull pull, FSSLPush push)
     if (!pull  ||  !push)
         return eIO_InvalidArg;
 
+    CORE_TRACE("MbedTlsInit(): Enter");
+
     mbedtls_ssl_config_init(&s_MbedTlsConf);
     mbedtls_ssl_config_defaults(&s_MbedTlsConf,
                                 MBEDTLS_SSL_IS_CLIENT,
@@ -700,6 +729,9 @@ static EIO_Status s_MbedTlsInit(FSSLPull pull, FSSLPush push)
     } else
         CORE_UNLOCK;
 
+    CORE_DEBUG_ARG(if (s_MbedTlsLogLevel))
+        CORE_TRACE("MbedTlsInit(): Go-on");
+
     if ((status = x_InitLocking()) != eIO_Success) {
         mbedtls_ssl_config_free(&s_MbedTlsConf);
         mbedtls_debug_set_threshold(s_MbedTlsLogLevel = 0);
@@ -720,6 +752,9 @@ static EIO_Status s_MbedTlsInit(FSSLPull pull, FSSLPush push)
 
     s_Pull = pull;
     s_Push = push;
+
+    CORE_DEBUG_ARG(if (s_MbedTlsLogLevel))
+        CORE_TRACE("MbedTlsInit(): Leave");
     return eIO_Success;
 }
 
@@ -727,6 +762,9 @@ static EIO_Status s_MbedTlsInit(FSSLPull pull, FSSLPush push)
 /* NB: Called under a lock */
 static void s_MbedTlsExit(void)
 {
+    CORE_DEBUG_ARG(if (s_MbedTlsLogLevel))
+        CORE_TRACE("MbedTlsExit(): Enter");
+
     s_Push = 0;
     s_Pull = 0;
 
@@ -738,6 +776,8 @@ static void s_MbedTlsExit(void)
     memset(&s_MbedTlsEntropy, 0, sizeof(s_MbedTlsEntropy));
     memset(&s_MbedTlsConf,    0, sizeof(s_MbedTlsConf));
     x_FreeLocking();
+
+    CORE_TRACE("MbedTlsExit(): Leave");
 }
 
  
