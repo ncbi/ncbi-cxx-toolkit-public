@@ -200,9 +200,9 @@ public:
         return m_MaxRetries;
     }
 
-    bool GetOSGEnabled() const
+    bool GetOSGProcessorsEnabled() const
     {
-        return m_OSGConnectionPool;
+        return m_OSGProcessorsEnabled;
     }
 
     const CRef<psg::osg::COSGConnectionPool>& GetOSGConnectionPool() const
@@ -388,6 +388,7 @@ private:
     // Configured counter/statistics ID to name/description
     map<string, tuple<string, string>>  m_IdToNameAndDescription;
 
+    bool                                m_OSGProcessorsEnabled;
     CRef<psg::osg::COSGConnectionPool>  m_OSGConnectionPool;
 
     // Requests dispatcher

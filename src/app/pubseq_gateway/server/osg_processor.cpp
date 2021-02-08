@@ -61,7 +61,7 @@ CPSGS_OSGProcessor::CreateProcessor(shared_ptr<CPSGS_Request> request,
                                     TProcessorPriority priority) const
 {
     auto app = CPubseqGatewayApp::GetInstance();
-    bool enabled = app->GetOSGEnabled();
+    bool enabled = app->GetOSGProcessorsEnabled();
     if ( enabled ) {
         for (const auto& name : request->GetRequest<SPSGS_RequestBase>().m_DisabledProcessors ) {
             if ( NStr::EqualNocase(name, "osg") ) {

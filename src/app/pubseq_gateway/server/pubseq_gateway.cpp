@@ -90,6 +90,7 @@ const unsigned long     kDefaultSlimMaxBlobSize = 10 * 1024;
 const unsigned int      kDefaultMaxHops = 2;
 const unsigned long     kDefaultSmallBlobSize = 16;
 const bool              kDefaultCassandraProcessorsEnabled = true;
+const bool              kDefaultOSGProcessorsEnabled = false;
 const string            kDefaultTestSeqId = "gi|2";
 const bool              kDefaultTestSeqIdIgnoreError = true;
 
@@ -140,7 +141,8 @@ CPubseqGatewayApp::CPubseqGatewayApp() :
     m_TestSeqIdIgnoreError(kDefaultTestSeqIdIgnoreError),
     m_ExcludeBlobCache(nullptr),
     m_StartupDataState(ePSGS_NoCassConnection),
-    m_LogFields("http")
+    m_LogFields("http"),
+    m_OSGProcessorsEnabled(kDefaultOSGProcessorsEnabled)
 {
     sm_PubseqApp = this;
     m_HelpMessage = GetIntrospectionNode().Repr(CJsonNode::fStandardJson);
@@ -252,13 +254,14 @@ void CPubseqGatewayApp::ParseArgs(void)
 
     x_ReadIdToNameAndDescriptionConfiguration(registry, "COUNTERS");
 
-    if ( registry.GetBool("OSG_PROCESSOR", "enabled", false) ) {
-        m_OSGConnectionPool = new psg::osg::COSGConnectionPool();
-        m_OSGConnectionPool->AppParseArgs(args);
-        m_OSGConnectionPool->LoadConfig(registry);
-        m_OSGConnectionPool->SetLogging(GetDiagPostLevel());
-    }
+    m_OSGConnectionPool = new psg::osg::COSGConnectionPool();
+    m_OSGConnectionPool->AppParseArgs(args);
+    m_OSGConnectionPool->LoadConfig(registry);
+    m_OSGConnectionPool->SetLogging(GetDiagPostLevel());
 
+    m_OSGProcessorsEnabled = registry.GetBool(
+            "OSG_PROCESSOR", "enabled",
+            kDefaultOSGProcessorsEnabled);
     m_CassandraProcessorsEnabled = registry.GetBool(
             "CASSANDRA_PROCESSOR", "enabled",
             kDefaultCassandraProcessorsEnabled);
