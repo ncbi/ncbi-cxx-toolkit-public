@@ -49,7 +49,7 @@
 #  ifdef __GNUC__
 inline
 #  endif /*__GNUC__*/
-static int/*bool*/ CORE_Once(void** once)
+static int/*bool*/ CORE_Once(void* volatile* once)
 {
     /* poor man's solution */
     if (*once)

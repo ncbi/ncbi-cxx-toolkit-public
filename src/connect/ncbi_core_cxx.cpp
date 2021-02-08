@@ -657,7 +657,8 @@ static void s_Init(const IRWRegistry* reg  = 0,
         g_NCBI_ConnectRandomSeed
             = (unsigned int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
         srand(g_NCBI_ConnectRandomSeed);
-        atexit(s_Fini);
+        if (atexit(s_Fini) != 0)
+            ERR_POST_X(9, "Failed to register exit handler");
     }
 
     g_CORE_GetAppName     = s_GetAppName;

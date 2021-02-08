@@ -194,7 +194,7 @@
 #  endif /*NCBI_OS_BEOS*/
 #  ifndef   INADDR_NONE
 #    define INADDR_NONE       ((unsigned int)(~0UL))
-#  endif  /*INADDR_NONE*/
+#  endif /*!INADDR_NONE*/
 /* NCBI_OS_UNIX */
 
 #  if defined(TCP_NOPUSH)  &&  !defined(TCP_CORK)
@@ -665,7 +665,7 @@ static struct timeval* s_to2tv(const STimeout* to,       struct timeval* tv)
 
 #  ifndef   SOCK_HAVE_SHOWDATALAYOUT
 #    define SOCK_HAVE_SHOWDATALAYOUT  1
-#  endif /* SOCK_HAVE_SHOWDATALAYOUT */
+#  endif /*!SOCK_HAVE_SHOWDATALAYOUT*/
 
 #endif /*__GNUC__ && _DEBUG && !NDEBUG*/
 
@@ -833,17 +833,21 @@ static EIO_Status s_Init(void)
     }
 #endif /*NCBI_OS*/
 
-#ifndef NCBI_OS_MSWIN
-    {{
-        static void* /*bool*/ s_AtExitSet = 0/*false*/;
-        if (CORE_Once(&s_AtExitSet))
-            atexit((void (*)(void)) SOCK_ShutdownAPI);
-    }}
-#endif /*NCBI_OS_MSWIN*/
-
     s_Initialized = 1/*inited*/;
 
     CORE_UNLOCK;
+
+#ifndef NCBI_OS_MSWIN
+    {{
+        static void* /*bool*/ s_AtExitSet = 0/*false*/;
+        if (CORE_Once(&s_AtExitSet)
+            &&  atexit((void (*)(void)) SOCK_ShutdownAPI) != 0) {
+            CORE_LOG_ERRNO_X(161, eLOG_Error, errno,
+                             "Failed to register exit handler");
+        }
+    }}
+#endif /*!NCBI_OS_MSWIN*/
+
     CORE_TRACE("[SOCK::InitializeAPI]  Leave");
     return eIO_Success;
 }
@@ -1249,7 +1253,7 @@ static unsigned int s_gethostbyname_(const char* hostname,
 #    ifndef SOCK_GHBX_MT_SAFE
         CORE_UNLOCK;
 #    endif /*!SOCK_GHBX_MT_SAFE*/
-#  endif /*HAVE_GETHOSTBYNAME_R*/
+#  endif /*!HAVE_GETHOSTBYNAME_R*/
 
         if (!host) {
 #  ifdef NETDB_INTERNAL
@@ -1448,7 +1452,7 @@ static char* s_gethostbyaddr_(unsigned int host, char* name,
 #    ifndef SOCK_GHBX_MT_SAFE
         CORE_UNLOCK;
 #    endif /*!SOCK_GHBX_MT_SAFE*/
-#  endif /*HAVE_GETHOSTBYADDR_R*/
+#  endif /*!HAVE_GETHOSTBYADDR_R*/
 
         if (!name) {
 #  ifdef NETDB_INTERNAL
@@ -6156,7 +6160,7 @@ extern EIO_Status TRIGGER_Close(TRIGGER trigger)
     free(trigger);
     return eIO_Success;
 
-#endif /*NCBI_CXX_TOOLKIT*/
+#endif /*!NCBI_CXX_TOOLKIT*/
 }
 
 
@@ -6260,7 +6264,7 @@ extern EIO_Status TRIGGER_IsSet(TRIGGER trigger)
 
 #  endif /*NCBI_OS_UNIX*/
 
-#endif /*NCBI_CXX_TOOLKIT*/
+#endif /*!NCBI_CXX_TOOLKIT*/
 }
 
 
