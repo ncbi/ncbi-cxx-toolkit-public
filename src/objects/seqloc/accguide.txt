@@ -3530,13 +3530,13 @@ special  CAAHDL000000000-CAAHDL999999999  embl_tpa_wgs_nuc # 6+9
 special  CAAHDO000000000-CAAHFA999999999  embl_tpa_wgs_nuc # 6+9
 special  CADEPO000000000-CADEVH999999999  embl_tpa_wgs_nuc # 6+9
 special  CADEVJ000000000-CADFGZ999999999  embl_tpa_wgs_nuc # 6+9
-special  CADFHB000000000-CADFUU000000000  embl_tpa_wgs_nuc # 6+9
-special  CADKUY000000000-CADKUY000000000  embl_tpa_wgs_nuc # 6+9
-special  CAJJIC000000000-CAJJID000000000  embl_tpa_wgs_nuc # 6+9
-special  CAJJIG000000000-CAJJIK000000000  embl_tpa_wgs_nuc # 6+9
-special  CAJJIM000000000-CAJJIM000000000  embl_tpa_wgs_nuc # 6+9
-special  CAJJIQ000000000-CAJJJK000000000  embl_tpa_wgs_nuc # 6+9
-special  CAJJJM000000000-CAJMTD000000000  embl_tpa_wgs_nuc # 6+9
+special  CADFHB000000000-CADFUU999999999  embl_tpa_wgs_nuc # 6+9
+special  CADKUY000000000-CADKUY999999999  embl_tpa_wgs_nuc # 6+9
+special  CAJJIC000000000-CAJJID999999999  embl_tpa_wgs_nuc # 6+9
+special  CAJJIG000000000-CAJJIK999999999  embl_tpa_wgs_nuc # 6+9
+special  CAJJIM000000000-CAJJIM999999999  embl_tpa_wgs_nuc # 6+9
+special  CAJJIQ000000000-CAJJJK999999999  embl_tpa_wgs_nuc # 6+9
+special  CAJJJM000000000-CAJMTD999999999  embl_tpa_wgs_nuc # 6+9
 
 # Some "EMBL" 8- and 10-character protein accessions are really third-party
 # annotations.
