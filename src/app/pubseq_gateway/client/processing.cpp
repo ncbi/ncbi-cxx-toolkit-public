@@ -31,6 +31,7 @@
 
 #include <numeric>
 #include <unordered_set>
+#include <unordered_map>
 
 #include <connect/impl/connect_misc.hpp>
 #include <objects/seqset/Seq_entry.hpp>
@@ -421,9 +422,10 @@ struct SBlobOnlyCopy
     void operator()(shared_ptr<CPSG_BlobData> blob_data);
 
 private:
+    void Process(shared_ptr<CPSG_BlobInfo> blob_info, shared_ptr<CPSG_BlobData> blob_data);
+
     const CProcessing::SParams::SBlobOnly& m_Params;
-    string compression;
-    string format;
+    unordered_map<string, pair<shared_ptr<CPSG_BlobInfo>, shared_ptr<CPSG_BlobData>>> m_Data;
 };
 
 ESerialDataFormat s_GetInputFormat(const string& format)
@@ -462,11 +464,27 @@ TTypeInfo s_GetInputType(const shared_ptr<CPSG_BlobData>& blob_data)
 
 void SBlobOnlyCopy::operator()(shared_ptr<CPSG_BlobInfo> blob_info)
 {
-    compression = blob_info->GetCompression();
-    format = blob_info->GetFormat();
+    auto& p = m_Data[blob_info->GetId()->Repr()];
+
+    if (p.second) {
+        Process(move(blob_info), move(p.second));
+    } else {
+        p.first = move(blob_info);
+    }
 }
 
 void SBlobOnlyCopy::operator()(shared_ptr<CPSG_BlobData> blob_data)
+{
+    auto& p = m_Data[blob_data->GetId()->Repr()];
+
+    if (p.first) {
+        Process(move(p.first), move(blob_data));
+    } else {
+        p.second = move(blob_data);
+    }
+}
+
+void SBlobOnlyCopy::Process(shared_ptr<CPSG_BlobInfo> blob_info, shared_ptr<CPSG_BlobData> blob_data)
 {
     auto& is = blob_data->GetStream();
 
@@ -475,10 +493,10 @@ void SBlobOnlyCopy::operator()(shared_ptr<CPSG_BlobData> blob_data)
         return;
     }
 
-    auto input_format = s_GetInputFormat(format);
+    auto input_format = s_GetInputFormat(blob_info->GetFormat());
     unique_ptr<CObjectIStream> in;
 
-    if (compression.find("zip") == string::npos) {
+    if (blob_info->GetCompression().find("zip") == string::npos) {
         in.reset(CObjectIStream::Open(input_format, is));
     } else {
         unique_ptr<CZipStreamDecompressor> zip(new CZipStreamDecompressor);
