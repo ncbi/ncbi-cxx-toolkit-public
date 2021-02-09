@@ -1086,7 +1086,7 @@ void DelNoneDigitTail(char* str)
 
     *p = '\0';
 }
-
+/*
 static void sDelNonDigitTail(string& str)
 {
     if (str.empty()) {
@@ -1097,7 +1097,7 @@ static void sDelNonDigitTail(string& str)
         str = str.substr(0,nondigitPos);
     }
 }
-
+*/
 
 /**********************************************************
  *
@@ -1432,13 +1432,12 @@ bool IsSPROTAccession(const char* acc)
 }
 
 
-
+/*
 static bool sCheckAccession(const list<string>& tokens, 
                             Parser::ESource source,
                             Parser::EMode mode,
                             const char* priacc, int skip)
 {
-    TokenBlkPtr tbp;
     bool        badac;
     bool        res = true;
     bool        iswgs;
@@ -1621,6 +1620,7 @@ static bool sCheckAccession(const list<string>& tokens,
 
     return(res);
 }
+*/
 
 /**********************************************************
  *
@@ -1998,10 +1998,11 @@ static void IsTLSAccPrefix(const Parser& parseInfo, const char* acc, IndexblkPtr
         if(fta_if_wgs_acc(ibp->acnum) == 11)
             ibp->is_tls = true;
 }
-
+/*
 static bool sIsAccPrefixChar(char c)  {
     return (c >= 'A'  && c <= 'Z');
 }
+*/
 /**********************************************************
  *
  *   bool GetAccession(pp, str, entry, skip):

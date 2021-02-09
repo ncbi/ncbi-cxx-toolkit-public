@@ -51,7 +51,7 @@ public:
 
     virtual ~CFlatFileMessage();
 
-    CFlatFileMessage *Clone(void) const;
+    CFlatFileMessage *Clone(void) const override;
 
     void Dump(CNcbiOstream& out) const override;
 

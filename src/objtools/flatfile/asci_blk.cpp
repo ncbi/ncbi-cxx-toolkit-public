@@ -1299,6 +1299,7 @@ static void fta_fix_secondaries(TokenBlkPtr secs)
 
 
 /**********************************************************/
+/*
 static void fta_fix_secondaries(list<string>& secondaries)
 {
     if (secondaries.size() < 2) {
@@ -1321,7 +1322,7 @@ static void fta_fix_secondaries(list<string>& secondaries)
     ++it;
     secondaries.insert(it, newSecondary);
 }
-
+*/
 
 /**********************************************************
 *
