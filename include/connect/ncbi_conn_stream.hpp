@@ -453,7 +453,7 @@ public:
     /// @sa
     ///   CConn_IOStream
     CConn_SocketStream
-    (const string&   hostport,                    ///< "host:port"
+    (const char*     hostport,                    ///< "host:port"
      unsigned short  max_try,                     ///< number of attempts
      const STimeout* timeout  = kDefaultTimeout,
      size_t          buf_size = kConn_DefaultBufSize);

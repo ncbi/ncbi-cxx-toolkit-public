@@ -248,14 +248,14 @@ CConn_SocketStream::CConn_SocketStream(const string&   host,
 
 
 static CConn_IOStream::TConnector
-s_SocketConnectorBuilder(const string&  hostport,
+s_SocketConnectorBuilder(const char*    hostport,
                          unsigned short max_try)
 {
     string       host, port;
     unsigned int x_port;
     EIO_Status   status;
     CONNECTOR    c;
-    if (!NStr::SplitInTwo(hostport, ":", host, port)
+    if (!hostport  ||  !NStr::SplitInTwo(hostport, ":", host, port)
         ||  !(x_port = NStr::StringToUInt(port, NStr::fConvErr_NoThrow))
         ||  x_port > 0xFFFF) {
         status = eIO_InvalidArg;
@@ -268,7 +268,7 @@ s_SocketConnectorBuilder(const string&  hostport,
 }
 
 
-CConn_SocketStream::CConn_SocketStream(const string&   hostport,
+CConn_SocketStream::CConn_SocketStream(const char*     hostport,
                                        unsigned short  max_try,
                                        const STimeout* timeout,
                                        size_t          buf_size)
