@@ -247,6 +247,38 @@ CConn_SocketStream::CConn_SocketStream(const string&   host,
 }
 
 
+static CConn_IOStream::TConnector
+s_SocketConnectorBuilder(const string&  hostport,
+                         unsigned short max_try)
+{
+    string       host, port;
+    unsigned int x_port;
+    EIO_Status   status;
+    CONNECTOR    c;
+    if (!NStr::SplitInTwo(hostport, ":", host, port)
+        ||  !(x_port = NStr::StringToUInt(port, NStr::fConvErr_NoThrow))
+        ||  x_port > 0xFFFF) {
+        status = eIO_InvalidArg;
+        c = 0;
+    } else {
+        status = eIO_Success;
+        c = SOCK_CreateConnector(host.c_str(),(unsigned short)x_port, max_try);
+    }
+    return CConn_IOStream::TConnector(c, status);
+}
+
+
+CConn_SocketStream::CConn_SocketStream(const string&   hostport,
+                                       unsigned short  max_try,
+                                       const STimeout* timeout,
+                                       size_t          buf_size)
+    : CConn_IOStream(s_SocketConnectorBuilder(hostport, max_try),
+                     timeout, buf_size)
+{
+    return;
+}
+
+
 CConn_SocketStream::CConn_SocketStream(const string&   host,
                                        unsigned short  port,
                                        const void*     data,

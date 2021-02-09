@@ -440,6 +440,24 @@ public:
      const STimeout* timeout  = kDefaultTimeout,
      size_t          buf_size = kConn_DefaultBufSize);
 
+    /// Create a direct connection with host:port.
+    ///
+    /// @param hostport
+    ///   A string in the form "host:port" with the server location
+    /// @param max_try
+    ///   Number of attempts
+    /// @param timeout
+    ///   Default I/O timeout
+    /// @param buf_size
+    ///   Default buffer size
+    /// @sa
+    ///   CConn_IOStream
+    CConn_SocketStream
+    (const string&   hostport,                    ///< "host:port"
+     unsigned short  max_try,                     ///< number of attempts
+     const STimeout* timeout  = kDefaultTimeout,
+     size_t          buf_size = kConn_DefaultBufSize);
+
     /// Create a direct connection with "host:port" and send an initial "data"
     /// block of the specified "size" first;  the remaining communication can
     /// proceed as usual.

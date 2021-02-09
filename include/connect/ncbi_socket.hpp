@@ -145,6 +145,22 @@ public:
             const STimeout* timeout = kInfiniteTimeout,
             TSOCK_Flags     flags   = fSOCK_LogDefault);
 
+    /// Create a client-side socket connected to "host:port".
+    /// @note  The created underlying "SOCK" will be owned by the "CSocket";
+    /// @note  Timeout from the argument becomes new eIO_Open timeout.
+    ///
+    /// @param hostport
+    ///  "host:port" as a string
+    /// @param timeout
+    ///  maximal time to wait for connection to be established
+    /// @param flags
+    ///  additional socket properties (including logging)
+    /// @sa
+    ///  CSocket::Connect, SOCK_Create
+    CSocket(const string&   hostport,
+            const STimeout* timeout = kInfiniteTimeout,
+            TSOCK_Flags     flags   = fSOCK_LogDefault);
+
     /// Variant of the above, which takes host as a binary value in 
     /// network byte order.
     /// @param host
