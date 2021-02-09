@@ -1499,6 +1499,13 @@ bool VerifyCpuCompatibility(string* message)
     // Compiles with SSE 4.2 support -- verify that CPU allow it
 
     #if defined(NCBI_SSE)  &&  NCBI_SSE >= 42
+        
+        if (getenv("NCBI_RUN_UNDER_VALGRIND")) {
+            // Skip if runs under Valgrind memory checker, 
+            // seems cpuid produce wrong results there, probably if running on VM
+            return true;
+        }
+
         unsigned eax, ebx, ecx, edx;
         #ifdef NCBI_OS_MSWIN
             int cpuid[4];
