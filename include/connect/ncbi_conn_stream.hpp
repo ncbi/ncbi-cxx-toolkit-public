@@ -440,24 +440,6 @@ public:
      const STimeout* timeout  = kDefaultTimeout,
      size_t          buf_size = kConn_DefaultBufSize);
 
-    /// Create a direct connection with host:port.
-    ///
-    /// @param hostport
-    ///   A string in the form "host:port" with the server location
-    /// @param max_try
-    ///   Number of attempts
-    /// @param timeout
-    ///   Default I/O timeout
-    /// @param buf_size
-    ///   Default buffer size
-    /// @sa
-    ///   CConn_IOStream
-    CConn_SocketStream
-    (const char*     hostport,                    ///< "host:port"
-     unsigned short  max_try,                     ///< number of attempts
-     const STimeout* timeout  = kDefaultTimeout,
-     size_t          buf_size = kConn_DefaultBufSize);
-
     /// Create a direct connection with "host:port" and send an initial "data"
     /// block of the specified "size" first;  the remaining communication can
     /// proceed as usual.
@@ -465,7 +447,7 @@ public:
     /// @param host
     ///   Host to connect to
     /// @param port
-    ///   ... and port number
+    ///   ... and port number (however, see a note below)
     /// @param data
     ///   Pointer to block of data to send once connection is ready
     /// @param size
@@ -478,11 +460,13 @@ public:
     ///   Default I/O timeout
     /// @param buf_size
     ///   Default buffer size
+    /// @note As a special case, if "port" is specified as 0, then the "host"
+    ///   parameter is expected to have a "host:port" string as its value.
     /// @sa
     ///   CConn_IOStream
     CConn_SocketStream
-    (const string&   host,                        ///< host to connect to
-     unsigned short  port,                        ///< ... and port number
+    (const string&   host,                        ///< host[:port] to connect
+     unsigned short  port     = 0,                ///< ... and port number
      const void*     data     = 0,                ///< initial data block
      size_t          size     = 0,                ///< size of the data block
      TSOCK_Flags     flags    = fSOCK_LogDefault, ///< see ncbi_socket.h
@@ -1025,10 +1009,15 @@ protected:
 /// See <connect/ncbi_connutil.h> for supported schemes.
 ///
 /// If "url" looks like an identifier (no scheme provided), then it will be
-/// opened as a named NCBI service (using CConn_ServiceStream).
+/// opened as a named NCBI service (using CConn_ServiceStream);  if the "url"
+/// looks like a string in the form "host:port", a socket to that host and port
+/// will be connected (using CConn_SocketStream);  otherwise, a stream will be
+/// created according to the URL scheme (recognized are: "ftp://", "http://",
+/// "https://", and "file://").
 ///
 /// @warning
-///   Writing to the resultant stream is undefined.
+///   Writing to the resultant stream is undefined, unless it's either a
+///   service or a socket stream.
 ///
 extern NCBI_XCONNECT_EXPORT
 CConn_IOStream* NcbiOpenURL(const string& url,

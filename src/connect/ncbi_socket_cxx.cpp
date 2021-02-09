@@ -83,19 +83,20 @@ CSocket::CSocket(const string&   hostport,
       r_timeout(0/*kInfiniteTimeout*/), w_timeout(0), c_timeout(0)
 {
     const char*    end;
-    unsigned int   host;
+    unsigned int x_host;
     unsigned short port;
-    char         x_host[16/*sizeof("255.255.255.255")*/];
+    char           host[16/*sizeof("255.255.255.255")*/];
     if (timeout  &&  timeout != kDefaultTimeout) {
         oo_timeout = *timeout;
         o_timeout  = &oo_timeout;
     } else
         o_timeout  = 0/*kInfiniteTimeout*/;
-    if (!(end = SOCK_StringToHostPort(hostport.c_str(), &host, &port))
-        ||  *end  ||  !port  ||  SOCK_ntoa(host, x_host, sizeof(x_host)) != 0){
+    if (!(end = SOCK_StringToHostPort(hostport.c_str(), &x_host, &port))
+        ||  *end  ||  !x_host  ||  !port
+        ||  SOCK_ntoa(x_host, host, sizeof(host)) != 0) {
         m_Socket = 0;
     } else
-        SOCK_CreateEx(x_host, port, o_timeout, &m_Socket, 0, 0, flags);
+        SOCK_CreateEx(host, port, o_timeout, &m_Socket, 0, 0, flags);
 }
 
 

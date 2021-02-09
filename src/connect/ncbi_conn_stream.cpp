@@ -233,6 +233,16 @@ EIO_Status CConn_IOStream::x_IsCanceled(CONN           conn,
 }
 
 
+static int/*bool*/ x_HasSpaces(const char* s, size_t n)
+{
+    while (n--) {
+        if (isspace((unsigned char) s[n]))
+            return 1/*true*/;
+    }
+    return 0/*false*/;
+}
+
+
 CConn_SocketStream::CConn_SocketStream(const string&   host,
                                        unsigned short  port,
                                        unsigned short  max_try,
@@ -248,34 +258,39 @@ CConn_SocketStream::CConn_SocketStream(const string&   host,
 
 
 static CConn_IOStream::TConnector
-s_SocketConnectorBuilder(const char*    hostport,
-                         unsigned short max_try)
+s_SocketConnectorBuilder(const string&  ahost,
+                         unsigned short aport,
+                         unsigned short max_try,
+                         const void*    data,
+                         size_t         size,
+                         TSOCK_Flags    flgs)
 {
-    string       host, port;
-    unsigned int x_port;
-    EIO_Status   status;
-    CONNECTOR    c;
-    if (!hostport  ||  !NStr::SplitInTwo(hostport, ":", host, port)
-        ||  !(x_port = NStr::StringToUInt(port, NStr::fConvErr_NoThrow))
-        ||  x_port > 0xFFFF) {
-        status = eIO_InvalidArg;
-        c = 0;
-    } else {
+    string         x_host, xx_port;
+    unsigned int   x_port;
+    const string*  host;
+    unsigned short port;
+    EIO_Status     status;
+    CONNECTOR      c;
+    if ((port  =  aport) != 0  &&  !ahost.empty()) {
+        host   = &ahost;
         status = eIO_Success;
-        c = SOCK_CreateConnector(host.c_str(),(unsigned short)x_port, max_try);
+    } else if (ahost.empty()
+               ||  x_HasSpaces(ahost.c_str(), ahost.size())
+               ||  !NStr::SplitInTwo(ahost, ":", x_host, xx_port)
+               ||  x_host.empty()  ||  xx_port.empty()
+               ||  !isdigit((unsigned char) xx_port[0])
+               ||  !(x_port = NStr::StringToUInt(xx_port,
+                                                 NStr::fConvErr_NoThrow))
+               ||  x_port > 0xFFFF) {
+        status = eIO_InvalidArg;
+    } else {
+        port   =  x_port;
+        host   = &x_host;
+        status = eIO_Success;
     }
+    c = status ? 0 : SOCK_CreateConnectorEx(host->c_str(), port, max_try,
+                                            data, size, flgs);
     return CConn_IOStream::TConnector(c, status);
-}
-
-
-CConn_SocketStream::CConn_SocketStream(const char*     hostport,
-                                       unsigned short  max_try,
-                                       const STimeout* timeout,
-                                       size_t          buf_size)
-    : CConn_IOStream(s_SocketConnectorBuilder(hostport, max_try),
-                     timeout, buf_size)
-{
-    return;
 }
 
 
@@ -287,12 +302,8 @@ CConn_SocketStream::CConn_SocketStream(const string&   host,
                                        unsigned short  max_try,
                                        const STimeout* timeout,
                                        size_t          buf_size)
-    : CConn_IOStream(TConnector(SOCK_CreateConnectorEx(host.c_str(),
-                                                       port,
-                                                       max_try,
-                                                       data,
-                                                       size,
-                                                       flgs)),
+    : CConn_IOStream(s_SocketConnectorBuilder(host, port, max_try,
+                                              data, size, flgs),
                      timeout, buf_size)
 {
     return;
@@ -1345,6 +1356,9 @@ static bool x_IsIdentifier(const string& str)
 
 extern CConn_IOStream* NcbiOpenURL(const string& url, size_t buf_size)
 {
+    size_t len = url.size();
+    if (!len)
+        return 0;
     {
         class CInPlaceConnIniter : protected CConnIniter
         {
@@ -1361,11 +1375,16 @@ extern CConn_IOStream* NcbiOpenURL(const string& url, size_t buf_size)
     if (svc)
         return new CConn_ServiceStream(url, fSERV_Any, net_info.get());
 
-    unsigned int   host;
-    unsigned short port;
-    if (url.size() == CSocketAPI::StringToHostPort(url, &host, &port)
-        &&  port  &&  net_info.get()) {
-        net_info->req_method = eReqMethod_Connect;
+    if (net_info.get()  &&  !x_HasSpaces(url.c_str(), len)) {
+        unsigned int   host;
+        unsigned short port;
+        SIZE_TYPE      pos = NStr::Find(url, ":");
+        if (0 < pos  &&  pos < len - 1
+            &&  url[pos - 1] != '/'  &&  (pos == 1  ||  url[pos - 2] != '/')
+            &&  CSocketAPI::StringToHostPort(url, &host, &port) == len
+            &&  host  &&  port) {
+            net_info->req_method = eReqMethod_Connect;
+        }
     }
 
     if (ConnNetInfo_ParseURL(net_info.get(), url.c_str())) {
