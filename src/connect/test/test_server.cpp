@@ -390,6 +390,7 @@ int CServerTestApp::Run(void)
             ERR_POST("CServer test: unable to find a free port to listen on");
             return 2;
         }
+        ERR_POST(Info << "Server port: " << port);
     }
 
     SServer_Parameters params;
