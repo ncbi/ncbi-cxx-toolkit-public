@@ -179,9 +179,14 @@ static CNcbi_mime_asn1 * GetStructureViaHTTPAndAddToCache(
                 args += "2"; break;
         }
 
+        // this is new 2/8/21. DIH.
+        // we now want Cn3D to request "unsanitized" data from mmdbsrv.
+        args += "&sanitize=0";
+
 #ifdef _USE_TEST_MMDBSRV_
         // This is for long chain-id testing. This is for Gabi's test release.
-        args += "&readfile=1";
+        // This is no longer used.
+        // args += "&readfile=1";
 #endif
     }
     
