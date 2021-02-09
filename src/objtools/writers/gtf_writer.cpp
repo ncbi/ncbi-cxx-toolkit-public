@@ -567,9 +567,9 @@ bool CGtfWriter::xAssignFeaturesCds(
 
     // generate stop codon:
     if (!mfLoc.IsPartialStop(eExtreme_Biological)) {
+        list<CRef<CGtfRecord>> stopCodonParts;
         int basePairsNeeded = 3;
         auto currentIt = sublocs.rbegin(); 
-        unsigned int partNumber = 1;
         while (basePairsNeeded > 0) {
             const CSeq_interval& currentLoc = **currentIt;
             auto currentFrom = currentLoc.GetFrom();
@@ -596,15 +596,20 @@ bool CGtfWriter::xAssignFeaturesCds(
                 basePairsNeeded = basePairsNeeded - (currentTo - currentFrom + 1);
             }
 
-            if (partNumber > 1  || basePairsNeeded > 0) {
-                pRecord->SetPartNumber(partNumber++);
-            }
             if (!transcriptId.empty()) {
                 pRecord->SetTranscriptId(transcriptId);
             }
             pRecord->SetCdsPhase(sublocs, mfStrand);
-            recordList.push_back(pRecord);
+            stopCodonParts.push_front(pRecord);
             currentIt++;
+        }
+        unsigned int partNumber = 1;
+        bool needPartNumbers = (stopCodonParts.size() > 1);
+        for (auto& pRecord: stopCodonParts) {
+            if (needPartNumbers) {
+                pRecord->SetPartNumber(partNumber++);
+            }
+            recordList.push_back(pRecord);
         }
     }
 
@@ -917,19 +922,12 @@ bool CGtfWriter::xAssignFeatureAttributeTranscriptId(
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
-    using FEAT_ID = string;
-    using FEAT_MAP = map<CMappedFeat, FEAT_ID>;
-    using FEAT_IDS = list<FEAT_ID>;
-
-    static FEAT_MAP featMap;
-    static FEAT_IDS usedFeatIds;
-
     if (!record.TranscriptId().empty()) {
         return true; //special case hence already assigned
     }
 
-    const auto mfIt = featMap.find(mf);
-    if (featMap.end() != mfIt) {
+    const auto mfIt = mFeatMap.find(mf);
+    if (mFeatMap.end() != mfIt) {
         record.SetTranscriptId(mfIt->second);
         return true;
     }
@@ -966,8 +964,8 @@ bool CGtfWriter::xAssignFeatureAttributeTranscriptId(
         return true;
     }
 
-    const auto featIt = featMap.find(mrnaFeat);
-    if (featMap.end() != featIt) {
+    const auto featIt = mFeatMap.find(mrnaFeat);
+    if (mFeatMap.end() != featIt) {
         record.SetTranscriptId(featIt->second);
         return true;
     }
@@ -987,16 +985,16 @@ bool CGtfWriter::xAssignFeatureAttributeTranscriptId(
         featId = xGenericTranscriptId(mf);
         //we know the ID is going to be unique if we get it this way
         // not point in further checking
-        usedFeatIds.push_back(featId);
-        featMap[mf] = featId;
+        mUsedFeatIds.push_back(featId);
+        mFeatMap[mf] = featId;
         record.SetTranscriptId(featId);
         return true;
     }
     //uniquify the ID we came up with
-    auto cit = find(usedFeatIds.begin(), usedFeatIds.end(), featId);
-    if (usedFeatIds.end() == cit) {
-        usedFeatIds.push_back(featId);
-        featMap[mf] = featId;
+    auto cit = find(mUsedFeatIds.begin(), mUsedFeatIds.end(), featId);
+    if (mUsedFeatIds.end() == cit) {
+        mUsedFeatIds.push_back(featId);
+        mFeatMap[mf] = featId;
         record.SetTranscriptId(featId);
         return true;
     }     
@@ -1004,10 +1002,10 @@ bool CGtfWriter::xAssignFeatureAttributeTranscriptId(
     featId += "_";
     while (true) {
         auto qualifiedId = featId + NStr::UIntToString(suffix);   
-        cit = find(usedFeatIds.begin(), usedFeatIds.end(), qualifiedId);
-        if (usedFeatIds.end() == cit) {
-            usedFeatIds.push_back(qualifiedId);
-            featMap[mf] = qualifiedId;
+        cit = find(mUsedFeatIds.begin(), mUsedFeatIds.end(), qualifiedId);
+        if (mUsedFeatIds.end() == cit) {
+            mUsedFeatIds.push_back(qualifiedId);
+            mFeatMap[mf] = qualifiedId;
             record.SetTranscriptId(qualifiedId);
             return true;
         }

@@ -156,6 +156,16 @@ protected:
         CGffFeatureContext&,
         const CMappedFeat&,
         const string& = ""); //transcript ID
+
+private:
+    using FEAT_ID = string;
+    using FEAT_MAP = map<CMappedFeat, FEAT_ID>;
+    using FEAT_IDS = list<FEAT_ID>;
+
+    FEAT_MAP mFeatMap;
+    FEAT_IDS mUsedFeatIds;
+
+
 };
 
 END_objects_SCOPE
