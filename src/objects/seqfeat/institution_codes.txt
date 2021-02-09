@@ -6952,7 +6952,7 @@ TBGT	s	Tropical Botanic Garden and Research Institute
 TBI	s	Georgian Academy of Sciences			
 TBIP	s	Research Institute of Plant Protection			
 TBPH	s	Iovel Kutateladze Institute of Pharmacochemistry			
-TBRC	c	Thailand Bioresource Research			
+TBRC	c	Thailand Bioresource Research Center			
 TBW	s	Tebiwa Herbarium			
 TBY	s	Tenby Museum			
 TBZFPH	s	Tabriz University of Medical Sciences			

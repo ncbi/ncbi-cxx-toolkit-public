@@ -6985,7 +6985,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "TBI\ts\tGeorgian Academy of Sciences\t\t\t",
 "TBIP\ts\tResearch Institute of Plant Protection\t\t\t",
 "TBPH\ts\tIovel Kutateladze Institute of Pharmacochemistry\t\t\t",
-"TBRC\tc\tThailand Bioresource Research\t\t\t",
+"TBRC\tc\tThailand Bioresource Research Center\t\t\t",
 "TBW\ts\tTebiwa Herbarium\t\t\t",
 "TBY\ts\tTenby Museum\t\t\t",
 "TBZFPH\ts\tTabriz University of Medical Sciences\t\t\t",
