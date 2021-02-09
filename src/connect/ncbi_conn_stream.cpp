@@ -267,15 +267,15 @@ s_SocketConnectorBuilder(const string&  ahost,
 {
     string         x_host, xx_port;
     unsigned int   x_port;
+    EIO_Status     status;
     const string*  host;
     unsigned short port;
-    EIO_Status     status;
+    size_t         len;
     CONNECTOR      c;
-    if ((port  =  aport) != 0  &&  !ahost.empty()) {
+    if ((port  =  aport) != 0  &&  (len = ahost.size()) != 0) {
         host   = &ahost;
         status = eIO_Success;
-    } else if (ahost.empty()
-               ||  x_HasSpaces(ahost.c_str(), ahost.size())
+    } else if (!len  ||  x_HasSpaces(ahost.c_str(), len)
                ||  !NStr::SplitInTwo(ahost, ":", x_host, xx_port)
                ||  x_host.empty()  ||  xx_port.empty()
                ||  !isdigit((unsigned char) xx_port[0])
