@@ -130,6 +130,12 @@ public:
     void SetJobProgressMessage(const string& msg)
         { m_ProgressMsg = msg; }
 
+    void AddTagMap(const string& n, const string& v, CHTMLPlainText::EEncodeMode m = CHTMLPlainText::eHTMLEncode)
+    {
+        m_Page.AddTagMap(n, new CHTMLPlainText(m, v));
+        m_CustomHTTPHeader.AddTagMap(n, new CHTMLPlainText(m, NStr::Sanitize(v)));
+    }
+
 private:
     CHTMLPage&                    m_Page;
     CHTMLPage&                    m_CustomHTTPHeader;
@@ -252,10 +258,7 @@ void CGridCgiContext::LoadQueryStringTags(
         CHTMLPlainText::EEncodeMode encode_mode)
 {
     ITERATE(TCgiEntries, eit, m_ParsedQueryString) {
-        string tag("QUERY_STRING:" + eit->first);
-        m_Page.AddTagMap(tag, new CHTMLPlainText(encode_mode, eit->second));
-        m_CustomHTTPHeader.AddTagMap(tag,
-                new CHTMLPlainText(encode_mode, eit->second));
+        AddTagMap("QUERY_STRING:" + eit->first, eit->second, encode_mode);
     }
 }
 
@@ -982,10 +985,7 @@ void CCgi2RCgiApp::SubmitJob(CCgiRequest& request,
 
 void CCgi2RCgiApp::PopulatePage(CGridCgiContext& grid_ctx)
 {
-    CHTMLPlainText* self_url =
-        new CHTMLPlainText(grid_ctx.GetSelfURL(), true);
-    m_Page->AddTagMap("SELF_URL", self_url);
-    m_CustomHTTPHeader->AddTagMap("SELF_URL", self_url);
+    grid_ctx.AddTagMap("SELF_URL", grid_ctx.GetSelfURL(), CHTMLPlainText::eNoEncode);
 
     if (!m_HTMLPassThrough) {
         // Preserve persistent entries as hidden fields
@@ -1004,9 +1004,7 @@ void CCgi2RCgiApp::PopulatePage(CGridCgiContext& grid_ctx)
         new CHTMLText(now.AsString(m_DateFormat)));
     string since_time = grid_ctx.GetPersistentEntryValue(kSinceTime);
     if (!since_time.empty()) {
-        m_Page->AddTagMap("SINCE_TIME", new CHTMLText(since_time));
-        m_CustomHTTPHeader->AddTagMap("SINCE_TIME",
-            new CHTMLText(since_time));
+        grid_ctx.AddTagMap("SINCE_TIME", since_time);
         time_t tt = NStr::StringToInt(since_time);
         CTime start;
         start.SetTimeT(tt);
@@ -1018,8 +1016,7 @@ void CCgi2RCgiApp::PopulatePage(CGridCgiContext& grid_ctx)
         m_Page->AddTagMap("ELAPSED_TIME",
                         new CHTMLText(ts.AsString(m_ElapsedTimeFormat)));
     }
-    m_Page->AddTagMap("JOB_ID", new CHTMLText(grid_ctx.GetJobKey()));
-    m_CustomHTTPHeader->AddTagMap("JOB_ID", new CHTMLText(grid_ctx.GetJobKey()));
+    grid_ctx.AddTagMap("JOB_ID", grid_ctx.GetJobKey());
     if (m_AddJobIdToHeader) {
         m_Response->SetHeaderValue(HTTP_NCBI_JSID, grid_ctx.GetJobKey());
     }
@@ -1126,9 +1123,7 @@ void CCgi2RCgiApp::DefineRefreshTags(CGridCgiContext& grid_ctx,
         m_Page->AddTagMap("REDIRECT_DELAY", delay);
     }
 
-    CHTMLPlainText* h_url = new CHTMLPlainText(url, true);
-    m_Page->AddTagMap("REDIRECT_URL", h_url);
-    m_CustomHTTPHeader->AddTagMap("REDIRECT_URL", h_url);
+    grid_ctx.AddTagMap("REDIRECT_URL", url, CHTMLPlainText::eNoEncode);
     m_Response->SetHeaderValue("Expires", "0");
     m_Response->SetHeaderValue("Pragma", "no-cache");
     m_Response->SetHeaderValue("Cache-Control",
