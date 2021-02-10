@@ -1121,7 +1121,7 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
             CORE_TRACEF(
                 ("Parsing server descriptor: '%s'", server_descriptor));
             SSERV_Info* info = SERV_ReadInfoEx(server_descriptor,
-                iter->reverse_dns ? iter->name : "", 0);
+                iter->reverse_dns ? iter->name : "", 0/*false*/);
 
             if ( ! info) {
                 CORE_LOGF_X(eNSub_BadData, eLOG_Warning,
