@@ -78,7 +78,7 @@ Log the author lists: Original vs Pubmed
 We may have to tweak things a bit further, but this is a good start.
 -------------------------------------------------------------------------------*/
 
-class CAuthListValidator
+class NCBI_XOBJEDIT_EXPORT CAuthListValidator
 {
 public:
     enum EOutcome {
@@ -129,7 +129,7 @@ private:
     static double cfg_removed_to_gb;
 };
 
-class CPubFix
+class NCBI_XOBJEDIT_EXPORT CPubFix
 {
 public:
 
