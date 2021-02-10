@@ -721,6 +721,7 @@ class NCBI_XCONNECT_EXPORT CHttpSessionException : public CException
 {
 public:
     enum EErrCode {
+        eConnFailed,      ///< Failed to open connection.
         eBadRequest,      ///< Error initializing or sending a request.
         eBadContentType,  ///< Content-type conflicts with the data.
         eBadFormDataName, ///< Empty or bad name in form data.
