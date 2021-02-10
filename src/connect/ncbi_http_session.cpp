@@ -770,11 +770,19 @@ void CHttpRequest::x_UpdateResponse(CHttpHeaders::THeaders headers, int status_c
 }
 
 
+template<>
+struct Deleter<SConnNetInfo>
+{
+    static void Delete(SConnNetInfo* net_info)
+    { ConnNetInfo_Destroy(net_info); }
+};
+
+
 void CHttpRequest::x_InitConnection(bool use_form_data)
 {
-    SConnNetInfo* net_info = ConnNetInfo_Create(
+    AutoPtr<SConnNetInfo> net_info = ConnNetInfo_Create(
         m_Url.IsService() ? m_Url.GetService().c_str() : 0);
-    if (!net_info) {
+    if (!net_info.get()) {
         NCBI_THROW(CHttpSessionException, eConnFailed, "Failed to create SConnNetInfo");
     }
     if (m_Session->GetProtocol() == CHttpSession::eHTTP_11) {
@@ -801,7 +809,7 @@ void CHttpRequest::x_InitConnection(bool use_form_data)
 
     if ( !m_Timeout.IsDefault() ) {
         STimeout sto;
-        ConnNetInfo_SetTimeout(net_info, g_CTimeoutToSTimeout(m_Timeout, sto));
+        ConnNetInfo_SetTimeout(net_info.get(), g_CTimeoutToSTimeout(m_Timeout, sto));
     }
     if ( !m_Retries.IsNull() ) {
         net_info->max_try = x_RetriesToMaxtry(m_Retries);
@@ -813,7 +821,7 @@ void CHttpRequest::x_InitConnection(bool use_form_data)
         m_IsService = false;
         m_Stream.reset(new CConn_HttpStream(
             m_Url.ComposeUrl(CUrlArgs::eAmp_Char),
-            net_info,
+            net_info.get(),
             headers.c_str(),
             sx_ParseHeader,
             this,
@@ -831,15 +839,14 @@ void CHttpRequest::x_InitConnection(bool use_form_data)
         x_extra.adjust = sx_Adjust;
         x_extra.parse_header = sx_ParseHeader;
         x_extra.flags = m_Session->GetHttpFlags() | fHTTP_AdjustOnRedirect;
-        ConnNetInfo_SetUserHeader(net_info, headers.c_str());
+        ConnNetInfo_SetUserHeader(net_info.get(), headers.c_str());
         m_Stream.reset(new CConn_ServiceStream(
             m_Url.GetService(), // Ignore other fields now, set them in sx_Adjust
             fSERV_Http,
-            net_info,
+            net_info.get(),
             &x_extra));
     }
     m_Response->m_Stream = m_Stream;
-    ConnNetInfo_Destroy(net_info);
 }
 
 
