@@ -475,12 +475,10 @@ int main(int argc, char* argv[])
             connector = 0/*as bool, visited*/;
             if (n)
                 fwrite(blk, 1, n, stdout);
-            if (status != eIO_Timeout)
+            if (n < sizeof(blk)  ||  status == eIO_Closed)
                 fputc('\n', stdout);
             if (status != eIO_Timeout  ||  n)
                 fflush(stdout);
-            if (n == sizeof(blk)  &&  status != eIO_Closed)
-                CORE_LOGF(eLOG_Warning, ("Line too long, continuing..."));
         }
         if (status == eIO_Timeout)
             continue;
