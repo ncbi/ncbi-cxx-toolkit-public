@@ -278,10 +278,10 @@ s_SocketConnectorBuilder(const string&  ahost,
     } else if (!len  ||  x_HasSpaces(ahost.c_str(), len)
                ||  !NStr::SplitInTwo(ahost, ":", x_host, xx_port)
                ||  x_host.empty()  ||  xx_port.empty()
-               ||  !isdigit((unsigned char) xx_port[0])
+               ||  !isdigit((unsigned char) xx_port[0])  ||  xx_port[0] == '0'
                ||  !(x_port = NStr::StringToUInt(xx_port,
                                                  NStr::fConvErr_NoThrow))
-               ||  x_port > 0xFFFF) {
+               ||  (x_port ^ (x_port & 0xFFFF))) {
         status = eIO_InvalidArg;
     } else {
         port   =  x_port;
