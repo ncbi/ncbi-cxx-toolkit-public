@@ -136,7 +136,10 @@ endif()
 if(NOT NCBI_COMPONENT_NCBI_C_DISABLED)
     set(NCBI_C_ROOT "${NCBI_TOOLS_ROOT}/ncbi")
 
-    if(Int8GI IN_LIST NCBI_PTBCFG_PROJECT_FEATURES OR StrictGI IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
+    get_directory_property(_foo_defs COMPILE_DEFINITIONS)
+    string(REGEX MATCH "NCBI_INT8_GI|NCBI_STRICT_GI" INT8GI_FOUND "${_foo_defs}")
+
+    if (INT8GI_FOUND)
         if (EXISTS "${NCBI_C_ROOT}/ncbi.gi64")
             set(NCBI_CTOOLKIT_PATH "${NCBI_C_ROOT}/ncbi.gi64")
         elseif (EXISTS "${NCBI_C_ROOT}.gi64")
