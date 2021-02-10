@@ -356,6 +356,61 @@ static EFWMode x_ParseFirewall(const char* str, int/*bool*/ generic)
 }
 
 
+/* Return 0 if failed, 1 if succeeded, -1 if nothing to do */
+static int x_SetupHttpProxy(SConnNetInfo* info, const char* env)
+{
+    SConnNetInfo* x_info;
+    const char* val;
+    int parsed;
+
+    assert(env  &&  *env);
+    CORE_LOCK_READ;
+    if (!(val = getenv(env))  ||  !*val
+        ||  strcmp(val, "''") == 0  ||  strcmp(val, "\"\"") == 0) {
+        CORE_UNLOCK;
+        return -1/*noop*/;
+    }
+    if (!(x_info = ConnNetInfo_CloneInternal(info))) {
+        CORE_UNLOCK;
+        return  0/*fail*/;
+    }
+    x_info->req_method = eReqMethod_Any;
+    x_info->scheme     = eURL_Unspec;
+    x_info->user[0]    = '\0';
+    x_info->pass[0]    = '\0';
+    x_info->host[0]    = '\0';
+    x_info->port       =   0;
+    x_info->path[0]    = '\0';
+    parsed = ConnNetInfo_ParseURL(x_info, val);
+    CORE_UNLOCK;
+    assert(!(parsed & ~1)); /*0|1*/
+    if (parsed  &&  (!x_info->scheme/*eURL_Unspec*/
+                     ||  x_info->scheme == eURL_Http
+                     ||  x_info->scheme == eURL_Https)
+        &&  x_info->host[0]  &&  x_info->port
+        &&  (!x_info->path[0]
+             ||  (x_info->path[0] == '/'  &&  !x_info->path[1]))) {
+        memcpy(info->http_proxy_user, x_info->user, strlen(x_info->user) + 1);
+        memcpy(info->http_proxy_pass, x_info->pass, strlen(x_info->pass) + 1);
+        memcpy(info->http_proxy_host, x_info->host, strlen(x_info->host) + 1);
+        info->http_proxy_port = x_info->port;
+    } else {
+        CORE_LOGF_X(10, info->http_proxy_leak ? eLOG_Warning : eLOG_Error,
+                    ("Cannot parse HTTP proxy settings from \"$%s\"", env));
+        parsed = info->http_proxy_leak ? -1/*noop*/ : 0/*fail*/;
+    }
+    ConnNetInfo_Destroy(x_info);
+    return parsed;
+}
+
+
+static int/*bool*/ x_SetupSystemHttpProxy(SConnNetInfo* info)
+{
+    int rv = x_SetupHttpProxy(info, "http_proxy");
+    return rv < 0 ? x_SetupHttpProxy(info, "HTTP_PROXY") : rv;
+}
+
+
 static void x_DestroyNetInfo(SConnNetInfo* info, unsigned int magic)
 {
     assert(info);
@@ -434,7 +489,8 @@ SConnNetInfo* ConnNetInfo_CreateInternal(const char* service)
         info->req_method = eReqMethod_Post;
     else if (strcasecmp(str, "GET") == 0)
         info->req_method = eReqMethod_Get;
-    /* NB: HEAD, CONNECT, etc not allowed here */
+    else /* NB: HEAD, CONNECT, etc not allowed here */
+        goto err;
 
     /* scheme */
     info->scheme = eURL_Unspec;
@@ -512,15 +568,14 @@ SConnNetInfo* ConnNetInfo_CreateInternal(const char* service)
         /* HTTP proxy password */
         REG_VALUE(REG_CONN_HTTP_PROXY_PASS, info->http_proxy_pass,
                   DEF_CONN_HTTP_PROXY_PASS);
-        /* HTTP proxy leakout */
-        REG_VALUE(REG_CONN_HTTP_PROXY_LEAK, str, DEF_CONN_HTTP_PROXY_LEAK);
-        info->http_proxy_leak    = ConnNetInfo_Boolean(str) ? 1 : 0;
     } else {
         info->http_proxy_port    =   0;
         info->http_proxy_user[0] = '\0';
         info->http_proxy_pass[0] = '\0';
-        info->http_proxy_leak    =   0;
     }
+    /* HTTP proxy leakout */
+    REG_VALUE(REG_CONN_HTTP_PROXY_LEAK, str, DEF_CONN_HTTP_PROXY_LEAK);
+    info->http_proxy_leak = ConnNetInfo_Boolean(str) ? 1 : 0;
 
     /* max. # of attempts to establish connection */
     REG_VALUE(REG_CONN_MAX_TRY, str, 0);
@@ -566,7 +621,10 @@ SConnNetInfo* ConnNetInfo_CreateInternal(const char* service)
     REG_VALUE(REG_CONN_ARGS, str, DEF_CONN_ARGS);
     if (!ConnNetInfo_SetArgs(info, str))
         goto err;
-    return info;
+    if ((!info->http_proxy_host[0]  ||  !info->http_proxy_port)
+        &&  x_SetupSystemHttpProxy(info)) {
+        return info;
+    }
 
  err:
     x_DestroyNetInfo(info, CONN_NET_INFO_MAGIC);
@@ -878,8 +936,11 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
     if ((info->req_method & ~eReqMethod_v1) == eReqMethod_Connect) {
         len = strlen(url);
         s = (const char*) memchr(url, ':', len);
-        if (s)
-            len = (size_t)(s - url);
+        if (s) {
+            if (!isdigit((unsigned char) s[1])  ||  s[1] == '0')
+                return 0/*failure*/;
+            len  = (size_t)(s - url);
+        }
         if (len >= sizeof(info->host))
             return 0/*failure*/;
         if (s) {
@@ -910,7 +971,7 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
                 return 0/*failure*/;
         } else
             scheme = (EURLScheme) info->scheme;
-        host    = s + 2;
+        host    = s + 2/*//*/;
         hostlen = strcspn(host, "/?#");
         path    = host + hostlen;
 
@@ -941,7 +1002,8 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
 
             /* port, if any */
             if ((s = (const char*) memchr(host, ':', hostlen)) != 0) {
-                if (!(hostlen = (size_t)(s - host)))
+                hostlen = (size_t)(s - host);
+                if (!hostlen  ||  !isdigit((unsigned char)s[1])  ||  s[1]=='0')
                     return 0/*failure*/;
                 errno = 0;
                 port = strtol(++s, &p, 10);
@@ -963,15 +1025,15 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
         user    = pass    = 0;
         userlen = passlen = 0;
         s = (const char*) strchr(url, ':');
-        if (s  &&
+        if (s  &&  s != url  &&
             (scheme = x_ParseScheme(url, (size_t)(s - url))) != eURL_Unspec) {
             url = ++s;
             s = 0;
         } else
             scheme  = (EURLScheme) info->scheme;
         /* Check for special case: host:port[/path[...]] (see CXX-11455) */
-        if (s  &&  s != url  &&  *++s != '0'
-            &&  (hostlen/*portlen*/ = strspn(s, "0123456789"))
+        if (s  &&  s != url
+            &&  *++s != '0'  &&  (hostlen/*portlen*/ = strspn(s, "0123456789"))
             &&  memchr("/?#", s[hostlen], 4)
             &&  (errno = 0, (port = strtoul(s, &p, 10)) > 0)  &&  !errno
             &&  p == s + hostlen  &&  !(port ^ (port & 0xFFFF))) {
@@ -1487,16 +1549,17 @@ extern int/*bool*/ ConnNetInfo_SetupStandardArgs(SConnNetInfo* info,
 }
 
 
-extern SConnNetInfo* ConnNetInfo_Clone(const SConnNetInfo* info)
+SConnNetInfo* ConnNetInfo_CloneInternal(const SConnNetInfo* info)
 {
     SConnNetInfo* x_info;
+    size_t svclen;
 
     if (!s_InfoIsValid(info))
         return 0;
 
-    if (!(x_info = (SConnNetInfo*) malloc(sizeof(*info) + strlen(info->svc))))
+    svclen = strlen(info->svc);
+    if (!(x_info = (SConnNetInfo*) malloc(sizeof(*info) + svclen)))
         return 0;
-    x_info->magic                 = 0;
 
     strcpy(x_info->client_host,     info->client_host);
     x_info->req_method            = info->req_method;
@@ -1524,24 +1587,34 @@ extern SConnNetInfo* ConnNetInfo_Clone(const SConnNetInfo* info)
     x_info->http_referer          = 0;
     x_info->credentials           = info->credentials;
 
+    x_info->tmo                   = info->timeout ? *info->timeout : info->tmo;
+    x_info->timeout               = info->timeout ? &x_info->tmo   : 0;
+    memcpy((char*) x_info->svc,     info->svc, svclen + 1);
+
+    x_info->magic                 = CONN_NET_INFO_MAGIC;
+    return x_info;
+
+}
+
+
+extern SConnNetInfo* ConnNetInfo_Clone(const SConnNetInfo* info)
+{
+    SConnNetInfo* x_info = ConnNetInfo_CloneInternal(info);
+    if (!x_info)
+        return 0;
+
     if (info->http_user_header  &&  *info->http_user_header
         &&  !(x_info->http_user_header = strdup(info->http_user_header))) {
         goto err;
     }
     if (info->http_referer  &&  *info->http_referer
-        &&  !(x_info->http_referer = strdup(info->http_referer))) {
+        &&  !(x_info->http_referer     = strdup(info->http_referer))) {
         goto err;
     }
-
-    x_info->tmo                   = info->timeout ? *info->timeout : info->tmo;
-    x_info->timeout               = info->timeout ? &x_info->tmo   : 0;
-    strcpy((char*) x_info->svc,     info->svc);
-
-    x_info->magic                 = CONN_NET_INFO_MAGIC;
     return x_info;
 
  err:
-    x_DestroyNetInfo(x_info, CONN_NET_INFO_MAGIC);
+    ConnNetInfo_Destroy(x_info);
     return 0;
 }
 

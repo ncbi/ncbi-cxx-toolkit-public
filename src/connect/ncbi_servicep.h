@@ -245,6 +245,13 @@ char* SERV_ServiceName(const char* service);
 SConnNetInfo* ConnNetInfo_CreateInternal(const char* service);
 
 
+/* Private interface:  Clone info without any dynamic fields (leave those 0).
+ * @sa
+ *   ConnNetInfo_Clone, ConnNetInfo_CreateInternal
+ */
+SConnNetInfo* ConnNetInfo_CloneInternal(const SConnNetInfo* info);
+
+
 /* Private interface:  same as ConnNetInfo_GetValue() for NULL, empty, or
  * non-wildcard service name but without any service name substitution(s).
  * @sa
