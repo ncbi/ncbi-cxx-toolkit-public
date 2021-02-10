@@ -410,8 +410,11 @@ static int x_SetupHttpProxy(SConnNetInfo* info, const char* env)
         const char* copy = strdup(val);
         CORE_UNLOCK;
         CORE_LOGF_X(10, info->http_proxy_leak ? eLOG_Warning : eLOG_Error,
-                    ("Cannot parse HTTP proxy settings from $%s=%c%s%c",
-                     env, "\"<"[!copy], copy ? copy : "NULL", "\">"[!copy]));
+                    ("[ConnNetInfo_Create%s%s%s]  Unrecognized HTTP proxy"
+                     " specification in $%s=%c%s%c",
+                     *info->svc ? "(\"" : "", info->svc,
+                     *info->svc ? "\")" : "", env,
+                     "\"<"[!copy], copy ? copy : "NULL", "\">"[!copy]));
         parsed = info->http_proxy_leak ? -1/*noop*/ : 0/*fail*/;
         if (copy)
             free((void*) copy);
@@ -555,8 +558,13 @@ SConnNetInfo* ConnNetInfo_CreateInternal(const char* service)
 
     /* hostname */
     REG_VALUE(REG_CONN_HOST, info->host, DEF_CONN_HOST);
-    if (x_HasSpaces(info->host, strlen(info->host)))
+    if (x_HasSpaces(info->host, strlen(info->host))) {
+        CORE_LOGF_X(11, eLOG_Error,
+                    ("[ConnNetInfo_Create%s%s%s]  Invalid host specification"
+                     " \"%s\"", *info->svc ? "(\"" : "",
+                     info->svc, *info->svc ? "\")" : "", info->host));
         goto err;
+    }
 
     /* port # */
     REG_VALUE(REG_CONN_PORT, str, DEF_CONN_PORT);
@@ -634,8 +642,17 @@ SConnNetInfo* ConnNetInfo_CreateInternal(const char* service)
         /* HTTP proxy from legacy settings */
         REG_VALUE(REG_CONN_HTTP_PROXY_HOST, info->http_proxy_host,
                   DEF_CONN_HTTP_PROXY_HOST);
-        if (x_HasSpaces(info->http_proxy_host, strlen(info->http_proxy_host)))
-            goto err;
+        if (x_HasSpaces(info->http_proxy_host, strlen(info->http_proxy_host))){
+            if (!info->http_proxy_leak) {
+                CORE_LOGF_X(12, eLOG_Error,
+                            ("[ConnNetInfo_Create%s%s%s]  Invalid HTTP proxy"
+                             " host specification \"%s\"",
+                             *info->svc ? "(\"" : "", info->svc,
+                             *info->svc ? "\")" : "", info->http_proxy_host));
+                goto err;
+            }
+            info->http_proxy_host[0] = '\0';
+        }
         if (info->http_proxy_host[0]) {
             REG_VALUE(REG_CONN_HTTP_PROXY_PORT, str, DEF_CONN_HTTP_PROXY_PORT);
             errno = 0;
