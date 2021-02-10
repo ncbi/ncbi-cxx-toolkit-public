@@ -168,7 +168,8 @@ protected:
     void ConfigureFromRegistry(const IRegistry* registry = NULL);
     virtual CDB_Connection* MakeDBConnection(
         I_DriverContext& ctx,
-        const CDBConnParams& params);
+        const CDBConnParams& params,
+        CDB_UserHandler::TExceptions** pexceptions);
 
 private:
     struct SOpeningContext {
@@ -200,8 +201,6 @@ private:
     CDB_Connection* MakeValidConnection(SOpeningContext& ctx,
                                         const CDBConnParams& params,
                                         CDB_Connection* candidate = NULL);
-
-    virtual CDB_UserHandler::TExceptions* GetExceptions(void);
 
     unsigned int CalculateConnectionTimeout(const I_DriverContext& ctx) const;
     unsigned int CalculateLoginTimeout(const I_DriverContext& ctx) const;

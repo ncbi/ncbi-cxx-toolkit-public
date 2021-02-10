@@ -100,18 +100,14 @@ protected:
     /// and connection attributes.
     virtual CDB_Connection* MakeDBConnection(
             I_DriverContext& ctx,
-            const CDBConnParams& params) = 0;
+            const CDBConnParams& params,
+            CDB_UserHandler::TExceptions** pexceptions = nullptr) = 0;
 
     /// Helper method to provide access to a protected method in I_DriverContext
     /// for child classses.
     static CDB_Connection* CtxMakeConnection(
             I_DriverContext& ctx,
             const CDBConnParams& params);
-
-    virtual CDB_UserHandler::TExceptions* GetExceptions(void)
-    {
-        return NULL;
-    }
 
 private:
     // Friends

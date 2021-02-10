@@ -312,8 +312,13 @@ CDBConnectionFactory::SOpeningContext::SOpeningContext
 CDB_Connection*
 CDBConnectionFactory::MakeDBConnection(
     I_DriverContext& ctx,
-    const CDBConnParams& params)
+    const CDBConnParams& params,
+    CDB_UserHandler::TExceptions** pexceptions)
 {
+    if (pexceptions != nullptr) {
+        *pexceptions = &m_Errors;
+    }
+
     CFastMutexGuard mg(m_Mtx);
 
     CDB_UserHandler::ClearExceptions(m_Errors);
@@ -771,12 +776,6 @@ CDBConnectionFactory::MakeValidConnection(
                            "Parameters prohibited creating connection", eDiag_Error, 0));
     }
     return conn.release();
-}
-
-CDB_UserHandler::TExceptions*
-CDBConnectionFactory::GetExceptions(void)
-{
-    return &m_Errors;
 }
 
 void

@@ -53,7 +53,8 @@ public:
     virtual void Configure(const IRegistry* registry = NULL);
     virtual CDB_Connection* MakeDBConnection(
         I_DriverContext& ctx,
-        const CDBConnParams& params);
+        const CDBConnParams& params,
+        CDB_UserHandler::TExceptions** pexceptions);
 };
 
 CDefaultConnectPolicy::~CDefaultConnectPolicy(void)
@@ -69,8 +70,12 @@ CDefaultConnectPolicy::Configure(const IRegistry*)
 CDB_Connection*
 CDefaultConnectPolicy::MakeDBConnection(
     I_DriverContext& ctx,
-    const CDBConnParams& params)
+    const CDBConnParams& params,
+    CDB_UserHandler::TExceptions** pexceptions)
 {
+    if (pexceptions != nullptr) {
+        *pexceptions = nullptr;
+    }
     unique_ptr<CDB_Connection> conn(CtxMakeConnection(ctx, params));
 
     if (conn.get()) {
