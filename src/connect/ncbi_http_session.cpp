@@ -770,18 +770,11 @@ void CHttpRequest::x_UpdateResponse(CHttpHeaders::THeaders headers, int status_c
 }
 
 
-template<>
-struct Deleter<SConnNetInfo>
-{
-    static void Delete(SConnNetInfo* net_info)
-    { ConnNetInfo_Destroy(net_info); }
-};
-
-
 void CHttpRequest::x_InitConnection(bool use_form_data)
 {
-    AutoPtr<SConnNetInfo> net_info = ConnNetInfo_Create(
-        m_Url.IsService() ? m_Url.GetService().c_str() : 0);
+    unique_ptr<SConnNetInfo, void (*)(SConnNetInfo*)> net_info
+        (ConnNetInfo_Create(m_Url.IsService() ? m_Url.GetService().c_str() : 0),
+         ConnNetInfo_Destroy);
     if (!net_info.get()) {
         NCBI_THROW(CHttpSessionException, eConnFailed, "Failed to create SConnNetInfo");
     }
