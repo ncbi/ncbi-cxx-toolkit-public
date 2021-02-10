@@ -483,6 +483,7 @@ public:
     bool IsNC (void) const { return m_IsNC; }
     bool IsNM (void) const { return m_IsNM; }
     bool IsNR (void) const { return m_IsNR; }
+    bool IsNZ (void) const { return m_IsNZ; }
     bool IsPatent (void) const { return m_IsPatent; }
     bool IsPDB (void) const { return m_IsPDB; }
     bool IsWP (void) const { return m_IsWP; }
@@ -662,6 +663,7 @@ private:
     bool m_IsNC;
     bool m_IsNM;
     bool m_IsNR;
+    bool m_IsNZ;
     bool m_IsPatent;
     bool m_IsPDB;
     bool m_IsWP;

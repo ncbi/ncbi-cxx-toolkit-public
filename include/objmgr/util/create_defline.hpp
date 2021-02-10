@@ -256,6 +256,7 @@ private:
     bool m_IsNC;
     bool m_IsNM;
     bool m_IsNR;
+    bool m_IsNZ;
     bool m_IsPatent;
     bool m_IsPDB;
     bool m_IsWP;

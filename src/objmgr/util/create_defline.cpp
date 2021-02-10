@@ -453,6 +453,7 @@ void CDeflineGenerator::x_SetFlagsIdx (
     m_IsNC = bsx->IsNC();
     m_IsNM = bsx->IsNM();
     m_IsNR = bsx->IsNR();
+    m_IsNZ = bsx->IsNZ();
     m_IsPatent = bsx->IsPatent();
     m_IsPDB = bsx->IsPDB();
     m_IsWP = bsx->IsWP();
@@ -617,6 +618,7 @@ void CDeflineGenerator::x_SetFlags (
     m_IsNC = false;
     m_IsNM = false;
     m_IsNR = false;
+    m_IsNZ = false;
     m_IsPatent = false;
     m_IsPDB = false;
     m_IsWP = false;
@@ -753,6 +755,8 @@ void CDeflineGenerator::x_SetFlags (
                         m_IsNM = true;
                     } else if (type == NCBI_ACCN(refseq_ncrna)) {
                         m_IsNR = true;
+                    } else if (type == NCBI_ACCN(refseq_contig)) {
+                        m_IsNZ = true;
                     } else if (type == NCBI_ACCN(refseq_unique_prot)) {
                         m_IsWP = true;
                     }
@@ -3830,7 +3834,7 @@ string CDeflineGenerator::GenerateDefline (
     }
 
     // use autodef user object, if present, to regenerate title
-    if (m_MainTitle.empty() && m_IsNA && (flags & fUseAutoDef) && ! m_IsTLS) {
+    if (m_MainTitle.empty() && m_IsNA && (flags & fUseAutoDef) && ! m_IsTLS && ! m_IsNZ) {
 
         CSeqdesc_CI desc(bsh, CSeqdesc::e_User);
         while (desc && desc->GetUser().GetObjectType() != CUser_object::eObjectType_AutodefOptions) {

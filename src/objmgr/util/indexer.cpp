@@ -830,6 +830,7 @@ CBioseqIndex::CBioseqIndex (CBioseq_Handle bsh,
     m_IsNC = false;
     m_IsNM = false;
     m_IsNR = false;
+    m_IsNZ = false;
     m_IsPatent = false;
     m_IsPDB = false;
     m_IsWP = false;
@@ -1010,6 +1011,8 @@ CBioseqIndex::CBioseqIndex (CBioseq_Handle bsh,
                         m_IsNM = true;
                     } else if (type == NCBI_ACCN(refseq_ncrna)) {
                         m_IsNR = true;
+                    } else if (type == NCBI_ACCN(refseq_contig)) {
+                         m_IsNZ = true;
                     } else if (type == NCBI_ACCN(refseq_unique_prot)) {
                         m_IsWP = true;
                     }

@@ -271,6 +271,7 @@ void CValidError_imp::Reset(void)
     m_IsNM = false;
     m_IsNP = false;
     m_IsNR = false;
+    m_IsNZ = false;
     m_IsNS  = false;
     m_IsNT = false;
     m_IsNW = false;
@@ -2854,6 +2855,8 @@ void CValidError_imp::Setup(const CSeq_entry_Handle& seh)
                             m_IsNP = true;
                         } else if (acc == "NR_") {
                             m_IsNR = true;
+                          } else if (acc == "NZ_") {
+                              m_IsNZ = true;
                         } else if (acc == "NS_") {
                             m_IsNS = true;
                         } else if (acc == "NT_") {

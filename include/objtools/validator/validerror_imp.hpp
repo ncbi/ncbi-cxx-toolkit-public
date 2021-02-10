@@ -311,6 +311,7 @@ public:
     inline bool IsNM(void) const { return m_IsNM; }
     inline bool IsNP(void) const { return m_IsNP; }
     inline bool IsNR(void) const { return m_IsNR; }
+    inline bool IsNZ(void) const { return m_IsNZ; }
     inline bool IsNS(void) const { return m_IsNS; }
     inline bool IsNT(void) const { return m_IsNT; }
     inline bool IsNW(void) const { return m_IsNW; }
@@ -556,6 +557,7 @@ private:
     bool m_IsNM;
     bool m_IsNP;
     bool m_IsNR;
+    bool m_IsNZ;
     bool m_IsNS;
     bool m_IsNT;
     bool m_IsNW;
