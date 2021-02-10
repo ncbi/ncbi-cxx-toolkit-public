@@ -130,16 +130,6 @@ static int/*bool*/ x_tr(char* str, char a, char b, size_t len)
 }
 
 
-static int/*bool*/ x_HasSpaces(const char* s, size_t n)
-{
-    while (n--) {
-        if (isspace((unsigned char) s[n]))
-            return 1/*true*/;
-    }
-    return 0/*false*/;
-}
-
-
 static const char* x_GetValue(const char* svc, size_t svclen,
                               const char* param, char* value,size_t value_size,
                               const char* def_value, int* /*bool*/ generic)
@@ -404,8 +394,8 @@ static int x_SetupHttpProxy(SConnNetInfo* info, const char* env)
         memcpy(info->http_proxy_pass, x_info->pass, strlen(x_info->pass) + 1);
         memcpy(info->http_proxy_host, x_info->host, strlen(x_info->host) + 1);
         info->http_proxy_port = x_info->port;
-        assert(!x_HasSpaces(info->http_proxy_host,
-                            strlen(info->http_proxy_host)));
+        assert(!NCBI_HasSpaces(info->http_proxy_host,
+                               strlen(info->http_proxy_host)));
     } else {
         const char* copy = strdup(val);
         CORE_UNLOCK;
@@ -558,7 +548,7 @@ SConnNetInfo* ConnNetInfo_CreateInternal(const char* service)
 
     /* hostname */
     REG_VALUE(REG_CONN_HOST, info->host, DEF_CONN_HOST);
-    if (x_HasSpaces(info->host, strlen(info->host))) {
+    if (NCBI_HasSpaces(info->host, strlen(info->host))) {
         CORE_LOGF_X(11, eLOG_Error,
                     ("[ConnNetInfo_Create%s%s%s]  Invalid host specification"
                      " \"%s\"", *info->svc ? "(\"" : "",
@@ -642,15 +632,15 @@ SConnNetInfo* ConnNetInfo_CreateInternal(const char* service)
         /* HTTP proxy from legacy settings */
         REG_VALUE(REG_CONN_HTTP_PROXY_HOST, info->http_proxy_host,
                   DEF_CONN_HTTP_PROXY_HOST);
-        if (x_HasSpaces(info->http_proxy_host, strlen(info->http_proxy_host))){
-            if (!info->http_proxy_leak) {
-                CORE_LOGF_X(12, eLOG_Error,
-                            ("[ConnNetInfo_Create%s%s%s]  Invalid HTTP proxy"
-                             " host specification \"%s\"",
-                             *info->svc ? "(\"" : "", info->svc,
-                             *info->svc ? "\")" : "", info->http_proxy_host));
+        if (NCBI_HasSpaces(info->http_proxy_host,
+                           strlen(info->http_proxy_host))){
+            CORE_LOGF_X(12, info->http_proxy_leak ? eLOG_Warning : eLOG_Error,
+                        ("[ConnNetInfo_Create%s%s%s]  Invalid HTTP proxy"
+                         " host specification \"%s\"",
+                         *info->svc ? "(\"" : "", info->svc,
+                         *info->svc ? "\")" : "", info->http_proxy_host));
+            if (!info->http_proxy_leak)
                 goto err;
-            }
             info->http_proxy_host[0] = '\0';
         }
         if (info->http_proxy_host[0]) {
@@ -988,7 +978,7 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
         }
         if (len >= sizeof(info->host))
             return 0/*failure*/;
-        if (x_HasSpaces(url, len))
+        if (NCBI_HasSpaces(url, len))
             return 0/*false*/;
         if (s) {
             errno = 0;
@@ -1020,7 +1010,7 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
             scheme = (EURLScheme) info->scheme;
         host    = s + 2/*"//"*/;
         hostlen = strcspn(host, "/?#");
-        if (x_HasSpaces(host, hostlen))
+        if (NCBI_HasSpaces(host, hostlen))
             return 0/*failure*/;
         path    = host + hostlen;
 
@@ -1086,7 +1076,7 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
             &&  memchr("/?#", s[hostlen], 4)
             &&  (errno = 0, (port = strtol(s, &p, 10)) > 0)  &&  !errno
             &&  p == s + hostlen  &&  !(port ^ (port & 0xFFFF))
-            &&  !x_HasSpaces(url, hostlen = (size_t)(--s - url))) {
+            &&  !NCBI_HasSpaces(url, hostlen = (size_t)(--s - url))) {
             host = url;
             path = p;
         } else {
@@ -1178,7 +1168,7 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
     if (port >= 0  ||  scheme == eURL_File)
         info->port = (unsigned short)(port < 0 ? 0 : port);
     if (host) {
-        assert(!x_HasSpaces(host, hostlen));
+        assert(!NCBI_HasSpaces(host, hostlen));
         memcpy(info->host, host, hostlen);
         info->host[hostlen] = '\0';
     }

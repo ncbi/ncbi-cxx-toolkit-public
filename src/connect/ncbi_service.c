@@ -90,16 +90,6 @@ static int/*bool*/ x_tr(char* str, char a, char b, size_t len)
 }
 
 
-static int/*bool*/ x_HasSpaces(const char* s, size_t n)
-{
-    while (n--) {
-        if (isspace((unsigned char) s[n]))
-            return 1/*true*/;
-    }
-    return 0/*false*/;
-}
-
-
 static char* x_ServiceName(unsigned int depth,
                            const char* service, const char* svc,
                            int/*bool*/ ismask, int/*bool*/ isfast)
@@ -111,7 +101,7 @@ static char* x_ServiceName(unsigned int depth,
     assert(sizeof(buf) > sizeof(REG_CONN_SERVICE_NAME));
     if (!svc  ||  (!ismask  &&  (!*svc  ||  strpbrk(svc, "?*[")))
         ||  (len = strlen(svc)) >= sizeof(buf)-sizeof(REG_CONN_SERVICE_NAME)
-        ||  x_HasSpaces(svc, len)) {
+        ||  NCBI_HasSpaces(svc, len)) {
         if (!service  ||  strcasecmp(service, svc) == 0)
             service = "";
         CORE_LOGF_X(7, eLOG_Error,

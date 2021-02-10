@@ -247,3 +247,42 @@ double NCBI_simple_atof(const char* s, char** t)
         *t = e;
     return (double)(n ? -x : x);
 }
+
+
+#if 1
+
+int/*bool*/ NCBI_HasSpaces(const char* s, size_t n)
+{
+    while (n--) {
+        if (isspace((unsigned char) s[n]))
+            return 1/*true*/;
+    }
+    return 0/*false*/;
+}
+
+#else
+
+#ifdef __GNUC__
+inline
+#endif /*__GNUC__*/
+/* Takes a <ctype.h>-like classification _function_ */
+static int/*bool*/ x_HasClass(const char* s, size_t n, int (*isa)(int))
+{
+    while (n--) {
+        if (isa((unsigned char) s[n]))
+            return 1/*true*/;
+    }
+    return 0/*false*/;
+}
+
+
+/* undef to use a function variant */
+#ifdef   isspace
+#  undef isspace
+#endif /*isspace*/
+int/*bool*/ NCBI_HasSpaces(const char* s, size_t n)
+{
+    return x_HasClass(s, n, isspace);
+}
+
+#endif

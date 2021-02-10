@@ -214,6 +214,16 @@ NCBI_XCONNECT_EXPORT
 double   NCBI_simple_atof(const char* s, char** e);
 
 
+/** Return non-zero(true) if a block of memory based at "s" and of size "n" has
+ *  any space characters (as defined by isspace(c) of <ctype.h>).  Return zero
+ *  (false) if no such characters were found.  Note that "s" is not considered
+ *  to be '\0'-terminated;  that is, all "n" positions will be checked.
+ *  @note If "n" is 0, then "s" is not getting accessed (and can be anything,
+ *  including NULL), and the return value is always 0(false).
+ */
+int/*bool*/ NCBI_HasSpaces(const char* s, size_t n);
+
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif

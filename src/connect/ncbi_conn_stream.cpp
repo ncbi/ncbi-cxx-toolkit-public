@@ -233,16 +233,6 @@ EIO_Status CConn_IOStream::x_IsCanceled(CONN           conn,
 }
 
 
-static int/*bool*/ x_HasSpaces(const char* s, size_t n)
-{
-    while (n--) {
-        if (isspace((unsigned char) s[n]))
-            return 1/*true*/;
-    }
-    return 0/*false*/;
-}
-
-
 CConn_SocketStream::CConn_SocketStream(const string&   host,
                                        unsigned short  port,
                                        unsigned short  max_try,
@@ -275,7 +265,7 @@ s_SocketConnectorBuilder(const string&  ahost,
     if ((port  =  aport) != 0  &&  (len = ahost.size()) != 0) {
         host   = &ahost;
         status = eIO_Success;
-    } else if (!len  ||  x_HasSpaces(ahost.c_str(), len)
+    } else if (!len  ||  NCBI_HasSpaces(ahost.c_str(), len)
                ||  !NStr::SplitInTwo(ahost, ":", x_host, xx_port)
                ||  x_host.empty()  ||  xx_port.empty()
                ||  !isdigit((unsigned char) xx_port[0])  ||  xx_port[0] == '0'
@@ -1375,7 +1365,7 @@ extern CConn_IOStream* NcbiOpenURL(const string& url, size_t buf_size)
     if (svc)
         return new CConn_ServiceStream(url, fSERV_Any, net_info.get());
 
-    if (net_info.get()  &&  !x_HasSpaces(url.c_str(), len)) {
+    if (net_info.get()  &&  !NCBI_HasSpaces(url.c_str(), len)) {
         unsigned int   host;
         unsigned short port;
         SIZE_TYPE      pos = NStr::Find(url, ":");

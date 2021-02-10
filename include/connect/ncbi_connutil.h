@@ -826,6 +826,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status BUF_StripToPattern
  * bytes.
  * Assign "*src_read" to the # of bytes successfully encoded from "src_buf".
  * Assign "*dst_written" to the # of bytes written to buffer "dst_buf".
+ * @note "dst_buf" is not getting '\0'-terminated.
  */
 extern NCBI_XCONNECT_EXPORT void URL_Encode
 (const void* src_buf,      /* [in]     non-NULL  */
@@ -842,6 +843,7 @@ extern NCBI_XCONNECT_EXPORT void URL_Encode
  * The extra allowed symbols are passed in a '\0'-terminated string
  * "allow_symbols" (it can be NULL or empty -- then this will be an exact
  * equivalent of URL_Encode).
+ * @note "dst_buf" is not getting '\0'-terminated.
  */
 extern NCBI_XCONNECT_EXPORT void URL_EncodeEx
 (const void* src_buf,      /* [in]     non-NULL  */
