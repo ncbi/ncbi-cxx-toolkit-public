@@ -93,6 +93,9 @@ set(NCBI_ThirdParty_GMOCK         ${NCBI_TOOLS_ROOT}/googletest-1.8.1 CACHE PATH
 set(NCBI_ThirdParty_GTEST         ${NCBI_TOOLS_ROOT}/googletest-1.8.1 CACHE PATH "GTEST root")
 set(NCBI_ThirdParty_CASSANDRA     ${NCBI_TOOLS_ROOT}/datastax-cpp-driver-2.9.0-ncbi1 CACHE PATH "CASSANDRA root")
 set(NCBI_ThirdParty_H2O           ${NCBI_TOOLS_ROOT}/h2o-2.2.5 CACHE PATH "H2O root")
+set(NCBI_ThirdParty_GMP           ${NCBI_TOOLS_ROOT}/gmp-6.0.0a CACHE PATH "GMP root")
+set(NCBI_ThirdParty_NETTLE        ${NCBI_TOOLS_ROOT}/nettle-3.1.1 CACHE PATH "NETTLE root")
+set(NCBI_ThirdParty_GNUTLS        ${NCBI_TOOLS_ROOT}/gnutls-3.4.0 CACHE PATH "GNUTLS root")
 
 #############################################################################
 #############################################################################
@@ -667,3 +670,24 @@ NCBI_define_Xcomponent(NAME CASSANDRA LIB cassandra)
 # H2O
 NCBI_define_Xcomponent(NAME H2O MODULE libh2o LIB h2o)
 
+#############################################################################
+# GMP
+NCBI_define_Xcomponent(NAME GMP LIB gmp)
+
+#############################################################################
+# NETTLE
+NCBI_define_Xcomponent(NAME NETTLE LIB hogweed nettle ADD_COMPONENT GMP)
+
+#############################################################################
+# GNUTLS
+if(DEFINED NCBI_COMPONENT_GNUTLS_DISABLED AND NOT NCBI_COMPONENT_GNUTLS_DISABLED)
+    NCBI_find_Xlibrary(NCBI_COMPONENT_IDN_LIBS idn)
+    if(NCBI_COMPONENT_IDN_LIBS)
+        set(NCBI_COMPONENT_IDN_FOUND TRUE)
+    endif()
+    NCBI_define_Xcomponent(NAME GNUTLS LIB gnutls ADD_COMPONENT NETTLE IDN Z)
+    if(NCBI_COMPONENT_GNUTLS_FOUND)
+        set(NCBI_COMPONENT_TLS_INCLUDE ${NCBI_COMPONENT_GNUTLS_INCLUDE} ${NCBI_COMPONENT_TLS_INCLUDE})
+        set(NCBI_COMPONENT_TLS_LIBS    ${NCBI_COMPONENT_GNUTLS_LIBS}    ${NCBI_COMPONENT_TLS_LIBS})
+    endif()
+endif()
