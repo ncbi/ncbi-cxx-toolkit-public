@@ -130,6 +130,16 @@ static int/*bool*/ x_tr(char* str, char a, char b, size_t len)
 }
 
 
+static int/*bool*/ x_HasSpaces(const char* s, size_t n)
+{
+    while (n--) {
+        if (isspace((unsigned char) s[n]))
+            return 1/*true*/;
+    }
+    return 0/*false*/;
+}
+
+
 static const char* x_GetValue(const char* svc, size_t svclen,
                               const char* param, char* value,size_t value_size,
                               const char* def_value, int* /*bool*/ generic)
@@ -363,6 +373,7 @@ static int x_SetupHttpProxy(SConnNetInfo* info, const char* env)
     const char* val;
     int parsed;
 
+    assert(!info->http_proxy_host[0]  &&  !info->http_proxy_port);
     assert(env  &&  *env);
     CORE_LOCK_READ;
     if (!(val = getenv(env))  ||  !*val
@@ -382,22 +393,28 @@ static int x_SetupHttpProxy(SConnNetInfo* info, const char* env)
     x_info->port       =   0;
     x_info->path[0]    = '\0';
     parsed = ConnNetInfo_ParseURL(x_info, val);
-    CORE_UNLOCK;
     assert(!(parsed & ~1)); /*0|1*/
     if (parsed  &&  (!x_info->scheme/*eURL_Unspec*/
-                     ||  x_info->scheme == eURL_Http
-                     ||  x_info->scheme == eURL_Https)
+                     ||  x_info->scheme == eURL_Http)
         &&  x_info->host[0]  &&  x_info->port
         &&  (!x_info->path[0]
              ||  (x_info->path[0] == '/'  &&  !x_info->path[1]))) {
+        CORE_UNLOCK;
         memcpy(info->http_proxy_user, x_info->user, strlen(x_info->user) + 1);
         memcpy(info->http_proxy_pass, x_info->pass, strlen(x_info->pass) + 1);
         memcpy(info->http_proxy_host, x_info->host, strlen(x_info->host) + 1);
         info->http_proxy_port = x_info->port;
+        assert(!x_HasSpaces(info->http_proxy_host,
+                            strlen(info->http_proxy_host)));
     } else {
+        const char* copy = strdup(val);
+        CORE_UNLOCK;
         CORE_LOGF_X(10, info->http_proxy_leak ? eLOG_Warning : eLOG_Error,
-                    ("Cannot parse HTTP proxy settings from \"$%s\"", env));
+                    ("Cannot parse HTTP proxy settings from $%s=%c%s%c",
+                     env, "\"<"[!copy], copy ? copy : "NULL", "\">"[!copy]));
         parsed = info->http_proxy_leak ? -1/*noop*/ : 0/*fail*/;
+        if (copy)
+            free((void*) copy);
     }
     ConnNetInfo_Destroy(x_info);
     return parsed;
@@ -538,6 +555,8 @@ SConnNetInfo* ConnNetInfo_CreateInternal(const char* service)
 
     /* hostname */
     REG_VALUE(REG_CONN_HOST, info->host, DEF_CONN_HOST);
+    if (x_HasSpaces(info->host, strlen(info->host)))
+        goto err;
 
     /* port # */
     REG_VALUE(REG_CONN_PORT, str, DEF_CONN_PORT);
@@ -551,28 +570,12 @@ SConnNetInfo* ConnNetInfo_CreateInternal(const char* service)
     /* path */
     REG_VALUE(REG_CONN_PATH, info->path, DEF_CONN_PATH);
 
-    /* HTTP proxy server */
-    REG_VALUE(REG_CONN_HTTP_PROXY_HOST, info->http_proxy_host,
-              DEF_CONN_HTTP_PROXY_HOST);
-    if (info->http_proxy_host[0]) {
-        REG_VALUE(REG_CONN_HTTP_PROXY_PORT, str, DEF_CONN_HTTP_PROXY_PORT);
-        errno = 0;
-        if (*str  &&  (val = (long) strtoul(str, &e, 10)) > 0
-            &&  !errno  &&  !*e  &&  val < (1 << 16)) {
-            info->http_proxy_port = (unsigned short) val;
-        } else
-            info->http_proxy_port = 0/*none*/;
-        /* HTTP proxy username */
-        REG_VALUE(REG_CONN_HTTP_PROXY_USER, info->http_proxy_user,
-                  DEF_CONN_HTTP_PROXY_USER);
-        /* HTTP proxy password */
-        REG_VALUE(REG_CONN_HTTP_PROXY_PASS, info->http_proxy_pass,
-                  DEF_CONN_HTTP_PROXY_PASS);
-    } else {
-        info->http_proxy_port    =   0;
-        info->http_proxy_user[0] = '\0';
-        info->http_proxy_pass[0] = '\0';
-    }
+    /* HTTP proxy server: set all blank for now */
+    info->http_proxy_host[0] = '\0';
+    info->http_proxy_port    =   0;
+    info->http_proxy_user[0] = '\0';
+    info->http_proxy_pass[0] = '\0';
+
     /* HTTP proxy leakout */
     REG_VALUE(REG_CONN_HTTP_PROXY_LEAK, str, DEF_CONN_HTTP_PROXY_LEAK);
     info->http_proxy_leak = ConnNetInfo_Boolean(str) ? 1 : 0;
@@ -621,9 +624,33 @@ SConnNetInfo* ConnNetInfo_CreateInternal(const char* service)
     REG_VALUE(REG_CONN_ARGS, str, DEF_CONN_ARGS);
     if (!ConnNetInfo_SetArgs(info, str))
         goto err;
-    if ((!info->http_proxy_host[0]  ||  !info->http_proxy_port)
-        &&  !x_SetupSystemHttpProxy(info)) {
+
+    /* HTTP proxy from process environment */
+    if (!(val = x_SetupSystemHttpProxy(info)))
         goto err;
+    if (val < 0) {
+        assert(!info->http_proxy_host[0]  &&  !info->http_proxy_port);
+
+        /* HTTP proxy from legacy settings */
+        REG_VALUE(REG_CONN_HTTP_PROXY_HOST, info->http_proxy_host,
+                  DEF_CONN_HTTP_PROXY_HOST);
+        if (x_HasSpaces(info->http_proxy_host, strlen(info->http_proxy_host)))
+            goto err;
+        if (info->http_proxy_host[0]) {
+            REG_VALUE(REG_CONN_HTTP_PROXY_PORT, str, DEF_CONN_HTTP_PROXY_PORT);
+            errno = 0;
+            if (*str  &&  (val = (long) strtoul(str, &e, 10)) > 0
+                &&  !errno  &&  !*e  &&  val < (1 << 16)) {
+                info->http_proxy_port = (unsigned short) val;
+            } else
+                info->http_proxy_port = 0/*none*/;
+            /* HTTP proxy username */
+            REG_VALUE(REG_CONN_HTTP_PROXY_USER, info->http_proxy_user,
+                      DEF_CONN_HTTP_PROXY_USER);
+            /* HTTP proxy password */
+            REG_VALUE(REG_CONN_HTTP_PROXY_PASS, info->http_proxy_pass,
+                      DEF_CONN_HTTP_PROXY_PASS);
+        }
     }
     return info;
 
@@ -944,6 +971,8 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
         }
         if (len >= sizeof(info->host))
             return 0/*failure*/;
+        if (x_HasSpaces(url, len))
+            return 0/*false*/;
         if (s) {
             errno = 0;
             port = strtol(++s, &p, 10);
@@ -972,8 +1001,10 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
                 return 0/*failure*/;
         } else
             scheme = (EURLScheme) info->scheme;
-        host    = s + 2/*//*/;
+        host    = s + 2/*"//"*/;
         hostlen = strcspn(host, "/?#");
+        if (x_HasSpaces(host, hostlen))
+            return 0/*failure*/;
         path    = host + hostlen;
 
         /* username:password */
@@ -1036,9 +1067,9 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
         if (s  &&  s != url
             &&  *++s != '0'  &&  (hostlen/*portlen*/ = strspn(s, "0123456789"))
             &&  memchr("/?#", s[hostlen], 4)
-            &&  (errno = 0, (port = strtoul(s, &p, 10)) > 0)  &&  !errno
-            &&  p == s + hostlen  &&  !(port ^ (port & 0xFFFF))) {
-            hostlen = (size_t)(--s - url);
+            &&  (errno = 0, (port = strtol(s, &p, 10)) > 0)  &&  !errno
+            &&  p == s + hostlen  &&  !(port ^ (port & 0xFFFF))
+            &&  !x_HasSpaces(url, hostlen = (size_t)(--s - url))) {
             host = url;
             path = p;
         } else {
@@ -1130,6 +1161,7 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
     if (port >= 0  ||  scheme == eURL_File)
         info->port = (unsigned short)(port < 0 ? 0 : port);
     if (host) {
+        assert(!x_HasSpaces(host, hostlen));
         memcpy(info->host, host, hostlen);
         info->host[hostlen] = '\0';
     }
