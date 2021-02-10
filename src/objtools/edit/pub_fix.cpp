@@ -495,7 +495,7 @@ bool MUIsJournalIndexed(const string& journal)
     CESearch_Request req("nlmcatalog", pContext);
     req.SetRetMax(2);
     req.SetUseHistory(false);
-  //  try {
+    try {
         if (MULooksLikeISSN(title)) {
             s_GetESearchIds(req, title + "[issn]", ids);
         }
@@ -507,10 +507,10 @@ bool MUIsJournalIndexed(const string& journal)
         if (ids.empty()) {
             s_GetESearchIds(req, title + "[jo]", ids);
         }
-  //  }
-  //  catch (CException& e) {
-  //      return false;
-  //  }
+    }
+    catch (CException& e) {
+        return false;
+    }
 
     if (ids.size() != 1) {
         return false;
@@ -518,6 +518,7 @@ bool MUIsJournalIndexed(const string& journal)
 
     return s_IsIndexed(pContext, ids.front());
 }
+
 
 
 void PrintPub(const CCit_art& cit_art, bool found, bool auth, long muid, IMessageListener* err_log)
@@ -809,7 +810,6 @@ bool TenAuthorsProcess(CCit_art& cit, CCit_art& new_cit, IMessageListener* err_l
 
     list<CTempString> new_author_names;
     GetFirstTenNames(new_cit.GetAuthors().GetNames().GetStd(), new_author_names);
-
     size_t match = 0;
 
     for (auto& name: cit.GetAuthors().GetNames().GetStd())
@@ -1336,7 +1336,8 @@ CRef<CCit_art> CPubFix::FetchPubPmId(TEntrezId pmid)
     return cit_art;
 }
 
-bool CAuthListValidator::enabled = false;
+bool CAuthListValidator::enabled = true; // Verified in ID-6550, so set to use it by default
+                                         // Setting it to false would lead to a few bugs
 bool CAuthListValidator::configured = false;
 double CAuthListValidator::cfg_matched_to_min = 0.3333;
 double CAuthListValidator::cfg_removed_to_gb = 0.3333;
@@ -1365,9 +1366,9 @@ CAuthListValidator::EOutcome CAuthListValidator::validate(const CCit_art& gb_art
         throw logic_error("Publication from PubMed has invalid year: " + std::to_string(pub_year));
     }
     gb_type = CAuth_list::C_Names::SelectionName(gb_art.GetAuthors().GetNames().Which());
-    get_lastnames(gb_art.GetAuthors(), removed);
+    get_lastnames(gb_art.GetAuthors(), removed, gb_auth_string);
     pm_type = CAuth_list::C_Names::SelectionName(pm_art.GetAuthors().GetNames().Which());
-    get_lastnames(pm_art.GetAuthors(), added);
+    get_lastnames(pm_art.GetAuthors(), added, pm_auth_string);
     matched.clear();
     compare_lastnames();
     actual_matched_to_min = double(cnt_matched) / cnt_min;
@@ -1465,9 +1466,8 @@ void CAuthListValidator::compare_lastnames()
 }
 
 
-void CAuthListValidator::get_lastnames(const CAuth_list& authors, list<string>& lastnames)
+void CAuthListValidator::get_lastnames(const CAuth_list& authors, list<string>& lastnames, string& auth_string)
 {
-    //cout << "... get_lastnames()\n";
     lastnames.clear();
     switch (authors.GetNames().Which()) {
     case CAuth_list::C_Names::e_Std:
@@ -1487,6 +1487,7 @@ void CAuthListValidator::get_lastnames(const CAuth_list& authors, list<string>& 
     default:
         throw logic_error("Unexpected CAuth_list::C_Name choice: " + CAuth_list::C_Names::SelectionName(authors.GetNames().Which()));
     }
+    auth_string = NStr::Join(lastnames, "; ");
 }
 
 void CAuthListValidator::get_lastnames(const CAuth_list::C_Names::TStd& authors, list<string>& lastnames)
@@ -1501,13 +1502,9 @@ void CAuthListValidator::get_lastnames(const CAuth_list::C_Names::TStd& authors,
 
 void CAuthListValidator::get_lastnames(const CAuth_list::C_Names::TStr& authors, list<string>& lastnames)
 {
-    //cout << "... str_to_lastnames()\n"
-    //    << "    # of authors in input: " << authors.size() << "\n";
     const char* alpha = "abcdefghijklmnopqrstuvwxyz";
     for (auto auth : authors) {
-        //cout << "...   Parsing: " << auth << "\n";
         size_t eow = NStr::ToLower(auth).find_first_not_of(alpha);
-        //cout << "...   extracting substring of length " << eow << ": " << auth.substr(0, eow) << ";\n";
         lastnames.push_back(auth.substr(0, eow));
     }
 }

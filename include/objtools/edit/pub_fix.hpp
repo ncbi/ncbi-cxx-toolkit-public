@@ -78,7 +78,7 @@ Log the author lists: Original vs Pubmed
 We may have to tweak things a bit further, but this is a good start.
 -------------------------------------------------------------------------------*/
 
-class NCBI_XOBJEDIT_EXPORT CAuthListValidator
+class CAuthListValidator
 {
 public:
     enum EOutcome {
@@ -94,7 +94,7 @@ public:
     EOutcome validate(const CCit_art& gb_art, const CCit_art& pm_art);
     void DebugDump(CNcbiOstream& out) const;
     // utility method
-    static void get_lastnames(const CAuth_list& authors, list<string>& lastnames);
+    static void get_lastnames(const CAuth_list& authors, list<string>& lastnames, string& auth_string);
     
     // public vars
     EOutcome outcome;
@@ -110,6 +110,8 @@ public:
     list<string> added;
     string gb_type;
     string pm_type;
+    string gb_auth_string;
+    string pm_auth_string;
     // for DebugDump()
     string reported_limit;
     double actual_matched_to_min;
@@ -127,7 +129,7 @@ private:
     static double cfg_removed_to_gb;
 };
 
-class NCBI_XOBJEDIT_EXPORT CPubFix
+class CPubFix
 {
 public:
 
