@@ -41,17 +41,7 @@
 extern "C" {
 #endif
 
-typedef enum {
-    eLGHP_NotSet,
-    eLGHP_Success,
-    eLGHP_Fail
-} ELGHP_Status;
 
-/* this is meant to be used by the linkerd and namerd service mappers */
-extern ELGHP_Status LINKERD_GetHttpProxy(char* host, size_t len,
-    unsigned short* port_p);
-
-/* this is meant to be used by the service mapping API */
 extern const SSERV_VTable* SERV_LINKERD_Open(SERV_ITER           iter,
                                              const SConnNetInfo* net_info,
                                              SSERV_Info**        info);

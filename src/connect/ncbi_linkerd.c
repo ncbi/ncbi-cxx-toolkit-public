@@ -97,8 +97,11 @@ enum ELINKERD_Subcodes {
 #define LINKERD_HOST_HDR_SFX    ".linkerd.ncbi.nlm.nih.gov"
 
 
-/* Misc. */
-#define NIL                         '\0'
+typedef enum {
+    eLGHP_NotSet,
+    eLGHP_Success,
+    eLGHP_Fail
+} ELGHP_Status;
 
 
 #ifdef __cplusplus
@@ -164,9 +167,9 @@ static EURLScheme x_ParseScheme(const char* str)
 
 
 /* LINKERD_TODO - this is copied from ncbi_connutil.c (but modified) */
-static const char* x_Scheme(EBURLScheme scheme)
+static const char* x_Scheme(EURLScheme scheme)
 {
-    switch ((EURLScheme)scheme) {
+    switch (scheme) {
     case eURL_Https:
         return "HTTPS";
     case eURL_Http:
@@ -213,7 +216,7 @@ static EEndpointStatus s_SetEndpoint(
         }
         memcpy(end->user, user, userlen);
     } else {
-        end->user[0] = NIL;
+        end->user[0] = '\0';
     }
 
     if (passlen) {
@@ -224,7 +227,7 @@ static EEndpointStatus s_SetEndpoint(
         }
         memcpy(end->pass, pass, passlen);
     } else {
-        end->pass[0] = NIL;
+        end->pass[0] = '\0';
     }
 
     if (pathlen | argslen) {
@@ -240,7 +243,7 @@ static EEndpointStatus s_SetEndpoint(
             memcpy(end->path + pathlen, args, argslen + 1);
         }
     } else {
-        end->path[0] = NIL;
+        end->path[0] = '\0';
     }
 
     return eEndStat_Success;
@@ -255,8 +258,8 @@ static EEndpointStatus s_EndpointFromNetInfo(SEndpoint *end,
     EEndpointStatus end_stat;
 
     /* use the endpoint scheme if it's already been determined */
-    scheme = x_Scheme(end->scheme == eURL_Unspec ?
-                      net_info->scheme : end->scheme);
+    scheme = x_Scheme(end->scheme == eURL_Unspec
+                      ? (EURLScheme) net_info->scheme : end->scheme);
 
     end_stat = s_SetEndpoint(end, scheme, net_info->user,
                              net_info->pass, net_info->path, 0);
@@ -433,8 +436,8 @@ static EEndpointStatus s_EndpointFromNamerd(SEndpoint* end, SERV_ITER iter)
 
     /* Assign the endpoint data */
     end->scheme = nd_srv_info->mode & fSERV_Secure ? eURL_Https : eURL_Http;
-    end->user[0] = NIL; /* username and password wouldn't be in namerd */
-    end->pass[0] = NIL;
+    end->user[0] = '\0'; /* username and password wouldn't be in namerd */
+    end->pass[0] = '\0';
     memcpy(end->path, path, pathlen + !argslen);
     if (argslen) {
         if (*args != '#')
@@ -602,11 +605,7 @@ static void s_Close(SERV_ITER iter)
 }
 
 
-/***********************************************************************
- *  EXTERNAL
- ***********************************************************************/
-
-extern ELGHP_Status LINKERD_GetHttpProxy(char* host, size_t len,
+static ELGHP_Status LINKERD_GetHttpProxy(char* host, size_t len,
     unsigned short* port_p)
 {
     char* http_proxy;
@@ -647,7 +646,7 @@ extern ELGHP_Status LINKERD_GetHttpProxy(char* host, size_t len,
     }
 
     strncpy(host, http_proxy, colon - http_proxy);
-    host[colon-http_proxy] = NIL;
+    host[colon-http_proxy] = '\0';
     *port_p = port;
 
     CORE_LOGF_X(eLSub_Message, eLOG_Info,
@@ -657,6 +656,10 @@ extern ELGHP_Status LINKERD_GetHttpProxy(char* host, size_t len,
     return eLGHP_Success;
 }
 
+
+/***********************************************************************
+ *  EXTERNAL
+ ***********************************************************************/
 
 extern const SSERV_VTable* SERV_LINKERD_Open(SERV_ITER           iter,
                                              const SConnNetInfo* net_info,
@@ -674,7 +677,7 @@ extern const SSERV_VTable* SERV_LINKERD_Open(SERV_ITER           iter,
     if ( ! (net_info->scheme == eURL_Http   ||
             net_info->scheme == eURL_Https  ||
             net_info->scheme == eURL_Unspec)) {
-        return NULL/*Unsuppoered scheme*/;
+        return NULL/*Unsupported scheme*/;
     }
 
     /* Prohibit catalog-prefixed services (e.g. "/lbsm/<svc>") */

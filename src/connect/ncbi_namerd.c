@@ -82,14 +82,10 @@ enum ENAMERD_Subcodes {
  * Note that this is approximate and doesn't need to be precise because
  * it's more than should be required for namerd anyway.
  */
-#define MAX_QRY_STR_LEN             4000
-
-/* This is hard-coded in the definition of SConnNetInfo in ncbi_connutil.h */
-#define MAX_ARGS_LEN                2048
+#define MAX_QUERY_STRING_LEN        4000
 
 /* Misc. */
 #define DTAB_HDR_FIELD_NAME         "DTab-Local"
-#define NIL                         '\0'
 
 
 /*  Registry entry names and default values for NAMERD "SConnNetInfo" fields.
@@ -351,7 +347,7 @@ static void s_CONN_Destroy(CONNECTOR* c_p, CONN* conn_p)
 static void s_UpdateDtab(char** dest_dtab_p, char* src_dtab, int* success_p)
 {
     char* new_dtab = NULL;
-    char enc_dtab[MAX_QRY_STR_LEN + 1];
+    char enc_dtab[MAX_QUERY_STRING_LEN + 1];
     size_t new_size, src_size, enc_size;
 
     CORE_TRACEF(("Entering s_UpdateDtab(\"%s\") -- old dtab = \"%s\"", src_dtab,
@@ -380,8 +376,8 @@ static void s_UpdateDtab(char** dest_dtab_p, char* src_dtab, int* success_p)
      *  to:     "%2Flbsm%2Fbounce%3D%3E%2Fservice%2Fxyz"
      */
     URL_Encode(src_dtab, strlen(src_dtab), &src_size,
-               enc_dtab, MAX_QRY_STR_LEN, &enc_size);
-    enc_dtab[enc_size] = NIL; /* not done by URL_Encode() */
+               enc_dtab, sizeof(enc_dtab) - 1, &enc_size);
+    enc_dtab[enc_size] = '\0'; /* not done by URL_Encode() */
 
     /* If dtab already has an entry then append a semicolon and the new dtab. */
     if (*dest_dtab_p  &&  **dest_dtab_p) {
@@ -451,25 +447,19 @@ static EBURLScheme s_GetScheme()
 }
 
 
-static int s_GetHttpProxy(char* host, size_t host_size, unsigned short* port_p)
+static int s_GetHttpProxy(SConnNetInfo* net_info)
 {
     char port_str[24];
 
-    /* Highest precedence is $http_proxy environment variable */
-    switch (LINKERD_GetHttpProxy(host, host_size, port_p)) {
-        case eLGHP_Success:
-            return 1;
-        case eLGHP_Fail:
-            CORE_LOG_X(eNSub_BadData, eLOG_Critical,
-                       "Couldn't get Linkerd http_proxy.");
-            return 0;
-        case eLGHP_NotSet:
-            break;
-    }
+    if (net_info->http_proxy_host[0]  &&  net_info->http_proxy_port)
+        return 1/*success*/;
 
     if ( ! ConnNetInfo_GetValueInternal(REG_NAMERD_SECTION,
-        REG_NAMERD_PROXY_HOST_KEY, host, host_size - 1,
-        REG_NAMERD_PROXY_HOST_DEF)  ||  ! *host)
+                                        REG_NAMERD_PROXY_HOST_KEY,
+                                        net_info->http_proxy_host,
+                                        sizeof(net_info->http_proxy_host),
+                                        REG_NAMERD_PROXY_HOST_DEF)
+         ||  ! net_info->http_proxy_host[0])
     {
         CORE_LOG_X(eNSub_Alloc, eLOG_Critical,
                    "Couldn't set default http proxy host.");
@@ -477,10 +467,12 @@ static int s_GetHttpProxy(char* host, size_t host_size, unsigned short* port_p)
     }
 
     if ( ! ConnNetInfo_GetValueInternal(REG_NAMERD_SECTION,
-            REG_NAMERD_PROXY_PORT_KEY, port_str, sizeof(port_str) - 1,
-            REG_NAMERD_PROXY_PORT_DEF)  ||
-         ! *port_str  ||
-         sscanf(port_str, "%hu", port_p) != 1)
+                                        REG_NAMERD_PROXY_PORT_KEY,
+                                        port_str,
+                                        sizeof(port_str),
+                                        REG_NAMERD_PROXY_PORT_DEF)
+         ||  ! *port_str
+         ||  sscanf(port_str, "%hu", &net_info->http_proxy_port) != 1)
     {
         CORE_LOG_X(eNSub_Alloc, eLOG_Critical,
                    "Couldn't set default http proxy port.");
@@ -810,7 +802,7 @@ static EIO_Status s_ReadFullResponse(CONN conn, char** bufp,
         return status;
     }
 
-    (*bufp)[total_got] = NIL; /* zero-terminate */
+    (*bufp)[total_got] = '\0'; /* zero-terminate */
 
     /* Reduce the buffer size if there's a lot of wasted space. */
     if (buf_len - total_got > waste_threshold) {
@@ -1196,7 +1188,7 @@ static char* s_GetDtabHeaderFromBuf(const char* buf)
             return NULL;
         }
         memcpy(dup_hdr, start, (size_t)(end - start));
-        dup_hdr[end - start] = NIL;
+        dup_hdr[end - start] = '\0';
         CORE_TRACEF((
             "Leaving s_GetDtabHeaderFromBuf() -- got dtab header \"%s\"",
             dup_hdr));
@@ -1238,7 +1230,7 @@ static void s_UpdateDtabFromUserHeader(char** dtab_p, int* success_p,
 static void s_UpdateDtabFromRegistry(char** dtab_p, int* success_p,
                                      const char* service)
 {
-    char val[MAX_QRY_STR_LEN + 1];
+    char val[MAX_QUERY_STRING_LEN + 1];
 
     CORE_TRACEF(("Entering s_UpdateDtabFromRegistry(\"%s\") -- success=%d",
         service ? service : "", *success_p));
@@ -1249,7 +1241,7 @@ static void s_UpdateDtabFromRegistry(char** dtab_p, int* success_p,
     }
 
     if ( ! ConnNetInfo_GetValueInternal(REG_NAMERD_SECTION,
-        REG_NAMERD_DTAB_KEY, val, MAX_QRY_STR_LEN,
+        REG_NAMERD_DTAB_KEY, val, sizeof(val),
         REG_NAMERD_DTAB_DEF))
     {
         *success_p = 0;
@@ -1582,15 +1574,13 @@ extern const SSERV_VTable* SERV_NAMERD_Open(SERV_ITER           iter,
     data->net_info->req_method  = s_GetReqMethod();
     data->net_info->scheme      = s_GetScheme();
     data->net_info->port        = 0; /* namerd doesn't support a port */
-    data->net_info->host[0]     = NIL;
-    data->net_info->path[0]     = NIL;
+    data->net_info->host[0]     = '\0';
+    data->net_info->path[0]     = '\0';
 
-    if ( ! s_GetHttpProxy(data->net_info->http_proxy_host,
-        sizeof(data->net_info->http_proxy_host),
-        &data->net_info->http_proxy_port))
+    if ( ! s_GetHttpProxy(data->net_info))
     {
         s_Close(iter);
-        CORE_TRACE("Leaving SERV_NAMERD_Open() -- fail, http_proxy");
+        CORE_TRACE("Leaving SERV_NAMERD_Open() -- fail, HTTP proxy");
         return NULL;
     }
 
@@ -1598,13 +1588,13 @@ extern const SSERV_VTable* SERV_NAMERD_Open(SERV_ITER           iter,
         REG_NAMERD_API_HOST_KEY, data->net_info->host,
         sizeof(data->net_info->host), REG_NAMERD_API_HOST_DEF))
     {
-        data->net_info->host[0] = NIL;
+        data->net_info->host[0] = '\0';
     }
     if ( ! ConnNetInfo_GetValueInternal(REG_NAMERD_SECTION,
         REG_NAMERD_API_PATH_KEY, data->net_info->path,
         sizeof(data->net_info->path), REG_NAMERD_API_PATH_DEF))
     {
-        data->net_info->path[0] = NIL;
+        data->net_info->path[0] = '\0';
     }
     if (ConnNetInfo_GetValueInternal(REG_NAMERD_SECTION,
         REG_NAMERD_API_ENV_KEY, namerd_env, sizeof(namerd_env),
