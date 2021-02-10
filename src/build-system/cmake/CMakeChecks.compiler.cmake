@@ -54,14 +54,21 @@ if(BinRelease IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
     set(NCBI_COMPONENT_ncbi_crypt_DISABLED TRUE)
     set(NCBI_COMPONENT_connext_DISABLED TRUE)
     set(NCBI_COMPONENT_BACKWARD_DISABLED TRUE)
+    set(NCBI_COMPONENT_UNWIND_DISABLED TRUE)
     set(NCBI_COMPONENT_PCRE_DISABLED TRUE)
-    list(APPEND NCBI_PTBCFG_PROJECT_FEATURES noSSE)
-    list(APPEND NCBI_PTBCFG_PROJECT_FEATURES noOpenMP)
+    if(NOT   SSE IN_LIST NCBI_PTBCFG_PROJECT_FEATURES AND
+       NOT noSSE IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
+        list(APPEND NCBI_PTBCFG_PROJECT_FEATURES noSSE)
+    endif()
+    if(NOT   OpenMP IN_LIST NCBI_PTBCFG_PROJECT_FEATURES AND
+       NOT noOpenMP IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
+        list(APPEND NCBI_PTBCFG_PROJECT_FEATURES noOpenMP)
+    endif()
 endif()
 
 # see also
 #    CfgMT, CfgProps in WIN32
-#    MaxDebug, Coverage, noSSE in UNIX
+#    MaxDebug, Coverage, noSSE, noOpenMP in UNIX
 
 #----------------------------------------------------------------------------
 if (WIN32)
