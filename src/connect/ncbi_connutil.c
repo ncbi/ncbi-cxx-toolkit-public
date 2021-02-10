@@ -622,9 +622,10 @@ SConnNetInfo* ConnNetInfo_CreateInternal(const char* service)
     if (!ConnNetInfo_SetArgs(info, str))
         goto err;
     if ((!info->http_proxy_host[0]  ||  !info->http_proxy_port)
-        &&  x_SetupSystemHttpProxy(info)) {
-        return info;
+        &&  !x_SetupSystemHttpProxy(info)) {
+        goto err;
     }
+    return info;
 
  err:
     x_DestroyNetInfo(info, CONN_NET_INFO_MAGIC);
