@@ -774,6 +774,9 @@ void CHttpRequest::x_InitConnection(bool use_form_data)
 {
     SConnNetInfo* net_info = ConnNetInfo_Create(
         m_Url.IsService() ? m_Url.GetService().c_str() : 0);
+    if (!net_info) {
+        NCBI_THROW(CHttpSessionException, eConnFailed, "Failed to create SConnNetInfo");
+    }
     if (m_Session->GetProtocol() == CHttpSession::eHTTP_11) {
         net_info->http_version = 1;
     }
@@ -1215,6 +1218,7 @@ CHttpResponse g_HttpPut(const CUrl&         url,
 const char* CHttpSessionException::GetErrCodeString(void) const
 {
     switch (GetErrCode()) {
+    case eConnFailed:       return "Connection failed";
     case eBadRequest:       return "Bad request";
     case eBadContentType:   return "Bad Content-Type";
     case eBadFormDataName:  return "Bad form data name";
