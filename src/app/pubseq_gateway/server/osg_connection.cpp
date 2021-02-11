@@ -46,7 +46,10 @@
 #include <serial/iterator.hpp>
 #include <cmath>
 #include <corelib/ncbi_system.hpp>
+#include <corelib/impl/ncbi_dbsvcmapper.hpp>
+#include <dbapi/driver/driver_mgr.hpp>
 #include "osg_processor_base.hpp"
+#include "osg_mapper.hpp"
 
 
 BEGIN_NCBI_NAMESPACE;
@@ -63,6 +66,8 @@ static const char kParamExpirationTimeout[] = "expiration_timeout";
 static const char kParamReadTimeout[] = "read_timeout";
 static const char kParamCDDRetryTimeout[] = "cdd_retry_timeout";
 static const char kParamRetryCount[] = "retry_count";
+static const char kParamPreferredServer[] = "preferred_server";
+static const char kParamPreference[] = "preference";
 
 // Default configuration parameters' values
 static const char kDefaultServiceName[] = "ID2_SNP2";
@@ -77,6 +82,10 @@ static const double kMinCDDRetryTimeout = .1;
 static const double kDefaultCDDRetryTimeout = 0.9;
 static const int kMinRetryCount = 1;
 static const int kDefaultRetryCount = 3;
+static const char kDefaultPreferredServer[] = "localhost";
+static const int kDefaultPreference = 90;
+
+static const int kNonResolutionTimeout = 5;
 
 
 COSGConnection::COSGConnection(size_t connection_id)
@@ -290,6 +299,18 @@ void COSGConnectionPool::AppParseArgs(const CArgs& /*args*/)
 }
 
 
+static Uint4 g_OSG_GetPreferredAddress(const string& name)
+{
+    if (name.empty()) {
+        return 0;
+    } else if (NStr::EqualNocase(name, "localhost")) {
+        return CSocketAPI::GetLocalHostAddress();
+    } else {
+        return CSocketAPI::gethostbyname(name);
+    }
+}
+
+
 void COSGConnectionPool::LoadConfig(const CNcbiRegistry& registry, string section)
 {
     if ( section.empty() ) {
@@ -343,10 +364,27 @@ void COSGConnectionPool::LoadConfig(const CNcbiRegistry& registry, string sectio
     SetDebugLevel(registry.GetInt(section,
                                   kParamDebugLevel,
                                   eDebugLevel_default));
-    if ( GetDebugLevel() >= eDebug_exchange ) {
+    if ( GetDebugLevel() >= eDebug_open ) {
         LOG_POST(GetDiagSeverity()<<"OSG: pool of "<<m_MaxConnectionCount<<
                  " connections to "<<m_ServiceName);
     }
+
+    COSGServiceMapper::InitDefaults(const_cast<CNcbiRegistry&>(registry));
+    CRef<IDBServiceMapper> service_mapper(new COSGServiceMapper(&registry));
+    string preferred_server = registry.GetString(section,
+                                                 kParamPreferredServer,
+                                                 kDefaultPreferredServer);
+    int preference = registry.GetInt(section,
+                                     kParamPreference,
+                                     kDefaultPreference);
+    auto psg_ip = g_OSG_GetPreferredAddress(preferred_server);
+    TSvrRef pref_info(new CDBServer(m_ServiceName, psg_ip));
+    service_mapper->SetPreference(m_ServiceName, pref_info, preference);
+    if ( GetDebugLevel() >= eDebug_open ) {
+        LOG_POST(GetDiagSeverity()<<"OSG: prefer "<<preferred_server<<
+                 " ["<<CSocketAPI::ntoa(psg_ip)<<"] by "<<preference);
+    }
+    m_Mapper = service_mapper;
 }
 
 
@@ -420,7 +458,20 @@ void COSGConnectionPool::x_OpenConnection(COSGConnection& conn)
         }
         SleepMicroSec((unsigned long)(wait_seconds*1e6));
     }
-    unique_ptr<CConn_IOStream> stream = make_unique<CConn_ServiceStream>(m_ServiceName);
+    unique_ptr<CConn_IOStream> stream;
+    auto server = x_GetServer();
+    if ( server ) {
+        string host = CSocketAPI::HostPortToString(server->GetHost(), server->GetPort());
+        host.erase(host.rfind(':'));
+        if ( GetDebugLevel() >= eDebug_open ) {
+            LOG_POST(GetDiagSeverity() << "OSG("<<connection_id<<"): "
+                     "Connecting to "<<host<<":"<<server->GetPort());
+        }
+        stream = make_unique<CConn_SocketStream>(host, server->GetPort());
+    }
+    else {
+        stream = make_unique<CConn_ServiceStream>(m_ServiceName);
+    }
     if ( !stream || !*stream ) {
         NCBI_THROW(CIOException, eWrite, "failed to open connection");
     }
@@ -445,6 +496,48 @@ void COSGConnectionPool::x_OpenConnection(COSGConnection& conn)
         if ( !reply->GetReply().IsInit() || !reply->IsSetEnd_of_reply() ) {
             NCBI_THROW(CIOException, eRead, "bad init reply");
         }
+    }
+}
+
+
+TSvrRef COSGConnectionPool::x_GetServer()
+{
+    if ( !m_Mapper ) {
+        return null;
+    }
+    CMutexGuard guard(m_Mutex);
+    if ( m_NonresolutionRetryDeadline && !m_NonresolutionRetryDeadline->IsExpired() ) {
+        return null;
+    }
+    unique_ptr<I_DriverContext> m_Context;
+    TSvrRef server;
+    do {
+        if ( !m_Balancer ) {
+            IDBServiceMapper::TOptions options;
+            m_Mapper->GetServerOptions(m_ServiceName, &options);
+            C_DriverMgr drvMgr;
+            string errmsg;
+            map<string,string> args;
+            m_Context.reset(drvMgr.GetDriverContext("ftds", &errmsg, &args));
+            m_Balancer.Reset(new CDBPoolBalancer(m_ServiceName, kEmptyStr, options, m_Context.get()));
+        }
+        server = m_Balancer->GetServer(nullptr, nullptr);
+        if ( !server ) {
+            ERR_POST(Warning <<
+                     "Unable to resolve OSG service name "
+                     << m_ServiceName
+                     << " via supplied mapper; passing it as is.");
+            m_NonresolutionRetryDeadline.reset(new CDeadline(kNonResolutionTimeout));
+        }
+        else if ( server->GetExpireTime() < CCurrentTime().GetTimeT() ) {
+            m_Balancer.Reset();
+        }
+    } while ( !m_Balancer );
+    if ( !server || server->GetHost() == 0 || server->GetPort() == 0 ) {
+        return null;
+    }
+    else {
+        return server;
     }
 }
 

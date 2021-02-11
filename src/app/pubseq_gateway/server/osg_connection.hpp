@@ -34,6 +34,8 @@
 
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbimtx.hpp>
+#include <dbapi/driver/impl/dbapi_pool_balancer.hpp>
+#include <corelib/impl/ncbi_dbsvcmapper.hpp>
 #include <list>
 
 BEGIN_NCBI_NAMESPACE;
@@ -136,6 +138,7 @@ protected:
     void RemoveConnection(COSGConnection& conn);
 
     void x_OpenConnection(COSGConnection& conn);
+    TSvrRef x_GetServer();
     
 private:
     string m_ServiceName;
@@ -150,6 +153,9 @@ private:
     int m_ConnectionCount;
     int m_ConnectFailureCount;
     list<CRef<COSGConnection>> m_FreeConnections;
+    CRef<IDBServiceMapper> m_Mapper;
+    CRef<CDBPoolBalancer>  m_Balancer;
+    unique_ptr<CDeadline>  m_NonresolutionRetryDeadline;
 };
 
 
