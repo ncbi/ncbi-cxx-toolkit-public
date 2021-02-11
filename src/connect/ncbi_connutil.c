@@ -229,13 +229,14 @@ static const char* s_GetValue(const char* svc, size_t svclen,
 {
     const char* retval = x_GetValue(svc, svclen, param,
                                     value, value_size, def_value, generic);
+    assert(!retval  ||  retval == value);
     if (retval) {
         size_t len;
         /* strip enveloping quotes, if any */
         if (*value  &&  (len = strlen(value)) > 1
             &&  (*value == '"'  ||  *value == '\'')
-            &&  (char*) memrchr(value + 1, *value, len-1) == value + len-1) {
-            if (len -= 2)
+            &&  value[--len] == *value) {
+            if (--len)
                 memmove(value, value + 1, len);
             value[len] = '\0';
         }
@@ -371,9 +372,25 @@ static int x_SetupHttpProxy(SConnNetInfo* info, const char* env)
         CORE_UNLOCK;
         return -1/*noop*/;
     }
-    if (!(x_info = ConnNetInfo_CloneInternal(info))) {
+    if (!(val = strdup(val))) {
         CORE_UNLOCK;
+        return  0/*failure*/;
+    }
+    CORE_UNLOCK;
+    if (!(x_info = ConnNetInfo_CloneInternal(info))) {
+        free((void*) val);
         return  0/*fail*/;
+    }
+    if (*val == '"'  ||  *val == '\'') {
+        /* strip enveloping quotes if any:  note that '' and ""  have already
+         * been excluded, so the resulting string is always non-empty... */
+        size_t len = strlen(val);
+        assert(len);
+        if (val[--len] == *val) {
+            memmove((char*) val, val + 1, --len);
+            ((char*) val)[len] = '\0';
+            assert(len);
+        }
     }
     x_info->req_method = eReqMethod_Any;
     x_info->scheme     = eURL_Unspec;
@@ -389,27 +406,23 @@ static int x_SetupHttpProxy(SConnNetInfo* info, const char* env)
         &&  x_info->host[0]  &&  x_info->port
         &&  (!x_info->path[0]
              ||  (x_info->path[0] == '/'  &&  !x_info->path[1]))) {
-        CORE_UNLOCK;
         memcpy(info->http_proxy_user, x_info->user, strlen(x_info->user) + 1);
         memcpy(info->http_proxy_pass, x_info->pass, strlen(x_info->pass) + 1);
         memcpy(info->http_proxy_host, x_info->host, strlen(x_info->host) + 1);
         info->http_proxy_port = x_info->port;
         assert(!NCBI_HasSpaces(info->http_proxy_host,
                                strlen(info->http_proxy_host)));
+        CORE_TRACEF(("ConnNetInfo(%s%s%s$%s): \"%s\"", &"\""[!*info->svc],
+                     info->svc, *info->svc ? "\", " : "", env, val));
     } else {
-        const char* copy = strdup(val);
-        CORE_UNLOCK;
         CORE_LOGF_X(10, info->http_proxy_leak ? eLOG_Warning : eLOG_Error,
-                    ("[ConnNetInfo_Create%s%s%s]  Unrecognized HTTP proxy"
-                     " specification in $%s=%c%s%c",
-                     *info->svc ? "(\"" : "", info->svc,
-                     *info->svc ? "\")" : "", env,
-                     "\"<"[!copy], copy ? copy : "NULL", "\">"[!copy]));
+                    ("ConnNetInfo(%s%s%s$%s): Unrecognized HTTP proxy"
+                     " specification \"%s\"", &"\""[!*info->svc],
+                     info->svc, *info->svc ? "\", " : "", env, val));
         parsed = info->http_proxy_leak ? -1/*noop*/ : 0/*fail*/;
-        if (copy)
-            free((void*) copy);
     }
     ConnNetInfo_Destroy(x_info);
+    free((void*) val);
     return parsed;
 }
 
