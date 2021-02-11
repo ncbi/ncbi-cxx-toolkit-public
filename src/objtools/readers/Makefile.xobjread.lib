@@ -16,7 +16,7 @@ SRC = reader_message reader_listener reader_message_handler \
         aln_scanner_sequin aln_scanner_multalign \
       fasta_aln_builder fasta_reader_utils getfeature gff_reader track_data reader_data \
       microarray_reader phrap reader_base readfeat rm_reader \
-      wiggle_reader gff3_sofa gff3_reader gtf_reader \
+      wiggle_reader gff3_reader gtf_reader \
 	  gff3_location_merger gtf_location_merger \
       gff_base_columns gff2_data gff2_reader \
       gvf_reader \

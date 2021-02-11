@@ -62,7 +62,6 @@
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seq/sofa_type.hpp>
-#include <objects/seq/sofa_map.hpp>
 
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/annot_ci.hpp>
