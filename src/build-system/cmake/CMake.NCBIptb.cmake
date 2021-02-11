@@ -2147,7 +2147,7 @@ if(OFF)
 endif()
 
 #message("target_link_libraries: ${NCBI_PROJECT}     ${NCBITMP_NCBILIB} ${NCBITMP_EXTLIB}")
-        set(_libs ${NCBITMP_EXTLIB} ${NCBITMP_NCBILIB})
+        set(_libs ${NCBITMP_NCBILIB} ${NCBITMP_EXTLIB})
         if ("${_libs}" STREQUAL "")
             set(_libs ${ORIG_LIBS})
         endif()
