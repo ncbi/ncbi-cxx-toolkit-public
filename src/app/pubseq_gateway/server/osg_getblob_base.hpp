@@ -74,6 +74,7 @@ public:
     };
     
     static bool IsOSGBlob(const CID2_Blob_Id& blob_id);
+    static bool IsCDDBlob(const CID2_Blob_Id& blob_id);
     static SParsedId2Info ParsePSGId2Info(const string& idsss2_info);
     static string GetPSGId2Info(const CID2_Blob_Id& tse_id,
                                 TID2SplitVersion split_version);

@@ -53,8 +53,17 @@ public:
     static bool CanProcess(SPSGS_BlobBySatSatKeyRequest& request);
     
     virtual void NotifyOSGCallStart() override;
+    virtual void NotifyOSGCallReply(const CID2_Reply& reply) override;
+    virtual void NotifyOSGCallEnd() override;
     virtual void CreateRequests() override;
     virtual void ProcessReplies() override;
+
+    static bool IsEmptyCDDBlob(const CID2_Reply& reply);
+
+private:
+    bool m_ApplyCDDFix;
+    bool m_EmptyCDDReceived;
+    CStopWatch m_RequestTime;
 };
 
 

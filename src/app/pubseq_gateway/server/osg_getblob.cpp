@@ -33,6 +33,7 @@
 
 #include "osg_getblob.hpp"
 #include "osg_fetch.hpp"
+#include "osg_connection.hpp"
 
 #include <objects/id2/id2__.hpp>
 #include <objects/seqsplit/seqsplit__.hpp>
@@ -69,27 +70,72 @@ bool CPSGS_OSGGetBlob::CanProcess(SPSGS_BlobBySatSatKeyRequest& request)
 }
 
 
-void CPSGS_OSGGetBlob::NotifyOSGCallStart()
-{
-    auto& psg_req = GetRequest()->GetRequest<SPSGS_BlobBySatSatKeyRequest>();
-    if ( auto blob_id = ParsePSGBlobId(psg_req.m_BlobId) ) {
-        if ( blob_id->GetSat() == 8087 ) {
-            //NCBI_THROW(CIOException, eRead, "simulating CDD blob read failure");
-        }
-    }
-}
-
-
 void CPSGS_OSGGetBlob::CreateRequests()
 {
     auto& psg_req = GetRequest()->GetRequest<SPSGS_BlobBySatSatKeyRequest>();
+    m_ApplyCDDFix = false;
+    m_EmptyCDDReceived = false;
     if ( auto blob_id = ParsePSGBlobId(psg_req.m_BlobId) ) {
+        if ( IsCDDBlob(*blob_id) ) {
+            m_ApplyCDDFix = GetConnectionPool().GetCDDRetryTimeout() > 0;
+        }
         CRef<CID2_Request> osg_req(new CID2_Request);
         auto& req = osg_req->SetRequest().SetGet_blob_info();
         req.SetBlob_id().SetBlob_id(*blob_id);
         // TODO: blob version?
         req.SetGet_data();
         AddRequest(osg_req);
+    }
+}
+
+
+bool CPSGS_OSGGetBlob::IsEmptyCDDBlob(const CID2_Reply& reply)
+{
+    if ( !reply.GetReply().IsGet_blob() ) {
+        return false;
+    }
+    const CID2_Reply_Get_Blob& reply_get_blob = reply.GetReply().GetGet_blob();
+    if ( !reply_get_blob.IsSetData() ) {
+        return false;
+    }
+    const CID2_Reply_Data& data = reply_get_blob.GetData();
+    if ( data.GetData_type() != data.eData_type_seq_entry ||
+         data.GetData_format() != data.eData_format_asn_binary ||
+         data.GetData_compression() != data.eData_compression_none ) {
+        return false;
+    }
+    // minimal Seq-entry with no data
+    const size_t kEmptySeqEntrySize = 24;
+    return data.GetData().size() == 1 && data.GetData().front()->size() == kEmptySeqEntrySize;
+}
+
+
+void CPSGS_OSGGetBlob::NotifyOSGCallStart()
+{
+    if ( m_ApplyCDDFix ) {
+        m_EmptyCDDReceived = false;
+        m_RequestTime.Restart();
+    }
+}
+
+
+void CPSGS_OSGGetBlob::NotifyOSGCallReply(const CID2_Reply& reply)
+{
+    if ( m_ApplyCDDFix ) {
+        if ( IsEmptyCDDBlob(reply) ) {
+            m_EmptyCDDReceived = true;
+        }
+    }
+}
+
+
+void CPSGS_OSGGetBlob::NotifyOSGCallEnd()
+{
+    if ( m_ApplyCDDFix ) {
+        if ( m_EmptyCDDReceived &&
+             m_RequestTime.Elapsed() > GetConnectionPool().GetCDDRetryTimeout() ) {
+            NCBI_THROW(CPubseqGatewayException, eRequestCancelled, "no CDD due to OSG timeout");
+        }
     }
 }
 

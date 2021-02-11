@@ -388,9 +388,25 @@ static bool s_IsOSGBlob(Int4 sat, Int4 /*subsat*/, Int4 /*satkey*/)
 }
 
 
+static bool s_IsCDDBlob(Int4 sat, Int4 /*subsat*/, Int4 /*satkey*/)
+{
+    if ( sat >= kOSG_Sat_CDD_min &&
+         sat <= kOSG_Sat_CDD_max ) {
+        return true;
+    }
+    return false;
+}
+
+
 bool CPSGS_OSGGetBlobBase::IsOSGBlob(const CID2_Blob_Id& blob_id)
 {
     return s_IsOSGBlob(blob_id.GetSat(), blob_id.GetSub_sat(), blob_id.GetSat_key());
+}
+
+
+bool CPSGS_OSGGetBlobBase::IsCDDBlob(const CID2_Blob_Id& blob_id)
+{
+    return s_IsCDDBlob(blob_id.GetSat(), blob_id.GetSub_sat(), blob_id.GetSat_key());
 }
 
 
