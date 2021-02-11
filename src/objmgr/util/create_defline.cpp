@@ -3848,6 +3848,7 @@ string CDeflineGenerator::GenerateDefline (
             options.InitFromUserObject(desc->GetUser());
             mod_combo.SetOptions(options);
             m_MainTitle = autodef.GetOneDefLine(&mod_combo, bsh);
+            s_TrimMainTitle (m_MainTitle);
         }
     }
 
