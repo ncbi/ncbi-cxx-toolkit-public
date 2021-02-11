@@ -436,19 +436,19 @@ static bool s_GetImpLabel
     if (!tlabel  ||  !feat.GetData().IsImp()) {
         return false;
     }
-    
-    const string& key = feat.GetData().GetImp().GetKey();
+
+    CSeqFeatData::ESubtype subtype = feat.GetData().GetSubtype();
     bool empty = true;
     
     // If the key is Site-ref
-    if (NStr::EqualNocase(key, "Site-ref")) {
+    if (subtype == CSeqFeatData::eSubtype_site_ref) {
         if (feat.IsSetCit()) {
             // Create label based on Pub-set
             feat.GetCit().GetLabel(tlabel);
             return true;
         }
     }
-    else if (NStr::EqualNocase(key, "variation")) {
+    else if (subtype == CSeqFeatData::eSubtype_variation) {
         if ( feat.IsSetDbxref() ) {
             ITERATE( CSeq_feat::TDbxref, it, feat.GetDbxref() ) {
                 s_GetVariationDbtagLabel(tlabel, flags, **it);
@@ -458,11 +458,11 @@ static bool s_GetImpLabel
     // else if the key is not Site-ref
     } else if ((flags & fFGL_Type) == 0) {
         // If the key is CDS
-        if (NStr::EqualNocase(key, "CDS")) {
+        if (subtype == CSeqFeatData::eSubtype_Imp_CDS) {
             *tlabel += "[CDS]";
         // else if the key is repeat_unit or repeat_region
-        } else if (NStr::EqualNocase(key, "repeat_unit")  ||
-                   NStr::EqualNocase(key, "repeat_region")) {
+        } else if (subtype == CSeqFeatData::eSubtype_repeat_unit ||
+                   subtype == CSeqFeatData::eSubtype_repeat_region) {
             if (feat.IsSetQual() && (0 == (flags & fFGL_NoQualifiers))) {
                 // Loop thru the feature qualifiers
                 const CSeq_feat_Base::TQual & qual = feat.GetQual(); // must store reference since ITERATE macro evaluates 3rd arg multiple times
@@ -481,7 +481,7 @@ static bool s_GetImpLabel
                 *tlabel += type_label ? *type_label : string("");
             }
         // else if the key is STS
-        } else if (NStr::EqualNocase(key, "STS")) {
+        } else if (subtype == CSeqFeatData::eSubtype_STS) {
             if (feat.IsSetQual() && (0 == (flags & fFGL_NoQualifiers))) {
                 const CSeq_feat_Base::TQual & qual = feat.GetQual(); // must store reference since ITERATE macro evaluates 3rd arg multiple times
                 ITERATE( CSeq_feat::TQual, it, qual ) {
@@ -508,35 +508,42 @@ static bool s_GetImpLabel
                 }
             }
         // else if the key is misc_feature
-        } else if (!NStr::EqualNocase(key, "misc_feature")) {
+        } else if (subtype != CSeqFeatData::eSubtype_misc_feature) {
             if (feat.IsSetQual() && (0 == (flags & fFGL_NoQualifiers))) {
                 // Look for a single qualifier qual in order of preference 
                 // "standard_name", "function", "number", any and
                 // append to tlabel and return if found
+                string std_name, func, num, other;
                 const CSeq_feat_Base::TQual & qual = feat.GetQual(); // must store reference since ITERATE macro evaluates 3rd arg multiple times
                 ITERATE( CSeq_feat::TQual, it, qual ) {
-                    if (NStr::EqualNocase((*it)->GetQual(),"standard_name")) {
-                        *tlabel += (*it)->GetVal();
-                        return false;
+                    if (other.empty()) other = (*it)->GetVal();
+                    if (std_name.empty() && NStr::EqualNocase((*it)->GetQual(),"standard_name")) {
+                        std_name = (*it)->GetVal();
+                        break; // no need to search further if found
+                    }
+                    if (func.empty() && NStr::EqualNocase((*it)->GetQual(), "function")) {
+                        func = (*it)->GetVal();
+                        continue;
+                    }
+                    if (num.empty() && NStr::EqualNocase((*it)->GetQual(), "number")) {
+                        num = (*it)->GetVal();
+                        continue;
                     }
                 }
-                const CSeq_feat_Base::TQual & qual2 = feat.GetQual(); // must store reference since ITERATE macro evaluates 3rd arg multiple times
-                ITERATE( CSeq_feat::TQual, it, qual2 ) {
-                    if (NStr::EqualNocase((*it)->GetQual(), "function")) {
-                        *tlabel += (*it)->GetVal();
-                        return false;
-                    }
+                if (!std_name.empty()) {
+                    *tlabel += std_name;
+                    return false;
                 }
-                const CSeq_feat_Base::TQual & qual3 = feat.GetQual(); // must store reference since ITERATE macro evaluates 3rd arg multiple times
-                ITERATE( CSeq_feat::TQual, it, qual3 ) {
-                    if (NStr::EqualNocase((*it)->GetQual(), "number")) {
-                        *tlabel += (*it)->GetVal();
-                        return false;
-                    }
+                if (!func.empty()) {
+                    *tlabel += func;
+                    return false;
                 }
-                const CSeq_feat_Base::TQual & qual4 = feat.GetQual(); // must store reference since ITERATE macro evaluates 3rd arg multiple times
-                ITERATE( CSeq_feat::TQual, it, qual4 ) {
-                    *tlabel += (*it)->GetVal();
+                if (!num.empty()) {
+                    *tlabel += num;
+                    return false;
+                }
+                if (!other.empty()) {
+                    *tlabel += other;
                     return false;
                 }
                 // Append type_label if there is one
