@@ -78,7 +78,11 @@ COrgMod::TSubtype COrgMod::GetSubtypeValue(const string& str,
         }
     }
 
-    return ENUM_METHOD_NAME(ESubtype)()->FindValue(name);
+    try {
+        return ENUM_METHOD_NAME(ESubtype)()->FindValue(name);
+    } catch ( ... ) {
+    }
+    return eSubtype_other;
 }
 
 
@@ -100,7 +104,11 @@ bool COrgMod::IsValidSubtypeName(const string& str,
         }
     }
 
-    return ENUM_METHOD_NAME(ESubtype)()->IsValidName(name);
+    try {
+        return ENUM_METHOD_NAME(ESubtype)()->IsValidName(name);
+    } catch ( ... ) {
+    }
+    return false;
 }
 
 
@@ -113,13 +121,20 @@ string COrgMod::GetSubtypeName(COrgMod::TSubtype stype, EVocabulary vocabulary)
         case eSubtype_substrain: return "sub_strain";
         case eSubtype_nat_host:  return "host";
         default:
-            return NStr::Replace
-                (ENUM_METHOD_NAME(ESubtype)()->FindName(stype, true),
-                 "-", "_");
+            try {
+                return NStr::Replace
+                    (ENUM_METHOD_NAME(ESubtype)()->FindName(stype, true),
+                     "-", "_");
+            } catch ( ... ) {
+            }
         }
     } else {
-        return ENUM_METHOD_NAME(ESubtype)()->FindName(stype, true);
+        try {
+            return ENUM_METHOD_NAME(ESubtype)()->FindName(stype, true);
+        } catch ( ... ) {
+        }
     }
+    return "note";
 }
 
 
