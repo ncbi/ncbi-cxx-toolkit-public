@@ -64,7 +64,7 @@
     ncbi_applog start_request <token> [-sid SID] [-phid PHID] [-rid RID] [-client IP]
                                       [-param PAIRS] [-timestamp TIME]  // -> request_token
     ncbi_applog stop_request  <token> -status STATUS [-input N] [-output N] [-timestamp TIME]
-    ncbi_applog post          <token> [-severity SEV] [-timestamp TIME] -message MESSAGE
+    ncbi_applog post          <token> [-severity SEV] [-note] [-timestamp TIME] -message MESSAGE
     ncbi_applog extra         <token> [-param PAIRS]  [-timestamp TIME]
     ncbi_applog perf          <token> -status STATUS -time TIMESPAN [-param PAIRS] [-timestamp TIME]
     ncbi_applog parse_token   <token> [-appname] [-client] [-guid] [-host] [-hostrole] [-hostloc]
@@ -383,7 +383,7 @@ void CNcbiApplogApp::Init(void)
         arg->SetDetailedDescription(
             "Stop logging request. "
             "Invalidate request specific token obtained for <start_request> command. "
-            "Returns the same token as <start_app> command, so you can use any for logging between requests. "
+            "Returns the same token as <start_app> command, so you can use any for logging between requests."
         );
         arg->AddOpening
             ("token", "Session token, obtained from stdout for <start_request> command.", CArgDescriptions::eString);
@@ -424,6 +424,7 @@ void CNcbiApplogApp::Init(void)
             ("severity", &(*new CArgAllow_Strings, "trace", "info", "warning", "error", "critical"));
         arg->AddKey
             ("message", "MESSAGE", "Posting message.", CArgDescriptions::eString);
+        arg->AddFlag("note", "Post message as a note, using Note[X] notation for a severity");
         arg->AddDefaultKey
             ("timestamp", "TIME", "Posting time if differ from current (YYYY-MM-DDThh:mm:ss, MM/DD/YY hh:mm:ss, time_t).", 
             CArgDescriptions::eString, kEmptyStr);
@@ -1821,24 +1822,47 @@ int CNcbiApplogApp::Run()
     } else 
     
     // -----  post  ----------------------------------------------------------
-    // ncbi_applog post <token> [-severity SEV] -message MESSAGE
+    // ncbi_applog post <token> [-severity SEV] [-note] -message MESSAGE
     
     if (cmd == "post") {
         string sev = args["severity"].AsString();
         string msg = args["message" ].AsString();
+        bool note = args["note"].AsBoolean();
+
         SetInfo();
         // Set minimal allowed posting level to API
         NcbiLog_SetPostLevel(eNcbiLog_Trace);
+
         if (sev == "trace")
-            NcbiLog_Trace(msg.c_str());
+            if (note) {
+                NcbiLog_Note(eNcbiLog_Trace, msg.c_str());
+            } else {
+                NcbiLog_Trace(msg.c_str());
+            }
         else if (sev == "info")
-            NcbiLog_Info(msg.c_str());
+            if (note) {
+                NcbiLog_Note(eNcbiLog_Info, msg.c_str());
+            } else {
+                NcbiLog_Info(msg.c_str());
+            }
         else if (sev == "warning")
-            NcbiLog_Warning(msg.c_str());
+            if (note) {
+                NcbiLog_Note(eNcbiLog_Warning, msg.c_str());
+            } else {
+                NcbiLog_Warning(msg.c_str());
+            }
         else if (sev == "error")
-            NcbiLog_Error(msg.c_str());
+            if (note) {
+                NcbiLog_Note(eNcbiLog_Error, msg.c_str());
+            } else {
+                NcbiLog_Error(msg.c_str());
+            }
         else if (sev == "critical")
-            NcbiLog_Critical(msg.c_str());
+            if (note) {
+                NcbiLog_Note(eNcbiLog_Critical, msg.c_str());
+            } else {
+                NcbiLog_Critical(msg.c_str());
+            }
         // otherwise ignore
     } else 
 

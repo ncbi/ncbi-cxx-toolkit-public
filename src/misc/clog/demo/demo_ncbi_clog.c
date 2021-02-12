@@ -135,6 +135,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
         NcbiLog_Error("Message");
         NcbiLog_Critical("Message");
         /* NcbiLog_Fatal("Message"); */
+        NcbiLog_Note(eNcbiLog_Trace, "Note message");
+        NcbiLog_Note(eNcbiLog_Warning, "Note message");
+        NcbiLog_Note(eNcbiLog_Error, "Note message");
     }}
 
     /* Standard messages with user provided time */

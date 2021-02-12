@@ -1128,6 +1128,14 @@ extern void NcbiLog_Critical(const char* msg);
 extern void NcbiLog_Fatal(const char* msg);
 
 
+/** Writes a message using "Note[X]" notation for severity.
+ *  Behavior is identical to NcbiLog_XXX() function for each severity.
+ *
+ *  @sa NcbiLog_SetPostLevel, 
+ */
+extern void NcbiLog_Note(ENcbiLog_Severity sev, const char* msg);
+
+
 
 #ifdef __cplusplus
 }  /* extern "C" */

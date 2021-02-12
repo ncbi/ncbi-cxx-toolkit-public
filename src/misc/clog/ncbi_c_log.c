@@ -2163,7 +2163,7 @@ static const char* sx_SeverityStr[] = {
 
 /** Print a message with severity to message buffer.
  */
-static void s_PrintMessage(ENcbiLog_Severity severity, const char* msg)
+static void s_PrintMessage(ENcbiLog_Severity severity, const char* msg, int/*bool*/ print_as_note)
 {
     TNcbiLog_Context  ctx;
     size_t            pos, r_len, w_len;
@@ -2199,7 +2199,11 @@ static void s_PrintMessage(ENcbiLog_Severity severity, const char* msg)
     VERIFY(pos);
 
     /* Severity */
-    pos += (size_t) sprintf(buf + pos, "%s: ", sx_SeverityStr[severity]);
+    if (print_as_note) {
+        pos += (size_t) sprintf(buf + pos, "Note[%c]: ", sx_SeverityStr[severity][0]);
+    } else {
+        pos += (size_t) sprintf(buf + pos, "%s: ", sx_SeverityStr[severity]);
+    }
 
     /* Message */
     s_Sanitize(msg, strlen(msg), &r_len, buf + pos, NCBILOG_ENTRY_MAX - pos, &w_len);
@@ -3548,33 +3552,39 @@ extern void NcbiLogP_PerfStr(int status, double timespan, const char* params)
 
 extern void NcbiLog_Trace(const char* msg)
 {
-    s_PrintMessage(eNcbiLog_Trace, msg);
+    s_PrintMessage(eNcbiLog_Trace, msg, 0 /*false*/);
 }
 
 extern void NcbiLog_Info(const char* msg)
 {
-    s_PrintMessage(eNcbiLog_Info, msg);
+    s_PrintMessage(eNcbiLog_Info, msg, 0 /*false*/);
 }
 
 extern void NcbiLog_Warning(const char* msg)
 {
-    s_PrintMessage(eNcbiLog_Warning, msg);
+    s_PrintMessage(eNcbiLog_Warning, msg, 0 /*false*/);
 }
 
 extern void NcbiLog_Error(const char* msg)
 {
-    s_PrintMessage(eNcbiLog_Error, msg);
+    s_PrintMessage(eNcbiLog_Error, msg, 0 /*false*/);
 }
 
 void NcbiLog_Critical(const char* msg)
 {
-    s_PrintMessage(eNcbiLog_Critical, msg);
+    s_PrintMessage(eNcbiLog_Critical, msg, 0 /*false*/);
 }
 
 extern void NcbiLog_Fatal(const char* msg)
 {
-    s_PrintMessage(eNcbiLog_Fatal, msg);
+    s_PrintMessage(eNcbiLog_Fatal, msg, 0 /*false*/);
 }
+
+extern void NcbiLog_Note(ENcbiLog_Severity severity, const char* msg)
+{
+    s_PrintMessage(severity, msg, 1 /*true*/);
+}
+
 
 extern void NcbiLogP_Raw(const char* line)
 {
