@@ -193,11 +193,13 @@ static inline bool x_IsFatalError(int error)
 
 struct SAuxData {
     const ICanceled* m_Canceled;
+    bool             m_Redirect;
     bool             m_Failed;
     void*            m_Data;
 
     SAuxData(const ICanceled* canceled, void* data)
-        : m_Canceled(canceled), m_Failed(false), m_Data(data)
+        : m_Canceled(canceled), m_Redirect(false),
+          m_Failed(false), m_Data(data)
     { }
 };
 
@@ -221,7 +223,7 @@ static EHTTP_HeaderParse s_GoodHeader(const char* /*header*/,
     SAuxData* auxdata = reinterpret_cast<SAuxData*>(data);
     _ASSERT(auxdata);
     if (server_error)
-        auxdata->m_Failed = true;
+        auxdata->m_Failed = server_error != 301  &&  server_error != 302;
     return eHTTP_HeaderSuccess;
 }
 
@@ -241,10 +243,12 @@ static EHTTP_HeaderParse s_SvcHeader(const char* header,
 }
 
 
-static int/*bool*/ s_Adjust(SConnNetInfo*, void* data, unsigned int /*count*/)
+static int/*bool*/ s_Adjust(SConnNetInfo*, void* data, unsigned int count)
 {
     SAuxData* auxdata = reinterpret_cast<SAuxData*>(data);
     _ASSERT(auxdata);
+    if (!count/*redirect*/)
+        auxdata->m_Redirect = true;
     return auxdata->m_Failed
         ||  (auxdata->m_Canceled  &&  auxdata->m_Canceled->IsCanceled())
         ? 0/*false*/ : 1/*true*/;
@@ -386,7 +390,7 @@ EIO_Status CConnTest::HttpOkay(string* reason)
         return eIO_Unknown;
     }
 
-    net_info->scheme = eURL_Https;
+    net_info->scheme = eURL_Http;
     if (net_info->http_proxy_host[0]  &&  net_info->http_proxy_port)
         m_HttpProxy = true;
     // Make sure there are no extras
@@ -396,7 +400,8 @@ EIO_Status CConnTest::HttpOkay(string* reason)
     SAuxData* auxdata = new SAuxData(m_Canceled, 0);
     CConn_HttpStream http("/Service/index.html",
                           net_info.get(), kEmptyStr/*user_hdr*/, s_GoodHeader,
-                          auxdata, s_Adjust, s_Cleanup, 0/*flags*/, m_Timeout);
+                          auxdata, s_Adjust, s_Cleanup, fHTTP_AdjustOnRedirect,
+                          m_Timeout);
     http.SetCanceledCallback(m_Canceled);
     string temp;
     http >> temp;
@@ -411,34 +416,47 @@ EIO_Status CConnTest::HttpOkay(string* reason)
             temp = x_TimeoutMsg();
         else
             temp.clear();
-        bool host = NStr::CompareNocase(net_info->host, DEF_CONN_HOST) != 0;
-        bool port = net_info->port != 0;
-        if (host  ||  port) {
-            int n = 0;
-            temp += "Make sure that ";
-            if (host) {
-                n++;
-                temp += "[" DEF_CONN_REG_SECTION "]" REG_CONN_HOST "=\"";
-                temp += net_info->host;
-                temp += port ? "\"" : "\" and ";
+        if (auxdata->m_Redirect) {
+            // Redirect to https:// is expected
+            temp += "Your HTTP connection appears to work but it does not seem"
+                " to be able to upgrade to secure HTTP (HTTPS), most likely"
+                " because of a malfunctioning HTTP proxy server in the way\n";
+        } else {
+            bool host = NStr::CompareNocase(net_info->host, DEF_CONN_HOST) !=0;
+            bool port = net_info->port != 0;
+            if (host  ||  port) {
+                int n = 0;
+                temp += "Make sure that ";
+                if (host) {
+                    n++;
+                    temp += "[" DEF_CONN_REG_SECTION "]" REG_CONN_HOST "=\"";
+                    temp += net_info->host;
+                    temp += port ? "\"" : "\" and ";
+                }
+                if (port) {
+                    n++;
+                    temp += "[" DEF_CONN_REG_SECTION "]" REG_CONN_PORT "=\"";
+                    temp += NStr::UIntToString(net_info->port);
+                    temp += '"';
+                }
+                _ASSERT(n);
+                temp += n > 1 ? " are" : " is";
+                temp += " redefined correctly\n";
             }
-            if (port) {
-                n++;
-                temp += "[" DEF_CONN_REG_SECTION "]" REG_CONN_PORT "=\"";
-                temp += NStr::UIntToString(net_info->port);
-                temp += '"';
-            }
-            _ASSERT(n);
-            temp += n > 1 ? " are" : " is";
-            temp += " redefined correctly\n";
         }
+        bool auth = true;
         if (m_HttpProxy) {
             temp += "Make sure that the HTTP proxy server \'";
             temp += net_info->http_proxy_host;
             temp += ':';
             temp += NStr::UIntToString(net_info->http_proxy_port);
-            temp += "' specified with [" DEF_CONN_REG_SECTION
-                "]HTTP_PROXY_{HOST|PORT} is correct";
+            temp += "' specified with ";
+            if (net_info->http_proxy_only) {
+                temp += "environment variable $http_proxy or $HTTP_PROXY";
+                auth = false;
+            } else
+                temp += "[" DEF_CONN_REG_SECTION "]HTTP_PROXY_{HOST|PORT}";
+            temp += " is correct";
         } else {
             if (net_info->http_proxy_host[0]  ||  net_info->http_proxy_port) {
                 temp += "Note that your HTTP proxy seems to have been"
@@ -453,13 +471,16 @@ EIO_Status CConnTest::HttpOkay(string* reason)
                 temp += ")\n";
             }
             temp += "If your network access requires the use of an HTTP proxy"
-                " server, please contact your network administrator and set"
+                " server, please contact your network administrator, and set"
                 " [" DEF_CONN_REG_SECTION "]{HTTP_PROXY_{HOST|PORT} (both must"
                 " be set) in your configuration accordingly";
         }
-        temp += "; and if your proxy server requires authorization, please"
-            " check that appropriate ["
-            DEF_CONN_REG_SECTION "]HTTP_PROXY_{USER|PASS} have been set\n";
+        if (auth) {
+            temp += "; and if your proxy server requires authorization, please"
+                " check that appropriate ["
+                DEF_CONN_REG_SECTION "]HTTP_PROXY_{USER|PASS} have been set\n";
+        } else
+            temp += '\n';
         if (*net_info->user  ||  *net_info->pass) {
             temp += "Make sure there are no stray values for ["
                 DEF_CONN_REG_SECTION "]{" REG_CONN_USER "|" REG_CONN_PASS
@@ -761,7 +782,7 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
             " firewall imposing a fine-grained control over which hosts and"
             " ports the outbound connections are allowed to use\n";
     }
-    if (m_HttpProxy  &&  net_info.get()) {
+    if (m_HttpProxy  &&  net_info.get()  &&  !net_info->http_proxy_only) {
         temp += "Connections to the aforementioned ports will be made via an"
             " HTTP proxy at '";
         temp += net_info->http_proxy_host;
@@ -1077,7 +1098,8 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
                     temp = x_TimeoutMsg();
                 else
                     temp.clear();
-                if (m_HttpProxy) {
+                if (m_HttpProxy  &&  !(net_info->http_proxy_only |
+                                       net_info->http_proxy_leak)) {
                     temp += "Your HTTP proxy '";
                     temp += net_info->http_proxy_host;
                     temp += ':';
@@ -1294,18 +1316,23 @@ EIO_Status CConnTest::StatefulOkay(string* reason)
                 SERV_Close(iter);
             }
         } else if (!str) {
-            if (n  &&  net_info.get()  &&  net_info->http_proxy_port
-                &&  NStr::strncasecmp(recv, kFWSign, (size_t) n) == 0) {
+            if (n  &&  NStr::strncasecmp(recv, kFWSign, (size_t) n) == 0) {
                 temp += "NCBI Firewall";
                 if (!net_info->firewall)
                     temp += " (Connection Relay)";
-                temp += " Daemon reports negotitation error, which usually"
-                    " means that an intermediate HTTP proxy '";
-                temp += net_info->http_proxy_host;
-                temp += ':';
-                temp += NStr::UIntToString(net_info->http_proxy_port);
-                temp += "' may be buggy."
-                    " Please contact your network administrator\n";
+                temp += " Daemon reports negotitation error";
+                if (net_info.get()  &&  m_HttpProxy
+                    &&  !(net_info->http_proxy_only |
+                          net_info->http_proxy_leak)) {
+                    temp += ", which usually means that an intermediate HTTP"
+                        " proxy '";
+                    temp += net_info->http_proxy_host;
+                    temp += ':';
+                    temp += NStr::UIntToString(net_info->http_proxy_port);
+                    temp += "' may be buggy.";
+                } else
+                    temp += '.';
+                temp += " Please contact your network administrator\n";
             } else {
                 temp += n ? "Unrecognized" : "No";
                 temp += " response from service;"
