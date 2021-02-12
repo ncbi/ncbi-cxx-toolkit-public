@@ -63,10 +63,10 @@ enum {
     eProxy_fail_bad_host,
     eProxy_fail_bad_port,
     eProxy_fail_bad_req_on_proxy,
-    eProxy_fail_empty,
     eProxy_fail_no_colon,
     eProxy_fail_no_host,
     eProxy_fail_no_port,
+    eProxy_pass_empty,
     eProxy_pass_linkerd,
     eProxy_pass_pool,
     eProxy_pass_unset
@@ -169,9 +169,6 @@ void CMapper::Init(vector<CMapper>& mappers)
         mapper.m_EnvSet["CONN_LINKERD_ENABLE"] = "1";
         mapper.m_EnvSet["CONN_LOCAL_ENABLE"] = "0";
         mapper.m_EnvSet["CONN_NAMERD_ENABLE"] = "0";
-        mapper.m_EnvUnset.push_back("CONN_LOCAL_SERVICES");
-        mapper.m_EnvUnset.push_back("TEST_CONN_LOCAL_SERVER_1");
-        mapper.m_EnvUnset.push_back("BOUNCEHTTP_CONN_LOCAL_SERVER_1");
         mappers.push_back(mapper);
     }}
 
@@ -185,9 +182,6 @@ void CMapper::Init(vector<CMapper>& mappers)
         mapper.m_EnvSet["CONN_LINKERD_ENABLE"] = "0";
         mapper.m_EnvSet["CONN_LOCAL_ENABLE"] = "0";
         mapper.m_EnvSet["CONN_NAMERD_ENABLE"] = "1";
-        mapper.m_EnvUnset.push_back("CONN_LOCAL_SERVICES");
-        mapper.m_EnvUnset.push_back("TEST_CONN_LOCAL_SERVER_1");
-        mapper.m_EnvUnset.push_back("BOUNCEHTTP_CONN_LOCAL_SERVER_1");
         mappers.push_back(mapper);
     }}
 }
@@ -227,16 +221,6 @@ void CProxy::Init(vector<CProxy>& proxies)
 
     {{
         CProxy proxy;
-        proxy.m_Id = eProxy_fail_empty;
-        proxy.m_Name = "fail_empty";
-        proxy.m_Enabled = true;
-        proxy.m_PassExpected = false;
-        proxy.m_EnvSet["http_proxy"] = "";
-        proxies.push_back(proxy);
-    }}
-
-    {{
-        CProxy proxy;
         proxy.m_Id = eProxy_fail_no_colon;
         proxy.m_Name = "fail_no_colon";
         proxy.m_Enabled = true;
@@ -265,7 +249,17 @@ void CProxy::Init(vector<CProxy>& proxies)
         proxies.push_back(proxy);
     }}
 
-#ifndef _MSC_VER
+    {{
+        CProxy proxy;
+        proxy.m_Id = eProxy_pass_empty;
+        proxy.m_Name = "pass_empty";
+        proxy.m_Enabled = true;
+        proxy.m_PassExpected = true;
+        proxy.m_EnvSet["http_proxy"] = "";
+        proxies.push_back(proxy);
+    }}
+
+#ifndef NCBI_OS_MSWIN
     {{
         CProxy proxy;
         proxy.m_Id = eProxy_pass_linkerd;
@@ -275,7 +269,7 @@ void CProxy::Init(vector<CProxy>& proxies)
         proxy.m_EnvSet["http_proxy"] = "linkerd:4140";
         proxies.push_back(proxy);
     }}
-#endif
+#endif /*NCBI_OS_MSWIN*/
 
     {{
         CProxy proxy;
@@ -435,8 +429,13 @@ int CTestNcbiLinkerdProxyApp::Test(int id, bool pass_expected)
     bool test_passed = false;
     bool post_worked = false;
     int result;
-    CHttpResponse resp = g_HttpPost(CUrl(url), post_data);
-    result = ProcessResponse(resp, exp_data);
+    try {
+        CHttpResponse resp = g_HttpPost(CUrl(url), post_data);
+        result = ProcessResponse(resp, exp_data);
+    } catch (const CHttpSessionException& ex) {
+        NCBI_REPORT_EXCEPTION("g_HttpPost() failed", ex);
+        result = -1;
+    }
     post_worked = (result == 0);
     if ((   pass_expected  &&    post_worked)  ||
         ( ! pass_expected  &&  ! post_worked))
@@ -485,9 +484,9 @@ int CTestNcbiLinkerdProxyApp::Run(void)
     }
 
     ERR_POST(Info << "All tests: " << num_total);
-    ERR_POST(Info << "Executed:    " << num_run);
-    ERR_POST(Info << "Passed:        " << num_passed);
-    ERR_POST(Info << "Failed:        " << num_failed);
+    ERR_POST(Info << "Executed:  " << num_run);
+    ERR_POST(Info << "Passed:    " << num_passed);
+    ERR_POST(Info << "Failed:    " << num_failed);
     if (num_total != num_run  ||  num_run != num_passed + num_failed)
         NCBI_USER_THROW("Invalid test counts.");   // would be a programming error
 
