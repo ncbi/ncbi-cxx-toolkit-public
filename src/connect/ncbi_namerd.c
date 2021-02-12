@@ -213,9 +213,10 @@ static CONNECTOR s_CreateConnectorHttp(SERV_ITER iter)
 
 static void s_DestroyMockBuf(void)
 {
-    if (s_mock_buf)
+    if (s_mock_buf) {
         BUF_Destroy(s_mock_buf);
-    s_mock_buf = NULL;
+        s_mock_buf = NULL;
+    }
 }
 
 
@@ -231,7 +232,7 @@ static CONNECTOR s_CreateConnectorMemory(SERV_ITER iter)
     /* Reset buffer for each connector */
     s_DestroyMockBuf();
 
-    BUF_Append(&s_mock_buf, (void*)s_mock_body, strlen(s_mock_body));
+    BUF_Append(&s_mock_buf, s_mock_body, strlen(s_mock_body));
 
     return MEMORY_CreateConnectorEx(s_mock_buf, 0);
 }
@@ -271,75 +272,6 @@ static void s_Init(void)
                        "Error registering atexit function.");
         }
     }
-}
-
-
-static EIO_Status s_CONN_Create(SERV_ITER iter, CONNECTOR* c_p, CONN* conn_p)
-{
-    EIO_Status  status = eIO_Unknown;
-
-    CORE_TRACE("Entering s_CONN_Create()");
-
-    /* require valid, NULL pointers */
-    if ( ! c_p) {
-        CORE_LOG_X(eNSub_Logic, eLOG_Critical,
-                   "Unexpected NULL connector pointer pointer.");
-        return eIO_Unknown;
-    }
-    if (*c_p) {
-        CORE_LOG_X(eNSub_Logic, eLOG_Critical,
-                   "Unexpected non-NULL connector pointer.");
-        return eIO_Unknown;
-    }
-    if ( ! conn_p) {
-        CORE_LOG_X(eNSub_Logic, eLOG_Critical,
-                   "Unexpected NULL connection pointer pointer.");
-        return eIO_Unknown;
-    }
-    if (*conn_p) {
-        CORE_LOG_X(eNSub_Logic, eLOG_Critical,
-                   "Unexpected non-NULL connection pointer.");
-        return eIO_Unknown;
-    }
-
-    *c_p = s_CreateConnector(iter);
-    if (*c_p) {
-        status = CONN_Create(*c_p, conn_p);
-        if (status != eIO_Success) {
-            CORE_LOGF_X(eNSub_Connect, eLOG_Error,
-                ("Unable to create connection, status = %s.",
-                 IO_StatusStr(status)));
-            if ((*c_p)->destroy  &&  (*c_p)->handle)
-                (*c_p)->destroy(*c_p);
-            *c_p    = NULL;
-            *conn_p = NULL;
-        }
-    } else {
-        CORE_LOG_X(eNSub_Connect, eLOG_Error, "Unable to create connector.");
-    }
-
-    CORE_TRACE("Leaving s_CONN_Create()");
-    return status;
-}
-
-
-static void s_CONN_Destroy(CONNECTOR* c_p, CONN* conn_p)
-{
-    if ( ! c_p) {
-        CORE_LOG_X(eNSub_Logic, eLOG_Critical,
-                   "Unexpected NULL connector pointer.");
-    } else {
-        *c_p = NULL;
-    }
-    if ( ! conn_p) {
-        CORE_LOG_X(eNSub_Logic, eLOG_Critical,
-                   "Unexpected NULL connection pointer.");
-    } else {
-        if (*conn_p)
-            CONN_Close(*conn_p);
-        *conn_p = NULL;
-    }
-    s_DestroyMockBuf();
 }
 
 
@@ -409,7 +341,7 @@ static TReqMethod s_GetReqMethod()
 {
     char val[20];
 
-    if ( ! ConnNetInfo_GetValueInternal(REG_NAMERD_SECTION,
+    if ( ! ConnNetInfo_GetValueService(REG_NAMERD_SECTION,
         REG_NAMERD_API_REQ_KEY, val, sizeof(val)-1,
         REG_NAMERD_API_REQ_DEF))
     {
@@ -431,7 +363,7 @@ static EBURLScheme s_GetScheme()
 {
     char val[12];
 
-    if ( ! ConnNetInfo_GetValueInternal(REG_NAMERD_SECTION,
+    if ( ! ConnNetInfo_GetValueService(REG_NAMERD_SECTION,
         REG_NAMERD_API_SCHEME_KEY, val, sizeof(val)-1,
         REG_NAMERD_API_SCHEME_DEF))
     {
@@ -454,7 +386,7 @@ static int s_GetHttpProxy(SConnNetInfo* net_info)
     if (net_info->http_proxy_host[0]  &&  net_info->http_proxy_port)
         return 1/*success*/;
 
-    if ( ! ConnNetInfo_GetValueInternal(REG_NAMERD_SECTION,
+    if ( ! ConnNetInfo_GetValueService(REG_NAMERD_SECTION,
                                         REG_NAMERD_PROXY_HOST_KEY,
                                         net_info->http_proxy_host,
                                         sizeof(net_info->http_proxy_host),
@@ -466,7 +398,7 @@ static int s_GetHttpProxy(SConnNetInfo* net_info)
         return 0;
     }
 
-    if ( ! ConnNetInfo_GetValueInternal(REG_NAMERD_SECTION,
+    if ( ! ConnNetInfo_GetValueService(REG_NAMERD_SECTION,
                                         REG_NAMERD_PROXY_PORT_KEY,
                                         port_str,
                                         sizeof(port_str),
@@ -1180,15 +1112,13 @@ static char* s_GetDtabHeaderFromBuf(const char* buf)
         while (*end  &&  *end != '\r'  &&  *end != '\n') ++end;
 
         /* clone the header value */
-        dup_hdr = (char*) malloc((size_t)(end - start + 1));
+        dup_hdr = strndup(start, (size_t)(end - start));
         if ( ! dup_hdr) {
             CORE_LOG_X(eNSub_Alloc, eLOG_Critical,
                        "Couldn't alloc for dtab header value.");
             CORE_TRACE("Leaving s_GetDtabHeaderFromBuf() -- bad alloc");
             return NULL;
         }
-        memcpy(dup_hdr, start, (size_t)(end - start));
-        dup_hdr[end - start] = '\0';
         CORE_TRACEF((
             "Leaving s_GetDtabHeaderFromBuf() -- got dtab header \"%s\"",
             dup_hdr));
@@ -1240,7 +1170,7 @@ static void s_UpdateDtabFromRegistry(char** dtab_p, int* success_p,
         return;
     }
 
-    if ( ! ConnNetInfo_GetValueInternal(REG_NAMERD_SECTION,
+    if ( ! ConnNetInfo_GetValueService(REG_NAMERD_SECTION,
         REG_NAMERD_DTAB_KEY, val, sizeof(val),
         REG_NAMERD_DTAB_DEF))
     {
@@ -1331,11 +1261,11 @@ static int/*bool*/ s_Adjust(SConnNetInfo* net_info,
 
 static int/*bool*/ s_Resolve(SERV_ITER iter)
 {
-    struct SNAMERD_Data*    data = (struct SNAMERD_Data*) iter->data;
-    SConnNetInfo*           net_info = data->net_info;
-    CONNECTOR               c = NULL;
-    CONN                    conn = NULL;
-    int/*bool*/             retval = 0;
+    struct SNAMERD_Data*  data = (struct SNAMERD_Data*) iter->data;
+    int/*bool*/           retval;
+    EIO_Status            status;
+    CONN                  conn;
+    CONNECTOR             c;
 
     CORE_TRACE("Entering s_Resolve()");
 
@@ -1346,13 +1276,27 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
     }
 
     /* Handle DTAB, if present. */
-    s_ProcessDtab(net_info, iter);
+    s_ProcessDtab(data->net_info, iter);
 
     /* Create connector and connection, and fetch and parse the response. */
-    if (s_CONN_Create(iter, &c, &conn) == eIO_Success) {
-        retval = s_ParseResponse(iter, conn);
+    if (!(c = s_CreateConnector(iter))
+        ||  (status = CONN_Create(c, &conn)) != eIO_Success) {
+        char what[80];
+        if (c)
+            sprintf(what, "connection: %s", IO_StatusStr(status));
+        else
+            strcpy (what, "connector");
+        CORE_LOGF_X(eNSub_Connect, eLOG_Error,
+                    ("Unable to create %s", what));
+        if (c)
+            c->destroy(c);
+        return 0;
     }
-    s_CONN_Destroy(&c, &conn);
+
+    retval = s_ParseResponse(iter, conn);
+
+    CONN_Close(conn);
+    s_DestroyMockBuf();
 
     CORE_TRACE("Leaving s_Resolve()");
     return retval;
@@ -1584,19 +1528,19 @@ extern const SSERV_VTable* SERV_NAMERD_Open(SERV_ITER           iter,
         return NULL;
     }
 
-    if ( ! ConnNetInfo_GetValueInternal(REG_NAMERD_SECTION,
+    if ( ! ConnNetInfo_GetValueService(REG_NAMERD_SECTION,
         REG_NAMERD_API_HOST_KEY, data->net_info->host,
         sizeof(data->net_info->host), REG_NAMERD_API_HOST_DEF))
     {
         data->net_info->host[0] = '\0';
     }
-    if ( ! ConnNetInfo_GetValueInternal(REG_NAMERD_SECTION,
+    if ( ! ConnNetInfo_GetValueService(REG_NAMERD_SECTION,
         REG_NAMERD_API_PATH_KEY, data->net_info->path,
         sizeof(data->net_info->path), REG_NAMERD_API_PATH_DEF))
     {
         data->net_info->path[0] = '\0';
     }
-    if (ConnNetInfo_GetValueInternal(REG_NAMERD_SECTION,
+    if (ConnNetInfo_GetValueService(REG_NAMERD_SECTION,
         REG_NAMERD_API_ENV_KEY, namerd_env, sizeof(namerd_env),
         REG_NAMERD_API_ENV_DEF))
     {
@@ -1607,7 +1551,7 @@ extern const SSERV_VTable* SERV_NAMERD_Open(SERV_ITER           iter,
             strcat(data->net_info->path, namerd_env);
         }
     }
-    if ( ! ConnNetInfo_GetValueInternal(REG_NAMERD_SECTION,
+    if ( ! ConnNetInfo_GetValueService(REG_NAMERD_SECTION,
         REG_NAMERD_API_ARGS_KEY, namerd_args, sizeof(namerd_args),
         REG_NAMERD_API_ARGS_DEF)
          ||  strlen(namerd_args) + strlen(iter->name) >= sizeof(namerd_args))

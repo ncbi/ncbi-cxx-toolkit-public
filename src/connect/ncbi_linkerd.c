@@ -423,6 +423,10 @@ static EEndpointStatus s_EndpointFromNamerd(SEndpoint* end, SERV_ITER iter)
         retval = eEndStat_Error;
         goto out;
     }
+    /* FIXME: I assume it's always HTTP but there's no paranoia check unlike
+     * for everything else like the impossible (-1L) above: */
+    assert(nd_srv_info->type & fSERV_Http);
+    /* FIXME: What about the method: ANY, GET, POST? */
     path = SERV_HTTP_PATH(&nd_srv_info->u.http);
     args = SERV_HTTP_ARGS(&nd_srv_info->u.http);
     pathlen = strlen(path);
@@ -441,7 +445,7 @@ static EEndpointStatus s_EndpointFromNamerd(SEndpoint* end, SERV_ITER iter)
     memcpy(end->path, path, pathlen + !argslen);
     if (argslen) {
         if (*args != '#')
-            end->path[pathlen++] = '?';;
+            end->path[pathlen++] = '?';
         memcpy(end->path + pathlen, args, argslen + 1);
     }
 
@@ -506,7 +510,8 @@ static int s_Resolve(SERV_ITER iter)
     /* Parse descriptor into SSERV_Info */
     CORE_TRACEF(
         ("Parsing candidate server descriptor: '%s'", server_descriptor));
-    SSERV_Info* cand_info = SERV_ReadInfoEx(server_descriptor, "", 0/*false*/);
+    SSERV_Info* cand_info = SERV_ReadInfoEx(server_descriptor,
+        iter->reverse_dns ? iter->name : "", 0/*false*/);
 
     if ( ! cand_info) {
         CORE_LOGF_X(eLSub_BadData, eLOG_Warning,
@@ -529,23 +534,10 @@ static int s_Resolve(SERV_ITER iter)
 
 static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
 {
-    struct SLINKERD_Data* data = NULL;
+    struct SLINKERD_Data* data;
 
-    if ( ! iter) {
-        CORE_LOG_X(eLSub_Logic, eLOG_Critical,
-                   "Unexpected NULL 'iter' pointer.");
-        return NULL;
-    }
+    assert(iter  &&  iter->data);
     data = (struct SLINKERD_Data*) iter->data;
-    if ( ! data) {
-        CORE_LOG_X(eLSub_Logic, eLOG_Critical,
-                   "Unexpected NULL 'iter->data' pointer.");
-        return NULL;
-    }
-
-    if (host_info) {
-        *host_info = NULL;
-    }
 
     /* When the last candidate is reached, return it, then for the next
         fetch return NULL, then for the next fetch refetch candidates and
@@ -577,17 +569,22 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
     /* Remove returned info */
     SSERV_Info* info = (SSERV_Info*) data->cand.info;
     data->cand.info = NULL;
+    if (host_info)
+        *host_info = NULL;
     return info;
 }
 
 
 static void s_Reset(SERV_ITER iter)
 {
-    struct SLINKERD_Data* data = (struct SLINKERD_Data*) iter->data;
-
-    if (data) {
-        data->done   = 0;
-        data->n_cand = 0;
+    struct SLINKERD_Data* data;
+    assert(iter  &&  iter->data);
+    data = (struct SLINKERD_Data*) iter->data;
+    data->done   = 0;
+    data->n_cand = 0;
+    if (data->cand.info) {
+        free((void*) data->cand.info);
+        data->cand.info = 0;
     }
 }
 
@@ -595,66 +592,11 @@ static void s_Reset(SERV_ITER iter)
 static void s_Close(SERV_ITER iter)
 {
     struct SLINKERD_Data* data = (struct SLINKERD_Data*) iter->data;
-
-    if (data->cand.info) {
-        free((void*)data->cand.info);
-    }
+    iter->data = 0;
     ConnNetInfo_Destroy(data->net_info);
-    free((void*)data);
-    iter->data = NULL;
+    free(data);
 }
 
-
-static ELGHP_Status LINKERD_GetHttpProxy(char* host, size_t len,
-    unsigned short* port_p)
-{
-    char* http_proxy;
-    char* colon;
-    unsigned short port;
-
-    http_proxy = getenv("http_proxy");
-    if ( ! http_proxy) {
-        return eLGHP_NotSet;
-    }
-
-    if (strncasecmp(http_proxy, "http://", 7) == 0)
-        http_proxy += 7;
-
-    colon = strchr(http_proxy, ':');
-    if ( ! colon) {
-        CORE_LOG_X(eLSub_BadData, eLOG_Critical,
-                   "http_proxy doesn't seem to include port number.");
-        return eLGHP_Fail;
-    }
-
-    if (colon == http_proxy) {
-        CORE_LOG_X(eLSub_BadData, eLOG_Critical,
-                   "http_proxy has no host part.");
-        return eLGHP_Fail;
-    }
-
-    if (http_proxy + len < colon + 1) {
-        CORE_LOG_X(eLSub_BadData, eLOG_Critical,
-                   "http_proxy host too long.");
-        return eLGHP_Fail;
-    }
-
-    if (sscanf(colon + 1, "%hu", &port) != 1) {
-        CORE_LOG_X(eLSub_BadData, eLOG_Critical,
-                   "http_proxy port not an unsigned short.");
-        return eLGHP_Fail;
-    }
-
-    strncpy(host, http_proxy, colon - http_proxy);
-    host[colon-http_proxy] = '\0';
-    *port_p = port;
-
-    CORE_LOGF_X(eLSub_Message, eLOG_Info,
-        ("Setting Linkerd host:port to %s:%hu from 'http_proxy' environment.",
-         host, port));
-
-    return eLGHP_Success;
-}
 
 
 /***********************************************************************
@@ -752,33 +694,20 @@ extern const SSERV_VTable* SERV_LINKERD_Open(SERV_ITER           iter,
     {{
         SConnNetInfo* dni = data->net_info;
 
-        /* Highest precedence is $http_proxy environment variable;
-            fallback to defaults */
-        /* N.B. the 'http_proxy' env var (detected by LINKERD_GetHttpProxy)
-            may be used to override the default host:port for Linkerd.  But
-            connections via Linkerd should be made directly to the Linkerd
-            host:port as the authority part of the URL, not by using the proxy
-            settings.  Therefore, this code sets 'dni->host', not
-            'dni->http_proxy_host' (same for port). */
-        switch (LINKERD_GetHttpProxy(dni->host, sizeof(dni->host), &dni->port))
-        {
-            case eLGHP_Success:
-                CORE_LOG_X(eLSub_Message, eLOG_Info,
-                           "LINKERD_GetHttpProxy() result: eLGHP_Success");
-                break;
-            case eLGHP_NotSet:
-                CORE_LOG_X(eLSub_Message, eLOG_Info,
-                           "LINKERD_GetHttpProxy() result: eLGHP_NotSet");
-                strcpy(dni->host, LINKERD_HOST);
-                dni->port = LINKERD_PORT;
-                break;
-            case eLGHP_Fail:
-                CORE_LOG_X(eLSub_Message, eLOG_Info,
-                           "LINKERD_GetHttpProxy() result: eLGHP_Fail");
-                CORE_LOG_X(eLSub_BadData, eLOG_Error,
-                           "Couldn't get Linkerd http_proxy.");
-                s_Close(iter);
-                return 0;
+        /* N.B. Proxy configuration (including 'http_proxy' env. var. detected
+           and parsed by the toolkit) may be used to override the default
+           host:port for Linkerd.  But connections via Linkerd should be made
+           directly to the Linkerd host:port as the authority part of the URL,
+           not by using the proxy settings.  Therefore, this code sets
+           'dni->host', not 'dni->http_proxy_host' (same for port). */
+        if (dni->http_proxy_host[0]  &&  dni->http_proxy_port
+            &&  dni->http_proxy_only) {
+            strcpy(dni->host, dni->http_proxy_host);
+            dni->port =       dni->http_proxy_port;
+        } else  {
+            /* FIXME: these should come from the [_LINKERD] section */
+            strcpy(dni->host, LINKERD_HOST);
+            dni->port =       LINKERD_PORT;
         }
 
         dni->scheme = endpoint.scheme;
