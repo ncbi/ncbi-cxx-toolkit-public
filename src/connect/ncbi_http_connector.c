@@ -354,7 +354,8 @@ static int/*bool*/ s_CallAdjust(SHttpConnector* uuu, unsigned int arg)
                      uuu->net_info->http_proxy_port !=
                           net_info->http_proxy_port)){
                 close = 1/*true*/;
-            } else if (net_info->http_proxy_host[0]) {
+            } else if (net_info->http_proxy_host[0]  &&
+                       net_info->http_proxy_port) {
                 if (net_info->scheme == eURL_Https) {
                     if (uuu->net_info->scheme != eURL_Https)
                         close = 1/*true*/;
@@ -366,7 +367,8 @@ static int/*bool*/ s_CallAdjust(SHttpConnector* uuu, unsigned int arg)
                                               net_info->scheme)) {
                         close = 1/*true*/;
                     }
-                }
+                } else if (!net_info->http_proxy_only)
+                    close = 1/*true*/;
                 /* connection reused with HTTP and w/CONNECT: HTTP -> HTTPS */
             } else if (!x_SameScheme(uuu->net_info->scheme,
                                           net_info->scheme)             ||
@@ -846,7 +848,8 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
             &&  uuu->net_info->req_method != eReqMethod_Connect
             &&  uuu->net_info->scheme == eURL_Https
             &&  uuu->net_info->http_proxy_host[0]
-            &&  uuu->net_info->http_proxy_port) {
+            &&  uuu->net_info->http_proxy_port
+            && !uuu->net_info->http_proxy_only) {
             SConnNetInfo* net_info = ConnNetInfo_Clone(uuu->net_info);
             uuu->reused = 0/*false*/;
             if (!net_info) {
@@ -918,7 +921,8 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
                     break;
                 }
                 if (req_method == eReqMethod_Connect) {
-                    /* Tunnel */
+                    /* Tunnel (RFC2817) */
+                    assert(!uuu->net_info->http_proxy_only);
                     assert(!uuu->net_info->http_version);
                     if (!len) {
                         args = 0;
@@ -1887,8 +1891,13 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
                 tags &= (THTTP_Tags)
                     (~(eHTTP_ContentLength | eHTTP_TransferEncoding));
                 if (!uuu->net_info->http_version) {
-                    CORE_LOG(eLOG_Warning,
-                             "Chunked transfer encoding within HTTP/1.0");
+                    if (!url)
+                        url = ConnNetInfo_URL(uuu->net_info);
+                    CORE_LOGF_X(26, eLOG_Warning,
+                                ("[HTTP%s%s]  Chunked transfer encoding"
+                                 " with HTTP/1.0",
+                                 url ? "; " : "",
+                                 url ? url  : ""));
                 }
                 continue;
             }
@@ -2762,7 +2771,8 @@ static EIO_Status s_CreateHttpConnector
     }
 
     if (tunnel) {
-        if (!xxx->http_proxy_host[0]  ||  !xxx->http_proxy_port) {
+        if (!xxx->http_proxy_host[0]  ||  !xxx->http_proxy_port
+            ||  xxx->http_proxy_only) {
             ConnNetInfo_Destroy(xxx);
             return eIO_InvalidArg;
         }

@@ -397,11 +397,11 @@ static SSERV_InfoCPtr s_GetNextInfo(SServiceConnector* uuu, int/*bool*/ http)
 }
 
 
-static char* x_HostPort(const char* host, unsigned short nport)
+static char* x_HostPort(const char* host, unsigned short aport)
 {
     char*  hostport, port[16];
     size_t hostlen = strlen(host);
-    size_t portlen = (size_t) sprintf(port, ":%hu", nport) + 1;
+    size_t portlen = (size_t) sprintf(port, ":%hu", aport) + 1;
     hostport = (char*) malloc(hostlen + portlen);
     if (hostport) {
         memcpy(hostport,           host, hostlen);
@@ -431,7 +431,8 @@ static CONNECTOR s_SocketConnectorBuilder(SConnNetInfo* net_info,
 
     flags |= (net_info->debug_printout == eDebugPrintout_Data
               ? fSOCK_LogOn : fSOCK_LogDefault);
-    if (net_info->http_proxy_host[0]  &&  net_info->http_proxy_port) {
+    if (net_info->http_proxy_host[0]  &&  net_info->http_proxy_port
+        &&  !net_info->http_proxy_only) {
         /* NB: ideally, should have pushed data:size here if proxy not buggy */
         *status = HTTP_CreateTunnel(net_info, fHTTP_NoAutoRetry, &sock);
         assert(!sock ^ !(*status != eIO_Success));
@@ -477,6 +478,8 @@ static CONNECTOR s_SocketConnectorBuilder(SConnNetInfo* net_info,
             net_info->http_version = 0;
             net_info->http_push_auth = 0;
             net_info->http_proxy_leak = 0;
+            net_info->http_proxy_skip = 0;
+            net_info->http_proxy_only = 0;
             net_info->user[0] = '\0';
             net_info->pass[0] = '\0';
             net_info->path[0] = '\0';
@@ -510,8 +513,6 @@ static CONNECTOR s_SocketConnectorBuilder(SConnNetInfo* net_info,
         }
     }
     if (!(c = SOCK_CreateConnectorOnTopEx(sock, 1/*own*/, hostport))) {
-        if (*status == eIO_Success)
-            *status  = eIO_Unknown;
         SOCK_Abort(sock);
         SOCK_Close(sock);
     }
@@ -750,6 +751,7 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
     char*       iter_header;
     EReqMethod  req_method;
 
+    *status = eIO_Success;
     assert(net_info->firewall  ||  info);
     ConnNetInfo_DeleteUserHeader(net_info, kHttpHostTag);
     if (!net_info->http_referer)
@@ -761,7 +763,6 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
            We know the connection point, so let's try to use it! */
         if ((info->type != fSERV_Standalone  ||  !net_info->stateless)
             &&  !x_SetHostPort(net_info, info)) {
-            *status = eIO_Unknown;
             return 0;
         }
 
@@ -785,7 +786,7 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
         case fSERV_Http:
         case fSERV_HttpGet:
         case fSERV_HttpPost:
-            /* Connection directly to CGI */
+            /* Connection directly to a CGI */
             net_info->stateless = 1/*true*/;
             req_method  = info->type == fSERV_HttpGet
                 ? eReqMethod_Get : (info->type == fSERV_HttpPost
@@ -861,10 +862,8 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
                                         0, user_header, mime_t,
                                         mime_s, mime_e, 0);
     }
-    if (!user_header) {
-        *status = eIO_Unknown;
+    if (!user_header)
         return 0;
-    }
 
     if ((iter_header = SERV_Print(uuu->iter, net_info, but_last)) != 0) {
         size_t uh_len;
@@ -882,14 +881,14 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
         user_header = 0; /* special case of assignment of literal "" */
 
     if (uuu->user_header) {
+        /* delete previously set user header first */
         ConnNetInfo_DeleteUserHeader(net_info, uuu->user_header);
         free((void*) uuu->user_header);
     }
+    /* then set a new one */
     uuu->user_header = user_header;
-    if (user_header && !ConnNetInfo_OverrideUserHeader(net_info, user_header)){
-        *status = eIO_Unknown;
+    if (user_header && !ConnNetInfo_OverrideUserHeader(net_info, user_header))
         return 0;
-    }
 
     ConnNetInfo_ExtendUserHeader
         (net_info, "User-Agent: NCBIServiceConnector/"
@@ -901,12 +900,11 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
 #endif /*NCBI_CXX_TOOLKIT*/
          );
 
-    *status = eIO_Success;
     if (!net_info->stateless  &&  (net_info->firewall            ||
                                    info->type == fSERV_Firewall  ||
                                    info->type == fSERV_Ncbid)) {
         /* Auxiliary HTTP connector first */
-        EIO_Status temp = eIO_Success;
+        EIO_Status aux_status;
         CONNECTOR c;
         CONN conn;
 
@@ -922,26 +920,25 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
                                    s_ParseHeaderNoUCB, uuu/*user_data*/,
                                    0/*adjust*/, 0/*cleanup*/);
         /* Wait for connection info back from dispatcher */
-        if (c  &&  (temp = CONN_Create(c, &conn)) == eIO_Success) {
+        if (c  &&  (*status = CONN_Create(c, &conn)) == eIO_Success) {
             CONN_SetTimeout(conn, eIO_Open,      timeout);
             CONN_SetTimeout(conn, eIO_ReadWrite, timeout);
             CONN_SetTimeout(conn, eIO_Close,     timeout);
             /* Send all the HTTP data... */
-            if ((temp = CONN_Flush(conn)) != eIO_Success)
-                *status = temp;
+            *status = CONN_Flush(conn);
             /* ...then trigger the header callback */
-            if ((temp = CONN_Close(conn)) != eIO_Success  &&
-                 temp                     != eIO_Closed   &&
-                *status < temp) {
-                *status = temp;
+            aux_status = CONN_Close(conn);
+            if (aux_status != eIO_Success  &&
+                aux_status != eIO_Closed   &&
+                *status < aux_status) {
+                *status = aux_status;
             }
         } else {
             /* can only happen if we're out of memory */
             const char* error;
             if (c) {
-                error = IO_StatusStr(temp);
+                error = IO_StatusStr(*status);
                 x_DestroyConnector(c);
-                *status = temp;
             } else
                 error = 0;
             CORE_LOGF_X(4, eLOG_Error,
@@ -953,14 +950,13 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
         if (uuu->host == (unsigned int)(-1)) {
             assert(net_info->firewall  ||  info->type == fSERV_Firewall);
             assert(!net_info->stateless);
+            assert(!uuu->port);
             net_info->stateless = 1/*true*/;
             /* Fallback to try to use stateless mode instead */
             return s_Open(uuu, timeout, info, net_info, status);
         }
         if (!uuu->host  ||  !uuu->port) {
             /* no connection info found */
-            if (*status == eIO_Success)
-                *status  = eIO_Unknown;
             if (!net_info->scheme)
                 net_info->scheme = eURL_Http;
             ConnNetInfo_SetArgs(net_info, 0);
@@ -1045,7 +1041,7 @@ static EIO_Status s_Close(CONNECTOR       connector,
 
     if (uuu->meta.list) {
         SMetaConnector* meta = connector->meta;
-        METACONN_Remove(meta, uuu->meta.list);
+        verify(METACONN_Remove(meta, uuu->meta.list) == eIO_Success);
         uuu->meta.list = 0;
         s_Reset(meta, connector);
     }
@@ -1078,6 +1074,7 @@ static EIO_Status s_VT_Open(CONNECTOR connector, const STimeout* timeout)
     for (uuu->retry = 0;  uuu->retry < uuu->net_info->max_try;  uuu->retry++) {
         SConnNetInfo* net_info;
         SSERV_InfoCPtr info;
+        const char* type;
         int stateless;
         CONNECTOR c;
 
@@ -1088,7 +1085,7 @@ static EIO_Status s_VT_Open(CONNECTOR connector, const STimeout* timeout)
 
         if (!(info = s_GetNextInfo(uuu, 0/*any*/))
             &&  (!uuu->net_info->firewall
-                 ||  strcasecmp(SERV_MapperName(uuu->iter), "local") == 0)) {
+                 ||  strcmp(SERV_MapperName(uuu->iter), "LOCAL") == 0)) {
             break;
         }
         if (uuu->type) {
@@ -1103,6 +1100,16 @@ static EIO_Status s_VT_Open(CONNECTOR connector, const STimeout* timeout)
             status = eIO_Unknown;
             break;
         }
+        if (info  &&  strcmp(SERV_MapperName(uuu->iter), "LINKERD") == 0) {
+            /* LINKERD *is* a proxy, so just drop HTTP proxy (if any) here */
+            net_info->http_proxy_host[0] = '\0';
+            net_info->http_proxy_port    =   0;
+            net_info->http_proxy_user[0] = '\0';
+            net_info->http_proxy_pass[0] = '\0';
+            net_info->http_proxy_leak    =   0;
+            net_info->http_proxy_skip    =   0;
+            net_info->http_proxy_only    =   1;
+        }
 
         c = s_Open(uuu, timeout, info, net_info, &status);
         stateless = net_info->stateless;
@@ -1111,17 +1118,21 @@ static EIO_Status s_VT_Open(CONNECTOR connector, const STimeout* timeout)
 
         if (!c) {
             if (status == eIO_Success)
-                status  = eIO_Closed;
+                status  = eIO_Unknown;
             continue;
         }
-
-        /* Setup the new connector on a temporary meta-connector... */
-        memset(&uuu->meta, 0, sizeof(uuu->meta));
-        if ((status = METACONN_Insert(&uuu->meta, c)) != eIO_Success) {
-            x_DestroyConnector(c);
-            continue;
-        }
-        /* ...then link it in using current connection's meta */
+        {{
+            EIO_Status meta_status;
+            /* Setup the new connector on a temporary meta-connector... */
+            memset(&uuu->meta, 0, sizeof(uuu->meta));
+            meta_status = METACONN_Insert(&uuu->meta, c);
+            if (meta_status != eIO_Success) {
+                x_DestroyConnector(c);
+                status = meta_status;
+                continue;
+            }
+        }}
+        /* ...then link it in using the current connection's meta */
         assert(c->meta == &uuu->meta);
         c->next = meta->list;
         meta->list = c;
@@ -1134,34 +1145,34 @@ static EIO_Status s_VT_Open(CONNECTOR connector, const STimeout* timeout)
         CONN_SET_METHOD    (meta, read,   uuu->meta.read,  uuu->meta.c_read);
         CONN_SET_METHOD    (meta, status, uuu->meta.status,uuu->meta.c_status);
 
-        if (uuu->meta.get_type) {
-            const char* temp;
-            if ((temp = uuu->meta.get_type(uuu->meta.c_get_type)) != 0) {
-                size_t slen = strlen(uuu->service);
-                size_t tlen = strlen(temp);
-                char*  type = (char*) malloc(slen + tlen + 2);
-                if (type) {
-                    memcpy(type,        uuu->service, slen);
-                    type[slen++]      = '/';
-                    memcpy(type + slen, temp,         tlen);
-                    type[slen + tlen] = '\0';
-                    uuu->type = type;
-                }
+        if (uuu->meta.get_type
+            &&  (type = uuu->meta.get_type(uuu->meta.c_get_type)) != 0) {
+            size_t slen = strlen(uuu->service);
+            size_t tlen = strlen(type);
+            char*  temp = (char*) malloc(slen + tlen + 2);
+            if (temp) {
+                memcpy(temp,        uuu->service, slen);
+                temp[slen++]      = '/';
+                memcpy(temp + slen, type,         tlen);
+                temp[slen + tlen] = '\0';
+                uuu->type = temp;
             }
         }
 
-        if (!uuu->meta.open) {
-            s_Close(connector, timeout, 0/*retain*/);
-            status = eIO_NotSupported;
-            continue;
+        if (status == eIO_Success) {
+            if (!uuu->meta.open) {
+                s_Close(connector, timeout, 0/*retain*/);
+                status = eIO_NotSupported;
+                continue;
+            }
+
+            status = uuu->meta.open(uuu->meta.c_open, timeout);
+            if (status == eIO_Success)
+                break;
         }
-
-        status = uuu->meta.open(uuu->meta.c_open, timeout);
-        if (status == eIO_Success)
-            break;
-
         if (!stateless
-            &&  (uuu->net_info->firewall  ||  info->type == fSERV_Firewall)) {
+            &&  (uuu->net_info->firewall  ||  info->type == fSERV_Firewall)
+            &&  uuu->type  &&  strcmp(uuu->type, g_kNcbiSockNameAbbr)) {
             static const char kFWDLink[] = CONN_FWD_LINK;
             CORE_LOGF_X(6, eLOG_Error,
                         ("[%s]  %s connection failure (%s) usually"

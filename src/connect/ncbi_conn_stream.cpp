@@ -257,14 +257,12 @@ s_SocketConnectorBuilder(const string&  ahost,
 {
     string         x_host, xx_port;
     unsigned int   x_port;
-    EIO_Status     status;
     const string*  host;
     unsigned short port;
     size_t         len;
     CONNECTOR      c;
-    if ((port  =  aport) != 0  &&  (len = ahost.size()) != 0) {
-        host   = &ahost;
-        status = eIO_Success;
+    if ((port =  aport) != 0  &&  (len = ahost.size()) != 0) {
+        host  = &ahost;
     } else if (!len  ||  NCBI_HasSpaces(ahost.c_str(), len)
                ||  !NStr::SplitInTwo(ahost, ":", x_host, xx_port)
                ||  x_host.empty()  ||  xx_port.empty()
@@ -272,15 +270,17 @@ s_SocketConnectorBuilder(const string&  ahost,
                ||  !(x_port = NStr::StringToUInt(xx_port,
                                                  NStr::fConvErr_NoThrow))
                ||  (x_port ^ (x_port & 0xFFFF))) {
-        status = eIO_InvalidArg;
+        NCBI_THROW(CIO_Exception, eInvalidArg,
+                   "CConn_SocketStream::CConn_SocketStream(\""
+                   + ahost + "\", " + NStr::NumericToString(aport) + "): "
+                   " Invalid/insufficient destination");
     } else {
-        port   =  x_port;
-        host   = &x_host;
-        status = eIO_Success;
+        port =  x_port;
+        host = &x_host;
     }
-    c = status ? 0 : SOCK_CreateConnectorEx(host->c_str(), port, max_try,
-                                            data, size, flgs);
-    return CConn_IOStream::TConnector(c, status);
+    c = SOCK_CreateConnectorEx(host->c_str(), port, max_try,
+                               data, size, flgs);
+    return CConn_IOStream::TConnector(c);
 }
 
 
@@ -369,7 +369,8 @@ s_SocketConnectorBuilder(const SConnNetInfo* net_info,
         flgs &= ~fSOCK_LogDefault;
         flgs |=  fSOCK_LogOn;
     }
-    if (net_info->http_proxy_host[0]  &&  net_info->http_proxy_port) {
+    if (net_info->http_proxy_host[0]  &&  net_info->http_proxy_port
+        &&  !net_info->http_proxy_only) {
         status = HTTP_CreateTunnel(net_info, fHTTP_NoAutoRetry, &sock);
         _ASSERT(!sock ^ !(status != eIO_Success));
         if (status == eIO_Success
@@ -394,7 +395,8 @@ s_SocketConnectorBuilder(const SConnNetInfo* net_info,
         if (!proxy  &&  net_info->debug_printout) {
             AutoPtr<SConnNetInfo> x_net_info(ConnNetInfo_Clone(net_info));
             if (x_net_info.get()) {
-                // manual cleanup of most fields req'd
+                // NB: This is only for logging! (so no throw on NULL)
+                // Manual cleanup of most fields req'd
                 x_net_info->scheme = eURL_Unspec;
                 x_net_info->req_method = eReqMethod_Any;
                 x_net_info->external = 0;
@@ -404,6 +406,8 @@ s_SocketConnectorBuilder(const SConnNetInfo* net_info,
                 x_net_info->http_version = 0;
                 x_net_info->http_push_auth = 0;
                 x_net_info->http_proxy_leak = 0;
+                x_net_info->http_proxy_skip = 0;
+                x_net_info->http_proxy_only = 0;
                 x_net_info->user[0] = '\0';
                 x_net_info->pass[0] = '\0';
                 x_net_info->path[0] = '\0';
@@ -437,7 +441,6 @@ s_SocketConnectorBuilder(const SConnNetInfo* net_info,
     if (!c) {
         SOCK_Abort(sock);
         SOCK_Close(sock);
-        status = eIO_Unknown;
     }
     return CConn_IOStream::TConnector(c, status);
 }
@@ -1402,6 +1405,8 @@ extern CConn_IOStream* NcbiOpenURL(const string& url, size_t buf_size)
                 net_info->http_version = 0;
                 net_info->http_push_auth = 0;
                 net_info->http_proxy_leak = 0;
+                net_info->http_proxy_skip = 0;
+                net_info->http_proxy_only = 0;
                 net_info->user[0] = '\0';
                 net_info->pass[0] = '\0';
                 net_info->http_proxy_host[0] = '\0';

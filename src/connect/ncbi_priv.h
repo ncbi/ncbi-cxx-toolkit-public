@@ -98,7 +98,7 @@ NCBI_C_DEFINE_ERRCODE_X(Connect_Util,          303,  12);
 NCBI_C_DEFINE_ERRCODE_X(Connect_LBSM,          304,  30);
 NCBI_C_DEFINE_ERRCODE_X(Connect_FTP,           305,  13);
 NCBI_C_DEFINE_ERRCODE_X(Connect_SMTP,          306,  33);
-NCBI_C_DEFINE_ERRCODE_X(Connect_HTTP,          307,  25);
+NCBI_C_DEFINE_ERRCODE_X(Connect_HTTP,          307,  26);
 NCBI_C_DEFINE_ERRCODE_X(Connect_Service,       308,  10);
 NCBI_C_DEFINE_ERRCODE_X(Connect_HeapMgr,       309,  34);
 NCBI_C_DEFINE_ERRCODE_X(Connect_LBOS,          310, 600); /*safe upper bound*/
