@@ -377,15 +377,18 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Close
  * non-eIO_Success return value causes it to be returned to the caller level
  * (but possibly with some processing already completed by then, e.g. such as
  * a partial read for eCONN_OnRead from an internal connection buffer).
- * @note  eIO_Interrupt returned from the callback switches connection into a
+ * @note  eIO_Interrupt returned from a callback switches connection into a
  * cancelled state irreversibly, causing any further I/O for this handle to
  * fail with eIO_Interrupt.
  * @note  non-eIO_Success from an eCONN_OnClose callback cannot postpone the
  * connection closure (but the error code is still passed through to the user).
  * @note  by returning eIO_Success, eCONN_OnTimeout restarts the I/O that
- * has timed out (except for open).
+ * has timed out (with possibly eCONN_OnOpen, eCONN_OnRead, eCONN_OnWrite,
+ * or eCONN_OnFlush callbacks invoked again, if they are set).
  * @note  eCONN_OnTimeout for connection open is only called if eCONN_OnOpen
  * was also set for that connection.
+ * @note  there's no timeout callback on connection close -- if timeout occurs,
+ * the connection is still closed with eIO_Timeout status.
  * @sa
  *  CONN_Read, CONN_Write, CONN_Close
  */
