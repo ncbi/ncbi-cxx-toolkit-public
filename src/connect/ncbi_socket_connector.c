@@ -320,17 +320,17 @@ static CONNECTOR s_Init
         if (host) {
             xxx->host  = strcpy((char*) xxx + sizeof(*xxx), host);
             xxx->port  = 0;
-        } else if (sock) {
+        } else if (!sock) {
+            /* in the absence of sock this denotes invalid state for Open() */
+            xxx->host  = 0;
+            xxx->port  = 0;
+        } else {
             unsigned int x_host;
             char* addr = (char*) xxx + sizeof(*xxx);
             SOCK_GetPeerAddress(sock, &x_host, &xxx->port, eNH_HostByteOrder);
             SOCK_ntoa(SOCK_HostToNetLong(x_host), addr, MAX_IP_ADDR_LEN);
             xxx->host  = addr;
             assert(xxx->port);
-        } else {
-            /* in the absence of sock this denotes invalid state for Open() */
-            xxx->host  = 0;
-            xxx->port  = 0;
         }
         xxx->try_own   = try_own   ? 1         : 0;
         /*xxx->flags   = 0; // unused*/
