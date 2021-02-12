@@ -64,10 +64,13 @@ void CExonNumberAssigner::xInitialize(
 bool CExonNumberAssigner::CdsNeedsExonNumbers() const
 //  ---------------------------------------------------------------------------
 {
-    if (!mRnaMf) {
-        return (mCdsLoc.GetPacked_int().Get().size() > 1);
-    }
-    return (mRnaLoc.GetPacked_int().Get().size() > 1);
+    return true; //latest instruction
+
+    //I suspect this will be back - or something close to it
+    //if (!mRnaMf) {
+    //    return (mCdsLoc.GetPacked_int().Get().size() > 1);
+    //}
+    //return (mRnaLoc.GetPacked_int().Get().size() > 1);
 }
 
 //  ---------------------------------------------------------------------------
