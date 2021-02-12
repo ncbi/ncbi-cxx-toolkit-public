@@ -33,7 +33,7 @@
 
 #include "ncbi_ansi_ext.h"
 #include "ncbi_connssl.h"
-#include "ncbi_priv.h"
+#include "ncbi_once.h"
 #include "ncbi_servicep.h"
 #include <connect/ncbi_connutil.h>
 #include <ctype.h>
@@ -130,6 +130,18 @@ static int/*bool*/ x_tr(char* str, char a, char b, size_t len)
 }
 
 
+/* Last parameter "*generic":
+ * [in]
+ *    if "svclen" == 0: ignored;
+ *    if "svclen" != 0, is a boolean "service_only" (if non-zero then no
+ *    fallback to generic search in the "CONN_param" environment or the
+ *    "[CONN]param" registry entry, gets performed);
+ * [out]
+ *    0 if the search ended up with a service-specific value returned (always
+ *      so if the [in] value was non-zero);
+ *    1 if the search ended up looking at the "CONN_param" enviroment or the
+ *      "[CONN]param" registry entry (always so if "svclen" == 0);
+ */
 static const char* x_GetValue(const char* svc, size_t svclen,
                               const char* param, char* value,size_t value_size,
                               const char* def_value, int* /*bool*/ generic)
@@ -150,34 +162,41 @@ static const char* x_GetValue(const char* svc, size_t svclen,
         char        tmp[sizeof(buf)];
         int/*bool*/ end, tr;
 
-        *generic = 0/*false*/;
         if (strncasecmp(param, DEF_CONN_REG_SECTION "_",
                         sizeof(DEF_CONN_REG_SECTION)) != 0) {
             len += sizeof(DEF_CONN_REG_SECTION);
             end = 0/*false*/;
         } else
             end = 1/*true*/;
-        if (len > sizeof(tmp))
+        if (len > sizeof(buf))
             return 0;
 
-        /* First, environment search for 'service_CONN_param' */
-        s = (char*) memcpy(tmp, svc, svclen) + svclen;
-        tr = x_tr(tmp, '-', '_', svclen);
+        /* First, search the environment for 'service_CONN_param' */
+        s = (char*) memcpy(buf, svc, svclen) + svclen;
+        tr = x_tr(buf, '-', '_', svclen);
+        memcpy(tmp, buf, svclen);
+        *s = '\0';
+        strupr(buf);
         *s++ = '_';
         if (!end) {
             memcpy(s, DEF_CONN_REG_SECTION, sizeof(DEF_CONN_REG_SECTION) - 1);
             s += sizeof(DEF_CONN_REG_SECTION) - 1;
             *s++ = '_';
+            end = *generic;
         }
+        *generic = 0/*false*/;
         memcpy(s, param, parlen);
+        strupr(s); /*FIXME: param all caps, so not needed*/
         CORE_LOCK_READ;
-        if ((val = getenv(strupr((char*) memcpy(buf, tmp, len--)))) != 0
-            ||  (memcmp(buf, tmp, len) != 0  &&  (val = getenv(tmp)) != 0)) {
+        if ((val = getenv(buf)) != 0
+            ||  (memcmp(buf, tmp, svclen) != 0
+                 &&  (val = getenv((char*) memcpy(buf, tmp, svclen))) != 0)) {
             rv = x_strncpy0(value, val, value_size);
             CORE_UNLOCK;
             return rv;
         }
         CORE_UNLOCK;
+        assert(memcmp(buf, tmp, svclen) == 0);
 
         /* Next, search for 'CONN_param' in '[service]' registry section */
         if (tr)
@@ -187,6 +206,7 @@ static const char* x_GetValue(const char* svc, size_t svclen,
         rv = CORE_REG_GET(buf, s, value, value_size, end ? def_value : 0);
         if (*value  ||  end)
             return rv;
+        assert(!*generic);
         *generic = 1/*true*/;
     } else {
         *generic = 1/*true*/;
@@ -205,7 +225,8 @@ static const char* x_GetValue(const char* svc, size_t svclen,
             s = buf;
         }
         memcpy(s, param, parlen);
-        s = strupr(buf);
+        strupr(s); /*FIXME: param all caps, so not needed*/
+        s = buf;
     }
 
     /* Environment search for 'CONN_param' */
@@ -256,12 +277,30 @@ const char* ConnNetInfo_GetValueInternal(const char* service,const char* param,
                                          char* value, size_t value_size,
                                          const char* def_value)
 {
-    int/*bool*/ dummy;
+    int/*bool*/ service_only = 0/*false*/;
     assert(!service  ||  !strpbrk(service, "?*["));
     assert(value  &&  value_size  &&  param  &&  *param);
     *value = '\0';
     return s_GetValue(service, service  &&  *service ? strlen(service) : 0,
-                      param, value, value_size, def_value, &dummy);
+                      param, value, value_size, def_value, &service_only);
+}
+
+
+/* No "CONN_param" environment or "[CONN]param" registry fallbacks */
+const char* ConnNetInfo_GetValueService(const char* service, const char* param,
+                                        char* value, size_t value_size,
+                                        const char* def_value)
+{
+    int/*bool*/ service_only = 1/*true*/;
+    const char* retval;
+
+    assert(service  &&  *service  &&  !strpbrk(service, "?*["));
+    assert(value  &&  value_size  &&  param  &&  *param);
+    *value = '\0';
+    retval = s_GetValue(service, strlen(service),
+                        param, value, value_size, def_value, &service_only);
+    assert(!service_only);
+    return retval;
 }
 
 
@@ -269,9 +308,9 @@ extern const char* ConnNetInfo_GetValue(const char* service, const char* param,
                                         char* value, size_t value_size,
                                         const char* def_value)
 {
+    int/*bool*/ service_only;
     const char* retval;
     size_t      svclen;
-    int/*bool*/ dummy;
 
     if (!value  ||  !value_size)
         return 0;
@@ -285,12 +324,13 @@ extern const char* ConnNetInfo_GetValue(const char* service, const char* param,
         else if (!(service = SERV_ServiceName(service)))
             return 0;
         else
-            verify((svclen = strlen(service)) > 0);
+            verify((svclen = strlen(service)) != 0);
     } else
         svclen = 0;
 
+    service_only = 0/*false*/;
     retval = s_GetValue(service, svclen,
-                        param, value, value_size, def_value, &dummy);
+                        param, value, value_size, def_value, &service_only);
     if (svclen)
         free((void*) service);
     return retval;
@@ -357,8 +397,8 @@ static EFWMode x_ParseFirewall(const char* str, int/*bool*/ generic)
 }
 
 
-/* Return 0 if failed, 1 if succeeded, -1 if nothing to do */
-static int x_SetupHttpProxy(SConnNetInfo* info, const char* env)
+/* Return -1 if nothing to do; 0 if failed; 1 if succeeded, */
+static int/*tri-state*/ x_SetupHttpProxy(SConnNetInfo* info, const char* env)
 {
     SConnNetInfo* x_info;
     const char* val;
@@ -427,9 +467,13 @@ static int x_SetupHttpProxy(SConnNetInfo* info, const char* env)
 }
 
 
-static int/*bool*/ x_SetupSystemHttpProxy(SConnNetInfo* info)
+/* -1: not set; 0 error; 1 set okay */
+static int/*tri-state*/ x_SetupSystemHttpProxy(SConnNetInfo* info)
 {
-    int rv = x_SetupHttpProxy(info, "http_proxy");
+    int rv;
+    if (info->http_proxy_skip)
+        return -1;
+    rv = x_SetupHttpProxy(info, "http_proxy");
     return rv < 0 ? x_SetupHttpProxy(info, "HTTP_PROXY") : rv;
 }
 
@@ -474,6 +518,7 @@ static int/*bool*/ s_InfoIsValid(const SConnNetInfo* info)
 SConnNetInfo* ConnNetInfo_CreateInternal(const char* service)
 {
 #define REG_VALUE(name, value, def_value)                               \
+    generic = 0;                                                        \
     *value = '\0';                                                      \
     if (!s_GetValue(service, len,                                       \
                     name, value, sizeof(value), def_value, &generic))   \
@@ -494,6 +539,7 @@ SConnNetInfo* ConnNetInfo_CreateInternal(const char* service)
     if (!(info = (SConnNetInfo*) malloc(sizeof(*info) + len)))
         return 0/*failure*/;
     info->magic            = 0;
+    info->unused           = 0/*MBZ*/;
     info->reserved         = 0/*MBZ*/;
     info->http_referer     = 0;
     info->http_user_header = 0;
@@ -586,10 +632,14 @@ SConnNetInfo* ConnNetInfo_CreateInternal(const char* service)
     info->http_proxy_port    =   0;
     info->http_proxy_user[0] = '\0';
     info->http_proxy_pass[0] = '\0';
+    info->http_proxy_only    =   0/*false*/;
 
     /* HTTP proxy leakout */
     REG_VALUE(REG_CONN_HTTP_PROXY_LEAK, str, DEF_CONN_HTTP_PROXY_LEAK);
     info->http_proxy_leak = ConnNetInfo_Boolean(str) ? 1 : 0;
+    /* HTTP proxy skip */
+    REG_VALUE(REG_CONN_HTTP_PROXY_SKIP, str, DEF_CONN_HTTP_PROXY_SKIP);
+    info->http_proxy_skip = ConnNetInfo_Boolean(str) ? 1 : 0;
 
     /* max. # of attempts to establish connection */
     REG_VALUE(REG_CONN_MAX_TRY, str, 0);
@@ -617,7 +667,7 @@ SConnNetInfo* ConnNetInfo_CreateInternal(const char* service)
     if (!x_StrcatCRLF((char**) &info->http_user_header, str))
         goto err;
 
-    /* default referer, all error(s) ignored */
+    /* default referer ([in] "generic" irrelevant), all error(s) ignored */
     *str = '\0';
     s_GetValue(0, 0, REG_CONN_HTTP_REFERER, str, sizeof(str),
                DEF_CONN_HTTP_REFERER, &generic);
@@ -628,7 +678,7 @@ SConnNetInfo* ConnNetInfo_CreateInternal(const char* service)
     /* credentials */
     info->credentials = 0;
 
-    /* magic */
+    /* magic: the "info" is fully inited and ready to use */
     info->magic = CONN_NET_INFO_MAGIC;
 
     /* args */
@@ -671,7 +721,8 @@ SConnNetInfo* ConnNetInfo_CreateInternal(const char* service)
             REG_VALUE(REG_CONN_HTTP_PROXY_PASS, info->http_proxy_pass,
                       DEF_CONN_HTTP_PROXY_PASS);
         }
-    }
+    } else
+        info->http_proxy_only = 1/*true*/;
     return info;
 
  err:
@@ -1625,6 +1676,8 @@ SConnNetInfo* ConnNetInfo_CloneInternal(const SConnNetInfo* info)
     x_info->debug_printout        = info->debug_printout;
     x_info->http_push_auth        = info->http_push_auth;
     x_info->http_proxy_leak       = info->http_proxy_leak;
+    x_info->http_proxy_skip       = info->http_proxy_skip;
+    x_info->http_proxy_only       = info->http_proxy_only;
     x_info->reserved              = info->reserved;
     strcpy(x_info->user,            info->user);
     strcpy(x_info->pass,            info->pass);
@@ -1636,6 +1689,7 @@ SConnNetInfo* ConnNetInfo_CloneInternal(const SConnNetInfo* info)
     strcpy(x_info->http_proxy_user, info->http_proxy_user);
     strcpy(x_info->http_proxy_pass, info->http_proxy_pass);
     x_info->max_try               = info->max_try;
+    x_info->unused                = info->unused;
     x_info->http_user_header      = 0;
     x_info->http_referer          = 0;
     x_info->credentials           = info->credentials;
@@ -1910,6 +1964,8 @@ extern void ConnNetInfo_Log(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
     } else
         s_SaveString(s, "http_proxy_pass", info->http_proxy_pass);
     s_SaveBool      (s, "http_proxy_leak", info->http_proxy_leak);
+    s_SaveBool      (s, "http_proxy_skip", info->http_proxy_skip);
+    s_SaveBool      (s, "http_proxy_only", info->http_proxy_only);
     s_SaveULong     (s, "max_try",         info->max_try);
     if (info->timeout) {
         s_SaveULong (s, "timeout(sec)",    info->timeout->sec);
@@ -2171,7 +2227,8 @@ extern EIO_Status URL_ConnectEx
         !BUF_Write(&buf, "\r\n\r\n", user_hdr_len ? 4 : 2)         ||
 
         /* tunneled data */
-        (content_length  &&  x_req_meth == eReqMethod_Connect
+        (x_req_meth == eReqMethod_Connect
+         &&  content_length  &&  content_length != (size_t)(-1L)
          &&  !BUF_Write(&buf, args, content_length))) {
         int x_errno = errno;
         if (port)
@@ -2271,9 +2328,14 @@ extern SOCK URL_Connect
 {
     static const char kHost[] = "Host: ";
     const char* x_hdr = user_hdr;
+    static void* s_Once = 0;
     char* x_args = 0;
     SOCK sock;
 
+    if (!CORE_Once(&s_Once)) {
+        CORE_LOG(eLOG_Warning, "[URL_Connect] "
+                 " *DEPRECATED*!!!  DON'T USE IT!!  Update your code please!");
+    }
     if (req_method >= eReqMethod_v1) {
         CORE_LOG_X(9, eLOG_Error,
                    "[URL_Connect]  Unsupported version of HTTP protocol");

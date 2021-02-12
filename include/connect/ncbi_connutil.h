@@ -187,8 +187,10 @@ typedef struct {  /* NCBI_FAKE_WARNING: ICC */
     unsigned        http_version:1;   /* HTTP/1.v (or selected by req_method)*/
     EBDebugPrintout debug_printout:2; /* switch to printout some debug info  */
     unsigned        http_push_auth:1; /* push authorize tags even w/o 401/407*/
-    unsigned        http_proxy_leak:1;/* non-zero when can fallback to direct*/
-    unsigned        reserved:14;      /* MBZ                                 */
+    unsigned        http_proxy_leak:1;/* TRUE when may fallback to direct    */
+    unsigned        http_proxy_skip:1;/* TRUE when *NOT* to read $http_proxy */
+    unsigned        http_proxy_only:1;/* TRUE when proxy is from $http_proxy */
+    unsigned        reserved:12;      /* MBZ                                 */
     char            user[CONN_USER_LEN+1];  /* username (if spec'd or req'd) */
     char            pass[CONN_PASS_LEN+1];  /* password (for non-empty user) */
     char            host[CONN_HOST_LEN+1];  /* host name to connect to       */
@@ -199,6 +201,7 @@ typedef struct {  /* NCBI_FAKE_WARNING: ICC */
     char            http_proxy_user[CONN_USER_LEN+1]; /* HTTP proxy username */
     char            http_proxy_pass[CONN_PASS_LEN+1]; /* HTTP proxy password */
     unsigned short  max_try;          /* max. # of attempts to connect (>= 1)*/
+    unsigned short  unused;           /* MBZ; 8-byte alignment               */
     const STimeout* timeout;          /* ptr to I/O timeout(infinite if NULL)*/
     const char*     http_user_header; /* user header to add to HTTP request  */
     const char*     http_referer;     /* request referrer (when spec'd)      */
@@ -250,6 +253,9 @@ typedef struct {  /* NCBI_FAKE_WARNING: ICC */
 
 #define REG_CONN_HTTP_PROXY_LEAK    "HTTP_PROXY_LEAK"
 #define DEF_CONN_HTTP_PROXY_LEAK    ""
+
+#define REG_CONN_HTTP_PROXY_SKIP    "HTTP_PROXY_SKIP"
+#define DEF_CONN_HTTP_PROXY_SKIP    ""
 
 #define REG_CONN_HTTP_PUSH_AUTH     "HTTP_PUSH_AUTH"
 #define DEF_CONN_HTTP_PUSH_AUTH     ""
@@ -317,14 +323,16 @@ typedef struct {  /* NCBI_FAKE_WARNING: ICC */
 #define DEF_CONN_LOCAL_IPS_DISABLE  "NONE"
 
 
-/* Lookup "param" in the registry / environment.
- * If "param" does not begin with "CONN_", then "CONN_" gets prepended
- * automatically in all lookups listed below, unless otherwise noted.
+/* Lookup "param" in the registry / environment.  "param" is usually all-caps.
+ * If "param" does not begin with "CONN_", then "CONN_" or "_CONN_" gets 
+ * automatically injected in all lookups listed below, unless otherwise noted.
  * The order of search is the following (the first match causes to return):
- * 1. Environment variable "service_param" (all upper-case;  and if failed,
- *    then "as-is");
- * 2. Registry key "param" in the section "[service]";
- * 3. Environment setting "param" (in all upper-case);
+ * 1. Environment variable "service_CONN_param", where "service" gets dashes
+ *    (if any) replaced with underscores: first looked up converted to all
+ *    uppercase, and if that failed, then looked up with the original case in
+ *    the "service" part;
+ * 2. Registry key "CONN_param" in the section '["service"]';
+ * 3. Environment setting "CONN_param" (in all upper-case);
  * 4. Registry key "param" (with the leading "CONN_" stripped) in the default
  *    section "[CONN]".
  * Steps 1 & 2 skipped for "service" passed as either NULL or empty ("").
@@ -357,32 +365,34 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_Boolean
  );
 
 
-/* This function fills out the "*info" structure using
- * registry entries named (see above) in macros REG_CONN_<NAME>:
+/* This function fills out the "*info" structure using registry entries named
+ * (see above) in the REG_CONN_<NAME> macros (defaults are in DEF_CONN_<NAME>):
  *
- *  -- INFO FIELD --  ----- NAME -----  ---------- REMARKS/EXAMPLES ---------
- *  client_host       local host name   assigned automatically
- *  req_method        REQ_METHOD
+ *  -- INFO FIELD --  ----- NAME -----  ----------- REMARKS/EXAMPLES ----------
+ *  client_host       (auto-assigned)   local host name filled in automatically
+ *  req_method        REQ_METHOD        only "GET"/"POST"/"ANY" allowed
  *  user              USER
  *  pass              PASS
  *  host              HOST
  *  port              PORT
  *  path              PATH
- *                    ARGS              combined in "path" now
+ *                    ARGS              combined in "path" now -- use API calls
  *  http_version      HTTP_VERSION      HTTP version override
- *  http_proxy_host   HTTP_PROXY_HOST   if empty http_proxy_port is set 0
+ *  http_proxy_host   HTTP_PROXY_HOST   if empty http_proxy_port is set to 0
  *  http_proxy_port   HTTP_PROXY_PORT   no HTTP proxy if 0
  *  http_proxy_user   HTTP_PROXY_USER
  *  http_proxy_pass   HTTP_PROXY_PASS
  *  http_proxy_leak   HTTP_PROXY_LEAK   1 means to also re-try w/o the proxy
- *  http_push_auth    HTTP_PUSH_AUTH    Send credentials pre-emptively
+ *  http_proxy_skip   HTTP_PROXY_SKIP   1 means to skip $http_proxy environment
+ *  http_proxy_only   (auto-assigned)   1 means proxy loaded from $http_proxy
+ *  http_push_auth    HTTP_PUSH_AUTH    1 if to send credentials pre-emptively
  *  timeout           TIMEOUT           "<sec>.<usec>": "3.00005", "infinite"
- *  max_try           MAX_TRY  
- *  external          EXTERNAL
+ *  max_try           MAX_TRY
+ *  external          EXTERNAL          1 to mark requests as "external"
  *  firewall          FIREWALL
  *  stateless         STATELESS
- *  lb_disable        LB_DISABLE        obsolete
- *  debug_printout    DEBUG_PRINTOUT
+ *  lb_disable        LB_DISABLE        obsolete, disables the "LBSMD" mapper
+ *  debug_printout    DEBUG_PRINTOUT   "SOME"/"DATA"/"ALL"(same as "DATA")
  *  http_user_header  HTTP_USER_HEADER  "\r\n" (if missing) is auto-appended
  *  http_referer      HTTP_REFERER      may be assigned automatically
  *  svc               SERVICE_NAME      no search/no value without service
@@ -392,7 +402,7 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_Boolean
  * the section 'service' by using the CONN_<NAME> key; then in the environment
  * variable again, but using the name CONN_<NAME>; and finally in the default
  * registry section (DEF_CONN_REG_SECTION), using just <NAME>.  If the service
- * is NULL or empty then the first 2 steps in the above lookup are skipped.
+ * is NULL or empty then the first two steps in the above lookup are skipped.
  *
  * For default values see right above, within macros DEF_CONN_<NAME>.
  *
@@ -440,12 +450,12 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_SetPath
  * is missing from the new args, the existing one will be preserved;  and if
  * no arguments are provided before the new fragment, that part of the exising
  * arguments will not get modified.  Thus, "" causes all arguments but the
- * fragment to be removed.  NULL clears all existing path args and frag. */
+ * fragment to be removed.  NULL clears all existing path, args and frag. */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_SetArgs
 (SConnNetInfo*       net_info,
  const char*         args);
 
-/* Set fragment part only; delete if frag=="".  The passed string may start
+/* Set fragment part only;  delete if "frag"=="".  The passed string may start
  * with '#'; otherwise, the '#' separator will be added to the path element. */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_SetFrag
 (SConnNetInfo*       net_info,
@@ -456,7 +466,7 @@ extern NCBI_XCONNECT_EXPORT const char* ConnNetInfo_GetArgs
 (const SConnNetInfo* net_info
  );
 
-/* Append an argument to the end of the list, preserving any #frag. */
+/* Append an argument to the end of the list, preserving any #frag if there. */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_AppendArg
 (SConnNetInfo*       net_info,
  const char*         arg,
@@ -502,7 +512,7 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_PostOverrideArg
 
 
 /* Set up standard arguments:  service(as passed), address, and platform.
- * Also, set up the User-Agent: HTTP header (using CORE_GetAppName()) in
+ * Also, set up the "User-Agent:" HTTP header (using CORE_GetAppName()) in
  * SConnNetInfo::http_user_header.  Return non-zero on success; zero on error.
  * @sa
  *  CORE_GetAppName, CORE_GetPlatform
@@ -513,8 +523,8 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_SetupStandardArgs
  );
 
 
-/* Set user header (discard previously set header, if any).  Remove the old
- * header (if any) only if "header" is NULL or empty ("" or all blanks).
+/* Set new user header (discard previously set header, if any).  Remove the old
+ * header (if any) only, if "header" is NULL or empty ("" or all blanks).
  * @warning
  *   New "header" may not be any part of the header kept in the structure.
  * Return non-zero if successful;  otherwise, return 0 to indicate an error.
@@ -525,7 +535,7 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_SetUserHeader
  );
 
 
-/* Append user header (same as ConnNetInfo_SetUserHeader() if no previous
+/* Append to user header (same as ConnNetInfo_SetUserHeader() if no previous
  * header was set);  do nothing if the provided "header" is NULL or empty.
  * @warning
  *   New "header" may not be any part of the header kept in the structure.
@@ -539,10 +549,11 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_AppendUserHeader
 
 /* Override user header.
  * Tags replaced (case-insensitively), and tags with empty values effectively
- * delete existing tags from the old user header, e.g. "My-Tag:\r\n" deletes
- * all appearences (if any) of "My-Tag: [<value>]" from the user header.
+ * delete all existing occurrences of the matching tags from the old user
+ * header, e.g. "My-Tag:\r\n" deletes all appearences of "My-Tag: [<value>]"
+ * from the user header, regardless of the "<value>" (if any).
  * Unmatched tags with non-empty values are simply added to the existing user
- * header (as with "Append" above).  Noop if "header" is an empty string ("").
+ * header (as with "Append" above).  No-op if "header" is an empty string ("").
  * @note
  *   New "header" may be part of the current header from the structure.
  * Return non-zero if successful, otherwise return 0 to indicate an error.
@@ -571,8 +582,8 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_ExtendUserHeader
  );
 
 
-/* Delete entries from current user header, if their tags match those
- * passed in "header" (regardless of the values, if any, in the latter).
+/* Delete entries from current user header, if their tags match those passed in
+ * "header" (regardless of the values, if any).
  * @note
  *   New "header" may be part of the current header from the structure.
  */
@@ -582,9 +593,8 @@ extern NCBI_XCONNECT_EXPORT void        ConnNetInfo_DeleteUserHeader
  );
 
 
-/* Set the timeout.  Accepted values can include a valid pointer
- * (to a finite timeout) or kInfiniteTimeout (or 0) to denote
- * the infinite timeout value.
+/* Set the timeout.  Accepted values can include a valid pointer (to a finite
+ * timeout) or kInfiniteTimeout (or 0) to denote the infinite timeout value.
  * Note that kDefaultTimeout as a pointer value is not accepted.
  * Return non-zero (TRUE) on success, or zero (FALSE) on error.
  */
@@ -605,10 +615,9 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_ParseURL
  );
 
 
-/* Reconstruct text URL out of the SConnNetInfo's components
- * (excluding username:password for safety reasons).
- * Returned string must be free()'d when no longer necessary.
- * Return NULL on error.
+/* Reconstruct text URL out of the SConnNetInfo's components (excluding
+ * username:password for safety reasons).  Return NULL on error.
+ * Returned non-NULL string must be free()'d when no longer needed.
  */
 extern NCBI_XCONNECT_EXPORT char*       ConnNetInfo_URL
 (const SConnNetInfo* net_info
@@ -624,7 +633,7 @@ extern NCBI_XCONNECT_EXPORT void        ConnNetInfo_Log
  );
 
 
-/* Destroy and deallocate "net_info" (if not NULL).
+/* Destroy and deallocate "net_info" (if not NULL;  otherwise, do nothing).
  */
 extern NCBI_XCONNECT_EXPORT void        ConnNetInfo_Destroy
 (SConnNetInfo*       net_info
@@ -638,7 +647,7 @@ extern NCBI_XCONNECT_EXPORT void        ConnNetInfo_Destroy
  * @sa
  *  HTTP_CreateConnector, CConn_HttpStream
  * 
- * Hit URL "http[s]://host[:port]/path[?args]" with the following request
+ * Hit a URL "http[s]://host[:port]/path[?args]" with the following request
  * (argument substitution is shown as enclosed in angle brackets (not present
  * in the actual request), and all optional parts shown in square brackets):
  *
@@ -650,28 +659,29 @@ extern NCBI_XCONNECT_EXPORT void        ConnNetInfo_Destroy
  * well-known standard value depending on the "fSOCK_Secure" bit in the "flags"
  * parameter, when connecting to an HTTP server.
  *
- * A protocol version "1.x" is selected by the "req_method"'s value, and
- * can be either 1.0 or 1.1.  METHOD can be any of those of EReqMethod.
+ * A protocol version "1.x" is selected by the "req_method"'s value, and can be
+ * either 1.0 or 1.1.  METHOD can be any of those of EReqMethod.
  *
- * @note that unlike the deprecated URL_Connect(), this call never encodes any
- * "args", and never auto-inserts any "Host:" tag into the headers (unless
+ * @note that unlike the now-deprecated URL_Connect(), this call never encodes
+ * any "args", and never auto-inserts any "Host:" tag into the headers (unless
  * provided by the "user_header" argument).
  *
  * Request method "eReqMethod_Any/11" selects an appropriate method depending
  * on the value of "content_length":  results in GET when no content is
  * expected ("content_length"==0), and POST when "content_length" is non-zero.
  *
- * The "content_length" parameter must specify the exact(!) amount of data
- * that is going to be sent (0 if none) to HTTP server.  The "Content-Length"
- * header with the specified value gets added to all legal requests
- * (but GET / HEAD / CONNECT).  Special case of (-1L) suppresses the header.
+ * The "content_length" parameter must specify the exact(!) amount of data that
+ * is going to be sent (0 if none) to HTTP server.  The "Content-Length" header
+ * with the specified value gets added to all legal requests (but GET / HEAD /
+ * CONNECT).  Special case of (-1L) suppresses the header.
  * Note that if "user_header" contains a "Transfer-Encoding:" header tag, then
- * "content_length" must be passed as (-1L) (RFC7230, 3.3.2).
+ * "content_length" *must* be passed as (-1L) (RFC7230, 3.3.2).
  *
  * Alternatively, "content_length" can specify the amount of initial data to be
  * sent with a CONNECT request into the established tunnel, and held by the
  * "args" parameter (although, no header tag will get added to the HTTP header
- * in that case, see below).
+ * in that case, see below).  Note, however, that RFC7231, 4.3.6 warns that the
+ * behavior of sending a payload with CONNECT is not well-defined.
  *
  * If the string "user_header" is not NULL/empty, it will be stripped off any
  * surrounding white space (including "\r\n"), then get added to the HTTP

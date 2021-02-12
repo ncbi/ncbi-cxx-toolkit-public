@@ -262,6 +262,18 @@ const char* ConnNetInfo_GetValueInternal(const char* service,const char* param,
                                          const char* def_value);
 
 
+/* Private interface:  same as ConnNetInfo_GetValue() for non-empty and
+ * non-wildcard service name but without any service name substitution(s),
+ * and without generic search fallback to "CONN_param" in the environment or
+ * "[CONN]param" in the registry.
+ * @sa
+ *   ConnNetInfo_GetValue, SERV_ServiceName, ConnNetInfo_CreateInternal
+ */
+const char* ConnNetInfo_GetValueService(const char* service,const char* param,
+                                        char* value, size_t value_size,
+                                        const char* def_value);
+
+
 /* Private interface:  manipulate a table of firewall ports */
 void SERV_InitFirewallPorts(void);
 
