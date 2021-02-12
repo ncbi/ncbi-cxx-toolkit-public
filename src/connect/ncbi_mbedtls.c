@@ -705,6 +705,7 @@ static EIO_Status s_MbedTlsInit(FSSLPull pull, FSSLPush push)
                                 MBEDTLS_SSL_PRESET_DEFAULT);
     mbedtls_ssl_conf_authmode(&s_MbedTlsConf, MBEDTLS_SSL_VERIFY_NONE);
 
+    /* Check CONN_[MBED]TLS_LOGLEVEL or [CONN][MBED]TLS_LOGLEVEL */
     val = ConnNetInfo_GetValueInternal(0, "MBED" REG_CONN_TLS_LOGLEVEL,
                                        buf, sizeof(buf),
                                        DEF_CONN_TLS_LOGLEVEL);

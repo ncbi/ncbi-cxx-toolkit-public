@@ -371,6 +371,7 @@ static void* s_GnuTlsCreate(ESOCK_Side side, SNcbiSSLctx* ctx, int* error)
         return 0;
     }
 
+    /* Check CONN_GNUTLS_PRIORITY or [CONN]GNUTLS_PRIORITY */
     ConnNetInfo_GetValueInternal(0, "GNUTLS_PRIORITY", val, sizeof(val), 0);
 
     len = ctx->host ? strlen(ctx->host) : 0;
@@ -732,6 +733,7 @@ static EIO_Status s_GnuTlsInit(FSSLPull pull, FSSLPush push)
     if (!pull  ||  !push)
         return eIO_InvalidArg;
 
+    /* Check CONN_[GNU]TLS_LOGLEVEL or [CONN][GNU]TLS_LOGLEVEL */
     val = ConnNetInfo_GetValueInternal(0, "GNU" REG_CONN_TLS_LOGLEVEL,
                                        buf, sizeof(buf),
                                        DEF_CONN_TLS_LOGLEVEL);

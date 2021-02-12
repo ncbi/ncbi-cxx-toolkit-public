@@ -72,25 +72,28 @@ extern "C" {
  * mbedTLS can also be used as an external installation, but the toolkit has
  * an embedded private copy of the library, which can be used transparently
  * without any additional dependencies.  That embedded copy will be used by
- * default, if no other provider is explicitly pre-set or selected.
+ * default, if no other provider is explicitly pre-set, selected, or disabled.
  */
 extern NCBI_XCONNECT_EXPORT
 SOCKSSL NcbiSetupTls(void);
 
 
-/* Debugging (see also <connect/ncbi_connutil.h>), sets log level in the TLS
- * provider library, and using an empty setting disables the logging.  Levels
- * are provider-specific, but generally the higher the level the more verbose
- * is the output, and usually level 0 is used to stop the output altogether. */
+/* Debugging (see also <connect/ncbi_connutil.h>): sets a log level in the TLS
+ * provider library (using an empty setting disables the logging).  Levels are
+ * provider-specific, but generally the higher the level the more verbose is
+ * the output, and usually level 0 is used to stop the log output altogether.
+ * Note that these are looked up as "CONN_TLS_LOGLEVEL" in the environment or
+ * "[CONN]TLS_LOGLEVEL" in the registry.
+ */
 #define REG_CONN_TLS_LOGLEVEL  "TLS_LOGLEVEL"
 #define DEF_CONN_TLS_LOGLEVEL  ""
 
-/* Provider-specific log level can be turned on by using the provider name
- * merged with the above.  For example, for mbedTLS that setting would become
- * MBEDTLS_LOGLEVEL, and it takes precedence over the generic setting above.
+/* Provider-specific log level can be turned on by using the all-capped 
+ * provider name merged with the above.  For example, for mbedTLS the setting
+ * would be "MBEDTLS_LOGLEVEL" and would have priority over the generic one.
  *
  * Note that GNUTLS has its own environment setting "GNUTLS_DEBUG_LEVEL", which
- * will be considered if none of the TLS_LOGLEVEL settings are used.
+ * will be considered if none of the TLS_LOGLEVEL settings are encountered.
  */
 
 
