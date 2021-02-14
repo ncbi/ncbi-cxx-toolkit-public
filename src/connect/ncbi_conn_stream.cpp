@@ -255,13 +255,13 @@ s_SocketConnectorBuilder(const string&  ahost,
                          size_t         size,
                          TSOCK_Flags    flgs)
 {
+    size_t         len = ahost.size();
     string         x_host, xx_port;
     unsigned int   x_port;
     const string*  host;
     unsigned short port;
-    size_t         len;
     CONNECTOR      c;
-    if ((port =  aport) != 0  &&  (len = ahost.size()) != 0) {
+    if ((port =  aport) != 0  &&  len) {
         host  = &ahost;
     } else if (!len  ||  NCBI_HasSpaces(ahost.c_str(), len)
                ||  !NStr::SplitInTwo(ahost, ":", x_host, xx_port)
