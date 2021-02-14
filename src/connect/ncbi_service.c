@@ -491,7 +491,7 @@ static int/*bool*/ x_ConsistencyCheck(SERV_ITER iter, const SSERV_Info* info)
                        str ? str : "<NULL>"));
             return x_Return(str, 0/*failure*/);
         }
-        if (!info->host  &&  (iter->last  ||   iter->ismask)) {
+        if (!info->host  &&  (iter->last  ||  iter->ismask)) {
             CORE_LOGF(eLOG_Critical,
                       ("[%s]  Interim DNS server w/o host:\n%s", iter->name,
                        str ? str : "<NULL>"));
@@ -505,9 +505,12 @@ static int/*bool*/ x_ConsistencyCheck(SERV_ITER iter, const SSERV_Info* info)
                        str ? str : "<NULL>"));
             RETURN(0/*failure*/);
         }
-        if (info->vhost  ||  info->extra) {
+        if (info->vhost | info->extra) {
             CORE_LOGF(eLOG_Critical,
-                      ("[%s]  Firewall entry with extra(s):\n%s", iter->name,
+                      ("[%s]  Firewall entry with %s%s%s:\n%s", iter->name,
+                       info->vhost                  ? "vhost" : "",
+                       info->extra  &&  info->vhost ? " and " : "",
+                       info->extra                  ? "extra" : "",
                        str ? str : "<NULL>"));
             RETURN(0/*failure*/);
         }
@@ -529,7 +532,7 @@ static int/*bool*/ x_ConsistencyCheck(SERV_ITER iter, const SSERV_Info* info)
             info->mime_s != eMIME_Undefined    ||
             info->mime_e != eENCOD_None) {
             CORE_LOGF(eLOG_Critical,
-                      ("[%s]  DNS entry with have MIME type:\n%s", iter->name,
+                      ("[%s]  DNS entry with MIME type:\n%s", iter->name,
                        str ? str : "<NULL>"));
             RETURN(0/*failure*/);
         }
