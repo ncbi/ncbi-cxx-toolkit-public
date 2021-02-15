@@ -65,36 +65,40 @@ enum ELINKERD_Subcodes {
     other part of the connect library, returned endpoints, or client code.
     Therefore, they are independent of other connect library macros.
  */
-#define REG_LINKERD_SCHEME_KEY      "LINKERD_SCHEME"
-#define REG_LINKERD_SCHEME_DEF      ""
+#define DEF_LINKERD_REG_SECTION  "_LINKERD"
 
-#define REG_LINKERD_USER_KEY        "LINKERD_USER"
-#define REG_LINKERD_USER_DEF        ""
+#define REG_LINKERD_SCHEME       "LINKERD_SCHEME"
+#define DEF_LINKERD_SCHEME       ""
 
-#define REG_LINKERD_PASS_KEY        "LINKERD_PASSWORD"
-#define REG_LINKERD_PASS_DEF        ""
-
-#define REG_LINKERD_PATH_KEY        "LINKERD_PATH"
-#define REG_LINKERD_PATH_DEF        ""
-
-#define REG_LINKERD_ARGS_KEY        "LINKERD_ARGS"
-#define REG_LINKERD_ARGS_DEF        ""
-
-#define REG_NAMERD_FOR_LINKERD_KEY  "NAMERD_FOR_LINKERD"
-#define REG_NAMERD_FOR_LINKERD_DEF  ""
-
-
+#define REG_LINKERD_HOST         "LINKERD_HOST"
 /*  LINKERD_TODO - "temporarily" support plain "linkerd" on Unix only */
 #if defined(NCBI_OS_UNIX)  &&  ! defined(NCBI_OS_CYGWIN)
-#define LINKERD_HOST            "linkerd"
+#  define DEF_LINKERD_HOST       "linkerd"
 #else
-#define LINKERD_HOST            \
+#  define DEF_LINKERD_HOST       \
     "pool.linkerd-proxy.service.bethesda-dev.consul.ncbi.nlm.nih.gov"
 #endif
 
-#define LINKERD_PORT            4140
+#define REG_LINKERD_PORT         "LINKERD_PORT"
+#define DEF_LINKERD_PORT         "4140"
 
-#define LINKERD_HOST_HDR_SFX    ".linkerd.ncbi.nlm.nih.gov"
+#define REG_LINKERD_USER         "LINKERD_USER"
+#define DEF_LINKERD_USER         ""
+
+#define REG_LINKERD_PASS         "LINKERD_PASS"
+#define DEF_LINKERD_PASS         ""
+
+#define REG_LINKERD_PATH         "LINKERD_PATH"
+#define DEF_LINKERD_PATH         ""
+
+#define REG_LINKERD_ARGS         "LINKERD_ARGS"
+#define DEF_LINKERD_ARGS         ""
+
+#define REG_NAMERD_FOR_LINKERD   "NAMERD_FOR_LINKERD"
+#define DEF_NAMERD_FOR_LINKERD   ""
+
+
+#define LINKERD_VHOST_SFX        ".linkerd.ncbi.nlm.nih.gov"
 
 
 typedef enum {
@@ -130,10 +134,10 @@ struct SLINKERD_Data {
 
 
 /* For the purposes of linkerd resolution, endpoint data doesn't include
-    host and port, because the linkerd host and port are constants.
-    Username and password wouldn't normally be part of an endpoint definition,
-    but they are supported so that constructs like
-    CUrl("scheme+ncbilb://user:pass@service/path?args") can be supported.*/
+   host and port, because the linkerd host and port are constants.
+   Username and password wouldn't normally be part of an endpoint definition,
+   but they are supported so that constructs like
+   CUrl("scheme+ncbilb://user:pass@service/path?args") can be supported. */
 typedef struct {
     EURLScheme      scheme;
     char            user[CONN_USER_LEN+1];
@@ -297,46 +301,46 @@ static EEndpointStatus s_EndpointFromRegistry(SEndpoint *end)
     char    path[(CONN_PATH_LEN+1)/2];
     char    args[(CONN_PATH_LEN+1)/2];
 
-    if ( ! ConnNetInfo_GetValueInternal(0,
-        REG_LINKERD_SCHEME_KEY, scheme, sizeof(scheme),
-        REG_LINKERD_SCHEME_DEF))
-    {
+    if ( ! ConnNetInfo_GetValueService(DEF_LINKERD_REG_SECTION,
+                                       REG_LINKERD_SCHEME,
+                                       scheme, sizeof(scheme),
+                                       DEF_LINKERD_SCHEME)) {
         CORE_LOG_X(eLSub_Alloc, eLOG_Critical,
                    "Couldn't alloc for scheme from registry.");
         return eEndStat_Error;
     }
 
-    if ( ! ConnNetInfo_GetValueInternal(0,
-        REG_LINKERD_USER_KEY, user, sizeof(user),
-        REG_LINKERD_USER_DEF))
-    {
+    if ( ! ConnNetInfo_GetValueService(DEF_LINKERD_REG_SECTION,
+                                       REG_LINKERD_USER,
+                                       user, sizeof(user),
+                                       DEF_LINKERD_USER)) {
         CORE_LOG_X(eLSub_Alloc, eLOG_Critical,
                    "Couldn't alloc for user from registry.");
         return eEndStat_Error;
     }
 
-    if ( ! ConnNetInfo_GetValueInternal(0,
-        REG_LINKERD_PASS_KEY, pass, sizeof(pass),
-        REG_LINKERD_PASS_DEF))
-    {
+    if ( ! ConnNetInfo_GetValueService(DEF_LINKERD_REG_SECTION,
+                                       REG_LINKERD_PASS,
+                                       pass, sizeof(pass),
+                                       DEF_LINKERD_PASS)) {
         CORE_LOG_X(eLSub_Alloc, eLOG_Critical,
                    "Couldn't alloc for password from registry.");
         return eEndStat_Error;
     }
 
-    if ( ! ConnNetInfo_GetValueInternal(0,
-        REG_LINKERD_PATH_KEY, path, sizeof(path),
-        REG_LINKERD_PATH_DEF))
-    {
+    if ( ! ConnNetInfo_GetValueService(DEF_LINKERD_REG_SECTION,
+                                       REG_LINKERD_PATH,
+                                       path, sizeof(path),
+                                       DEF_LINKERD_PATH)) {
         CORE_LOG_X(eLSub_Alloc, eLOG_Critical,
                    "Couldn't alloc for path from registry.");
         return eEndStat_Error;
     }
 
-    if ( ! ConnNetInfo_GetValueInternal(0,
-        REG_LINKERD_ARGS_KEY, args, sizeof(args),
-        REG_LINKERD_ARGS_DEF))
-    {
+    if ( ! ConnNetInfo_GetValueService(DEF_LINKERD_REG_SECTION,
+                                       REG_LINKERD_ARGS,
+                                       args, sizeof(args),
+                                       DEF_LINKERD_ARGS)) {
         CORE_LOG_X(eLSub_Alloc, eLOG_Critical,
                    "Couldn't alloc for args from registry.");
         return eEndStat_Error;
@@ -377,10 +381,10 @@ static EEndpointStatus s_EndpointFromNamerd(SEndpoint* end, SERV_ITER iter)
     size_t              pathlen, argslen;
 
     /* Make sure namerd is enabled for linkerd. */
-    if ( ! ConnNetInfo_GetValueInternal(0,
-        REG_NAMERD_FOR_LINKERD_KEY, use_namerd, sizeof(use_namerd)-1,
-        REG_NAMERD_FOR_LINKERD_DEF))
-    {
+    if ( ! ConnNetInfo_GetValueService(DEF_LINKERD_REG_SECTION,
+                                       REG_NAMERD_FOR_LINKERD,
+                                       use_namerd, sizeof(use_namerd),
+                                       DEF_NAMERD_FOR_LINKERD)) {
         CORE_LOG_X(eLSub_Alloc, eLOG_Critical,
                    "Couldn't alloc for namerd-for-linkerd flag.");
         return eEndStat_Error;
@@ -467,18 +471,21 @@ static int s_Resolve(SERV_ITER iter)
     struct SLINKERD_Data*   data = (struct SLINKERD_Data*) iter->data;
     SConnNetInfo*           dni = data->net_info;
     char*                   server_descriptor;
-
     char ip4[16];
-    SOCK_ntoa(SOCK_gethostbyname(dni->host), ip4, sizeof(ip4)-1);
 
     /* Set vhost */
-    char vhost[CONN_HOST_LEN + 45];
-    if (strlen(iter->name) + sizeof(LINKERD_HOST_HDR_SFX) >= sizeof(vhost)) {
+    char   vhost[CONN_HOST_LEN + 1];
+    size_t nlen = strlen(iter->name); 
+    if (nlen + sizeof(LINKERD_VHOST_SFX) >= sizeof(vhost)) {
         CORE_LOGF_X(eLSub_Alloc, eLOG_Critical,
-            ("vhost '%s.%s' is too long.", iter->name, LINKERD_HOST_HDR_SFX));
+                    ("vhost '%s.%s' is too long.",
+                     iter->name, LINKERD_VHOST_SFX));
         return 0;
     }
-    sprintf(vhost, "%s%s", iter->name, LINKERD_HOST_HDR_SFX);
+    memcpy((char*) memcpy(vhost, iter->name, nlen) + nlen,
+           LINKERD_VHOST_SFX, sizeof(LINKERD_VHOST_SFX));
+
+    SOCK_ntoa(SOCK_gethostbyname(dni->host), ip4, sizeof(ip4));
 
     const char *secure = dni->scheme == eURL_Https ? "YES" : "NO";
 
@@ -693,6 +700,7 @@ extern const SSERV_VTable* SERV_LINKERD_Open(SERV_ITER           iter,
     /* Populate linkerd endpoint */
     {{
         SConnNetInfo* dni = data->net_info;
+        
 
         /* N.B. Proxy configuration (including 'http_proxy' env. var. detected
            and parsed by the toolkit) may be used to override the default
@@ -705,9 +713,17 @@ extern const SSERV_VTable* SERV_LINKERD_Open(SERV_ITER           iter,
             strcpy(dni->host, dni->http_proxy_host);
             dni->port =       dni->http_proxy_port;
         } else  {
-            /* FIXME: these should come from the [_LINKERD] section */
-            strcpy(dni->host, LINKERD_HOST);
-            dni->port =       LINKERD_PORT;
+            char port[40];
+            /* FIXME: check for errors */
+            ConnNetInfo_GetValueService(DEF_LINKERD_REG_SECTION,
+                                        REG_LINKERD_HOST,
+                                        dni->host, sizeof(dni->host),
+                                        DEF_LINKERD_HOST);
+            ConnNetInfo_GetValueService(DEF_LINKERD_REG_SECTION,
+                                        REG_LINKERD_PORT,
+                                        port, sizeof(port),
+                                        DEF_LINKERD_PORT);
+            sscanf(port, "%hu", &dni->port);
         }
 
         dni->scheme = endpoint.scheme;
