@@ -2629,7 +2629,7 @@ static EIO_Status s_VT_Close
      */
     if ((uuu->can_connect & fCC_Once)
         &&  ((!uuu->sock  &&  BUF_Size(uuu->w_buf))
-             ||  ((uuu->flags & fHTTP_Flushable)  &&  !uuu->conn_state))) {
+             ||  (uuu->flags & fHTTP_Flushable))) {
         /* "WRITE" mode and data (or just flag) is still pending */
         s_PreRead(uuu, timeout, eEM_Drop);
     }
