@@ -943,7 +943,7 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
                         if ((temp = (char*) strchr(path, '?')) != 0)
                             *temp = '\0';
                         args = ConnNetInfo_GetArgs(uuu->net_info);
-                        if (*args == '#')
+                        if (args  &&  (!*args  ||  *args == '#'))
                             args = 0;
                     } else
                         args = 0;
@@ -963,12 +963,14 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
                 if (*args == '#'  ||  !(uuu->flags & fHCC_UrlEncodeArgs)) {
                     path = uuu->net_info->path;
                     args = 0;
-                } else if (!(path = strndup(uuu->net_info->path,
-                                            (size_t)(&args[-1]/*'?'*/
-                                                     - uuu->net_info->path)))){
+                } else if (!(path = strndup(uuu->net_info->path, (size_t)
+                                            (args - uuu->net_info->path) -
+                                            !(args == uuu->net_info->path)
+                                            /*'?'*/))) {
                     status = eIO_Unknown;
                     break;
-                }
+                } else if (!*args)
+                    args = 0;
             }
 
             /* encode args (obsolete feature) */
@@ -977,7 +979,7 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
                 size_t size = args_len * 3;
                 size_t rd_len, wr_len;
                 assert((uuu->flags & fHCC_UrlEncodeArgs)  &&  args_len > 0);
-                if (!(temp = (char*) malloc(size + 1))) {
+                if (!(temp = (char*) malloc(size + strlen(args+args_len) +1))){
                     int error = errno;
                     temp = ConnNetInfo_URL(uuu->net_info);
                     CORE_LOGF_ERRNO_X(20, eLOG_Error, error,
@@ -985,7 +987,8 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
                                        " URL arguments (%lu bytes)",
                                        temp ? "; " : "",
                                        temp ? temp : "",
-                                       (unsigned long)(size + 1)));
+                                       (unsigned long)(size + strlen
+                                                       (args + args_len) +1)));
                     if (path != uuu->net_info->path)
                         free((void*) path);
                     status = eIO_Unknown;
@@ -994,7 +997,7 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
                 URL_Encode(args, args_len, &rd_len, temp, size, &wr_len);
                 assert(rd_len == args_len);
                 assert(wr_len <= size);
-                temp[wr_len] = '\0';
+                strcpy(temp + wr_len, args + args_len);
                 args = temp;
             }
 
@@ -2569,6 +2572,8 @@ static EIO_Status s_VT_Flush
     if (!(uuu->flags & fHTTP_Flushable))
         return eIO_Success;
 
+    if (uuu->conn_state & eCS_ReadBody)
+        return eIO_Success;
     if (uuu->sock
         &&  !(x_IsWriteThru(uuu)  &&  uuu->conn_state < eCS_ReadHeader)) {
         return eIO_Success;
@@ -2624,7 +2629,7 @@ static EIO_Status s_VT_Close
      */
     if ((uuu->can_connect & fCC_Once)
         &&  ((!uuu->sock  &&  BUF_Size(uuu->w_buf))
-             ||  (uuu->flags & fHTTP_Flushable))) {
+             ||  ((uuu->flags & fHTTP_Flushable)  &&  !uuu->conn_state))) {
         /* "WRITE" mode and data (or just flag) is still pending */
         s_PreRead(uuu, timeout, eEM_Drop);
     }
