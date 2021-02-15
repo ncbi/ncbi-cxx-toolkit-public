@@ -112,7 +112,7 @@ typedef struct {
 
 static const STimeout kFailsafeTimeout = { 10, 0 };
 static const STimeout kZeroTimeout     = {  0, 0 };
-static const char     kDigits[] = "0123456789";
+static const char     kDigits[]        = "0123456789";
 
 
 typedef EIO_Status (*FFTPReplyCB)(SFTPConnector* xxx,  int   code,
