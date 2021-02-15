@@ -366,7 +366,7 @@ static void s_Reset(SERV_ITER iter)
     data->eof = data->fail = 0/*false*/;
     if (data->cand) {
         size_t i;
-        assert(data->a_cand);
+        assert(data->a_cand  &&  data->n_cand <= data->a_cand);
         for (i = 0;  i < data->n_cand;  ++i)
             free((void*) data->cand[i].info);
         data->n_cand = 0;
@@ -379,7 +379,7 @@ static void s_Close(SERV_ITER iter)
 {
     struct SDISPD_Data* data = (struct SDISPD_Data*) iter->data;
     iter->data = 0;
-    assert(!data->n_cand); /*s_Reset() had to be called before*/
+    assert(data  &&  !data->n_cand); /*s_Reset() had to be called before*/
     if (data->cand)
         free(data->cand);
     ConnNetInfo_Destroy(data->net_info);
