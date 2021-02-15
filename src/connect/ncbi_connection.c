@@ -39,6 +39,7 @@
 
 #define NCBI_USE_ERRCODE_X   Connect_Conn
 
+
 #define CONNECTION_MAGIC     0xEFCDAB09
 
 
@@ -144,7 +145,8 @@ typedef enum {
 
 
 /* Connection internal data.
- * NOTE:  meta *must* come first!
+ *
+ * NOTE:  "meta" *must* come first!
  */
 typedef struct SConnectionTag {
     SMetaConnector  meta;        /* VTable of operations and list            */
@@ -154,7 +156,7 @@ typedef struct SConnectionTag {
     EIO_Status      r_status;    /* I/O status of last read                  */
     EIO_Status      w_status;    /* I/O status of last write                 */
 
-    BUF             buf;         /* storage for peek data                    */
+    BUF             buf;         /* storage for peek/pushback data           */
 
     void*           data;        /* user data pointer                        */
 
@@ -383,7 +385,7 @@ static EIO_Status s_Open(CONN conn)
                 break;
 
             /* eCONN_OnTimeout gets called only if eCONN_OnOpen was there */
-            status  = x_Callback(conn, eCONN_OnTimeout, eIO_Open);
+            status = x_Callback(conn, eCONN_OnTimeout, eIO_Open);
             if (status != eIO_Success)
                 break;
         }
@@ -873,7 +875,7 @@ static EIO_Status s_CONN_Read
                       ? BUF_Peek(conn->buf, buf, size - *n_read)
                       : BUF_Read(conn->buf, buf, size - *n_read));
             *n_read += x_read;
-            if (*n_read == size) {
+            if (x_read  &&  (*n_read == size  ||  !peek)) {
                 status = eIO_Success;
                 break;
             }
