@@ -363,41 +363,59 @@ static void TEST_ConnNetInfo(void)
     assert(strcmp(net_info->path,         "/path7?newargs#frag") == 0);
     assert(strcmp(ConnNetInfo_GetArgs(net_info), "newargs#frag") == 0);
 
-    assert(ConnNetInfo_SetPath(net_info, "/path8?moreargs"));
+    assert(ConnNetInfo_SetPath(net_info,  "/path8?moreargs"));
     ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
 
     assert(strcmp(net_info->path,         "/path8?moreargs#frag") == 0);
     assert(strcmp(ConnNetInfo_GetArgs(net_info), "moreargs#frag") == 0);
 
-    assert(ConnNetInfo_SetPath(net_info, "/path9#morefrag"));
+    assert(ConnNetInfo_SetPath(net_info,   "/path9#morefrag"));
     ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
 
     assert(strcmp(net_info->path,          "/path9#morefrag") == 0);
     assert(strcmp(ConnNetInfo_GetArgs(net_info), "#morefrag") == 0);
 
-    assert(ConnNetInfo_SetArgs(net_info, "newarg=newval#newfrag"));
+    assert(ConnNetInfo_SetArgs(net_info,  "newarg=newval#newfrag"));
     ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
 
     assert(strcmp(net_info->path,         "/path9?newarg=newval#newfrag")==0);
     assert(strcmp(ConnNetInfo_GetArgs(net_info), "newarg=newval#newfrag")==0);
 
-    assert(ConnNetInfo_SetArgs(net_info, "arg=val"));
+    assert(ConnNetInfo_SetArgs(net_info,  "arg=val"));
     ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
 
     assert(strcmp(net_info->path,         "/path9?arg=val#newfrag")==0);
     assert(strcmp(ConnNetInfo_GetArgs(net_info), "arg=val#newfrag")==0);
 
-    assert(ConnNetInfo_SetArgs(net_info, "#xfrag"));
+    assert(ConnNetInfo_SetArgs(net_info,  "#xfrag"));
     ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
 
     assert(strcmp(net_info->path,          "/path9#xfrag") == 0);
     assert(strcmp(ConnNetInfo_GetArgs(net_info), "#xfrag") == 0);
 
+    assert(ConnNetInfo_AddPath(net_info,   "/path10"));
+    ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
+
+    assert(strcmp(net_info->path,          "/path9/path10#xfrag") == 0);
+    assert(strcmp(ConnNetInfo_GetArgs(net_info),        "#xfrag") == 0);
+
+    assert(ConnNetInfo_AddPath(net_info,   "path11/?args"));
+    ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
+
+    assert(strcmp(net_info->path,          "/path9/path11/?args#xfrag") == 0);
+    assert(strcmp(ConnNetInfo_GetArgs(net_info),          "args#xfrag") == 0);
+
+    assert(ConnNetInfo_AddPath(net_info,   "/path12#xxx"));
+    ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
+
+    assert(strcmp(net_info->path,          "/path9/path11/path12#xxx") == 0);
+    assert(strcmp(ConnNetInfo_GetArgs(net_info),               "#xxx") == 0);
+
     assert(ConnNetInfo_SetPath(net_info, ""));
     ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
 
-    assert(strcmp(net_info->path,                "#xfrag") == 0);
-    assert(strcmp(ConnNetInfo_GetArgs(net_info), "#xfrag") == 0);
+    assert(strcmp(net_info->path,                "#xxx") == 0);
+    assert(strcmp(ConnNetInfo_GetArgs(net_info), "#xxx") == 0);
 
     assert(ConnNetInfo_SetArgs(net_info, 0));
     ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
@@ -542,6 +560,44 @@ static void TEST_ConnNetInfo(void)
     for (n = strcspn(net_info->path, "?")+1;  n < sizeof(net_info->path);  ++n)
         net_info->path[n] = "0123456789"[rand() % 10];
 
+    strcpy(net_info->path, "/path?#frag");
+    ConnNetInfo_SetArgs(net_info, "a=b#");
+    ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
+    assert(strcmp(net_info->path, "/path?a=b") == 0);
+
+    strcpy(net_info->path, "/path?");
+    ConnNetInfo_PrependArg(net_info, "a", "b");
+    ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
+    assert(strcmp(net_info->path, "/path?a=b") == 0);
+
+    strcpy(net_info->path, "/path?#frag");
+    ConnNetInfo_PrependArg(net_info, "a", "b");
+    ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
+    assert(strcmp(net_info->path, "/path?a=b#frag") == 0);
+    ConnNetInfo_PrependArg(net_info, "c", "d");
+    ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
+    assert(strcmp(net_info->path, "/path?c=d&a=b#frag") == 0);
+
+    ConnNetInfo_SetPath(net_info, "#");
+    ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
+    assert(strcmp(net_info->path, "") == 0);
+
+    strcpy(net_info->path, "/path?");
+    ConnNetInfo_AppendArg(net_info, "a", "b");
+    ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
+    assert(strcmp(net_info->path, "/path?a=b") == 0);
+
+    strcpy(net_info->path, "/path?#frag");
+    ConnNetInfo_AppendArg(net_info, "a", "b");
+    ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
+    assert(strcmp(net_info->path, "/path?a=b#frag") == 0);
+    ConnNetInfo_AppendArg(net_info, "c", "d");
+    ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
+    assert(strcmp(net_info->path, "/path?a=b&c=d#frag") == 0);
+
+    for (n = strcspn(net_info->path, "?")+1;  n < sizeof(net_info->path);  ++n)
+        net_info->path[n] = "0123456789"[rand() % 10];
+
     ConnNetInfo_SetArgs(net_info, "a=b&b=c&c=d#f");
     printf("HTTP Arg:                     \"%s\"\n",
            ConnNetInfo_GetArgs(net_info));
@@ -597,7 +653,7 @@ static void TEST_ConnNetInfo(void)
 static void TEST_DoubleConv(void)
 {
     static const char* good_tests[] = { "100.25", "-100.25",
-                                        "100.9876", "-100.9876",
+                                        "100.987654", "-100.987654",
                                         "0.01", "-0.01",
                                         "0.001", "-0.001",
                                         "+1.0001", "-1.0001",
@@ -621,7 +677,7 @@ static void TEST_DoubleConv(void)
     CORE_LOG(eLOG_Note, "Conversion checks");
 
     for (i = 0;  i < sizeof(good_tests) / sizeof(good_tests[0]);  i++) {
-        int p, q;
+        int p, q, okay;
         char buf[80], *end = 0;
         const char* str = good_tests[i];
         double val = NCBI_simple_atof(str, &end);
@@ -633,13 +689,15 @@ static void TEST_DoubleConv(void)
             q = (int) strlen(str) - (int)(end - str) - 1;
         printf("str = \"%s\", val =  %.*f\n", str, q, val);
 
+        okay = 0/*false*/;
         for (p = 0;  p < 10;  p++) {
             end = NCBI_simple_ftoa(buf, val, p);
             printf("str = \"%s\", buf = \"%s\"%s\n", str, buf,
-                   p == q ? " *" : "");
+                   p == q ? (okay = 1/*true*/, " *") : "");
             assert(end  &&  (p != q  ||
                              strcmp(buf, *str == '+' ? str + 1 : str) == 0));
         }
+        assert(okay);
     }
 
     CORE_LOG(eLOG_Note, "Illegal input checks");

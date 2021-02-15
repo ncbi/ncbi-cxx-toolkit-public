@@ -37,6 +37,7 @@
  *       ConnNetInfo_Create()
  *       ConnNetInfo_Clone()
  *       ConnNetInfo_SetPath()
+ *       ConnNetInfo_AddPath()
  *       ConnNetInfo_SetArgs()
  *       ConnNetInfo_SetFrag()
  *       ConnNetInfo_GetArgs()
@@ -96,7 +97,7 @@
 #define CONN_USER_LEN    63
 #define CONN_PASS_LEN    63
 #define CONN_HOST_LEN    255
-#define CONN_PATH_LEN    4095
+#define CONN_PATH_LEN    4095 /* including arguments and a fragment */
 
 
 /** @addtogroup UtilityFunc
@@ -291,17 +292,16 @@ typedef struct {  /* NCBI_FAKE_WARNING: ICC */
 #define DEF_CONN_HTTP_REFERER       0
 
 /* Environment/registry keys that are *not* kept in SConnNetInfo */
-#define REG_CONN_LOCAL_ENABLE               "LOCAL_ENABLE"
-#define REG_CONN_LBSMD_DISABLE              "LBSMD_DISABLE"
-#define REG_CONN_LBDNS_ENABLE               "LBDNS_ENABLE"
-#define REG_CONN_LBOS_ENABLE                "LBOS_ENABLE"
-#define REG_CONN_LINKERD_ENABLE             "LINKERD_ENABLE"
-#define REG_CONN_NAMERD_FOR_LINKERD_ENABLE  "NAMERD_FOR_LINKERD_ENABLE"
-#define REG_CONN_NAMERD_ENABLE              "NAMERD_ENABLE"
-#define REG_CONN_DISPD_DISABLE              "DISPD_DISABLE"
+#define REG_CONN_LOCAL_ENABLE       "LOCAL_ENABLE"
+#define REG_CONN_LBSMD_DISABLE      "LBSMD_DISABLE"
+#define REG_CONN_LBDNS_ENABLE       "LBDNS_ENABLE"
+#define REG_CONN_LBOS_ENABLE        "LBOS_ENABLE"
+#define REG_CONN_LINKERD_ENABLE     "LINKERD_ENABLE"
+#define REG_CONN_NAMERD_ENABLE      "NAMERD_ENABLE"
+#define REG_CONN_DISPD_DISABLE      "DISPD_DISABLE"
 
 /* Implicit server type (LINKERD/NAMERD) */
-#define REG_CONN_IMPLICIT_SERVER_TYPE       "IMPLICIT_SERVER_TYPE"
+#define REG_CONN_IMPLICIT_SERVER_TYPE  "IMPLICIT_SERVER_TYPE"
 
 /* Substitute (redirected) service name */
 #define REG_CONN_SERVICE_NAME       DEF_CONN_REG_SECTION "_" "SERVICE_NAME"
@@ -421,27 +421,67 @@ extern NCBI_XCONNECT_EXPORT SConnNetInfo* ConnNetInfo_Clone
  );
 
 
-/* Convenience routines to manipulate URL path, arguments and fragment that are
- * now all combined within SConnNetInfo::path.
- * All routines below assume that "arg" is either a single arg name or an
- * "arg=val" pair (a fragment part, separated by '#', if any, is ignored).
- * In the former case, an additional "val" may be supplied separately (and
- * will be prepended by the '=').  In the latter case, also having a non-zero
- * string the in the "val" argument may result in an incorrect behavior.
- * The ampersand ('&') gets automatically managed to keep the arg list proper.
+/* Convenience routines to manipulate URL path, arguments, and fragment, all of
+ * which are now stored combined in SConnNetInfo::path.
+ *
  * @warning
- *   Arguments provided in the path element modification routines may not point
- *   to the path element currently stored in the SConnNetInfo being modified.
- * Return value (if any):  non-zero on success; 0 on error.
+ * Arguments provided to the SConnNetInfo::path manipulation routines below
+ * may not point to anywhere inside the path stored within the SConnNetInfo
+ * structure, which is being modified.
+ *
+ * All argument modification routines below assume that "arg" is either a
+ * single arg name or an "arg=val" pair (a fragment part, separated by '#',
+ * if any, is ignored).
+ * In the former case, an additional "val" may be supplied separately (and will
+ * be prepended with '=').  In the latter case, also having a non-zero string
+ * in the "val" argument may result in an incorrect behavior.  The ampersand
+ * ('&') gets automatically managed to keep the arg list consistent.
+ *
+ * Return value (if non-void):  non-zero(true) on success; 0(false) on error.
  */
 
 /* Set the path part in the path element.
- * New path can contain either or both the argument part (separated by '?') and
- * the fragment part (separated by '#'), in this order.  The new path will
- * replace the existing one up to the last specified part, preserving the
- * remainder.  Thus, "" causes only the path part to be removed (preserving any
- * existing argument(s) and fragment).  NULL clears the entire path element. */
+ * New path may also contain either or both the argument part (separated by
+ * '?'), and the fragment part (separated by '#'), in this order.  The new path
+ * will replace the existing one up to and including the last specified part,
+ * preserving the remainder.  Thus, "" causes only the path part to be removed
+ * (leaving any existing argument(s) and fragment alone).  However, "#" will
+ * cause to clear the entire path (single trailing '#' is never stored, but is
+ * always considered).  Also, NULL clears the entire path element. */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_SetPath
+(SConnNetInfo*       net_info,
+ const char*         path);
+
+/* Add the path part to the path element.
+ * New path may also contain either or both the argument part (separated by
+ * '?'), and the fragment part (separated by '#'), in this order.  The new path
+ * will extend the existing one up to and including the last specified part,
+ * preserving the remainder.  If the new path begins with a slash ('/'), the
+ * exnetsion begins at the end of the existing path, making sure the slash is
+ * not doubled;  if the new path does not begin with a slash, the extension
+ * starts after the last slash found in the existing path, or at the very
+ * beginning, if there was no slash in the old path.  Note that NULL or ""
+ * cause no effect.
+ *
+ * Corner cases:  if the new "path" begins with the arguments part ('?'), then
+ * the path part will be retained but the arguments part (and possibly the
+ * fragment, too, if specified) will be replaced.  If the new "path" begins
+ * with '#', then only the fragment part is replaced ("#" causes the fragment
+ * to be dropped, and the single trailing '#' will not be stored).
+ *
+ * Example: "/path1/path2?args1&args2#" extends the existing path part with
+ * appending two more levels "/path1/path2" to it, replaces all existing
+ * arguments with "args1&args2", and drops any exising fragment (not storing
+ * the trailing '#').  If the trailing '#' wasn't specified, the old fragment
+ * (if any) would have been kept intact.  "/path1/path2#frag" would work
+ * similarly with path, but drop all existing args, and replace the existing
+ * fragment.
+ *
+ * Note that incoming "path" is assumed to be minimally syntatcially correct,
+ * so passing "/path1/path2?#frag" is allowed but will create the path element
+ * with a lone '?' character, just as given.
+ */
+extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_AddPath
 (SConnNetInfo*       net_info,
  const char*         path);
 
@@ -450,13 +490,14 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_SetPath
  * is missing from the new args, the existing one will be preserved;  and if
  * no arguments are provided before the new fragment, that part of the exising
  * arguments will not get modified.  Thus, "" causes all arguments but the
- * fragment to be removed.  NULL clears all existing path, args and frag. */
+ * fragment to be removed.  NULL clears all existing args and frag. */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_SetArgs
 (SConnNetInfo*       net_info,
  const char*         args);
 
-/* Set fragment part only;  delete if "frag"=="".  The passed string may start
- * with '#'; otherwise, the '#' separator will be added to the path element. */
+/* Set fragment part only;  delete if "frag" is NULL, "", or "#".  The passed
+ * string may start with '#';  otherwise, the '#' separator will be added to
+ * the path element. */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_SetFrag
 (SConnNetInfo*       net_info,
  const char*         frag);
@@ -473,7 +514,7 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_AppendArg
  const char*         val
  );
 
-/* Insert an argument at the front of the list. */
+/* Insert an argument at the front of the list, preserving any #frag part. */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_PrependArg
 (SConnNetInfo*       net_info,
  const char*         arg,
@@ -483,14 +524,15 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_PrependArg
 /* Delete an argument from the list of arguments in the path element.  In case
  * the passed arg is specified as "arg=val&arg2...", the value as well as any
  * successive arguments are ignored in the search for the matching argument.
- * Return zero if no arg was found;  non-zero if it was found and deleted. */
+ * Return zero if no arg was found;  non-zero if it was found and deleted.
+ * Any existing #frag part is not modified. */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_DeleteArg
 (SConnNetInfo*       net_info,
  const char*         arg
  );
 
 /* Delete all arguments specified in "args" (regardless of their values) from
- * the path element. */
+ * the path element.  Any existing #frag part if not modified. */
 extern NCBI_XCONNECT_EXPORT void        ConnNetInfo_DeleteAllArgs
 (SConnNetInfo*       net_info,
  const char*         args

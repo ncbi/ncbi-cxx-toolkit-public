@@ -48,6 +48,9 @@
 #define SizeOf(arr)  (sizeof(arr) / sizeof((arr)[0]))
 
 
+static const char kDigits[] = "0123456789";
+
+
 const STimeout g_NcbiDefConnTimeout = {
     (unsigned int)
       DEF_CONN_TIMEOUT,
@@ -513,7 +516,8 @@ static int/*bool*/ s_InfoIsValid(const SConnNetInfo* info)
 /****************************************************************************
  * ConnNetInfo API
  */
-
+/*fwdecl*/
+static int/*bool*/ x_SetArgs(SConnNetInfo* info, const char* args);
 
 SConnNetInfo* ConnNetInfo_CreateInternal(const char* service)
 {
@@ -599,6 +603,17 @@ SConnNetInfo* ConnNetInfo_CreateInternal(const char* service)
     REG_VALUE(REG_CONN_HTTP_PUSH_AUTH, str, DEF_CONN_HTTP_PUSH_AUTH);
     info->http_push_auth = ConnNetInfo_Boolean(str) ? 1 : 0;
 
+    /* HTTP proxy leakout */
+    REG_VALUE(REG_CONN_HTTP_PROXY_LEAK, str, DEF_CONN_HTTP_PROXY_LEAK);
+    info->http_proxy_leak = ConnNetInfo_Boolean(str) ? 1 : 0;
+
+    /* HTTP proxy skip */
+    REG_VALUE(REG_CONN_HTTP_PROXY_SKIP, str, DEF_CONN_HTTP_PROXY_SKIP);
+    info->http_proxy_skip = ConnNetInfo_Boolean(str) ? 1 : 0;
+
+    /* HTTP proxy only for HTTP (loaded from "$http_proxy" */
+    info->http_proxy_only = 0/*false*/;
+
     /* username */
     REG_VALUE(REG_CONN_USER, info->user, DEF_CONN_USER);
 
@@ -632,14 +647,6 @@ SConnNetInfo* ConnNetInfo_CreateInternal(const char* service)
     info->http_proxy_port    =   0;
     info->http_proxy_user[0] = '\0';
     info->http_proxy_pass[0] = '\0';
-    info->http_proxy_only    =   0/*false*/;
-
-    /* HTTP proxy leakout */
-    REG_VALUE(REG_CONN_HTTP_PROXY_LEAK, str, DEF_CONN_HTTP_PROXY_LEAK);
-    info->http_proxy_leak = ConnNetInfo_Boolean(str) ? 1 : 0;
-    /* HTTP proxy skip */
-    REG_VALUE(REG_CONN_HTTP_PROXY_SKIP, str, DEF_CONN_HTTP_PROXY_SKIP);
-    info->http_proxy_skip = ConnNetInfo_Boolean(str) ? 1 : 0;
 
     /* max. # of attempts to establish connection */
     REG_VALUE(REG_CONN_MAX_TRY, str, 0);
@@ -683,13 +690,14 @@ SConnNetInfo* ConnNetInfo_CreateInternal(const char* service)
 
     /* args */
     REG_VALUE(REG_CONN_ARGS, str, DEF_CONN_ARGS);
-    if (!ConnNetInfo_SetArgs(info, str))
+    if (!x_SetArgs(info, str))
         goto err;
 
     /* HTTP proxy from process environment */
     if (!(val = x_SetupSystemHttpProxy(info)))
         goto err;
     if (val < 0) {
+        /* proxy wasn't defined; try loading it from the registry */
         assert(!info->http_proxy_host[0]  &&  !info->http_proxy_port);
 
         /* HTTP proxy from legacy settings */
@@ -1136,9 +1144,9 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
             scheme  = (EURLScheme) info->scheme;
         /* Check for special case: host:port[/path[...]] (see CXX-11455) */
         if (s  &&  s != url
-            &&  *++s != '0'  &&  (hostlen/*portlen*/ = strspn(s, "0123456789"))
-            &&  memchr("/?#", s[hostlen], 4)
-            &&  (errno = 0, (port = strtol(s, &p, 10)) > 0)  &&  !errno
+            &&  *++s != '0'  &&  (hostlen/*NB:portlen*/ = strspn(s, kDigits))
+            &&  memchr("/?#", s[hostlen/*NB:portlen*/], 4)
+            &&  (errno = 0, (port = strtol(s, &p, 10)) != 0)  &&  !errno
             &&  p == s + hostlen  &&  !(port ^ (port & 0xFFFF))
             &&  !NCBI_HasSpaces(url, hostlen = (size_t)(--s - url))) {
             host = url;
@@ -1155,7 +1163,7 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
                ? strcspn(path, "?#") : strlen(path));
     args    = path + pathlen;
 
-    if (path != url  ||  *path == '/') {
+    if ((!pathlen  &&  !*args)  ||  (pathlen  &&  *path == '/')) {
         /* absolute path */
         p = info->path;
         len = 0;
@@ -1165,7 +1173,8 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
         }
     } else {
         /* relative path */
-        len = strcspn(info->path, "?#");
+        len = (scheme == eURL_Https  ||  scheme == eURL_Http
+               ? strcspn(info->path, "?#") : strlen(info->path));
         if (!pathlen) {
             p = info->path + len;
             path = 0;
@@ -1181,6 +1190,7 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
     /* arguments and fragment */
     if (*args) {
         const char* frag;
+        assert(scheme == eURL_Https  ||  scheme == eURL_Http);
         argslen = strlen(args);
         if (*args == '#')
             frag = args;
@@ -1262,6 +1272,7 @@ static const char* x_SepAndLen(const char* str, const char* sep, size_t* len)
 extern int/*bool*/ ConnNetInfo_SetPath(SConnNetInfo* info, const char* path)
 {
     size_t plen, x_alen;
+    const char* frag;
     const char* sep;
     char* x_args;
 
@@ -1275,8 +1286,8 @@ extern int/*bool*/ ConnNetInfo_SetPath(SConnNetInfo* info, const char* path)
 
     sep = x_SepAndLen(path, "?#", &plen);
 
-    x_args = info->path
-        + (*sep ? strcspn(info->path, sep) : strlen(info->path));
+    x_args = info->path + strcspn(info->path, sep);
+
     if (!plen) {
         if (!*x_args)
             info->path[0] = '\0';
@@ -1286,23 +1297,72 @@ extern int/*bool*/ ConnNetInfo_SetPath(SConnNetInfo* info, const char* path)
     }
 
     x_alen = strlen(x_args);
+    if ((frag = (const char*) memchr(path, '#', plen)) != 0  &&  !frag[1])
+        --plen;
     if (plen + x_alen >= sizeof(info->path))
         return 0/*failure: too long*/;
-    if (x_alen)
-        memmove(info->path + plen, x_args, x_alen + 1/*EOL*/);
-    memcpy(info->path, path, plen + !x_alen/*EOL*/);
+
+    memmove(info->path + plen, x_args, x_alen + 1/*EOL*/);
+    memcpy(info->path, path, plen);
     return 1/*success*/;
 }
 
 
-extern int/*bool*/ ConnNetInfo_SetArgs(SConnNetInfo* info, const char* args)
+extern int/*bool*/ ConnNetInfo_AddPath(SConnNetInfo* info, const char* path)
 {
-    size_t alen, x_flen;
-    const char *x_frag;
+    size_t plen, x_alen;
+    const char* sep;
+    char* x_path;
     char* x_args;
 
     if (!s_InfoIsValid(info))
         return 0/*failure*/;
+
+    if (!path  ||  !*path)
+        return 1/*success: nothing to do*/;
+
+    sep = x_SepAndLen(path, "?#", &plen);
+    assert(plen);
+
+    x_args = info->path + strcspn(info->path, sep);
+    x_alen = strlen(x_args);
+
+    if (*path == '?'  ||  *path == '#') {
+        x_path = (char*) memchr (info->path,
+                                 *path, (size_t)(x_args - info->path));
+        if (!x_path)
+            x_path = x_args;
+        if (*path == '#'  &&  !path[1])
+            --plen;
+    } else if (*path != '/') {
+        x_path = (char*) memrchr(info->path,
+                                 '/',   (size_t)(x_args - info->path));
+        if (!x_path)
+            x_path = info->path;
+        else
+            x_path++;
+    } else {
+        x_path = info->path + strcspn(info->path, "?#");
+        if (x_path != info->path  &&  x_path[-1] == '/')
+            x_path--;
+    }
+    if ((size_t)(x_path - info->path) + plen + x_alen >= sizeof(info->path))
+        return 0/*failure: too long*/;
+
+    memmove(x_path + plen, x_args, x_alen + 1/*EOL*/);
+    memcpy(x_path, path, plen);
+    return 1/*success*/;
+}
+
+
+static int/*bool*/ x_SetArgs(SConnNetInfo* info, const char* args)
+{
+    size_t alen, x_flen, room;
+    const char *x_frag;
+    const char* frag;
+    char* x_args;
+
+    assert(s_InfoIsValid(info));
 
     alen = args ? strlen(args) : 0;
 
@@ -1322,23 +1382,34 @@ extern int/*bool*/ ConnNetInfo_SetArgs(SConnNetInfo* info, const char* args)
         return 1/*success: deleted*/;
     }
 
-    if (!memchr(args, '#', alen)) {
+    if (!(frag = (const char*) memchr(args, '#', alen))) {
         /* preserve frag, if any */
         x_frag = x_args + strcspn(x_args, "#");
         x_flen = strlen(x_frag);
-    } else
-        x_frag = "", x_flen = 0;
-
-    if ((size_t)(x_args - info->path)
-        + !(*args == '#') + alen + x_flen >= sizeof(info->path)) {
-        return 0/*failure: too long*/;
+    } else {
+        if (!frag[1])
+            --alen;
+        x_frag = ""; /*NB: unused*/
+        x_flen = 0;
     }
+    room = !(*args == '#') + alen;
+    if ((size_t)(x_args - info->path) + room + x_flen >= sizeof(info->path))
+        return 0/*failure: too long*/;
+
     if (x_flen)
-        memmove(x_args + 1 + alen, x_frag, x_flen + 1/*EOL*/);
+        memmove(x_args + room, x_frag, x_flen + 1/*EOL*/);
     if (!(*args == '#'))
         *x_args++ = '?';
-    memcpy(x_args, args, alen + !x_flen/*EOL*/);
+    memcpy(x_args, args, alen);
+    if (!x_flen)
+        x_args[alen] = '\0';
     return 1/*success*/;
+}
+
+
+extern int/*bool*/ ConnNetInfo_SetArgs(SConnNetInfo* info, const char* args)
+{
+    return s_InfoIsValid(info) ? x_SetArgs(info, args) : 0/*failure*/;
 }
 
 
@@ -1350,20 +1421,17 @@ extern int/*bool*/ ConnNetInfo_SetFrag(SConnNetInfo* info, const char* frag)
     if (!s_InfoIsValid(info))
         return 0/*failure*/;
 
-    flen = frag ? strlen(frag) : 0;
+    flen = frag ? strlen(frag += !(*frag != '#')) : 0;
 
     x_frag = info->path + strcspn(info->path, "#");
     if (!flen) {
         *x_frag = '\0';
         return 1/*success: deleted*/;
     }
-
-    if (*frag == '#')
-        ++frag;
-    else
-        ++flen;
+    ++flen;
     if ((size_t)(x_frag - info->path) + flen >= sizeof(info->path))
         return 0/*failure: too long*/;
+
     *x_frag++ = '#';
     memcpy(x_frag, frag, flen/*EOL incl'd*/);
     return 1/*success*/;
@@ -1384,15 +1452,14 @@ extern const char* ConnNetInfo_GetArgs(const SConnNetInfo* info)
 }
 
 
-extern int/*bool*/ ConnNetInfo_AppendArg(SConnNetInfo* info,
-                                         const char*   arg,
-                                         const char*   val)
+static int/*bool*/ x_AppendArg(SConnNetInfo* info,
+                               const char*   arg,
+                               const char*   val)
 {
-    size_t alen, vlen, x_alen, x_flen;
+    size_t alen, vlen, x_alen, x_flen, room;
     char*  x_args, *x_frag;
 
-    if (!s_InfoIsValid(info))
-        return 0/*failure*/;
+    assert(s_InfoIsValid(info));
 
     if (!arg  ||  !(alen = strcspn(arg, "#")))
         return 1/*success*/;
@@ -1400,10 +1467,6 @@ extern int/*bool*/ ConnNetInfo_AppendArg(SConnNetInfo* info,
 
     x_args = info->path + strcspn(info->path, "?#");
     x_alen = strlen(x_args);
-    if ((size_t)(x_args - info->path) + x_alen
-        + 1/*'?'/'&'*/ + (alen + vlen) >= sizeof(info->path)) {
-        return 0/*failure: too long*/;
-    }
 
     if (*x_args == '?') {
         x_frag  = (x_args + 1) + strcspn(x_args + 1, "#");
@@ -1412,13 +1475,16 @@ extern int/*bool*/ ConnNetInfo_AppendArg(SConnNetInfo* info,
     } else {
         x_frag  = x_args;
         x_flen  = x_alen;
+        x_alen  = 0;
     }
-    if (x_flen) {
-        assert(*x_frag == '#');
-        memmove(x_frag + 1/*'&'*/ + (alen + vlen), x_frag, x_flen + 1/*EOL*/);
-    }
+    room = (x_alen == 1 ? 0 : x_alen) + 1/*'?'|'&'*/ + (alen + vlen);
+    if ((size_t)(x_args - info->path) + room + x_flen >= sizeof(info->path))
+        return 0/*failure: too long*/;
 
-    if (x_alen) {
+    assert(!x_flen  ||  *x_frag == '#');
+    if (x_flen)
+        memmove(x_args + room, x_frag, x_flen + 1/*EOL*/);
+    if (x_alen > 1) {
         assert(*x_args == '?');
         x_args += x_alen;
         *x_args++ = '&';
@@ -1437,15 +1503,22 @@ extern int/*bool*/ ConnNetInfo_AppendArg(SConnNetInfo* info,
 }
 
 
-extern int/*bool*/ ConnNetInfo_PrependArg(SConnNetInfo* info,
-                                          const char*   arg,
-                                          const char*   val)
+extern int/*bool*/ ConnNetInfo_AppendArg(SConnNetInfo* info,
+                                         const char*   arg,
+                                         const char*   val)
 {
-    size_t alen, vlen, x_alen;
-    char*  x_args;
+    return s_InfoIsValid(info) ? x_AppendArg(info, arg, val) : 0/*failure*/;
+}
 
-    if (!s_InfoIsValid(info))
-        return 0/*failure*/;
+
+static int/*bool*/ x_PrependArg(SConnNetInfo* info,
+                                const char*   arg,
+                                const char*   val)
+{
+    size_t alen, vlen, x_alen, room;
+    char*  x_args, *xx_args;
+
+    assert(s_InfoIsValid(info));
 
     if (!arg  ||  !(alen = strcspn(arg, "#")))
         return 1/*success*/;
@@ -1453,20 +1526,22 @@ extern int/*bool*/ ConnNetInfo_PrependArg(SConnNetInfo* info,
 
     x_args = info->path + strcspn(info->path, "?#");
     x_alen = strlen(x_args);
-    if ((size_t)(x_args - info->path) + x_alen
-        + 1/*'?'/'&'*/ + (alen + vlen) >= sizeof(info->path)) {
+
+    xx_args = x_args;
+    if (*xx_args == '?'  &&  (!xx_args[1]  ||  xx_args[1] == '#')) {
+        ++xx_args;
+        --x_alen;
+        room = 0;
+    } else
+        room = 1/*'?'|'&'*/;
+    room += alen + vlen;
+    if ((size_t)(x_args - info->path) + room + x_alen >= sizeof(info->path))
         return 0/*failure: too long*/;
-    }
 
     if (x_alen) {
-        char* tmp = x_args;
-        if (*x_args == '?')
-            ++x_args;
-        else
-            ++x_alen;
-        memmove(tmp + 2/*"?&"*/ + (alen + vlen), x_args, x_alen/*EOL incl'd*/);
-        x_args = tmp++;
-        tmp[alen + vlen] = '&';
+        if (*xx_args == '?')
+            *xx_args  = '&';
+        memmove(xx_args + room, xx_args, x_alen + 1/*EOL*/);
     }
     *x_args++ = '?';
     memcpy(x_args, arg, alen);
@@ -1482,14 +1557,24 @@ extern int/*bool*/ ConnNetInfo_PrependArg(SConnNetInfo* info,
 }
 
 
-extern int/*bool*/ ConnNetInfo_DeleteArg(SConnNetInfo* info,
-                                         const char*   arg)
+extern int/*bool*/ ConnNetInfo_PrependArg(SConnNetInfo* info,
+                                          const char*   arg,
+                                          const char*   val)
+{
+    return s_InfoIsValid(info) ? x_PrependArg(info, arg, val) : 0/*failure*/;
+}
+
+
+static int/*bool*/ x_DeleteArg(SConnNetInfo* info,
+                               const char*   arg)
 {
     int/*bool*/ deleted;
     size_t alen, x_alen;
     char*  x_args, *x_a;
 
-    if (!s_InfoIsValid(info)  ||  !arg  ||  !(alen = strcspn(arg, "=&#")))
+    assert(s_InfoIsValid(info));
+
+    if (!arg  ||  !(alen = strcspn(arg, "=&#")))
         return 0/*failure*/;
 
     deleted = 0/*false*/;
@@ -1515,21 +1600,36 @@ extern int/*bool*/ ConnNetInfo_DeleteArg(SConnNetInfo* info,
 }
 
 
-extern void ConnNetInfo_DeleteAllArgs(SConnNetInfo* info,
-                                      const char*   args)
+extern int/*bool*/ ConnNetInfo_DeleteArg(SConnNetInfo* info,
+                                         const char*   arg)
 {
-    if (!s_InfoIsValid(info)  ||  !args)
-        return;
+    return s_InfoIsValid(info) ? x_DeleteArg(info, arg) : 0/*failure*/;
+}
+
+
+static void x_DeleteAllArgs(SConnNetInfo* info,
+                            const char*   args)
+{
+    assert(s_InfoIsValid(info)  &&  args  &&  *args);
 
     while (*args  &&  *args != '#') {
         size_t alen = strcspn(args, "&#");
-        ConnNetInfo_DeleteArg(info, args);
+        if (alen)
+            x_DeleteArg(info, args);
         if (args[alen] == '&')
             ++args;
         args += alen;
     }
 }
 
+
+extern void ConnNetInfo_DeleteAllArgs(SConnNetInfo* info,
+                                      const char*   args)
+{
+    if (s_InfoIsValid(info)  &&  args  &&  *args)
+        x_DeleteAllArgs(info, args);
+}
+                    
 
 extern int/*bool*/ ConnNetInfo_PreOverrideArg(SConnNetInfo* info,
                                               const char*   arg,
@@ -1541,8 +1641,8 @@ extern int/*bool*/ ConnNetInfo_PreOverrideArg(SConnNetInfo* info,
     if (!arg  ||  !*arg)
         return 1/*success*/;
 
-    ConnNetInfo_DeleteAllArgs(info, arg);
-    return ConnNetInfo_PrependArg(info, arg, val);
+    x_DeleteAllArgs(info, arg);
+    return x_PrependArg(info, arg, val);
 }
 
 
@@ -1556,8 +1656,8 @@ extern int/*bool*/ ConnNetInfo_PostOverrideArg(SConnNetInfo* info,
     if (!arg  ||  !*arg)
         return 1/*success*/;
 
-    ConnNetInfo_DeleteAllArgs(info, arg);
-    return ConnNetInfo_AppendArg(info, arg, val);
+    x_DeleteAllArgs(info, arg);
+    return x_AppendArg(info, arg, val);
 }
 
 
@@ -1709,6 +1809,7 @@ extern SConnNetInfo* ConnNetInfo_Clone(const SConnNetInfo* info)
     SConnNetInfo* x_info = ConnNetInfo_CloneInternal(info);
     if (!x_info)
         return 0;
+    assert(s_InfoIsValid(x_info));
 
     if (info->http_user_header  &&  *info->http_user_header
         &&  !(x_info->http_user_header = strdup(info->http_user_header))) {
