@@ -889,6 +889,7 @@ static const unsigned char* x_ProcessReply(SERV_ITER iter,
 }
 
 
+/* This also advances the pointer to the beginning of the answer section */
 static const unsigned char* x_VerifyReply(const char* fqdn,
                                           const unsigned char* msg,
                                           const unsigned char* eom,
@@ -1051,7 +1052,7 @@ static int/*bool*/ x_ResolveType(SERV_ITER iter, ns_type type)
     }
     CORE_TRACEF(("LBDNS query \"%s\"", fqdn));
 
-    errno = h_errno = 0;
+    h_errno = errno = 0;
     memset(msg, 0, NS_HFIXEDSZ);
     rv = res_query(fqdn, ns_c_in, ns_t_any, msg, sizeof(msg));
     if (rv < 0) {
