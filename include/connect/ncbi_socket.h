@@ -1005,8 +1005,8 @@ extern NCBI_XCONNECT_EXPORT const STimeout* SOCK_GetTimeout
  * whether it is okay to read again.
  *
  * As a special case, "buf" may passed as NULL:
- *   eIO_ReadPeek      -- read up to "size" bytes and store them
- *                        in internal buffer;
+ *   eIO_ReadPeek      -- read up to "size" bytes and store them in internal
+ *                        buffer;
  *   eIO_Read[Persist] -- discard up to "size" bytes from internal buffer
  *                        and socket (check "*n_read" to know how many).
  *
