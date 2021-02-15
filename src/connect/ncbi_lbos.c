@@ -2609,4 +2609,3 @@ unsigned short LBOS_ServiceVersionDelete(const char*  service,
 
 
 #undef NCBI_USE_ERRCODE_X
-
