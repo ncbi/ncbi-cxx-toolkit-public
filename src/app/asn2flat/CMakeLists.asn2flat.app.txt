@@ -1,9 +1,16 @@
 # $Id$
 
 NCBI_begin_app(asn2flat)
-  NCBI_sources(asn2flat)
-  NCBI_optional_components(GRPC)
-  NCBI_uses_toolkit_libraries(data_loaders_util xformat ncbi_xloader_snp ncbi_xloader_cdd)
   NCBI_project_watchers(ludwigf gotvyans)
+  NCBI_sources(asn2flat)
+  NCBI_uses_toolkit_libraries(data_loaders_util xformat)
+
+  NCBI_optional_components(GRPC VDB) 
+
+  if(NCBI_COMPONENT_VDB_FOUND AND NCBI_COMPONENT_GRPC_FOUND)
+    NCBI_uses_toolkit_libraries(ncbi_xloader_snp)
+  endif()
+
+  NCBI_uses_toolkit_libraries(ncbi_xloader_cdd)
 NCBI_end_app()
 
