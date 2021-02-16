@@ -278,7 +278,7 @@ bool CGtfWriter::xWriteRecordsGene(
         return false;
     }
 
-    for (const auto record: records) {
+    for (const auto& record: records) {
         if (!xWriteRecord(record)) {
             return false;
         }
@@ -307,7 +307,7 @@ bool CGtfWriter::xWriteRecordsCds(
         return false;
     }
 
-    for (const auto record: records) {
+    for (const auto& record: records) {
         if (!xWriteRecord(record)) {
             return false;
         }
@@ -329,7 +329,7 @@ bool CGtfWriter::xWriteRecordsTranscript(
         return false;
     }
 
-    for (const auto record: records) {
+    for (const auto& record: records) {
         if (!xWriteRecord(record)) {
             return false;
         }
