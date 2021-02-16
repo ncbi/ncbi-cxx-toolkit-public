@@ -220,13 +220,13 @@ TSvrRef CDBPoolBalancer::GetServer(CDB_Connection** conn,
                            << impl::ConvertN2A(host) << ":" << port
                            << " (" << server_name << ')');
                 excess = m_DriverCtx->NofConnections(server_name, pool_name);
-                result.Reset(&*it->second.ref);
+                time_t t = CurrentTime(CTime::eUTC).GetTimeT() + 10;
+                result.Reset(new CDBServer(server_name, host, port, t));
             } else {
                 double scale_factor = m_TotalCount / total_ranking;
                 excess = (it->second.actual_count
                           - it->second.effective_ranking * scale_factor);
-                time_t t = CurrentTime(CTime::eUTC).GetTimeT() + 10;
-                result.Reset(new CDBServer(server_name, host, port, t));
+                result.Reset(&*it->second.ref);
             }
             _TRACE("Considering connection to " << impl::ConvertN2A(host)
                    << ":" << port << " (" << server_name
