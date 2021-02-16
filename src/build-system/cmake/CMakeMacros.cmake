@@ -269,6 +269,18 @@ endmacro( RunDatatool )
 
 
 ##############################################################################
+macro(NCBI_util_parse_sign _input _value _negative)
+    string(SUBSTRING ${_input} 0 1 _sign)
+    if ("${_sign}" STREQUAL "-")
+        string(SUBSTRING ${_input} 1 -1 ${_value})
+        set(${_negative} ON)
+    else()
+        set(${_value} ${_input})
+        set(${_negative} OFF)
+    endif()
+endmacro()
+
+##############################################################################
 macro(NCBI_util_Cfg_ToStd _value _result)
     set(${_result} ${_value})
     if("${NCBI_CONFIGURATION_TYPES_COUNT}" EQUAL 1)

@@ -34,9 +34,6 @@ function(NCBI_internal_add_NCBI_definitions)
         target_compile_definitions(${NCBI_PROJECT} PRIVATE ${_defs})
     endif()
 
-    get_property(_alltargets  GLOBAL PROPERTY NCBI_NCBIPROP_ALLTARGETS)
-    list(APPEND _alltargets ${NCBI_PROJECT})
-    set_property(GLOBAL PROPERTY NCBI_NCBIPROP_ALLTARGETS ${_alltargets})
 endfunction()
 
 ##############################################################################
@@ -44,7 +41,7 @@ function(NCBI_internal_postproc_NCBI_tree)
     if("${NCBI_TOOLS_ROOT}" STREQUAL "")
         return()
     endif()
-    get_property(_alltargets  GLOBAL PROPERTY NCBI_NCBIPROP_ALLTARGETS)
+    get_property(_alltargets  GLOBAL PROPERTY NCBI_PTBPROP_ALLTARGETS)
     foreach( _target IN LISTS _alltargets)
         get_target_property(_deps ${_target} INTERFACE_LINK_LIBRARIES)
         if(NOT "${_deps}" STREQUAL "")
