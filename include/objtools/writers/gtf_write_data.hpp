@@ -61,6 +61,14 @@ public:
         const list< CRef< CSeq_interval > >&,
         ENa_strand );
  
+    void SetCdsPhase_Force(
+        int phase) {
+            mPhase = NStr::NumericToString(phase); };
+
+    unsigned int GetExtent() const {
+        return (mSeqStop - mSeqStart + 1);
+    };
+
     bool MakeChildRecord(
         const CGtfRecord&,
         const CSeq_interval&,
