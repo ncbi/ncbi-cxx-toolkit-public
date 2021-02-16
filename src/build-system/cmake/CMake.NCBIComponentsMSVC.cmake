@@ -49,8 +49,7 @@ set(NCBI_ThirdPartyAppsPath ${NCBI_TOOLS_ROOT}/App/ThirdParty)
 set(NCBI_ThirdParty_NCBI_C  ${NCBI_TOOLS_ROOT}/Lib/Ncbi/C/${NCBI_ThirdPartyCompiler}/c.current)
 set(NCBI_ThirdParty_VDBROOT //snowman/trace_software/vdb)
 
-
-set(NCBI_ThirdParty_TLS        ${NCBI_ThirdPartyBasePath}/gnutls/${NCBI_ThirdPartyCompiler}/3.4.9 CACHE PATH "TLS root")
+set(NCBI_ThirdParty_GNUTLS     ${NCBI_ThirdPartyBasePath}/gnutls/${NCBI_ThirdPartyCompiler}/3.4.9 CACHE PATH "GNUTLS root")
 set(NCBI_ThirdParty_FASTCGI    ${NCBI_ThirdPartyBasePath}/fastcgi/${NCBI_ThirdPartyCompiler}/2.4.1 CACHE PATH "FASTCGI root")
 set(NCBI_ThirdParty_Boost      ${NCBI_ThirdPartyBasePath}/boost/${NCBI_ThirdPartyCompiler}/1.66.0 CACHE PATH "Boost root")
 set(NCBI_ThirdParty_PCRE       ${NCBI_ThirdPartyBasePath}/pcre/${NCBI_ThirdPartyCompiler}/8.42 CACHE PATH "PCRE root")
@@ -235,10 +234,18 @@ NCBI_define_Wcomponent(TIFF libtiff.lib)
 
 #############################################################################
 # TLS
-NCBI_define_Wcomponent(TLS)
-if(NCBI_COMPONENT_TLS_FOUND)
-    list(APPEND NCBI_ALL_LEGACY GNUTLS)
-    set(NCBI_COMPONENT_GNUTLS_FOUND TLS)
+set(NCBI_COMPONENT_TLS_FOUND YES)
+list(APPEND NCBI_ALL_COMPONENTS TLS)
+
+#############################################################################
+# GNUTLS
+if(DEFINED NCBI_COMPONENT_GNUTLS_DISABLED AND NOT NCBI_COMPONENT_GNUTLS_DISABLED)
+    NCBI_define_Wcomponent(GNUTLS libgnutls-30.lib)
+    if(NCBI_COMPONENT_GNUTLS_FOUND)
+        set(NCBI_COMPONENT_TLS_INCLUDE ${NCBI_COMPONENT_GNUTLS_INCLUDE} ${NCBI_COMPONENT_TLS_INCLUDE})
+        set(NCBI_COMPONENT_TLS_LIBS    ${NCBI_COMPONENT_GNUTLS_LIBS}    ${NCBI_COMPONENT_TLS_LIBS})
+        set(NCBI_COMPONENT_TLS_BINPATH ${NCBI_COMPONENT_GNUTLS_BINPATH})
+    endif()
 endif()
 
 #############################################################################
