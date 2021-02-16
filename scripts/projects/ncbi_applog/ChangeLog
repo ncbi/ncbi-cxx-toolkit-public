@@ -1,3 +1,7 @@
+1.3.3 (02/16/2021)
+    - Add "Note[X]" notation for the severity of posted messages. CXX-11741
+    - Add '-note' flag for 'post' command CXX-11741
+
 1.3.2 (10/19/17)
     Re-release of broken 1.3.1. CXX-8978
 
