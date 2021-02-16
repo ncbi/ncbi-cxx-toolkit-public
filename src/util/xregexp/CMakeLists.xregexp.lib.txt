@@ -1,7 +1,7 @@
 # $Id$
 
 NCBI_begin_lib(xregexp)
-  NCBI_sources(regexp arg_regexp mask_regexp)
+  NCBI_sources(regexp arg_regexp mask_regexp convert_dates_iso8601)
   NCBI_uses_toolkit_libraries(xncbi)
   NCBI_project_watchers(ivanov)
 NCBI_end_lib()

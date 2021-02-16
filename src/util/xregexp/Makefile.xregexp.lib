@@ -1,6 +1,6 @@
 # $Id$
 
-SRC = regexp arg_regexp mask_regexp
+SRC = regexp arg_regexp mask_regexp convert_dates_iso8601
 LIB = xregexp
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(PCRE_INCLUDE)

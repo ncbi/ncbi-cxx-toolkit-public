@@ -24,6 +24,7 @@
  * ===========================================================================
  *
  * Author: Vladimir Ivanov, Clifford Clausen
+ *
  * File Description:
  *     C++ wrappers for Perl Compatible Regular Expression (pcre) library
  *
