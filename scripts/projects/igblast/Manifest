@@ -44,6 +44,6 @@ DEFAULT_CONFIGURATIONS: Linux64-Centos:icc
 
 Win64    : plain : static  64  ReleaseDLL <ENV>NCBI_CONFIG____ENABLEDUSERREQUESTS__NCBI-INT8-GI=1</ENV>
 
-IntelMAC    : clang : Clang.sh    --with-bin-release --without-debug --without-pcre --without-openmp --with-mt --with-flat-makefile --with-ncbi-public --with-experimental=Int8GI --with-vdb=/net/traces01.be-md.ncbi.nlm.nih.gov/trace_software/vdb --with-static-vdb --without-gnutls --without-gcrypt
+IntelMAC    : clang : Clang.sh    --with-bin-release --without-debug --without-pcre --without-openmp --with-mt --with-flat-makefile --with-ncbi-public --with-experimental=Int8GI --with-vdb=/net/traces01.be-md.ncbi.nlm.nih.gov/trace_software/vdb --with-static-vdb --without-gnutls --without-gcrypt --with-libuv=/netopt/ncbi_tools/libuv-1.35.0
 
 USE_COMPONENTS
