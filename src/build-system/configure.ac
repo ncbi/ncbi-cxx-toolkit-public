@@ -3599,7 +3599,7 @@ CFLAGS="$CFLAGS $OPENMP_FLAGS"
 AC_CHECK_HEADER(omp.h)
 if test "$ac_cv_header_omp_h" = no; then
    if test "$with_openmp" = yes; then
-      AC_MSG_ERROR([$with_openmp explicitly specified, but unavailable with $CC.])
+      AC_MSG_ERROR([--with-openmp explicitly specified, but unavailable with $CC.])
    else
       OPENMP_FLAGS=
    fi
