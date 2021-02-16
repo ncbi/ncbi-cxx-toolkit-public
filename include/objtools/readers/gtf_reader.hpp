@@ -194,7 +194,7 @@ public:
     virtual CRef< CSeq_annot >
     ReadSeqAnnot(
         ILineReader& lr,
-        ILineErrorListener* pErrors=0 );
+        ILineErrorListener* pErrors=0 ) override;
 
 protected:
     virtual void xProcessData(

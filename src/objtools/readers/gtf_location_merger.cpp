@@ -58,8 +58,6 @@ CGtfLocationRecord::CGtfLocationRecord(
     CGff3ReadRecord::SeqIdResolver seqIdResolve)
 //  ----------------------------------------------------------------------------
 {
-    const int partBase = 100;  //anything bigger than any value above
-
     mId.Assign(*record.GetSeqId(flags, seqIdResolve));
     mStart = static_cast<TSeqPos>(record.SeqStart());
     mStop  = static_cast<TSeqPos>(record.SeqStop());
@@ -230,7 +228,7 @@ CGtfLocationMerger::AddRecordForId(
     if (existingEntry == mMapIdToLocations.end()) {
         existingEntry = mMapIdToLocations.emplace(id, LOCATIONS()).first;
     }
-    LOCATIONS& locations = existingEntry->second;
+
     CGtfLocationRecord location(record, mFlags, mIdResolver);
     auto& existingRecords = existingEntry->second;
     for (auto& record: existingRecords) {
