@@ -148,7 +148,7 @@ CSeqDBIsam::x_SearchIndexNumeric(Int8             Number,
 {
     //m_Atlas.Lock(locked);
     
-    x_InitLease();//Map files if needed
+    //x_InitLease();//Map files if needed
     if(m_Initialized == false) {
         EErrorCode error = x_InitSearch();
 
@@ -1192,6 +1192,8 @@ CSeqDBIsam::CSeqDBIsam(CSeqDBAtlas  & atlas,
     } else {
         m_PageSize = DEFAULT_SISAM_SIZE;
     }
+    x_InitSearch();
+    x_FindIndexBounds();
 }
 
 void CSeqDBIsam::x_MakeFilenames(const string & dbname,
