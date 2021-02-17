@@ -68,7 +68,7 @@
 
 #define USE_CDDLOADER
 
-#if defined(HAVE_LIBGRPC) and defined(HAVE_NCBI_VDB)
+#if defined(HAVE_LIBGRPC) && defined(HAVE_NCBI_VDB)
 #define USE_SNPLOADER
 #endif
 
