@@ -53,10 +53,8 @@ BEGIN_NCBI_SCOPE
 ///   String in some arbitrary date format.
 /// @return
 ///   Corresponding string in ISO 8601 format. Contain the same field as an original string,
-///   but rearranged to conform ISO 8601.
+///   but rearranged to conform ISO 8601. If the original string have time, it will be omitted.
 ///   Return empty string on error, if we cannot locate valid date, or it is ambiguous.
-
-
 
 NCBI_XREGEXP_EXPORT 
 string ConvertDateTo_iso8601(string const& value);
