@@ -123,6 +123,18 @@ double COSGConnection::UpdateTimestamp()
 }
 
 
+void COSGConnection::AcceptFeedback(int feedback)
+{
+    if ( feedback != 0 && m_RemoveFrom && m_ServerInfo ) {
+        m_RemoveFrom->m_Mapper->AcceptFeedback(m_ServiceName,
+                                               m_ServerInfo->GetHost(), m_ServerInfo->GetPort(),
+                                               (feedback < 0?
+                                                COSGServiceMapper::eNegativeFeedback:
+                                                COSGServiceMapper::ePositiveFeedback));
+    }
+}
+
+
 template<class Type>
 struct SConditionalASNLogger
 {
@@ -370,7 +382,7 @@ void COSGConnectionPool::LoadConfig(const CNcbiRegistry& registry, string sectio
     }
 
     COSGServiceMapper::InitDefaults(const_cast<CNcbiRegistry&>(registry));
-    CRef<IDBServiceMapper> service_mapper(new COSGServiceMapper(&registry));
+    CRef<COSGServiceMapper> service_mapper(new COSGServiceMapper(&registry));
     string preferred_server = registry.GetString(section,
                                                  kParamPreferredServer,
                                                  kDefaultPreferredServer);
@@ -459,15 +471,15 @@ void COSGConnectionPool::x_OpenConnection(COSGConnection& conn)
         SleepMicroSec((unsigned long)(wait_seconds*1e6));
     }
     unique_ptr<CConn_IOStream> stream;
-    auto server = x_GetServer();
-    if ( server ) {
-        string host = CSocketAPI::HostPortToString(server->GetHost(), server->GetPort());
-        host.erase(host.rfind(':'));
+    conn.m_ServiceName = m_ServiceName;
+    conn.m_ServerInfo = move(x_GetServer());
+    if ( conn.m_ServerInfo ) {
+        string host = CSocketAPI::ntoa(conn.m_ServerInfo->GetHost());
         if ( GetDebugLevel() >= eDebug_open ) {
             LOG_POST(GetDiagSeverity() << "OSG("<<connection_id<<"): "
-                     "Connecting to "<<host<<":"<<server->GetPort());
+                     "Connecting to "<<host<<":"<<conn.m_ServerInfo->GetPort());
         }
-        stream = make_unique<CConn_SocketStream>(host, server->GetPort());
+        stream = make_unique<CConn_SocketStream>(host, conn.m_ServerInfo->GetPort());
     }
     else {
         stream = make_unique<CConn_ServiceStream>(m_ServiceName);
@@ -496,6 +508,7 @@ void COSGConnectionPool::x_OpenConnection(COSGConnection& conn)
         if ( !reply->GetReply().IsInit() || !reply->IsSetEnd_of_reply() ) {
             NCBI_THROW(CIOException, eRead, "bad init reply");
         }
+        conn.AcceptFeedback(+1);
     }
 }
 
@@ -515,11 +528,7 @@ TSvrRef COSGConnectionPool::x_GetServer()
         if ( !m_Balancer ) {
             IDBServiceMapper::TOptions options;
             m_Mapper->GetServerOptions(m_ServiceName, &options);
-            C_DriverMgr drvMgr;
-            string errmsg;
-            map<string,string> args;
-            m_Context.reset(drvMgr.GetDriverContext("ftds", &errmsg, &args));
-            m_Balancer.Reset(new CDBPoolBalancer(m_ServiceName, kEmptyStr, options, m_Context.get()));
+            m_Balancer.Reset(new CDBPoolBalancer(m_ServiceName, kEmptyStr, options, nullptr));
         }
         server = m_Balancer->GetServer(nullptr, nullptr);
         if ( !server ) {
@@ -548,6 +557,7 @@ void COSGConnectionPool::ReleaseConnection(CRef<COSGConnection>& conn)
     _ASSERT(conn);
     _ASSERT(m_ConnectionCount > 0);
     _ASSERT(conn->m_RemoveFrom == this);
+    conn->AcceptFeedback(+1);
     conn->m_RemoveFrom = nullptr;
     m_FreeConnections.push_back(move(conn));
     _ASSERT(!conn);
@@ -564,6 +574,7 @@ void COSGConnectionPool::RemoveConnection(COSGConnection& conn)
     CMutexGuard guard(m_Mutex);
     _ASSERT(m_ConnectionCount > 0);
     _ASSERT(conn.m_RemoveFrom == this);
+    conn.AcceptFeedback(-1);
     conn.m_RemoveFrom = nullptr;
     --m_ConnectionCount;
     m_WaitConnectionSlot.Post();

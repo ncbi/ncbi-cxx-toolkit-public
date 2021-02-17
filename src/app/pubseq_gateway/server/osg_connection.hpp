@@ -58,6 +58,7 @@ BEGIN_NAMESPACE(osg);
 USING_SCOPE(objects);
 
 class COSGConnectionPool;
+class COSGServiceMapper;
 
 class COSGConnection : public CObject
 {
@@ -91,6 +92,8 @@ public:
     
     double UpdateTimestamp();
 
+    void AcceptFeedback(int feedback);
+
 protected:
     friend class COSGConnectionPool;
 
@@ -101,6 +104,8 @@ protected:
 private:
     size_t m_ConnectionID;
     CRef<COSGConnectionPool> m_RemoveFrom;
+    string m_ServiceName;
+    TSvrRef m_ServerInfo;
     unique_ptr<CConn_IOStream> m_Stream;
     int m_RequestCount;
     bool m_InitRequestWasSent;
@@ -153,7 +158,7 @@ private:
     int m_ConnectionCount;
     int m_ConnectFailureCount;
     list<CRef<COSGConnection>> m_FreeConnections;
-    CRef<IDBServiceMapper> m_Mapper;
+    CRef<COSGServiceMapper> m_Mapper;
     CRef<CDBPoolBalancer>  m_Balancer;
     unique_ptr<CDeadline>  m_NonresolutionRetryDeadline;
 };
