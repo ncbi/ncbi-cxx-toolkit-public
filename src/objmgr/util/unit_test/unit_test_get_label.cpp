@@ -131,13 +131,13 @@ BOOST_AUTO_TEST_CASE(Test_feature_GetLabel)
         "Prot: neuronal thread protein AD7c-NTP");
 
     CheckOneFeatureType(*prot_bsh, CSeqFeatData::eSubtype_preprotein,
-                        "proprotein", "proprotein", "proprotein");
+                        "proprotein", "proprotein", "proprotein: ");
     CheckOneFeatureType(*prot_bsh, CSeqFeatData::eSubtype_mat_peptide_aa,
-        "mat_peptide", "mat_peptide", "mat_peptide");
+        "mat_peptide", "mat_peptide", "mat_peptide: ");
     CheckOneFeatureType(*prot_bsh, CSeqFeatData::eSubtype_sig_peptide_aa,
-        "sig_peptide", "sig_peptide", "sig_peptide");
+        "sig_peptide", "sig_peptide", "sig_peptide: ");
     CheckOneFeatureType(*prot_bsh, CSeqFeatData::eSubtype_transit_peptide_aa,
-        "transit_peptide", "transit_peptide", "transit_peptide");
+        "transit_peptide", "transit_peptide", "transit_peptide: ");
 }
 
 

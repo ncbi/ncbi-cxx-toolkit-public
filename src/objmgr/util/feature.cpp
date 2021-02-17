@@ -773,9 +773,6 @@ void GetLabel
     if (label->size() == label_len  &&  (flags & fFGL_Type) == 0) {
         *label += type_label;
     }
-    if (NStr::EndsWith(*label, ": ")) {
-        label->resize(label->size() - 2);
-    }
 }
 
 
