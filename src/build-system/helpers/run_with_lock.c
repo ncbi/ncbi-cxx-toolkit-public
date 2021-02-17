@@ -392,6 +392,8 @@ int s_Run(const char* const* args, FILE* log)
                 if (s_MainChildDone  &&  ( !stdout_done  ||  !stderr_done )
                     &&  waitpid(pid, &status, WNOHANG) != 0) {
                     s_MainChildDone = 0;
+                    fflush(stdout);
+                    fflush(stderr);
                     fflush(log);
                     if (fork() > 0) {
                         s_FinishingInBackground = 1;
