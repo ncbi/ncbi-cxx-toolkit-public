@@ -31,6 +31,7 @@
 */
 #include <ncbi_pch.hpp>
 #include "read_blast_result.hpp"
+#include <strstream>
 
 // all things overlaps
 // that i've done
@@ -273,7 +274,7 @@ bool CReadBlastApp::overlaps_prot_na
        report->loc2 = &seq_interval;
 
        char bufferchar[20480];  memset(bufferchar, 0, 20480);
-       CNcbiStrstream buffer(NCBI_STRSTREAM_INIT(bufferchar, 20480));
+       strstream buffer(bufferchar, 20480);
        printOverlapReport(report, buffer);
 
        CNcbiStrstream buff_misc_feat_rna;
@@ -661,7 +662,7 @@ bool CReadBlastApp::overlaps
     report->right_frame    = right_frame;
 
     char bufferchar[20480];  memset(bufferchar, 0, 20480);
-    CNcbiStrstream buffer(NCBI_STRSTREAM_INIT(bufferchar, 20480));
+    strstream buffer(bufferchar, 20480);
     printOverlapReport(report, buffer);
 /*
     CNcbiStrstream misc_feat;

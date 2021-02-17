@@ -31,6 +31,7 @@
 */
 #include <ncbi_pch.hpp>
 #include "read_blast_result.hpp"
+#include <strstream>
 
 bool CReadBlastApp::fit_blast
   (     
@@ -172,7 +173,7 @@ bool CReadBlastApp::fit_blast
         if(PrintDetails()) NcbiCerr << "!!!! Blast bounds match !!!!! numFit: " << numFit << NcbiEndl;
 
         char bufferchar[20480];  memset(bufferchar, 0, 20480);
-        CNcbiStrstream buffer(NCBI_STRSTREAM_INIT(bufferchar, 20480));
+        strstream buffer(bufferchar, 20480);
         printReport(report, buffer);
         CNcbiStrstream misc_feat;
         if(common_subject.size())
@@ -262,7 +263,7 @@ bool CReadBlastApp::fit_blast
 // print exhonerating hits to stderr if detailed printing
      {
      char bufferchar[2048];  memset(bufferchar, 0, 2048);
-     CNcbiStrstream buffer(NCBI_STRSTREAM_INIT(bufferchar, 2048));
+     strstream buffer(bufferchar, 2048);
      buffer << "Left sequence has " << left_perfect.size() << " perfect hits." << NcbiEndl;
      ITERATE(vector<perfectHitStr>, hit, left_perfect)
        {
