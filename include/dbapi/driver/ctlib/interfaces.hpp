@@ -810,7 +810,7 @@ class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_LangCmd : public CTL_LRCmd
     friend class CTL_Connection;
     friend class CTL_CursorCmdExpl;
     friend class CTL_CursorResultExpl;
-    friend class default_delete<CTL_LangCmd>;
+    friend struct default_delete<CTL_LangCmd>;
 
 protected:
     CTL_LangCmd(CTL_Connection& conn,
@@ -1290,7 +1290,7 @@ private:
 class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_CursorResultExpl : public CTL_CursorResult
 {
     friend class CTL_CursorCmdExpl;
-    friend class default_delete<CTL_CursorResultExpl>;
+    friend struct default_delete<CTL_CursorResultExpl>;
 
 protected:
     CTL_CursorResultExpl(CTL_LangCmd* cmd, const string& cursor_name);
