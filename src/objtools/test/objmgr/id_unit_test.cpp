@@ -1173,7 +1173,7 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr2)
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Source));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Molinfo));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Pub));
-    BOOST_CHECK_EQUAL(pub_count, 1);
+    BOOST_CHECK_EQUAL(pub_count, 2);
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Comment));
     BOOST_CHECK_EQUAL(comment_count, 1);
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Create_date));
@@ -1218,7 +1218,7 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr3)
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Source));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Molinfo));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Pub));
-    BOOST_CHECK_EQUAL(pub_count, 1);
+    BOOST_CHECK_EQUAL(pub_count, 2);
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Comment));
     BOOST_CHECK_EQUAL(comment_count, 1);
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Create_date));
