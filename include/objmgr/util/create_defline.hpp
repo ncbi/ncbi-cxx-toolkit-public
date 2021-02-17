@@ -90,7 +90,8 @@ public:
         fOmitTaxonomicName = 1 <<  4, ///< Do not add organism suffix to proteins.
         fDevMode           = 1 <<  5, ///< Development mode for testing new features.
         fShowModifiers     = 1 <<  6, ///< Show key-value pair modifiers (e.g. "[organism=Homo sapiens]")
-        fUseAutoDef        = 1 <<  7  ///< Run auto-def for nucleotides if user object is present
+        fUseAutoDef        = 1 <<  7, ///< Run auto-def for nucleotides if user object is present
+        fFastaFormat       = 1 <<  8  ///< Generate FASTA defline
     };
     typedef int TUserFlags; ///< Binary "OR" of EUserFlags
 
@@ -166,6 +167,10 @@ private:
     void x_SetBioSrcIdx (
         const CBioseq_Handle& bsh
     );
+
+    const char* x_OrganelleName(
+        CBioSource::TGenome genome
+    ) const;
 
     bool x_CDShasLowQualityException (
         const CSeq_feat& sft
@@ -348,6 +353,7 @@ private:
 
     bool m_UsePDBCompoundForDefline;
 
+    bool m_FastaFormat;
     /// exception fields
 
     /// (Careful: CTextFsm has no virtual destructor)

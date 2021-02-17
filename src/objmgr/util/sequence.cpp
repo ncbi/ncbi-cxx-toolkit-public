@@ -2832,6 +2832,8 @@ sequence::CDeflineGenerator::TUserFlags
 CFastaOstream::x_GetTitleFlags(void) const
 {
     sequence::TGetTitleFlags title_flags = 0;
+    title_flags |= sequence::CDeflineGenerator::fFastaFormat;
+
     if ((m_Flags & fNoExpensiveOps) != 0) {
         title_flags |= sequence::CDeflineGenerator::fNoExpensiveOps;
     }

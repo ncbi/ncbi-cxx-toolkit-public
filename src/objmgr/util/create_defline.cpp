@@ -312,15 +312,21 @@ void x_CleanAndCompress(string& dest, const CTempString& instr, bool isProt)
     }
 }
 
-static const char* x_OrganelleName (
-    TBIOSOURCE_GENOME genome,
-    bool has_plasmid,
-    bool virus_or_phage,
-    bool wgs_suffix
-)
+static bool s_IsVirusOrPhage(const CTempString& taxname) 
+{
+    return (NStr::FindNoCase(taxname, "virus") != NPOS ||
+            NStr::FindNoCase(taxname, "phage") != NPOS);
+}
 
+
+const char* CDeflineGenerator::x_OrganelleName (
+    TBIOSOURCE_GENOME genome
+    ) const
 {
     const char* result = kEmptyCStr;
+    
+    const bool has_plasmid = !m_Plasmid.empty();
+    
 
     switch (genome) {
         case NCBI_GENOME(chloroplast):
@@ -334,7 +340,7 @@ static const char* x_OrganelleName (
             break;
         case NCBI_GENOME(mitochondrion):
         {
-            if (has_plasmid || wgs_suffix) {
+            if (!m_FastaFormat && (has_plasmid || m_IsWGS)) {
                 result = "mitochondrial";
             } else {
                 result = "mitochondrion";
@@ -351,14 +357,14 @@ static const char* x_OrganelleName (
         }
         case NCBI_GENOME(extrachrom):
         {
-            if (! wgs_suffix) {
+            if (!m_IsWGS) {
                 result = "extrachromosomal";
             }
             break;
         }
         case NCBI_GENOME(plasmid):
         {
-            if (! wgs_suffix) {
+            if (!m_IsWGS) {
                 result = "plasmid";
             }
             break;
@@ -369,8 +375,8 @@ static const char* x_OrganelleName (
             break;
         case NCBI_GENOME(proviral):
         {
-            if (! virus_or_phage) {
-                if (has_plasmid || wgs_suffix) {
+            if (!s_IsVirusOrPhage(m_Taxname)) {
+                if (has_plasmid || m_IsWGS) {
                     result = "proviral";
                 } else {
                     result = "provirus";
@@ -380,14 +386,14 @@ static const char* x_OrganelleName (
         }
         case NCBI_GENOME(virion):
         {
-            if (! virus_or_phage) {
+            if (!s_IsVirusOrPhage(m_Taxname)) {
                 result = "virus";
             }
             break;
         }
         case NCBI_GENOME(nucleomorph):
         {
-            if (! wgs_suffix) {
+            if (!m_IsWGS) {
                 result = "nucleomorph";
             }
            break;
@@ -603,6 +609,7 @@ void CDeflineGenerator::x_SetFlags (
     m_GpipeMode = (flags & fGpipeMode) != 0;
     m_OmitTaxonomicName = (flags & fOmitTaxonomicName) != 0;
     m_DevMode = (flags & fDevMode) != 0;
+    m_FastaFormat = (flags & fFastaFormat) != 0;
 
     // reset member variables to cleared state
     m_IsNA = false;
@@ -1332,10 +1339,9 @@ void CDeflineGenerator::x_SetBioSrc (
             }
         }
     }
-
+/*
     bool virus_or_phage = false;
     bool has_plasmid = false;
-    bool wgs_suffix = false;
 
     if (NStr::FindNoCase(m_Taxname, "virus") != NPOS  ||
         NStr::FindNoCase(m_Taxname, "phage") != NPOS) {
@@ -1344,19 +1350,10 @@ void CDeflineGenerator::x_SetBioSrc (
 
     if (! m_Plasmid.empty()) {
         has_plasmid = true;
-        /*
-        if (NStr::FindNoCase(m_Plasmid, "plasmid") == NPOS  &&
-            NStr::FindNoCase(m_Plasmid, "element") == NPOS) {
-            pls_pfx = " plasmid ";
-        }
-        */
     }
+*/
 
-    if (m_IsWGS) {
-        wgs_suffix = true;
-    }
-
-    m_Organelle = x_OrganelleName (m_Genome, has_plasmid, virus_or_phage, wgs_suffix);
+    m_Organelle = x_OrganelleName(m_Genome);
 
     if (m_has_clone) return;
 
