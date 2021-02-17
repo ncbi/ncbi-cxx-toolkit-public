@@ -37,6 +37,7 @@
 #include <corelib/request_control.hpp>
 #include <corelib/stream_utils.hpp>
 #include <vector>
+#include <strstream>
 #include <stdlib.h>
 #include <time.h>
 
@@ -107,7 +108,7 @@ static int s_StreamPushback(iostream&   ios,
             char savech = data[j + i];
             data[j+i] = '\0';  // to prevent reading past "i" from strstream
             // We don't actually do any "app", but w/o it we can't read
-            CNcbiStrstream str(NCBI_STRSTREAM_INIT(data + j, i), IOS_BASE::in | IOS_BASE::out | IOS_BASE::app);
+            strstream str(data + j, i, IOS_BASE::in | IOS_BASE::out | IOS_BASE::app);
             PushDiagPostPrefix("-");
             ERR_POST(Info << "Sub-streaming "
                      << NStr::UInt8ToString((Uint8) i)
