@@ -38,12 +38,12 @@ DEFAULT_CONFIGURE_FLAGS:  --without-debug --with-strip --with-openmp --with-mt -
 # ICC gives us about 10% improvement in the core2 microarchitecture, so prefer
 # that. The build-root is needed so that rpmbuild can find the proper directories
 # to copy the binaries from
-Linux64-Centos   : icc : ICC.sh 19.0       --with-bin-release --with-strip --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-experimental=Int8GI --with-vdb=/panfs/traces01.be-md.ncbi.nlm.nih.gov/trace_software/vdb --with-static-vdb --without-gnutls --without-gcrypt
+Linux64-Centos   : icc : ICC.sh 19.0       --with-bin-release --with-strip --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-experimental=Int8GI --with-vdb=/panfs/traces01.be-md.ncbi.nlm.nih.gov/trace_software/vdb --with-static-vdb --without-gnutls --without-gcrypt --with-nghttp2=/netopt/ncbi_tools64/nghttp2-1.40.0
 
 DEFAULT_CONFIGURATIONS: Linux64-Centos:icc
 
 Win64    : plain : static  64  ReleaseDLL <ENV>NCBI_CONFIG____ENABLEDUSERREQUESTS__NCBI-INT8-GI=1</ENV>
 
-IntelMAC    : clang : Clang.sh    --with-bin-release --without-debug --without-pcre --without-openmp --with-mt --with-flat-makefile --with-ncbi-public --with-experimental=Int8GI --with-vdb=/net/traces01.be-md.ncbi.nlm.nih.gov/trace_software/vdb --with-static-vdb --without-gnutls --without-gcrypt --with-libuv=/netopt/ncbi_tools/libuv-1.35.0
+IntelMAC    : clang : Clang.sh    --with-bin-release --without-debug --without-pcre --without-openmp --with-mt --with-flat-makefile --with-ncbi-public --with-experimental=Int8GI --with-vdb=/net/traces01.be-md.ncbi.nlm.nih.gov/trace_software/vdb --with-static-vdb --without-gnutls --without-gcrypt --with-libuv=/netopt/ncbi_tools/libuv-1.35.0 --with-nghttp2=/netopt/ncbi_tools/nghttp2-1.40.0
 
 USE_COMPONENTS
