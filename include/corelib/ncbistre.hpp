@@ -286,7 +286,7 @@ template class NCBI_XNCBI_EXPORT CNcbistrstream_Base<IO_PREFIX::strstream,  IOS_
 #endif
 
 #else
-#if 1
+#if 0
 //typedef IO_PREFIX::stringbuf      CNcbiStrstreambuf;
 typedef IO_PREFIX::istringstream  CNcbiIstrstream;
 typedef IO_PREFIX::ostringstream  CNcbiOstrstream;
