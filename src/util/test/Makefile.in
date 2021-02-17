@@ -29,6 +29,7 @@ APP_PROJ = example_value_convert \
            test_range_set \
            test_rangemap \
            test_regexp \
+           test_xregexp \
            test_resize_iter \
            test_scheduler \
            test_staticmap \

@@ -25,6 +25,7 @@ NCBI_add_app(
     test_range_coll
     test_rangemap
     test_regexp
+    test_xregexp
     test_resize_iter
     test_scheduler
     test_staticmap

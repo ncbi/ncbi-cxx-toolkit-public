@@ -36,7 +36,6 @@
 #include <corelib/ncbiargs.hpp>
 
 #include <util/xregexp/arg_regexp.hpp>
-#include <util/xregexp/mask_regexp.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -189,31 +188,6 @@ int CRegexApplication::Run(void)
     }}
 
     // ---------------------------------------------------------------
-    // CMaskRegexp
-    {{
-        CMaskRegexp mask;
-        assert( mask.Match(""));
-        assert( mask.Match("text"));
-
-        mask.Add("D..");
-        mask.Add("....");
-        mask.Add("[0-9][0-9]*");
-        mask.AddExclusion("d.*m");
-
-        assert( mask.Match("DOG"));
-        assert(!mask.Match("dog"));
-        assert( mask.Match("dog", NStr::eNocase));
-        assert( mask.Match("Dam"));
-        assert(!mask.Match("dam"));
-        assert( mask.Match("abcd"));
-        assert(!mask.Match("abc"));
-        assert( mask.Match("123"));
-
-        mask.Remove("[0-9][0-9]*");
-        assert(!mask.Match("123"));
-    }}
-
-    // ---------------------------------------------------------------
     // CRegexpUtil
 
     {{
@@ -246,10 +220,8 @@ int CRegexApplication::Run(void)
 }
 
 
-
 /////////////////////////////////////////////////////////////////////////////
 //  MAIN
-
 
 int main(int argc, const char* argv[])
 {
