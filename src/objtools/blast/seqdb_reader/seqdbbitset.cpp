@@ -42,7 +42,6 @@ CSeqDB_BitSet::CSeqDB_BitSet(size_t        start,
       m_End    (end),
       m_Special(eNone)
 {
-    _ASSERT(eWordShift); // must be 32 or 64
     _ASSERT(TByte(0) < (TByte(-1))); // must be unsigned
     
     // Allocation is guaranteed to zero out the bit memory.
