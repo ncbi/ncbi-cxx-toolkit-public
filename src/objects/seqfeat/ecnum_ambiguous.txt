@@ -260,6 +260,8 @@
 1.16.9.n	With a copper protein as acceptor
 1.16.98.-	With other known acceptors
 1.16.98.n	With other known acceptors
+1.16.99.-	With other acceptors
+1.16.99.n	With other acceptors
 1.17.-.-	Acting on CH or CH(2) groups
 1.17.n.n	Acting on CH or CH(2) groups
 1.17.1.-	With NAD(+) or NADP(+) as acceptor

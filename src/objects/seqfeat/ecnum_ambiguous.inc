@@ -293,6 +293,8 @@ static const char* const kECNum_ambiguous[] = {
     "1.16.9.n\tWith a copper protein as acceptor",
     "1.16.98.-\tWith other known acceptors",
     "1.16.98.n\tWith other known acceptors",
+    "1.16.99.-\tWith other acceptors",
+    "1.16.99.n\tWith other acceptors",
     "1.17.-.-\tActing on CH or CH(2) groups",
     "1.17.n.n\tActing on CH or CH(2) groups",
     "1.17.1.-\tWith NAD(+) or NADP(+) as acceptor",
