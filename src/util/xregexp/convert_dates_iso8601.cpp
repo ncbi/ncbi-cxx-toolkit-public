@@ -38,8 +38,8 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <cassert>
 #include <sstream>
+#include <memory>
 #include <map>
 #include <util/xregexp/regexp.hpp>
 #include <util/xregexp/convert_dates_iso8601.hpp>
@@ -165,7 +165,7 @@ private:
         swap(lhs.m_Transform, rhs.m_Transform);
         swap(lhs.m_Regexp_s, rhs.m_Regexp_s);
 
-        auto_ptr<CRegexp> temp(lhs.m_Regexp);
+        shared_ptr<CRegexp> temp(lhs.m_Regexp);
         lhs.m_Regexp = rhs.m_Regexp;
         rhs.m_Regexp = temp;
     }
@@ -173,7 +173,7 @@ private:
     string m_Tag;
     TFun_transform m_Transform;    
     string m_Regexp_s;
-    auto_ptr<CRegexp> m_Regexp;
+    shared_ptr<CRegexp> m_Regexp;
 };
 
 class CAmbiguousDateException : public CException
