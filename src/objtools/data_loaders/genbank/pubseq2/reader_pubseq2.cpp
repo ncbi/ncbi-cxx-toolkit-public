@@ -60,6 +60,7 @@
 
 #include <connect/ncbi_http_session.hpp>
 #include <objtools/data_loaders/genbank/pubseq2/EMyNCBIResult.hpp>
+#include <strstream>
 
 #define BINARY_REQUESTS     1
 #define LONG_REQUESTS       1
