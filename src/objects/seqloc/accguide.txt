@@ -3536,7 +3536,7 @@ special  CAJJIC000000000-CAJJID999999999  embl_tpa_wgs_nuc # 6+9
 special  CAJJIG000000000-CAJJIK999999999  embl_tpa_wgs_nuc # 6+9
 special  CAJJIM000000000-CAJJIM999999999  embl_tpa_wgs_nuc # 6+9
 special  CAJJIQ000000000-CAJJJK999999999  embl_tpa_wgs_nuc # 6+9
-special  CAJJJM000000000-CAJMTD999999999  embl_tpa_wgs_nuc # 6+9
+special  CAJJJM000000000-CAJMTE999999999  embl_tpa_wgs_nuc # 6+9
 
 # Some "EMBL" 8- and 10-character protein accessions are really third-party
 # annotations.
