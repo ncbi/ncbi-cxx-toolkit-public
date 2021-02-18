@@ -2464,7 +2464,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "GSI\ts\tGeological Survey of India\t\t\t",
 "GSM\ts\tGeologic Museum\t\t\t",
 "GSMNP\ts\tGreat Smoky Mountains National Park\t\t\t",
-"GSN\ts\tGeological Survey of Nambia\t\t\t",
+"GSN\ts\tNatural History Gallery of Casalina (University of Perugia);\t\t\t",
 "GSO\ts\tGlasgow Society of Field Naturalists'\t\t\t",
 "GSP\ts\tGeological Survey of Portugal\t\t\t",
 "GSU\ts\tF. Scorina Gomel State University, Department of Botany and Plant Physiology\t\t\t",

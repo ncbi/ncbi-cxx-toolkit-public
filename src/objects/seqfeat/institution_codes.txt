@@ -2431,7 +2431,7 @@ GSFS	s	Gansu Forestry School
 GSI	s	Geological Survey of India			
 GSM	s	Geologic Museum			
 GSMNP	s	Great Smoky Mountains National Park			
-GSN	s	Geological Survey of Nambia			
+GSN	s	Natural History Gallery of Casalina (University of Perugia);			
 GSO	s	Glasgow Society of Field Naturalists'			
 GSP	s	Geological Survey of Portugal			
 GSU	s	F. Scorina Gomel State University, Department of Botany and Plant Physiology			
