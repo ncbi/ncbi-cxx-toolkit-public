@@ -43,6 +43,7 @@
 #include <objmgr/util/feature.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
+#include <strstream>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -243,7 +244,7 @@ string s_GuessType(CNcbiIstream& in, ESerialDataFormat format)
     in.clear();
     CStreamUtils::Pushback(in, buf, size);
 
-    CNcbiIstrstream test_str(buf, size);
+    istrstream test_str(buf, size);
     unique_ptr<CObjectIStream> test_in(CObjectIStream::Open(format, test_str));
     if ( format == eSerial_AsnText || format == eSerial_Xml ) {
         return test_in->ReadFileHeader();
