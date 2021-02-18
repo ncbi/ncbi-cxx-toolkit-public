@@ -64,61 +64,63 @@ endif()
 #############################################################################
 # LocalPCRE
 if (EXISTS ${NCBITK_INC_ROOT}/util/regexp AND NOT NCBI_COMPONENT_LocalPCRE_DISABLED)
-  set(NCBI_COMPONENT_LocalPCRE_FOUND YES)
-  list(APPEND NCBI_ALL_REQUIRES LocalPCRE)
-  set(NCBI_COMPONENT_LocalPCRE_INCLUDE ${NCBITK_INC_ROOT}/util/regexp)
-  set(NCBI_COMPONENT_LocalPCRE_NCBILIB regexp)
+    set(NCBI_COMPONENT_LocalPCRE_FOUND YES)
+    list(APPEND NCBI_ALL_REQUIRES LocalPCRE)
+    set(NCBI_COMPONENT_LocalPCRE_INCLUDE ${NCBITK_INC_ROOT}/util/regexp)
+    set(NCBI_COMPONENT_LocalPCRE_NCBILIB regexp)
 else()
-  set(NCBI_COMPONENT_LocalPCRE_FOUND NO)
+    set(NCBI_COMPONENT_LocalPCRE_FOUND NO)
 endif()
 
 #############################################################################
 # LocalZ
 if (EXISTS ${NCBITK_INC_ROOT}/util/compress/zlib AND NOT NCBI_COMPONENT_LocalZ_DISABLED)
-  set(NCBI_COMPONENT_LocalZ_FOUND YES)
-  list(APPEND NCBI_ALL_REQUIRES LocalZ)
-  set(NCBI_COMPONENT_LocalZ_INCLUDE ${NCBITK_INC_ROOT}/util/compress/zlib)
-  set(NCBI_COMPONENT_LocalZ_NCBILIB z)
+    set(NCBI_COMPONENT_LocalZ_FOUND YES)
+    list(APPEND NCBI_ALL_REQUIRES LocalZ)
+    set(NCBI_COMPONENT_LocalZ_INCLUDE ${NCBITK_INC_ROOT}/util/compress/zlib)
+    set(NCBI_COMPONENT_LocalZ_NCBILIB z)
 else()
-  set(NCBI_COMPONENT_LocalZ_FOUND NO)
+    set(NCBI_COMPONENT_LocalZ_FOUND NO)
 endif()
 
 #############################################################################
 # LocalBZ2
 if (EXISTS ${NCBITK_INC_ROOT}/util/compress/bzip2 AND NOT NCBI_COMPONENT_LocalBZ2_DISABLED)
-  set(NCBI_COMPONENT_LocalBZ2_FOUND YES)
-  list(APPEND NCBI_ALL_REQUIRES LocalBZ2)
-  set(NCBI_COMPONENT_LocalBZ2_INCLUDE ${NCBITK_INC_ROOT}/util/compress/bzip2)
-  set(NCBI_COMPONENT_LocalBZ2_NCBILIB bz2)
+    set(NCBI_COMPONENT_LocalBZ2_FOUND YES)
+    list(APPEND NCBI_ALL_REQUIRES LocalBZ2)
+    set(NCBI_COMPONENT_LocalBZ2_INCLUDE ${NCBITK_INC_ROOT}/util/compress/bzip2)
+    set(NCBI_COMPONENT_LocalBZ2_NCBILIB bz2)
 else()
-  set(NCBI_COMPONENT_LocalBZ2_FOUND NO)
+    set(NCBI_COMPONENT_LocalBZ2_FOUND NO)
 endif()
 
 #############################################################################
 # LocalLMDB
 if (EXISTS ${NCBITK_INC_ROOT}/util/lmdb AND NOT CYGWIN AND NOT NCBI_COMPONENT_LocalLMDB_DISABLED)
-  set(NCBI_COMPONENT_LocalLMDB_FOUND YES)
-  list(APPEND NCBI_ALL_REQUIRES LocalLMDB)
-  set(NCBI_COMPONENT_LocalLMDB_INCLUDE ${NCBITK_INC_ROOT}/util/lmdb)
-  set(NCBI_COMPONENT_LocalLMDB_NCBILIB lmdb)
+    set(NCBI_COMPONENT_LocalLMDB_FOUND YES)
+    list(APPEND NCBI_ALL_REQUIRES LocalLMDB)
+    set(NCBI_COMPONENT_LocalLMDB_INCLUDE ${NCBITK_INC_ROOT}/util/lmdb)
+    set(NCBI_COMPONENT_LocalLMDB_NCBILIB lmdb)
 else()
-  set(NCBI_COMPONENT_LocalLMDB_FOUND NO)
+    set(NCBI_COMPONENT_LocalLMDB_FOUND NO)
 endif()
 
 #############################################################################
 # connext
+set(NCBI_REQUIRE_connext_FOUND NO)
 if (EXISTS ${NCBITK_SRC_ROOT}/connect/ext/CMakeLists.txt AND NOT NCBI_COMPONENT_connext_DISABLED)
-  set(NCBI_REQUIRE_connext_FOUND YES)
-  set(HAVE_LIBCONNEXT 1)
-  list(APPEND NCBI_ALL_REQUIRES connext)
+    set(NCBI_REQUIRE_connext_FOUND YES)
+    set(HAVE_LIBCONNEXT 1)
+    list(APPEND NCBI_ALL_REQUIRES connext)
 endif()
 
 #############################################################################
 # PubSeqOS
+set(NCBI_REQUIRE_PubSeqOS_FOUND NO)
 if (EXISTS ${NCBITK_SRC_ROOT}/objtools/data_loaders/genbank/pubseq/CMakeLists.txt
     AND NOT NCBI_COMPONENT_PubSeqOS_DISABLED)
-  set(NCBI_REQUIRE_PubSeqOS_FOUND YES)
-  list(APPEND NCBI_ALL_REQUIRES PubSeqOS)
+    set(NCBI_REQUIRE_PubSeqOS_FOUND YES)
+    list(APPEND NCBI_ALL_REQUIRES PubSeqOS)
 endif()
 
 #############################################################################
@@ -126,6 +128,7 @@ endif()
 set(FTDS95_INCLUDE  ${NCBITK_INC_ROOT}/dbapi/driver/ftds95  ${NCBITK_INC_ROOT}/dbapi/driver/ftds95/freetds)
 set(FTDS100_INCLUDE ${NCBITK_INC_ROOT}/dbapi/driver/ftds100 ${NCBITK_INC_ROOT}/dbapi/driver/ftds100/freetds)
 
+set(NCBI_COMPONENT_FreeTDS_FOUND   NO)
 if(NOT NCBI_COMPONENT_FreeTDS_DISABLED)
     set(NCBI_COMPONENT_FreeTDS_FOUND   YES)
     set(HAVE_LIBFTDS 1)
@@ -177,6 +180,8 @@ if(NOT "${NCBI_PTBCFG_PROJECT_COMPONENTS}" STREQUAL "")
         if (_negate)
             if(NCBI_COMPONENT_${_value}_FOUND OR NCBI_REQUIRE_${_value}_FOUND)
                 message(SEND_ERROR "Component ${_value} is enabled, but not allowed")
+            elseif(NOT DEFINED NCBI_COMPONENT_${_value}_FOUND AND NOT DEFINED NCBI_REQUIRE_${_value}_FOUND)
+                message(SEND_ERROR "Component ${_value} is unknown")
             endif()
         else()
             if(NOT NCBI_COMPONENT_${_value}_FOUND AND NOT NCBI_REQUIRE_${_value}_FOUND)

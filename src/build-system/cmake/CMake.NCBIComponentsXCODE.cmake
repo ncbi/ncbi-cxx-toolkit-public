@@ -130,6 +130,7 @@ endif()
 #############################################################################
 # PCRE
 #NCBI_define_Xcomponent(NAME PCRE MODULE libpcre LIB pcre)
+set(NCBI_COMPONENT_PCRE_FOUND NO)
 if(NOT NCBI_COMPONENT_PCRE_FOUND)
   set(NCBI_COMPONENT_PCRE_FOUND ${NCBI_COMPONENT_LocalPCRE_FOUND})
   set(NCBI_COMPONENT_PCRE_INCLUDE ${NCBI_COMPONENT_LocalPCRE_INCLUDE})
@@ -363,6 +364,7 @@ if(NOT NCBI_COMPONENT_OpenGL_DISABLED)
     set(NCBI_COMPONENT_OpenGL_LIBS "-framework AGL -framework OpenGL -framework Metal -framework MetalKit")
     list(APPEND NCBI_ALL_COMPONENTS OpenGL)
 else()
+    set(NCBI_COMPONENT_OpenGL_FOUND NO)
     message("DISABLED OpenGL")
 endif()
 

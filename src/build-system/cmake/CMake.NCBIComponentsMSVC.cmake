@@ -134,6 +134,7 @@ if(NOT NCBI_COMPONENT_ODBC_DISABLED)
     set(HAVE_ODBCSS_H 1)
     list(APPEND NCBI_ALL_COMPONENTS ODBC)
 else()
+    set(NCBI_COMPONENT_ODBC_FOUND NO)
     message("DISABLED ODBC")
 endif()
 
@@ -145,6 +146,7 @@ if(NOT NCBI_COMPONENT_OpenGL_DISABLED)
     set(HAVE_OPENGL 1)
     list(APPEND NCBI_ALL_COMPONENTS OpenGL)
 else()
+    set(NCBI_COMPONENT_OpenGL_FOUND NO)
     message("DISABLED OpenGL")
 endif()
 
@@ -239,6 +241,7 @@ list(APPEND NCBI_ALL_COMPONENTS TLS)
 
 #############################################################################
 # GNUTLS
+set(NCBI_COMPONENT_GNUTLS_FOUND NO)
 if(DEFINED NCBI_COMPONENT_GNUTLS_DISABLED AND NOT NCBI_COMPONENT_GNUTLS_DISABLED)
     NCBI_define_Wcomponent(GNUTLS libgnutls-30.lib)
     if(NCBI_COMPONENT_GNUTLS_FOUND)
@@ -357,6 +360,7 @@ else()
     unset(NCBI_COMPONENT_VDB_LIBS)
 endif()
 else(NOT NCBI_COMPONENT_VDB_DISABLED)
+    set(NCBI_COMPONENT_VDB_FOUND NO)
     message("DISABLED VDB")
 endif(NOT NCBI_COMPONENT_VDB_DISABLED)
 

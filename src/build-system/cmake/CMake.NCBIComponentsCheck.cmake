@@ -638,7 +638,9 @@ macro(NCBI_define_Xcomponent)
 
     if("${DC_NAME}" STREQUAL "")
         message(FATAL_ERROR "No component name")
-    elseif(NCBI_COMPONENT_${DC_NAME}_DISABLED)
+    endif()
+    set(NCBI_COMPONENT_${DC_NAME}_FOUND NO)
+    if(NCBI_COMPONENT_${DC_NAME}_DISABLED)
         message("DISABLED ${DC_NAME}")
     else()
         if(NOT NCBI_COMPONENT_${DC_NAME}_FOUND AND NOT "${DC_MODULE}" STREQUAL "" AND PKG_CONFIG_FOUND
@@ -696,6 +698,7 @@ endmacro()
 #############################################################################
 function(NCBI_define_Wcomponent _name)
 
+    set(NCBI_COMPONENT_${_name}_FOUND NO PARENT_SCOPE)
     if(NCBI_COMPONENT_${_name}_DISABLED)
         message("DISABLED ${_name}")
         return()

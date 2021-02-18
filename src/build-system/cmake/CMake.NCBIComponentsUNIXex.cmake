@@ -181,6 +181,7 @@ if(NOT NCBI_COMPONENT_NCBI_C_DISABLED)
         message("NOT FOUND NCBI_C")
     endif()
 else()
+    set(NCBI_COMPONENT_NCBI_C_FOUND NO)
     message("DISABLED NCBI_C")
 endif()
 
@@ -590,6 +591,7 @@ if(NOT NCBI_COMPONENT_PERL_DISABLED)
         endif()
     endif()
 else()
+    set(NCBI_COMPONENT_PERL_FOUND   NO)
     message("DISABLED PERL")
 endif()
 
@@ -635,6 +637,7 @@ if(DEFINED NCBI_COMPONENT_WGMLST_DISABLED AND NOT NCBI_COMPONENT_WGMLST_DISABLED
         list(APPEND NCBI_ALL_COMPONENTS WGMLST)
     endif()
 else()
+    set(NCBI_COMPONENT_WGMLST_FOUND NO)
     message("DISABLED WGMLST")
 endif()
 
@@ -682,10 +685,11 @@ NCBI_define_Xcomponent(NAME NETTLE LIB hogweed nettle ADD_COMPONENT GMP)
 
 #############################################################################
 # GNUTLS
+set(NCBI_COMPONENT_GNUTLS_FOUND NO)
 if(DEFINED NCBI_COMPONENT_GNUTLS_DISABLED AND NOT NCBI_COMPONENT_GNUTLS_DISABLED)
     NCBI_find_Xlibrary(NCBI_COMPONENT_IDN_LIBS idn)
     if(NCBI_COMPONENT_IDN_LIBS)
-        set(NCBI_COMPONENT_IDN_FOUND TRUE)
+        set(NCBI_COMPONENT_IDN_FOUND YES)
     endif()
     NCBI_define_Xcomponent(NAME GNUTLS LIB gnutls ADD_COMPONENT NETTLE IDN Z)
     if(NCBI_COMPONENT_GNUTLS_FOUND)
