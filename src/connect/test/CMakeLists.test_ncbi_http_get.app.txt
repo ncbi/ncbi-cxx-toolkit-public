@@ -4,6 +4,7 @@ NCBI_begin_app(test_ncbi_http_get)
 
   NCBI_sources(test_ncbi_http_get)
   NCBI_uses_toolkit_libraries(connssl)
+  NCBI_requires(TLS)
 
   NCBI_begin_test(test_ncbi_http_get)
     NCBI_set_test_command(test_ncbi_http_get.sh)
