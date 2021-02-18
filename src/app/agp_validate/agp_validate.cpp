@@ -112,27 +112,7 @@ CAgpValidateApplication::CAgpValidateApplication(void)
       m_reader( (pAgpErr.Reset(new CAgpErrEx), *pAgpErr),
                 m_comp2len, m_comp2range_coll)
 {
-    const int build_num =
-#if defined(NCBI_PRODUCTION_VER)
-        NCBI_PRODUCTION_VER
-#elif defined(NCBI_DEVELOPMENT_VER)
-        NCBI_DEVELOPMENT_VER
-#else
-        0
-#endif
-        ;
-
-    const string version_name =
-#if defined(NCBI_PRODUCTION_VER)
-        "production"
-#elif defined(NCBI_DEVELOPMENT_VER)
-        "development"
-#else
-        kEmptyStr
-#endif
-        ;
-
-    SetVersion(CVersionInfo(1, 0, build_num, version_name));
+    SetVersion(CVersionInfo(2, NCBI_SC_VERSION_PROXY, NCBI_TEAMCITY_BUILD_NUMBER_PROXY));
 }
 
 // Print a nicer usage message
