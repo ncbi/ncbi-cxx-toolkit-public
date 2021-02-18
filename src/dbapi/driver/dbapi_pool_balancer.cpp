@@ -96,15 +96,15 @@ CDBPoolBalancer::CDBPoolBalancer(const string& service_name,
                     ||  NStr::StartsWith(driver_ctx->GetDriverName(), "ftds"));
     for (auto it : options) {
         CTempString name = it->GetName();
-        auto key = impl::MakeEndpointKey(it->GetHost(), it->GetPort());
+        CEndpointKey key(it->GetHost(), it->GetPort());
         if (key == 0  &&  name != service_name) {
             key = x_NameToKey(name);
             if (key != 0) {
                 if ( !is_ftds  &&  name == it->GetName() ) {
                     continue;
                 }
-                it.Reset(new CDBServerOption(name, impl::GetHost(key),
-                                             impl::GetPort(key),
+                it.Reset(new CDBServerOption(name, key.GetHost(),
+                                             key.GetPort(),
                                              it->GetRanking(), it->GetState(),
                                              it->GetExpireTime()));
             }
@@ -150,9 +150,9 @@ CDBPoolBalancer::CDBPoolBalancer(const string& service_name,
         auto         eit   = m_Endpoints.lower_bound(key);
         CTime        exp(CTime::eEmpty, CTime::eUTC);
         if ((eit == m_Endpoints.end()
-             ||  impl::GetHost(key) != impl::GetHost(eit->first)
-             ||  (impl::GetPort(key) != 0
-                  &&  impl::GetPort(key) != impl::GetPort(eit->first)))
+             ||  key.GetHost() != eit->first.GetHost()
+             ||  (key.GetPort() != 0
+                  &&  key.GetPort() != eit->first.GetPort()))
             &&  (is_ftds  ||  key == 0  ||  name != cit.first)) {
             _TRACE(service_name << ": " << key << " -> " << name
                    << " per existing connection(s)");
@@ -167,8 +167,8 @@ CDBPoolBalancer::CDBPoolBalancer(const string& service_name,
                     exp.AddSecond(10);
                 }
                 endpoint.ref.Reset(new CDBServerOption
-                                   (name, impl::GetHost(key),
-                                    impl::GetPort(key), kRanking,
+                                   (name, key.GetHost(), key.GetPort(),
+                                    kRanking,
                                     CDBServerOption::fState_Normal,
                                     exp.GetTimeT()));
                 m_Rankings.insert(kRanking);
@@ -183,8 +183,8 @@ CDBPoolBalancer::CDBPoolBalancer(const string& service_name,
 TSvrRef CDBPoolBalancer::GetServer(CDB_Connection** conn,
                                    const CDBConnParams* params)
 {
-    TSvrRef             result;
-    impl::TEndpointKey  conn_key = 0;
+    TSvrRef      result;
+    CEndpointKey conn_key(0u);
     
     // trivial if <= 1 endpoint
     if (m_Endpoints.empty()) {
@@ -212,13 +212,12 @@ TSvrRef CDBPoolBalancer::GetServer(CDB_Connection** conn,
             Uint2          port         = (*conn)->Port();
             double         excess;
             bool           keep         = true;
-            conn_key = impl::MakeEndpointKey(host, port);
+            conn_key = CEndpointKey(host, port);
             auto it = m_Endpoints.find(conn_key);
             if (it == m_Endpoints.end()) {
                 ERR_POST_X(3,
                            "Unrecognized endpoint for existing connection to "
-                           << impl::ConvertN2A(host) << ":" << port
-                           << " (" << server_name << ')');
+                           << conn_key << " (" << server_name << ')');
                 excess = m_DriverCtx->NofConnections(server_name, pool_name);
                 time_t t = CurrentTime(CTime::eUTC).GetTimeT() + 10;
                 result.Reset(new CDBServer(server_name, host, port, t));
@@ -228,8 +227,8 @@ TSvrRef CDBPoolBalancer::GetServer(CDB_Connection** conn,
                           - it->second.effective_ranking * scale_factor);
                 result.Reset(&*it->second.ref);
             }
-            _TRACE("Considering connection to " << impl::ConvertN2A(host)
-                   << ":" << port << " (" << server_name
+            _TRACE("Considering connection to " << conn_key << " ("
+                   << server_name
                    << ") for turnover; projected excess count " << excess);
             if (excess > 0.0) {
                 string        pool_max_str  = params->GetParam("pool_maxsize");
@@ -324,7 +323,7 @@ TSvrRef CDBPoolBalancer::GetServer(CDB_Connection** conn,
     return TSvrRef(&*options[i]->second.ref);
 }
 
-impl::TEndpointKey CDBPoolBalancer::x_NameToKey(CTempString& name) const
+CEndpointKey CDBPoolBalancer::x_NameToKey(CTempString& name) const
 {
     _TRACE(name);
     CTempString  address  = name;
@@ -343,69 +342,13 @@ impl::TEndpointKey CDBPoolBalancer::x_NameToKey(CTempString& name) const
             return 0;
         }
     }
-    Uint2 port = 0;
-    pos = address.find(':');
-    if (pos != NPOS) {
-        if ( !NStr::StringToNumeric(address.substr(pos + 1), &port,
-                                    NStr::fConvErr_NoThrow) ) {
-            ERR_POST_X(5, "Bad port number " << port);
-            return 0;
-        }
-        address = address.substr(0, pos);
+    CEndpointKey key(address, NStr::fConvErr_NoThrow);
+    if (key == 0) {
+        ERR_POST_X(5, "Error parsing " << address << ": "
+                   << CNcbiError::GetLast().Extra());
     }
-    union { // to help produce network byte order
-        Uint4 i;
-        Uint1 c[4];
-    } host = { 0, };
-#if 0 // slow
-    vector<CTempString> v;
-    NStr::Split(address, ".", v); // slow :-/
-    if (v.size() != 4) {
-        ERR_POST_X(6, "Wrong number of components in IP address " << address);
-        return 0;
-    }
-    for (int i = 0;  i < 4;  ++i) {
-        if ( !NStr::StringToNumeric(v[i], &host.c[i],
-                                    NStr::fConvErr_NoThrow) ) {
-            ERR_POST_X(7, "Bad IP address component " << v[i]);
-            return 0;
-        }
-    }
-#else
-    if (count(address.begin(), address.end(), '.') != 3) {
-        ERR_POST_X(6, "Wrong number of components in IP address " << address);
-        return 0;
-    }
-    for (int i = 0;  i < 4;  ++i) {
-        CTempString component;
-        switch (i) {
-        case 0:
-            pos = address.find('.');
-            component = address.substr(0, pos);
-            break;
-        case 1: case 2:
-        {
-            SIZE_TYPE pos2 = address.find('.', pos + 1);
-            component = address.substr(pos + 1, pos2 - pos - 1);
-            pos = pos2;
-            break;
-        }
-        case 3:
-            component = address.substr(pos + 1);
-            break;
-        default:
-            _TROUBLE;
-        }
-        if ( !NStr::StringToNumeric(component, &host.c[i],
-                                    NStr::fConvErr_NoThrow) ) {
-            ERR_POST_X(7, "Bad IP address component " << component);
-            return 0;
-        }
-        
-    }
-#endif
-    _TRACE(impl::ConvertN2A(host.i) << ":" << port);
-    return impl::MakeEndpointKey(host.i, port);
+    _TRACE(key);
+    return key;
 }
 
 

@@ -252,28 +252,32 @@ private:
 
 
 /////////////////////////////////////////////////////////////////////////////
-NCBI_DBAPIDRIVER_EXPORT
-string ConvertN2A(Uint4 host);
+inline
+string ConvertN2A(Uint4 host)
+{
+    CNcbiOstrstream oss;
+    oss << CEndpointKey(host, 0);
+    return CNcbiOstrstreamToString(oss);
+}
 
-typedef Uint8 TEndpointKey;
+typedef CEndpointKey TEndpointKey;
 
 inline
 TEndpointKey MakeEndpointKey(Uint4 host, Uint2 port)
 {
-    return (static_cast<TEndpointKey>(host) << 16) | port;
+    return CEndpointKey(host, port);
 }
 
 inline
 Uint4 GetHost(TEndpointKey key)
 {
-    _ASSERT(key >> 48 == 0);
-    return static_cast<Uint4>(key >> 16);
+    return key.GetHost();
 }
 
 inline
 Uint2 GetPort(TEndpointKey key)
 {
-    return key & 0xFFFF;
+    return key.GetPort();
 }
 
 

@@ -83,6 +83,58 @@ private:
 };
 
 
+/// Lightweight representation of just a host and a port.
+class NCBI_XNCBI_EXPORT CEndpointKey
+{
+private:
+    typedef Uint8 TValue;
+
+public:
+    CEndpointKey(const CEndpointKey& that)
+        : m_Value(that.m_Value)
+        { }
+    
+    CEndpointKey(Uint4 host, Uint2 port = 0)
+        : m_Value((static_cast<TValue>(host) << 16) | port)
+        { }
+
+    CEndpointKey(const CTempString& name, NStr::TConvErrFlags flags = 0);
+
+    Uint4 GetHost(void) const {
+        _ASSERT(m_Value >> 48 == 0);
+        return static_cast<Uint4>(m_Value >> 16);
+    }
+
+    Uint2 GetPort(void) const {
+        return m_Value & 0xFFFF;
+    }
+
+    bool operator==(const CEndpointKey& that) const
+        { return m_Value == that.m_Value; }
+
+    bool operator!=(const CEndpointKey& that) const
+        { return m_Value != that.m_Value; }
+
+    bool operator<(const CEndpointKey& that) const
+        { return m_Value < that.m_Value; }
+
+    bool operator<=(const CEndpointKey& that) const
+        { return m_Value <= that.m_Value; }
+
+    bool operator>(const CEndpointKey& that) const
+        { return m_Value > that.m_Value; }
+
+    bool operator>=(const CEndpointKey& that) const
+        { return m_Value >= that.m_Value; }
+
+private:
+    TValue m_Value;
+};
+
+
+ostream& operator<<(ostream& os, const CEndpointKey& key);
+
+
 ///////////////////////////////////////////////////////////////////////////////
 /// IDBServiceMapper
 ///
@@ -162,7 +214,7 @@ DECLARE_SAFE_FLAGS(CDBServerOption::EState);
 /// IDBServiceMapper
 ///
 
-class IDBServiceMapper : public CObject
+class NCBI_XNCBI_EXPORT IDBServiceMapper : public CObject
 {
 public:
     typedef IDBServiceMapper* (*TFactory)(const IRegistry* registry);
@@ -195,8 +247,8 @@ public:
                                   const TSvrRef&   server)
     {
         _TRACE("For " << service << ": excluding server '" << server->GetName()
-               << "', host " << server->GetHost()
-               << ", port " << server->GetPort());
+               << "' on "
+               << CEndpointKey(server->GetHost(), server->GetPort()));
         CFastMutexGuard mg(m_Mtx);
         m_ExcludeMap[service].insert(server);
     }
@@ -256,6 +308,7 @@ protected:
     TExcludeMap         m_ExcludeMap;
 };
 
+
 ///////////////////////////////////////////////////////////////////////////////
 /// DBServiceMapperTraits
 /// IDBServiceMapper traits
@@ -276,23 +329,6 @@ inline
 string IDBServiceMapper::GetName(void) const
 {
     return CDBServiceMapperTraits<IDBServiceMapper>::GetName();
-}
-
-inline
-void IDBServiceMapper::GetServerOptions(const string& name, TOptions* options)
-{
-    list<string> servers;
-    GetServersList(name, &servers);
-    options->clear();
-    CFastMutexGuard mg(m_Mtx);
-    const auto& exclusions = m_ExcludeMap[name];
-    for (const string& it : servers) {
-        options->emplace_back(new CDBServerOption(it, 0, 0, 1.0));
-        auto lb = exclusions.lower_bound(options->back());
-        if (lb != exclusions.end()  &&  (*lb)->GetName() == name) {
-            options->back()->m_State |= CDBServerOption::fState_Excluded;
-        }
-    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////

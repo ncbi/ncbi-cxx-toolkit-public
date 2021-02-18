@@ -68,18 +68,6 @@ CMsgHandlerGuard::~CMsgHandlerGuard(void)
 namespace impl
 {
 
-string ConvertN2A(Uint4 host)
-{
-    const unsigned char* b = (const unsigned char*) &host;
-    char str[16/*sizeof("255.255.255.255")*/];
-    int len;
-
-    len = sprintf(str, "%u.%u.%u.%u", b[0], b[1], b[2], b[3]);
-    _ASSERT((size_t) len < sizeof(str));
-
-    return string(str, len);
-}
-
 SIZE_TYPE GetValidUTF8Len(const CTempString& ts)
 {
     SIZE_TYPE len = ts.size();

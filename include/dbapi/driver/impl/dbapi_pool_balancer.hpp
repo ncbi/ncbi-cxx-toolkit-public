@@ -65,9 +65,9 @@ private:
         unsigned int           actual_count;
         unsigned int           penalty_level;
     };
-    typedef map<impl::TEndpointKey, SEndpointInfo> TEndpoints;
+    typedef map<CEndpointKey, SEndpointInfo> TEndpoints;
 
-    impl::TEndpointKey x_NameToKey(CTempString& name) const;
+    CEndpointKey x_NameToKey(CTempString& name) const;
     
     TEndpoints        m_Endpoints;
     multiset<double>  m_Rankings;
