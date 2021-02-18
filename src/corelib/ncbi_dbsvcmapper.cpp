@@ -113,7 +113,7 @@ CEndpointKey::CEndpointKey(const CTempString& name, NStr::TConvErrFlags flags)
         }
         
     }
-    m_Value = (host.i << 16) | port;
+    m_Value = (TValue(host.i) << 16) | port;
 }
 
 
