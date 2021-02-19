@@ -19,7 +19,7 @@ ifeq "$(COMPILER)-$(DEBUG_SFX)$(DLL)" "icc-Release"
   ncbi_linkerd.o:        CFLAGS += -fno-builtin-strcat -fno-builtin-strcpy
   ncbi_local.o:          CFLAGS += -fno-builtin-strcspn -fno-builtin-strspn
   ncbi_localip.o:        CFLAGS += -fno-builtin-strcspn -fno-builtin-strspn
-  ncbi_namerd.o:         CFLAGS += -fno-builtin-strcat
+  ncbi_namerd.o:         CFLAGS += -fno-builtin-strcat -fno-builtin-strcspn
   ncbi_sendmail.o:       CFLAGS += -fno-builtin-strcpy
   ncbi_server_info.o:    CFLAGS += -fno-builtin-strcpy -fno-builtin-strcspn \
                                    -fno-builtin-strncmp -fno-builtin-strspn
