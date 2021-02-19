@@ -204,8 +204,7 @@ static int run_a_test(size_t test_idx, const char *svc, const char *sch,
     ConnNetInfo_SetArgs(net_info, args ? args : "");
 
     /* Set up the server iterator */
-    iter = SERV_OpenP(svc, fSERV_All |
-                      (strpbrk(svc, "?*[") ? fSERV_Promiscuous : 0),
+    iter = SERV_OpenP(svc, fSERV_All,
                       SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
                       net_info, 0/*skip*/, 0/*n_skip*/,
                       0/*external*/, 0/*arg*/, 0/*val*/);
@@ -235,11 +234,14 @@ static int run_a_test(size_t test_idx, const char *svc, const char *sch,
             /* linkerd must return only 1 hit */
             info = SERV_GetNextInfo(iter);
             if (info) {
-                CORE_LOG(eLOG_Error, "linkerd unexpectedly returned a hit.");
+                CORE_LOG(eLOG_Error, "Linkerd unexpectedly returned a hit.");
                 errors = 1;
             } else {
-
+#if 0
                 /* Make sure endpoint data can be repopulated and reset */
+                /* THIS IS A LOGIC ERROR:  if the iterator has reached its end
+                 * repopulating it might end up with all duplicates (to skip)
+                 * and result in no new entries!  Which is NOT an error. */
                 if (repop) {
                     /* repopulate */
                     CORE_LOG(eLOG_Trace, "Repopulating the service mapper.");
@@ -248,6 +250,12 @@ static int run_a_test(size_t test_idx, const char *svc, const char *sch,
                         errors = 1;
                     }
                 }
+#else
+                if (SERV_GetNextInfo(iter)  ||  SERV_GetNextInfo(iter)) {
+                    CORE_LOG(eLOG_Error, "Server entry after EOF.");
+                    errors = 1;
+                }
+#endif
                 if (reset) {
                     /* reset */
                     CORE_LOG(eLOG_Trace, "Resetting the service mapper.");

@@ -140,7 +140,7 @@ static void        s_Reset      (SERV_ITER);
 static void        s_Close      (SERV_ITER);
 
 static const SSERV_VTable s_op = {
-    s_GetNextInfo, NULL/*Feedback*/, NULL/*s_Update*/, s_Reset, s_Close, "NAMERD"
+    s_GetNextInfo, 0/*Feedback*/, 0/*s_Update*/, s_Reset, s_Close, "NAMERD"
 };
 
 #ifdef __cplusplus
@@ -150,7 +150,7 @@ static const SSERV_VTable s_op = {
 
 struct SNAMERD_Data {
     SConnNetInfo*  net_info;
-    int/*bool*/    done;
+    int/*bool*/    resolved;
     SLB_Candidate* cand;
     size_t         n_cand;
     size_t         a_cand;
@@ -401,7 +401,7 @@ static const char* s_ReadFullResponse(CONN conn)
 static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
 {
     struct SNAMERD_Data* data = (struct SNAMERD_Data*) iter->data;
-    int/*bool*/          retval = 0;
+    int/*bool*/          found = 0/*false*/;
     x_JSON_Value*        root = 0;
     const char*          response;
     x_JSON_Array*        addrs;
@@ -475,6 +475,7 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
         char*          server_descr;
         x_JSON_Object* address;
         ESERV_Type     atype;
+        SSERV_Info*    info;
         double         rate;
         int            port;
         TNCBI_Time     time;
@@ -511,7 +512,7 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
             CORE_LOGF_X(eNSub_Json, eLOG_Error,
                         ("Couldn't get JSON {\"addrs[" FMT_SIZE_T "]\"}"
                          " object.", i));
-            goto out;
+            continue;
         }
 
         /* SSERV_Info.host <=== addrs[i].ip */
@@ -520,7 +521,7 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
             CORE_LOGF_X(eNSub_Json, eLOG_Error,
                         ("Couldn't get JSON {\"addrs[" FMT_SIZE_T "].ip\"}"
                          " value.", i));
-            goto out;
+            continue;
         }
 
         /* SSERV_Info.port <=== addrs[i].port */
@@ -531,14 +532,14 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
             CORE_LOGF_X(eNSub_Json, eLOG_Error,
                         ("Couldn't get JSON {\"addrs[" FMT_SIZE_T " ].port\"}"
                          " type", i));
-            goto out;
+            continue;
         }
         port = (int) x_json_object_get_number(address, "port");
         if (port <= 0  ||  port > 65535) {
             CORE_LOGF_X(eNSub_Json, eLOG_Error,
                         ("Invalid JSON {\"addrs[" FMT_SIZE_T "].port\"}"
                          " value: %d.", i, port));
-            goto out;
+            continue;
         }
 
         /* SSERV_Info.type <=== addrs[i].meta.serviceType */
@@ -550,10 +551,11 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
             CORE_LOGF_X(eNSub_Json, eLOG_Error,
                         ("Unrecognized {\"addrs[" FMT_SIZE_T
                          "].meta.serviceType\"} value: '%s'.", i, type));
-            goto out;
+            continue;
         }
 
-        CORE_TRACEF(("Parsed endpoint %s:%d '%s'", host, port, type));
+        CORE_TRACEF(("Parsing %s:%d '%s'", host, port, type));
+        found = 1; /* at least one info found */
 
         /* SSERV_Info.mode <=== addrs[i].meta.stateful */
         if (x_json_object_dothas_value_of_type(address, "meta.stateful",
@@ -567,7 +569,7 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
                 CORE_LOGF_X(eNSub_Json, eLOG_Error,
                             ("Invalid JSON {\"addrs[" FMT_SIZE_T
                              "].meta.stateful\"} value (%d).", i, st));
-                goto out;
+                continue;
             }
         } else
             stateful = "";
@@ -582,7 +584,7 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
                 CORE_LOGF_X(eNSub_Json, eLOG_Error,
                             ("Couldn't get JSON {\"addrs[" FMT_SIZE_T
                              "].meta.mode\"} value.", i));
-                goto out;
+                continue;
             }
             if (strcmp(mode, "L") == 0)
                 local = "YES";
@@ -594,7 +596,7 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
                 CORE_LOGF_X(eNSub_Json, eLOG_Error,
                             ("Unrecognized JSON {\"addrs[" FMT_SIZE_T
                              "].meta.mode\"} value '%s'.", i, mode));
-                goto out;
+                continue;
             }
         }
 
@@ -607,7 +609,7 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
                 CORE_LOGF_X(eNSub_Json, eLOG_Error,
                             ("Unexpected JSON {\"addrs[" FMT_SIZE_T
                              "].meta.rate\"} value '%lf'.", i, rate));
-                goto out;
+                continue;
             }
         } else
             rate = LBSM_DEFAULT_RATE;
@@ -619,7 +621,7 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
                                   (address, "meta.expires"),
                                   (time_t) iter->time, i);
             if ( ! time)
-                goto out;
+                continue;
         } else {
             static void* s_Once = 0;
             time = iter->time + LBSM_DEFAULT_TIME;
@@ -653,10 +655,8 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
                 extra = "";
         }
 
-        retval = 1; /* at least one info found */
-
         /* Make sure the server type matches an allowed type. */
-        /* FIXME:  not quite */
+        /* FIXME:  not quite like this */
         if (iter->types != fSERV_Any  &&  !(iter->types & atype)) {
             CORE_TRACEF(("Ignoring endpoint %s:%d with unallowed server"
                          " type '%s'(0x%04X) - allowed types = 0x%04X",
@@ -685,13 +685,13 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
                        &" "[!(extra  &&  *extra)], extra ? extra : "",
                        mime  &&  *mime ? " C=" : "", mime ? mime : "",
                        local, private, rate < LBSM_STANDBY_THRESHOLD ? 3 : 2,
-                       /* 3-digit precsion for standby; else 2-digits */
+                       /* 3-digit precision for standby; else 2-digits */
                        rate, stateful, time) < size);
 
         /* Parse descriptor into SSERV_Info */
         CORE_TRACEF(("Parsing server descriptor: '%s'", server_descr));
-        SSERV_Info* info = SERV_ReadInfoEx(server_descr, iter->reverse_dns
-                                           ? iter->name : "", 0/*false*/);
+        info = SERV_ReadInfoEx(server_descr, iter->reverse_dns
+                               ? iter->name : "", 0/*false*/);
         if ( ! info) {
             CORE_LOGF_X(eNSub_BadData, eLOG_Warning,
                         ("Unable to add server info with descriptor '%s'.",
@@ -701,6 +701,9 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
         }
         free(server_descr);
         CORE_TRACEF(("Created info: %p", info));
+
+        /*FIXME: skip array*/
+        /*FIXME: ReverseDNS*/
 
         /* Add new info to collection */
         if (!s_AddServerInfo(data, info)) {
@@ -720,8 +723,8 @@ out:
         x_json_value_free(root);
     if (response)
         free((void*) response);
-    CORE_TRACEF(("Leaving s_ParseResponse(): %d", retval));
-    return retval;
+    CORE_TRACEF(("Leaving s_ParseResponse(): %d", found));
+    return found;
 }
 
 
@@ -753,6 +756,7 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
 
     CONN_Close(conn);
 
+    ((struct SNAMERD_Data*) iter->data)->resolved = 1/*true*/;
     CORE_TRACEF(("Leaving s_Resolve(): %d", retval));
     return retval;
 }
@@ -764,7 +768,7 @@ static int/*bool*/ s_IsUpdateNeeded(TNCBI_Time now, struct SNAMERD_Data *data)
     size_t i;
 
     /* Loop from highest index to lowest to ensure well-defined behavior when
-       candidates are removed and to avoid memmove in s_RemoveCand(). */
+       candidates are removed and to avoid memmove() in s_RemoveCand(). */
     for (i = data->n_cand;  i > 0;  ) {
         const SSERV_Info* info = data->cand[--i].info;
         if (info->time < now) {
@@ -796,7 +800,7 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
 
     assert(data);
 
-    if (!data->n_cand  &&  data->done) {
+    if (!data->n_cand  &&  data->resolved) {
         CORE_TRACE("Leaving s_GetNextInfo() -- end of candidates");
         return 0;
     }
@@ -804,7 +808,6 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
     if (!data->n_cand  ||  s_IsUpdateNeeded(iter->time, data)) {
         (void) s_Resolve(iter);
         if (!data->n_cand) {
-            data->done = 1/*true*/;
             CORE_TRACE("Leaving s_GetNextInfo() -- resolved no candidates");
             return 0;
         }
@@ -818,11 +821,9 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
 
     /* Remove returned info */
     s_RemoveCand(data, n, 0);
-    if (!data->n_cand)
-        data->done = 1/*true*/;
 
     if (host_info)
-        *host_info = NULL;
+        *host_info = 0;
 
     CORE_TRACEF(("Leaving s_GetNextInfo(): %p", info));
     return info;
@@ -845,7 +846,7 @@ static void s_Reset(SERV_ITER iter)
         }
         data->n_cand = 0;
     }
-    data->done = 0/*false*/;
+    data->resolved = 0/*false*/;
 
     CORE_TRACE("Leaving s_Reset()");
 }
@@ -981,13 +982,13 @@ static char* x_GetDtabFromHeader(const char* header)
 
 
 /* Long but very linear */
-static int/*bool*/ x_SetupConnectionParams(SConnNetInfo* net_info,
-                                           const char* name)
+static int/*bool*/ x_SetupConnectionParams(SConnNetInfo*   net_info,
+                                           const SERV_ITER iter)
 {
-    char buf[CONN_PATH_LEN];
-    size_t argslen, namelen;
-    char* dtab;
-    int n;
+    size_t len, argslen, namelen;
+    char   buf[CONN_PATH_LEN];
+    char*  dtab;
+    int    n;
 
     /* Scheme */
     if ( ! ConnNetInfo_GetValueService(DEF_NAMERD_REG_SECTION,
@@ -1095,9 +1096,9 @@ static int/*bool*/ x_SetupConnectionParams(SConnNetInfo* net_info,
                    "Couldn't alloc for port.");
         return 0/*failed*/;
     }
-    /* namerd doesn't support a port -- make sure none given */
+    /* namerd doesn't support port -- make sure none given */
     if (*buf  &&  (sscanf(buf, "%hu%n", &net_info->port, &n) < 1
-                   ||  net_info->port != DEF_NAMERD_API_PORT  ||  buf[n])) {
+                   ||  buf[n]  ||  net_info->port != DEF_NAMERD_API_PORT)) {
         CORE_LOGF_X(eNSub_BadData, eLOG_Error,
                     ("Bad port \"%s\"", buf));
         return 0/*failed*/;
@@ -1145,11 +1146,32 @@ static int/*bool*/ x_SetupConnectionParams(SConnNetInfo* net_info,
         CORE_LOG_X(eNSub_Alloc, eLOG_Critical,
                    "Couldn't alloc for args.");
         return 0/*failed*/;
-    }  
-    if ((argslen = strlen(buf)) + (namelen = strlen(name)) < sizeof(buf))
-        memcpy(buf + argslen, name, namelen + 1);
-    if (argslen + namelen >= sizeof(buf)
-        ||  !ConnNetInfo_PreOverrideArg(net_info, buf, 0)) {
+    }
+    argslen = strlen(buf);
+    namelen = strlen(iter->name);
+    len = argslen + namelen;
+    if (iter->arglen) {
+        len += 1 + iter->arglen;
+        if (iter->val)
+            len += 1 + iter->vallen;
+    }
+    if (len < sizeof(buf)) {
+        len = argslen,
+        memcpy(buf + len, iter->name, namelen);
+        len += namelen;
+        if (iter->vallen) {
+            buf[len++] = '/';
+            memcpy(buf + len, iter->arg, iter->arglen);
+            len += iter->arglen;
+            if (iter->val) {
+                buf[len++] = '/';
+                memcpy(buf + len, iter->val, iter->vallen);
+                len += iter->vallen;
+            }
+        }
+        buf[len] = '\0';
+    }       
+    if (len >= sizeof(buf)  ||  !ConnNetInfo_PreOverrideArg(net_info, buf, 0)){
         CORE_LOGF_X(eNSub_BadData, eLOG_Error,
                     ("Args too long \"%s\"", buf));
         return 0/*failed*/;
@@ -1186,7 +1208,7 @@ static int/*bool*/ x_SetupConnectionParams(SConnNetInfo* net_info,
             return 0/*failed*/;
         }
         if (!*buf  ||  sscanf(buf, "%hu%n", &net_info->http_proxy_port, &n) < 1
-            ||  !net_info->http_proxy_port  ||  buf[n]) {
+            ||  buf[n]  ||  !net_info->http_proxy_port) {
             CORE_LOGF_X(eNSub_BadData, eLOG_Error,
                         ("%s proxy port \"%s\"", *buf ? "Bad" : "Empty", buf));
             return 0/*failed*/;
@@ -1256,15 +1278,15 @@ extern const SSERV_VTable* SERV_NAMERD_Open(SERV_ITER           iter,
     /* Prohibit catalog-prefixed services, e.g. "/lbsm/<svc>" */
     if (iter->name[0] == '/') {
         CORE_LOGF_X(eNSub_BadData, eLOG_Error,
-            ("Invalid service name \"%s\" - must not begin with '/'.",
-             iter->name));
+                    ("Invalid service name \"%s\" - must not begin with '/'.",
+                     iter->name));
         CORE_TRACE("Leaving SERV_NAMERD_Open() -- fail, catalog prefix");
         return 0;
     }
 
     if ( ! (data = (struct SNAMERD_Data*) calloc(1, sizeof(*data)))) {
         CORE_LOG_X(eNSub_Alloc, eLOG_Critical,
-            "Could not allocate for SNAMERD_Data.");
+                   "Could not allocate for SNAMERD_Data.");
         CORE_TRACE("Leaving SERV_NAMERD_Open() -- fail, bad alloc");
         return 0;
     }
@@ -1273,7 +1295,8 @@ extern const SSERV_VTable* SERV_NAMERD_Open(SERV_ITER           iter,
     if ( ! (net_info = ConnNetInfo_Clone(x_net_info))) {
         CORE_LOG_X(eNSub_Alloc, eLOG_Critical, "Couldn't clone net_info.");
         CORE_TRACE("Leaving SERV_NAMERD_Open() -- fail, net_info clone");
-        goto out;
+        s_Close(iter);
+        return 0;
     }
     data->net_info = net_info;
 
@@ -1286,12 +1309,14 @@ extern const SSERV_VTable* SERV_NAMERD_Open(SERV_ITER           iter,
         CORE_LOG_X(eNSub_BadData, eLOG_Critical,
             "Couldn't set up standard args.");
         CORE_TRACE("Leaving SERV_NAMERD_Open() -- fail, standard args");
-        goto out;
+        s_Close(iter);
+        return 0;
     }
 
-    if (!x_SetupConnectionParams(net_info, iter->name)) {
+    if (!x_SetupConnectionParams(net_info, iter)) {
         CORE_TRACE("Leaving SERV_NAMERD_Open() -- fail, connection params");
-        goto out;
+        s_Close(iter);
+        return 0;
     }
 
     ConnNetInfo_ExtendUserHeader(net_info,
@@ -1310,21 +1335,15 @@ extern const SSERV_VTable* SERV_NAMERD_Open(SERV_ITER           iter,
 
     if (!s_Resolve(iter)) {
         CORE_TRACE("Leaving SERV_NAMERD_Open() -- service not found");
-        goto out;
+        s_Close(iter);
+        return 0;
     }
-    if (data->n_cand)
-        data->done = 1/*true*/;
 
     /* call GetNextInfo subsequently if info is actually needed */
     if (info)
         *info = 0;
     CORE_TRACE("Leaving SERV_NAMERD_Open()");
     return &s_op;
-
- out:
-    s_Reset(iter);
-    s_Close(iter);
-    return 0;
 }
 
 

@@ -177,7 +177,7 @@ static void adjust_mock_times(const char* mock_body, char** mock_body_adj_p)
 {
     const char* cp;
     char        sign;
-    int         hh, mm, ss;
+    int         hh, mm, ss, n;
     size_t      spec_len = strlen("\"expires\":\"__________+00:00:27_\"");
     size_t      prfx_len = strlen("\"expires\":\"");
     size_t      notz_len = strlen("2017-04-01T11:04:52");
@@ -187,11 +187,13 @@ static void adjust_mock_times(const char* mock_body, char** mock_body_adj_p)
         const char* exp = strstr(cp, "\"expires\":\"__________");
         if ( ! exp) break;
         if (strlen(exp) < spec_len) break;
-        if (sscanf(exp, "\"expires\":\"__________%c%2d:%2d:%2d_\"",
-            &sign, &hh, &mm, &ss) != 4) break;
+        n = sscanf(exp, "\"expires\":\"__________%c%2d:%2d:%2d_\"",
+                   &sign, &hh, &mm, &ss);
+        if (n != 4) break;
         if (sign != '-'  &&  sign != '+') break;
         if (hh < 0  ||  mm < 0  ||  ss < 0) break;
         ss += 60 * mm + 3600 * hh;
+        cp = exp;
 
         /* Get the current UTC epoch time. */
         time_t      tt_now = time(0);
@@ -385,8 +387,7 @@ static int run_a_test(size_t test_idx, int live, const char *svc,
     /* Set up the server iterator. */
     net_info = ConnNetInfo_Create(svc);
     if (*hdr)  ConnNetInfo_SetUserHeader(net_info, hdr);
-    iter = SERV_OpenP(svc, fSERV_All |
-                      (strpbrk(svc, "?*[") ? fSERV_Promiscuous : 0),
+    iter = SERV_OpenP(svc, fSERV_All,
                       SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
                       net_info, 0/*skip*/, 0/*n_skip*/,
                       0/*external*/, 0/*arg*/, 0/*val*/);
@@ -443,6 +444,11 @@ static int run_a_test(size_t test_idx, int live, const char *svc,
                 CORE_LOG(eLOG_Error, "Unable to repopulate endpoint data.");
                 errors = 1;
             }
+        }
+#else
+        if (!info  &&  (SERV_GetNextInfo(iter)  ||  SERV_GetNextInfo(iter))) {
+            CORE_LOG(eLOG_Error, "Server entry after EOF.");
+            errors = 1;
         }
 #endif
         if (reset  &&  s_n_hits_got) {
@@ -943,7 +949,7 @@ static int test_service(int live, const char *svc)
         CORE_REG_SET("", "CONN_NAMERD_ENABLE", "1", eREG_Transient);
 
     /* Run the test */
-    return run_a_test(0, 1 ,svc, s_user_header, 0, 0, NULL, 0, 0) ? 0 : 1;
+    return run_a_test(0, 1, svc, s_user_header, 0, 0, NULL, 0, 0) ? 0 : 1;
 }
 
 
@@ -962,7 +968,7 @@ int main(int argc, const char *argv[])
     int         live = 0;
 
     int i;
-    for (i=1; i < argc; ++i) {
+    for (i = 1;  i < argc;  ++i) {
         if (strcmp(argv[i], "-f") == 0  &&  i < argc-1) {
             ++i;
             s_json_file = argv[i];
