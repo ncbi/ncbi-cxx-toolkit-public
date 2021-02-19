@@ -144,7 +144,8 @@ void CPSGS_OSGResolveBase::ProcessResolveReply(const CID2_Reply& reply)
                     if ( text_id->IsSetName() ) {
                         m_BioseqInfo.SetName(text_id->GetName());
                     }
-                    m_BioseqInfoFlags |= SPSGS_ResolveRequest::fPSGS_CanonicalId;
+                    m_BioseqInfoFlags |= (SPSGS_ResolveRequest::fPSGS_CanonicalId |
+                                          SPSGS_ResolveRequest::fPSGS_Name);
                     continue;
                 }
             }
@@ -162,7 +163,8 @@ void CPSGS_OSGResolveBase::ProcessResolveReply(const CID2_Reply& reply)
                 m_BioseqInfo.SetAccession(content);
                 m_BioseqInfo.SetVersion(0);
                 m_BioseqInfo.SetSeqIdType(gi_id.Which());
-                m_BioseqInfoFlags |= SPSGS_ResolveRequest::fPSGS_CanonicalId;
+                m_BioseqInfoFlags |= (SPSGS_ResolveRequest::fPSGS_CanonicalId |
+                                      SPSGS_ResolveRequest::fPSGS_Name);
             }
             else {
                 // to other ids
@@ -170,7 +172,8 @@ void CPSGS_OSGResolveBase::ProcessResolveReply(const CID2_Reply& reply)
             }
         }
         if ( req_id.GetSeq_id_type() == req_id.eSeq_id_type_all &&
-             !seq_ids.empty() ) {
+             ((m_BioseqInfoFlags & SPSGS_ResolveRequest::fPSGS_CanonicalId) ||
+              !seq_ids.empty()) ) {
             m_BioseqInfo.SetSeqIds(move(seq_ids));
             // all ids are requested, so we should get GI and acc.ver too if they exist
             m_BioseqInfoFlags |= (SPSGS_ResolveRequest::fPSGS_SeqIds |
@@ -207,7 +210,7 @@ void CPSGS_OSGResolveBase::ProcessResolveReply(const CID2_Reply& reply)
             else if ( id2_state & 8 ) {
                 psg_state = 0;
             }
-            m_BioseqInfo.SetSeqState(psg_state);
+            m_BioseqInfo.SetState(psg_state);
             m_BioseqInfoFlags |= SPSGS_ResolveRequest::fPSGS_State;
         }
     }
