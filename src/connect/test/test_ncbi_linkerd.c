@@ -30,14 +30,9 @@
  *
  */
 
-
-#include "../ncbi_ansi_ext.h"
 #include "../ncbi_priv.h"               /* CORE logging facilities */
-#include "../ncbi_linkerd.h"
-#include "../ncbi_servicep.h"
 #include "../parson.h"
 
-#include <connect/ncbi_server_info.h>
 #include <connect/ncbi_service.h>
 #include <connect/ncbi_tls.h>
 
@@ -125,8 +120,7 @@ static int check_match(EMatch flags);
 
 static int run_a_test(size_t test_idx, const char *svc, const char *sch,
                       const char *user, const char *pass, const char *path,
-                      const char *args, int exp_err, int exp_warn, int repop,
-                      int reset);
+                      const char *args, int exp_err, int exp_warn, int reset);
 
 static int run_tests(const char *test_nums);
 
@@ -157,8 +151,7 @@ static int check_match(EMatch flags)
 
 static int run_a_test(size_t test_idx, const char *svc, const char *sch,
                       const char *user, const char *pass, const char *path,
-                      const char *args, int exp_err, int exp_warn, int repop,
-                      int reset)
+                      const char *args, int exp_err, int exp_warn, int reset)
 {
     const SSERV_Info    *info = NULL;
     SConnNetInfo        *net_info;
@@ -204,20 +197,17 @@ static int run_a_test(size_t test_idx, const char *svc, const char *sch,
     ConnNetInfo_SetArgs(net_info, args ? args : "");
 
     /* Set up the server iterator */
-    iter = SERV_OpenP(svc, fSERV_All,
-                      SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
-                      net_info, 0/*skip*/, 0/*n_skip*/,
-                      0/*external*/, 0/*arg*/, 0/*val*/);
+    iter = SERV_Open(svc, fSERV_All, SERV_LOCALHOST, net_info);
     ConnNetInfo_Destroy(net_info);
 
     /* Fetch the linkerd info */
     if ( ! iter) {
-        CORE_LOG(eLOG_Error, "SERV_OpenP failed.");
+        CORE_LOG(eLOG_Error, "SERV_Open() failed.");
         errors = 1;
     } else {
         info = SERV_GetNextInfo(iter);
         if ( ! info) {
-            CORE_LOG(eLOG_Error, "SERV_GetNextInfo failed.");
+            CORE_LOG(eLOG_Error, "SERV_GetNextInfo() failed.");
             errors = 1;
         } else {
             SOCK_ntoa(info->host, s_end_got.host, LEN_HOST);
@@ -237,25 +227,11 @@ static int run_a_test(size_t test_idx, const char *svc, const char *sch,
                 CORE_LOG(eLOG_Error, "Linkerd unexpectedly returned a hit.");
                 errors = 1;
             } else {
-#if 0
-                /* Make sure endpoint data can be repopulated and reset */
-                /* THIS IS A LOGIC ERROR:  if the iterator has reached its end
-                 * repopulating it might end up with all duplicates (to skip)
-                 * and result in no new entries!  Which is NOT an error. */
-                if (repop) {
-                    /* repopulate */
-                    CORE_LOG(eLOG_Trace, "Repopulating the service mapper.");
-                    if ( ! SERV_GetNextInfo(iter)) {
-                        CORE_LOG(eLOG_Error, "Unable to repopulate endpoint data.");
-                        errors = 1;
-                    }
-                }
-#else
+                /* Make sure entries can't be repopulated and can be reset */
                 if (SERV_GetNextInfo(iter)  ||  SERV_GetNextInfo(iter)) {
                     CORE_LOG(eLOG_Error, "Server entry after EOF.");
                     errors = 1;
                 }
-#endif
                 if (reset) {
                     /* reset */
                     CORE_LOG(eLOG_Trace, "Resetting the service mapper.");
@@ -620,14 +596,7 @@ static int run_tests(const char *test_nums)
             "        Expected server:   %s:%hu %s",
             s_end_exp.host, s_end_exp.port, s_end_exp.hdr));
 
-        int repop = 0, reset = 0;
-        if (x_json_object_has_value_of_type(
-                test_obj, "iter-repop", JSONString)  &&
-            strcmp(x_json_object_get_string(
-                test_obj, "iter-repop"), "yes") == 0)
-        {
-            repop = 1;
-        }
+        int reset = 0;
         if (x_json_object_has_value_of_type(
                 test_obj, "iter-reset", JSONString)  &&
             strcmp(x_json_object_get_string(
@@ -637,8 +606,7 @@ static int run_tests(const char *test_nums)
         }
 
         /* Run the test */
-        if (run_a_test(it, svc, sch, user, pass, path, args, err, warn, repop,
-                       reset))
+        if (run_a_test(it, svc, sch, user, pass, path, args, err, warn, reset))
         {
             ++n_pass;
             s_results[it].result = "ok";

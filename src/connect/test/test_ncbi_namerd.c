@@ -30,13 +30,11 @@
  *
  */
 
-
+#include "../ncbi_ansi_ext.h"
 #include "../ncbi_priv.h"               /* CORE logging facilities */
 #include "../ncbi_namerd.h"
-#include "../ncbi_servicep.h"
 #include "../parson.h"
 
-#include <connect/ncbi_server_info.h>
 #include <connect/ncbi_service.h>
 
 #include <stdio.h>
@@ -150,7 +148,7 @@ static int log_match_diffs(int idx_exp, int idx_got);
 
 static int run_a_test(size_t test_idx, int live, const char *svc,
                       const char *hdr, int check_for_match, int exp_err,
-                      const char *mock_body, int repop, int reset);
+                      const char *mock_body, int reset);
 
 static int run_tests(int live, const char *test_nums);
 
@@ -347,7 +345,7 @@ static int log_match_diffs(int idx_exp, int idx_got)
 
 static int run_a_test(size_t test_idx, int live, const char *svc,
                       const char *hdr, int check_for_match, int exp_err,
-                      const char *mock_body_in, int repop, int reset)
+                      const char *mock_body_in, int reset)
 {
     const SSERV_Info    *info = NULL;
     SConnNetInfo        *net_info;
@@ -387,10 +385,7 @@ static int run_a_test(size_t test_idx, int live, const char *svc,
     /* Set up the server iterator. */
     net_info = ConnNetInfo_Create(svc);
     if (*hdr)  ConnNetInfo_SetUserHeader(net_info, hdr);
-    iter = SERV_OpenP(svc, fSERV_All,
-                      SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
-                      net_info, 0/*skip*/, 0/*n_skip*/,
-                      0/*external*/, 0/*arg*/, 0/*val*/);
+    iter = SERV_Open(svc, fSERV_All, SERV_LOCALHOST, net_info);
     ConnNetInfo_Destroy(net_info);
 
     /* Fetch the server hits from namerd. */
@@ -432,25 +427,11 @@ static int run_a_test(size_t test_idx, int live, const char *svc,
                 free(info_str);
         }
 
-        /* Make sure endpoint data can be repopulated and reset. */
-#if 0
-        if (repop  &&  s_n_hits_got) {
-            /* repopulate */
-            CORE_LOG(eLOG_Trace, "Repopulating the service mapper.");
-            if ( ! info  &&  ! SERV_GetNextInfo(iter)) {
-                /* THIS IS A LOGIC ERROR:  if the iterator has reached its end
-                 * repopulating it might end up with all duplicates (to skip)
-                 * and result in no new entries!  Which is NOT an error. */
-                CORE_LOG(eLOG_Error, "Unable to repopulate endpoint data.");
-                errors = 1;
-            }
-        }
-#else
+        /* Make sure entries cannot be repopulated and can be reset. */
         if (!info  &&  (SERV_GetNextInfo(iter)  ||  SERV_GetNextInfo(iter))) {
             CORE_LOG(eLOG_Error, "Server entry after EOF.");
             errors = 1;
         }
-#endif
         if (reset  &&  s_n_hits_got) {
             /* reset */
             CORE_LOG(eLOG_Trace, "Resetting the service mapper.");
@@ -874,14 +855,7 @@ static int run_tests(int live, const char *test_nums)
                 CORE_LOG(eLOG_Note, "    Empty mock HTTP body found.");
         }
 
-        int repop = 0, reset = 0;
-        if (x_json_object_has_value_of_type(
-                test_obj, "iter-repop", JSONString)  &&
-            strcmp(x_json_object_get_string(
-                test_obj, "iter-repop"), "yes") == 0)
-        {
-            repop = 1;
-        }
+        int reset = 0;
         if (x_json_object_has_value_of_type(
                 test_obj, "iter-reset", JSONString)  &&
             strcmp(x_json_object_get_string(
@@ -891,7 +865,7 @@ static int run_tests(int live, const char *test_nums)
         }
 
         /* Run the test */
-        if (run_a_test(it, live, svc, hdr, 1, err, mock_body, repop, reset))
+        if (run_a_test(it, live, svc, hdr, 1, err, mock_body, reset))
         {
             ++n_pass;
             s_results[it].result = "ok";
@@ -949,7 +923,7 @@ static int test_service(int live, const char *svc)
         CORE_REG_SET("", "CONN_NAMERD_ENABLE", "1", eREG_Transient);
 
     /* Run the test */
-    return run_a_test(0, 1, svc, s_user_header, 0, 0, NULL, 0, 0) ? 0 : 1;
+    return run_a_test(0, 1, svc, s_user_header, 0, 0, NULL, 0) ? 0 : 1;
 }
 
 
