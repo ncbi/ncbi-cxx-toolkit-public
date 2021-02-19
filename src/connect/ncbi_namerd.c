@@ -100,7 +100,7 @@ enum ENAMERD_Subcodes {
 #define REG_NAMERD_API_PATH        REG_CONN_PATH
 #define DEF_NAMERD_API_PATH        "/api/1/resolve"
 
-#define REG_NAMERD_API_ENV         "ENVIRONMENT"
+#define REG_NAMERD_API_ENV         "ENV"
 #define DEF_NAMERD_API_ENV         "default"
 
 #define REG_NAMERD_API_ARGS        REG_CONN_ARGS
@@ -869,7 +869,7 @@ static void s_Close(SERV_ITER iter)
     CORE_TRACE("Leaving s_Close()");
 }
 
- 
+
 /* Update a dtab value by appending another entry. */
 static int/*bool*/ x_UpdateDtabInArgs(SConnNetInfo* net_info, const char* dtab)
 {
@@ -956,7 +956,7 @@ static char* x_GetDtabFromHeader(const char* header)
 
     CORE_TRACEF(("Entering x_GetDtabFromHeader(%s%s%s)",
                  &"\""[!header], header ? header : "NULL", &"\""[!header]));
-    
+
     for (line = header;  line  &&  *line;  line += linelen) {
         const char* end = strchr(line, '\n');
         linelen = end ? (size_t)(end - line) + 1 : strlen(line);
@@ -1170,7 +1170,7 @@ static int/*bool*/ x_SetupConnectionParams(SConnNetInfo*   net_info,
             }
         }
         buf[len] = '\0';
-    }       
+    }
     if (len >= sizeof(buf)  ||  !ConnNetInfo_PreOverrideArg(net_info, buf, 0)){
         CORE_LOGF_X(eNSub_BadData, eLOG_Error,
                     ("Args too long \"%s\"", buf));
