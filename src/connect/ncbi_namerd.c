@@ -443,7 +443,7 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
         } else
             CORE_LOG_X(eNSub_Json, eLOG_Error, "Couldn't serialize JSON");
     }}
-#endif
+#endif /*_DEBUG && !NDEBUG*/
 
     /* top-level {"type" : "bound"} expected for successful lookup */
     type = x_json_object_get_string(top, "type");
