@@ -54,8 +54,8 @@ USING_SCOPE(objects);
 ///
 BOOST_AUTO_TEST_CASE(Test_BED_OneLiner)
 {
-	char BEDLine[] = "chr1\t16759829\t16778548\tchr1:21667704\t270866\t-\n";
-	CNcbiIstrstream Stream(BEDLine, strlen(BEDLine));
+	const char BEDLine[] = "chr1\t16759829\t16778548\tchr1:21667704\t270866\t-\n";
+	CNcbiIstrstream Stream(BEDLine);
 
 	CFormatGuessEx Guesser(Stream);
 	CFormatGuess::EFormat Guess;
@@ -70,8 +70,8 @@ BOOST_AUTO_TEST_CASE(Test_BED_OneLiner)
 ///
 BOOST_AUTO_TEST_CASE(Test_GFF_OneLiner)
 {
-	char GFFLine[] = "NC_000008.9\tdbVar\tmisc\t151699\t186841\t.\t.\t.\n";
-	CNcbiIstrstream Stream(GFFLine, strlen(GFFLine));
+	const char GFFLine[] = "NC_000008.9\tdbVar\tmisc\t151699\t186841\t.\t.\t.\n";
+	CNcbiIstrstream Stream(GFFLine);
 
 	CFormatGuessEx Guesser(Stream);
 	CFormatGuess::EFormat Guess;
