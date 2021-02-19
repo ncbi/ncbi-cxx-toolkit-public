@@ -463,7 +463,7 @@ bool CAnnotWriterApp::xTryProcessInputId(
     CSeq_id_Handle seqh = CSeq_id_Handle::GetHandle(args["id"].AsString());
     CBioseq_Handle bsh = m_pScope->GetBioseqHandle(seqh);
     //CSeq_entry_Handle seh = bsh.GetParentEntry();
-    CFeatureGenerator::CreateMicroIntrons(*m_pScope, bsh);
+    CFeatureGenerator::CreateMicroIntrons(*m_pScope, bsh, "", 0, true);
     if (!args["skip-headers"]) {
         m_pWriter->WriteHeader();
     }
@@ -486,7 +486,7 @@ bool CAnnotWriterApp::xTryProcessInputIdList(
     for (auto inputId: inputIds) {
         CSeq_id_Handle seqh = CSeq_id_Handle::GetHandle(inputId);
         CBioseq_Handle bsh = m_pScope->GetBioseqHandle(seqh);
-        CFeatureGenerator::CreateMicroIntrons(*m_pScope, bsh);
+        CFeatureGenerator::CreateMicroIntrons(*m_pScope, bsh, "", 0, true);
         if (!args["skip-headers"]) {
             m_pWriter->WriteHeader();
         }
@@ -696,7 +696,7 @@ bool CAnnotWriterApp::xTryProcessBioseq(
         return false;
     }
     CBioseq_Handle bsh = scope.AddBioseq(bioseq);
-    CFeatureGenerator::CreateMicroIntrons(*m_pScope, bsh);
+    CFeatureGenerator::CreateMicroIntrons(*m_pScope, bsh, "", 0, true);
     if (!GetArgs()["skip-headers"]) {
         m_pWriter->WriteHeader();
     }
