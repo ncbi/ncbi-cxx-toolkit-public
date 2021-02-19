@@ -5,7 +5,7 @@ SRC = test_xregexp
 
 LIB = xregexp $(PCRE_LIB) xutil test_boost xncbi
 LIBS = $(PCRE_LIBS) $(ORIG_LIBS)
-CPPFLAGS = $(PCRE_INCLUDE) $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
+CPPFLAGS = $(BOOST_INCLUDE) $(PCRE_INCLUDE) $(ORIG_CPPFLAGS)
 
 REQUIRES = Boost.Test.Included
 
