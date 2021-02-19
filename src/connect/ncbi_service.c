@@ -498,6 +498,22 @@ static int/*bool*/ x_ConsistencyCheck(SERV_ITER iter, const SSERV_Info* info)
             RETURN(0/*failure*/);
         }
     }
+    if (info->time) {
+        if (info->time < iter->time) {
+            CORE_LOGF(eLOG_Critical,
+                      ("[%s]  Expired entry (%u < %u):\n%s", iter->name,
+                       info->time, iter->time,
+                       str ? str : "<NULL>"));
+            RETURN(0/*failure*/);
+        }
+        if (info->time > iter->time + LBSM_DEFAULT_TIME) {
+            CORE_LOGF(eLOG_Critical,
+                      ("[%s]  Excessive expiration (%u > %u):\n%s", iter->name,
+                       info->time, iter->time + LBSM_DEFAULT_TIME,
+                       str ? str : "<NULL>"));
+            RETURN(0/*failure*/);
+        }
+    }
     if (info->type == fSERV_Firewall) {
         if (info->u.firewall.type == fSERV_Dns) {
             CORE_LOGF(eLOG_Critical,

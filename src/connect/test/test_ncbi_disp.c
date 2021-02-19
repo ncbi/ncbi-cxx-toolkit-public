@@ -338,6 +338,8 @@ int main(int argc, const char* argv[])
             if (x_gettimeofday(&start) != 0)
                 memcpy(&start, &stop, sizeof(start));
         }
+        if (SERV_GetNextInfo(iter)  ||  SERV_GetNextInfo(iter))
+            CORE_LOG(eLOG_Fatal, "Server entry after EOF");
         CORE_LOG(eLOG_Trace, "Resetting service mapper");
         SERV_Reset(iter);
         CORE_LOG(eLOG_Trace, "Service mapper has been reset");
