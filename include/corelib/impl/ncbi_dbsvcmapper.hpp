@@ -132,6 +132,7 @@ private:
 };
 
 
+NCBI_XNCBI_EXPORT
 ostream& operator<<(ostream& os, const CEndpointKey& key);
 
 
