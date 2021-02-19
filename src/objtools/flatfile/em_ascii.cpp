@@ -1378,7 +1378,7 @@ static CRef<objects::CEMBL_block> GetDescrEmblBlock(
             ErrPostEx(SEV_WARNING, ERR_KEYWORD_HTGPlusENV,
                       "This HTG record also has the ENV keyword, which is an unusual combination. Confirmation that isolation and cloning steps actually occured might be appropriate.");
         else if((i == 2 && wgs_kwd && tpa_kwd) ||
-                (i == 2 && tsa_kwd && tpa_kwd)
+                (i == 2 && tsa_kwd && tpa_kwd))
         {
         }
         else if(i != 2 || env_kwd == false ||
