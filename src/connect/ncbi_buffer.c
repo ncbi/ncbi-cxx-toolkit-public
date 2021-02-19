@@ -152,7 +152,7 @@ extern int/*bool*/ BUF_AppendEx(BUF* buf, void* base, size_t alloc_size,
     if (!*buf  &&  !BUF_SetChunkSize(buf, 0))
         return 0/*failure*/;
 
-    if (!(chunk = s_BUF_AllocChunk(0, (*buf)->unit)))
+    if (!(chunk = s_BUF_AllocChunk(0, 0)))
         return 0/*failure*/;
 
     assert(!chunk->data);
@@ -195,7 +195,7 @@ extern int/*bool*/ BUF_PrependEx(BUF* buf, void* base, size_t alloc_size,
     if (!*buf  &&  !BUF_SetChunkSize(buf, 0))
         return 0/*failure*/;
 
-    if (!(chunk = s_BUF_AllocChunk(0, (*buf)->unit)))
+    if (!(chunk = s_BUF_AllocChunk(0, 0)))
         return 0/*failure*/;
 
     assert(!chunk->data);

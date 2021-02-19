@@ -113,7 +113,6 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ BUF_PrependEx
  * Equivalent to BUF_PrependEx(pBuf, 0, 0, data, size)
  * NOTE: the prepended chunk is thus read-only and will not be auto-freed.
  */
-
 extern NCBI_XCONNECT_EXPORT int/*bool*/ BUF_Prepend
 (BUF*        pBuf,
  const void* data,
@@ -156,7 +155,7 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ BUF_Append
  * NOTE:  if "*pBuf" == NULL then create it if necessary (e.g. if size != 0).
  * NOTE:  BUF_Write() with "data" that reside immediately past the end of the
  * data (in the unoccupied space) of a chunk that was previously appended with
- * BUF_AppendEx() results in a zero-copy operation (just the pointers updated
+ * BUF_Append[Ex]() results in a zero-copy operation (just the pointers updated
  * internally as necessary).
  */
 extern NCBI_XCONNECT_EXPORT /*bool*/int BUF_Write
@@ -209,10 +208,10 @@ extern NCBI_XCONNECT_EXPORT size_t BUF_PeekAt
 /*!
  * Call "callback" repeatedly on up to "size" bytes stored in "buf" (starting
  * at position "pos"), in chunks.  Pass "cbdata" as an opaque parameter to the
- * "callback".  Processing stops when all buffer bytes (but no more than
- * "size" bytes) have been visited by the "callback", or when the "callback"
- * returns a value less than its passed "size" argument (the "callback" may
- * _not_ return a value greater than its "size" argument!).
+ * "callback".  Processing stops when all buffer bytes (but no more than "size"
+ * bytes) have been visited by the "callback", or when the "callback" returns
+ * a value less than its passed "size" argument (the "callback" may _not_
+ * return a value greater than its "size" argument!).
  * Return the # of processed bytes (can be less than "size").
  * Return zero and do nothing if "buf" is NULL or "pos" >= BUF_Size(buf).
  * If "callback" is NULL, return the number of bytes that would have been
