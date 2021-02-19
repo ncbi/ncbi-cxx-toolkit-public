@@ -45,14 +45,16 @@ void AddComment(CSeq_feat& feat, const string& comment)
 {
     if (!comment.empty()) {
         if (feat.IsSetComment() && !feat.GetComment().empty()) {
-            if (feat.GetComment().find(comment) != -1) {
+            if (feat.GetComment().find(comment) != string::npos) {
                 return;
             }
             if (!NStr::EndsWith(feat.GetComment(), ";")) {
                 feat.SetComment() += "; ";
             }
+            feat.SetComment() += comment;
+        } else {
+            feat.SetComment(comment);
         }
-        feat.SetComment() += comment;
     }
 }
 
