@@ -35,7 +35,6 @@ set(NCBI_PlatformBits 64)
 # prebuilt libraries
 
 set(NCBI_ThirdParty_BACKWARD   ${NCBI_TOOLS_ROOT}/backward-cpp-1.3.20180206-44ae960 CACHE PATH "BACKWARD root")
-set(NCBI_ThirdParty_TLS        ${NCBI_TOOLS_ROOT}/gnutls-3.4.0 CACHE PATH "TLS root")
 set(NCBI_ThirdParty_LMDB       ${NCBI_TOOLS_ROOT}/lmdb-0.9.18 CACHE PATH "LMDB root")
 set(NCBI_ThirdParty_LZO        ${NCBI_TOOLS_ROOT}/lzo-2.05 CACHE PATH "LZO root")
 set(NCBI_ThirdParty_SQLITE3    ${NCBI_TOOLS_ROOT}/sqlite-3.26.0-ncbi1 CACHE PATH "SQLITE2 root")
@@ -55,9 +54,9 @@ set(NCBI_ThirdParty_wxWidgets ${NCBI_TOOLS_ROOT}/wxWidgets-3.1.4-ncbi2 CACHE PAT
 set(NCBI_ThirdParty_UV        ${NCBI_TOOLS_ROOT}/libuv-1.35.0 CACHE PATH "UV root")
 set(NCBI_ThirdParty_NGHTTP2   ${NCBI_TOOLS_ROOT}/nghttp2-1.40.0 CACHE PATH "NGHTTP2 root")
 set(NCBI_ThirdParty_GL2PS     ${NCBI_TOOLS_ROOT}/gl2ps-1.4.0 CACHE PATH "GL2PS root")
-set(NCBI_ThirdParty_Nettle    ${NCBI_TOOLS_ROOT}/nettle-3.1.1)
-set(NCBI_ThirdParty_Hogweed   ${NCBI_TOOLS_ROOT}/nettle-3.1.1)
-set(NCBI_ThirdParty_GMP       ${NCBI_TOOLS_ROOT}/gmp-6.0.0a)
+set(NCBI_ThirdParty_GMP       ${NCBI_TOOLS_ROOT}/gmp-6.0.0a CACHE PATH "GMP root")
+set(NCBI_ThirdParty_NETTLE    ${NCBI_TOOLS_ROOT}/nettle-3.1.1 CACHE PATH "NETTLE root")
+set(NCBI_ThirdParty_GNUTLS     ${NCBI_TOOLS_ROOT}/gnutls-3.4.0 CACHE PATH "GNUTLS root")
 
 #############################################################################
 #############################################################################
@@ -201,17 +200,8 @@ NCBI_define_Xcomponent(NAME TIFF MODULE libtiff-4 PACKAGE TIFF LIB tiff)
 
 #############################################################################
 # TLS
-if (EXISTS ${NCBI_ThirdParty_TLS}/include)
-    message(STATUS "Found TLS: ${NCBI_ThirdParty_TLS}")
-    set(NCBI_COMPONENT_TLS_FOUND YES)
-    set(NCBI_COMPONENT_TLS_INCLUDE ${NCBI_ThirdParty_TLS}/include)
-    list(APPEND NCBI_ALL_COMPONENTS TLS)
-    list(APPEND NCBI_ALL_LEGACY GNUTLS)
-    set(NCBI_COMPONENT_GNUTLS_FOUND TLS)
-else()
-    message("Component TLS ERROR: ${NCBI_ThirdParty_TLS}/include not found")
-    set(NCBI_COMPONENT_TLS_FOUND NO)
-endif()
+set(NCBI_COMPONENT_TLS_FOUND YES)
+list(APPEND NCBI_ALL_COMPONENTS TLS)
 
 #############################################################################
 # FASTCGI
@@ -403,19 +393,22 @@ NCBI_define_Xcomponent(NAME NGHTTP2 MODULE libnghttp2 LIB nghttp2)
 NCBI_define_Xcomponent(NAME GL2PS LIB gl2ps)
 
 #############################################################################
-# Nettle
-if(OFF)
-if(ON)
-    NCBI_find_module(Nettle nettle)
-    NCBI_find_module(Hogweed hogweed)
-    if(NCBI_COMPONENT_Nettle_FOUND)
-        set(NCBI_COMPONENT_Nettle_LIBS  ${NCBI_COMPONENT_Nettle_LIBS} ${NCBI_COMPONENT_Hogweed_LIBS})
-    endif()
-else()
-    NCBI_define_component(Nettle nettle hogweed)
-endif()
-endif()
+# GMP
+NCBI_define_Xcomponent(NAME GMP LIB gmp)
 
 #############################################################################
-# GMP
-#NCBI_define_component(GMP gmp)
+# NETTLE
+NCBI_define_Xcomponent(NAME NETTLE LIB hogweed nettle ADD_COMPONENT GMP)
+
+#############################################################################
+# GNUTLS
+set(NCBI_COMPONENT_GNUTLS_FOUND NO)
+if(DEFINED NCBI_COMPONENT_GNUTLS_DISABLED AND NOT NCBI_COMPONENT_GNUTLS_DISABLED)
+    NCBI_define_Xcomponent(NAME GNUTLS LIB gnutls ADD_COMPONENT NETTLE)
+    if(NCBI_COMPONENT_GNUTLS_FOUND)
+        set(NCBI_COMPONENT_TLS_INCLUDE ${NCBI_COMPONENT_GNUTLS_INCLUDE} ${NCBI_COMPONENT_TLS_INCLUDE})
+        set(NCBI_COMPONENT_TLS_LIBS    ${NCBI_COMPONENT_GNUTLS_LIBS}    ${NCBI_COMPONENT_TLS_LIBS})
+    endif()
+endif()
+
+
