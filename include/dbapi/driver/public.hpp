@@ -66,7 +66,8 @@ class CAutoTrans;
 template <class I> class CInterfaceHook;
 
 
-class NCBI_DBAPIDRIVER_EXPORT CDB_Connection : public I_Connection
+class NCBI_DBAPIDRIVER_EXPORT CDB_Connection
+    : public I_Connection, public IBalanceable
 {
 public:
     /// @brief 

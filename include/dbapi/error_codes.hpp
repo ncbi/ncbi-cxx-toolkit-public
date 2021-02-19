@@ -71,7 +71,7 @@ NCBI_DEFINE_ERRCODE_X(Dbapi_BulkInsert,    1136,  1);
 NCBI_DEFINE_ERRCODE_X(Dbapi_DrvrContext,   1137,  1);
 NCBI_DEFINE_ERRCODE_X(Dbapi_Sdbapi,        1138, 20);
 NCBI_DEFINE_ERRCODE_X(Dbapi_ConnMgr,       1139,  1);
-NCBI_DEFINE_ERRCODE_X(Dbapi_PoolBalancer,  1140,  7);
+NCBI_DEFINE_ERRCODE_X(Dbapi_PoolBalancer,  1140,  1);
 
 
 END_NCBI_SCOPE

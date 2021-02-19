@@ -33,7 +33,7 @@
  */
 
 #include <corelib/ncbi_param.hpp>
-#include <corelib/impl/ncbi_dbsvcmapper.hpp>
+#include <corelib/ncbi_pool_balancer.hpp>
 
 #include <dbapi/driver/types.hpp>
 #include <dbapi/driver/exception.hpp>

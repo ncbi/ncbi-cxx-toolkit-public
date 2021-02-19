@@ -19,7 +19,7 @@ NCBI_sources(
     version request_ctx request_control expr ncbi_strings resource_info
     interprocess_lock ncbi_autoinit perf_log ncbi_toolkit ncbierror ncbi_url
     ncbi_cookies guard ncbi_message request_status ncbi_fast ncbi_dbsvcmapper
-    ${os_src} ${cfgfile}
+    ncbi_pool_balancer ${os_src} ${cfgfile}
 )
 NCBI_disable_pch_for(ncbi_strings ${cfgfile})
 NCBI_uses_external_libraries(${DL_LIBS} ${ORIG_LIBS})

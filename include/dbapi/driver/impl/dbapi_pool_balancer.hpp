@@ -42,7 +42,7 @@
 
 BEGIN_NCBI_SCOPE
 
-class CDBPoolBalancer : public CObject
+class CDBPoolBalancer : public CPoolBalancer
 {
 public:
     CDBPoolBalancer(const string& service_name,
@@ -50,29 +50,17 @@ public:
                     const IDBServiceMapper::TOptions& options,
                     I_DriverContext* driver_ctx = nullptr);
 
-    TSvrRef GetServer(CDB_Connection** conn, const CDBConnParams* params);
+    TSvrRef GetServer(CDB_Connection** conn, const CDBConnParams* params)
+        { return x_GetServer(params, reinterpret_cast<IBalanceable**>(conn)); }
+
+protected:
+    IBalanceable* x_TryPool(const void* params) override;
+    unsigned int  x_GetCount(const void* params, const string& name) override;
+    unsigned int  x_GetPoolMax(const void* params) override;
+    void          x_Discard(const void* params, IBalanceable* conn) override;
 
 private:
-    struct SEndpointInfo {
-        SEndpointInfo()
-            : effective_ranking(0.0), ideal_count(0.0), actual_count(0U),
-              penalty_level(0U)
-            { }
-        
-        CRef<CDBServerOption>  ref;
-        double                 effective_ranking;
-        double                 ideal_count;
-        unsigned int           actual_count;
-        unsigned int           penalty_level;
-    };
-    typedef map<CEndpointKey, SEndpointInfo> TEndpoints;
-
-    CEndpointKey x_NameToKey(CTempString& name) const;
-    
-    TEndpoints        m_Endpoints;
-    multiset<double>  m_Rankings;
-    I_DriverContext*  m_DriverCtx;
-    unsigned int      m_TotalCount;
+    I_DriverContext* m_DriverCtx;
 };
 
 END_NCBI_SCOPE
