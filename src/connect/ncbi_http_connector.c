@@ -1071,6 +1071,8 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
             assert(!sock);
 
         assert(status != eIO_Success);
+        if (status == eIO_Closed)
+            status  = eIO_Unknown;
         /* connection failed, try another server */
         if (s_Adjust(uuu, 0, extract) != eIO_Success)
             break;
