@@ -154,6 +154,7 @@ public:
     string const& GetTag() const { return m_Tag; }
     string MakeTransform(string const& value) const { return m_Transform(value); }
     CRegexp& GetRegexp() const { return *m_Regexp; }
+    string const& GetRegexpStr() const { return m_Regexp_s; }
 
 private:
     TParse_rule();
@@ -252,7 +253,7 @@ vector<TParse_rule> make_parse_rules()
     {
         {kTransform_code_iso8601, 
             "^((?:19\\d{2}|2\\d{3}))$", 
-            transform_identity}, // YYYY
+            transform_identity}, // YYYY - 19xx, 2xxx
 
         {kTransform_code_cast_na, 
             "(?i)^([a-z]+(?:\\s[a-z]+)*)$", 
@@ -262,8 +263,12 @@ vector<TParse_rule> make_parse_rules()
             "(?i)^((?:na|n[.]a[.]|n/a))$", 
             transform_missing},
 
-        {kTransform_code_iso8601, 
-            "^([123]\\d{3}\\-(?:[0][1-9]|[1][012])\\-(?:[0][1-9]|[12][0-9]|[3][01]))(?:[T ](?:[01][0-9]|2[0123])(?:[:][0-5][0-9]){1,2})?$", 
+        {kTransform_code_iso8601,
+            "^([123]\\d{3}\\-(?:[0][1-9]|[1][012])\\-(?:[0][1-9]|[12][0-9]|[3][01])(?:T(?:[01][0-9]|2[0123])(?:[:][0-5][0-9]){1,2})Z)$",
+            transform_identity },
+	
+        {kTransform_code_iso8601,
+            "^([123]\\d{3}\\-(?:[0][1-9]|[1][012])\\-(?:[0][1-9]|[12][0-9]|[3][01]))(?:[T ](?:[01][0-9]|2[0123])(?:[:][0-5][0-9]){1,2})?$",
             transform_identity },
 
         {kTransform_code_iso8601, 
