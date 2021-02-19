@@ -1377,7 +1377,8 @@ static CRef<objects::CEMBL_block> GetDescrEmblBlock(
         if(i == 2 && ibp->htg > 0 && env_kwd)
             ErrPostEx(SEV_WARNING, ERR_KEYWORD_HTGPlusENV,
                       "This HTG record also has the ENV keyword, which is an unusual combination. Confirmation that isolation and cloning steps actually occured might be appropriate.");
-        else if(i == 2 && wgs_kwd && tpa_kwd)
+        else if((i == 2 && wgs_kwd && tpa_kwd) ||
+                (i == 2 && tsa_kwd && tpa_kwd)
         {
         }
         else if(i != 2 || env_kwd == false ||
@@ -2040,7 +2041,8 @@ static void GetEmblDescr(ParserPtr pp, DataBlkPtr entry, objects::CBioseq& biose
         return;
     }
 
-    if(ibp->is_tsa && (title.empty() || StringNCmp(title.c_str(), "TSA:", 4) != 0))
+    if(ibp->is_tsa && !ibp->is_tpa &&
+       (title.empty() || StringNCmp(title.c_str(), "TSA:", 4) != 0))
     {
         ErrPostEx(SEV_REJECT, ERR_DEFINITION_MissingTSA,
                   "This is apparently a TSA record, but it lacks the required \"TSA:\" prefix on its definition line. Entry dropped.");
