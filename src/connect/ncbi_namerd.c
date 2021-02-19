@@ -79,33 +79,34 @@ enum ENAMERD_Subcodes {
 
 
 /*  Registry entry names and default values for NAMERD "SConnNetInfo" fields.
-    Note that these are purely for the NAMERD API; they don't relate to any
-    other part of the connect library, returned endpoints, or client code.
-    Therefore, they are independent of other connect library macros.
-    Also, the namerd API doesn't support using a port so there's no macro for
-    that.
- */
+    We just override the given fields (which were collected for the service in
+    question), so there are some standard keys plus some additional ones, which
+    are purely for NAMERD.  Note that the namerd API doesn't support a port.
+*/
 #define DEF_NAMERD_REG_SECTION     "_NAMERD"
 
-#define REG_NAMERD_API_SCHEME      "API_SCHEME"
+#define REG_NAMERD_API_SCHEME      "SCHEME"
 #define DEF_NAMERD_API_SCHEME      "http"
 
-#define REG_NAMERD_API_REQ_METHOD  "API_REQ_METHOD"
+#define REG_NAMERD_API_REQ_METHOD  REG_CONN_REQ_METHOD
 #define DEF_NAMERD_API_REQ_METHOD  "GET"
 
-#define REG_NAMERD_API_HOST        "API_HOST"
+#define REG_NAMERD_API_HOST        REG_CONN_HOST
 #define DEF_NAMERD_API_HOST        "namerd-api.linkerd.ncbi.nlm.nih.gov"
 
-#define REG_NAMERD_API_PATH        "API_PATH"
+#define REG_NAMERD_API_PORT        REG_CONN_PORT
+#define DEF_NAMERD_API_PORT        0
+
+#define REG_NAMERD_API_PATH        REG_CONN_PATH
 #define DEF_NAMERD_API_PATH        "/api/1/resolve"
 
-#define REG_NAMERD_API_ENV         "API_ENVIRONMENT"
+#define REG_NAMERD_API_ENV         "ENVIRONMENT"
 #define DEF_NAMERD_API_ENV         "default"
 
-#define REG_NAMERD_API_ARGS        "API_ARGS"
+#define REG_NAMERD_API_ARGS        REG_CONN_ARGS
 #define DEF_NAMERD_API_ARGS        "path=/service/"
 
-#define REG_NAMERD_PROXY_HOST      "PROXY_HOST"
+#define REG_NAMERD_PROXY_HOST      REG_CONN_HTTP_PROXY_HOST
 /*  NAMERD_TODO - "temporarily" support plain "linkerd" on Unix only */
 #if defined(NCBI_OS_UNIX)  &&  !defined(NCBI_OS_CYGWIN)
 #define DEF_NAMERD_PROXY_HOST      "linkerd"
@@ -114,23 +115,17 @@ enum ENAMERD_Subcodes {
     "pool.linkerd-proxy.service.bethesda-dev.consul.ncbi.nlm.nih.gov"
 #endif
 
-#define REG_NAMERD_PROXY_PORT      "PROXY_PORT"
+#define REG_NAMERD_PROXY_PORT      REG_CONN_HTTP_PROXY_PORT
 #define DEF_NAMERD_PROXY_PORT      "4140"
 
 #define REG_NAMERD_DTAB            "DTAB"
 #define DEF_NAMERD_DTAB            ""
 
+#define NAMERD_DTAB_ARG            "dtab"
+
 
 /* Default rate increase 20% if svc runs locally */
 #define NAMERD_LOCAL_BONUS         1.2
-
-
-/* Apache is limited to around 4000 byte query strings. -- todo: find reference
- * Note that this is approximate and doesn't need to be precise because
- * it's more than should be required for namerd anyway.
- */
-#define MAX_QUERY_STRING_LEN       4000
-
 
 /* Misc. */
 #define DTAB_HTTP_HEADER_TAG       "DTab-Local:"
@@ -140,10 +135,6 @@ enum ENAMERD_Subcodes {
 extern "C" {
 #endif /*__cplusplus*/
 
-static int/*bool*/ s_Adjust(SConnNetInfo* net_info,
-                            void*         iter,
-                            unsigned int  unused);
-
 static SSERV_Info* s_GetNextInfo(SERV_ITER, HOST_INFO*);
 static void        s_Reset      (SERV_ITER);
 static void        s_Close      (SERV_ITER);
@@ -152,20 +143,14 @@ static const SSERV_VTable s_op = {
     s_GetNextInfo, NULL/*Feedback*/, NULL/*s_Update*/, s_Reset, s_Close, "NAMERD"
 };
 
-static EHTTP_HeaderParse s_ParseHeader(const char* header,
-                                       void*       iter,
-                                       int         server_error);
-
 #ifdef __cplusplus
 } /* extern "C" */
 #endif /*__cplusplus*/
 
 
 struct SNAMERD_Data {
-    short/*bool*/  eof;  /* no more resolves */
-    short/*bool*/  fail; /* no more connects */
-    short/*bool*/  done; /* all endpoints have been processed */
     SConnNetInfo*  net_info;
+    int/*bool*/    done;
     SLB_Candidate* cand;
     size_t         n_cand;
     size_t         a_cand;
@@ -193,8 +178,7 @@ static CONNECTOR s_CreateConnectorHttp(SERV_ITER iter)
 
     CORE_TRACE("s_CreateConnectorHttp()");
 
-    return HTTP_CreateConnectorEx(data->net_info, 0/*flags*/,
-                s_ParseHeader, iter/*data*/, s_Adjust, 0/*cleanup*/);
+    return HTTP_CreateConnector(data->net_info, 0/*user-headers*/, 0/*flags*/);
 }
 
 
@@ -215,143 +199,6 @@ static CONNECTOR s_CreateConnectorMemory(SERV_ITER iter)
 }
 
 
-/* Update a dtab value by appending another entry. */
-static void s_UpdateDtab(char** dest_dtab_p, char* src_dtab, int* success_p)
-{
-    char* new_dtab = NULL;
-    char enc_dtab[MAX_QUERY_STRING_LEN + 1];
-    size_t new_size, src_size, enc_size;
-
-    CORE_TRACEF(("Entering s_UpdateDtab(\"%s\") -- old dtab = \"%s\"", src_dtab,
-        *dest_dtab_p ? *dest_dtab_p : ""));
-
-    if ( ! *success_p) {
-        CORE_TRACE("Leaving s_UpdateDtab() -- prior no success");
-        return;
-    }
-    if ( ! *src_dtab) {
-        CORE_TRACE("Leaving s_UpdateDtab() -- prior no dtab");
-        return;
-    }
-
-    /* Ignore header label if it was included. */
-    if (strncasecmp(src_dtab, DTAB_HTTP_HEADER_TAG,
-                    sizeof(DTAB_HTTP_HEADER_TAG) - 1) == 0)
-    {
-        /* advance start past name, colon, and any whitespace */
-        src_dtab += sizeof(DTAB_HTTP_HEADER_TAG) - 1;
-        while (*src_dtab == ' '  ||  *src_dtab == '\t') ++src_dtab;
-    }
-
-    /* Dtabs passed as query string parameter must be url-encoded, for example:
-     *  from:   "/lbsm/bounce=>/service/xyz"
-     *  to:     "%2Flbsm%2Fbounce%3D%3E%2Fservice%2Fxyz"
-     */
-    URL_Encode(src_dtab, strlen(src_dtab), &src_size,
-               enc_dtab, sizeof(enc_dtab) - 1, &enc_size);
-    enc_dtab[enc_size] = '\0'; /* not done by URL_Encode() */
-
-    /* If dtab already has an entry then append a semicolon and the new dtab. */
-    if (*dest_dtab_p  &&  **dest_dtab_p) {
-        new_size = strlen(*dest_dtab_p) + 3/* "%3B" */ + strlen(enc_dtab) + 1;
-        new_dtab = (char*)realloc(*dest_dtab_p, new_size);
-        if (new_dtab) {
-            strcat(new_dtab, "%3B"); /* url-encoded ';' separator */
-            strcat(new_dtab, enc_dtab);
-        }
-    } else {
-        /* Dtab didn't exist yet, so just clone it. */
-        new_dtab = strdup(enc_dtab);
-    }
-    if ( ! new_dtab) {
-        *success_p = 0;
-        CORE_LOG_X(eNSub_Alloc, eLOG_Critical, "Couldn't alloc for dtab.");
-        CORE_TRACE("Leaving s_UpdateDtab() -- bad alloc");
-        return;
-    }
-
-    /* Update the caller's pointer. */
-    *dest_dtab_p = new_dtab;
-
-    CORE_TRACEF(("Leaving s_UpdateDtab() -- new dtab = \"%s\"", new_dtab));
-}
-
-
-static TReqMethod s_GetReqMethod(void)
-{
-    char val[20];
-
-    if ( ! ConnNetInfo_GetValueService(DEF_NAMERD_REG_SECTION,
-                                       REG_NAMERD_API_REQ_METHOD,
-                                       val, sizeof(val),
-                                       DEF_NAMERD_API_REQ_METHOD)) {
-        CORE_LOG_X(eNSub_Alloc, eLOG_Critical,
-                   "Couldn't alloc for request method.");
-        return eReqMethod_Any;
-    }
-    if ( ! *val) return eReqMethod_Any;
-    if (strcasecmp(val, "GET") == 0) return eReqMethod_Get;
-    if (strcasecmp(val, "POST") == 0) return eReqMethod_Post;
-    if (strcasecmp(val, "GET11") == 0) return eReqMethod_Get11;
-    if (strcasecmp(val, "POST11") == 0) return eReqMethod_Post11;
-
-    return eReqMethod_Any;
-}
-
-
-static EBURLScheme s_GetScheme(void)
-{
-    char val[12];
-
-    if ( ! ConnNetInfo_GetValueService(DEF_NAMERD_REG_SECTION,
-                                       REG_NAMERD_API_SCHEME,
-                                       val, sizeof(val),
-                                       DEF_NAMERD_API_SCHEME)) {
-        CORE_LOG_X(eNSub_Alloc, eLOG_Critical,
-                   "Couldn't alloc for scheme.");
-        return eURL_Unspec;
-    }
-    if ( ! *val) return eURL_Unspec;
-    if (strcasecmp(val, "http") == 0) return eURL_Http;
-    if (strcasecmp(val, "https") == 0) return eURL_Https;
-
-    return eURL_Unspec;
-}
-
-
-static int s_GetHttpProxy(SConnNetInfo* net_info)
-{
-    char port_str[24];
-
-    if (net_info->http_proxy_host[0]  &&  net_info->http_proxy_port
-        &&  net_info->http_proxy_only) {
-        return 1/*success*/;
-    }
-
-    if ( ! ConnNetInfo_GetValueService(DEF_NAMERD_REG_SECTION,
-                                       REG_NAMERD_PROXY_HOST,
-                                       net_info->http_proxy_host,
-                                       sizeof(net_info->http_proxy_host),
-                                       DEF_NAMERD_PROXY_HOST)) {
-        CORE_LOG_X(eNSub_Alloc, eLOG_Critical,
-                   "Couldn't get default http proxy host.");
-        return 0/*failure*/;
-    }
-
-    if ( ! ConnNetInfo_GetValueService(DEF_NAMERD_REG_SECTION,
-                                       REG_NAMERD_PROXY_PORT,
-                                       port_str, sizeof(port_str),
-                                       DEF_NAMERD_PROXY_PORT)
-         ||  sscanf(port_str, "%hu", &net_info->http_proxy_port) != 1) {
-        CORE_LOG_X(eNSub_Alloc, eLOG_Critical,
-                   "Couldn't get default http proxy port.");
-        return 0/*failure*/;
-    }
-
-    return 1/*success*/;
-}
-
-
 static void s_RemoveCand(struct SNAMERD_Data* data, size_t n, int free_info)
 {
     CORE_TRACEF(("s_RemoveCand() Removing info " FMT_SIZE_T ": %p",
@@ -369,8 +216,6 @@ static void s_RemoveCand(struct SNAMERD_Data* data, size_t n, int free_info)
         memmove(data->cand + n, data->cand + n + 1,
                 (data->n_cand - n) * sizeof(*data->cand));
     }
-    if (data->n_cand == 0)
-        data->done = 1;
 }
 
 
@@ -415,14 +260,12 @@ static int/*bool*/ s_AddServerInfo(struct SNAMERD_Data* data, SSERV_Info* info)
     /* First check if the new server info updates an existing one */
     for (i = 0;  i < data->n_cand;  ++i) {
         if (strcasecmp(name, SERV_NameOfInfo(data->cand[i].info)) == 0
-            &&  SERV_EqualInfo(info, data->cand[i].info))
-        {
+            &&  SERV_EqualInfo(info, data->cand[i].info)) {
             /* Replace older version */
-            CORE_TRACE("Replaced older candidate version.");
+            CORE_TRACEF(("Replaced candidate " FMT_SIZE_T ": %p", i, info));
             free((void*) data->cand[i].info);
             data->cand[i].info   = info;
             data->cand[i].status = info->rate;
-
             return 1;
         }
     }
@@ -435,7 +278,7 @@ static int/*bool*/ s_AddServerInfo(struct SNAMERD_Data* data, SSERV_Info* info)
             (SLB_Candidate*) realloc(data->cand, n * sizeof(*temp));
         if ( ! temp) {
             CORE_LOG_X(eNSub_Alloc, eLOG_Critical,
-                "Failed to reallocate memory for new candidates.");
+                       "Failed to reallocate memory for new candidates.");
             return 0;
         }
         data->cand = temp;
@@ -443,19 +286,10 @@ static int/*bool*/ s_AddServerInfo(struct SNAMERD_Data* data, SSERV_Info* info)
     }
 
     /* Add the new service to the list */
-#if defined(_DEBUG)  &&  ! defined(NDEBUG)
-    {{
-        char hostbuf[40];
-        SOCK_ntoa(info->host, hostbuf, sizeof(hostbuf));
-        CORE_TRACEF(("Added candidate " FMT_SIZE_T
-            ":   %s:%hu with server type '%s'.",
-            data->n_cand, hostbuf, info->port, SERV_TypeStr(info->type)));
-    }}
-#endif
+    CORE_TRACEF(("Added candidate " FMT_SIZE_T ": %p", data->n_cand, info));
     data->cand[data->n_cand].info   = info;
     data->cand[data->n_cand].status = info->rate;
     data->n_cand++;
-    data->done = 0;
 
     return 1;
 }
@@ -468,107 +302,63 @@ static int/*bool*/ s_AddServerInfo(struct SNAMERD_Data* data, SSERV_Info* info)
    Unfortunately, strptime is not supported at all on Windows, and doesn't
    support the "%z" format on Unix, so some custom parsing is required.
 */
-static TNCBI_Time s_ParseExpires(time_t tt_now, const char* expires)
+static TNCBI_Time x_ParseExpires(const char* expires, time_t utc, size_t i)
 {
-    int     exp_year, exp_mon, exp_mday, exp_hour, exp_min, exp_sec;
-    char    exp_zulu;
+    struct tm tm_exp, tm_now;
+    time_t exp, now;
+    char   exp_zulu;
+    double tzdiff;
+    int    n;
 
-    if ( ! expires) {
-        CORE_LOG_X(eNSub_Logic, eLOG_Critical,
-                   "Unexpected NULL 'expires' pointer.");
-        return 0;
-    }
-
-    if (sscanf(expires, "%d-%d-%dT%d:%d:%d%c", &exp_year, &exp_mon, &exp_mday,
-               &exp_hour, &exp_min, &exp_sec, &exp_zulu) != 7  ||
-        (exp_year < 2017  ||  exp_year > 9999)  ||
-        (exp_mon  < 1     ||  exp_mon  > 12)    ||
-        (exp_mday < 1     ||  exp_mday > 31)    ||
-        (exp_hour < 0     ||  exp_hour > 23)    ||
-        (exp_min  < 0     ||  exp_min  > 59)    ||
-        (exp_sec  < 0     ||  exp_sec  > 60)    ||  /* 60 for leap second */
-        exp_zulu != 'Z')
-    {
+    if ( ! expires  ||  ! *expires) {
         CORE_LOGF_X(eNSub_Json, eLOG_Error,
-                    ("Unexpected JSON {\"addrs[i].meta.expires\"} "
-                     "value '%s'.", expires));
+                    ("Couldn't get JSON {\"addrs[" FMT_SIZE_T
+                     "].meta.expires\"} value.", i));
         return 0;
     }
 
-    /* Get the UTC epoch time for the expires value. */
-    struct tm   tm_expires;
-    tm_expires.tm_year  = exp_year - 1900;    /* years since 1900 */
-    tm_expires.tm_mon   = exp_mon - 1;        /* months since January: 0-11 */
-    tm_expires.tm_mday  = exp_mday;
-    tm_expires.tm_hour  = exp_hour;
-    tm_expires.tm_min   = exp_min;
-    tm_expires.tm_sec   = exp_sec;
-    tm_expires.tm_isdst = 0;
-    tm_expires.tm_wday  = 0;
-    tm_expires.tm_yday  = 0;
+    memset(&tm_exp, 0, sizeof(tm_exp));
+    if (sscanf(expires, "%d-%d-%dT%d:%d:%d%c%n",
+               &tm_exp.tm_year, &tm_exp.tm_mon, &tm_exp.tm_mday,
+               &tm_exp.tm_hour, &tm_exp.tm_min, &tm_exp.tm_sec,
+               &exp_zulu, &n) < 7  ||  expires[n]
+        ||  tm_exp.tm_year < 2017  ||  tm_exp.tm_year > 9999
+        ||  tm_exp.tm_mon  < 1     ||  tm_exp.tm_mon  > 12
+        ||  tm_exp.tm_mday < 1     ||  tm_exp.tm_mday > 31
+        ||  tm_exp.tm_hour < 0     ||  tm_exp.tm_hour > 23
+        ||  tm_exp.tm_min  < 0     ||  tm_exp.tm_min  > 59
+        ||  tm_exp.tm_sec  < 0     ||  tm_exp.tm_sec  > 60/* 60 for leap sec */
+        ||  exp_zulu != 'Z'
+        /* Get the UTC epoch time for the expires value. */
+        ||  (tm_exp.tm_year -= 1900,  /* years since 1900 */
+             tm_exp.tm_mon--,         /* months since January: 0-11 */
+             (exp = mktime(&tm_exp)) == (time_t)(-1))) {
+        CORE_LOGF_X(eNSub_Json, eLOG_Error,
+                    ("Unexpected JSON {\"addrs[" FMT_SIZE_T
+                     "].meta.expires\"} value '%s'.", i, expires));
+        return 0;
+    }
+
+    CORE_LOCK_WRITE;
+    tm_now = *gmtime(&utc);
+    CORE_UNLOCK;
+    verify((now = mktime(&tm_now)) != (time_t)(-1));
 
     /* Adjust for time diff between local and UTC, which should
        correspond to 3600 x (number of time zones from UTC),
        i.e. diff between current TZ (UTC-12 to UTC+14) and UTC. */
-    double      tdiff;
-    struct tm   tm_now;
-    CORE_LOCK_WRITE;
-    tm_now = *gmtime(&tt_now);
-    CORE_UNLOCK;
-    tdiff = difftime(mktime(&tm_expires), mktime(&tm_now));
-    if (tdiff < -14.0 * 3600.0  ||  tdiff > 12.0 * 3600.0) {
-        int     now_year = tm_now.tm_year + 1900;
-        int     now_mon  = tm_now.tm_mon + 1;
-        int     now_mday = tm_now.tm_mday;
-        int     now_hour = tm_now.tm_hour;
-        int     now_min  = tm_now.tm_min;
-        int     now_sec  = tm_now.tm_sec;
-        char    now_str[40]; /* need 21 for 'yyyy-mm-ddThh:mm:ssZ' */
-        double  td_diff, td_hour, td_min, td_sec;
-        const char* td_sign;
-
-        if ((now_year < 2017  ||  now_year > 9999)  ||
-            (now_mon  < 1     ||  now_mon  > 12)    ||
-            (now_mday < 1     ||  now_mday > 31)    ||
-            (now_hour < 0     ||  now_hour > 23)    ||
-            (now_min  < 0     ||  now_min  > 59)    ||
-            (now_sec  < 0     ||  now_sec  > 60)) { /* 60 for leap second */
-            CORE_LOGF_X(eNSub_Json, eLOG_Error,
-                        ("Invalid 'struct tm' for current time"
-                         " (adjusted to UTC): { "
-                         "tm_year = %d, tm_mon = %d, tm_mday = %d, "
-                         "tm_hour = %d, tm_min = %d, tm_sec = %d }.",
-                         tm_now.tm_year + 1900, tm_now.tm_mon + 1,
-                         tm_now.tm_mday, tm_now.tm_hour,
-                         tm_now.tm_min, tm_now.tm_sec));
-            return 0;
-        }
-        if (tdiff < 0.0) {
-            td_sign = "-";
-            td_diff = -tdiff;
-        } else {
-            td_sign = "";
-            td_diff = tdiff;
-        }
-        td_hour  = td_diff / 3600.0;
-        td_diff -= td_hour * 3600.0;
-        td_min   = td_diff / 60.0;
-        td_sec   = td_diff - td_min * 60.0;
-        sprintf(now_str, "%d-%02d-%02dT%02d:%02d:%02dZ",
-                now_year, now_mon, now_mday, now_hour, now_min, now_sec);
+    tzdiff = difftime(utc, now);
+    assert(-12.0 * 3600.0 <= tzdiff  &&  tzdiff <= 14.0 * 3600.0);
+    exp += tzdiff;
+    if (exp < utc) {
         CORE_LOGF_X(eNSub_Json, eLOG_Error,
-                    ("Unexpected JSON {\"addrs[i].meta.expires\"}"
-                     " value '%s' - excessive difference"
-                     " (%.0lfs = %s%.0lf:%.0lf:%.0lf) "
-                     "from current time '%s'", expires, tdiff,
-                     td_sign, td_hour, td_min, td_sec, now_str));
+                    ("Unexpected JSON {\"addrs[" FMT_SIZE_T
+                     "].meta.expires\"} value expired: "
+                     FMT_TIME_T " vs. " FMT_TIME_T " now",
+                     i, exp, utc));
         return 0;
     }
-    TNCBI_Time  timeval = (TNCBI_Time)((double) tt_now + tdiff);
-    /*CORE_TRACEF(("expires=%s  tdiff=%lf  now=" FMT_TIME_T "  info->time=%u",
-      expires, tdiff, tt_now, timeval));*/
-
-    return timeval;
+    return (TNCBI_Time) exp;
 }
 
 
@@ -584,7 +374,7 @@ static const char* s_ReadFullResponse(CONN conn)
     CORE_TRACE("Entering s_ReadFullResponse()");
 
     do {
-        char block[5000];
+        char block[2000];
         status = CONN_Read(conn, block, sizeof(block), &len, eIO_ReadPlain);
         if (!len)
             assert(status != eIO_Success);
@@ -596,7 +386,7 @@ static const char* s_ReadFullResponse(CONN conn)
     } while (status == eIO_Success);
     if ((len = BUF_Size(buf)) > 0  &&  (response = (char*) malloc(len + 1))) {
         /* read all in */
-        verify(BUF_Read(buf, response, len) == len);
+        verify(BUF_Read(buf, response, len) == len  &&  !BUF_Size(buf));
         response[len] = '\0';
         CORE_TRACEF(("Got response: %s", response));
     }
@@ -611,13 +401,13 @@ static const char* s_ReadFullResponse(CONN conn)
 static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
 {
     struct SNAMERD_Data* data = (struct SNAMERD_Data*) iter->data;
-    x_JSON_Value*        root_value = 0;
-    const char*          success_type;
     int/*bool*/          retval = 0;
-    x_JSON_Object*       root_obj;
-    x_JSON_Array*        address_arr;
+    x_JSON_Value*        root = 0;
     const char*          response;
-    size_t               it;
+    x_JSON_Array*        addrs;
+    const char*          type;
+    size_t               i, n;
+    x_JSON_Object*       top;
 
     CORE_TRACE("Entering s_ParseResponse()");
 
@@ -625,48 +415,52 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
         goto out;
 
     /* root object */
-    root_value = x_json_parse_string(response);
-    if ( ! root_value) {
+    root = x_json_parse_string(response);
+    if ( ! root) {
         CORE_LOG_X(eNSub_Json, eLOG_Error,
                    "Response couldn't be parsed as JSON.");
         goto out;
     }
-    if (x_json_value_get_type(root_value) != JSONObject) {
+    if (x_json_value_get_type(root) != JSONObject) {
         CORE_LOG_X(eNSub_Json, eLOG_Error,
-                   "Response root name is not a JSON object.");
+                   "Response is not a JSON object.");
         goto out;
     }
-    root_obj = x_json_value_get_object(root_value);
-    if ( ! root_obj) {
+    top = x_json_value_get_object(root);
+    if ( ! top) {
         CORE_LOG_X(eNSub_Json, eLOG_Error,
                    "Couldn't get JSON root object.");
         goto out;
     }
+
 #if defined(_DEBUG)  &&  ! defined(NDEBUG)
-    char json[9999];
-    if (x_json_serialize_to_buffer_pretty(root_value, json, sizeof(json)-1)
-        == JSONSuccess) {
-        CORE_TRACEF(("Got JSON:\n%s", json));
-    } else
-        CORE_LOG_X(eNSub_Json, eLOG_Error, "Couldn't serialize JSON");
+    {{
+        char json[9999];
+        if (x_json_serialize_to_buffer_pretty(root, json, sizeof(json)-1)
+            == JSONSuccess) {
+            json[sizeof(json)-1] = '\0';
+            CORE_TRACEF(("Got JSON:\n%s", json));
+        } else
+            CORE_LOG_X(eNSub_Json, eLOG_Error, "Couldn't serialize JSON");
+    }}
 #endif
 
-    /* top-level {"type" : "bound"} expected for successful connection */
-    success_type = x_json_object_get_string(root_obj, "type");
-    if ( ! success_type) {
+    /* top-level {"type" : "bound"} expected for successful lookup */
+    type = x_json_object_get_string(top, "type");
+    if ( ! type) {
         CORE_LOG_X(eNSub_Json, eLOG_Error,
                    "Couldn't get JSON {\"type\"} value.");
         goto out;
     }
-    if (strcmp(success_type, "bound") != 0) {
-        CORE_LOGF_X(eNSub_NoService, eLOG_Error,
-                    ("Service \"%s\" appears to be unknown.", iter->name));
+    if (strcmp(type, "bound") != 0) {
+        CORE_TRACEF(("Service \"%s\" appears to be unknown: %s.",
+                     iter->name, type));
         goto out;
     }
 
     /* top-level {"addrs" : []} contains endpoint data */
-    address_arr = x_json_object_get_array(root_obj, "addrs");
-    if ( ! address_arr) {
+    addrs = x_json_object_get_array(top, "addrs");
+    if ( ! addrs) {
         CORE_LOG_X(eNSub_Json, eLOG_Error,
                    "Couldn't get JSON {\"addrs\"} array.");
         goto out;
@@ -675,31 +469,31 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
     /* Note: top-level {"meta" : {}} not currently used */
 
     /* Iterate through addresses, adding to "candidates". */
-    for (it = 0;  it < x_json_array_get_count(address_arr);  ++it) {
-        x_JSON_Object   *address;
-        const char      *host, *extra, *srv_type, *mode;
-        const char      *cpfx, *ctype;
-        const char      *local;
-        const char      *priv;
-        const char      *stateful;
-        char            *server_descriptor;
-        double          rate;
-        int             port;
+    n = x_json_array_get_count(addrs);
+    for (i = 0;  i < n;  ++i) {
+        const char*    host, *extra, *mime, *mode, *local, *private, *stateful;
+        char*          server_descr;
+        x_JSON_Object* address;
+        ESERV_Type     atype;
+        double         rate;
+        int            port;
+        TNCBI_Time     time;
+        size_t         size;
 
         /*  JSON|SSERV_Info|variable mapping to format string:
-            meta.expires|time|time -------------------------------+
-            meta.stateful|mode|stateful ---------------------+    |
-            meta.rate|rate|rate ---------------------------+ |    |
-            meta.mode|site|priv ----------------------+    | |    |
-            meta.mode|site|local -------------------+ |    | |    |
-            meta.contentType|mime_*|cpfx,ctype      | |    | |    |
-            meta.extra|extra|extra -------+  |      | |    | |    |
-            port|port|port ------------+  |  |      | |    | |    |
-            ip|host|host -----------+  |  |  |      | |    | |    |
-            meta.serviceType        |  |  |  |      | |    | |    |
-               type|srv_type ----+  |  |  |  |      | |    | |    |
-                                 [] [] [] [] [__]   [][]   [][]   [] */
-        const char* descr_fmt = "%s %s:%u %s %s%s L=%s%s R=%s%s T=%u";
+            meta.expires|time|time ---------------------------------+
+            meta.stateful|mode|stateful -----------------------+    |
+            meta.rate|rate|rate --------------------------+    |    |
+            meta.mode|site|private ------------------+    |    |    |
+            meta.mode|site|local ------------------+ |    |    |    |
+            meta.contentType|mime_*|mime ---+      | |    |    |    |
+            meta.extra|extra|extra -----+   |      | |    |    |    |
+            port|port|port -----------+ |   |      | |    |    |    |
+            ip|host|host ----------+  | |   |      | |    |    |    |
+            meta.serviceType       |  | |   |      | |    |    |    |
+                  |type|type ---+  |  | |   |      | |    |    |    |  */
+        static const         /* [] [] [][__][__]   [][]   [___][]   [] */
+            char kDescrFmt[] = "%s %s:%u%s%s%s%s L=%s%s R=%.*lf%s T=%u";
         /*  NOTE: Some fields must not be included in certain situations
             because SERV_ReadInfoEx() does not expect them in those
             situations, and if they are present then SERV_ReadInfoEx()
@@ -712,60 +506,54 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
         */
 
         /* get a handle on the object for this iteration */
-        address = x_json_array_get_object(address_arr, it);
+        address = x_json_array_get_object(addrs, i);
         if ( ! address) {
-            CORE_LOG_X(eNSub_Json, eLOG_Error,
-                       "Couldn't get JSON {\"addrs[i]\"} object.");
+            CORE_LOGF_X(eNSub_Json, eLOG_Error,
+                        ("Couldn't get JSON {\"addrs[" FMT_SIZE_T "]\"}"
+                         " object.", i));
             goto out;
         }
 
         /* SSERV_Info.host <=== addrs[i].ip */
         host = x_json_object_get_string(address, "ip");
-        if ( ! host  ||   ! *host) {
-            CORE_LOG_X(eNSub_Json, eLOG_Error,
-                       "Couldn't get JSON {\"addrs[i].ip\"} value.");
+        if ( ! host  ||  ! *host) {
+            CORE_LOGF_X(eNSub_Json, eLOG_Error,
+                        ("Couldn't get JSON {\"addrs[" FMT_SIZE_T "].ip\"}"
+                         " value.", i));
             goto out;
         }
 
         /* SSERV_Info.port <=== addrs[i].port */
         /* Unfortunately the x_json_object_get_number() function does
-           not distinguish failure from a legitimate zero value.  :-/
+           not distinguish failure from a legitimate zero value :-/
            Therefore, first explicitly check for the value. */
-        if ( ! x_json_object_has_value_of_type
-             ((const x_JSON_Object*) address,
-              (const char*) "port", JSONNumber)) {
-            CORE_LOG_X(eNSub_Json, eLOG_Error,
-                       "Couldn't get JSON {\"addrs.port\"} name.");
+        if ( ! x_json_object_has_value_of_type(address, "port", JSONNumber)) {
+            CORE_LOGF_X(eNSub_Json, eLOG_Error,
+                        ("Couldn't get JSON {\"addrs[" FMT_SIZE_T " ].port\"}"
+                         " type", i));
             goto out;
         }
         port = (int) x_json_object_get_number(address, "port");
         if (port <= 0  ||  port > 65535) {
             CORE_LOGF_X(eNSub_Json, eLOG_Error,
-                        ("Invalid JSON {\"addrs[i].port\"} value (%d).",
-                         port));
+                        ("Invalid JSON {\"addrs[" FMT_SIZE_T "].port\"}"
+                         " value: %d.", i, port));
             goto out;
         }
 
-        ESERV_Type  type;
         /* SSERV_Info.type <=== addrs[i].meta.serviceType */
-        srv_type = x_json_object_dotget_string(address, "meta.serviceType");
-        if ( ! srv_type  ||   ! *srv_type) {
-            type = SERV_GetImplicitServerType(iter->name);
-            srv_type = SERV_TypeStr(type);
-        } else if ( ! SERV_ReadType(srv_type, &type)) {
+        type = x_json_object_dotget_string(address, "meta.serviceType");
+        if ( ! type  ||  ! *type) {
+            atype = SERV_GetImplicitServerType(iter->name);
+            type  = SERV_TypeStr(atype);
+        } else if ( ! SERV_ReadType(type, &atype)) {
             CORE_LOGF_X(eNSub_Json, eLOG_Error,
-                        ("Unrecognized server type '%s'.", srv_type));
+                        ("Unrecognized {\"addrs[" FMT_SIZE_T
+                         "].meta.serviceType\"} value: '%s'.", i, type));
             goto out;
         }
-        /* Make sure the server type matches an allowed type. */
-        if (iter->types != fSERV_Any  &&  !(iter->types & type)) {
-            CORE_TRACEF(("Ignoring endpoint %s:%d with unallowed server"
-                         " type '%s' - allowed types = 0x%lx.",
-                         host, port, srv_type, (unsigned long) iter->types));
-            continue;
-        }
-        CORE_TRACEF(("Parsed endpoint %s:%d with allowed server type '%s'.",
-                     host, port, srv_type));
+
+        CORE_TRACEF(("Parsed endpoint %s:%d '%s'", host, port, type));
 
         /* SSERV_Info.mode <=== addrs[i].meta.stateful */
         if (x_json_object_dothas_value_of_type(address, "meta.stateful",
@@ -777,42 +565,35 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
                 stateful = " S=YES";
             } else {
                 CORE_LOGF_X(eNSub_Json, eLOG_Error,
-                            ("Invalid JSON {\"addrs[i].meta.stateful\"}"
-                             " value (%d).", st));
+                            ("Invalid JSON {\"addrs[" FMT_SIZE_T
+                             "].meta.stateful\"} value (%d).", i, st));
                 goto out;
             }
-        } else {
+        } else
             stateful = "";
-        }
-
-        /* Make sure the JSON is stateless for a stateless SERV_ITER. */
-        if ((iter->types & fSERV_Stateless)  &&  stateful[0] != '\0') {
-            CORE_TRACEF(("Ignoring stateful endpoint %s:%d in stateless"
-                         " search.", host, port));
-            continue;
-        }
 
         /* SSERV_Info.site <=== addrs[i].meta.mode */
-        local = "NO";
-        priv = "";
+        local   = "NO";
+        private = "";
         if (x_json_object_dothas_value_of_type(address, "meta.mode",
                                                JSONString)) {
             mode = x_json_object_dotget_string(address, "meta.mode");
             if ( ! mode  ||  ! *mode) {
-                CORE_LOG_X(eNSub_Json, eLOG_Error,
-                           "Couldn't get JSON {\"addrs[i].meta.mode\"}"
-                           " value.");
+                CORE_LOGF_X(eNSub_Json, eLOG_Error,
+                            ("Couldn't get JSON {\"addrs[" FMT_SIZE_T
+                             "].meta.mode\"} value.", i));
                 goto out;
             }
-            if (strcmp(mode, "L") == 0) {
+            if (strcmp(mode, "L") == 0)
                 local = "YES";
-            } else if (strcmp(mode, "H") == 0) {
-                local = "YES";
-                priv = " P=YES";
-            } else {
+            else if (strcmp(mode, "P") == 0)
+                private = " P=YES";
+            else if (strcmp(mode, "H") == 0)
+                local = "YES", private = " P=YES";
+            else {
                 CORE_LOGF_X(eNSub_Json, eLOG_Error,
-                            ("Unexpected JSON {\"addrs[i].meta.mode\"}"
-                             " value '%s'.", mode));
+                            ("Unrecognized JSON {\"addrs[" FMT_SIZE_T
+                             "].meta.mode\"} value '%s'.", i, mode));
                 goto out;
             }
         }
@@ -821,103 +602,108 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
         if (x_json_object_dothas_value_of_type(address, "meta.rate",
                                                JSONNumber)) {
             rate = x_json_object_dotget_number(address, "meta.rate");
-        } else {
+            /* verify magnitude */
+            if (rate < SERV_MINIMAL_RATE  ||  rate > SERV_MAXIMAL_RATE) {
+                CORE_LOGF_X(eNSub_Json, eLOG_Error,
+                            ("Unexpected JSON {\"addrs[" FMT_SIZE_T
+                             "].meta.rate\"} value '%lf'.", i, rate));
+                goto out;
+            }
+        } else
             rate = LBSM_DEFAULT_RATE;
-        }
-        /* verify magnitude */
-        if (rate < SERV_MINIMAL_RATE  ||  rate > SERV_MAXIMAL_RATE) {
-            CORE_LOGF_X(eNSub_Json, eLOG_Error,
-                        ("Unexpected JSON {\"addrs[i].meta.rate\"}"
-                         " value '%lf'.", rate));
-            goto out;
-        }
-        /* format with 3-digit precsion for standby; else 2-digits */
-        char rate_str[12];
-        sprintf(rate_str, "%.*lf",
-                (rate < LBSM_STANDBY_THRESHOLD ? 3 : 2), rate);
 
         /* SSERV_Info.time <=== addrs[i].meta.expires */
-        TNCBI_Time  timeval = iter->time + LBSM_DEFAULT_TIME;
         if (x_json_object_dothas_value_of_type(address, "meta.expires",
                                                JSONString)) {
-            timeval = s_ParseExpires(iter->time,
-                                     x_json_object_dotget_string
-                                     (address, "meta.expires"));
-            if ( ! timeval)
+            time = x_ParseExpires(x_json_object_dotget_string
+                                  (address, "meta.expires"),
+                                  (time_t) iter->time, i);
+            if ( ! time)
                 goto out;
         } else {
             static void* s_Once = 0;
+            time = iter->time + LBSM_DEFAULT_TIME;
             if (CORE_Once(&s_Once)) {
                 CORE_LOGF_X(eNSub_Json, eLOG_Trace,
-                            ("Missing JSON {\"addrs[i].meta.expires\"} - "
-                             "using current time (%u) + default expiration"
-                             " (%u) = %u",
-                             iter->time, LBSM_DEFAULT_TIME, timeval));
+                            ("Missing JSON {\"addrs[" FMT_SIZE_T
+                             "].meta.expires\"} - using default expiration",
+                             i));
             }
         }
 
         /* SSERV_Info.mime_t
            SSERV_Info.mime_s
            SSERV_Info.mime_e <=== addrs[i].meta.contentType */
-        ctype = x_json_object_dotget_string(address, "meta.contentType");
-        cpfx  = (ctype ? " C=" : "");
-        ctype = (ctype ? ctype : "");
+        mime = x_json_object_dotget_string(address, "meta.contentType");
 
         /* SSERV_Info.extra <=== addrs[i].meta.extra */
         extra = x_json_object_dotget_string(address, "meta.extra");
         if ( ! extra  ||  ! *extra) {
-            if (type & fSERV_Http) {
+            if (atype & fSERV_Http) {
                 CORE_LOG_X(eNSub_Json, eLOG_Trace,
                            "Namerd API did not return a path in meta.extra "
                            "JSON for an HTTP type server");
                 extra = "/";
-            } else if (type == fSERV_Ncbid) {
+            } else if (atype == fSERV_Ncbid) {
                 CORE_LOG_X(eNSub_Json, eLOG_Trace,
                            "Namerd API did not return args in meta.extra "
                            "JSON for an NCBID type server");
                 extra = "''";
-            } else {
+            } else
                 extra = "";
-            }
+        }
+
+        retval = 1; /* at least one info found */
+
+        /* Make sure the server type matches an allowed type. */
+        /* FIXME:  not quite */
+        if (iter->types != fSERV_Any  &&  !(iter->types & atype)) {
+            CORE_TRACEF(("Ignoring endpoint %s:%d with unallowed server"
+                         " type '%s'(0x%04X) - allowed types = 0x%04X",
+                         host, port, type, atype, iter->types));
+            continue;
+        }
+
+        /* Make sure the JSON is stateless for a stateless SERV_ITER. */
+        if ((iter->types & fSERV_Stateless)  &&  *stateful) {
+            CORE_TRACEF(("Ignoring stateful endpoint %s:%d '%s' in stateless"
+                         " search.", host, port, type));
+            continue;
         }
 
         /* Prepare descriptor */
-        size_t length;
-        length = strlen(descr_fmt) + strlen(srv_type) + strlen(host) +
-            5 /*length of port*/ + strlen(extra) + strlen(cpfx) +
-            strlen(ctype) + strlen(local) + strlen(priv) +
-            strlen(rate_str) + strlen(stateful) +
-            20/*length of timeval*/;
-        server_descriptor = (char*)malloc(sizeof(char) * length);
-        if ( ! server_descriptor) {
+        size = sizeof(kDescrFmt) + strlen(type) + strlen(host) + 5/*port*/
+            + strlen(extra) + (mime  &&  *mime ? 3 + strlen(mime) : 0)
+            + strlen(local) + strlen(private) + 10/*rate*/
+            + strlen(stateful) + 10/*time*/ + 40/*slack room*/;
+        if (!(server_descr = (char*) malloc(size))) {
             CORE_LOG_X(eNSub_Alloc, eLOG_Critical,
                        "Couldn't alloc for server descriptor.");
             goto out;
         }
-        sprintf(server_descriptor, descr_fmt, srv_type, host,
-                port, extra, cpfx, ctype, local, priv, rate_str, stateful,
-                timeval);
+        verify(sprintf(server_descr, kDescrFmt, type, host, port,
+                       &" "[!(extra  &&  *extra)], extra ? extra : "",
+                       mime  &&  *mime ? " C=" : "", mime ? mime : "",
+                       local, private, rate < LBSM_STANDBY_THRESHOLD ? 3 : 2,
+                       /* 3-digit precsion for standby; else 2-digits */
+                       rate, stateful, time) < size);
 
         /* Parse descriptor into SSERV_Info */
-        CORE_TRACEF(("Parsing server descriptor: '%s'", server_descriptor));
-        SSERV_Info* info = SERV_ReadInfoEx(server_descriptor,
-                                           iter->reverse_dns
+        CORE_TRACEF(("Parsing server descriptor: '%s'", server_descr));
+        SSERV_Info* info = SERV_ReadInfoEx(server_descr, iter->reverse_dns
                                            ? iter->name : "", 0/*false*/);
-
         if ( ! info) {
             CORE_LOGF_X(eNSub_BadData, eLOG_Warning,
                         ("Unable to add server info with descriptor '%s'.",
-                         server_descriptor));
-            free(server_descriptor);
+                         server_descr));
+            free(server_descr);
             continue;
         }
-        free(server_descriptor);
+        free(server_descr);
         CORE_TRACEF(("Created info: %p", info));
 
         /* Add new info to collection */
-        if (s_AddServerInfo(data, info)) {
-            retval = 1; /* at least one info added */
-        } else {
+        if (!s_AddServerInfo(data, info)) {
             CORE_LOG_X(eNSub_Alloc, eLOG_Critical,
                        "Unable to add server info.");
             CORE_TRACEF(("Freeing info: %p", info));
@@ -930,203 +716,23 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
     s_RemoveStandby(data);
 
 out:
+    if (root)
+        x_json_value_free(root);
     if (response)
         free((void*) response);
-    if (root_value)
-        x_json_value_free(root_value);
     CORE_TRACEF(("Leaving s_ParseResponse(): %d", retval));
     return retval;
 }
 
 
-/* Parse buffer and extract DTab-Local header, if present. */
-static char* s_GetDtabHeaderFromBuf(const char* buf)
-{
-    char* start = (char*)buf;
-    char* end;
-    char* dup_hdr;
-
-    CORE_TRACEF(("Entering s_GetDtabHeaderFromBuf(\"%s\")", buf ? buf : ""));
-
-    if (start  &&  strncasecmp(start, DTAB_HTTP_HEADER_TAG,
-                       sizeof(DTAB_HTTP_HEADER_TAG) - 1) == 0)
-    {
-        /* advance start past name, colon, and any whitespace */
-        start += sizeof(DTAB_HTTP_HEADER_TAG) - 1;
-        while (*start == ' '  ||  *start == '\t') ++start;
-
-        /* advance end to \0 or eol (excluding eol) */
-        end = start;
-        while (*end  &&  *end != '\r'  &&  *end != '\n') ++end;
-
-        /* clone the header value */
-        dup_hdr = strndup(start, (size_t)(end - start));
-        if ( ! dup_hdr) {
-            CORE_LOG_X(eNSub_Alloc, eLOG_Critical,
-                       "Couldn't alloc for dtab header value.");
-            CORE_TRACE("Leaving s_GetDtabHeaderFromBuf() -- bad alloc");
-            return NULL;
-        }
-        CORE_TRACEF((
-            "Leaving s_GetDtabHeaderFromBuf() -- got dtab header \"%s\"",
-            dup_hdr));
-        return dup_hdr;
-    }
-
-    CORE_TRACE("Leaving s_GetDtabHeaderFromBuf()");
-    return NULL;
-}
-
-
-/* If there's a dtab in the user header, add it to the caller's dtab. */
-/* FIXME: User header can be a collection of lines, separated by "[\r]\n",
- * not just a single tag... */
-static void s_UpdateDtabFromUserHeader(char** dtab_p, int* success_p,
-                                       SConnNetInfo* net_info)
-{
-    char* dtab = NULL;
-
-    CORE_TRACEF(("Entering s_UpdateDtabFromUserHeader(\"%s\") -- success=%d",
-        net_info->http_user_header ? net_info->http_user_header : "",
-        *success_p));
-
-    if ( ! *success_p) {
-        CORE_TRACE("Leaving s_UpdateDtabFromUserHeader() -- prior no success");
-        return;
-    }
-
-    dtab = s_GetDtabHeaderFromBuf(net_info->http_user_header);
-    if (dtab) {
-        /*ConnNetInfo_DeleteUserHeader(net_info, DTAB_HTTP_HEADER_TAG);*/
-        s_UpdateDtab(dtab_p, dtab, success_p);
-        free(dtab);
-    }
-
-    CORE_TRACE("Leaving s_UpdateDtabFromUserHeader()");
-}
-
-
-/* If there's a dtab in the registry, add it to the caller's dtab. */
-static void s_UpdateDtabFromRegistry(char** dtab_p, int* success_p,
-                                     const char* service)
-{
-    char val[MAX_QUERY_STRING_LEN + 1];
-
-    CORE_TRACEF(("Entering s_UpdateDtabFromRegistry(\"%s\") -- success=%d",
-                 service ? service : "", *success_p));
-
-    if ( ! *success_p) {
-        CORE_TRACE("Leaving s_UpdateDtabFromRegistry() -- prior no success");
-        return;
-    }
-
-    if ( ! ConnNetInfo_GetValueService(DEF_NAMERD_REG_SECTION,
-                                       REG_NAMERD_DTAB,
-                                       val, sizeof(val),
-                                       DEF_NAMERD_DTAB)) {
-        *success_p = 0;
-        CORE_LOG_X(eNSub_Alloc, eLOG_Critical,
-                   "Couldn't alloc for dtab from registry.");
-        CORE_TRACE("Leaving s_UpdateDtabFromRegistry() -- bad alloc");
-        return;
-    }
-
-    s_UpdateDtab(dtab_p, val, success_p);
-
-    CORE_TRACE("Leaving s_UpdateDtabFromRegistry()");
-}
-
-
-/*  If net_info->http_user_header contains a DTab-Local header, that value
- *  must be moved to net_info->args, which in turn populates the "dtab"
- *  parameter in the HTTP query string.  It must not be in a header because
- *  if it was, it would apply to the namerd service itself, not the requested
- *  service.  Instead, the namerd service uses the dtab param for resolution.
- *
- *  Thus, this function builds the dtab param from (highest priority first):
- *      *   CONN_DTAB environment variable
- *      *   DTab-Local header in net_info->http_user_header
- */
-static int/*bool*/ s_ProcessDtab(SConnNetInfo* net_info, SERV_ITER iter)
-{
-#define  DTAB_ARGS_SEP  "dtab"
-    int/*bool*/ success = 1;
-    char* dtab = NULL;
-
-    CORE_TRACE("Entering s_ProcessDtab()");
-
-    /* Dtab precedence (highest first): registry > user_header */
-    s_UpdateDtabFromRegistry(&dtab, &success, iter->name);
-    s_UpdateDtabFromUserHeader(&dtab, &success, net_info);
-
-    if (success  &&  dtab
-        &&  !ConnNetInfo_AppendArg(net_info, DTAB_ARGS_SEP, dtab)) {
-        CORE_LOG_X(eNSub_TooLong, eLOG_Error, "Dtab too long.");
-        success = 0;
-    }
-
-    if (dtab)
-        free(dtab);
-
-    CORE_TRACE("Leaving s_ProcessDtab()");
-    return success;
-#undef  DTAB_ARGS_SEP
-}
-
-
-static EHTTP_HeaderParse s_ParseHeader(const char* header,
-                                       void*       iter,
-                                       int         server_error)
-{
-    struct SNAMERD_Data* data = (struct SNAMERD_Data*)((SERV_ITER) iter)->data;
-    int code = 0/*success code if any*/;
-
-    CORE_TRACEF(("Entering s_ParseHeader(\"%s\")", header));
-
-    if (server_error == 400  ||  server_error == 403  ||  server_error == 404) {
-        data->fail = 1/*true*/;
-    } else if (sscanf(header, "%*s %d", &code) < 1) {
-        data->eof = 1/*true*/;
-        CORE_TRACE("Leaving s_ParseHeader() -- eof=true");
-        return eHTTP_HeaderError;
-    }
-
-    /* check for empty document */
-    if (code == 204)
-        data->eof = 1/*true*/;
-
-    CORE_TRACE("Leaving s_ParseHeader()");
-    return eHTTP_HeaderSuccess;
-}
-
-
-static int/*bool*/ s_Adjust(SConnNetInfo* net_info,
-                            void*         iter,
-                            unsigned int  unused)
-{
-    struct SNAMERD_Data* data = (struct SNAMERD_Data*)((SERV_ITER) iter)->data;
-    return data->fail ? 0/*no more tries*/ : 1/*may try again*/;
-}
-
-
 static int/*bool*/ s_Resolve(SERV_ITER iter)
 {
-    struct SNAMERD_Data*  data = (struct SNAMERD_Data*) iter->data;
-    int/*bool*/           retval;
-    EIO_Status            status;
-    CONN                  conn;
-    CONNECTOR             c;
+    int/*bool*/ retval;
+    EIO_Status  status;
+    CONN        conn;
+    CONNECTOR   c;
 
     CORE_TRACE("Entering s_Resolve()");
-
-    if (data->eof | data->fail) {
-        CORE_LOG_X(eNSub_Logic, eLOG_Critical,
-                   "Unexpected non-zero 'data->eof | data->fail'.");
-        return 0;
-    }
-
-    /* Handle DTAB, if present. */
-    s_ProcessDtab(data->net_info, iter);
 
     /* Create connector and connection, and fetch and parse the response. */
     if (!(c = s_CreateConnector(iter))
@@ -1147,47 +753,29 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
 
     CONN_Close(conn);
 
-    CORE_TRACE("Leaving s_Resolve()");
+    CORE_TRACEF(("Leaving s_Resolve(): %d", retval));
     return retval;
 }
 
 
 static int/*bool*/ s_IsUpdateNeeded(TNCBI_Time now, struct SNAMERD_Data *data)
 {
-    /* Note: Because the namerd API does not supply rate data for many
-        of the services it resolves, a rate-based algorithm can't be used.
-        It could end up in an infinite loop because the total could be zero,
-        thus causing immediate repeated updates of the same server, forever.
-        Therefore, use a simpler algorithm that is just:
-            An update is needed if:
-            *   there are no candidates; or
-            *   any candidates are expired.
-        */
-    int     any_expired = 0;
-    size_t  i;
+    int/*bool*/ expired = 0/*false*/;
+    size_t i;
 
     /* Loop from highest index to lowest to ensure well-defined behavior when
-        candidates are removed and to avoid memmove in s_RemoveCand(). */
+       candidates are removed and to avoid memmove in s_RemoveCand(). */
     for (i = data->n_cand;  i > 0;  ) {
-        --i; /* decrement here to avoid unsigned underflow */
-        const SSERV_Info* info = data->cand[i].info;
+        const SSERV_Info* info = data->cand[--i].info;
         if (info->time < now) {
-#if defined(_DEBUG)  &&  ! defined(NDEBUG)
-            TNCBI_Time  tnow = (TNCBI_Time) time(0);
-            CORE_TRACE("Endpoint expired:");
-            CORE_TRACEF((
-                "    info->time (%u) < iter->time (%u)   now (%u)",
-                info->time, now, tnow));
-            CORE_TRACEF((
-                "    iter->time - info->time (%d)     now - iter->time (%d)",
-                now - info->time, tnow - now));
-#endif
-            any_expired = 1;
+            CORE_TRACEF(("Endpoint expired (%u < %u): %p",
+                         info->time, now, info));
             s_RemoveCand(data, i, 1);
+            expired = 1/*true*/;
         }
     }
 
-    return any_expired  ||  data->n_cand == 0;
+    return expired;
 }
 
 
@@ -1208,35 +796,35 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
 
     assert(data);
 
-    if (data->n_cand < 1  &&  data->done) {
-        data->done = 0;
+    if (!data->n_cand  &&  data->done) {
         CORE_TRACE("Leaving s_GetNextInfo() -- end of candidates");
         return 0;
     }
 
-    if (s_IsUpdateNeeded(iter->time, data)) {
-        if ( ! (data->eof | data->fail)) {
-            s_Resolve(iter);
-            if (data->n_cand < 1) {
-                data->done = 1;
-                CORE_TRACE("Leaving s_GetNextInfo() -- resolved no candidates");
-                return 0;
-            }
+    if (!data->n_cand  ||  s_IsUpdateNeeded(iter->time, data)) {
+        (void) s_Resolve(iter);
+        if (!data->n_cand) {
+            data->done = 1/*true*/;
+            CORE_TRACE("Leaving s_GetNextInfo() -- resolved no candidates");
+            return 0;
         }
     }
 
     /* Pick a randomized candidate. */
     n = LB_Select(iter, data, s_GetCandidate, NAMERD_LOCAL_BONUS);
+    assert(n < data->n_cand);
     info       = (SSERV_Info*) data->cand[n].info;
     info->rate =               data->cand[n].status;
 
     /* Remove returned info */
     s_RemoveCand(data, n, 0);
+    if (!data->n_cand)
+        data->done = 1/*true*/;
 
     if (host_info)
         *host_info = NULL;
 
-    CORE_TRACE("Leaving s_GetNextInfo()");
+    CORE_TRACEF(("Leaving s_GetNextInfo(): %p", info));
     return info;
 }
 
@@ -1257,6 +845,7 @@ static void s_Reset(SERV_ITER iter)
         }
         data->n_cand = 0;
     }
+    data->done = 0/*false*/;
 
     CORE_TRACE("Leaving s_Reset()");
 }
@@ -1279,6 +868,372 @@ static void s_Close(SERV_ITER iter)
     CORE_TRACE("Leaving s_Close()");
 }
 
+ 
+/* Update a dtab value by appending another entry. */
+static int/*bool*/ x_UpdateDtabInArgs(SConnNetInfo* net_info, const char* dtab)
+{
+    size_t dtablen, arglen, bufsize, dtab_in, dtab_out;
+    const char* arg;
+    char* buf;
+
+    CORE_TRACEF(("Entering x_UpdateDtabInArgs(\"%s\")", dtab));
+
+    /* Trim off all surrounding whitespace */
+    while (*dtab  &&  isspace((unsigned char)(*dtab)))
+        ++dtab;
+    dtablen = strlen(dtab);
+    while (dtablen  &&  isspace((unsigned char) dtab[dtablen - 1]))
+        --dtablen;
+    assert(!*dtab == !dtablen);
+
+    if (!*dtab) {
+        CORE_TRACE("Leaving x_UpdateDtabInArgs() -- nothing to do");
+        return 1/*success*/;
+    }
+
+    /* Find any existing dtab in the args */
+    arg = ConnNetInfo_GetArgs(net_info);
+    assert(arg);
+    for ( ;  *arg  &&  *arg != '#';  arg += arglen + !(arg[arglen] != '&')) {
+        arglen = strcspn(arg, "&#");
+        if (arglen < sizeof(NAMERD_DTAB_ARG))
+            continue;
+        if (strncasecmp(arg, NAMERD_DTAB_ARG "=", sizeof(NAMERD_DTAB_ARG)) !=0)
+            continue;
+        arg    += sizeof(NAMERD_DTAB_ARG);
+        arglen -= sizeof(NAMERD_DTAB_ARG);
+        if (arglen)
+            break;
+    }
+    if (*arg  &&  *arg != '#') {
+        assert(arglen);
+        CORE_TRACEF(("x_UpdateDtabInArgs() existing dtab \"%.*s\"",
+                     (int) arglen, arg));
+    } else
+        arglen = 0;
+
+    /* Prepare new argument value, appending the new dtab, if necessary */
+    bufsize = (arglen ? arglen + 3/*"%3B"*/ : 0) + dtablen * 3 + 1/*'\0'*/;
+    if (!(buf = (char*) malloc(bufsize))) {
+        CORE_LOG_X(eNSub_Alloc, eLOG_Critical, "Couldn't alloc for dtab.");
+        CORE_TRACE("Leaving x_UpdateDtabInArgs() -- bad alloc");
+        return 0/*failure*/;
+    }
+    if (arglen) {
+        memcpy(buf,            arg, arglen);
+        memcpy(buf + arglen, "%3B", 3); /* url-encoded ';' separator */
+        arglen += 3;
+    }
+
+    /* Dtabs passed as query string parameter must be url-encoded, for example:
+     *  from:   "/lbsm/bounce=>/service/xyz"
+     *  to:     "%2Flbsm%2Fbounce%3D%3E%2Fservice%2Fxyz"
+     */
+    URL_Encode(dtab,         dtablen,          &dtab_in,
+               buf + arglen, bufsize - arglen, &dtab_out);
+    assert(dtablen == dtab_in  &&  dtab_out < bufsize - arglen);
+    buf[arglen + dtab_out] = '\0'; /* not done by URL_Encode() */
+
+    if (!ConnNetInfo_PostOverrideArg(net_info, NAMERD_DTAB_ARG, buf)) {
+        CORE_LOGF_X(eNSub_BadData, eLOG_Error,
+                    ("Couldn't set dtab in args \"%s\"", buf));
+        CORE_TRACE("Leaving x_UpdateDtabInArgs() -- value too long");
+        free(buf);
+        return 0/*failure*/;
+    }
+
+    CORE_TRACEF(("Leaving x_UpdateDtabInArgs() -- new dtab \"%s\"", buf));
+    free(buf);
+    return 1/*success*/;
+}
+
+
+static char* x_GetDtabFromHeader(const char* header)
+{
+    const char* line;
+    size_t linelen;
+
+    CORE_TRACEF(("Entering x_GetDtabFromHeader(%s%s%s)",
+                 &"\""[!header], header ? header : "NULL", &"\""[!header]));
+    
+    for (line = header;  line  &&  *line;  line += linelen) {
+        const char* end = strchr(line, '\n');
+        linelen = end ? (size_t)(end - line) + 1 : strlen(line);
+        if (!(end = memchr(line, ':', linelen)))
+            continue;
+        if ((size_t)(end - line) != sizeof(DTAB_HTTP_HEADER_TAG)-2/*":\0"*/)
+            continue;
+        if (strncasecmp(line, DTAB_HTTP_HEADER_TAG,
+                        sizeof(DTAB_HTTP_HEADER_TAG)-2/*":\0"*/) == 0) {
+            line    += sizeof(DTAB_HTTP_HEADER_TAG)-1/*"\0"*/;
+            linelen -= sizeof(DTAB_HTTP_HEADER_TAG)-1/*"\0"*/;
+            CORE_TRACEF(("Leaving x_GetDtabFromHeader(): "
+                         DTAB_HTTP_HEADER_TAG " \"%.*s\"",
+                         (int) linelen, line));
+            return strndup(line, linelen);
+        }
+    }
+
+    CORE_TRACE("Leaving x_GetDtabFromHeader() -- " DTAB_HTTP_HEADER_TAG
+               " not found");
+    return (char*)(-1L);
+}
+
+
+/* Long but very linear */
+static int/*bool*/ x_SetupConnectionParams(SConnNetInfo* net_info,
+                                           const char* name)
+{
+    char buf[CONN_PATH_LEN];
+    size_t argslen, namelen;
+    char* dtab;
+    int n;
+
+    /* Scheme */
+    if ( ! ConnNetInfo_GetValueService(DEF_NAMERD_REG_SECTION,
+                                       REG_NAMERD_API_SCHEME,
+                                       buf, sizeof(buf),
+                                       DEF_NAMERD_API_SCHEME)) {
+        CORE_LOG_X(eNSub_Alloc, eLOG_Critical,
+                   "Couldn't alloc for scheme.");
+        return 0/*failed*/;
+    }
+    switch (strlen(buf)) {
+    case 0:
+        net_info->scheme = eURL_Unspec;
+        break;
+    case 4:
+        if (strcasecmp(buf, "http") == 0) {
+            net_info->scheme = eURL_Http;
+            break;
+        }
+        /*FALLTHRU*/
+    case 5:
+        if (strcasecmp(buf, "https") == 0) {
+            net_info->scheme = eURL_Https;
+            break;
+        }
+        /*FALLTHRU*/
+    default:
+        CORE_LOGF_X(eNSub_BadData, eLOG_Error,
+                    ("Unrecognized scheme \"%s\"", buf));
+        return 0/*failed*/;
+    }
+
+    /* Request method */
+    if ( ! ConnNetInfo_GetValueService(DEF_NAMERD_REG_SECTION,
+                                       REG_NAMERD_API_REQ_METHOD,
+                                       buf, sizeof(buf),
+                                       DEF_NAMERD_API_REQ_METHOD)) {
+        CORE_LOG_X(eNSub_Alloc, eLOG_Critical,
+                   "Couldn't alloc for request method.");
+        return 0/*failed*/;
+    }
+    switch (strlen(buf)) {
+    case 0:
+        net_info->req_method = eReqMethod_Any;
+        break;
+    case 3:
+        if (strcasecmp(buf, "ANY") == 0) {
+            net_info->req_method = eReqMethod_Any;
+            break;
+        }
+        if (strcasecmp(buf, "GET") == 0) {
+            net_info->req_method = eReqMethod_Get;
+            break;
+        }
+        /*FALLTHRU*/
+    case 4:
+        if (strcasecmp(buf, "POST") == 0) {
+            net_info->req_method = eReqMethod_Post;
+            break;
+        }
+        /*FALLTHRU*/
+    case 5:
+        if (strcasecmp(buf, "ANY11") == 0) {
+            net_info->req_method = eReqMethod_Any11;
+            break;
+        }
+        if (strcasecmp(buf, "GET11") == 0) {
+            net_info->req_method = eReqMethod_Get11;
+            break;
+        }
+        /*FALLTHRU*/
+    case 6:
+        if (strcasecmp(buf, "POST11") == 0) {
+            net_info->req_method = eReqMethod_Post11;
+            break;
+        }
+        /*FALLTHRU*/
+    default:
+        CORE_LOGF_X(eNSub_BadData, eLOG_Error,
+                    ("Unrecognized request method \"%s\"", strupr(buf)));
+        return 0/*failed*/;
+    }
+
+    /* Host */
+    if ( ! ConnNetInfo_GetValueService(DEF_NAMERD_REG_SECTION,
+                                       REG_NAMERD_API_HOST,
+                                       net_info->host, sizeof(net_info->host),
+                                       DEF_NAMERD_API_HOST)) {
+        CORE_LOG_X(eNSub_Alloc, eLOG_Critical,
+                   "Couldn't alloc for host.");
+        return 0/*failed*/;
+    }
+    if (NCBI_HasSpaces(net_info->host, strlen(net_info->host))) {
+        CORE_LOGF_X(eNSub_BadData, eLOG_Error,
+                    ("Bad host \"%s\"", net_info->host));
+        return 0/*failed*/;
+    }
+
+    /* Port */
+    if ( ! ConnNetInfo_GetValueService(DEF_NAMERD_REG_SECTION,
+                                       REG_NAMERD_API_PORT,
+                                       buf, sizeof(buf),
+                                       DEF_NAMERD_API_PORT)) {
+        CORE_LOG_X(eNSub_Alloc, eLOG_Critical,
+                   "Couldn't alloc for port.");
+        return 0/*failed*/;
+    }
+    /* namerd doesn't support a port -- make sure none given */
+    if (*buf  &&  (sscanf(buf, "%hu%n", &net_info->port, &n) < 1
+                   ||  net_info->port != DEF_NAMERD_API_PORT  ||  buf[n])) {
+        CORE_LOGF_X(eNSub_BadData, eLOG_Error,
+                    ("Bad port \"%s\"", buf));
+        return 0/*failed*/;
+    } else
+        net_info->port = DEF_NAMERD_API_PORT;
+
+    /* Path */
+    if ( ! ConnNetInfo_GetValueService(DEF_NAMERD_REG_SECTION,
+                                       REG_NAMERD_API_PATH,
+                                       buf, sizeof(buf),
+                                       DEF_NAMERD_API_PATH)) {
+        CORE_LOG_X(eNSub_Alloc, eLOG_Critical,
+                   "Couldn't alloc for path.");
+        return 0/*failed*/;
+    }
+    if (!ConnNetInfo_SetPath(net_info, buf)) {
+        CORE_LOGF_X(eNSub_BadData, eLOG_Error,
+                    ("Bad path \"%s\"", buf));
+        return 0/*failed*/;
+    }
+
+    /* Env */
+    if ( ! ConnNetInfo_GetValueService(DEF_NAMERD_REG_SECTION,
+                                       REG_NAMERD_API_ENV,
+                                       buf + 1, sizeof(buf) - 1,
+                                       DEF_NAMERD_API_ENV)) {
+        CORE_LOG_X(eNSub_Alloc, eLOG_Critical,
+                   "Couldn't alloc for env.");
+        return 0/*failed*/;
+    }
+    if (buf[1]) {
+        *buf = '/';
+        if (!ConnNetInfo_AddPath(net_info, buf)) {
+            CORE_LOGF_X(eNSub_Alloc, eLOG_Error,
+                        ("Couldn't set env \"%s\"", buf));
+            return 0/*failed*/;
+        }
+    }
+
+    /* Args */
+    if ( ! ConnNetInfo_GetValueService(DEF_NAMERD_REG_SECTION,
+                                       REG_NAMERD_API_ARGS,
+                                       buf, sizeof(buf),
+                                       DEF_NAMERD_API_ARGS)) {
+        CORE_LOG_X(eNSub_Alloc, eLOG_Critical,
+                   "Couldn't alloc for args.");
+        return 0/*failed*/;
+    }  
+    if ((argslen = strlen(buf)) + (namelen = strlen(name)) < sizeof(buf))
+        memcpy(buf + argslen, name, namelen + 1);
+    if (argslen + namelen >= sizeof(buf)
+        ||  !ConnNetInfo_PreOverrideArg(net_info, buf, 0)) {
+        CORE_LOGF_X(eNSub_BadData, eLOG_Error,
+                    ("Args too long \"%s\"", buf));
+        return 0/*failed*/;
+    }
+
+    /* Proxy: $http_proxy not overridden */
+    if (!net_info->http_proxy_host[0]  ||
+        !net_info->http_proxy_port     ||
+        !net_info->http_proxy_only) {
+        if ( ! ConnNetInfo_GetValueService(DEF_NAMERD_REG_SECTION,
+                                           REG_NAMERD_PROXY_HOST,
+                                           net_info->http_proxy_host,
+                                           sizeof(net_info->http_proxy_host),
+                                           DEF_NAMERD_PROXY_HOST)) {
+            CORE_LOG_X(eNSub_Alloc, eLOG_Critical,
+                       "Couldn't get http proxy host.");
+            return 0/*failed*/;
+        }
+        if (!net_info->http_proxy_host[0]
+            ||  NCBI_HasSpaces(net_info->http_proxy_host,
+                               strlen(net_info->http_proxy_host))) {
+            CORE_LOGF_X(eNSub_BadData, eLOG_Error,
+                        ("%s proxy host \"%s\"",
+                         net_info->http_proxy_host[0] ? "Bad" : "Empty",
+                         net_info->http_proxy_host));
+            return 0/*failed*/;
+        }
+        if ( ! ConnNetInfo_GetValueService(DEF_NAMERD_REG_SECTION,
+                                           REG_NAMERD_PROXY_PORT,
+                                           buf, sizeof(buf),
+                                           DEF_NAMERD_PROXY_PORT)) {
+            CORE_LOG_X(eNSub_Alloc, eLOG_Critical,
+                       "Couldn't get http proxy port.");
+            return 0/*failed*/;
+        }
+        if (!*buf  ||  sscanf(buf, "%hu%n", &net_info->http_proxy_port, &n) < 1
+            ||  !net_info->http_proxy_port  ||  buf[n]) {
+            CORE_LOGF_X(eNSub_BadData, eLOG_Error,
+                        ("%s proxy port \"%s\"", *buf ? "Bad" : "Empty", buf));
+            return 0/*failed*/;
+        }
+        net_info->http_proxy_only = 0;  /* just in case */
+    }
+
+    /* Lastly, DTABs */
+    /*  If net_info->http_user_header contains a DTab-Local: header, that value
+     *  must be moved to net_info->args, which in turn populates the "dtab"
+     *  argument in the HTTP query string.  It must not be in a header because
+     *  if it was, it would apply to the namerd service itself, not the
+     *  requested service.  Instead, the namerd service uses the dtab argument
+     *  for resolution. */
+    /* 1: service DTAB (either service-specific or global) */
+    if (!(dtab = x_GetDtabFromHeader(net_info->http_user_header))) {
+        CORE_LOG_X(eNSub_Alloc, eLOG_Critical,
+                   "Couldn't get dtab from http header.");
+        return 0/*failed*/;
+    }
+    if (dtab  &&  dtab != (const char*)(-1L)) {
+        if (!x_UpdateDtabInArgs(net_info, dtab))
+            return 0/*failed*/;
+        free(dtab);
+    }
+    /* 2: NAMERD DTAB */
+    if ( ! ConnNetInfo_GetValueService(DEF_NAMERD_REG_SECTION,
+                                       REG_NAMERD_DTAB,
+                                       buf + sizeof(DTAB_HTTP_HEADER_TAG),
+                                       sizeof(buf)
+                                       - sizeof(DTAB_HTTP_HEADER_TAG),
+                                       DEF_NAMERD_DTAB)) {
+        CORE_LOG_X(eNSub_Alloc, eLOG_Critical,
+                   "Couldn't get NAMERD dtab from registry.");
+        return 0/*failed*/;
+    }
+    memcpy(buf, DTAB_HTTP_HEADER_TAG " ", sizeof(DTAB_HTTP_HEADER_TAG));
+    /* note that it also clears remnants of a service DTAB if "buf" is empty */
+    if (!ConnNetInfo_OverrideUserHeader(net_info, buf)) {
+        CORE_LOG_X(eNSub_Alloc, eLOG_Error,
+                   "Couldn't set NAMERD dtab in http header.");
+        return 0/*failed*/;
+    }
+
+    return 1/*succeeded*/;
+}
+
 
 /***********************************************************************
  *  EXTERNAL
@@ -1290,7 +1245,6 @@ extern const SSERV_VTable* SERV_NAMERD_Open(SERV_ITER           iter,
 {
     struct SNAMERD_Data* data;
     SConnNetInfo*        net_info;
-    char                 buf[(CONN_PATH_LEN+1)/2];
 
     assert(iter  &&  x_net_info  &&  !iter->data  &&  !iter->op);
     if (iter->ismask)
@@ -1318,7 +1272,7 @@ extern const SSERV_VTable* SERV_NAMERD_Open(SERV_ITER           iter,
 
     if ( ! (net_info = ConnNetInfo_Clone(x_net_info))) {
         CORE_LOG_X(eNSub_Alloc, eLOG_Critical, "Couldn't clone net_info.");
-        CORE_TRACE("Leaving SERV_NAMERD_Open() -- fail, no net_info clone");
+        CORE_TRACE("Leaving SERV_NAMERD_Open() -- fail, net_info clone");
         goto out;
     }
     data->net_info = net_info;
@@ -1335,47 +1289,11 @@ extern const SSERV_VTable* SERV_NAMERD_Open(SERV_ITER           iter,
         goto out;
     }
 
-    net_info->scheme      = s_GetScheme();
-    net_info->req_method  = s_GetReqMethod();
-
-    if ( ! ConnNetInfo_GetValueService(DEF_NAMERD_REG_SECTION,
-                                       REG_NAMERD_API_HOST,
-                                       net_info->host, sizeof(net_info->host),
-                                       DEF_NAMERD_API_HOST)) {
-        net_info->host[0] = '\0';
-    }
-    net_info->port        = 0; /* namerd doesn't support a port */
-    if ( ! ConnNetInfo_GetValueService(DEF_NAMERD_REG_SECTION,
-                                       REG_NAMERD_API_PATH,
-                                       buf, sizeof(buf),
-                                       DEF_NAMERD_API_PATH)) {
-        ConnNetInfo_SetPath(net_info, "");
-    } else
-        ConnNetInfo_SetPath(net_info, buf);
-    if (ConnNetInfo_GetValueService(DEF_NAMERD_REG_SECTION,
-                                    REG_NAMERD_API_ENV,
-                                    buf + 1, sizeof(buf) - 1,
-                                    DEF_NAMERD_API_ENV)  &&  buf[1]) {
-        *buf = '/';
-        ConnNetInfo_AddPath(net_info, buf);
-    }
-
-    if (ConnNetInfo_GetValueService(DEF_NAMERD_REG_SECTION,
-                                    REG_NAMERD_API_ARGS,
-                                    buf, sizeof(buf),
-                                    DEF_NAMERD_API_ARGS)) {
-        size_t argslen = strlen(buf);
-        size_t namelen = strlen(iter->name);
-        if (argslen + namelen < sizeof(buf)) {
-            memcpy(buf + argslen, iter->name, namelen + 1);
-            ConnNetInfo_PreOverrideArg(net_info, buf, 0);
-        }
-    }
-
-    if ( ! s_GetHttpProxy(net_info)) {
-        CORE_TRACE("Leaving SERV_NAMERD_Open() -- fail, HTTP proxy");
+    if (!x_SetupConnectionParams(net_info, iter->name)) {
+        CORE_TRACE("Leaving SERV_NAMERD_Open() -- fail, connection params");
         goto out;
     }
+
     ConnNetInfo_ExtendUserHeader(net_info,
                                  "User-Agent: NCBINamerdMapper"
 #ifdef NCBI_CXX_TOOLKIT
@@ -1390,12 +1308,12 @@ extern const SSERV_VTable* SERV_NAMERD_Open(SERV_ITER           iter,
         srand(g_NCBI_ConnectRandomSeed);
     }
 
-    s_Resolve(iter);
-
-    if (!data->n_cand) {
+    if (!s_Resolve(iter)) {
         CORE_TRACE("Leaving SERV_NAMERD_Open() -- service not found");
         goto out;
     }
+    if (data->n_cand)
+        data->done = 1/*true*/;
 
     /* call GetNextInfo subsequently if info is actually needed */
     if (info)
