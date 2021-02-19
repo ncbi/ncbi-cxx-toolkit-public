@@ -199,11 +199,6 @@ NCBI_define_Xcomponent(NAME PNG MODULE libpng PACKAGE PNG LIB png)
 NCBI_define_Xcomponent(NAME TIFF MODULE libtiff-4 PACKAGE TIFF LIB tiff)
 
 #############################################################################
-# TLS
-set(NCBI_COMPONENT_TLS_FOUND YES)
-list(APPEND NCBI_ALL_COMPONENTS TLS)
-
-#############################################################################
 # FASTCGI
 set(NCBI_COMPONENT_FASTCGI_FOUND NO)
 
@@ -402,13 +397,10 @@ NCBI_define_Xcomponent(NAME NETTLE LIB hogweed nettle ADD_COMPONENT GMP)
 
 #############################################################################
 # GNUTLS
+set(NCBI_COMPONENT_TLS_FOUND YES)
 set(NCBI_COMPONENT_GNUTLS_FOUND NO)
 if(DEFINED NCBI_COMPONENT_GNUTLS_DISABLED AND NOT NCBI_COMPONENT_GNUTLS_DISABLED)
     NCBI_define_Xcomponent(NAME GNUTLS LIB gnutls ADD_COMPONENT NETTLE)
-    if(NCBI_COMPONENT_GNUTLS_FOUND)
-        set(NCBI_COMPONENT_TLS_INCLUDE ${NCBI_COMPONENT_GNUTLS_INCLUDE} ${NCBI_COMPONENT_TLS_INCLUDE})
-        set(NCBI_COMPONENT_TLS_LIBS    ${NCBI_COMPONENT_GNUTLS_LIBS}    ${NCBI_COMPONENT_TLS_LIBS})
-    endif()
 endif()
 
 

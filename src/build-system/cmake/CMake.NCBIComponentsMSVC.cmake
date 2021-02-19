@@ -235,20 +235,11 @@ NCBI_define_Wcomponent(GIF libgif.lib)
 NCBI_define_Wcomponent(TIFF libtiff.lib)
 
 #############################################################################
-# TLS
-set(NCBI_COMPONENT_TLS_FOUND YES)
-list(APPEND NCBI_ALL_COMPONENTS TLS)
-
-#############################################################################
 # GNUTLS
+set(NCBI_COMPONENT_TLS_FOUND YES)
 set(NCBI_COMPONENT_GNUTLS_FOUND NO)
 if(DEFINED NCBI_COMPONENT_GNUTLS_DISABLED AND NOT NCBI_COMPONENT_GNUTLS_DISABLED)
     NCBI_define_Wcomponent(GNUTLS libgnutls-30.lib)
-    if(NCBI_COMPONENT_GNUTLS_FOUND)
-        set(NCBI_COMPONENT_TLS_INCLUDE ${NCBI_COMPONENT_GNUTLS_INCLUDE} ${NCBI_COMPONENT_TLS_INCLUDE})
-        set(NCBI_COMPONENT_TLS_LIBS    ${NCBI_COMPONENT_GNUTLS_LIBS}    ${NCBI_COMPONENT_TLS_LIBS})
-        set(NCBI_COMPONENT_TLS_BINPATH ${NCBI_COMPONENT_GNUTLS_BINPATH})
-    endif()
 endif()
 
 #############################################################################
