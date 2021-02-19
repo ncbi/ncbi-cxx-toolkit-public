@@ -47,6 +47,9 @@ BEGIN_NAMESPACE(psg);
 BEGIN_NAMESPACE(osg);
 
 
+static const bool kAlwaysAskForBlobId = true;
+
+
 CPSGS_OSGResolve::CPSGS_OSGResolve(const CRef<COSGConnectionPool>& pool,
                                    const shared_ptr<CPSGS_Request>& request,
                                    const shared_ptr<CPSGS_Reply>& reply,
@@ -115,9 +118,11 @@ void CPSGS_OSGResolve::CreateRequests()
       TODO
       fPSGS_SeqState = (1 << 12),
     */
-    if ( psg_req.m_IncludeDataFlags &
-         (psg_req.fPSGS_BlobId |
-          psg_req.fPSGS_State) ) {
+    if ( kAlwaysAskForBlobId ||
+         (psg_req.m_IncludeDataFlags &
+          (psg_req.fPSGS_BlobId |
+           psg_req.fPSGS_State |
+           psg_req.fPSGS_DateChanged)) ) {
         // blob id or state
         CRef<CID2_Request> osg_req(new CID2_Request);
         auto& req = osg_req->SetRequest().SetGet_blob_id();
@@ -137,6 +142,7 @@ void CPSGS_OSGResolve::CreateRequests()
 
 void CPSGS_OSGResolve::ProcessReplies()
 {
+    bool got_blob_id = false;
     for ( auto& f : GetFetches() ) {
         for ( auto& r : f->GetReplies() ) {
             switch ( r->GetReply().Which() ) {
@@ -146,12 +152,9 @@ void CPSGS_OSGResolve::ProcessReplies()
                 break;
             case CID2_Reply::TReply::e_Get_seq_id:
                 ProcessResolveReply(*r);
-                if ( m_BioseqInfoFlags != 0 ) {
-                    // resolved to OSG sequence
-                    SignalStartProcessing();
-                }
                 break;
             case CID2_Reply::TReply::e_Get_blob_id:
+                got_blob_id = true;
                 ProcessResolveReply(*r);
                 if ( m_BioseqInfoFlags & SPSGS_ResolveRequest::fPSGS_BlobId ) {
                     // resolved to OSG sequence
@@ -166,6 +169,10 @@ void CPSGS_OSGResolve::ProcessReplies()
         }
     }
     if ( m_BioseqInfoFlags == 0 ) {
+        FinalizeResult(ePSGS_NotFound);
+    }
+    else if ( got_blob_id && !(m_BioseqInfoFlags & SPSGS_ResolveRequest::fPSGS_BlobId) ) {
+        // got non-OSG blob-id -> non-OSG sequence
         FinalizeResult(ePSGS_NotFound);
     }
     else {
