@@ -41,6 +41,8 @@ BEGIN_NCBI_SCOPE
 class IBalanceable
 {
 public:
+    virtual ~IBalanceable()
+        { }
     virtual const string& ServerName(void) const = 0;
     virtual Uint4 Host(void) const = 0;
     virtual Uint2 Port(void) const = 0;
@@ -63,13 +65,14 @@ protected:
     void x_InitFromCounts(const TCounts& counts);
     TSvrRef x_GetServer(const void* params, IBalanceable** conn);
 
-    virtual IBalanceable* x_TryPool(const void* params)
+    virtual IBalanceable* x_TryPool(const void* /* params */)
         { return nullptr; }
-    virtual unsigned int x_GetCount(const void* params, const string& name)
+    virtual unsigned int x_GetCount(const void* /* params */,
+                                    const string& /* name */)
         { return 0u; }
-    virtual unsigned int x_GetPoolMax(const void* params)
+    virtual unsigned int x_GetPoolMax(const void* /* params */)
         { return 0u; }
-    virtual void x_Discard(const void* params, IBalanceable* conn)
+    virtual void x_Discard(const void* /* params */, IBalanceable* /* conn */)
         { }
     
 private:
