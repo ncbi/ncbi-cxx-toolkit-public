@@ -328,7 +328,7 @@ DISCREPANCY_AUTOFIX(MISMATCHED_COMMENTS)
         CSeqdesc* desc_handle = const_cast<CSeqdesc*>(desc);
         desc_handle->SetComment(data->Value);
         obj->SetFixed();
-        return CRef<CAutofixReport>(new CAutofixReport("MISMATCHED_COMMENTS: Replaced [n] coment[s] with " + data->Value, 1));
+        return CRef<CAutofixReport>(new CAutofixReport("MISMATCHED_COMMENTS: Replaced [n] comment[s] with " + data->Value, 1));
     }
     return CRef<CAutofixReport>();
 }

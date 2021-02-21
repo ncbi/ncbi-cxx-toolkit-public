@@ -130,8 +130,8 @@ void CDiscRepApp::Init()
     arg_desc->AddDefaultKey("x", "Suffix", "File Selection Substring", CArgDescriptions::eString, ".sqn");
     arg_desc->AddOptionalKey("outdir", "OutputDirectory", "Output Directory", CArgDescriptions::eString);
 
-    arg_desc->AddOptionalKey("e", "EnableTests", "List of enabled tests, seperated by ','", CArgDescriptions::eString);
-    arg_desc->AddOptionalKey("d", "DisableTests",  "List of disabled tests, seperated by ','", CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("e", "EnableTests", "List of enabled tests, separated by ','", CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("d", "DisableTests",  "List of disabled tests, separated by ','", CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("a", "Asn1Type", "Asn.1 Type: a: Any, e: Seq-entry, b: Bioseq, s: Bioseq-set, m: Seq-submit, t: Batch Bioseq-set, u: Batch Seq-submit, c: Catenated seq-entry", CArgDescriptions::eString);
     // use CArgAllow_Strings
