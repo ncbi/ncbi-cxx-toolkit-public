@@ -753,7 +753,7 @@ void CSingleFeatValidator::x_ValidateSeqFeatLoc()
                 bool mostly_raw_ns = x_IsMostlyNs(m_Feat.GetLocation(), m_LocationBioseq);
 
                 if ((rval & eLocationGapMostlyNs) || mostly_raw_ns) {
-                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_FeatureIsMostlyNs,
+                    PostErr(eDiag_Info, eErr_SEQ_FEAT_FeatureIsMostlyNs,
                         "Feature contains more than 50% Ns");
                 }
                 for (auto gap_start : gap_starts) {
@@ -767,7 +767,7 @@ void CSingleFeatValidator::x_ValidateSeqFeatLoc()
                 }
                 if (m_Feat.GetData().IsCdregion() || m_Feat.GetData().IsRna()) {
                     if (rval & eLocationGapInternalIntervalEndpointInGap) {
-                        PostErr(eDiag_Warning, eErr_SEQ_FEAT_IntervalBeginsOrEndsInGap,
+                        PostErr(eDiag_Info, eErr_SEQ_FEAT_IntervalBeginsOrEndsInGap,
                             "Internal interval begins or ends in gap");
                     }
                     if (rval & eLocationGapCrossesUnknownGap) {

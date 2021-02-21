@@ -386,7 +386,7 @@ void CCdregionValidator::x_ReportTranslationProblems(const CCDSTranslationProble
     }
 
     if (problem_flags & CCDSTranslationProblems::eCDSTranslationProblem_TooManyX) {
-        PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDShasTooManyXs, "CDS translation consists of more than 50% X residues");
+        PostErr(eDiag_Info, eErr_SEQ_FEAT_CDShasTooManyXs, "CDS translation consists of more than 50% X residues");
     }
 
     if (problems.UnableToTranslate()) {

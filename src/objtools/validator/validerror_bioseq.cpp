@@ -3405,12 +3405,12 @@ void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
         }
 
         if (begin_ambig && !s_WillReportTerminalGap(seq, bsh)) {
-            PostErr(eDiag_Warning, eErr_SEQ_INST_HighNpercent5Prime,
+            PostErr(eDiag_Info, eErr_SEQ_INST_HighNpercent5Prime,
                 "Sequence has more than 5 Ns in the first 10 bases or more than 15 Ns in the first 50 bases",
                 seq);
         }
         if (end_ambig && !s_WillReportTerminalGap(seq, bsh)) {
-            PostErr(eDiag_Warning, eErr_SEQ_INST_HighNpercent3Prime,
+            PostErr(eDiag_Info, eErr_SEQ_INST_HighNpercent3Prime,
                 "Sequence has more than 5 Ns in the last 10 bases or more than 15 Ns in the last 50 bases",
                 seq);
         }
@@ -3603,7 +3603,7 @@ void CValidError_bioseq::ValidateRawConst(
         if (check_alphabet) {
             unsigned int trailingX = 0;
             size_t dashes = 0;
-            bool leading_x = false, found_lower = false;
+            bool leading_x = false, found_lower = false, cds_5_prime = false;
 
             CConstRef<CSeqVector> sv = MakeSeqVectorForResidueCounting(bsh); 
             CSeqVector sv_res = bsh.GetSeqVector(CBioseq_Handle::eCoding_Ncbi);
@@ -3690,9 +3690,10 @@ void CValidError_bioseq::ValidateRawConst(
                 CBioseq_Handle bsh = m_Scope->GetBioseqHandle (seq);
                 const CSeq_feat* cds = GetCDSForProduct(bsh);
                 if (cds && cds->IsSetLocation()) {
-                    size_t dna_len = GetLength (cds->GetLocation(), m_Scope);
+                    const CSeq_loc& cdsloc = cds->GetLocation();
+                    size_t dna_len = GetLength (cdsloc, m_Scope);
                     if (dna_len > 5) {
-                        string cds_seq = GetSequenceStringFromLoc (cds->GetLocation(), *m_Scope);
+                        string cds_seq = GetSequenceStringFromLoc (cdsloc, *m_Scope);
                         if (cds->GetData().GetCdregion().IsSetFrame()) {
                             if (cds->GetData().GetCdregion().GetFrame() == 2) {
                                 cds_seq = cds_seq.substr(1);
@@ -3711,11 +3712,21 @@ void CValidError_bioseq::ValidateRawConst(
                             }
                         }
                     }
+                    // only need to calculate cds_5_prime to set severity for subsequent eErr_SEQ_INST_LeadingX message
+                    if (leading_x) {
+                        if (cdsloc.IsPartialStart(eExtreme_Biological)) {
+                            cds_5_prime = true;
+                        }
+                    }
                 }
             }
 
             if (leading_x) {
-                PostErr (eDiag_Warning, eErr_SEQ_INST_LeadingX, 
+                EDiagSev sev = eDiag_Warning;
+                if (cds_5_prime) {
+                    sev = eDiag_Info;
+                }
+                PostErr (sev, eErr_SEQ_INST_LeadingX, 
                          "Sequence starts with leading X", seq);
             }
                 
