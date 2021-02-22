@@ -51,7 +51,7 @@ static const char* kPassThrough_ClientIp = "ncbi_client_ip";
 static const char* kPassThrough_Dtab = "ncbi_dtab";
 
 
-CAtomicCounter_WithAutoInit CRequestContext::sm_VersionCounter;
+CAtomicCounter CRequestContext::sm_VersionCounter;
 
 
 CRequestContext::CRequestContext(TContextFlags flags)

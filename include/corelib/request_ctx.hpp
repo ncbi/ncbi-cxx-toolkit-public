@@ -469,7 +469,7 @@ private:
     // Context values loaded from the global environment.
     static unique_ptr<TPassThroughProperties> sm_EnvContextProperties;
 
-    static CAtomicCounter_WithAutoInit sm_VersionCounter;
+    static CAtomicCounter sm_VersionCounter;
 };
 
 
