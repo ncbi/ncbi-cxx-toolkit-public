@@ -4413,6 +4413,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "MHA\ts\tMain Botanical Garden of the Russian Academy of Sciences\t\t\t",
 "MHES\ts\tMuseo de Historia Natural de El Salvador\t\t\t",
 "MHH\tc\tInstitute of Virology\t\t\t",
+"MHHNU\ts\tMycological Herbarium of Hunan Normal University\t\t\t",
 "MHL\ts\tMildenhall and District Museum\t\t\t",
 "MHLCLF\ts\tMuseum Henri Lecoq Clermont-Ferrand\t\t\t",
 "MHM\ts\tMalham Tarn Field Centre\t\t\t",

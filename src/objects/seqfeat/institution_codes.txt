@@ -4380,6 +4380,7 @@ MH<IND>	s	Tamil Nadu Agricultural University
 MHA	s	Main Botanical Garden of the Russian Academy of Sciences			
 MHES	s	Museo de Historia Natural de El Salvador			
 MHH	c	Institute of Virology			
+MHHNU	s	Mycological Herbarium of Hunan Normal University			
 MHL	s	Mildenhall and District Museum			
 MHLCLF	s	Museum Henri Lecoq Clermont-Ferrand			
 MHM	s	Malham Tarn Field Centre			
