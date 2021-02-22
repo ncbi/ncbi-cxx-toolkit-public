@@ -348,6 +348,12 @@ public:
     /// Get current read-only flag.
     bool GetReadOnly(void) const { return m_IsReadOnly; }
 
+    typedef int TVersion;
+
+    /// Return version increased on every context change (hit/subhit id, client ip,
+    /// session id).
+    TVersion GetVersion(void) const { return m_Version; }
+
 private:
     // Prohibit copying
     CRequestContext(const CRequestContext&);
@@ -415,6 +421,9 @@ private:
     bool x_LogHitIDOnError(void) const;
 
     bool x_CanModify(void) const;
+
+    // Bumps context version.
+    void x_Modify(void);
         
     enum FLoggedHitIDFlag {
         fLoggedOnRequest = 1, // Logged on creation or request start
@@ -444,6 +453,7 @@ private:
     // TID of the thread currently using this context or -1.
     Uint8          m_OwnerTID;
     bool           m_IsReadOnly;
+    TVersion       m_Version;
 
     // Name/value map for properties to be passed between requests.
     // @sa CRequestContext_PassThrough
@@ -594,6 +604,7 @@ void CRequestContext::SetRequestID(TCount rid)
     if (!x_CanModify()) return;
     x_SetProp(eProp_RequestID);
     m_RequestID = rid;
+    x_Modify();
 }
 
 inline
@@ -616,6 +627,7 @@ void CRequestContext::UnsetRequestID(void)
     if (!x_CanModify()) return;
     x_UnsetProp(eProp_RequestID);
     m_RequestID = 0;
+    x_Modify();
 }
 
 
@@ -637,6 +649,7 @@ void CRequestContext::UnsetClientIP(void)
     if (!x_CanModify()) return;
     x_UnsetProp(eProp_ClientIP);
     m_ClientIP.clear();
+    x_Modify();
 }
 
 
@@ -678,6 +691,7 @@ void CRequestContext::UnsetSessionID(void)
     if (!x_CanModify()) return;
     x_UnsetProp(eProp_SessionID);
     m_SessionID.SetString(kEmptyStr);
+    x_Modify();
 }
 
 
@@ -704,6 +718,7 @@ void CRequestContext::UnsetHitID(void)
     if (!x_CanModify()) return;
     x_UnsetProp(eProp_HitID);
     m_HitID.SetHitId(kEmptyStr);
+    x_Modify();
     m_HitIDLoggedFlag = 0;
     m_SubHitIDCache.clear();
 }
@@ -890,6 +905,13 @@ bool CRequestContext::x_CanModify(void) const
         return false;
     }
     return true;
+}
+
+
+inline
+void CRequestContext::x_Modify(void)
+{
+    m_Version++;
 }
 
 

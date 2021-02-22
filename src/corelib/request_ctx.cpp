@@ -64,7 +64,8 @@ CRequestContext::CRequestContext(TContextFlags flags)
       m_AutoIncOnPost(false),
       m_Flags(flags),
       m_OwnerTID(-1),
-      m_IsReadOnly(false)
+      m_IsReadOnly(false),
+      m_Version(0)
 {
     x_LoadEnvContextProperties();
 }
@@ -212,11 +213,13 @@ void CRequestContext::SetClientIP(const string& client)
     string ip = NStr::TruncateSpaces(client);
     if ( !NStr::IsIPAddress(ip) ) {
         m_ClientIP = kBadIP;
+        x_Modify();
         ERR_POST_X(25, "Bad client IP value: " << ip);
         return;
     }
 
     m_ClientIP = ip;
+    x_Modify();
 }
 
 
@@ -345,31 +348,33 @@ void CRequestContext::x_SetHitID(const CSharedHitId& hit_id)
         ERR_POST_X(28, Warning << "Changing hit ID after one has been logged. "
             "New hit id is: " << hit);
     }
-    if (m_HitID.GetHitId() == hit) return;
 
-    static CSafeStatic<TOnBadHitId> action;
-    if ( !IsValidHitID(hit) ) {
-        switch ( action->Get() ) {
-        case eOnBadPHID_Ignore:
-            return;
-        case eOnBadPHID_AllowAndReport:
-            ERR_POST_X(27, Warning << "Bad hit ID format: " << hit);
-            break;
-        case eOnBadPHID_IgnoreAndReport:
-            ERR_POST_X(27, Warning << "Bad hit ID format: " << hit);
-            return;
-        case eOnBadPHID_Throw:
-            NCBI_THROW(CRequestContextException, eBadHit,
-                "Bad hit ID format: " + hit);
-            break;
-        case eOnBadPHID_Allow:
-            break;
+    if (m_HitID.GetHitId() != hit) {
+        static CSafeStatic<TOnBadHitId> action;
+        if (!IsValidHitID(hit)) {
+            switch (action->Get()) {
+            case eOnBadPHID_Ignore:
+                return;
+            case eOnBadPHID_AllowAndReport:
+                ERR_POST_X(27, Warning << "Bad hit ID format: " << hit);
+                break;
+            case eOnBadPHID_IgnoreAndReport:
+                ERR_POST_X(27, Warning << "Bad hit ID format: " << hit);
+                return;
+            case eOnBadPHID_Throw:
+                NCBI_THROW(CRequestContextException, eBadHit,
+                    "Bad hit ID format: " + hit);
+                break;
+            case eOnBadPHID_Allow:
+                break;
+            }
         }
     }
     x_SetProp(eProp_HitID);
 
     m_SubHitIDCache.clear();
     m_HitID = hit_id;
+    x_Modify();
     m_HitIDLoggedFlag = 0;
     x_LogHitID();
 }
@@ -397,8 +402,14 @@ void CRequestContext::x_UpdateSubHitID(bool increment, CTempString prefix)
     // duplicate phids in different threads.
     string hit_id = GetHitID();
 
-    unsigned int sub_hit_id = increment ?
-        m_HitID.GetNextSubHitId() : m_HitID.GetCurrentSubHitId();
+    unsigned int sub_hit_id;
+    if (increment) {
+        sub_hit_id = m_HitID.GetNextSubHitId();
+        x_Modify();
+    }
+    else {
+        sub_hit_id = m_HitID.GetCurrentSubHitId();
+    }
 
     // Cache the string so that C code can use it.
     string subhit = prefix + NStr::NumericToString(sub_hit_id);
@@ -434,6 +445,7 @@ void CRequestContext::SetSessionID(const string& session)
     }
     x_SetProp(eProp_SessionID);
     m_SessionID.SetString(session);
+    x_Modify();
 }
 
 
@@ -551,6 +563,7 @@ CRef<CRequestContext> CRequestContext::Clone(void) const
     ret->m_AutoIncOnPost = m_AutoIncOnPost;
     ret->m_Flags = m_Flags;
     ret->m_IsReadOnly = m_IsReadOnly;
+    ret->m_Version = m_Version;
     return ret;
 }
 
