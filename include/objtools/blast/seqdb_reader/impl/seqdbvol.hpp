@@ -351,11 +351,9 @@ public:
     ///   within the previous lease [in]
     /// @return
     ///   The length of this sequence in bases.
-    int GetSequence(int oid, const char ** buffer,
-                    CSeqDBLockHold & locked,
-                    bool in_lease = false) const
+    int GetSequence(int oid, const char ** buffer) const
     {
-        return x_GetSequence(oid, buffer, true, false, in_lease);
+        return x_GetSequence(oid, buffer);
     }
 
     /// Get a sequence with ambiguous regions.
@@ -1208,10 +1206,7 @@ private:
     /// @return
     ///     The length of the sequence in bases.
     int x_GetSequence(int              oid,
-                      const char    ** buffer,
-                      bool             keep,                      
-                      bool             can_release,
-                      bool             in_lease = false) const;
+                      const char    ** buffer) const;
 
     /// Get partial sequence data.
     ///

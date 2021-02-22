@@ -1359,7 +1359,7 @@ CSeqDBVol::GetBioseq(int                    oid,
 
     if (seqdata) {
         const char * seq_buffer = 0;
-        int length = x_GetSequence(oid, & seq_buffer, false, false);
+        int length = x_GetSequence(oid, & seq_buffer);
 
         if (length < 1) {
             return null_result;
@@ -1534,7 +1534,7 @@ int CSeqDBVol::GetAmbigPartialSeq(int                oid,
 	}
 
     const char * tmp(0);
-    int base_length = x_GetSequence(oid, &tmp, false, false);
+    int base_length = x_GetSequence(oid, &tmp);
 	if (base_length < 1) {
 	    NCBI_THROW(CSeqDBException, eFileErr, "Error: could not get sequence or range.");
 	}
@@ -1601,10 +1601,7 @@ int CSeqDBVol::x_GetAmbigSeq(int                oid,
     // argument ties the lifetime to the CSeqDBSeqFile's memory lease.
 
     const char * tmp(0);
-    int base_length = x_GetSequence(oid,
-                                    &tmp,
-                                    false,                                   
-                                    false);
+    int base_length = x_GetSequence(oid, &tmp);
 
     if (region && region->end > base_length )
         NCBI_THROW(CSeqDBException, eFileErr, "Error: region beyond sequence range.");
@@ -1755,10 +1752,7 @@ void SeqDB_UnpackAmbiguities(const CTempString & sequence,
 
 
 int CSeqDBVol::x_GetSequence(int              oid,
-                             const char    ** buffer,
-                             bool             keep,                             
-                             bool             can_release,
-                             bool             in_lease) const
+                             const char    ** buffer) const
 {
     TIndx start_offset = 0;
     TIndx end_offset   = 0;
@@ -2903,7 +2897,7 @@ CSeqDBVol::GetSeqData(int              oid,
         const char * buffer(0);
         TSeqPos      length(0);
 
-        length = x_GetSequence(oid, & buffer, false, false);
+        length = x_GetSequence(oid, & buffer);
 
         if ((begin >= end) || (end > length)) {
             NCBI_THROW(CSeqDBException,

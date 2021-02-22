@@ -761,12 +761,15 @@ public:
     /// @param filename
     ///   file to memory map    
     void Init(const string filename) {                
+    	 CSeqDBLockHold locked(m_Atlas);
+    	 m_Atlas.Lock(locked);
         if(!m_MappedFile || m_Filename != filename)
         {
         	Clear();
             m_Filename = filename;
             Init();
         }
+        m_Atlas.Unlock(locked);
     }
 
     //m_Filename is set

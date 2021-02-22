@@ -1397,13 +1397,13 @@ private:
     mutable vector<SSeqResBuffer *> m_CachedSeqs;
 
     /// Fill up the buffer
-    void x_FillSeqBuffer(SSeqResBuffer * buffer, int oid, CSeqDBLockHold &locked) const;
+    void x_FillSeqBuffer(SSeqResBuffer * buffer, int oid) const;
 
     /// Get sequence from buffer
     int x_GetSeqBuffer(SSeqResBuffer * buffer, int oid, const char ** seq) const;
 
     /// Return sequence to buffer
-    void x_RetSeqBuffer(SSeqResBuffer * buffer, CSeqDBLockHold & locked) const;
+    void x_RetSeqBuffer(SSeqResBuffer * buffer) const;
 
     /// Initialize Id Set
     void x_InitIdSet();

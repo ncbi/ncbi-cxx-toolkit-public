@@ -336,7 +336,7 @@ CSeqDBImpl::GetNextOIDChunk(int         & begin_chunk, // out
     // fill the cache for all sequence in mmaped slice
     if (m_NumThreads) {
         SSeqResBuffer * buffer = m_CachedSeqs[cacheID];
-        x_FillSeqBuffer(buffer, begin_chunk, locked);
+        x_FillSeqBuffer(buffer, begin_chunk);
         end_chunk = begin_chunk + buffer->results.size();
     } else {
         end_chunk = begin_chunk + oid_size;
@@ -664,8 +664,7 @@ void CSeqDBImpl::RetAmbigSeq(const char ** buffer) const
     *buffer = 0;
 }
 
-void CSeqDBImpl::x_RetSeqBuffer(SSeqResBuffer * buffer,
-                                CSeqDBLockHold & locked ) const
+void CSeqDBImpl::x_RetSeqBuffer(SSeqResBuffer * buffer) const
 {
     // client must return sequence before getting a new one
     if (buffer->checked_out > 0) {
@@ -673,13 +672,6 @@ void CSeqDBImpl::x_RetSeqBuffer(SSeqResBuffer * buffer,
     }
 
     buffer->checked_out = 0;
-
-    m_Atlas.Lock(locked);
-/*
-    for(Uint4 index = 0; index < buffer->results.size(); ++index) {
-        m_Atlas.RetRegion(buffer->results[index].address);
-    }
-*/
     buffer->results.clear();
 }
 
@@ -694,24 +686,17 @@ int CSeqDBImpl::x_GetSeqBuffer(SSeqResBuffer * buffer, int oid,
         return buffer->results[index].length;
     }
 
-    // Not in cache, fill the cache
-    CSeqDBLockHold locked(m_Atlas);
-    m_Atlas.Lock(locked);
-    x_FillSeqBuffer(buffer, oid, locked);
+    x_FillSeqBuffer(buffer, oid);
     (buffer->checked_out)++;
     *seq = buffer->results[0].address;
     return buffer->results[0].length;
 }
 
 void CSeqDBImpl::x_FillSeqBuffer(SSeqResBuffer  *buffer,
-                                 int             oid,
-                                 CSeqDBLockHold &locked) const
+                                 int             oid) const
 {
-    // Must lock the atlas
-    m_Atlas.Lock(locked);
-
     // clear the buffer first
-    x_RetSeqBuffer(buffer, locked);
+    x_RetSeqBuffer(buffer);
 
     buffer->oid_start = oid;
     Int4 vol_oid = 0;
@@ -722,17 +707,16 @@ void CSeqDBImpl::x_FillSeqBuffer(SSeqResBuffer  *buffer,
         const char * seq;
         Int8 tot_length = m_Atlas.GetSliceSize() / (4*m_NumThreads) + 1;
 
-        res.length = vol->GetSequence(vol_oid++, &seq, locked);
+        res.length = vol->GetSequence(vol_oid++, &seq);
         if (res.length < 0) return;
         // must return at least one sequence
         do {
             tot_length -= res.length;
             res.address = seq;
             buffer->results.push_back(res);
-            res.length = vol->GetSequence(vol_oid++, &seq, locked);
+            res.length = vol->GetSequence(vol_oid++, &seq);
         } while (res.length >= 0 && tot_length >= res.length && vol_oid < m_RestrictEnd);
 
-        //if (res.length >= 0)  m_Atlas.RetRegion(seq);
         return;
     }
 
@@ -742,9 +726,7 @@ void CSeqDBImpl::x_FillSeqBuffer(SSeqResBuffer  *buffer,
 int CSeqDBImpl::GetSequence(int oid, const char ** buffer) const
 {
     CHECK_MARKER();
-
     CSeqDBLockHold locked(m_Atlas);
-
     if (m_NumThreads) {
         int cacheID = x_GetCacheID(locked);
         return x_GetSeqBuffer(m_CachedSeqs[cacheID], oid, buffer);
@@ -752,11 +734,8 @@ int CSeqDBImpl::GetSequence(int oid, const char ** buffer) const
 
     int vol_oid = 0;
 
-    m_Atlas.Lock(locked);
-    //m_Atlas.MentionOid(oid, m_NumOIDs, locked);
-
     if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
-        return vol->GetSequence(vol_oid, buffer, locked);
+        return vol->GetSequence(vol_oid, buffer);
     }
 
     NCBI_THROW(CSeqDBException, eArgErr, CSeqDB::kOidNotFound);
@@ -2627,7 +2606,7 @@ void CSeqDBImpl::SetNumberOfThreads(int num_threads, bool force_mt)
 
         for (int thread = num_threads; thread < m_NumThreads; ++thread) {
             SSeqResBuffer * buffer = m_CachedSeqs.back();
-            x_RetSeqBuffer(buffer, locked);
+            x_RetSeqBuffer(buffer);
             m_CachedSeqs.pop_back();
             delete buffer;
         }
