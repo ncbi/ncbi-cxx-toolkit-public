@@ -754,3 +754,48 @@ Seq-entry ::= seq {\
   }\
 }";
 
+
+BOOST_AUTO_TEST_CASE(Test_LocationMitochondrion)
+{
+    // RW-1277
+    auto testEntry = 
+    R"(Seq-entry ::= seq {
+        id {
+            local str "id1"
+        },
+        descr {
+            source {
+            genome mitochondrion,
+            org {
+            }
+            },
+            molinfo {
+                biomol genomic,
+                tech wgs
+            }
+        },
+        inst {
+            repr raw,
+            mol dna,
+            length 68,
+            seq-data ncbi2na '1E555555555555555555555555555555C9'H
+        }
+    })";
+
+    CSeq_entry entry;
+    {{
+         CNcbiIstrstream istr(testEntry);
+         istr >> MSerial_AsnText >> entry;
+     }}
+
+    CScope scope(*CObjectManager::GetInstance());
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(entry);
+    CNcbiOstrstream os;
+    CFastaOstream fasta_os(os);
+    fasta_os.Write(seh);
+    auto s = string(CNcbiOstrstreamToString(os));
+    string expected = ">lcl|id1 Mitochondrion, whole genome shotgun sequence\n"
+    "ACTGCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCTAGC\n";
+
+    BOOST_CHECK_EQUAL(s, expected);
+}
