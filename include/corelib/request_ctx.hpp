@@ -348,7 +348,7 @@ public:
     /// Get current read-only flag.
     bool GetReadOnly(void) const { return m_IsReadOnly; }
 
-    typedef int TVersion;
+    typedef CAtomicCounter::TValue TVersion;
 
     /// Return version increased on every context change (hit/subhit id, client ip,
     /// session id).
@@ -468,6 +468,8 @@ private:
 
     // Context values loaded from the global environment.
     static unique_ptr<TPassThroughProperties> sm_EnvContextProperties;
+
+    static CAtomicCounter_WithAutoInit sm_VersionCounter;
 };
 
 
@@ -911,7 +913,7 @@ bool CRequestContext::x_CanModify(void) const
 inline
 void CRequestContext::x_Modify(void)
 {
-    m_Version++;
+    m_Version = sm_VersionCounter.Add(1);
 }
 
 

@@ -51,6 +51,9 @@ static const char* kPassThrough_ClientIp = "ncbi_client_ip";
 static const char* kPassThrough_Dtab = "ncbi_dtab";
 
 
+CAtomicCounter_WithAutoInit CRequestContext::sm_VersionCounter;
+
+
 CRequestContext::CRequestContext(TContextFlags flags)
     : m_RequestID(0),
       m_AppState(eDiagAppState_NotSet),
@@ -65,7 +68,7 @@ CRequestContext::CRequestContext(TContextFlags flags)
       m_Flags(flags),
       m_OwnerTID(-1),
       m_IsReadOnly(false),
-      m_Version(0)
+      m_Version(sm_VersionCounter.Add(1))
 {
     x_LoadEnvContextProperties();
 }
@@ -563,7 +566,7 @@ CRef<CRequestContext> CRequestContext::Clone(void) const
     ret->m_AutoIncOnPost = m_AutoIncOnPost;
     ret->m_Flags = m_Flags;
     ret->m_IsReadOnly = m_IsReadOnly;
-    ret->m_Version = m_Version;
+    // NOTE: Do not clone m_Version - the new context gets its own unique version.
     return ret;
 }
 
