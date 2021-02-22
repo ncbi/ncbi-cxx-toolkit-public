@@ -582,7 +582,7 @@ bool CRegexpTemplateFilter::TestAttribute(const string& attr_name,
     if (node == NULL)
         return false;
 
-    CNcbiOstrstream node_stream;
+    stringstream node_stream;
 
     node->Print(node_stream, CNCBINode::ePlainText);
 
