@@ -526,7 +526,7 @@ bool CGtfWriter::xAssignFeaturesCds(
         int basePairsNeeded = 3;
         auto currentIt = sublocs.begin(); 
         unsigned int partNumber = 1;
-        unsigned int phase = 0;
+        unsigned int baseCount = 0;
 
         while (basePairsNeeded > 0) {
             const CSeq_interval& currentLoc = **currentIt;
@@ -560,8 +560,9 @@ bool CGtfWriter::xAssignFeaturesCds(
             if (!transcriptId.empty()) {
                 pRecord->SetTranscriptId(transcriptId);
             }
-            pRecord->SetCdsPhase_Force(phase);
-            phase = phase + (pRecord->GetExtent()) % 3; 
+            _ASSERT(baseCount < 3);
+            pRecord->SetCdsPhase_Force((3-baseCount)%3);
+            baseCount += pRecord->GetExtent(); 
             recordList.push_back(pRecord);
             currentIt++;
         }
@@ -606,13 +607,14 @@ bool CGtfWriter::xAssignFeaturesCds(
         }
         unsigned int partNumber = 1;
         bool needPartNumbers = (stopCodonParts.size() > 1);
-        unsigned int phase = 0;
+        unsigned int baseCount = 0;
         for (auto& pRecord: stopCodonParts) {
             if (needPartNumbers) {
                 pRecord->SetPartNumber(partNumber++);
             }
-            pRecord->SetCdsPhase_Force(phase);
-            phase = (phase + pRecord->GetExtent()) % 3;
+            _ASSERT(baseCount < 3);
+            pRecord->SetCdsPhase_Force((3-baseCount)%3);
+            baseCount += pRecord->GetExtent();
             recordList.push_back(pRecord);
         }
     }
