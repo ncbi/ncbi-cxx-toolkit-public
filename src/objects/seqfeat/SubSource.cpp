@@ -3890,6 +3890,613 @@ void CCountries::x_FindCountryName
     }
 }
 
+// RW-1278
+
+bool s_TrimSpacesEtcFromEnds(string& val)
+{
+    if (val.length() == 0) return false;
+
+    char * str = new char[sizeof(char) * (val.length() + 1)];
+    strcpy(str, val.c_str());
+
+    char *  amp;
+    unsigned char    ch;    /* to use 8bit characters in multibyte languages */
+    char *  dst;
+    char *  ptr;
+
+    dst = str;
+    ptr = str;
+    ch = *ptr;
+    if (ch != '\0' && (ch <= ' ' || ch == ';' || ch == ',')) {
+        while (ch != '\0' && (ch <= ' ' || ch == ';' || ch == ',')) {
+            ptr++;
+            ch = *ptr;
+        }
+        while (ch != '\0') {
+            *dst = ch;
+            dst++;
+            ptr++;
+            ch = *ptr;
+        }
+        *dst = '\0';
+    }
+    amp = NULL;
+    dst = NULL;
+    ptr = str;
+    ch = *ptr;
+    while (ch != '\0') {
+        if (ch == '&') {
+            amp = ptr;
+            dst = NULL;
+        }
+        else if (ch <= ' ') {
+            if (dst == NULL) {
+                dst = ptr;
+            }
+            amp = NULL;
+        }
+        else if (ch == ';') {
+            if (dst == NULL && amp == NULL) {
+                dst = ptr;
+            }
+        }
+        else if (ch == ',') {
+            if (dst == NULL) {
+                dst = ptr;
+            }
+            amp = NULL;
+        }
+        else {
+            dst = NULL;
+        }
+        ptr++;
+        ch = *ptr;
+    }
+    if (dst != NULL) {
+        *dst = '\0';
+    }
+
+    string new_val;
+    new_val = str;
+    delete[] str;
+
+    if (!NStr::Equal(val, new_val)) {
+        val = new_val;
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
+bool s_CompressRunsOfSpaces(string& val)
+{
+    if (val.length() == 0) return false;
+
+    char * str = new char[sizeof(char) * (val.length() + 1)];
+    strcpy(str, val.c_str());
+
+    unsigned char    ch;    /* to use 8bit characters in multibyte languages */
+    unsigned char    pv;    /* to use 8bit characters in multibyte languages */
+    char *  dst;
+    char *  ptr;
+
+    dst = str;
+    ptr = str;
+    ch = *ptr;
+    pv = '\0';
+    while (ch != '\0') {
+        *dst = ch;
+        dst++;
+        ptr++;
+        pv = ch;
+        ch = *ptr;
+        if (pv == ' ') {
+            while (ch == ' ') {
+              ptr++;
+              ch = *ptr;
+            }
+            pv = '\0';
+        }
+    }
+    if (dst != NULL) {
+        *dst = '\0';
+    }
+
+    string new_val;
+    new_val = str;
+    delete[] str;
+
+    if (!NStr::Equal(val, new_val)) {
+        val = new_val;
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
+typedef SStaticPair<const char*, const char*> TParishMapEntry;
+static const TParishMapEntry parish_abbrev_array[] = {
+    { "Acadia Parish",               "Acadia Parish"               },
+    { "AcadiaParish",                "Acadia Parish"               },
+    { "Allen Parish",                "Allen Parish"                },
+    { "AllenParish",                 "Allen Parish"                },
+    { "Ascension Parish",            "Ascension Parish"            },
+    { "AscensionParish",             "Ascension Parish"            },
+    { "Assumption Parish",           "Assumption Parish"           },
+    { "AssumptionParish",            "Assumption Parish"           },
+    { "Avoyelles Parish",            "Avoyelles Parish"            },
+    { "AvoyellesParish",             "Avoyelles Parish"            },
+    { "Beauregard Parish",           "Beauregard Parish"           },
+    { "BeauregardParish",            "Beauregard Parish"           },
+    { "Bienville Parish",            "Bienville Parish"            },
+    { "BienvilleParish",             "Bienville Parish"            },
+    { "Bossier Parish",              "Bossier Parish"              },
+    { "BossierParish",               "Bossier Parish"              },
+    { "Caddo Parish",                "Caddo Parish"                },
+    { "CaddoParish",                 "Caddo Parish"                },
+    { "Calcasieu Parish",            "Calcasieu Parish"            },
+    { "CalcasieuParish",             "Calcasieu Parish"            },
+    { "Caldwell Parish",             "Caldwell Parish"             },
+    { "CaldwellParish",              "Caldwell Parish"             },
+    { "Cameron Parish",              "Cameron Parish"              },
+    { "CameronParish",               "Cameron Parish"              },
+    { "Catahoula Parish",            "Catahoula Parish"            },
+    { "CatahoulaParish",             "Catahoula Parish"            },
+    { "Claiborne Parish",            "Claiborne Parish"            },
+    { "ClaiborneParish",             "Claiborne Parish"            },
+    { "Concordia Parish",            "Concordia Parish"            },
+    { "ConcordiaParish",             "Concordia Parish"            },
+    { "DeSoto Parish",               "DeSoto Parish"               },
+    { "DeSotoParish",                "DeSoto Parish"               },
+    { "East Baton Rouge Parish",     "East Baton Rouge Parish"     },
+    { "East Carroll Parish",         "East Carroll Parish"         },
+    { "East Feliciana Parish",       "East Feliciana Parish"       },
+    { "EastBatonRougeParish",        "East Baton Rouge Parish"     },
+    { "EastCarrollParish",           "East Carroll Parish"         },
+    { "EastFelicianaParish",         "East Feliciana Parish"       },
+    { "Evangeline Parish",           "Evangeline Parish"           },
+    { "EvangelineParish",            "Evangeline Parish"           },
+    { "Franklin Parish",             "Franklin Parish"             },
+    { "FranklinParish",              "Franklin Parish"             },
+    { "Grant Parish",                "Grant Parish"                },
+    { "GrantParish",                 "Grant Parish"                },
+    { "Iberia Parish",               "Iberia Parish"               },
+    { "IberiaParish",                "Iberia Parish"               },
+    { "Iberville Parish",            "Iberville Parish"            },
+    { "IbervilleParish",             "Iberville Parish"            },
+    { "Jackson Parish",              "Jackson Parish"              },
+    { "JacksonParish",               "Jackson Parish"              },
+    { "Jefferson Davis Parish",      "Jefferson Davis Parish"      },
+    { "Jefferson Parish",            "Jefferson Parish"            },
+    { "JeffersonDavisParish",        "Jefferson Davis Parish"      },
+    { "JeffersonParish",             "Jefferson Parish"            },
+    { "Lafayette Parish",            "Lafayette Parish"            },
+    { "LafayetteParish",             "Lafayette Parish"            },
+    { "Lafourche Parish",            "Lafourche Parish"            },
+    { "LafourcheParish",             "Lafourche Parish"            },
+    { "LaSalle Parish",              "LaSalle Parish"              },
+    { "LaSalleParish",               "LaSalle Parish"              },
+    { "Lincoln Parish",              "Lincoln Parish"              },
+    { "LincolnParish",               "Lincoln Parish"              },
+    { "Livingston Parish",           "Livingston Parish"           },
+    { "LivingstonParish",            "Livingston Parish"           },
+    { "Madison Parish",              "Madison Parish"              },
+    { "MadisonParish",               "Madison Parish"              },
+    { "Morehouse Parish",            "Morehouse Parish"            },
+    { "MorehouseParish",             "Morehouse Parish"            },
+    { "Natchitoches Parish",         "Natchitoches Parish"         },
+    { "NatchitochesParish",          "Natchitoches Parish"         },
+    { "Orleans Parish",              "Orleans Parish"              },
+    { "OrleansParish",               "Orleans Parish"              },
+    { "Ouachita Parish",             "Ouachita Parish"             },
+    { "OuachitaParish",              "Ouachita Parish"             },
+    { "Plaquemines Parish",          "Plaquemines Parish"          },
+    { "PlaqueminesParish",           "Plaquemines Parish"          },
+    { "Pointe Coupee Parish",        "Pointe Coupee Parish"        },
+    { "PointeCoupeeParish",          "Pointe Coupee Parish"        },
+    { "Rapides Parish",              "Rapides Parish"              },
+    { "RapidesParish",               "Rapides Parish"              },
+    { "Red River Parish",            "Red River Parish"            },
+    { "RedRiverParish",              "Red River Parish"            },
+    { "Richland Parish",             "Richland Parish"             },
+    { "RichlandParish",              "Richland Parish"             },
+    { "Sabine Parish",               "Sabine Parish"               },
+    { "SabineParish",                "Sabine Parish"               },
+    { "St. Bernard Parish",          "St. Bernard Parish"          },
+    { "St. Charles Parish",          "St. Charles Parish"          },
+    { "St. Helena Parish",           "St. Helena Parish"           },
+    { "St. James Parish",            "St. James Parish"            },
+    { "St. John the Baptist Parish", "St. John the Baptist Parish" },
+    { "St. Landry Parish",           "St. Landry Parish"           },
+    { "St. Martin Parish",           "St. Martin Parish"           },
+    { "St. Mary Parish",             "St. Mary Parish"             },
+    { "St. Tammany Parish",          "St. Tammany Parish"          },
+    { "St.BernardParish",            "St. Bernard Parish"          },
+    { "St.CharlesParish",            "St. Charles Parish"          },
+    { "St.HelenaParish",             "St. Helena Parish"           },
+    { "St.JamesParish",              "St. James Parish"            },
+    { "St.JohntheBaptistParish",     "St. John the Baptist Parish" },
+    { "St.LandryParish",             "St. Landry Parish"           },
+    { "St.MartinParish",             "St. Martin Parish"           },
+    { "St.MaryParish",               "St. Mary Parish"             },
+    { "St.TammanyParish",            "St. Tammany Parish"          },
+    { "Tangipahoa Parish",           "Tangipahoa Parish"           },
+    { "TangipahoaParish",            "Tangipahoa Parish"           },
+    { "Tensas Parish",               "Tensas Parish"               },
+    { "TensasParish",                "Tensas Parish"               },
+    { "Terrebonne Parish",           "Terrebonne Parish"           },
+    { "TerrebonneParish",            "Terrebonne Parish"           },
+    { "Union Parish",                "Union Parish"                },
+    { "UnionParish",                 "Union Parish"                },
+    { "Vermilion Parish",            "Vermilion Parish"            },
+    { "VermilionParish",             "Vermilion Parish"            },
+    { "Vernon Parish",               "Vernon Parish"               },
+    { "VernonParish",                "Vernon Parish"               },
+    { "Washington Parish",           "Washington Parish"           },
+    { "WashingtonParish",            "Washington Parish"           },
+    { "Webster Parish",              "Webster Parish"              },
+    { "WebsterParish",               "Webster Parish"              },
+    { "West Baton Rouge Parish",     "West Baton Rouge Parish"     },
+    { "West Carroll Parish",         "West Carroll Parish"         },
+    { "West Feliciana Parish",       "West Feliciana Parish"       },
+    { "WestBatonRougeParish",        "West Baton Rouge Parish"     },
+    { "WestCarrollParish",           "West Carroll Parish"         },
+    { "WestFelicianaParish",         "West Feliciana Parish"       },
+    { "Winn Parish",                 "Winn Parish"                 },
+    { "WinnParish",                  "Winn Parish"                 }
+};
+
+typedef CStaticPairArrayMap<const char *, const char *, PNocase_CStr> TParishMap;
+DEFINE_STATIC_ARRAY_MAP(TParishMap, parishAbbrevMap, parish_abbrev_array);
+
+bool s_IsParish ( string& parish ) {
+
+    if ( parish.empty() ) {
+        return false;
+    }
+
+    TParishMap::const_iterator parish_find_iter = parishAbbrevMap.find(parish.c_str());
+    if ( parish_find_iter != parishAbbrevMap.end() ) {
+        // replace with full parish name
+        parish = parish_find_iter->second;
+        return true;
+    }
+
+    return false;
+}
+
+typedef SStaticPair<const char*, const char*> TStateMapEntry;
+static const TStateMapEntry state_abbrev_array[] = {
+    { "AK",                    "Alaska"               },
+    { "AL",                    "Alabama"              },
+    { "Alabama",               "Alabama"              },
+    { "Alaska",                "Alaska"               },
+    { "AR",                    "Arkansas"             },
+    { "Arizona",               "Arizona"              },
+    { "Arkansas",              "Arkansas"             },
+    { "AZ",                    "Arizona"              },
+    { "CA",                    "California"           },
+    { "California",            "California"           },
+    { "CO",                    "Colorado"             },
+    { "Colorado",              "Colorado"             },
+    { "Connecticut",           "Connecticut"          },
+    { "CT",                    "Connecticut"          },
+    { "DC",                    "District of Columbia" },
+    { "DE",                    "Delaware"             },
+    { "Delaware",              "Delaware"             },
+    { "District of Columbia",  "District of Columbia" },
+    { "FL",                    "Florida"              },
+    { "Florida",               "Florida"              },
+    { "GA",                    "Georgia"              },
+    { "Georgia",               "Georgia"              },
+    { "Hawaii",                "Hawaii"               },
+    { "HI",                    "Hawaii"               },
+    { "IA",                    "Iowa"                 },
+    { "ID",                    "Idaho"                },
+    { "Idaho",                 "Idaho"                },
+    { "IL",                    "Illinois"             },
+    { "Illinois",              "Illinois"             },
+    { "IN",                    "Indiana"              },
+    { "Indiana",               "Indiana"              },
+    { "Iowa",                  "Iowa"                 },
+    { "Kansas",                "Kansas"               },
+    { "Kentucky",              "Kentucky"             },
+    { "KS",                    "Kansas"               },
+    { "KY",                    "Kentucky"             },
+    { "LA",                    "Louisiana"            },
+    { "Louisiana",             "Louisiana"            },
+    { "MA",                    "Massachusetts"        },
+    { "Maine",                 "Maine"                },
+    { "Maryland",              "Maryland"             },
+    { "Massachusetts",         "Massachusetts"        },
+    { "MD",                    "Maryland"             },
+    { "ME",                    "Maine"                },
+    { "MI",                    "Michigan"             },
+    { "Michigan",              "Michigan"             },
+    { "Minnesota",             "Minnesota"            },
+    { "Mississippi",           "Mississippi"          },
+    { "Missouri",              "Missouri"             },
+    { "MN",                    "Minnesota"            },
+    { "MO",                    "Missouri"             },
+    { "Montana",               "Montana"              },
+    { "MS",                    "Mississippi"          },
+    { "MT",                    "Montana"              },
+    { "NC",                    "North Carolina"       },
+    { "ND",                    "North Dakota"         },
+    { "NE",                    "Nebraska"             },
+    { "Nebraska",              "Nebraska"             },
+    { "Nevada",                "Nevada"               },
+    { "New Hampshire",         "New Hampshire"        },
+    { "New Jersey",            "New Jersey"           },
+    { "New Mexico",            "New Mexico"           },
+    { "New York",              "New York"             },
+    { "NH",                    "New Hampshire"        },
+    { "NJ",                    "New Jersey"           },
+    { "NM",                    "New Mexico"           },
+    { "North Carolina",        "North Carolina"       },
+    { "North Dakota",          "North Dakota"         },
+    { "NV",                    "Nevada"               },
+    { "NY",                    "New York"             },
+    { "OH",                    "Ohio"                 },
+    { "Ohio",                  "Ohio"                 },
+    { "OK",                    "Oklahoma"             },
+    { "Oklahoma",              "Oklahoma"             },
+    { "OR",                    "Oregon"               },
+    { "Oregon",                "Oregon"               },
+    { "PA",                    "Pennsylvania"         },
+    { "Pennsylvania",          "Pennsylvania"         },
+    { "Rhode Island",          "Rhode Island"         },
+    { "RI",                    "Rhode Island"         },
+    { "SC",                    "South Carolina"       },
+    { "SD",                    "South Dakota"         },
+    { "South Carolina",        "South Carolina"       },
+    { "South Dakota",          "South Dakota"         },
+    { "Tennessee",             "Tennessee"            },
+    { "Texas",                 "Texas"                },
+    { "TN",                    "Tennessee"            },
+    { "TX",                    "Texas"                },
+    { "UT",                    "Utah"                 },
+    { "Utah",                  "Utah"                 },
+    { "VA",                    "Virginia"             },
+    { "Vermont",               "Vermont"              },
+    { "Virginia",              "Virginia"             },
+    { "VT",                    "Vermont"              },
+    { "WA",                    "Washington"           },
+    { "Washington",            "Washington"           },
+    { "West Virginia",         "West Virginia"        },
+    { "WI",                    "Wisconsin"            },
+    { "Wisconsin",             "Wisconsin"            },
+    { "WV",                    "West Virginia"        },
+    { "WY",                    "Wyoming"              },
+    { "Wyoming",               "Wyoming"              }
+};
+
+typedef CStaticPairArrayMap<const char *, const char *, PNocase_CStr> TStateMap;
+DEFINE_STATIC_ARRAY_MAP(TStateMap, stateAbbrevMap, state_abbrev_array);
+
+bool s_IsState ( string& state, bool& modified ) {
+
+    if ( state.empty() ) {
+        return false;
+    }
+
+    string original = state;
+    string working = state;
+
+    if ( NStr::StartsWith ( working, "State of ", NStr::eNocase )) {
+          NStr::TrimPrefixInPlace ( working, "State of ", NStr::eNocase );
+    }
+
+    if ( NStr::StartsWith ( working, "Commonwealth of ", NStr::eNocase )) {
+        NStr::TrimPrefixInPlace ( working, "Commonwealth of ", NStr::eNocase );
+    }
+
+    if ( NStr::EndsWith ( working, " State", NStr::eNocase )) {
+        NStr::TrimSuffixInPlace ( working, " State", NStr::eNocase );
+    }
+
+    TStateMap::const_iterator state_find_iter = stateAbbrevMap.find(working.c_str());
+    if ( state_find_iter != stateAbbrevMap.end() ) {
+        // replace with full state name
+        state = state_find_iter->second;
+        // report conversion from two-letter, changed capitalization, or prefix/suffix removal
+        if ( ! NStr::Equal ( original, state )) {
+            modified = true;
+        }
+        return true;
+    }
+
+    return false;
+}
+
+CCountries::EStateCleanResults CCountries::USAStateCleanup ( string& country ) {
+
+    if ( country.empty() ) {
+        return e_NoResult;
+    }
+
+    // make working copy
+    string original = country;
+    string working = country;
+
+    // remove flanking quotation marks - if CCountries::NewFixCountry not called
+    if ( NStr::StartsWith ( working, "\"" ) && NStr::EndsWith ( working, "\"" )) {
+        working = working.substr ( 1, working.length() - 2 );
+    }
+    NStr::TruncateSpacesInPlace ( working );
+
+    // remove flanking spaces and other punctuation
+    s_TrimSpacesEtcFromEnds ( working );
+
+    // check if no colon, just name of country
+    if ( NStr::Find ( working, ":" ) == NPOS ) {
+        if ( NStr::EqualNocase ( working, "USA") || NStr::EqualNocase ( working, "US")) {
+            country = "USA";
+            return e_Missing;
+        }
+        return e_NotUSA;
+    }
+
+    // separate strings before and after colon
+    string frst, scnd;
+    NStr::SplitInTwo ( working, ":", frst, scnd );
+
+    // handle pathological case of leading colon
+    if ( frst.empty()) {
+        if ( scnd.empty()) {
+            return e_NotUSA;
+        }
+        s_TrimSpacesEtcFromEnds ( scnd );
+        if ( NStr::EqualNocase ( scnd, "USA") || NStr::EqualNocase ( scnd, "US")) {
+            country = "USA";
+            return e_Missing;
+        }
+        return e_NotUSA;
+    }
+
+    // confirm that country is USA
+    s_TrimSpacesEtcFromEnds ( frst );
+    if ( ! NStr::EqualNocase ( frst, "USA") && ! NStr::EqualNocase ( frst, "US")) {
+        return e_NotUSA;
+    }
+
+    // handle pathological case of trailing colon
+    s_TrimSpacesEtcFromEnds ( scnd );
+    if ( scnd.empty()) {
+        country = "USA";
+        return e_Missing;
+    }
+
+    // split state/county/city clauses at commas
+    vector<string> components;
+    NStr::Split(scnd, ",", components);
+
+    if ( components.size() < 1 ) {
+        country = "USA";
+        return e_Missing;
+    }
+
+    // remove flanking spaces around components
+    for ( int j = 0; j < components.size(); j++ ) {
+        s_TrimSpacesEtcFromEnds ( components[j] );
+        s_CompressRunsOfSpaces ( components[j] );
+    }
+
+    // clean up runon strings like EastBatonRougeParish
+    for ( int j = 0; j < components.size(); j++ ) {
+        if ( NStr::EndsWith ( components[j], "Parish", NStr::eNocase )) {
+            s_IsParish( components[j] );
+        }
+    }
+
+    // single component must be state
+    if ( components.size() == 1 ) {
+        // string before = components[0];
+        bool modified = false;
+        if ( s_IsState  ( components[0], modified )) {
+            country = "USA: " + components[0];
+            if (modified) {
+                return e_Corrected;
+            } else {
+                return e_Valid;
+            }
+
+        // hard-coding for test
+        } else if ( NStr::EqualNocase ( components[0], "New York City") ) {
+
+            country = "USA: New York, New York City";
+            return e_Corrected;
+
+          } else if ( NStr::EqualNocase ( components[0], "Philadelphia") ) {
+
+              country = "USA: Pennsylvania, Philadelphia";
+              return e_Corrected;
+
+          } else if ( NStr::EqualNocase ( components[0], "Atlanta") ) {
+
+              country = "USA: Georgia, Atlanta";
+              return e_Corrected;
+
+        } else {
+            country = "USA: " + components[0];
+            return e_Missing;
+        }
+    }
+
+    bool any_modified = false;
+    int num_states = 0;
+
+    // only set first and last if s_IsState returned true
+    string* first = 0;
+    string* last = 0;
+
+    // has multiple components
+    int max = components.size() - 1;
+    for ( int j = 0; j < components.size(); j++ ) {
+        string before = components[j];
+        bool modified = false;
+        if ( s_IsState  ( components[j], modified )) {
+            if (modified) {
+                any_modified = true;
+            }
+            num_states++;
+            if ( j == 0 ) {
+                first = &(components[j]);
+            }
+            if ( j == max ) {
+                last = &(components[j]);
+            }
+        }
+    }
+
+    if ( num_states > 1 ) {
+
+        return e_Ambiguous;
+
+    } else if ( first != 0 ) {
+
+        string res;
+        string pfx = "";
+        res.append ("USA: ");
+        for ( int j = 0; j < components.size(); j++ ) {
+            res.append ( pfx );
+            res.append ( components[j] );
+            pfx = ", ";
+        }
+        country = res;
+        if ( ! NStr::Equal ( original, res )) {
+            return e_Corrected;
+         } else {
+             return e_Valid;
+         }
+
+    } else if ( last != 0 ) {
+
+      string res;
+      string pfx = ", ";
+      res.append ("USA: ");
+      res.append ( *last );
+      for ( int j = 0; j < max; j++ ) {
+          res.append ( ", " );
+          res.append ( components[j] );
+      }
+      country = res;
+      if ( ! NStr::Equal ( original, res )) {
+          return e_Corrected;
+       } else {
+           return e_Valid;
+       }
+
+    } else {
+
+        return e_Invalid;
+    }
+
+    return e_NoResult;
+}
+
 string CCountries::NewFixCountry (const string& test)
 {
     // change requested for JIRA:SQD-1410

@@ -280,6 +280,16 @@ CSubSource::CSubSource(const string& subtype, const TName& name)
 class NCBI_SEQFEAT_EXPORT CCountries
 {
 public:
+    enum EStateCleanResults {
+        e_NoResult  = 0,
+        e_Valid     = 1,
+        e_Corrected = 2,
+        e_Invalid   = 3,
+        e_Ambiguous = 4,
+        e_Missing   = 5,
+        e_NotUSA    = 6
+    };
+
     static bool IsValid(const string& country);
     static bool IsValid(const string& country, bool& is_miscapitalized);
     static bool WasValid(const string& country);
@@ -290,6 +300,7 @@ public:
     static bool ContainsMultipleCountryNames (const string &phrase);
     static string GetCorrectedCountryCapitalization(const string& country);
     static string NewFixCountry (const string& input);
+    static EStateCleanResults USAStateCleanup (string& country);
     static bool ChangeExtraColonsToCommas(string& country);
     static string CountryFixupItem(const string &input, bool capitalize_after_colon);
     typedef CStaticPairArrayMap<const char*, const char*, PCase_CStr> TCStringPairsMap;
