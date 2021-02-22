@@ -111,6 +111,9 @@ public:
     unsigned int
     SequenceSize() const { return mSequenceSize; };
 
+    bool
+    AtSequenceData() const { return mAtSequenceData; };
+
     //
     // class interface:
     //
@@ -267,6 +270,9 @@ public:
     static bool xIsSequenceRegion(
         const string& line);
 
+    static bool xIsFastaMarker(
+        const string& line);
+
     CMessageListenerLenient m_ErrorsPrivate;
     IdToFeatureMap m_MapIdToFeature;
 
@@ -307,6 +313,7 @@ protected:
     CRef<CAnnotdesc> m_CurrentBrowserInfo;
     CRef<CAnnotdesc> m_CurrentTrackInfo;
     unsigned int mSequenceSize;
+    bool mAtSequenceData;
 };
 
 END_SCOPE(objects)

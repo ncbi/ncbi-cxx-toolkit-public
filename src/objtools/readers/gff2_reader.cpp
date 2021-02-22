@@ -87,7 +87,8 @@ CGff2Reader::CGff2Reader(
     m_pErrors(0),
     mCurrentFeatureCount(0),
     mParsingAlignment(false),
-    mSequenceSize(0)
+    mSequenceSize(0),
+    mAtSequenceData(false)
 {
 }
 
@@ -118,7 +119,7 @@ CGff2Reader::ReadSeqAnnots(
 //  ----------------------------------------------------------------------------
 {
     xProgressInit(lr);
-    while (!lr.AtEOF()) {
+    while (!lr.AtEOF()  &&  !mAtSequenceData) {
         CRef<CSeq_annot> pNext = this->ReadSeqAnnot(lr, pEC);
         if (pNext) {
             annots.push_back(pNext);
@@ -192,56 +193,62 @@ CGff2Reader::xGetData(
 {
     readerData.clear();
     string line;
-    if (xGetLine(lr, line)) {
-        if (xNeedsNewSeqAnnot(line)) {
-            return;
-        }
-        if (xIsTrackLine(line)) {
-            if (!mCurrentFeatureCount) {
-                xParseTrackLine(line);
-                xGetData(lr, readerData);
-                return;
-            }
-            m_PendingLine = line;
-            return;
-        }
-        if (xIsTrackTerminator(line)) {
-            if (!mCurrentFeatureCount) {
-                xParseTrackLine("track");
-                xGetData(lr, readerData);
-            }
-            return;
-        }
-        if (xIsSequenceRegion(line)) {
-            vector<string> tokens;
-            NStr::Split(line, " \n", tokens, NStr::fSplit_MergeDelimiters);
-            if (tokens.size() < 4) {
-                mSequenceSize = 0;
-            }
-            else {
-                mSequenceSize = NStr::StringToNonNegativeInt(tokens[3]);
-                m_iFlags |= fAssumeCircularSequence;
-            }
-            if (mSequenceSize == -1) {
-                mSequenceSize = 0;
-                CReaderMessage warning(
-                    ncbi::eDiag_Warning,
-                    m_uLineNumber,
-                    "Bad sequence-region pragma - ignored.");
-                throw warning;
-            }
-            if (!mCurrentFeatureCount) {
-                xParseTrackLine("track");
-                xGetData(lr, readerData);
-            }
-            return;
-        }
-        if (!xIsCurrentDataType(line)) {
-            xUngetLine(lr);
-            return;
-        }
-        readerData.push_back(TReaderLine{m_uLineNumber, line});
+    if (!xGetLine(lr, line)) {
+        return;
     }
+    if (xNeedsNewSeqAnnot(line)) {
+        return;
+    }
+    if (xIsTrackLine(line)) {
+        if (!mCurrentFeatureCount) {
+            xParseTrackLine(line);
+            xGetData(lr, readerData);
+            return;
+        }
+        m_PendingLine = line;
+        return;
+    }
+    if (xIsTrackTerminator(line)) {
+        if (!mCurrentFeatureCount) {
+            xParseTrackLine("track");
+            xGetData(lr, readerData);
+        }
+        return;
+    }
+    if (xIsSequenceRegion(line)) {
+        vector<string> tokens;
+        NStr::Split(line, " \n", tokens, NStr::fSplit_MergeDelimiters);
+        if (tokens.size() < 4) {
+            mSequenceSize = 0;
+        }
+        else {
+            mSequenceSize = NStr::StringToNonNegativeInt(tokens[3]);
+            m_iFlags |= fAssumeCircularSequence;
+        }
+        if (mSequenceSize == -1) {
+            mSequenceSize = 0;
+            CReaderMessage warning(
+                ncbi::eDiag_Warning,
+                m_uLineNumber,
+                "Bad sequence-region pragma - ignored.");
+            throw warning;
+        }
+        if (!mCurrentFeatureCount) {
+            xParseTrackLine("track");
+            xGetData(lr, readerData);
+        }
+        return;
+    }
+    if (xIsFastaMarker(line)) {
+        mAtSequenceData = true;
+        readerData.clear();
+        return;
+    }
+    if (!xIsCurrentDataType(line)) {
+        xUngetLine(lr);
+        return;
+    }
+    readerData.push_back(TReaderLine{m_uLineNumber, line});
     ++m_uDataCount;
 }
 
@@ -1469,7 +1476,19 @@ bool CGff2Reader::xIsSequenceRegion(
     const string& line) 
 //  -------------------------------------------------------------------------------
 {
-    return NStr::StartsWith(line, "##sequence-region");
+    string lineLowerCase(line);
+    NStr::ToLower(lineLowerCase);
+    return NStr::StartsWith(lineLowerCase, "##sequence-region");
+}
+
+//  -------------------------------------------------------------------------------
+bool CGff2Reader::xIsFastaMarker(
+    const string& line) 
+//  -------------------------------------------------------------------------------
+{
+    string lineLowerCase(line);
+    NStr::ToLower(lineLowerCase);
+    return NStr::StartsWith(lineLowerCase, "##fasta");
 }
 
 
