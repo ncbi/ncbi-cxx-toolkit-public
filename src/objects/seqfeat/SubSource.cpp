@@ -1306,30 +1306,30 @@ static string s_InsertSpacesBetweenTokens(const string &old_str)
     string new_str;
     for (string::const_iterator i = old_str.begin(); i != old_str.end(); ++i) 
     {
-	TUnicodeSymbol sym = CUtf8::Decode(i);
-	if (sym < 0x80)
-	{
-	    char c = static_cast<char>(sym);
-	    if (!isalpha(c) && !isdigit(c) && c != '.' && c != '-' && c != '+')
-	    {
-		new_str += ' ';
-	    }
-	    else if (!new_str.empty() && 
-		     ((isalpha(new_str.back()) && !isalpha(c)) || 
-		      (!isalpha(new_str.back()) && isalpha(c))))
-	    {
-		new_str += ' ';
-	    }
-	    new_str += c;
-	    if (!isalpha(c) && !isdigit(c) && c != '.' && c != '-' && c != '+')
-	    {
-		new_str += ' ';
-	    }
-	}
-	else
-	{
-	    new_str += ' ';
-	}		
+        TUnicodeSymbol sym = CUtf8::Decode(i);
+        if (sym < 0x80)
+        {
+            char c = static_cast<char>(sym);
+            if (!isalpha(c) && !isdigit(c) && c != '.' && c != '-' && c != '+')
+            {
+                new_str += ' ';
+            }
+            else if (!new_str.empty() && 
+                 ((isalpha(new_str.back()) && !isalpha(c)) || 
+                  (!isalpha(new_str.back()) && isalpha(c))))
+            {
+                new_str += ' ';
+            }
+            new_str += c;
+            if (!isalpha(c) && !isdigit(c) && c != '.' && c != '-' && c != '+')
+            {
+                new_str += ' ';
+            }
+        }
+        else
+        {
+            new_str += ' ';
+        }        
     }
     return new_str;
 }
@@ -1340,27 +1340,28 @@ static string s_RemoveSpacesWithinNumbers(const string &old_str)
     bool is_number = true;
     for (string::const_iterator i = old_str.begin(); i != old_str.end(); ++i) 
     {
-	TUnicodeSymbol sym = CUtf8::Decode(i);
-	if (sym < 0x80)
-	{
-	    char c = static_cast<char>(sym);
-            size_t j = new_str.size();            
-            if (j >= 4 &&  new_str[j-1] == ' ' && new_str[j-2] == '.' && new_str[j-3] == ' ' && isdigit(new_str[j-4]) && isdigit(c))
-	    {
-                new_str.pop_back();
-                new_str.pop_back();
-                new_str.pop_back();
-                new_str += '.';
-	    }
-            new_str += c;
-            if (!isdigit(c) && c != '+' && c != '-' && c != '.' && !isspace(c))
-                is_number = false;
-        }
-	else
-	{
-	    new_str += ' ';
+        TUnicodeSymbol sym = CUtf8::Decode(i);
+        if (sym < 0x80)
+        {
+            char c = static_cast<char>(sym);
+                size_t j = new_str.size();            
+                if (j >= 4 &&  new_str[j-1] == ' ' && new_str[j-2] == '.' && new_str[j-3] == ' ' && isdigit(new_str[j-4]) && isdigit(c))
+                {
+                    new_str.pop_back();
+                    new_str.pop_back();
+                    new_str.pop_back();
+                    new_str += '.';
+                }
+                new_str += c;
+                if (!isdigit(c) && c != '+' && c != '-' && c != '.' && !isspace(c)) {
+                    is_number = false;
+                }
+            }
+        else
+        {
+            new_str += ' ';
             is_number = false;
-	}	
+        }    
     }
     if (is_number)
     {
@@ -1377,8 +1378,9 @@ static bool s_IsNumber(const string &token, double *result = NULL)
     {
         return false;
     }
-    if (result)
-	*result = num;
+    if (result) {
+        *result = num;
+    }
     return true;
 }
 
@@ -1387,124 +1389,124 @@ static string s_NormalizeTokens(vector<string> &tokens, vector<double> &numbers,
     vector<string> pattern;
     for (size_t i = 0; i < tokens.size(); i++)
     {
-	string &token = tokens[i];
-	
-	double num;
-	if (s_IsNumber(token, &num))
-	{
-	    numbers.push_back(num);
+        string &token = tokens[i];
+    
+        double num;
+        if (s_IsNumber(token, &num))
+        {
+            numbers.push_back(num);
             anum.push_back(token);
-	    pattern.push_back("1");
-	    precision.push_back(0);
-	    if (NStr::Find(token, ".") != NPOS && !NStr::EndsWith(token, "."))
-	    {
-		precision.back() = token.length() - NStr::Find(token, ".") - 1;
-	    }
-	    continue;
-	}
+            pattern.push_back("1");
+            precision.push_back(0);
+            if (NStr::Find(token, ".") != NPOS && !NStr::EndsWith(token, "."))
+            {
+                precision.back() = token.length() - NStr::Find(token, ".") - 1;
+            }
+            continue;
+        }
 
-	{
-	    vector<string> tmp;
-	    NStr::Split(token, ".", tmp);
-	    double num0, num1, num2;
-	    if (tmp.size() == 3 && s_IsNumber(tmp[0], &num0) && s_IsNumber(tmp[1], &num1) && s_IsNumber(tmp[2], &num2))
-	    {
-		numbers.push_back(num0);
+        {
+            vector<string> tmp;
+            NStr::Split(token, ".", tmp);
+            double num0, num1, num2;
+            if (tmp.size() == 3 && s_IsNumber(tmp[0], &num0) && s_IsNumber(tmp[1], &num1) && s_IsNumber(tmp[2], &num2))
+            {
+                numbers.push_back(num0);
                 anum.push_back(tmp[0]);
-		pattern.push_back("1");
-		precision.push_back(0);
-		numbers.push_back(num1);
+                pattern.push_back("1");
+                precision.push_back(0);
+                numbers.push_back(num1);
                 anum.push_back(tmp[1]);
-		pattern.push_back("1");
-		precision.push_back(0);
-		numbers.push_back(num2);
+                pattern.push_back("1");
+                precision.push_back(0);
+                numbers.push_back(num2);
                 anum.push_back(tmp[2]);
-		pattern.push_back("1");
-		precision.push_back(0);
-		continue;
-	    }
-	}
+                pattern.push_back("1");
+                precision.push_back(0);
+                continue;
+            }
+        }
 
-	if (token == "\'" && i >= 3 && s_IsNumber(tokens[i - 1]) && tokens[i - 2] == "\'" && s_IsNumber(tokens[i - 3]))
-	{
-	    token = "\"";
-	}
+        if (token == "\'" && i >= 3 && s_IsNumber(tokens[i - 1]) && tokens[i - 2] == "\'" && s_IsNumber(tokens[i - 3]))
+        {
+            token = "\"";
+        }
 
-	if (NStr::EqualNocase(token, "degrees") || NStr::EqualNocase(token, "deg")  || NStr::EqualNocase(token, "deg.") || NStr::EqualNocase(token, "degree"))
-	{
-	    token = "degrees";
-	    pattern.push_back("degrees");
-	}	   
-	else if ( token == "\'"  || NStr::EqualNocase(token, "min") || NStr::EqualNocase(token, "min.") || NStr::EqualNocase(token, "minute") || NStr::EqualNocase(token, "minutes"))
-	{
-	    token  = "\'";
-	    pattern.push_back("\'");
-	}
-	else if (token == "\"" || NStr::EqualNocase(token, "sec") || NStr::EqualNocase(token, "sec.") || NStr::EqualNocase(token, "second") || NStr::EqualNocase(token, "seconds"))
-	{
-	    token = "\"";
-	    pattern.push_back("\"");
-	}
-	else if (token == "," || token == ":" || token == "_" || token == "&" || token == "." || token == ";" || token == "#" || NStr::EqualNocase(token, "and"))
-	{
-	}
-	else if (NStr::EqualNocase(token, "lattitude") || NStr::EqualNocase(token, "latitude") || NStr::EqualNocase(token, "lat") || NStr::EqualNocase(token, "lat."))
-	{
-	    pattern.push_back("lat");
-	    lat_long.push_back("lat");
-	}
-	else if (NStr::EqualNocase(token, "longitude") || NStr::EqualNocase(token, "lo") || NStr::EqualNocase(token, "lon") || NStr::EqualNocase(token, "long")
-                 || NStr::EqualNocase(token, "lo.") || NStr::EqualNocase(token, "lon.") || NStr::EqualNocase(token, "long."))
-	{
-	    pattern.push_back("lat");
-	    lat_long.push_back("long");
-	}
-	else if (token == "N"  || NStr::EqualNocase(token, "north"))
-	{
-	    pattern.push_back("N");
-	    nsew.push_back("N");
-	}
-	else if (token == "S"  || NStr::EqualNocase(token, "south"))
-	{
-	    pattern.push_back("N");
-	    nsew.push_back("S");
-	}
-	else if (token == "E"  || NStr::EqualNocase(token, "east"))
-	{
-	    pattern.push_back("N");
-	    nsew.push_back("E");
-	}
-	else if (token == "W"  || NStr::EqualNocase(token, "west") || token == "Wdeg")
-	{
-	    pattern.push_back("N");
-	    nsew.push_back("W");
-	}
-	else if (token == "NW")
-	{
-	    nsew.push_back("N");
-	    nsew.push_back("W");
-	}
-	else if (token == "NE")
-	{
-	    nsew.push_back("N");
-	    nsew.push_back("E");
-	}
-	else if (token == "SW")
-	{
-	    nsew.push_back("S");
-	    nsew.push_back("W");
-	}
-	else if (token == "SE")
-	{
-	    nsew.push_back("S");
-	    nsew.push_back("E");
-	}
-	else
-	{
-	    //cout << "Token: " << token << endl;
-	    numbers.clear();
-	    return kEmptyStr;
-	}
+        if (NStr::EqualNocase(token, "degrees") || NStr::EqualNocase(token, "deg")  || NStr::EqualNocase(token, "deg.") || NStr::EqualNocase(token, "degree"))
+        {
+            token = "degrees";
+            pattern.push_back("degrees");
+        }       
+        else if ( token == "\'"  || NStr::EqualNocase(token, "min") || NStr::EqualNocase(token, "min.") || NStr::EqualNocase(token, "minute") || NStr::EqualNocase(token, "minutes"))
+        {
+            token  = "\'";
+            pattern.push_back("\'");
+        }
+        else if (token == "\"" || NStr::EqualNocase(token, "sec") || NStr::EqualNocase(token, "sec.") || NStr::EqualNocase(token, "second") || NStr::EqualNocase(token, "seconds"))
+        {
+            token = "\"";
+            pattern.push_back("\"");
+        }
+        else if (token == "," || token == ":" || token == "_" || token == "&" || token == "." || token == ";" || token == "#" || NStr::EqualNocase(token, "and"))
+        {
+        }
+        else if (NStr::EqualNocase(token, "lattitude") || NStr::EqualNocase(token, "latitude") || NStr::EqualNocase(token, "lat") || NStr::EqualNocase(token, "lat."))
+        {
+            pattern.push_back("lat");
+            lat_long.push_back("lat");
+        }
+        else if (NStr::EqualNocase(token, "longitude") || NStr::EqualNocase(token, "lo") || NStr::EqualNocase(token, "lon") || NStr::EqualNocase(token, "long")
+                     || NStr::EqualNocase(token, "lo.") || NStr::EqualNocase(token, "lon.") || NStr::EqualNocase(token, "long."))
+        {
+            pattern.push_back("lat");
+            lat_long.push_back("long");
+        }
+        else if (token == "N"  || NStr::EqualNocase(token, "north"))
+        {
+            pattern.push_back("N");
+            nsew.push_back("N");
+        }
+        else if (token == "S"  || NStr::EqualNocase(token, "south"))
+        {
+            pattern.push_back("N");
+            nsew.push_back("S");
+        }
+        else if (token == "E"  || NStr::EqualNocase(token, "east"))
+        {
+            pattern.push_back("N");
+            nsew.push_back("E");
+        }
+        else if (token == "W"  || NStr::EqualNocase(token, "west") || token == "Wdeg")
+        {
+            pattern.push_back("N");
+            nsew.push_back("W");
+        }
+        else if (token == "NW")
+        {
+            nsew.push_back("N");
+            nsew.push_back("W");
+        }
+        else if (token == "NE")
+        {
+            nsew.push_back("N");
+            nsew.push_back("E");
+        }
+        else if (token == "SW")
+        {
+            nsew.push_back("S");
+            nsew.push_back("W");
+        }
+        else if (token == "SE")
+        {
+            nsew.push_back("S");
+            nsew.push_back("E");
+        }
+        else
+        {
+            //cout << "Token: " << token << endl;
+            numbers.clear();
+            return kEmptyStr;
+        }
     }
     //cout << "Pattern: " << NStr::Join(pattern, " ") << endl;
     return NStr::Join(pattern, " ");
@@ -1514,23 +1516,24 @@ static void s_ReorderNorthSouthEastWest(vector<double> &numbers, vector<int> &pr
 {
     if (numbers.size() != 2)
     {
-	numbers.clear();
-	return;
+        numbers.clear();
+        return;
     }
     if (lat_long.size() == 2)
     {
-	if (lat_long.front() == "long")
-	{
-	    swap(numbers[0], numbers[1]);
-	    swap(precision[0], precision[1]);
-            if (nsew.size() == 2)
+        if (lat_long.front() == "long")
+        {
+            swap(numbers[0], numbers[1]);
+            swap(precision[0], precision[1]);
+            if (nsew.size() == 2) {
                 swap(nsew[0], nsew[1]);
-	}
+            }
+        }
     }
     else if (!lat_long.empty())
     {
-	numbers.clear();
-	return;
+        numbers.clear();
+        return;
     }
     if (nsew.size() == 2)
     {
@@ -1538,53 +1541,53 @@ static void s_ReorderNorthSouthEastWest(vector<double> &numbers, vector<int> &pr
             (nsew[1] == "N" || nsew[1] == "S"))
         {
             swap(numbers[0], numbers[1]);
-	    swap(precision[0], precision[1]);
+            swap(precision[0], precision[1]);
             swap(nsew[0], nsew[1]);
         }
-	if (nsew[0] == "N")
+        if (nsew[0] == "N")
         {
-	    numbers[0] = fabs(numbers[0]);
+        numbers[0] = fabs(numbers[0]);
         }
-	else if (nsew[0] == "S")
+        else if (nsew[0] == "S")
         {
             if (numbers[0] != 0)
                 numbers[0] = -fabs(numbers[0]);
         }
-	else
-	{
-	    numbers.clear();
-	    return;
-	}
-	if (nsew[1] == "E")
+        else
         {
-	    numbers[1] = fabs(numbers[1]);
+            numbers.clear();
+            return;
         }
-	else if (nsew[1] == "W")
+        if (nsew[1] == "E")
+        {
+            numbers[1] = fabs(numbers[1]);
+        }
+        else if (nsew[1] == "W")
         {
             if (numbers[1] != 0)
                 numbers[1] = -fabs(numbers[1]);
         }
-	else
-	{
-	    numbers.clear();
-	    return;
-	}
+        else
+        {
+            numbers.clear();
+            return;
+        }
 
     }
     else if (!nsew.empty())
     {
-	numbers.clear();
-	return;
+        numbers.clear();
+        return;
     }
     if (lat_long.empty() && nsew.empty() && fabs(numbers[0]) > 90 && fabs(numbers[1]) < 90)
     {
-	swap(numbers[0], numbers[1]);
-	swap(precision[0], precision[1]);
+        swap(numbers[0], numbers[1]);
+        swap(precision[0], precision[1]);
     }
     if (fabs(numbers[0]) > 90 || fabs(numbers[1]) > 180)
     {
-	numbers.clear();
-	return;
+        numbers.clear();
+        return;
     }
 }
 
@@ -1598,37 +1601,37 @@ static void s_GetLatLong(const string &new_str, vector<double> &numbers, vector<
     string pattern = s_NormalizeTokens(tokens, numbers, anum, precision, lat_long, nsew);
     if (pattern.empty())
     {
-	numbers.clear();
-	return;
+        numbers.clear();
+        return;
     }
     vector<double> degrees(2, 0);
     vector<int> prec(2, 0);
     int sign1 = 1;
     int sign2 = 1;
     if ( pattern == "1 1" ||
-	 pattern == "1 N 1 N" ||
+     pattern == "1 N 1 N" ||
          pattern == "N 1 N 1" ||
-	 pattern == "1 degrees N 1 degrees N" ||
-	 pattern == "lat 1 lat 1" ||
+     pattern == "1 degrees N 1 degrees N" ||
+     pattern == "lat 1 lat 1" ||
          pattern == "1 N lat 1 N lat" ||
          pattern == "1 degrees N lat 1 degrees N lat")
     {
-	degrees[0] = numbers[0];
-	degrees[1] = numbers[1];
-	prec[0] = precision[0];
-	prec[1] = precision[1];
+        degrees[0] = numbers[0];
+        degrees[1] = numbers[1];
+        prec[0] = precision[0];
+        prec[1] = precision[1];
     }
     else if ((pattern == "1 1 \" 1 1 '" ||
-	      pattern == "1 degrees 1 \" N 1 degrees 1 ' N")
-	     && numbers[1] < 60 && numbers[3] < 60 
+          pattern == "1 degrees 1 \" N 1 degrees 1 ' N")
+         && numbers[1] < 60 && numbers[3] < 60 
              && numbers[1] >= 0 && numbers[3] >= 0)
     {
         sign1 = anum[0][0] == '-' ? -1 : 1;
         sign2 = anum[2][0] == '-' ? -1 : 1;
-	degrees[0] = sign1*(fabs(numbers[0]) + numbers[1] / 3600);
-	degrees[1] = sign2*(fabs(numbers[2]) + numbers[3] / 60);
-	prec[0] = max(precision[0], precision[1] + 4);
-	prec[1] = max(precision[2], precision[3] + 2);
+        degrees[0] = sign1*(fabs(numbers[0]) + numbers[1] / 3600);
+        degrees[1] = sign2*(fabs(numbers[2]) + numbers[3] / 60);
+        prec[0] = max(precision[0], precision[1] + 4);
+        prec[1] = max(precision[2], precision[3] + 2);
     }
     else if ( (pattern == "1 1 ' 1" ||
                pattern == "1 degrees 1 ' N 1 degrees N")
@@ -1636,121 +1639,121 @@ static void s_GetLatLong(const string &new_str, vector<double> &numbers, vector<
               && numbers[1] >= 0)
     {
         sign1 = anum[0][0] == '-' ? -1 : 1;
-	degrees[0] = sign1*(fabs(numbers[0]) + numbers[1] / 60);
-	degrees[1] = numbers[2];
-	prec[0] = max(precision[0], precision[1] + 2);
-	prec[1] = precision[2];
-    }
+        degrees[0] = sign1*(fabs(numbers[0]) + numbers[1] / 60);
+        degrees[1] = numbers[2];
+        prec[0] = max(precision[0], precision[1] + 2);
+        prec[1] = precision[2];
+        }
     else if (pattern == "1 1 ' 1 \" 1" 
-	     && numbers[1] < 60 && numbers[2] < 60
+         && numbers[1] < 60 && numbers[2] < 60
              && numbers[1] >= 0 && numbers[2] >= 0)
     {
         sign1 = anum[0][0] == '-' ? -1 : 1;
-	degrees[0] = sign1*(fabs(numbers[0]) + numbers[1] / 60 + numbers[2] / 3600);
-	degrees[1] = numbers[3];
-	prec[0] = max(max(precision[0], precision[1] + 2), precision[2] + 4);
-	prec[1] = precision[3];
+        degrees[0] = sign1*(fabs(numbers[0]) + numbers[1] / 60 + numbers[2] / 3600);
+        degrees[1] = numbers[3];
+        prec[0] = max(max(precision[0], precision[1] + 2), precision[2] + 4);
+        prec[1] = precision[3];
     }
     else if ((pattern == "1 1 ' 1 \" 1 1 '" ||
-	      pattern == "1 1 1 N 1 1 N" ||
-	      pattern == "1 degrees 1 ' 1 \" N 1 degrees 1 ' N")
-	     && numbers[1] < 60 && numbers[2] < 60 && numbers[4] < 60
+          pattern == "1 1 1 N 1 1 N" ||
+          pattern == "1 degrees 1 ' 1 \" N 1 degrees 1 ' N")
+         && numbers[1] < 60 && numbers[2] < 60 && numbers[4] < 60
              && numbers[1] >= 0 && numbers[2] >= 0 && numbers[4] >= 0)
     {
         sign1 = anum[0][0] == '-' ? -1 : 1;
         sign2 = anum[3][0] == '-' ? -1 : 1;
-	degrees[0] = sign1*(fabs(numbers[0]) + numbers[1] / 60 + numbers[2] / 3600);
-	degrees[1] = sign2*(fabs(numbers[3]) + numbers[4] / 60);
-	prec[0] = max(max(precision[0], precision[1] + 2), precision[2] + 4);
-	prec[1] = max(precision[3], precision[4] + 2);
+        degrees[0] = sign1*(fabs(numbers[0]) + numbers[1] / 60 + numbers[2] / 3600);
+        degrees[1] = sign2*(fabs(numbers[3]) + numbers[4] / 60);
+        prec[0] = max(max(precision[0], precision[1] + 2), precision[2] + 4);
+        prec[1] = max(precision[3], precision[4] + 2);
     }
     else if (( pattern == "1 1 ' 1 \" 1 1 ' 1 \"" ||
-	       pattern == "1 1 ' 1 \" N 1 1 ' 1 \" N" || 
-	       pattern == "1 degrees 1 ' 1 \" 1 degrees 1 ' 1 \"" || 
-	       pattern == "1 degrees 1 ' 1 \" N 1 degrees 1 ' 1 \" N" ||
-               pattern == "N 1 degrees 1 ' 1 \" N 1 degrees 1 ' 1 \"" ||
-	       pattern == "1 degrees 1 ' 1 N 1 degrees 1 ' 1 N" ||
-	       pattern == "1 degrees 1 1 N 1 degrees 1 1 N" ||
-	       pattern == "1 1 1 N 1 1 1 N")
+           pattern == "1 1 ' 1 \" N 1 1 ' 1 \" N" || 
+           pattern == "1 degrees 1 ' 1 \" 1 degrees 1 ' 1 \"" || 
+           pattern == "1 degrees 1 ' 1 \" N 1 degrees 1 ' 1 \" N" ||
+           pattern == "N 1 degrees 1 ' 1 \" N 1 degrees 1 ' 1 \"" ||
+           pattern == "1 degrees 1 ' 1 N 1 degrees 1 ' 1 N" ||
+           pattern == "1 degrees 1 1 N 1 degrees 1 1 N" ||
+           pattern == "1 1 1 N 1 1 1 N")
              && numbers[1] < 60 && numbers[2] < 60 && numbers[4] < 60 && numbers[5] < 60
              && numbers[1] >= 0 && numbers[2] >= 0 && numbers[4] >= 0 && numbers[5] >= 0)
     {
         sign1 = anum[0][0] == '-' ? -1 : 1;
         sign2 = anum[3][0] == '-' ? -1 : 1;
-	degrees[0] = sign1*(fabs(numbers[0]) + numbers[1] / 60 + numbers[2] / 3600);
-	degrees[1] = sign2*(fabs(numbers[3]) + numbers[4] / 60 + numbers[5] / 3600);
-	prec[0] = max(max(precision[0], precision[1] + 2), precision[2] + 4);
-	prec[1] = max(max(precision[3], precision[4] + 2), precision[5] + 4);
+        degrees[0] = sign1*(fabs(numbers[0]) + numbers[1] / 60 + numbers[2] / 3600);
+        degrees[1] = sign2*(fabs(numbers[3]) + numbers[4] / 60 + numbers[5] / 3600);
+        prec[0] = max(max(precision[0], precision[1] + 2), precision[2] + 4);
+        prec[1] = max(max(precision[3], precision[4] + 2), precision[5] + 4);
     }
     else if (( pattern == "1 1 ' 1 1 '" ||
-	       pattern == "1 1 N 1 1 N" ||
+           pattern == "1 1 N 1 1 N" ||
                pattern == "1 1 ' N 1 1 ' N" ||
-	       pattern == "1 degrees 1 ' N 1 degrees 1 ' N" ||
+           pattern == "1 degrees 1 ' N 1 degrees 1 ' N" ||
                pattern == "lat 1 degrees 1 ' N lat 1 degrees 1 ' N" ||
-	       pattern == "1 degrees 1 N 1 degrees 1 N" ||
-	       pattern == "1 degrees 1 N 1 degrees 1 ' N" ||
+           pattern == "1 degrees 1 N 1 degrees 1 N" ||
+           pattern == "1 degrees 1 N 1 degrees 1 ' N" ||
                pattern == "1 degrees 1 ' N 1 degrees 1 N" ||
                pattern == "N 1 degrees 1 ' N 1 degrees 1" ||
                pattern == "N 1 degrees 1 ' N 1 degrees 1 '" ||
                pattern == "N 1 degrees 1 ' N 1 1 '")
-	     && numbers[1] < 60  && numbers[3] < 60
+         && numbers[1] < 60  && numbers[3] < 60
              && numbers[1] >= 0  && numbers[3] >= 0)
     {
         sign1 = anum[0][0] == '-' ? -1 : 1;
         sign2 = anum[2][0] == '-' ? -1 : 1;
-	degrees[0] = sign1*(fabs(numbers[0]) + numbers[1] / 60);
-	degrees[1] = sign2*(fabs(numbers[2]) + numbers[3] / 60);
-	prec[0] = max(precision[0], precision[1] + 2);
-	prec[1] = max(precision[2], precision[3] + 2);
+        degrees[0] = sign1*(fabs(numbers[0]) + numbers[1] / 60);
+        degrees[1] = sign2*(fabs(numbers[2]) + numbers[3] / 60);
+        prec[0] = max(precision[0], precision[1] + 2);
+        prec[1] = max(precision[2], precision[3] + 2);
     }
     else if ((pattern == "1 N 1 1 N" ||
               pattern == "1 degrees N 1 degrees 1 ' N")
-	     &&  numbers[2] < 60
+         &&  numbers[2] < 60
              &&  numbers[2] >= 0)
     {
         sign2 = anum[1][0] == '-' ? -1 : 1;
-	degrees[0] = numbers[0];
-	degrees[1] = sign2*(fabs(numbers[1]) + numbers[2] / 60);
-	prec[0] = precision[0];
-	prec[1] = max(precision[1], precision[2] + 2);
+        degrees[0] = numbers[0];
+        degrees[1] = sign2*(fabs(numbers[1]) + numbers[2] / 60);
+        prec[0] = precision[0];
+        prec[1] = max(precision[1], precision[2] + 2);
     }
     else if ((pattern == "1 degrees 1 ' 1 degrees 1 ' 1 \"" ||
               pattern == "N 1 1 N 1 1 1")
-	     && numbers[1] < 60 && numbers[3] < 60 && numbers[4] < 60
+         && numbers[1] < 60 && numbers[3] < 60 && numbers[4] < 60
              && numbers[1] >= 0 && numbers[3] >= 0 && numbers[4] >= 0)
     {
         sign1 = anum[0][0] == '-' ? -1 : 1;
         sign2 = anum[2][0] == '-' ? -1 : 1;
-	degrees[0] = sign1*(fabs(numbers[0]) + numbers[1] / 60);
-	degrees[1] = sign2*(fabs(numbers[2]) + numbers[3] / 60 + numbers[4] / 3600);
-	prec[0] = max(precision[0], precision[1] + 2);
-	prec[1] = max(max(precision[2], precision[3] + 2), precision[4] + 4);
+        degrees[0] = sign1*(fabs(numbers[0]) + numbers[1] / 60);
+        degrees[1] = sign2*(fabs(numbers[2]) + numbers[3] / 60 + numbers[4] / 3600);
+        prec[0] = max(precision[0], precision[1] + 2);
+        prec[1] = max(max(precision[2], precision[3] + 2), precision[4] + 4);
     }
     else if (pattern == "1 degrees 1 degrees 1 ' 1 \""
-	     && numbers[2] < 60 && numbers[3] < 60
+         && numbers[2] < 60 && numbers[3] < 60
              && numbers[2] >= 0 && numbers[3] >= 0)
     {
         sign2 = anum[1][0] == '-' ? -1 : 1;
-	degrees[0] = numbers[0];
-	degrees[1] = sign2*(fabs(numbers[1]) + numbers[2] / 60 + numbers[3] / 3600);
-	prec[0] = precision[0];
-	prec[1] = max(max(precision[1], precision[2] + 2), precision[3] + 4);
+        degrees[0] = numbers[0];
+        degrees[1] = sign2*(fabs(numbers[1]) + numbers[2] / 60 + numbers[3] / 3600);
+        prec[0] = precision[0];
+        prec[1] = max(max(precision[1], precision[2] + 2), precision[3] + 4);
     }  
     else if (pattern == "1 degrees 1 ' 1 \" N 1 degrees 1 \" N"  
-	     && numbers[1] < 60 && numbers[2] < 60 && numbers[4] < 60
+         && numbers[1] < 60 && numbers[2] < 60 && numbers[4] < 60
              && numbers[1] >= 0 && numbers[2] >= 0 && numbers[4] >= 0)
     {
         sign1 = anum[0][0] == '-' ? -1 : 1;
         sign2 = anum[3][0] == '-' ? -1 : 1;
-	degrees[0] = sign1*(fabs(numbers[0]) + numbers[1] / 60 + numbers[2] / 3600);
-	degrees[1] = sign2*(fabs(numbers[3]) + numbers[4] / 3600);
-	prec[0] = max(max(precision[0], precision[1] + 2), precision[2] + 4);
-	prec[1] = max(precision[3], precision[4] + 4);
+        degrees[0] = sign1*(fabs(numbers[0]) + numbers[1] / 60 + numbers[2] / 3600);
+        degrees[1] = sign2*(fabs(numbers[3]) + numbers[4] / 3600);
+        prec[0] = max(max(precision[0], precision[1] + 2), precision[2] + 4);
+        prec[1] = max(precision[3], precision[4] + 4);
     }   
     else
     {
-	degrees.clear();
-	prec.clear();
+        degrees.clear();
+        prec.clear();
     }
     swap(degrees, numbers);
     swap(prec, precision);
@@ -1765,8 +1768,8 @@ string CSubSource::FixLatLonFormat (string orig_lat_lon, bool guess)
     CStringUTF8 old_str = CUtf8::AsUTF8(orig_lat_lon, CUtf8::GuessEncoding(orig_lat_lon));
     if (NStr::StartsWith(old_str, "\""))
     {
-	NStr::TrimPrefixInPlace(old_str, "\"");
-	NStr::TrimSuffixInPlace(old_str, "\"");
+        NStr::TrimPrefixInPlace(old_str, "\"");
+        NStr::TrimSuffixInPlace(old_str, "\"");
     }
     NStr::ReplaceInPlace(old_str, "\'\'", "\""); 
     string fixed_str = s_RemoveSpacesWithinNumbers(old_str);
@@ -1778,7 +1781,7 @@ string CSubSource::FixLatLonFormat (string orig_lat_lon, bool guess)
     string res;
     if (!numbers.empty())
     {
-	res = MakeLatLon(numbers[0], numbers[1], precision[0], precision[1]);
+        res = MakeLatLon(numbers[0], numbers[1], precision[0], precision[1]);
     }
     //cout << "After: " << res << endl;
     return res;
@@ -2611,10 +2614,10 @@ string CSubSource::FixAltitude (const string& value)
 
 
 // From VR-793:
-// A.	For segment, endogenous_virus_name:
-//   1. Must begin with a letter or number
-//   2. Spaces and other printable characters are permitted
-//   3. Must not be empty, must not be longer than 240 characters
+// A.    For segment, endogenous_virus_name:
+//   1.  Must begin with a letter or number
+//   2.  Spaces and other printable characters are permitted
+//   3.  Must not be empty, must not be longer than 240 characters
 
 bool CSubSource::x_GenericRepliconNameValid(const string& value)
 {
@@ -2649,13 +2652,13 @@ bool CSubSource::IsEndogenousVirusNameValid(const string& value)
 
 
 // From VR-793:
-// B.	For chromosome, linkage_group and plasmid_name values:
-//   4.	Must begin with a letter or number
-//   5.	Must not be empty, must not be longer than 32 characters
-//   6.	Must not contain <tab>
-//   7.	Spaces and other printable characters are permitted
-//   8.	Must not contain the word "plasmid" (ignoring case)
-//   9.	Must not contain the word "chromosome" (ignoring case)
+// B.    For chromosome, linkage_group and plasmid_name values:
+//   4.  Must begin with a letter or number
+//   5.  Must not be empty, must not be longer than 32 characters
+//   6.  Must not contain <tab>
+//   7.  Spaces and other printable characters are permitted
+//   8.  Must not contain the word "plasmid" (ignoring case)
+//   9.  Must not contain the word "chromosome" (ignoring case)
 //   10. Must not contain the phrase "linkage group" (ignoring case)
 //   11. Must not contain the series of letters "chr" (ignoring case)
 //   12. Must not contain the taxname (ignoring case)
@@ -2747,7 +2750,7 @@ bool CSubSource::IsLinkageGroupNameValid(const string& value, const string& taxn
 
 
 // VR-793
-// C.	For plasmid_name values:
+// C.    For plasmid_name values:
 //   19. Exception- megaplasmid is legal
 bool CSubSource::IsPlasmidNameValid(const string& value, const string& taxname)
 {
@@ -3890,84 +3893,7 @@ void CCountries::x_FindCountryName
     }
 }
 
-// RW-1278
-
-bool s_TrimSpacesEtcFromEnds(string& val)
-{
-    if (val.length() == 0) return false;
-
-    char * str = new char[sizeof(char) * (val.length() + 1)];
-    strcpy(str, val.c_str());
-
-    char *  amp;
-    unsigned char    ch;    /* to use 8bit characters in multibyte languages */
-    char *  dst;
-    char *  ptr;
-
-    dst = str;
-    ptr = str;
-    ch = *ptr;
-    if (ch != '\0' && (ch <= ' ' || ch == ';' || ch == ',')) {
-        while (ch != '\0' && (ch <= ' ' || ch == ';' || ch == ',')) {
-            ptr++;
-            ch = *ptr;
-        }
-        while (ch != '\0') {
-            *dst = ch;
-            dst++;
-            ptr++;
-            ch = *ptr;
-        }
-        *dst = '\0';
-    }
-    amp = NULL;
-    dst = NULL;
-    ptr = str;
-    ch = *ptr;
-    while (ch != '\0') {
-        if (ch == '&') {
-            amp = ptr;
-            dst = NULL;
-        }
-        else if (ch <= ' ') {
-            if (dst == NULL) {
-                dst = ptr;
-            }
-            amp = NULL;
-        }
-        else if (ch == ';') {
-            if (dst == NULL && amp == NULL) {
-                dst = ptr;
-            }
-        }
-        else if (ch == ',') {
-            if (dst == NULL) {
-                dst = ptr;
-            }
-            amp = NULL;
-        }
-        else {
-            dst = NULL;
-        }
-        ptr++;
-        ch = *ptr;
-    }
-    if (dst != NULL) {
-        *dst = '\0';
-    }
-
-    string new_val;
-    new_val = str;
-    delete[] str;
-
-    if (!NStr::Equal(val, new_val)) {
-        val = new_val;
-        return true;
-    }
-    else {
-        return false;
-    }
-}
+// start of RW-1278
 
 bool s_CompressRunsOfSpaces(string& val)
 {
@@ -4297,6 +4223,8 @@ bool s_IsState ( string& state, bool& modified ) {
         NStr::TrimSuffixInPlace ( working, " State", NStr::eNocase );
     }
 
+    NStr::TruncateSpacesInPlace ( working );
+
     TStateMap::const_iterator state_find_iter = stateAbbrevMap.find(working.c_str());
     if ( state_find_iter != stateAbbrevMap.end() ) {
         // replace with full state name
@@ -4328,7 +4256,7 @@ CCountries::EStateCleanResults CCountries::USAStateCleanup ( string& country ) {
     NStr::TruncateSpacesInPlace ( working );
 
     // remove flanking spaces and other punctuation
-    s_TrimSpacesEtcFromEnds ( working );
+    NStr::TruncateSpacesInPlace ( working );
 
     // check if no colon, just name of country
     if ( NStr::Find ( working, ":" ) == NPOS ) {
@@ -4348,7 +4276,7 @@ CCountries::EStateCleanResults CCountries::USAStateCleanup ( string& country ) {
         if ( scnd.empty()) {
             return e_NotUSA;
         }
-        s_TrimSpacesEtcFromEnds ( scnd );
+        NStr::TruncateSpacesInPlace ( scnd );
         if ( NStr::EqualNocase ( scnd, "USA") || NStr::EqualNocase ( scnd, "US")) {
             country = "USA";
             return e_Missing;
@@ -4357,13 +4285,13 @@ CCountries::EStateCleanResults CCountries::USAStateCleanup ( string& country ) {
     }
 
     // confirm that country is USA
-    s_TrimSpacesEtcFromEnds ( frst );
+    NStr::TruncateSpacesInPlace ( frst );
     if ( ! NStr::EqualNocase ( frst, "USA") && ! NStr::EqualNocase ( frst, "US")) {
         return e_NotUSA;
     }
 
     // handle pathological case of trailing colon
-    s_TrimSpacesEtcFromEnds ( scnd );
+    NStr::TruncateSpacesInPlace ( scnd );
     if ( scnd.empty()) {
         country = "USA";
         return e_Missing;
@@ -4380,7 +4308,7 @@ CCountries::EStateCleanResults CCountries::USAStateCleanup ( string& country ) {
 
     // remove flanking spaces around components
     for ( int j = 0; j < components.size(); j++ ) {
-        s_TrimSpacesEtcFromEnds ( components[j] );
+        NStr::TruncateSpacesInPlace ( components[j] );
         s_CompressRunsOfSpaces ( components[j] );
     }
 
@@ -4403,23 +4331,27 @@ CCountries::EStateCleanResults CCountries::USAStateCleanup ( string& country ) {
                 return e_Valid;
             }
 
-        // hard-coding for test
+        // hard-coding of several cities - placeholder for (single clause) exception list processing
+
         } else if ( NStr::EqualNocase ( components[0], "New York City") ) {
 
             country = "USA: New York, New York City";
             return e_Corrected;
 
-          } else if ( NStr::EqualNocase ( components[0], "Philadelphia") ) {
+        } else if ( NStr::EqualNocase ( components[0], "Philadelphia") ) {
 
-              country = "USA: Pennsylvania, Philadelphia";
-              return e_Corrected;
+            country = "USA: Pennsylvania, Philadelphia";
+            return e_Corrected;
 
-          } else if ( NStr::EqualNocase ( components[0], "Atlanta") ) {
+        } else if ( NStr::EqualNocase ( components[0], "Atlanta") ) {
 
-              country = "USA: Georgia, Atlanta";
-              return e_Corrected;
+            country = "USA: Georgia, Atlanta";
+            return e_Corrected;
+
+        // otherwise report missing state information
 
         } else {
+
             country = "USA: " + components[0];
             return e_Missing;
         }
@@ -4450,6 +4382,8 @@ CCountries::EStateCleanResults CCountries::USAStateCleanup ( string& country ) {
             }
         }
     }
+
+    // code expects state to be in first or last clause
 
     if ( num_states > 1 ) {
 
@@ -4491,11 +4425,15 @@ CCountries::EStateCleanResults CCountries::USAStateCleanup ( string& country ) {
 
     } else {
 
+        // code not expected to rescue a state hidden in middle of three or more clauses
+
         return e_Invalid;
     }
 
     return e_NoResult;
 }
+
+// end of RW-1278
 
 string CCountries::NewFixCountry (const string& test)
 {
