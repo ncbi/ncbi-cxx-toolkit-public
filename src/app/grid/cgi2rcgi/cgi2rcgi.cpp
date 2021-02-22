@@ -55,6 +55,7 @@
 
 #include <array>
 #include <vector>
+#include <functional>
 #include <map>
 #include <sstream>
 #include <unordered_map>
@@ -79,6 +80,148 @@ enum EEntryPulling {
 };
 
 
+struct SInputValidator
+{
+    SInputValidator();
+
+    void CheckEntry(const string& name, const string& value, bool is_requested = true);
+    void AddAffinityEntry(string name);
+
+    static vector<string> GetListenJobs(const string& value);
+    static CDeadline GetDeadline(const string& value);
+
+private:
+    static void CheckJobKey(const string& value);
+    static void CheckCancel(const string& value);
+    static void CheckCtgTime(const string& value)       { NStr::StringToInt(value);     }
+    static void CheckGetResults(const string& value)    { NStr::StringToBool(value);    }
+    static void CheckAffinity(const string& value);
+
+    struct SEntry;
+    vector<SEntry> m_Entries;
+};
+
+struct SInputValidator::SEntry
+{
+    string name;
+
+    template <class TF>
+    SEntry(string n, TF f) : name(move(n)), m_Func(f) {}
+
+    bool Check(const string& value);
+
+private:
+    function<void(const string&)> m_Func;
+    bool m_Validated = false;
+};
+
+bool SInputValidator::SEntry::Check(const string& value)
+{
+    if (m_Validated || value.empty()) {
+        return true;
+    }
+
+    if (!m_Func) {
+        return false;
+    }
+
+    try {
+        m_Func(value);
+        m_Validated = true;
+    }
+    catch (CCgiRequestException&) {
+        // This type is safe to rethrow and has more precise message
+        throw;
+    }
+    catch (...) {
+        NCBI_THROW_FMT(CCgiRequestException, eData,
+                "Invalid " << name << " value (not shown for safety reasons)");
+    }
+
+    return true;
+}
+
+SInputValidator::SInputValidator() :
+    m_Entries({
+            { "listen_jobs",    GetListenJobs       },
+            { "timeout",        GetDeadline         },
+            { "job_key",        CheckJobKey         },
+            { "cancel",         CheckCancel         },
+            { "ctg_time",       CheckCtgTime        },
+            { "get_results",    CheckGetResults     },
+        })
+{
+}
+
+void SInputValidator::CheckEntry(const string& name, const string& value, bool is_requested)
+{
+    auto l = [&](const SEntry& entry) { return NStr::CompareNocase(entry.name, name) == 0; };
+    auto found = find_if(m_Entries.begin(), m_Entries.end(), l);
+
+    // Throw if no validation function has found but the input value has been explicitly requested
+    if (((found == m_Entries.end()) || !found->Check(value)) && is_requested) {
+        NCBI_CGI_THROW_WITH_STATUS(CCgiRequestException, eData,
+                FORMAT(name << " has no validation defined"), CCgiException::e501_NotImplemented);
+    }
+}
+
+void SInputValidator::AddAffinityEntry(string name)
+{
+    m_Entries.push_back(SEntry(move(name), CheckAffinity));
+}
+
+vector<string> SInputValidator::GetListenJobs(const string& value)
+{
+    vector<string> rv;
+    NStr::Split(value, ",", rv);
+
+    for (const auto& job_id : rv) {
+        CheckJobKey(job_id);
+    }
+
+    return rv;
+}
+
+CDeadline SInputValidator::GetDeadline(const string& value)
+{
+    CTimeout timeout(CTimeout::eZero);
+
+    if (!value.empty()) {
+        timeout.Set(NStr::StringToDouble(value));
+    }
+
+    return CDeadline(timeout);
+}
+
+void SInputValidator::CheckJobKey(const string& value)
+{
+    CNetScheduleKey key(value);
+
+    if (!key.version) {
+        // CNetScheduleKey allows anything if that starts with a digit, so the additional check
+        NStr::StringToInt(value);
+
+        // NetSchedule API can fail (abort) on old job key formats (version == 0)
+        NCBI_THROW(CCgiRequestException, eData, "Old job key formats are not supported");
+    }
+}
+
+void SInputValidator::CheckCancel(const string& value)
+{
+    // Cannot use NStr::StringToBool here as cgi2rcgi.inc.html uses "Cancel the job" as a value
+    if (!NStr::MatchesMask(value, "[ 0-9a-zA-Z_-]*")) {
+        NCBI_THROW(CCgiRequestException, eData, "Cancel check failed");
+    }
+}
+
+void SInputValidator::CheckAffinity(const string& value)
+{
+    if (!NStr::MatchesMask(value, "[0-9a-zA-Z_-]*")) {
+        NCBI_THROW(CCgiRequestException, eData, "Affinity check failed");
+    }
+}
+
+
 /** @addtogroup NetScheduleClient
  *
  * @{
@@ -91,7 +234,7 @@ enum EEntryPulling {
 class CGridCgiContext
 {
 public:
-    CGridCgiContext(CHTMLPage& page,
+    CGridCgiContext(SInputValidator& input_validator, CHTMLPage& page,
         CHTMLPage& custom_http_header, CCgiContext& ctx);
 
     // Get the HTML page
@@ -148,6 +291,7 @@ public:
     }
 
 private:
+    SInputValidator&              m_InputValidator;
     CHTMLPage&                    m_Page;
     CHTMLPage&                    m_CustomHTTPHeader;
     CCgiContext&                  m_CgiContext;
@@ -164,8 +308,9 @@ private:
 /////////////////////////////////////////////////////////////////////////////
 
 
-CGridCgiContext::CGridCgiContext(CHTMLPage& page,
+CGridCgiContext::CGridCgiContext(SInputValidator& input_validator, CHTMLPage& page,
         CHTMLPage& custom_http_header, CCgiContext& ctx) :
+    m_InputValidator(input_validator),
     m_Page(page),
     m_CustomHTTPHeader(custom_http_header),
     m_CgiContext(ctx),
@@ -257,6 +402,8 @@ void CGridCgiContext::PullUpPersistentEntry(
         NStr::TruncateSpacesInPlace(value);
         DefinePersistentEntry(entry_name, value);
     }
+
+    m_InputValidator.CheckEntry(entry_name, value);
 }
 
 void CGridCgiContext::DefinePersistentEntry(const string& entry_name,
@@ -277,6 +424,7 @@ void CGridCgiContext::LoadQueryStringTags(
 {
     ITERATE(TCgiEntries, eit, m_ParsedQueryString) {
         AddTagMap("QUERY_STRING:" + eit->first, eit->second, encode_mode);
+        m_InputValidator.CheckEntry(eit->first, eit->second, false);
     }
 }
 
@@ -373,6 +521,7 @@ private:
     CHTMLPlainText::EEncodeMode m_TargetEncodeMode;
     bool m_HTMLPassThrough;
     bool m_PortAdded;
+    SInputValidator m_InputValidator;
 };
 
 void CCgi2RCgiApp::Init()
@@ -507,6 +656,7 @@ void CCgi2RCgiApp::Init()
         }
         m_AffinitySetLimit = config.GetInt(cgi2rcgi_section,
             "narrow_affinity_set_to", 0);
+        m_InputValidator.AddAffinityEntry(m_AffinityName);
     }
 
     // Disregard the case of CGI arguments
@@ -658,7 +808,7 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
     }
     m_CustomHTTPHeader.reset(new CHTMLPage);
     m_CustomHTTPHeader->SetTemplateString("<@CUSTOM_HTTP_HEADER@>");
-    CGridCgiContext grid_ctx(*m_Page, *m_CustomHTTPHeader, ctx);
+    CGridCgiContext grid_ctx(m_InputValidator, *m_Page, *m_CustomHTTPHeader, ctx);
 
     string listen_jobs;
     string timeout;
@@ -702,6 +852,10 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
                 SubmitJob(request, grid_ctx);
             }
         } // try
+        catch (CCgiRequestException&) {
+            // Pass input validator exception
+            throw;
+        }
         catch (exception& ex) {
             ERR_POST("Job's reported as failed: " << ex.what());
             OnJobFailed(ex.what(), grid_ctx);
@@ -709,6 +863,10 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
 
         if (grid_ctx.NeedRenderPage()) PopulatePage(grid_ctx);
     } //try
+    catch (CCgiRequestException&) {
+        // Pass input validator exception
+        throw;
+    }
     catch (exception& e) {
         ERR_POST("Failed to populate " << m_Title <<
             " HTML page: " << e.what());
@@ -745,18 +903,7 @@ struct SJobs : unordered_map<string, SJob>
 
 void CCgi2RCgiApp::ListenJobs(const string& job_ids_value, const string& timeout_value)
 {
-    CTimeout timeout(CTimeout::eZero);
-
-    try {
-        timeout.Set(NStr::StringToDouble(timeout_value));
-    }
-    catch (...) {
-    }
-
-    CDeadline deadline(timeout);
-
-    vector<string> job_ids;
-    NStr::Split(job_ids_value, ",", job_ids);
+    auto job_ids = SInputValidator::GetListenJobs(job_ids_value);
 
     if (job_ids.empty()) return;
 
@@ -766,6 +913,7 @@ void CCgi2RCgiApp::ListenJobs(const string& job_ids_value, const string& timeout
         jobs.emplace(job_id, job_id);
     }
 
+    auto deadline = SInputValidator::GetDeadline(timeout_value);
 
     // Request notifications unless there is a job that is already not pending/running
 
@@ -981,6 +1129,10 @@ void CCgi2RCgiApp::SubmitJob(CCgiRequest& request,
             "NetSchedule Queue is busy" : ex.what(), grid_ctx);
         done = true;
     }
+    catch (CCgiRequestException&) {
+        // Pass input validator exception
+        throw;
+    }
     catch (exception& ex) {
         ERR_POST("Failed to submit a job: " << ex.what());
         OnJobFailed(ex.what(), grid_ctx);
@@ -1102,6 +1254,10 @@ int CCgi2RCgiApp::RenderPage()
         }
         m_Response->WriteHeader();
         m_Page->Print(out, CNCBINode::eHTML);
+    }
+    catch (CCgiRequestException&) {
+        // Pass input validator exception
+        throw;
     }
     catch (exception& e) {
         if (!out) {
