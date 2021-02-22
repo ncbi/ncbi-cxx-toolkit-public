@@ -1041,13 +1041,14 @@ int CCgi2RCgiApp::RenderPage()
 
     // Compose and flush the resultant HTML page
     try {
-        CRegexpTemplateFilter filter(m_Page.get());
+        CRegexpTemplateFilter page_filter(m_Page.get());
+        CRegexpTemplateFilter header_filter(m_CustomHTTPHeader.get());
 
         vector<string>::const_iterator it;
         for (it = m_HtmlIncs.begin(); it != m_HtmlIncs.end(); ++it) {
             string lib = NStr::TruncateSpaces(*it);
-            m_Page->LoadTemplateLibFile(lib, &filter);
-            m_CustomHTTPHeader->LoadTemplateLibFile(lib, &filter);
+            m_Page->LoadTemplateLibFile(lib, &page_filter);
+            m_CustomHTTPHeader->LoadTemplateLibFile(lib, &header_filter);
         }
 
         stringstream header_stream;
