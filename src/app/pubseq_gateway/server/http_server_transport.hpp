@@ -77,6 +77,10 @@ static const char *    k_NotFound = "Not Found";
 static const char *    k_Unauthorized = "Unauthorized";
 static const char *    k_BadRequest = "Bad Request";
 
+void GetSSLSettings(bool &  enabled,
+                    string &  cert_file,
+                    string &  key_file,
+                    string &  ciphers);
 
 struct CQueryParam
 {
@@ -998,10 +1002,15 @@ public:
         m_HttpAcceptCtx({0})
     {
         PSG_TRACE("CHttpProto::CHttpProto");
+        x_SetupSSL();
     }
 
     ~CHttpProto()
     {
+        if (m_HttpAcceptCtx.ssl_ctx) {
+            SSL_CTX_free(m_HttpAcceptCtx.ssl_ctx);
+        }
+
         PSG_TRACE("~CHttpProto");
     }
 
@@ -1139,6 +1148,60 @@ public:
     }
 
 private:
+    void x_SetupSSL(void)
+    {
+        bool        enabled;
+        string      cert_file;
+        string      key_file;
+        string      ciphers;
+
+        GetSSLSettings(enabled, cert_file, key_file, ciphers);
+        if (!enabled)
+            return;
+
+        m_HttpAcceptCtx.ssl_ctx = SSL_CTX_new(SSLv23_server_method());
+        m_HttpAcceptCtx.expect_proxy_line = 0;
+
+        SSL_CTX_set_options(m_HttpAcceptCtx.ssl_ctx, SSL_OP_NO_SSLv2);
+        SSL_CTX_set_ecdh_auto(m_HttpAcceptCtx.ssl_ctx, 1);
+
+        if (SSL_CTX_use_certificate_chain_file(m_HttpAcceptCtx.ssl_ctx,
+                                               cert_file.c_str()) != 1) {
+            NCBI_THROW(CPubseqGatewayException, eConfigurationError,
+                       "Error loading SSL certificate from " +
+                       cert_file);
+        }
+
+        if (SSL_CTX_use_PrivateKey_file(m_HttpAcceptCtx.ssl_ctx,
+                                        key_file.c_str(),
+                                        SSL_FILETYPE_PEM) != 1) {
+            NCBI_THROW(CPubseqGatewayException, eConfigurationError,
+                       "Error loading SSL private key from " +
+                       key_file);
+        }
+
+        if (SSL_CTX_set_cipher_list(m_HttpAcceptCtx.ssl_ctx,
+                                    ciphers.c_str()) != 1) {
+            NCBI_THROW(CPubseqGatewayException, eConfigurationError,
+                       "Error setting SSL ciphers (" +
+                       ciphers + ")");
+        }
+
+        // Note:
+        // NPN support could also be added however it does not look necessary
+        // because it is for SPDY while http/2 tends to use ALPN
+        // #if H2O_USE_NPN
+        //     h2o_ssl_register_npn_protocols(m_HttpAcceptCtx.ssl_ctx,
+        //                                    h2o_http2_npn_protocols);
+        // #endif
+
+        #if H2O_USE_ALPN
+            h2o_ssl_register_alpn_protocols(m_HttpAcceptCtx.ssl_ctx,
+                                            h2o_http2_alpn_protocols);
+        #endif
+    }
+
+private:
     worker_t *              m_Worker;
     CHttpDaemon<P> &        m_Daemon;
     h2o_context_t           m_HttpCtx;
@@ -1187,14 +1250,6 @@ public:
                                                 tcp_workers, tcp_backlog,
                                                 tcp_max_connections));
 
-    /*
-        SSL_load_error_strings();
-        SSL_library_init();
-        OpenSSL_add_all_algorithms();
-
-        m_HttpAcceptCtx.ssl_ctx = SSL_CTX_new(SSLv23_server_method());
-        SSL_CTX_set_options(m_HttpAcceptCtx.ssl_ctx, SSL_OP_NO_SSLv2);
-    */
         h2o_config_init(&m_HttpCfg);
         m_HttpCfgInitialized = true;
 

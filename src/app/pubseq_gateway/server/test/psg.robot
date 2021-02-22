@@ -11,7 +11,7 @@
 
 # Local application
 | ${IS_LOCAL}              | true                           | # Enable testing the application locally (with command line) |
-| ${APP_NAME}              | psg.bash -server ${PSG_SERVER} | # Name of the application |
+| ${APP_NAME}              | psg.bash -server ${PSG_SERVER} -https ${PSG_HTTPS} | # Name of the application |
 | ${PARAMS}                | ${EMPTY}                       | # Parameters for finding server
 | ${APP_BN}                | ${TEST_APPS_DIR}${APP_NAME} ${PARAMS} | # Path to the application |
 | ${RUN_FROM_APP_DIR}      | false                          | # Run the application to be tested from its own directory |

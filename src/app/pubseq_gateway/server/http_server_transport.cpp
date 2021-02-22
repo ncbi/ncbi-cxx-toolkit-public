@@ -37,6 +37,7 @@
 
 #include "pending_operation.hpp"
 #include "http_server_transport.hpp"
+#include "pubseq_gateway.hpp"
 
 #include <h2o.h>
 
@@ -393,5 +394,18 @@ string CHttpRequest::GetPeerIP(void)
     }
 
     return buf;
+}
+
+
+void GetSSLSettings(bool &  enabled,
+                    string &  cert_file,
+                    string &  key_file,
+                    string &  ciphers)
+{
+    auto *  app = CPubseqGatewayApp::GetInstance();
+    enabled = app->GetSSLEnable();
+    cert_file = app->GetSSLCertFile();
+    key_file = app->GetSSLKeyFile();
+    ciphers = app->GetSSLCiphers();
 }
 

@@ -229,16 +229,34 @@ EPSGS_AccessionAdjustmentResult
 CPSGS_AsyncResolveBase::AdjustBioseqAccession(
                                     SBioseqResolution &  bioseq_resolution)
 {
-    if (CanSkipBioseqInfoRetrieval(bioseq_resolution.m_BioseqInfo))
+    if (CanSkipBioseqInfoRetrieval(bioseq_resolution.m_BioseqInfo)) {
+        if (m_Request->NeedTrace()) {
+            m_Reply->SendTrace("Accession adjustment is not required "
+                               "(bioseq info is not provided)",
+                               m_Request->GetStartTimestamp());
+        }
         return ePSGS_NotRequired;
+    }
 
     auto    acc_subst_option = GetAccessionSubstitutionOption();
-    if (acc_subst_option == SPSGS_RequestBase::ePSGS_NeverAccSubstitute)
+    if (acc_subst_option == SPSGS_RequestBase::ePSGS_NeverAccSubstitute) {
+        if (m_Request->NeedTrace()) {
+            m_Reply->SendTrace("Accession adjustment is not required "
+                               "(substitute option is 'never')",
+                               m_Request->GetStartTimestamp());
+        }
         return ePSGS_NotRequired;
+    }
 
     if (acc_subst_option == SPSGS_RequestBase::ePSGS_LimitedAccSubstitution &&
-        bioseq_resolution.m_BioseqInfo.GetSeqIdType() != CSeq_id::e_Gi)
+        bioseq_resolution.m_BioseqInfo.GetSeqIdType() != CSeq_id::e_Gi) {
+        if (m_Request->NeedTrace()) {
+            m_Reply->SendTrace("Accession adjustment is not required "
+                               "(substitute option is 'limited' and seq_id_type is not gi)",
+                               m_Request->GetStartTimestamp());
+        }
         return ePSGS_NotRequired;
+    }
 
     auto    adj_result = bioseq_resolution.AdjustAccession(m_Request, m_Reply);
     if (adj_result == ePSGS_LogicError ||

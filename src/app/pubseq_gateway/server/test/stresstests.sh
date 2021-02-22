@@ -1,6 +1,47 @@
+#!/bin/env bash
+
+
+usage() {
+    echo "USAGE:"
+    echo "$0  [-h|--help]  [--https] --server host:port"
+    exit 0
+}
+
+(( $# == 0 )) && usage
+
+
+
 outdir="`pwd`/stressoutput"
 aggregate="`pwd`/aggregate.py"
-url="http://tonka1:2180"
+server="tonka1:2180"
+https="0"
+
+while (( $# )); do
+    case $1 in
+        --server)
+            (( $# > 1 )) || usage
+            shift
+            server=$1
+            ;;
+        --https)
+            (( $# > 1 )) || usage
+            https="1"
+            ;;
+        --help)
+            usage
+            ;;
+        -h|*) # Help
+            usage
+            ;;
+    esac
+    shift
+done
+
+url="http://${server}"
+if [[ "${https}" == "1" ]]; then
+    url="https://${server}"
+fi
+
 
 # Waits for h2load to finish; exit if failed;
 # aggregate all output; remove output files

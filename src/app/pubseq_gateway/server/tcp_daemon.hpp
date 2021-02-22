@@ -113,9 +113,10 @@ public:
     {
         int         err_code;
 
-        for (unsigned int  i = 0; i < nworkers; ++i)
+        for (unsigned int  i = 0; i < nworkers; ++i) {
             m_workers.emplace_back(new CTcpWorker<P, U, D>(i + 1, exp,
                                                            m_daemon, this, d));
+        }
 
         for (auto &  it: m_workers) {
             CTcpWorker<P, U, D> *worker = it.get();
@@ -685,7 +686,12 @@ public:
                 NCBI_THROW2(CPubseqGatewayUVException, eUvExportStartFailure,
                             "uv_export_start failed", rc);
 
-            workers.Start(exp, m_num_workers, d, OnWatchDog);
+            try {
+                workers.Start(exp, m_num_workers, d, OnWatchDog);
+            } catch (const exception &  exc) {
+                uv_export_close(exp);
+                throw;
+            }
 
             rc = uv_export_finish(exp);
             if (rc)

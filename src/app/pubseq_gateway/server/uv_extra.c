@@ -158,8 +158,6 @@ static void s_on_ipc_connection(uv_stream_t *  ipc, int  status)
 }
 
 
-static int uv_export_close(struct uv_export_t *  exp);
-
 
 int uv_export_start(uv_loop_t *  loop, uv_stream_t *  handle,
                     const char *  ipc_name, unsigned short  count,
@@ -261,7 +259,7 @@ static int uv_export_wait(struct uv_export_t *  exp)
 }
 
 
-static int uv_export_close(struct uv_export_t *  exp)
+int uv_export_close(struct uv_export_t *  exp)
 {
     if (exp->m_InWaiting)
         return UV_EBUSY;

@@ -93,6 +93,10 @@ const bool              kDefaultCassandraProcessorsEnabled = true;
 const bool              kDefaultOSGProcessorsEnabled = false;
 const string            kDefaultTestSeqId = "gi|2";
 const bool              kDefaultTestSeqIdIgnoreError = true;
+const bool              kDefaultSSLEnable = false;
+const string            kDefaultSSLCertFile = "";
+const string            kDefaultSSLKeyFile = "";
+const string            kDefaultSSLCiphers = "DEFAULT:!MD5:!DSS:!DES:!RC4:!RC2:!SEED:!IDEA:!NULL:!ADH:!EXP:!SRP:!PSK";
 
 static const string     kDaemonizeArgName = "daemonize";
 
@@ -142,7 +146,9 @@ CPubseqGatewayApp::CPubseqGatewayApp() :
     m_ExcludeBlobCache(nullptr),
     m_StartupDataState(ePSGS_NoCassConnection),
     m_LogFields("http"),
-    m_OSGProcessorsEnabled(kDefaultOSGProcessorsEnabled)
+    m_OSGProcessorsEnabled(kDefaultOSGProcessorsEnabled),
+    m_SSLEnable(kDefaultSSLEnable),
+    m_SSLCiphers(kDefaultSSLCiphers)
 {
     sm_PubseqApp = this;
     m_HelpMessage = GetIntrospectionNode().Repr(CJsonNode::fStandardJson);
@@ -269,6 +275,11 @@ void CPubseqGatewayApp::ParseArgs(void)
     m_TestSeqId = registry.GetString("HEALTH", "test_seq_id", kDefaultTestSeqId);
     m_TestSeqIdIgnoreError = registry.GetBool("HEALTH", "test_seq_id_ignore_error",
                                               kDefaultTestSeqIdIgnoreError);
+
+    m_SSLEnable = registry.GetBool("SSL", "ssl_enable", kDefaultSSLEnable);
+    m_SSLCertFile = registry.GetString("SSL", "ssl_cert_file", kDefaultSSLCertFile);
+    m_SSLKeyFile = registry.GetString("SSL", "ssl_key_file", kDefaultSSLKeyFile);
+    m_SSLCiphers = registry.GetString("SSL", "ssl_ciphers", kDefaultSSLCiphers);
 
     // It throws an exception in case of inability to start
     x_ValidateArgs();
@@ -559,6 +570,7 @@ int CPubseqGatewayApp::Run(void)
             }, &get_parser, nullptr);
 
 
+    x_InitSSL();
     m_TcpDaemon.reset(
             new CHttpDaemon<CPendingOperation>(http_handler, "0.0.0.0",
                                                m_HttpPort,
@@ -839,6 +851,32 @@ void CPubseqGatewayApp::x_ValidateArgs(void)
                     "reset to the default value (" +
                     to_string(kDefaultMaxHops) + ").");
         m_MaxHops = kDefaultMaxHops;
+    }
+
+    if (m_SSLEnable) {
+        if (m_SSLCertFile.empty()) {
+            NCBI_THROW(CPubseqGatewayException, eConfigurationError,
+                       "[SSL]/ssl_cert_file value must be provided "
+                       "if [SSL]/ssl_enable is set to true");
+        }
+        if (m_SSLKeyFile.empty()) {
+            NCBI_THROW(CPubseqGatewayException, eConfigurationError,
+                       "[SSL]/ssl_key_file value must be provided "
+                       "if [SSL]/ssl_enable is set to true");
+        }
+
+        if (!CFile(m_SSLCertFile).Exists()) {
+            NCBI_THROW(CPubseqGatewayException, eConfigurationError,
+                       "[SSL]/ssl_cert_file is not found");
+        }
+        if (!CFile(m_SSLKeyFile).Exists()) {
+            NCBI_THROW(CPubseqGatewayException, eConfigurationError,
+                       "[SSL]/ssl_key_file is not found");
+        }
+
+        if (m_SSLCiphers.empty()) {
+            m_SSLCiphers = kDefaultSSLCiphers;
+        }
     }
 }
 
@@ -1513,6 +1551,15 @@ void CPubseqGatewayApp::x_ReadIdToNameAndDescriptionConfiguration(
     }
 }
 
+void CPubseqGatewayApp::x_InitSSL(void)
+{
+    if (m_SSLEnable) {
+        SSL_load_error_strings();
+        SSL_library_init();
+        OpenSSL_add_all_algorithms();
+    }
+}
+
 
 void CPubseqGatewayApp::x_RegisterProcessors(void)
 {
@@ -1557,4 +1604,5 @@ void CollectGarbage(void)
     CPubseqGatewayApp *      app = CPubseqGatewayApp::GetInstance();
     app->GetExcludeBlobCache()->Purge();
 }
+
 

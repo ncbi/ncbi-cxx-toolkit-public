@@ -231,6 +231,26 @@ public:
         m_RequestDispatcher.SignalConnectionCancelled(processor);
     }
 
+    bool GetSSLEnable(void) const
+    {
+        return m_SSLEnable;
+    }
+
+    string GetSSLCertFile(void) const
+    {
+        return m_SSLCertFile;
+    }
+
+    string GetSSLKeyFile(void) const
+    {
+        return m_SSLKeyFile;
+    }
+
+    string GetSSLCiphers(void) const
+    {
+        return m_SSLCiphers;
+    }
+
 private:
     struct SRequestParameter
     {
@@ -316,6 +336,7 @@ private:
     void x_RegisterProcessors(void);
     void x_DispatchRequest(shared_ptr<CPSGS_Request>  request,
                            shared_ptr<CPSGS_Reply>  reply);
+    void x_InitSSL(void);
 
 private:
     string                              m_Si2csiDbFile;
@@ -393,6 +414,12 @@ private:
 
     // Requests dispatcher
     CPSGS_Dispatcher                    m_RequestDispatcher;
+
+    // https support
+    bool                                m_SSLEnable;
+    string                              m_SSLCertFile;
+    string                              m_SSLKeyFile;
+    string                              m_SSLCiphers;
 
 private:
     static CPubseqGatewayApp *          sm_PubseqApp;

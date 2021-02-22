@@ -46,6 +46,7 @@ int uv_export_start(uv_loop_t *  loop, uv_stream_t *  handle,
 int uv_export_finish(struct uv_export_t *  exp);
 int uv_import(uv_loop_t *  loop, uv_stream_t *  handle,
               struct uv_export_t *  exp);
+int uv_export_close(struct uv_export_t *  exp);
 
 #ifdef __cplusplus
 }
