@@ -67,6 +67,17 @@ USING_NCBI_SCOPE;
 
 static const string kSinceTime = "ctg_time";
 
+enum EEntryPulling {
+    fUseQueryString    = 1 << 0,
+    fUseRequestContent = 1 << 1,
+    fMakePersistent    = 1 << 2,
+    eDefaultPulling    = fUseQueryString | fUseRequestContent | fMakePersistent,
+
+    // Old values, now synonyms
+    eUseQueryString    = fUseQueryString,
+    eUseRequestContent = fUseRequestContent,
+};
+
 
 /** @addtogroup NetScheduleClient
  *
@@ -104,7 +115,7 @@ public:
     typedef map<string,string>    TPersistentEntries;
 
     void PullUpPersistentEntry(const string& entry_name);
-    void PullUpPersistentEntry(const string& entry_name, string& value);
+    void PullUpPersistentEntry(const string& entry_name, string& value, int pulling = eDefaultPulling);
     void DefinePersistentEntry(const string& entry_name, const string& value);
     const TPersistentEntries& GetPersistentEntries() const
         { return m_PersistentEntries; }
@@ -232,13 +243,20 @@ void CGridCgiContext::PullUpPersistentEntry(const string& entry_name)
 }
 
 void CGridCgiContext::PullUpPersistentEntry(
-    const string& entry_name, string& value)
+    const string& entry_name, string& value, int pulling)
 {
-    GetQueryStringEntryValue(entry_name, value);
-    if (value.empty())
+    if (pulling & fUseQueryString) {
+        GetQueryStringEntryValue(entry_name, value);
+    }
+
+    if (value.empty() && (pulling & fUseRequestContent)) {
         GetRequestEntryValue(entry_name, value);
-    NStr::TruncateSpacesInPlace(value);
-    DefinePersistentEntry(entry_name, value);
+    }
+
+    if (pulling & fMakePersistent) {
+        NStr::TruncateSpacesInPlace(value);
+        DefinePersistentEntry(entry_name, value);
+    }
 }
 
 void CGridCgiContext::DefinePersistentEntry(const string& entry_name,
@@ -322,11 +340,6 @@ private:
     CCgiResponse* m_Response;
 
 private:
-    enum {
-        eUseQueryString = 1,
-        eUseRequestContent = 2
-    };
-
     void ReadJob(istream&, CGridCgiContext&);
 
     // This method is called when result is available immediately
@@ -911,12 +924,7 @@ void CCgi2RCgiApp::SubmitJob(CCgiRequest& request,
 
     if (!m_AffinityName.empty()) {
         string affinity;
-        if (m_AffinitySource & eUseQueryString)
-            grid_ctx.GetQueryStringEntryValue(m_AffinityName,
-                affinity);
-        if (affinity.empty() &&
-                m_AffinitySource & eUseRequestContent)
-            grid_ctx.GetRequestEntryValue(m_AffinityName, affinity);
+        grid_ctx.PullUpPersistentEntry(m_AffinityName, affinity, m_AffinitySource);
         if (!affinity.empty()) {
             if (m_AffinitySetLimit > 0) {
                 CChecksum crc32(CChecksum::eCRC32);
