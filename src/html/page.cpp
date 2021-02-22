@@ -739,7 +739,7 @@ void CHTMLPage::x_LoadTemplateLib(CNcbiIstream& istrm, SIZE_TYPE size,
 
         // Find next
         tag_start = s_Find(*pstr, kTagStartBOL.c_str(),
-                           last + te_size + name_end - name_start + tse_size);
+                           last + te_size + name.size() + tse_size);
 
     }
 }
