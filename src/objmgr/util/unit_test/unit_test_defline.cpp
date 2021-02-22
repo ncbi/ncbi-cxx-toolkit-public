@@ -206,3 +206,54 @@ GTCAAACCTGCAAATTCAGTAGTAACAGAGTTCTTTTATAACTTTTAAACAAAGCTTTAGAGCA\"\
     }\
   }\
 }";
+
+
+
+BOOST_AUTO_TEST_CASE(Test_LocationMitochondrion)
+{
+    // RW-1277
+    auto testEntry = 
+    R"(Seq-entry ::= seq {
+        id {
+            local str "id1"
+        },
+        descr {
+            source {
+            genome mitochondrion,
+            org {
+            }
+            },
+            molinfo {
+                biomol genomic,
+                tech wgs
+            }
+        },
+        inst {
+            repr raw,
+            mol dna,
+            length 68,
+            seq-data ncbi2na '1E555555555555555555555555555555C9'H
+        }
+    })";
+
+    CSeq_entry entry;
+    {{
+         CNcbiIstrstream istr(testEntry);
+         istr >> MSerial_AsnText >> entry;
+     }}
+
+    CScope scope(*CObjectManager::GetInstance());
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(entry);
+
+    CDeflineGenerator gen(seh);
+ 
+    CBioseq_CI bs_iter(seh);
+    CBioseq_Handle bsh = *bs_iter;
+  
+    string defline = gen.GenerateDefline(bsh, 
+            CDeflineGenerator::fFastaFormat | CDeflineGenerator::fShowModifiers);
+    BOOST_CHECK_EQUAL(defline, " [location=mitochondrion] [tech=wgs]");
+
+    defline = gen.GenerateDefline(bsh, CDeflineGenerator::fShowModifiers);
+    BOOST_CHECK_EQUAL(defline, " [location=mitochondrial] [tech=wgs]");
+}
