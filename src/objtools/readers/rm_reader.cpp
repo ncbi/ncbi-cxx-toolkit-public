@@ -839,7 +839,7 @@ CRepeatMaskerReader::ReadSeqAnnot(ILineReader& lr, ILineErrorListener* pMessageL
 
 bool CRepeatMaskerReader::IsHeaderLine(const string& line)
 {
-    string labels_1st_line[] = { "SW", "perc", "query", "position", "matching", "" };
+    string labels_1st_line[] = { "perc", "query", "position", "matching", "" };
     string labels_2nd_line[] = { "score", "div.", "del.", "ins.", "sequence", "" };
 
     // try to identify 1st line of column labels:
