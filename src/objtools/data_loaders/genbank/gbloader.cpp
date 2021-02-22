@@ -203,16 +203,17 @@ CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
     CObjectManager::EIsDefault is_default,
     CObjectManager::TPriority  priority)
 {
-#if defined(HAVE_PSG_LOADER)
     if (TGenbankLoaderPsg::GetDefault()) {
+#if defined(HAVE_PSG_LOADER)
         return CPSGDataLoader::RegisterInObjectManager(om, is_default, priority);
-    }
 #else
-    if (0) {}
+        ERR_POST_X(3, Critical << "PSG Loader is requested but not available");
+        TRegisterLoaderInfo info;
+        info.Set(nullptr, false);
+        return info;
 #endif
-    else {
-        return CGBDataLoader_Native::RegisterInObjectManager(om, reader_ptr, is_default, priority);
     }
+    return CGBDataLoader_Native::RegisterInObjectManager(om, reader_ptr, is_default, priority);
 }
 
 
@@ -228,16 +229,17 @@ CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
     CObjectManager::EIsDefault is_default,
     CObjectManager::TPriority  priority)
 {
-#if defined(HAVE_PSG_LOADER)
     if (TGenbankLoaderPsg::GetDefault()) {
+#if defined(HAVE_PSG_LOADER)
         return CPSGDataLoader::RegisterInObjectManager(om, is_default, priority);
-    }
 #else
-    if (0) {}
+        ERR_POST_X(3, Critical << "PSG Loader is requested but not available");
+        TRegisterLoaderInfo info;
+        info.Set(nullptr, false);
+        return info;
 #endif
-    else {
-        return CGBDataLoader_Native::RegisterInObjectManager(om, reader_name, is_default, priority);
     }
+    return CGBDataLoader_Native::RegisterInObjectManager(om, reader_name, is_default, priority);
 }
 
 
@@ -265,16 +267,17 @@ CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
     CObjectManager::EIsDefault is_default,
     CObjectManager::TPriority  priority)
 {
-#if defined(HAVE_PSG_LOADER)
     if (TGenbankLoaderPsg::GetDefault()) {
+#if defined(HAVE_PSG_LOADER)
         return CPSGDataLoader::RegisterInObjectManager(om, is_default, priority);
-    }
 #else
-    if (0) {}
+        ERR_POST_X(3, Critical << "PSG Loader is requested but not available");
+        TRegisterLoaderInfo info;
+        info.Set(nullptr, false);
+        return info;
 #endif
-    else {
-        return CGBDataLoader_Native::RegisterInObjectManager(om, include_hup, web_cookie, is_default, priority);
     }
+    return CGBDataLoader_Native::RegisterInObjectManager(om, include_hup, web_cookie, is_default, priority);
 }
 
 
@@ -302,16 +305,17 @@ CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
     CObjectManager::EIsDefault is_default,
     CObjectManager::TPriority  priority)
 {
-#if defined(HAVE_PSG_LOADER)
     if (TGenbankLoaderPsg::GetDefault()) {
+#if defined(HAVE_PSG_LOADER)
         return CPSGDataLoader::RegisterInObjectManager(om, is_default, priority);
-    }
 #else
-    if (0) {}
+        ERR_POST_X(3, Critical << "PSG Loader is requested but not available");
+        TRegisterLoaderInfo info;
+        info.Set(nullptr, false);
+        return info;
 #endif
-    else {
-        return CGBDataLoader_Native::RegisterInObjectManager(om, reader_name, include_hup, web_cookie, is_default, priority);
     }
+    return CGBDataLoader_Native::RegisterInObjectManager(om, reader_name, include_hup, web_cookie, is_default, priority);
 }
 
 
@@ -328,16 +332,17 @@ CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
     CObjectManager::EIsDefault is_default,
     CObjectManager::TPriority  priority)
 {
-#if defined(HAVE_PSG_LOADER)
     if (TGenbankLoaderPsg::GetDefault()) {
+#if defined(HAVE_PSG_LOADER)
         return CPSGDataLoader::RegisterInObjectManager(om, param_tree, is_default, priority);
-    }
 #else
-    if (0) {}
+        ERR_POST_X(3, Critical << "PSG Loader is requested but not available");
+        TRegisterLoaderInfo info;
+        info.Set(nullptr, false);
+        return info;
 #endif
-    else {
-        return CGBDataLoader_Native::RegisterInObjectManager(om, param_tree, is_default, priority);
     }
+    return CGBDataLoader_Native::RegisterInObjectManager(om, param_tree, is_default, priority);
 }
 
 
@@ -353,16 +358,17 @@ CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
     CObjectManager::EIsDefault is_default,
     CObjectManager::TPriority  priority)
 {
-#if defined(HAVE_PSG_LOADER)
     if (TGenbankLoaderPsg::GetDefault()) {
+#if defined(HAVE_PSG_LOADER)
         return CPSGDataLoader::RegisterInObjectManager(om, params, is_default, priority);
-    }
 #else
-    if (0) {}
+        ERR_POST_X(3, Critical << "PSG Loader is requested but not available");
+        TRegisterLoaderInfo info;
+        info.Set(nullptr, false);
+        return info;
 #endif
-    else {
-        return CGBDataLoader_Native::RegisterInObjectManager(om, params, is_default, priority);
     }
+    return CGBDataLoader_Native::RegisterInObjectManager(om, params, is_default, priority);
 }
 
 

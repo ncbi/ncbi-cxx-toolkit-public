@@ -48,7 +48,7 @@ NCBI_DEFINE_ERRCODE_X(Objtools_LDS_Mgr,     1404,  3);
 NCBI_DEFINE_ERRCODE_X(Objtools_LDS_Object,  1405, 13);
 NCBI_DEFINE_ERRCODE_X(Objtools_LDS_Query,   1406,  1);
 NCBI_DEFINE_ERRCODE_X(Objtools_LDS_Loader,  1407,  3);
-NCBI_DEFINE_ERRCODE_X(Objtools_GBLoader,    1408,  2);
+NCBI_DEFINE_ERRCODE_X(Objtools_GBLoader,    1408,  3);
 NCBI_DEFINE_ERRCODE_X(Objtools_GB_Util,     1409, 14);
 NCBI_DEFINE_ERRCODE_X(Objtools_Reader,      1410,  0);
 NCBI_DEFINE_ERRCODE_X(Objtools_Rd_Id2Base,  1411,  0);
