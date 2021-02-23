@@ -212,7 +212,7 @@ case "$ncbi_platform" in
     Linux64    ) : ${GSOAP_PATH=$NCBI/gsoap-2.8.15} ;;
 esac
 
-: ${H2O_PATH=$NCBI/h2o-2.2.5}
+: ${H2O_PATH=$NCBI/h2o-2.2.6}
 
 : ${HDF5_PATH=$NCBI/hdf5-1.8.3}
 
