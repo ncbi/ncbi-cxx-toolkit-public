@@ -2071,5 +2071,88 @@ DISCREPANCY_SUMMARIZE(SUSPICIOUS_SEQUENCE_ID)
 }
 
 
+// CHROMOSOME_PRESENT
+
+static const CSubSource::ESubtype eSubtype_unknown = static_cast<CSubSource::ESubtype>(0);
+
+static bool s_areCompatible(CBioSource::EGenome Location, CSubSource::ESubtype Qualifier)
+{
+    if (Qualifier == CSubSource::eSubtype_plasmid_name) {
+        return true; // always OK by this test; might be handled elsewhere
+    }
+
+    switch (Location)
+    {
+    case CBioSource::eGenome_chromosome:
+        return false;
+    case CBioSource::eGenome_unknown: // not present
+    case CBioSource::eGenome_genomic:
+        switch (Qualifier)
+        {
+        case CSubSource::eSubtype_chromosome:
+        case CSubSource::eSubtype_linkage_group:
+            return false;
+        case eSubtype_unknown: // not present
+        default:
+            return true;
+        }
+    case CBioSource::eGenome_plasmid: // always OK by this test; might be handled elsewhere
+    default:
+        return true;
+    }
+
+}
+
+DISCREPANCY_CASE(CHROMOSOME_PRESENT, SEQ_SET, eSubmitter | eSmart | eFatal, "Chromosome present")
+{
+    const CBioseq_set& set = context.CurrentBioseq_set();
+    if (set.IsSetSeq_set() && set.IsSetClass() && set.GetClass() == CBioseq_set::eClass_genbank) {
+        for (const auto& se : set.GetSeq_set()) {
+            if (!se->IsSetDescr()) {
+                continue;
+            }
+
+            for (const auto& descr : se->GetDescr().Get()) {
+                if (!descr->IsSource()) {
+                    continue;
+                }
+                const CBioSource& bio_src = descr->GetSource();
+
+                CBioSource::EGenome Location = CBioSource::eGenome_unknown;
+                if (bio_src.IsSetGenome()) {
+                    Location = static_cast<CBioSource::EGenome>(bio_src.GetGenome());
+                }
+                // shortcut
+                if (Location == CBioSource::eGenome_plasmid) {
+                    continue; // always OK by this test; might be handled elsewhere
+                }
+
+                if (bio_src.IsSetSubtype()) {
+                    for (const auto& subtype : bio_src.GetSubtype()) {
+                        CSubSource::ESubtype Qualifier = eSubtype_unknown;
+                        if (subtype->IsSetSubtype()) {
+                            Qualifier = static_cast<CSubSource::ESubtype>(subtype->GetSubtype());
+                        }
+                        if (!s_areCompatible(Location, Qualifier)) {
+                            m_Objs["[n] chromosome[s] [is] present"].Add(*context.BioseqSetObjRef()).Fatal();
+                        }
+                    }
+                } else {
+                    if (!s_areCompatible(Location, eSubtype_unknown)) {
+                        m_Objs["[n] chromosome[s] [is] present"].Add(*context.BioseqSetObjRef()).Fatal();
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+DISCREPANCY_SUMMARIZE(CHROMOSOME_PRESENT)
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
