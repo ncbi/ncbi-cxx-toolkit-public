@@ -109,6 +109,7 @@ static const char* x_strncpy0(char* dst, const char* src, size_t dst_size)
 {
     size_t src_len = strlen(src);
     const char* retval = dst;
+    assert(dst_size);
     if (src_len >= dst_size) {
         src_len  = dst_size - 1;
         retval = 0;
@@ -118,22 +119,28 @@ static const char* x_strncpy0(char* dst, const char* src, size_t dst_size)
 }
 
 
-static int/*bool*/ x_tr(char* str, char a, char b, size_t len)
+/* Replace any non-alpha / non-digit with '_' */
+static int/*bool*/ x_mkenv(char* str, size_t len)
 {
-    int/*bool*/ subst = 0/*false*/;
-    char* end = str + len;
-    while (str < end) {
-        if (*str == a) {
-            *str  = b;
-            subst = 1/*true*/;
+    int/*bool*/ made = 0/*false*/;
+    const char* end  = str + len;
+    while (str != end) {
+        unsigned char c = (unsigned char)(*str);
+        assert(!isspace(c));
+        if (!isalpha(c)  &&  !isdigit(c)  &&  !(c == '_')) {
+            made = 1/*true*/;
+            *str = '_';
         }
         ++str;
     }
-    return subst;
+    return made;
 }
 
 
-/* Last parameter "*generic":
+/* Either strncasecmp() or strncmp() */
+typedef int (*FStrNCmp)(const char* s1, const char* s2, size_t n);
+
+/* The "*generic" parameter:
  * [in]
  *    if "svclen" == 0: ignored;
  *    if "svclen" != 0, is a boolean "service_only" (if non-zero then no
@@ -143,11 +150,16 @@ static int/*bool*/ x_tr(char* str, char a, char b, size_t len)
  *    0 if the search ended up with a service-specific value returned (always
  *      so if the [in] value was non-zero);
  *    1 if the search ended up looking at the "CONN_param" enviroment or the
- *      "[CONN]param" registry entry (always so if "svclen" == 0);
+ *      "[CONN]param" registry entry (always so if "svclen" == 0).
+ *
+ * The strncompar parameter:
+ *    if strncmp()'s address is passed in, "param" is assumed all-CAPS and is
+ *    not uppercased unnecessarily (compared to when strncasecmp() passed in).
  */
 static const char* x_GetValue(const char* svc, size_t svclen,
-                              const char* param, char* value,size_t value_size,
-                              const char* def_value, int* /*bool*/ generic)
+                              const char* param, char* value,
+                              size_t value_size, const char* def_value,
+                              int* /*bool*/ generic, FStrNCmp strncompar)
 {
     const char* val, *rv;
     char        buf[128];
@@ -163,10 +175,10 @@ static const char* x_GetValue(const char* svc, size_t svclen,
         /* Service-specific inquiry */
         size_t      len = svclen + 1 + parlen;
         char        tmp[sizeof(buf)];
-        int/*bool*/ end, tr;
+        int/*bool*/ end, e;
 
-        if (strncasecmp(param, DEF_CONN_REG_SECTION "_",
-                        sizeof(DEF_CONN_REG_SECTION)) != 0) {
+        if (strncompar(param, DEF_CONN_REG_SECTION "_",
+                       sizeof(DEF_CONN_REG_SECTION)) != 0) {
             len += sizeof(DEF_CONN_REG_SECTION);
             end = 0/*false*/;
         } else
@@ -176,7 +188,7 @@ static const char* x_GetValue(const char* svc, size_t svclen,
 
         /* First, search the environment for 'service_CONN_param' */
         s = (char*) memcpy(buf, svc, svclen) + svclen;
-        tr = x_tr(buf, '-', '_', svclen);
+        e = x_mkenv(buf, svclen);
         memcpy(tmp, buf, svclen);
         *s = '\0';
         strupr(buf);
@@ -189,7 +201,8 @@ static const char* x_GetValue(const char* svc, size_t svclen,
         }
         *generic = 0/*false*/;
         memcpy(s, param, parlen);
-        strupr(s); /*FIXME: param all caps, so not needed*/
+        if (strncompar != strncmp)
+            strupr(s);
         CORE_LOCK_READ;
         if ((val = getenv(buf)) != 0
             ||  (memcmp(buf, tmp, svclen) != 0
@@ -202,34 +215,37 @@ static const char* x_GetValue(const char* svc, size_t svclen,
         assert(memcmp(buf, tmp, svclen) == 0);
 
         /* Next, search for 'CONN_param' in '[service]' registry section */
-        if (tr)
+        if (e)
             memcpy(buf, svc, svclen);  /* re-copy */
         buf[svclen++] = '\0';
         s = buf + svclen;
         rv = CORE_REG_GET(buf, s, value, value_size, end ? def_value : 0);
         if (*value  ||  end)
             return rv;
-        assert(!*generic);
         *generic = 1/*true*/;
     } else {
         *generic = 1/*true*/;
         /* Common case. Form 'CONN_param' */
-        if (strncasecmp(param, DEF_CONN_REG_SECTION "_",
-                        sizeof(DEF_CONN_REG_SECTION)) != 0) {
+        if (strncompar(param, DEF_CONN_REG_SECTION "_",
+                       sizeof(DEF_CONN_REG_SECTION)) != 0) {
             if (sizeof(DEF_CONN_REG_SECTION) + parlen > sizeof(buf))
                 return 0;
             s = buf;
             memcpy(s, DEF_CONN_REG_SECTION, sizeof(DEF_CONN_REG_SECTION) - 1);
             s += sizeof(DEF_CONN_REG_SECTION) - 1;
             *s++ = '_';
-        } else {
+        } else if (strncompar != strncmp) {
             if (parlen > sizeof(buf))
                 return 0;
             s = buf;
+        } else
+            s = (char*) param;
+        if (s != param) {
+            memcpy(s, param, parlen);
+            if (strncompar != strncmp)
+                strupr(s);
+            s = buf;
         }
-        memcpy(s, param, parlen);
-        strupr(s); /*FIXME: param all caps, so not needed*/
-        s = buf;
     }
 
     /* Environment search for 'CONN_param' */
@@ -247,26 +263,44 @@ static const char* x_GetValue(const char* svc, size_t svclen,
 }
 
 
-static const char* s_GetValue(const char* svc, size_t svclen,
-                              const char* param, char* value,size_t value_size,
-                              const char* def_value, int* /*bool*/ generic)
+/* Trim leading and trailing spaces first, then drop enveloping quotes,
+ * if any.  Do not trim any spaces within the quotes, though. */
+static void s_Trim(char* str)
 {
-    const char* retval = x_GetValue(svc, svclen, param,
-                                    value, value_size, def_value, generic);
+    size_t len;
+    char*  ptr = str;
+    /* surrounding whitespace first */
+    while (*ptr  &&  isspace((unsigned char)(*ptr)))
+        ++ptr;
+    len = strlen(ptr);
+    while (len  &&  isspace((unsigned char) ptr[len - 1]))
+        --len;
+    assert(!*ptr == !len);
+    /* then strip enveloping quotes, if any */
+    if (len > 1  &&  (*ptr == '"'  ||  *ptr == '\'') &&  ptr[len - 1] == *ptr)
+        len -= 2, ++ptr;
+    if (ptr != str) {
+        if (len)
+            memmove(str, ptr, len);
+        str[len] = '\0';
+    }
+}
+
+
+static const char* s_GetValue(const char* svc, size_t svclen,
+                              const char* param, char* value,
+                              size_t value_size, const char* def_value,
+                              int* /*bool*/ generic, FStrNCmp strncompar)
+{
+    const char* retval = x_GetValue(svc, svclen, param, value,
+                                    value_size, def_value, generic,strncompar);
     assert(!retval  ||  retval == value);
     if (retval) {
-        size_t len;
-        /* strip enveloping quotes, if any */
-        if (*value  &&  (len = strlen(value)) > 1
-            &&  (*value == '"'  ||  *value == '\'')
-            &&  value[--len] == *value) {
-            if (--len)
-                memmove(value, value + 1, len);
-            value[len] = '\0';
-        }
-        assert(retval == value);
+        assert(value == retval);
+        if (*value)
+            s_Trim(value);
     }
-    if (*value  ||  (retval  &&  *retval)) {
+    if (*value) {
         CORE_TRACEF(("ConnNetInfo(%s%.*s%s%s=\"%s\"): %s%s%s", &"\""[!svclen],
                      (int) svclen, svc, svclen ? "\", " : "", param, value,
                      &"\""[!retval], retval ? retval : "NULL",
@@ -285,7 +319,8 @@ const char* ConnNetInfo_GetValueInternal(const char* service,const char* param,
     assert(value  &&  value_size  &&  param  &&  *param);
     *value = '\0';
     return s_GetValue(service, service  &&  *service ? strlen(service) : 0,
-                      param, value, value_size, def_value, &service_only);
+                      param, value, value_size, def_value,
+                      &service_only, strncmp);
 }
 
 
@@ -301,7 +336,8 @@ const char* ConnNetInfo_GetValueService(const char* service, const char* param,
     assert(value  &&  value_size  &&  param  &&  *param);
     *value = '\0';
     retval = s_GetValue(service, strlen(service),
-                        param, value, value_size, def_value, &service_only);
+                        param, value, value_size, def_value,
+                        &service_only, strncmp);
     assert(!service_only);
     return retval;
 }
@@ -333,7 +369,8 @@ extern const char* ConnNetInfo_GetValue(const char* service, const char* param,
 
     service_only = 0/*false*/;
     retval = s_GetValue(service, svclen,
-                        param, value, value_size, def_value, &service_only);
+                        param, value, value_size, def_value,
+                        &service_only, strncasecmp);
     if (svclen)
         free((void*) service);
     return retval;
@@ -342,11 +379,50 @@ extern const char* ConnNetInfo_GetValue(const char* service, const char* param,
 
 extern int/*bool*/ ConnNetInfo_Boolean(const char* str)
 {
-    return str  &&  *str  &&  (strcmp    (str, "1")    == 0  ||
-                               strcasecmp(str, "on")   == 0  ||
-                               strcasecmp(str, "yes")  == 0  ||
-                               strcasecmp(str, "true") == 0)
-        ? 1/*true*/ : 0/*false*/;
+    char c;
+    switch (!str ? 6 : !*str ? 0 : strnlen(str, 6)) {
+    case 0:
+        return 0/*false*/;
+    case 1:
+        if (*str == '1')
+            return 1/*true*/;
+        if (*str == '0')
+            return 0/*false*/;
+        c = toupper((unsigned char)(*str));
+        if (c == 'Y'  ||  c == 'T')
+            return 1/*true*/;
+        if (c == 'N'  ||  c == 'F')
+            return 0/*false*/;
+        break;
+    case 2:
+        if (strcasecmp(str, "on") == 0)
+            return 1/*true*/;
+        if (strcasecmp(str, "no") == 0)
+            return 0/*false*/;
+        break;
+    case 3:
+        if (strcasecmp(str, "yes") == 0)
+            return 1/*true*/;
+        if (strcasecmp(str, "off") == 0)
+            return 0/*false*/;
+        break;
+    case 4:
+        if (strcasecmp(str, "true") == 0)
+            return 1/*true*/;
+        break;
+    case 5:
+        if (strcasecmp(str, "false") == 0)
+            return 0/*false*/;
+        break;
+    default:
+        break;
+    }
+#if defined(_DEBUG)  &&  !defined(NDEBUG)
+    CORE_LOGF(eLOG_Warning,
+              ("Unrecognized boolean value %s%s%s treated as FALSE",
+               &"\""[!str], str ? str : "NULL", &"\""[!str]));
+#endif /*_DEBUG && !NDEBUG*/
+    return 0/*false*/;
 }
 
 
@@ -377,26 +453,28 @@ static EURLScheme x_ParseScheme(const char* str, size_t len)
 
 static EFWMode x_ParseFirewall(const char* str, int/*bool*/ generic)
 {
+    const char* ptr;
     if (!*str) /*NB: not actually necessary but faster*/
         return eFWMode_Legacy;
-    if (strcasecmp(str, "adaptive") == 0  ||  ConnNetInfo_Boolean(str))
+    if (strcasecmp(str, "adaptive") == 0)
         return eFWMode_Adaptive;
     if (strcasecmp(str, "firewall") == 0)
         return eFWMode_Firewall;
     if (strcasecmp(str, "fallback") == 0)
         return eFWMode_Fallback;
+    ptr = str;
     for (;;) {
         int n;
         unsigned short port;
-        if (sscanf(str, "%hu%n", &port, &n) < 1  ||  !port)
+        if (sscanf(ptr, "%hu%n", &port, &n) < 1  ||  port < 2)
             break;
         if (generic)
             SERV_AddFirewallPort(port);
-        str += n;
-        if (!*(str += strspn(str, " \t")))
+        ptr += n;
+        if (!*(ptr += strspn(ptr, " \t")))
             return eFWMode_Fallback;
     }
-    return eFWMode_Legacy;
+    return ConnNetInfo_Boolean(str) ? eFWMode_Adaptive : eFWMode_Legacy;
 }
 
 
@@ -422,7 +500,7 @@ static int/*tri-state*/ x_SetupHttpProxy(SConnNetInfo* info, const char* env)
     CORE_UNLOCK;
     if (!(x_info = ConnNetInfo_CloneInternal(info))) {
         free((void*) val);
-        return  0/*fail*/;
+        return  0/*failure*/;
     }
     if (*val == '"'  ||  *val == '\'') {
         /* strip enveloping quotes if any:  note that '' and ""  have already
@@ -512,20 +590,17 @@ static int/*bool*/ s_InfoIsValid(const SConnNetInfo* info)
 }
 
 
-
-/****************************************************************************
- * ConnNetInfo API
- */
 /*fwdecl*/
 static int/*bool*/ x_SetArgs(SConnNetInfo* info, const char* args);
 
-SConnNetInfo* ConnNetInfo_CreateInternal(const char* service)
+static SConnNetInfo* s_CreateNetInfo(const char* service, FStrNCmp strncompar)
 {
 #define REG_VALUE(name, value, def_value)                               \
     generic = 0;                                                        \
     *value = '\0';                                                      \
     if (!s_GetValue(service, len,                                       \
-                    name, value, sizeof(value), def_value, &generic))   \
+                    name, value, sizeof(value), def_value,              \
+                    &generic, strncompar))                              \
         goto err/*memory or truncation error*/
 
     char str[(CONN_PATH_LEN + 1)/2];
@@ -590,14 +665,17 @@ SConnNetInfo* ConnNetInfo_CreateInternal(const char* service)
 
     /* level of debug printout */
     REG_VALUE(REG_CONN_DEBUG_PRINTOUT, str, DEF_CONN_DEBUG_PRINTOUT);
-    if (ConnNetInfo_Boolean(str)
-        ||    (*str  &&   strcasecmp(str, "some") == 0)) {
-        info->debug_printout = eDebugPrintout_Some;
-    } else if (*str  &&  (strcasecmp(str, "data") == 0  ||
-                          strcasecmp(str, "all")  == 0)) {
-        info->debug_printout = eDebugPrintout_Data;
-    } else
+    if (!*str)
         info->debug_printout = eDebugPrintout_None;
+    else if (strcasecmp(str, "some") == 0)
+        info->debug_printout = eDebugPrintout_Some;
+    else if (strcasecmp(str, "data") == 0  ||  strcasecmp(str, "all") == 0)
+        info->debug_printout = eDebugPrintout_Data;
+    else {
+        info->debug_printout = ConnNetInfo_Boolean(str)
+            ? eDebugPrintout_Some
+            : eDebugPrintout_None;
+    }
 
     /* push HTTP auth tags */
     REG_VALUE(REG_CONN_HTTP_PUSH_AUTH, str, DEF_CONN_HTTP_PUSH_AUTH);
@@ -677,7 +755,7 @@ SConnNetInfo* ConnNetInfo_CreateInternal(const char* service)
     /* default referer ([in] "generic" irrelevant), all error(s) ignored */
     *str = '\0';
     s_GetValue(0, 0, REG_CONN_HTTP_REFERER, str, sizeof(str),
-               DEF_CONN_HTTP_REFERER, &generic);
+               DEF_CONN_HTTP_REFERER, &generic, strncompar);
     assert(generic);
     if (*str)
         info->http_referer = strdup(str);
@@ -740,6 +818,16 @@ SConnNetInfo* ConnNetInfo_CreateInternal(const char* service)
 }
 
 
+/****************************************************************************
+ * ConnNetInfo API
+ */
+
+SConnNetInfo* ConnNetInfo_CreateInternal(const char* service)
+{
+    return s_CreateNetInfo(service, strncmp);
+}
+
+
 extern SConnNetInfo* ConnNetInfo_Create(const char* service)
 {
     const char* x_service;
@@ -752,7 +840,7 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
     } else
         x_service = 0;
 
-    retval = ConnNetInfo_CreateInternal(x_service);
+    retval = s_CreateNetInfo(x_service, strncasecmp);
 
     if (x_service)
         free((void*) x_service);
@@ -1009,17 +1097,17 @@ extern int/*bool*/ ConnNetInfo_OverrideUserHeader(SConnNetInfo* info,
 }
 
 
-extern void ConnNetInfo_DeleteUserHeader(SConnNetInfo* info,
-                                         const char*   header)
-{
-    verify(s_ModifyUserHeader(info, header, eUserHeaderOp_Delete));
-}
-
-
 extern int/*bool*/ ConnNetInfo_ExtendUserHeader(SConnNetInfo* info,
                                                 const char*   header)
 {
     return s_ModifyUserHeader(info, header, eUserHeaderOp_Extend);
+}
+
+
+extern void ConnNetInfo_DeleteUserHeader(SConnNetInfo* info,
+                                         const char*   header)
+{
+    verify(s_ModifyUserHeader(info, header, eUserHeaderOp_Delete));
 }
 
 
@@ -2092,7 +2180,8 @@ extern void ConnNetInfo_Log(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
     s_SaveString    (s, "http_referer",    info->http_referer);
     if (info->credentials)
         s_SaveKeyval(s, "credentials",     x_CredInfo(info->credentials, buf));
-    strcat(s, "#################### [END] SConnNetInfo\n");
+    strcat(s,
+           "#################### [_END_] SConnNetInfo\n");
 
     assert(strlen(s) < len);
     LOG_Write(lg, NCBI_C_ERRCODE_X, 12, sev, 0, 0, 0, 0, s, 0, 0);
