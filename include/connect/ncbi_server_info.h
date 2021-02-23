@@ -303,7 +303,7 @@ extern NCBI_XCONNECT_EXPORT char*       SERV_WriteInfo
  *           cases when it might have been captured from the connection point.
  *
  *    Local server:
- *       L={yes|no}     [default is set by SERV_SetLocalServerDefault()]
+ *       L={yes|no}     [yes=default]
  *           Local servers are accessible only by local clients (from within
  *           the Intranet) or direct clients of LBSMD, and are not accessible
  *           by the outside users (e.g. via network dispatching).
@@ -355,7 +355,7 @@ extern NCBI_XCONNECT_EXPORT char*       SERV_WriteInfo
  *    Validity period:
  *       T=integer      [0=default]
  *           specifies the time in seconds that this server entry is valid for
- *           without an update.  (If equal to 0 then defaulted to the LBSM
+ *           without an update.  (If equal to 0 then defaulted by the LBSM
  *           Daemon to some reasonable value.)
  *
  *    Interzone server:

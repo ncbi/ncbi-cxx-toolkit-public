@@ -153,7 +153,7 @@ extern char* SERV_WriteInfo(const SSERV_Info* info)
                                       info->mime_e, c_t, sizeof(c_t))) {
         char* p;
         assert(c_t[strlen(c_t) - 2] == '\r'  &&  c_t[strlen(c_t) - 1] == '\n');
-        c_t[strlen(c_t) - 2] = 0;
+        c_t[strlen(c_t) - 2] = '\0';
         p = strchr(c_t, ' ');
         assert(p);
         p++;
@@ -675,14 +675,17 @@ static char* s_Ncbid_Write(size_t reserve, const USERV_Info* u)
 
 static SSERV_Info* s_Ncbid_Read(const char** str, size_t add)
 {
+    char*       args = 0;
     SSERV_Info* info;
-    char        *args, *c;
+    const char* c;
 
-    if (!(args = strdup(*str)))
-        return 0;
-    for (c = args;  *c;  ++c) {
+    assert(!isspace((unsigned char)(**str)));
+    for (c = *str;  *c;  ++c) {
         if (isspace((unsigned char)(*c))) {
-            *c++ = '\0';
+            size_t len = (size_t)(c - *str);
+            assert(len);
+            if (!(args = strndup(*str, len)))
+                return 0;
             while (*c  &&  isspace((unsigned char)(*c)))
                 ++c;
             break;
@@ -690,8 +693,9 @@ static SSERV_Info* s_Ncbid_Read(const char** str, size_t add)
     }
     info = SERV_CreateNcbidInfoEx(0, 0, args, add);
     if (info)
-        *str += c - args;
-    free(args);
+        *str = c;
+    if (args)
+        free(args);
     return info;
 }
 
@@ -839,14 +843,19 @@ static char* s_Http_Write(size_t reserve, const USERV_Info* u)
 
 static SSERV_Info* s_HttpAny_Read(ESERV_Type type,const char** str, size_t add)
 {
+    char*       path, *args;
     SSERV_Info* info;
-    char       *path, *args, *c;
+    const char* c;
 
-    if (!**str  ||  !(path = strdup(*str)))
+    if (!**str)
         return 0;
-    for (c = path;  *c;  ++c) {
-        if (isspace((unsigned char)(*c))) {
-            *c++ = '\0';
+    assert(!isspace((unsigned char)(**str)));
+    for (c = *str;  ;  ++c) {
+        if (!*c  ||  isspace((unsigned char)(*c))) {
+            size_t len = (size_t)(c - *str);
+            assert(len);
+            if (!(path = strndup(*str, len)))
+                return 0;
             while (*c  &&  isspace((unsigned char)(*c)))
                 ++c;
             break;
@@ -856,7 +865,7 @@ static SSERV_Info* s_HttpAny_Read(ESERV_Type type,const char** str, size_t add)
         *args++ = '\0';
     info = SERV_CreateHttpInfoEx(type, 0, 0, path, args, add);
     if (info)
-        *str += c - path;
+        *str = c;
     free(path);
     return info;
 }
@@ -882,9 +891,9 @@ static SSERV_Info* s_Http_Read(const char** str, size_t add)
 
 static size_t s_Http_SizeOf(const USERV_Info* u)
 {
-    return sizeof(u->http)
-        + strlen(SERV_HTTP_PATH(&u->http))+1
-        + strlen(SERV_HTTP_ARGS(&u->http))+1;
+    const char* path = SERV_HTTP_PATH(&u->http);
+    const char* args = SERV_HTTP_ARGS(&u->http);
+    return sizeof(u->http) + (size_t)((args + strlen(args) + 1) - path);
 }
 
 
@@ -908,8 +917,18 @@ SSERV_Info* SERV_CreateHttpInfoEx(ESERV_Type     type,
 
     if (type & (unsigned int)(~fSERV_Http))
         return 0;
-    path_len = path  &&  *path ? strlen(path) + 1 : 1;
+    if (!path  ||  !*path)
+        return 0;
+    else
+        path_len =               strlen(path) + 1;
+#if 1 /* NB: have to use this for ABI compatibility */
     args_len = args  &&  *args ? strlen(args) + 1 : 1;
+#else
+    if (!args  ||  !*args)
+        path_len--, args_len = 1;
+    else
+        args_len =               strlen(args) + 1;
+#endif
     add += path_len + args_len;
     if ((info = (SSERV_Info*) malloc(sizeof(SSERV_Info) + add)) != 0) {
         info->type   = type;
