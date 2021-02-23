@@ -56,14 +56,16 @@
 #ifdef __cplusplus
 extern "C" {
 #endif /*__cplusplus*/
+
 static SSERV_Info* s_GetNextInfo(SERV_ITER, HOST_INFO*);
 static int/*bool*/ s_Update     (SERV_ITER, const char*, int);
 static void        s_Reset      (SERV_ITER);
 static void        s_Close      (SERV_ITER);
 
-static const SSERV_VTable s_op = {
+static const SSERV_VTable kDispdOp = {
     s_GetNextInfo, 0/*Feedback*/, s_Update, s_Reset, s_Close, "DISPD"
 };
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif /*__cplusplus*/
@@ -91,7 +93,8 @@ static int/*bool*/ s_AddServerInfo(struct SDISPD_Data* data, SSERV_Info* info)
             &&  SERV_EqualInfo(info, data->cand[n].info)) {
             /* Replace older version */
             free((void*) data->cand[n].info);
-            data->cand[n].info = info;
+            data->cand[n].info   = info;
+            data->cand[n].status = info->rate;
             return 1/*success*/;
         }
     }
@@ -99,16 +102,17 @@ static int/*bool*/ s_AddServerInfo(struct SDISPD_Data* data, SSERV_Info* info)
     if (data->n_cand == data->a_cand) {
         SLB_Candidate* temp;
         n = data->a_cand + 10;
-        if (!(temp
-              = (SLB_Candidate*)(data->cand
-                                 ? realloc(data->cand, n * sizeof(*temp))
-                                 : malloc (            n * sizeof(*temp))))) {
+        temp = (SLB_Candidate*)(data->cand
+                                ? realloc(data->cand, n * sizeof(*temp))
+                                : malloc (            n * sizeof(*temp)));
+        if (!temp)
             return 0/*failure*/;
-        }
         data->cand = temp;
         data->a_cand = n;
     }
-    data->cand[data->n_cand++].info = info;
+    data->cand[data->n_cand].info   = info;
+    data->cand[data->n_cand].status = info->rate;
+    data->n_cand++;
     return 1/*success*/;
 }
 
@@ -331,6 +335,7 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
     size_t n;
 
     assert(data);
+
     if (!data->fail  &&  iter->n_skip < data->n_skip)
         data->eof = 0/*false*/;
     data->n_skip = iter->n_skip;
@@ -342,11 +347,9 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
             return 0;
     }
 
-    for (n = 0;  n < data->n_cand;  ++n)
-        data->cand[n].status = data->cand[n].info->rate;
     n = LB_Select(iter, data, s_GetCandidate, DISPD_LOCAL_BONUS);
-    info = (SSERV_Info*) data->cand[n].info;
-    info->rate = data->cand[n].status;
+    info       = (SSERV_Info*) data->cand[n].info;
+    info->rate =               data->cand[n].status;
     if (n < --data->n_cand) {
         memmove(data->cand + n, data->cand + n + 1,
                 (data->n_cand - n) * sizeof(*data->cand));
@@ -407,18 +410,13 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER           iter,
         s_Close(iter);
         return 0;
     }
-
-    if (g_NCBI_ConnectRandomSeed == 0) {
-        g_NCBI_ConnectRandomSeed  = iter->time ^ NCBI_CONNECT_SRAND_ADDEND;
-        srand(g_NCBI_ConnectRandomSeed);
-    }
-
     data->net_info->scheme = eURL_Https;
     data->net_info->req_method = eReqMethod_Get;
     if (iter->types & fSERV_Stateless)
         data->net_info->stateless = 1/*true*/;
     if ((iter->types & fSERV_Firewall)  &&  !data->net_info->firewall)
         data->net_info->firewall = eFWMode_Adaptive;
+
     ConnNetInfo_ExtendUserHeader(data->net_info,
                                  "User-Agent: NCBIServiceDispatcher/"
                                  NCBI_DISP_VERSION
@@ -428,15 +426,22 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER           iter,
                                  " (C Toolkit)"
 #endif /*NCBI_CXX_TOOLKIT*/
                                  "\r\n");
-    data->n_skip = iter->n_skip;
 
-    iter->op = &s_op; /*SERV_Update() [from HTTP callback] expects*/
+    if (g_NCBI_ConnectRandomSeed == 0) {
+        g_NCBI_ConnectRandomSeed  = iter->time ^ NCBI_CONNECT_SRAND_ADDEND;
+        srand(g_NCBI_ConnectRandomSeed);
+    }
+
+    data->n_skip = iter->n_skip;
+    iter->op = &kDispdOp; /*SERV_Update() [from HTTP callback] expects*/
     s_Resolve(iter);
     iter->op = 0;
 
     if (!data->n_cand  &&  (data->fail
                             ||  !(data->net_info->stateless  &&
                                   data->net_info->firewall))) {
+        CORE_LOGF(eLOG_Trace,
+                  ("SERV_DISPD_Open(\"%s\"): Service not found", iter->name));
         s_Reset(iter);
         s_Close(iter);
         return 0;
@@ -445,5 +450,5 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER           iter,
     /* call GetNextInfo subsequently if info is actually needed */
     if (info)
         *info = 0;
-    return &s_op;
+    return &kDispdOp;
 }
