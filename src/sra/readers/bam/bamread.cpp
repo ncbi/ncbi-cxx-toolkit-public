@@ -596,36 +596,41 @@ static CBamRef<KConfig> s_InitProxyConfig()
 }
 
 
-/* set in s_InitProxyConfig()
-static void s_InitProxyKNS(KNSManager* kns_mgr)
+static DECLARE_TLS_VAR(const CRequestContext*, s_LastRequestContext);
+static DECLARE_TLS_VAR(CRequestContext::TVersion, s_LastRequestContextVersion);
+
+void s_UpdateVDBRequestContext(void)
 {
-    if ( CNcbiApplicationGuard app = CNcbiApplication::InstanceGuard() ) {
-        string host = app->GetConfig().GetString("CONN", "HTTP_PROXY_HOST", kEmptyStr);
-        int port = app->GetConfig().GetInt("CONN", "HTTP_PROXY_PORT", 0);
-        if ( !host.empty() && port != 0 ) {
-            if ( rc_t rc = KNSManagerSetHTTPProxyPath(kns_mgr, "%s:%d", host.c_str(), port) ) {
-                NCBI_THROW2(CBamException, eInitFailed,
-                            "Cannot set KNSManager proxy parameters", rc);
-            }
-            KNSManagerSetHTTPProxyEnabled(kns_mgr, true);
-        }
+    CRequestContext& req_ctx = CDiagContext::GetRequestContext();
+    auto req_ctx_version = req_ctx.GetVersion();
+    if ( &req_ctx == s_LastRequestContext && req_ctx_version == s_LastRequestContextVersion ) {
+        return;
+    }
+    _TRACE("CVDBMgr: Updating request context with version: "<<req_ctx_version);
+    s_LastRequestContext = &req_ctx;
+    s_LastRequestContextVersion = req_ctx_version;
+    CBamRef<KNSManager> kns_mgr;
+    if ( rc_t rc = KNSManagerMake(kns_mgr.x_InitPtr()) ) {
+        NCBI_THROW2(CBamException, eInitFailed,
+                    "Cannot create KNSManager singleton", rc);
+    }
+    if ( req_ctx.IsSetSessionID() ) {
+        _TRACE("CVDBMgr: Updating session ID: "<<req_ctx.GetSessionID());
+        KNSManagerSetSessionID(kns_mgr, req_ctx.GetSessionID().c_str());
+    }
+    if ( req_ctx.IsSetClientIP() ) {
+        _TRACE("CVDBMgr: Updating client IP: "<<req_ctx.GetClientIP());
+        KNSManagerSetClientIP(kns_mgr, req_ctx.GetClientIP().c_str());
+    }
+    if ( req_ctx.IsSetHitID() ) {
+        _TRACE("CVDBMgr: Updating hit ID: "<<req_ctx.GetHitID());
+        KNSManagerSetPageHitID(kns_mgr, req_ctx.GetHitID().c_str());
     }
 }
-*/
 
 
 static void s_InitAllKNS(KNSManager* kns_mgr)
 {
-    CRequestContext& req_ctx = GetDiagContext().GetRequestContext();
-    if ( req_ctx.IsSetSessionID() ) {
-        KNSManagerSetSessionID(kns_mgr, req_ctx.GetSessionID().c_str());
-    }
-    if ( req_ctx.IsSetClientIP() ) {
-        KNSManagerSetClientIP(kns_mgr, req_ctx.GetClientIP().c_str());
-    }
-    if ( req_ctx.IsSetHitID() ) {
-        KNSManagerSetPageHitID(kns_mgr, req_ctx.GetHitID().c_str());
-    }
     CNcbiApplicationGuard app = CNcbiApplication::InstanceGuard();
     if ( app && app->GetConfig().GetBool("VDB", "ALLOW_ALL_CERTS", false) ) {
         if ( rc_t rc = KNSManagerSetAllowAllCerts(kns_mgr, true) ) {
@@ -666,32 +671,6 @@ static void s_InitStaticKNS(KNSManager* kns_mgr)
 static void s_InitLocalKNS(KNSManager* kns_mgr)
 {
     s_InitAllKNS(kns_mgr);
-    /*
-    if ( 1 ) { // log effective http parameters
-        const String* path = 0;
-        if ( KNSManagerGetHTTPProxyPath(kns_mgr, &path) ) {
-            LOG_POST("CVDBMgr: HTTP proxy path is not set");
-        }
-        else {
-            LOG_POST("CVDBMgr: HTTP proxy path: "<<
-                     CTempString(path->addr, path->size));
-            StringWhack(path);
-        }
-        bool enabled = KNSManagerGetHTTPProxyEnabled(kns_mgr);
-        LOG_POST("CVDBMgr: HTTP proxy "<<(enabled? "enabled": "disabled"));
-        bool allow_all_certs = false;
-        KNSManagerGetAllowAllCerts(kns_mgr, &allow_all_certs);
-        LOG_POST("CVDBMgr: allow all certificates "<<(allow_all_certs? "true": "false"));
-
-        const char* agent = 0;
-        if ( KNSManagerGetUserAgent(&agent) ) {
-            LOG_POST("CVDBMgr: user agent is not set");
-        }
-        else {
-            LOG_POST("CVDBMgr: user agent: "<<agent);
-        }
-    }
-    */
 }
 
 
@@ -902,6 +881,7 @@ CBamDb::CBamDb(const CBamMgr& mgr,
                EUseAPI use_api)
     : m_DbName(db_name)
 {
+    s_UpdateVDBRequestContext();
     if ( UseRawIndex(use_api) ) {
         m_RawDB = new CObjectFor<CBamRawDb>(db_name);
     }
@@ -918,6 +898,7 @@ CBamDb::CBamDb(const CBamMgr& mgr,
     : m_DbName(db_name),
       m_IndexName(idx_name)
 {
+    s_UpdateVDBRequestContext();
     if ( UseRawIndex(use_api) ) {
         m_RawDB = new CObjectFor<CBamRawDb>(db_name, idx_name);
     }
@@ -987,6 +968,7 @@ string CBamDb::GetHeaderText(void) const
     }
     else {
         CMutexGuard guard(m_AADB->m_Mutex);
+        s_UpdateVDBRequestContext();
         CBamRef<const BAMFile> file;
         if ( rc_t rc = AlignAccessDBExportBAMFile(m_AADB->m_DB, file.x_InitPtr()) ) {
             NCBI_THROW2(CBamException, eOtherError,
@@ -1565,6 +1547,7 @@ CBamRefSeqIterator::CBamRefSeqIterator(const CBamDb& bam_db)
     }
     else {
         CMutexGuard guard(bam_db.m_AADB->m_Mutex);
+        s_UpdateVDBRequestContext();
         AlignAccessRefSeqEnumerator* ptr = 0;
         if ( rc_t rc = AlignAccessDBEnumerateRefSequences(bam_db.m_AADB->m_DB, &ptr) ) {
             if ( !(GetRCObject(rc) == rcRow &&
@@ -1627,6 +1610,7 @@ CBamRefSeqIterator& CBamRefSeqIterator::operator++(void)
 {
     if ( m_AADBImpl ) {
         x_InvalidateBuffers();
+        s_UpdateVDBRequestContext();
         if ( rc_t rc = AlignAccessRefSeqEnumeratorNext(m_AADBImpl->m_Iter) ) {
             m_AADBImpl.Reset();
             if ( !(GetRCObject(rc) == rcRow &&
@@ -1850,6 +1834,7 @@ CBamAlignIterator::CBamAlignIterator(const CBamDb& bam_db)
     : m_DB(&bam_db),
       m_BamFlagsAvailability(eBamFlags_NotTried)
 {
+    s_UpdateVDBRequestContext();
     if ( bam_db.UsesRawIndex() ) {
         m_RawImpl = new SRawImpl(bam_db.m_RawDB.GetNCObject());
         if ( !m_RawImpl->m_Iter ) {
@@ -1882,6 +1867,7 @@ CBamAlignIterator::CBamAlignIterator(const CBamDb& bam_db,
     : m_DB(&bam_db),
       m_BamFlagsAvailability(eBamFlags_NotTried)
 {
+    s_UpdateVDBRequestContext();
     if ( bam_db.UsesRawIndex() ) {
         m_RawImpl = new SRawImpl(bam_db.m_RawDB.GetNCObject(), ref_id, ref_pos, window, search_mode);
         if ( !m_RawImpl->m_Iter ) {
@@ -1936,6 +1922,7 @@ CBamAlignIterator::CBamAlignIterator(const CBamDb& bam_db,
     : m_DB(&bam_db),
       m_BamFlagsAvailability(eBamFlags_NotTried)
 {
+    s_UpdateVDBRequestContext();
     if ( bam_db.UsesRawIndex() ) {
         m_RawImpl = new SRawImpl(bam_db.m_RawDB.GetNCObject(), ref_id, ref_pos, window, min_level, max_level, search_mode);
         if ( !m_RawImpl->m_Iter ) {
@@ -1980,6 +1967,7 @@ CBamAlignIterator& CBamAlignIterator::operator++(void)
     x_CheckValid();
     m_RefSeq_id.Reset();
     m_ShortSeq_id.Reset();
+    s_UpdateVDBRequestContext();
     if ( m_AADBImpl ) {
         if ( rc_t rc = AlignAccessAlignmentEnumeratorNext(m_AADBImpl->m_Iter) ) {
             m_AADBImpl.Reset();
