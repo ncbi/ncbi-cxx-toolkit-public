@@ -89,7 +89,6 @@ bool CTestRegApp::Thread_Run(int /*idx*/)
 
     CNcbiOstrstream os;
     string os_string = CNcbiOstrstreamToString(os);
-    const char* os_str = os_string.c_str();
     string       test_str("\" V481\" \n\"V482 ");
 
     // Compose a test registry
@@ -234,12 +233,11 @@ bool CTestRegApp::Thread_Run(int /*idx*/)
     assert ( m_Registry.Write(os) );
 
     os_string = CNcbiOstrstreamToString(os);
-    os_str = os_string.c_str();
 
     }}
 
     // "Persistent" load
-    CNcbiIstrstream is1(os_str);
+    CNcbiIstrstream is1(os_string);
     CNcbiRegistry   reg1(is1);
     assert(  reg1.Get("Section2", "Name21", CNcbiRegistry::ePersistent) ==
              "Val21" );
@@ -253,7 +251,7 @@ bool CTestRegApp::Thread_Run(int /*idx*/)
                       CNcbiRegistry::ePersistent) );
 
     // "Transient" load
-    CNcbiIstrstream is2(os_str);
+    CNcbiIstrstream is2(os_string);
     CNcbiRegistry  reg2(is2, CNcbiRegistry::eTransient);
     assert(  reg2.Get("Section2", "Name21",
                       CNcbiRegistry::ePersistent).empty() );
