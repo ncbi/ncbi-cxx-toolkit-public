@@ -53,8 +53,8 @@ NCBITEST_AUTO_FINI()
 
 
 // Real data does not matter, just need some non-printable chars.
-static const char* kData_AsnBin = "\1\2\3\4\5\6\7\0";
-static const char* kData_AsnBin_SeqFeat = 
+static const string kData_AsnBin = "\1\2\3\4\5\6\7\0"s;
+static const string kData_AsnBin_SeqFeat = 
     "\x30\x80\xa0\x80\xa2\x80\xa0\x80\x02\x01\x09\x00\x00\x00\x00\x00"
     "\x00\xa1\x80\xa0\x80\x30\x80\xa0\x80\x1a\x07\x56\x4e\x31\x52\x35" 
     "\x34\x50\x00\x00\x00\x00\x00\x00\x00\x00\xa6\x80\xa3\x80\x30\x80"
@@ -83,8 +83,8 @@ static const char* kData_AsnBin_SeqFeat =
     "\x00\x00\xa1\x80\xa0\x80\x02\x04\x05\xfa\xa6\xe7\x00\x00\x00\x00"
     "\x00\x00\x30\x80\xa0\x80\x1a\x04\x48\x47\x4e\x43\x00\x00\xa1\x80"
     "\xa0\x80\x02\x03\x00\x91\xfe\x00\x00\x00\x00\x00\x00\x00\x00\x00"
-    "\x00\xae\x80\x01\x01\x01\x00\x00\x00\x00";
-static const char* kData_Rmo =
+    "\x00\xae\x80\x01\x01\x01\x00\x00\x00\x00"s;
+static const string kData_Rmo =
     " 1320 15.6  6.2  0.0  HSU08988  6563 6781 (22462) C  MER7A   "
     "DNA/MER2_type    (0)  337  104  20\n"
     "12279 10.5  2.1  1.7  HSU08988  6782 7718 (21525) C  Tigger1 "
@@ -93,10 +93,10 @@ static const char* kData_Rmo =
     "SINE/Alu         (0)  317    1  17\n"
     "12279 10.5  2.1  1.7  HSU08988  8023 8694 (20549) C  Tigger1 "
     "DNA/MER2_type  (932) 1486  818  19\n";
-static const char* kHeader_Rmo =
+static const string kHeader_Rmo =
     "SW perc query position matching\n"
     "score div. del. ins. sequence\n";
-static const char* kData_Gtf =
+static const string kData_Gtf =
     "381 Twinscan  CDS          380   401   .   +   0  "
     "gene_id \"001\"; transcript_id \"001.1\";\n"
     "381 Twinscan  CDS          501   650   .   +   2  "
@@ -105,20 +105,20 @@ static const char* kData_Gtf =
     "gene_id \"001\"; transcript_id \"001.1\";\n"
     "381 Twinscan  start_codon  380   382   .   +   0  "
     "gene_id \"001\"; transcript_id \"001.1\";\n";
-static const char* kData_Gvf =
+static const string kData_Gvf =
     "NC_000008.9    dbVar    CNV    151699    186841    .    .    .    ID=nsv6034;Variant_seq=A;Name=nsv6034(CNV);Start_range=151699,152699;End_range=185641,186841\n"
     "NC_000008.9    dbVar    SNV    212185    257141    .    .    .    ID=nsv6035;Variant_seq=A;Name=nsv6035(CNV)\n"
     "NC_000008.9    dbVar    CNV    577296    606629    .    .    .    ID=nsv6036;Variant_seq=A;Name=nsv6036(CNV)\n";
-static const char* kData_Gff3 =
+static const string kData_Gff3 =
     "NC_000008.9    dbVar    misc    151699    186841    .    .    .    ID=nsv6034;Name=nsv6034(CNV)\n"
     "NC_000008.9    dbVar    misc    212185    257141    .    .    .    ID=nsv6035;Name=nsv6035(CNV)\n"
     "NC_000008.9    dbVar    misc    577296    606629    .    .    .    ID=nsv6036;Name=nsv6036(CNV)\n";
-static const char* kData_Gff2 =
+static const string kData_Gff2 =
     "NC_000008.9    dbVar    misc    151699    186841    .    .    .    feat=a\n"
     "NC_000008.9    dbVar    misc    212185    257141    .    .    .    feat=b\n"
     "NC_000008.9    dbVar    misc    577296    606629    .    .    .    feat=c\n";
 // Test for handling cases with huge comments
-static const char* kData_Gff3_Comment = 
+static const string kData_Gff3_Comment = 
     "##gff-version 3\n"
     "##species http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=9606\n"
     "##date 2009-11-04\n"
@@ -147,13 +147,13 @@ static const char* kData_Gff3_Comment =
     "NC_000001.7    dbVar    misc    10415637    10427143    .    .    .    ID=nsv436924;Name=nsv436924(CNV)\n"
     "NC_000001.7    dbVar     misc    101474397    101476638    .    .    .    ID=nsv436925;Name=nsv436925(CNV)\n"
     "NC_000003.8    dbVar     misc    164983304    164985198    .    .    .    ID=nsv436926;Name=nsv436926(CNV)\n";
-static const char* kData_Glimmer3 =
+static const string kData_Glimmer3 =
     ">gms:3447|cmr:632 chromosome 1 {Mycobacterium smegmatis MC2}\n"
     "orf00001 499 1692 +1 13.14\n"
     "orf00004 1721 2614 +2 14.20\n"
     "orf00006 2624 3778 +2 10.35\n"
     "orf00009 3775 4359 +1 9.34\n";
-static const char* kData_Agp =
+static const string kData_Agp =
     //"# ORGANISM: Homo sapiens\n"
     //"# TAX_ID: 9606\n"
     //"# ASSEMBLY NAME: EG1\n"
@@ -171,12 +171,12 @@ static const char* kData_Agp =
     "EG1_scaffold2\t148351\t148450\t8\tN\t100\tfragment\tyes\t\n"
     "EG1_scaffold2\t148451\t152599\t9\tW\tAADB02037556.1\t1\t4149\t-\n"
     "EG1_scaffold2\t152600\t152699\t10\tN\t100\tfragment\tyes\t\n";
-static const char* kData_Xml =
+static const string kData_Xml =
     "<?xml version=\"1.0\"?>\n"
     "<!DOCTYPE Seq-entry PUBLIC \"-//NCBI//NCBI Seqset/EN\" "
     "\"https://www.ncbi.nlm.nih.gov/dtd/NCBI_Seqset.dtd\">\n"
     "<Seq-entry>\n";
-static const char* kData_Wiggle =
+static const string kData_Wiggle =
     "browser position chr19:59302001-59311000\n"
     "browser hide all\n"
     "browser pack refGene encodeRegions\n"
@@ -196,11 +196,11 @@ static const char* kData_Wiggle =
     "chr19 59303800 59304100 0.50\n"
     "chr19 59304100 59304400 0.75\n"
     "chr19 59304400 59304700 1.00\n";
-static const char* kData_Bed =
+static const string kData_Bed =
     "track name=pairedReads description=\"Clone Paired Reads\" useScore=1\n"
     "chr22 1000 5000 cloneA 960 + 1000 5000 0 2 567,488, 0,3512\n"
     "chr22 2000 6000 cloneB 900 - 2000 6000 0 2 433,399, 0,3601\n";
-static const char* kData_Bed15 =
+static const string kData_Bed15 =
     "#chrom\tchromStart\tchromEnd\tname\tscore\tstrand\tthickStart\tthickEnd\t"
     "reserved\tblockCount\tblockSizes\tchromStarts\texpCount\texpIds\texpScores\n"
     "chr1\t159639972\t159640031\t2440848\t500\t-\t159639972\t159640031\t"
@@ -226,11 +226,11 @@ static const char* kData_Bed15 =
     "0.887000,-0.464000,1.196000,-0.463000,0.376000,-0.461000,0.547000,"
     "0.032000,-0.464000,0.066000,0.762000,-0.465000,-0.456000,0.919000,"
     "-0.464000,\n";
-static const char* kData_Newick =
+static const string kData_Newick =
     "(Bovine:0.69395,(Hylobates:0.36079,(Pongo:0.33636,(G._Gorilla:0.17147, "
     "(P._paniscus:0.19268,H._sapiens:0.11927):0.08386):0.06124):0.15057):"
     "0.54939, Rodent:1.21460);";
-static const char* kData_Alignment1 =
+static const string kData_Alignment1 =
     "#NEXUS\n"
     "[TITLE: NoName]\n\n"
     "begin data;\n"
@@ -240,12 +240,12 @@ static const char* kData_Alignment1 =
     "CYS1_DICDI          -----MKVIL LFVLAVFTVF VSS------- --------RG IPPEEQ---- \n"
     "ALEU_HORVU          MAHARVLLLA LAVLATAAVA VASSSSFADS NPIRPVTDRA ASTLESAVLG \n"
     "CATH_HUMAN          ------MWAT LPLLCAGAWL LGV------- -PVCGAAELS VNSLEK---- ";
-static const char* kData_Alignment2 =
+static const string kData_Alignment2 =
     "CLUSTAL W (1.83) multiple sequence alignment\n\n"
     "aboA            -NLFV-ALYDFVASGDNTLSITKGEKLRV-------LGYNHNG-------EWCEA--QTK 42\n"
     "ycsB            KGVIY-ALWDYEPQNDDELPMKEGDCMTI-------IHREDEDEI-----EWWWA--RLN 45\n"
     "pht             -GYQYRALYDYKKEREEDIDLHLGDILTVNKGSLVALGFSDGQEARPEEIGWLNGYNETT 59\n";
-static const char* kData_DistanceMatrix =
+static const string kData_DistanceMatrix =
     "   14\n"
     "Mouse     \n"
     "Bovine      1.7043\n"
@@ -253,20 +253,20 @@ static const char* kData_DistanceMatrix =
     "Tarsier     2.1378  1.3287  1.2905\n";
     //"Squir Monk  1.5232  1.2423  1.3199  1.7878\n"
     //"Jpn Macaq   1.8261  1.2508  1.3887  1.3137  1.0642\n";
-static const char* kData_FlatFileSequence =
+static const string kData_FlatFileSequence =
     "        1 ccagaatggt tactatggac atccgccaac catacaagct atggtgaaat gctttatcta\n"
     "       61 tctcattttt agtttcaaag cttttgttat aacacatgca aatccatatc cgtaaccaat\n"
     "      121 atccaatcgc ttgacatagt ctgatgaagt ttttggtagt taagataaag ctcgagactg\n"
     "      181 atatttcata tactggatga tttagggaaa cttgcattct attcatgaac gaatgagtca\n"
     "      241 atacgagaca caaccaagca tgcaaggagc tgtgagttga tgttctatgc tatttaagta\n";
-static const char* kData_FiveColFeatureTable =
+static const string kData_FiveColFeatureTable =
     ">Feature Sc_16\n"
     "1    7000    REFERENCE\n"
     "            PubMed        8849441\n"
     "<1    1050    gene\n"
     "            gene        ATH1\n"
     "            locus_tag    YPR026W\n";
-static const char* kData_SnpMarkers =
+static const string kData_SnpMarkers =
     "rs10509971\t10\t114.981618\tA\n"
     "rs7580303\t2\t2.065249\tC\n"
     "rs7527281\t1\t213.591486\tC\n"
@@ -274,46 +274,46 @@ static const char* kData_SnpMarkers =
     "rs4237768\t11\t5.963848\tG\n"
     "rs11771665\t7\t86.510866\tA\n"
     "rs6542185\t2\t114.423281\tT\n";
-static const char* kData_Fasta =
+static const string kData_Fasta =
     ">gi|13990994|dbj|BAA33523.2| hedgehog [Homo sapiens]\n"
     "MSPARLRPRLHFCLVLLLLLVVPAAWGCGPGRVVGSRRRPPRKLVPLAYKQFSPNVPEKTLGASGRYEGK\n"
     "IARSSERFKELTPNYNPDIIFKDEENTGADRLMTQRCKDRLNSLAISVMNQWPGVKLRVTEGWDEDGHHS\n"
     "EESLHYEGRAVDITTSDRDRNKYGLLARLAVEAGFDWVYYESKAHVHCSVKSEHSAAAKTGGCFPAGAQV";
-static const char* kData_TextASN =
+static const string kData_TextASN =
     "Seq-entry ::= set {\n"
     "  level 1 ,\n"
     "  class nuc-prot ,\n"
     "  descr {\n"
     "    pub {\n";
-static const char* kData_PhrapAceOld =
+static const string kData_PhrapAceOld =
     "DNA Contig35\n"
     "GATAAGataATAAtGGAAAATaGAAaccGGAaAaATaATAAaATaaTTTc\n"
     "aGATcGcTGaAGAaGAaGaGAAGaGAATAGcAGccCaATGTGAGAAGCTC\n"
     "GGcAAAAAAGGACTCGAAGaaGcGGGAAAGAGTCTgGAAGcTGCCATTCT";
-static const char* kData_PhrapAceNew =
+static const string kData_PhrapAceNew =
     "AS 1 6\n\n"
     "CO Contig1 1222 6 0 U\n"
     "AGTTTTAGTTTTCCTCTGAAGCAAGCACACCTTCCCTTTCCCGTCTGTCTATCCATCCCT\n"
     "GACCCTGTTGTCTGTCTATCCCTGACCCCGTAGTCTCCTAAGTCGCCCCAGATTTTGTGA\n"
     "ACACCCTCTGGAACTAGAATCTAGTGGGCGGATGGACCATTTACTAGACGGAGGTAGAGG\n";
-static const char* kData_Table =
+static const string kData_Table =
     " a         b         c         d         f         g         h\n"
     "-0.465000 -0.141000  0.507000 -0.462000 -0.464000  0.570000  1.356000\n"
     " 0.559000 -0.459000 -0.464000 -0.458000  0.000000  0.322000 -0.454000\n"
     " 0.887000 -0.464000  1.196000 -0.463000  0.376000 -0.461000  0.547000\n"
     " 0.032000 -0.464000  0.066000  0.762000 -0.465000 -0.456000  0.919000\n";
-static const char* kData_Table2 =
+static const string kData_Table2 =
     "DNA        a         b         c         d         f         g\n"
     "-0.465000 -0.141000  0.507000 -0.462000 -0.464000  0.570000  1.356000\n"
     " 0.559000 -0.459000 -0.464000 -0.458000  0.000000  0.322000 -0.454000\n";
-static const char* kData_Hgvs =
+static const string kData_Hgvs =
     "NC_000023.9:g.107688969G>A\n"
     "NC_000023.9:g.107693786delG\n"
     "NG_008472.1:g.10295_10296insT\n";
-static const char* kData_NotHgvs = 
+static const string kData_NotHgvs = 
     "Seq-annot ::= {desc {name Primer.\n";
 
-static const char* kData_JSON1 = 
+static const string kData_JSON1 = 
     R"( { )"
     R"(    "Search": { )"
     R"(     "query\"_id": "lcl|1", )"
@@ -327,18 +327,18 @@ static const char* kData_JSON1 =
     R"(        "test open\\\" string )";
 
 
-static const char* kData_JSON2 = 
+static const string kData_JSON2 = 
     R"( { )"
     R"(    "Search": { )"
     R"(     "truncated boolean": fal )";
 
-static const char* kData_JSON3 = 
+static const string kData_JSON3 = 
     R"( { )"
     R"(    "Search": { )"
     R"(     "truncated number": 1.7E- )";
 
 // Missing starting brace
-static const char* kData_NotJSON1 = 
+static const string kData_NotJSON1 = 
     R"(    "Search": { )"
     R"(    "query_id": "lcl|1", )"
     R"(    "hits": [ )"
@@ -350,7 +350,7 @@ static const char* kData_NotJSON1 =
     R"(        "test open string )";
 
 // Unexpected word    
-static const char* kData_NotJSON2 = 
+static const string kData_NotJSON2 = 
     R"( { )"
     R"(    "Search": { )"
     R"(    "query_id": "lcl|1", )"
@@ -364,7 +364,7 @@ static const char* kData_NotJSON2 =
 
 
 // CLUSTAL
-static const char* kData_CLUSTAL1 =
+static const string kData_CLUSTAL1 =
 R"(gi|109899834|ref|YP_663089.1|       MRIKDCILAIDQGTTSTRAIIFAPDSSIIAVAQQEFTQHYPNDGWVEHDP
 gi|115525772|ref|YP_782683.1|       ---MSFVLAIDQGTTSSRAIVFRDDISIAAVAQQEFSQHFPASGWVEHEP
 gi|108762389|ref|YP_634888.1|       MPKAKYVLALDQGTTGTHVSILDTKLQVVGRSYKEFTQHFPKPSWVEHDL
@@ -374,7 +374,7 @@ gi|109899834|ref|YP_663089.1|       EDIWSSTVVVCRQAISEAIAKGARIAAIGVTNQRETTVVWDRNT
 gi|115525772|ref|YP_782683.1|       EDIWSSTLATSRAAIEQAGLKASDIAAIGITNQRETVVLWDRVTGQAIHR
 gi|108762389|ref|YP_634888.1|       DEIWASSEWCIARALKSAGLRGKDIAAIGITNQRETTGLWMRGSGQPLSH)";
 
-static const char* kData_CLUSTAL2 =
+static const string kData_CLUSTAL2 =
 R"(gi|109899834|ref|YP_663089.1|       MRIKDCILAIDQGTTSTRAIIFAPDSSIIAVAQQEFTQHYPNDGWVEHDP
 gi|115525772|ref|YP_782683.1|       ---MSFVLAIDQGTTSSRAIVFRDDISIAAVAQQEFSQHFPASGWVEHEP
 gi|108762389|ref|YP_634888.1|       MPKAKYVLALDQGTTGTHVSILDTKLQVVGRSYKEFTQHFPKPSWVEHDL
@@ -383,7 +383,7 @@ gi|109899834|ref|YP_663089.1|       EDIWSSTVVVCRQAISEAIAKGARIAAIGVTNQRETTVVWDRNT
 gi|115525772|ref|YP_782683.1|       EDIWSSTLATSRAAIEQAGLKASDIAAIGITNQRETVVLWDRVTGQAIHR
 gi|108762389|ref|YP_634888.1|       DEIWASSEWCIARALKSAGLRGKDIAAIGITNQRETTGLWMRGSGQPLSH)";
 
-static const char* kData_NotCLUSTAL1 =
+static const string kData_NotCLUSTAL1 =
 R"(gi|109899834|ref|YP_663089.1|       MRIKDCILAIDQGTTSTRAIIFAPDSSIIAVAQQEFTQHYPNDGWVEHDP
 gi|115525772|ref|YP_782683.1|       ---MSFVLAIDQGTTSSRAIVFRDDISIAAVAQQEFSQHFPASGWVEHEP
 gi|115525772|ref|YP_782683.1|       ---MSFVLAIDQGTTSSRAIVFRDDISIAAVAQQEFSQHFPASGWVEHEP
@@ -392,25 +392,25 @@ gi|109899834|ref|YP_663089.1|       EDIWSSTVVVCRQAISEAIAKGARIAAIGVTNQRETTVVWDRNT
 gi|115525772|ref|YP_782683.1|       EDIWSSTLATSRAAIEQAGLKASDIAAIGITNQRETVVLWDRVTGQAIHR
 gi|108762389|ref|YP_634888.1|       DEIWASSEWCIARALKSAGLRGKDIAAIGITNQRETTGLWMRGSGQPLSH)";
 
-static const char* kData_NotCLUSTAL2 =
+static const string kData_NotCLUSTAL2 =
 R"(CLUSTAL W (1.83) multiple sequence alignment
 "aboA            -NLFV-ALYDFVASGDNTLSITKGEKLRV-------LGYNHNG-------EWCEA--QTK 42
 "ycsB            KGVIY-ALWDYEPQNDDELPMKEGDCMTI-------IHREDEDEI-----EWWWA--RLN abc
 "pht             -GYQYRALYDYKKEREEDIDLHLGDILTVNKGSLVALGFSDGQEARPEEIGWLNGYNETT 59)";
 
-static const char* kData_NotCLUSTAL3 =
+static const string kData_NotCLUSTAL3 =
 R"(CLUSTAL W (1.83) multiple sequence alignment
 "aboA            -NLFV-ALYDFVASGDNTLSITKGEKLRV-------LGYNHNG-------EWCEA--QTK 42
 "ycsB            KGVIY-ALWDYEPQNDDELPMKEGDCMTI-------IHREDEDEI-----EWWWA--RLN 45
 "pht             -GYQYRALYDYKKEREEDIDLHLGDILTVNKGSLVALGFSDGQEARPEEIGWLNGNETT 59)";
 
-static const char* kData_NotCLUSTAL4 =
+static const string kData_NotCLUSTAL4 =
 R"(CLUSTAL W (1.83) multiple sequence alignment
 "aboA            -NLFV-ALYDFVASGDNTLSITKGEKLRV-------LGYNHNG-------EWCEA--QTK 42
 "ycsB            KGVIY-ALWDYEPQNDDELPMKEGDCMTI-------IHREDEDEI-----EWWWA--RLN 44
 "pht             -GYQYRALYDYKKEREEDIDLHLGDILTVNKGSLVALGFSDGQEARPEEIGWLNGYNETT 59)";
 
-static const char* kData_Zip = 
+static const string kData_Zip = 
     "\x50\x4b\x03\x04\x0a\x00\x00\x00\x00\x00\x41\x73\x58\x3f\xb3\xf1"
     "\x7f\x5a\x09\x00\x00\x00\x09\x00\x00\x00\x0c\x00\x15\x00\x7a\x69"
     "\x70\x5f\x74\x65\x73\x74\x2e\x74\x78\x74\x55\x54\x09\x00\x03\xba"
@@ -421,33 +421,33 @@ static const char* kData_Zip =
     "\xa4\x81\x00\x00\x00\x00\x7a\x69\x70\x5f\x74\x65\x73\x74\x2e\x74"
     "\x78\x74\x55\x54\x05\x00\x03\xba\xad\xa5\x4e\x55\x78\x00\x00\x50"
     "\x4b\x05\x06\x00\x00\x00\x00\x01\x00\x01\x00\x47\x00\x00\x00\x48"
-    "\x00\x00\x00\x00\x00\x00";
+    "\x00\x00\x00\x00\x00\x00"s;
 
-static const char* kData_GZip = 
+static const string kData_GZip = 
     "\x1f\x8b\x08\x08\xba\xad\xa5\x4e\x00\x03\x7a\x69\x70\x5f\x74\x65"
     "\x73\x74\x2e\x74\x78\x74\x00\xab\xca\x2c\x50\x28\x49\x2d\x2e\xe1"
-    "\x02\x00\xb3\xf1\x7f\x5a\x09\x00\x00\x00";
+    "\x02\x00\xb3\xf1\x7f\x5a\x09\x00\x00\x00"s;
 
-static const char* kData_BZip2 = 
+static const string kData_BZip2 = 
     "\x42\x5a\x68\x39\x31\x41\x59\x26\x53\x59\x9a\x7c\x2e\xc9\x00\x00"
     "\x04\x51\x80\x00\x10\x40\x00\x02\x20\x4c\x10\x20\x00\x22\x00\xf2"
-    "\x84\x30\x20\xea\x41\x5f\x17\x72\x45\x38\x50\x90\x9a\x7c\x2e\xc9";
+    "\x84\x30\x20\xea\x41\x5f\x17\x72\x45\x38\x50\x90\x9a\x7c\x2e\xc9"s;
 
-static const char kData_Lzo[] = 
+static const string kData_Lzo = 
     "\x4c\x5a\x4f\x00\x0b\x00\x00\x60\x00\x00\x00\x18\x00\x00\x00\x25"
     "\x7a\x69\x70\x20\x74\x65\x73\x74\x00\x73\x6f\x75\x72\x63\x65\x20"
-    "\x73\x74\x72\x3a\x11\x00\x00\x00\x00\x00\x00\x00";
+    "\x73\x74\x72\x3a\x11\x00\x00\x00\x00\x00\x00\x00"s;
 
-static const char kData_Sra_BigEndian[] = 
-    "NCBI.sra\x05\x03\x19\x88\x00\x00\x00\x01";
-static const char kData_Sra_LittleEndian[] = 
-    "NCBI.sra\x88\x19\x03\x05\x01\x00\x00\x00";
+static const string kData_Sra_BigEndian = 
+    "NCBI.sra\x05\x03\x19\x88\x00\x00\x00\x01"s;
+static const string kData_Sra_LittleEndian = 
+    "NCBI.sra\x88\x19\x03\x05\x01\x00\x00\x00"s;
 
-static const char kData_Bam[] =
+static const string kData_Bam =
     "\x1f\x8b\x08\x04\x00\x00\x00\x00\x00\xff\x06\x00\x42\x43\x02\x00"
-    "\x19\x64\xc4\xbd\x0b\x70\x2c\x6d\x5a\x1e\xd6\xbf\x8e\x8e\x8e\xa4";
+    "\x19\x64\xc4\xbd\x0b\x70\x2c\x6d\x5a\x1e\xd6\xbf\x8e\x8e\x8e\xa4"s;
     
-static const char kData_Psl[] =
+static const string kData_Psl =
     "186559	"
     "44	"
     "0	"
@@ -479,7 +479,7 @@ BOOST_AUTO_TEST_CASE(TestSupportedFormats)
 
 BOOST_AUTO_TEST_CASE(TestEmptyFile)
 {
-    CNcbiIstrstream str("");
+    CNcbiIstrstream str(kEmptyStr);
     CFormatGuess guess(str);
     BOOST_CHECK_EQUAL(guess.GuessFormat(), CFormatGuess::eUnknown);
 }
