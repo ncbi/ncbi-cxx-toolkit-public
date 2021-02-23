@@ -204,13 +204,24 @@ static int/*bool*/ s_AddSkipInfo(SERV_ITER      iter,
 #ifdef __GNUC__
 inline
 #endif /*__GNUC__*/
-static int/*bool*/ s_IsMapperConfigured(const char* svc, const char* key)
+static int/*bool*/ x_IsMapperConfigured(const char* svc,
+                                        const char* key,
+                                        int/*bool*/ fast)
 {
-    char val[32];
-    if (s_Fast)
-        return 0/*false*/;
-    ConnNetInfo_GetValueInternal(svc, key, val, sizeof(val), 0);
-    return ConnNetInfo_Boolean(val);
+    char val[40];
+    return fast
+        ? 0/*false*/
+        : ConnNetInfo_Boolean(ConnNetInfo_GetValueInternal
+                              (svc, key, val, sizeof(val), 0));
+}
+
+
+#define s_IsMapperConfigured(s, k)  x_IsMapperConfigured(s, k, s_Fast)
+
+
+int/*bool*/ SERV_IsMapperConfiguredInternal(const char* svc, const char* key)
+{
+    return s_IsMapperConfigured(svc, key);
 }
 
 
@@ -1165,53 +1176,78 @@ extern unsigned short SERV_ServerPort(const char*  name,
 }
 
 
-extern void SERV_SetImplicitServerType(const char* service, ESERV_Type type)
+extern int/*bool*/ SERV_SetImplicitServerType(const char* service,
+                                              ESERV_Type  type)
 {
     char* buf, *svc = SERV_ServiceName(service);
     const char* typ = SERV_TypeStr(type);
     size_t len;
+
     if (!svc)
-        return;
+        return 0/*failure*/;
     /* Store service-specific setting */
     if (CORE_REG_SET(svc, CONN_IMPLICIT_SERVER_TYPE, typ, eREG_Transient)) {
         free(svc);
-        return;
+        return 1/*success*/;
     }
     len = strlen(svc);
     if (!(buf = (char*) realloc(svc, len + sizeof(CONN_IMPLICIT_SERVER_TYPE)
                                 + 2/*"=\0"*/) + strlen(typ))) {
         free(svc);
-        return;
+        return 0/*failure*/;
     }
     x_tr(strupr(buf), '-', '_', len);
     memcpy(buf + len,
            "_"    CONN_IMPLICIT_SERVER_TYPE,
            sizeof(CONN_IMPLICIT_SERVER_TYPE));
     len += sizeof(CONN_IMPLICIT_SERVER_TYPE);
+#ifdef HAVE_SETENV
+    buf[len++] = '\0';
+#else
     buf[len++] = '=';
+#endif /*HAVE_SETENV*/
     strcpy(buf + len, typ);
+
     CORE_LOCK_WRITE;
+#ifdef HAVE_SETENV
+    len = !setenv(buf, buf + len, 1/*overwrite*/);
+#else
     /* NOTE that putenv() leaks memory if the environment is later replaced */
     len = !putenv(buf);
+#endif /*HAVE_SETENV*/
     CORE_UNLOCK;
+
+#ifndef HAVE_SETENV
     if (!len)
+#endif /*!HAVE_SETENV*/
         free(buf);
+    return len ? 1/*success*/ : 0/*failure*/;
 }
 
 
-extern ESERV_Type SERV_GetImplicitServerType(const char* service)
-{
-    ESERV_Type type;
-    const char *end;
-    char value[40];
-    /* Try to retrieve service-specific first, then global default */
-    if (!ConnNetInfo_GetValue(service, REG_CONN_IMPLICIT_SERVER_TYPE,
-                              value, sizeof(value), 0)
-        ||  !*value  ||  !(end = SERV_ReadType(value, &type))  ||  *end) {
-        return SERV_GetImplicitServerTypeDefault();
-    }
-    return type;
-}
+#define SERV_MERGE(a, b)  a ## b
+
+#define SERV_GET_IMPLICIT_SERVER_TYPE(version)                              \
+    ESERV_Type SERV_MERGE(SERV_GetImplicitServerType, version)              \
+        (const char* service)                                               \
+    {                                                                       \
+        ESERV_Type type;                                                    \
+        const char *end;                                                    \
+        char val[40];                                                       \
+        /* Try to retrieve service-specific first, then global default */   \
+        if (!SERV_MERGE(ConnNetInfo_GetValue, version)                      \
+            (service, REG_CONN_IMPLICIT_SERVER_TYPE, val, sizeof(val), 0)   \
+            ||  !*val  ||  !(end = SERV_ReadType(val, &type))  ||  *end) {  \
+            return SERV_GetImplicitServerTypeDefault();                     \
+        }                                                                   \
+        return type;                                                        \
+    }                                                                       \
+    
+
+extern SERV_GET_IMPLICIT_SERVER_TYPE()
+
+
+SERV_GET_IMPLICIT_SERVER_TYPE(Internal)
 
 
 ESERV_Type SERV_GetImplicitServerTypeDefault(void)

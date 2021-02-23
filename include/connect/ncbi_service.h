@@ -105,8 +105,8 @@ typedef unsigned short TSERV_TypeOnly;  /**<Server type only, w/o specials   */
  * @param preferred_host
  *  Preferred host to use the service at, nbo.
  * @param net_info
- *  Connection information (NULL prevents use of the network dispatching via
- *  DISPD, still allowing use of LBOS/NAMERD/LINKERD).
+ *  Connection information (NULL prevents the use of the network-based
+ *  dispatching via LBOS, LINKERD, NAMERD, and DISPD)
  * @note If "net_info" is NULL, only the following mappers will be consulted:
  *          LOCAL(if enabled, see below), LBSMD, and LBDNS.
  *       If "net_info" is not NULL, the above mappers are consulted first,
@@ -125,6 +125,10 @@ typedef unsigned short TSERV_TypeOnly;  /**<Server type only, w/o specials   */
  *       skip(for LBSMD and DISPD) the corresponding service mapper(s).  This
  *       scheme  permits to use any combination of the service mappers (local/
  *       lbsmd/lbdns/linkerd/namerd/lbos/dispd, network-aware or not).
+ *       These keys can also be used for even more granular, per-service basis,
+ *       as described in <connect/ncbi_connutil.h> -- when used in the registry
+ *       section '[service]' or prefixed with the service name in the process
+ *       environment.
  * @note If "net_info" is not NULL then a non-zero value of
  *       "net_info->stateless" forces "types" to get the "fSERV_Stateless" bit
  *       set implicitly.
@@ -136,7 +140,7 @@ typedef unsigned short TSERV_TypeOnly;  /**<Server type only, w/o specials   */
  *       the fSERV_ReverseDns bit is set in the "types" parameter:  the
  *       result-to-be is not considered if either
  *    1. There is an entry of the fSERV_Dns type found in "skip" array that
- *       matches the host[:port] (any port if port is 0); or
+ *       matches the host[:port] (any port if the skip entry's port is 0); or
  *    2. The reverse lookup of the host:port turns up an fSERV_Dns-type server
  *       whose name matches an fSERV_Dns-type server in "skip".
  * @param n_skip
@@ -227,7 +231,7 @@ extern NCBI_XCONNECT_EXPORT SSERV_InfoCPtr SERV_GetNextInfoEx
  HOST_INFO*           host_info
  );
 
-/** Same as "SERV_GetNextInfoEx(., 0)" -- i.e. w/o host information.
+/** Same as "SERV_GetNextInfoEx(., 0)" -- i.e. w/o the host information.
  * @sa
  *  SERV_GetNextInfoEx
  */
@@ -250,8 +254,8 @@ extern NCBI_XCONNECT_EXPORT SSERV_InfoCPtr SERV_GetNextInfo
  * @param preferred_host
  *  Preferred host to use the service at, nbo.
  * @param net_info
- *  Connection information (NULL disables network dispatching via
- *  DISPD, still allowing use of LBOS/NAMERD/LINKERD).
+ *  Connection information (NULL disables network-based dispatching via
+ *  LBOS, LINKERD, NAMERD, and DISPD)
  * @param skip[]
  *  An array of servers NOT to select, see SERV_OpenEx() for notes.
  * @param n_skip
@@ -359,7 +363,7 @@ extern NCBI_XCONNECT_EXPORT void SERV_Close
  );
 
 
-/** Obtain port number that corresponds to the named (standalone) service
+/** Obtain a port number that corresponds to the named (standalone) service
  * declared at the specified host (per the LB configuration information).
  * @param name
  *  Service name (of type fSERV_Standalone) to look up.
@@ -382,14 +386,18 @@ extern NCBI_XCONNECT_EXPORT unsigned short SERV_ServerPort
 /** Set a server type to use when a service mapper returns typeless entries for
  * the given service name (typed entries retain their types as received).
  * @note Current implementation of this call tries to store the association in
- * the application's registry as a transient setting.  Only if that has failed,
- * then it proceeds to store the association in the application environment.
+ *       the application's registry as a transient setting.  Only if that has
+ *       failed, then it proceeds to store the association in the application
+ *       environment.
  * @note Implicit server type designation is managed the same way as any other
- * service-related parameters, using the REG_CONN_IMPLICIT_SERVER_TYPE key.
+ *       service-related parameters from <connect/ncbi_connutil.h>: this one is
+ *       using the REG_CONN_IMPLICIT_SERVER_TYPE key.
+ * @return
+ *  0 if failed; non-zero if succeeded
  * @sa
  *  ConnNetInfo_GetValue, SERV_GetImplicitServerType
  */
-extern NCBI_XCONNECT_EXPORT void       SERV_SetImplicitServerType
+extern NCBI_XCONNECT_EXPORT int/*bool*/ SERV_SetImplicitServerType
 (const char* service,
  ESERV_Type  type
  );
