@@ -269,9 +269,14 @@ const char* ConnNetInfo_GetValueInternal(const char* service,const char* param,
  * @sa
  *   ConnNetInfo_GetValue, SERV_ServiceName, ConnNetInfo_CreateInternal
  */
-const char* ConnNetInfo_GetValueService(const char* service,const char* param,
+const char* ConnNetInfo_GetValueService(const char* service, const char* param,
                                         char* value, size_t value_size,
                                         const char* def_value);
+
+
+/* Private interface:  using the _DISABLE/_ENABLE key (e.g. CONN_LOCAL_ENABLE),
+ * return non-zero if set, zero if not.  NB:  "svc" may not be a mask. */
+int/*bool*/ SERV_IsMapperConfiguredInternal(const char* svc, const char* key);
 
 
 /* Private interface:  manipulate a table of firewall ports */
@@ -292,8 +297,11 @@ void SERV_PrintFirewallPorts
 );
 
 
-/* Return a global default */
+/* Return the global default */
 ESERV_Type SERV_GetImplicitServerTypeDefault(void);
+
+/* Private interface: same as public but service is not checked/substituted */
+ESERV_Type SERV_GetImplicitServerTypeInternal(const char* service);
 
 
 #ifdef __cplusplus
