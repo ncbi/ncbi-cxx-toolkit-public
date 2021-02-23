@@ -45,28 +45,29 @@
 
 typedef struct SServiceConnectorTag {
     SMetaConnector      meta;           /* Low level comm.conn and its VT    */
+    const char*         name;           /* Subst'd svc name (cf. iter->name) */
     const char*         type;           /* Verbal connector type             */
     const char*         descr;          /* Verbal connector description      */
     const SConnNetInfo* net_info;       /* R/O conn info with translated svc */
     const char*         user_header;    /* User header currently set         */
 
-    SERV_ITER           iter;           /* Dispatcher information            */
+    SERV_ITER           iter;           /* Dispatcher information (when open)*/
 
     SSERVICE_Extra      extra;          /* Extra params as passed to ctor    */
-    EIO_Status          status;         /* Status of last I/O op             */
+    EIO_Status          status;         /* Status of last I/O                */
 
     unsigned short      retry;          /* Open retry count since last okay  */
     TSERV_TypeOnly      types;          /* Server types w/o any specials     */
     unsigned            reset:1;        /* Non-zero if iter was just reset   */
     unsigned            warned:1;       /* Non-zero when needed adj via HTTP */
     unsigned            unused:5;
-    unsigned            secure:1;       /* Set when must start ssl on SOCK   */
+    unsigned            secure:1;       /* Set when must start SSL on SOCK   */
 
     ticket_t            ticket;         /* Network byte order (none if zero) */
     unsigned int        host;           /* Parsed connection info... (n.b.o) */
     unsigned short      port;           /*                       ... (h.b.o) */
 
-    const char          service[1];     /* Untranslated (orig.) service name */
+    const char          service[1];     /* Unsubst'd (original) service name */
 } SServiceConnector;
 
 
@@ -103,6 +104,7 @@ static int/*bool*/ s_OpenDispatcher(SServiceConnector* uuu)
                     ("[%s]  Service not found", uuu->service));
         return 0/*false*/;
     }
+    assert(strcmp(uuu->iter->name, uuu->name) == 0);
     uuu->reset = 1/*true*/;
     return 1/*true*/;
 }
@@ -890,6 +892,9 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
     if (user_header && !ConnNetInfo_OverrideUserHeader(net_info, user_header))
         return 0;
 
+    if (!ConnNetInfo_SetupStandardArgs(net_info, uuu->name))
+        return 0;
+
     ConnNetInfo_ExtendUserHeader
         (net_info, "User-Agent: NCBIServiceConnector/"
          NCBI_DISP_VERSION
@@ -1248,10 +1253,11 @@ extern CONNECTOR SERVICE_CreateConnectorEx
  const SConnNetInfo*   net_info,
  const SSERVICE_Extra* extra)
 {
-    char*              x_service;
+    size_t             slen, nlen;
     SConnNetInfo*      x_net_info;
+    char*              x_service;
+    int/*bool*/        same;
     CONNECTOR          ccc;
-    size_t             len;
     SServiceConnector* xxx;
 
     if (!(x_service = SERV_ServiceName(service)))
@@ -1261,8 +1267,10 @@ extern CONNECTOR SERVICE_CreateConnectorEx
         free(x_service);
         return 0;
     }
-    len = strlen(service);
-    if (!(xxx = (SServiceConnector*) calloc(1, sizeof(*xxx) + len))) {
+    slen = strlen(service);
+    same = strcasecmp(service, x_service) == 0;
+    nlen = same  ||  !net_info ? 0 : strlen(x_service) + 1;
+    if (!(xxx = (SServiceConnector*) calloc(1, sizeof(*xxx) + slen + nlen))) {
         free(x_service);
         free(ccc);
         return 0;
@@ -1279,15 +1287,18 @@ extern CONNECTOR SERVICE_CreateConnectorEx
     x_net_info    = (net_info
                      ? ConnNetInfo_Clone(net_info)
                      : ConnNetInfo_CreateInternal(x_service));
-    xxx->net_info = x_net_info;
-
-    if (!ConnNetInfo_SetupStandardArgs(x_net_info, x_service)) {
+    if (!x_net_info) {
         free(x_service);
         s_Destroy(ccc);
         return 0;
     }
+    xxx->net_info = x_net_info;
     /* NB: zero'ed block, no need to copy the trailing '\0' */
-    memcpy((char*) xxx->service, service, len);
+    memcpy((char*) xxx->service, service, slen++);
+    xxx->name     = (same ? xxx->service : nlen
+                     ? (const char*) memcpy((char*) xxx->service + slen,
+                                            x_service, nlen)
+                     : x_net_info->svc);
     free(x_service);
 
     /* now get ready for first probe dispatching */
