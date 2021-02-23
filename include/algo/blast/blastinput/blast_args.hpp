@@ -1275,13 +1275,19 @@ private:
 class NCBI_BLASTINPUT_EXPORT CMTArgs : public IBlastCmdLineArgs
 {
 public:
+	enum EMTMode {
+		eNotSupported = -1,
+		eSplitByDB,
+	    eSplitByQueries
+	};
     /// Default Constructor
-    CMTArgs(size_t default_num_threads = CThreadable::kMinNumThreads) :
-    	m_NumThreads(default_num_threads)
+    CMTArgs(size_t default_num_threads = CThreadable::kMinNumThreads, EMTMode mt_mode = eNotSupported) :
+    	m_NumThreads(default_num_threads), m_MTMode(mt_mode)
     {
 #ifdef NCBI_NO_THREADS
         // No threads can be set in NON-MT mode
         m_NumThreads = CThreadable::kMinNumThreads;
+        m_MTMode = eNotSupported;
 #endif
     }
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
@@ -1292,8 +1298,12 @@ public:
 
     /// Get the number of threads to spawn
     size_t GetNumThreads() const { return m_NumThreads; }
+
+    int GetMTMode() const { return m_MTMode; }
+
 protected:
     size_t m_NumThreads;        ///< Number of threads to spawn
+    EMTMode m_MTMode;
 };
 
 /// Argument class to collect remote vs. local execution
@@ -1435,13 +1445,10 @@ public:
     }
 
     /// Get the input stream
-    CNcbiIstream& GetInputStream() const {
-        return m_StdCmdLineArgs->GetInputStream();
-    }
+    virtual CNcbiIstream& GetInputStream();
+
     /// Get the output stream
-    CNcbiOstream& GetOutputStream() const {
-        return m_StdCmdLineArgs->GetOutputStream();
-    }
+    virtual CNcbiOstream& GetOutputStream();
 
     /// Set the input stream to a temporary input file (needed when importing
     /// a search strategy)

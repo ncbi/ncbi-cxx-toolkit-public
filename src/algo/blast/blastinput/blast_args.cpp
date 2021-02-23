@@ -3038,6 +3038,17 @@ CMTArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.SetDependency(kArgNumThreads,
                            CArgDescriptions::eExcludes,
                            kArgRemote);
+
+    if (m_MTMode >= 0) {
+    	arg_desc.AddDefaultKey(kArgMTMode, "int_value",
+                               "Multi-thread mode to use in BLAST search:\n "
+                               "0 (auto) split by database \n "
+                               "1 split by queries",
+                               CArgDescriptions::eInteger,
+                               NStr::IntToString(0));
+    	arg_desc.SetConstraint(kArgMTMode,
+                               new CArgAllowValuesBetween(0, 1, true));
+    }
     /*
     arg_desc.SetDependency(kArgNumThreads,
                            CArgDescriptions::eExcludes,
@@ -3077,6 +3088,10 @@ CMTArgs::ExtractAlgorithmOptions(const CArgs& args, CBlastOptions& /* opts */)
                      << "ignored when '" << kArgSubject << "' is specified.");
         }
     }
+    if (args.Exist(kArgMTMode) && args[kArgMTMode].HasValue()) {
+    	m_MTMode = (EMTMode) args[kArgMTMode].AsInteger();
+    }
+
 }
 
 void
@@ -3482,6 +3497,15 @@ void CBlastAppArgs::SetTask(const string& task)
     ThrowIfInvalidTask(task);
 #endif
     m_Task.assign(task);
+}
+
+/// Get the input stream
+CNcbiIstream& CBlastAppArgs::GetInputStream() {
+    return m_StdCmdLineArgs->GetInputStream();
+}
+/// Get the output stream
+CNcbiOstream& CBlastAppArgs::GetOutputStream() {
+    return m_StdCmdLineArgs->GetOutputStream();
 }
 
 CArgDescriptions*
