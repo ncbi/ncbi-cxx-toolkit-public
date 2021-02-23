@@ -140,6 +140,72 @@ void s_CheckSource(const string& descr,
 
 
 static
+size_t s_CheckFeat(CRef<CScope> scope,
+                   const SAnnotSelector& sel,
+                   const string& str_id,
+                   CRange<TSeqPos> range = CRange<TSeqPos>::GetWhole())
+{
+    size_t ret = 0;
+    CRef<CSeq_id> seq_id(new CSeq_id(str_id));
+    CRef<CSeq_loc> loc(new CSeq_loc);
+    if ( range == CRange<TSeqPos>::GetWhole() ) {
+        loc->SetWhole(*seq_id);
+    }
+    else {
+        CSeq_interval& interval = loc->SetInt();
+        interval.SetId(*seq_id);
+        interval.SetFrom(range.GetFrom());
+        interval.SetTo(range.GetTo());
+    }
+    {
+        CFeat_CI it(*scope, *loc, sel);
+        ret += it.GetSize();
+        BOOST_CHECK(it);
+    }
+
+    CBioseq_Handle bh = scope->GetBioseqHandle(*seq_id);
+    BOOST_REQUIRE(bh);
+    {
+        CFeat_CI it(bh, range, sel);
+        ret += it.GetSize();
+        BOOST_CHECK(it);
+    }
+    return ret;
+}
+
+
+static
+void s_CheckNoFeat(CRef<CScope> scope,
+                   const SAnnotSelector& sel,
+                   const string& str_id,
+                   CRange<TSeqPos> range = CRange<TSeqPos>::GetWhole())
+{
+    CRef<CSeq_id> seq_id(new CSeq_id(str_id));
+    CRef<CSeq_loc> loc(new CSeq_loc);
+    if ( range == CRange<TSeqPos>::GetWhole() ) {
+        loc->SetWhole(*seq_id);
+    }
+    else {
+        CSeq_interval& interval = loc->SetInt();
+        interval.SetId(*seq_id);
+        interval.SetFrom(range.GetFrom());
+        interval.SetTo(range.GetTo());
+    }
+    {
+        CFeat_CI it(*scope, *loc, sel);
+        BOOST_CHECK(!it);
+    }
+
+    CBioseq_Handle bh = scope->GetBioseqHandle(*seq_id);
+    BOOST_REQUIRE(bh);
+    {
+        CFeat_CI it(bh, range, sel);
+        BOOST_CHECK(!it);
+    }
+}
+
+
+static
 void s_TestNoNA(const string& descr,
                 const string& na_acc,
                 CBioseq_Handle bh, TSeqPos range_from, TSeqPos range_to)
@@ -322,12 +388,14 @@ BOOST_AUTO_TEST_CASE(SNPImplicitSNP)
     string seq_id = "NC_000001.11";
     TSeqPos range_from = 0;
     TSeqPos range_to = 100000;
-    size_t snp_count = 17889;
+    size_t snp_count = 23474; // new PTIS version - NA000193272.8#17
+    // old was NA000193272.7#17 and had 17889 SNPs in this case
     
     string seq_id2 = "NC_000007";
     TSeqPos range_from2 = 1000000;
     TSeqPos range_to2 = 1100000;
-    size_t snp_count2 = 34431;
+    size_t snp_count2 = 44657; // new PTIS version - NA000193272.8#17
+    // old was NA000193272.7#17 and had 34431 SNPs in this case
     
     CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetHandle(seq_id));
     BOOST_REQUIRE(bh);
@@ -336,6 +404,35 @@ BOOST_AUTO_TEST_CASE(SNPImplicitSNP)
 
     s_TestPTIS("SNPImplicitSNP 1", eFromSNP, bh, range_from, range_to, snp_count);
     s_TestPTIS("SNPImplicitSNP 2", eFromSNP, bh2, range_from2, range_to2, snp_count2);
+}
+
+
+BOOST_AUTO_TEST_CASE(CheckExtSNPEditChangeId)
+{
+    LOG_POST("Checking ExtAnnot SNP for sequence with changed ids");
+    string id = "NM_004006.2";
+    string dummy_id = "lcl|dummy";
+    
+    SAnnotSelector sel(CSeqFeatData::eSubtype_variation);
+    sel.SetResolveAll().SetAdaptiveDepth();
+    sel.IncludeNamedAnnotAccession("SNP");
+    sel.AddNamedAnnots("SNP");
+    CRef<CScope> scope = s_MakeScope();
+    scope->SetKeepExternalAnnotsForEdit();
+    CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetHandle(id));
+    BOOST_REQUIRE(bh);
+    CBioseq_EditHandle bhe = bh.GetEditHandle();
+    BOOST_REQUIRE(bh);
+    BOOST_REQUIRE(bhe);
+    size_t count = s_CheckFeat(scope, sel, id);
+    vector<CSeq_id_Handle> ids = bhe.GetId();
+    bhe.ResetId();
+    bhe.AddId(CSeq_id_Handle::GetHandle(dummy_id));
+    s_CheckNoFeat(scope, sel, dummy_id);
+    for ( auto idh : ids ) {
+        bhe.AddId(idh);
+    }
+    BOOST_CHECK_EQUAL(s_CheckFeat(scope, sel, dummy_id), count);
 }
 
 
