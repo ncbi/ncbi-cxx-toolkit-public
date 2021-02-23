@@ -79,13 +79,15 @@ typedef int        TSOCK_socklen_t;
 #ifdef __cplusplus
 extern "C" {
 #endif /*__cplusplus*/
+
 static SSERV_Info* s_GetNextInfo(SERV_ITER, HOST_INFO*);
 static void        s_Reset      (SERV_ITER);
 static void        s_Close      (SERV_ITER);
 
-static const SSERV_VTable s_op = {
+static const SSERV_VTable kLbdnsOp = {
     s_GetNextInfo, 0/*Feedback*/, 0/*Update*/, s_Reset, s_Close, "LBDNS"
 };
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif /*__cplusplus*/
@@ -1309,6 +1311,7 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
 
     CORE_TRACEF(("LBDNS getnextinfo(\"%s\"): %lu%s", iter->name,
                  (unsigned long) data->n_cand, data->empty ? ", EOF" : ""));
+    assert(!data->empty  ||  !data->n_cand);
     if (!data->n_cand) {
         if (!data->empty)
             s_Resolve(iter);
@@ -1324,7 +1327,7 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
         memmove(data->cand, data->cand + 1,
                 data->n_cand * sizeof(data->cand));
     } else
-        data->empty = 1;
+        data->empty = 1/*true*/;
     if (host_info)
         *host_info = 0;
     CORE_TRACEF(("LBDNS getnextinfo(\"%s\"): %p", iter->name, info));
@@ -1586,7 +1589,7 @@ const SSERV_VTable* SERV_LBDNS_Open(SERV_ITER iter, SSERV_Info** info)
         if (info)
             *info = 0;
         CORE_TRACEF(("LBDNS open(\"%s\") okay", iter->name));
-        return &s_op;
+        return &kLbdnsOp;
     }
 
  out:
