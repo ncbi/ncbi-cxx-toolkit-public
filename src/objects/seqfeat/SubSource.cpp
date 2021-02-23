@@ -4239,7 +4239,17 @@ bool s_IsState ( string& state, bool& modified ) {
     return false;
 }
 
-CCountries::EStateCleanResults CCountries::USAStateCleanup ( string& country ) {
+enum EStateCleanup {
+    e_NoResult  = 0,
+    e_Valid     = 1,
+    e_Corrected = 2,
+    e_Invalid   = 3,
+    e_Ambiguous = 4,
+    e_Missing   = 5,
+    e_NotUSA    = 6
+};
+
+EStateCleanup s_DoUSAStateCleanup ( string& country ) {
 
     if ( country.empty() ) {
         return e_NoResult;
@@ -4431,6 +4441,24 @@ CCountries::EStateCleanResults CCountries::USAStateCleanup ( string& country ) {
     }
 
     return e_NoResult;
+}
+
+
+string CCountries::USAStateCleanup ( const string& country ) {
+
+
+    string working = country;
+    s_DoUSAStateCleanup ( working );
+    return working;
+}
+
+string CCountries::USAStateCleanup ( const string& country, int& type ) {
+
+
+    string working = country;
+    EStateCleanup res = s_DoUSAStateCleanup ( working );
+    type = (int) res;
+    return working;
 }
 
 // end of RW-1278
