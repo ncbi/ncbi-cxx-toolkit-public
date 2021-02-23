@@ -41,6 +41,7 @@
 #include <algo/blast/format/blast_format.hpp>
 #include <util/profile/rtprofile.hpp>
 #include "blast_app_util.hpp"
+#include "blastn_node.hpp"
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 USING_NCBI_SCOPE;
@@ -71,6 +72,9 @@ private:
     /** @inheritDoc */
     virtual int Run();
 
+    int x_RunMTBySplitDB();
+    int x_RunMTBySplitQuery();
+
     /// This application's command line args
     CRef<CBlastnAppArgs> m_CmdLineArgs; 
     CBlastUsageReport m_UsageReport;
@@ -88,6 +92,19 @@ void CBlastnApp::Init()
 }
 
 int CBlastnApp::Run(void)
+{
+	const CArgs& args = GetArgs();
+	if (args.Exist(kArgMTMode) &&
+		(args[kArgMTMode].AsInteger() == CMTArgs::eSplitByQueries) &&
+		(args[kArgNumThreads].AsInteger() > 1)){
+		return x_RunMTBySplitQuery();
+	}
+	else {
+		return x_RunMTBySplitDB();
+	}
+}
+
+int CBlastnApp::x_RunMTBySplitDB()
 {
     BLAST_PROF_START( APP.MAIN );
     BLAST_PROF_START( APP.PRE );
@@ -265,6 +282,77 @@ int CBlastnApp::Run(void)
     BLAST_PROF_ADD( BATCHES , (int)batch_num );
     BLAST_PROF_ADD( EXIT_STATUS , (int)status );
     BLAST_PROF_REPORT ;
+    return status;
+}
+
+int CBlastnApp::x_RunMTBySplitQuery()
+{
+    BLAST_PROF_START( APP.MAIN );
+    BLAST_PROF_START( APP.PRE );
+    BLAST_PROF_ADD2( PROGRAM, blastn ) ;
+    int status = BLAST_EXIT_SUCCESS;
+    CBlastAppDiagHandler bah;
+    int batch_size = 1000000;
+
+	char * mt_query_batch_env = getenv("BLAST_MT_QUERY_BATCH_SIZE");
+	if (mt_query_batch_env) {
+		batch_size = NStr::StringToInt(mt_query_batch_env);
+	}
+	cerr << "Batch Size: " << batch_size << endl;
+    // Allow the fasta reader to complain on invalid sequence input
+    SetDiagPostLevel(eDiag_Warning);
+    SetDiagPostPrefix("blastn");
+    SetDiagHandler(&bah, false);
+
+	try {
+    	const CArgs& args = GetArgs();
+    	const int kMaxNumOfThreads = args[kArgNumThreads].AsInteger();
+    	CRef<CBlastOptionsHandle> opts_hndl;
+        if(RecoverSearchStrategy(args, m_CmdLineArgs)) {
+        	opts_hndl.Reset(&*m_CmdLineArgs->SetOptionsForSavedStrategy(args));
+        }
+        else {
+        	opts_hndl.Reset(&*m_CmdLineArgs->SetOptions(args));
+        }
+    	if(IsIStreamEmpty(m_CmdLineArgs->GetInputStream())){
+       		ERR_POST(Warning << "Query is Empty!");
+       		return BLAST_EXIT_SUCCESS;
+    	}
+    	CNcbiOstream & out_stream = m_CmdLineArgs->GetOutputStream();
+		CBlastMasterNode master_node(out_stream, kMaxNumOfThreads);
+   		int chunk_num = 0;
+
+   		CBlastNodeInputReader input(m_CmdLineArgs->GetInputStream(), batch_size, 2000);
+		while (master_node.Processing()) {
+			if (!input.AtEOF()) {
+			 	if (!master_node.IsFull()) {
+					string qb;
+					int q_index = 0;
+					int num_q = input.GetQueryBatch(qb, q_index);
+					if (num_q > 0) {
+						CBlastNodeMailbox * mb(new CBlastNodeMailbox(chunk_num, master_node.GetBuzzer()));
+						CBlastnNode * t(new CBlastnNode(chunk_num, GetArguments(), args, bah, qb, q_index, num_q, mb));
+						master_node.RegisterNode(t, mb);
+						chunk_num ++;
+					}
+				}
+			}
+			else {
+				master_node.Shutdown();
+			}
+    	}
+
+	} CATCH_ALL (status)
+
+    if(!bah.GetMessages().empty()) {
+    	const CArgs & a = GetArgs();
+    	PrintErrorArchive(a, bah.GetMessages());
+    }
+	    BLAST_PROF_STOP( APP.MAIN );
+    BLAST_PROF_ADD( THREADS , (int)m_CmdLineArgs->GetNumThreads() );
+    BLAST_PROF_ADD( EXIT_STATUS , (int)status );
+    BLAST_PROF_REPORT ;
+
     return status;
 }
 
