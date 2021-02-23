@@ -599,7 +599,7 @@ static CBamRef<KConfig> s_InitProxyConfig()
 static DECLARE_TLS_VAR(const CRequestContext*, s_LastRequestContext);
 static DECLARE_TLS_VAR(CRequestContext::TVersion, s_LastRequestContextVersion);
 
-void s_UpdateVDBRequestContext(void)
+static void s_UpdateVDBRequestContext(void)
 {
     CRequestContext& req_ctx = CDiagContext::GetRequestContext();
     auto req_ctx_version = req_ctx.GetVersion();
