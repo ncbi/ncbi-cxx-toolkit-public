@@ -134,9 +134,8 @@ std::string 	CRtProfiler::AsStringMT (std::string sw_name, const CTimeFormat &fm
 void CRtProfiler::AddMarkerMT (std::string new_marker){
     CTimeFormat ctfmt("Y-M-DTh:m:g"); 
     CTime time_now( CTime::eCurrent  );
-    time_now.SetFormat( ctfmt ); 
 
-    std::string new_time_str = time_now.AsString();
+    std::string new_time_str = time_now.AsString( ctfmt );
 
     m_markers_mx.Lock();
     m_markers.push_back(  std::make_pair ( new_marker, new_time_str  )  );
