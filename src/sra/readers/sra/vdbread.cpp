@@ -568,36 +568,37 @@ static CKConfig s_InitProxyConfig()
 }
 
 
-/* set in s_InitProxyConfig()
-static void s_InitProxyKNS(KNSManager* kns_mgr)
+static DECLARE_TLS_VAR(const CRequestContext*, s_LastRequestContext);
+static DECLARE_TLS_VAR(CRequestContext::TVersion, s_LastRequestContextVersion);
+
+void s_UpdateVDBRequestContext(void)
 {
-    if ( CNcbiApplicationGuard app = CNcbiApplication::InstanceGuard() ) {
-        string host = app->GetConfig().GetString("CONN", "HTTP_PROXY_HOST", kEmptyStr);
-        int port = app->GetConfig().GetInt("CONN", "HTTP_PROXY_PORT", 0);
-        if ( !host.empty() && port != 0 ) {
-            if ( rc_t rc = KNSManagerSetHTTPProxyPath(kns_mgr, "%s:%d", host.c_str(), port) ) {
-                NCBI_THROW2(CSraException, eInitFailed,
-                            "Cannot set KNSManager proxy parameters", rc);
-            }
-            KNSManagerSetHTTPProxyEnabled(kns_mgr, true);
-        }
+    CRequestContext& req_ctx = CDiagContext::GetRequestContext();
+    auto req_ctx_version = req_ctx.GetVersion();
+    if ( &req_ctx == s_LastRequestContext && req_ctx_version == s_LastRequestContextVersion ) {
+        return;
+    }
+    _TRACE("CVDBMgr: Updating request context with version: "<<req_ctx_version);
+    s_LastRequestContext = &req_ctx;
+    s_LastRequestContextVersion = req_ctx_version;
+    CKNSManager kns_mgr(CKNSManager::eMake);
+    if ( req_ctx.IsSetSessionID() ) {
+        _TRACE("CVDBMgr: Updating session ID: "<<req_ctx.GetSessionID());
+        KNSManagerSetSessionID(kns_mgr, req_ctx.GetSessionID().c_str());
+    }
+    if ( req_ctx.IsSetClientIP() ) {
+        _TRACE("CVDBMgr: Updating client IP: "<<req_ctx.GetClientIP());
+        KNSManagerSetClientIP(kns_mgr, req_ctx.GetClientIP().c_str());
+    }
+    if ( req_ctx.IsSetHitID() ) {
+        _TRACE("CVDBMgr: Updating hit ID: "<<req_ctx.GetHitID());
+        KNSManagerSetPageHitID(kns_mgr, req_ctx.GetHitID().c_str());
     }
 }
-*/
 
 
 static void s_InitAllKNS(KNSManager* kns_mgr)
 {
-    CRequestContext& req_ctx = GetDiagContext().GetRequestContext();
-    if ( req_ctx.IsSetSessionID() ) {
-        KNSManagerSetSessionID(kns_mgr, req_ctx.GetSessionID().c_str());
-    }
-    if ( req_ctx.IsSetClientIP() ) {
-        KNSManagerSetClientIP(kns_mgr, req_ctx.GetClientIP().c_str());
-    }
-    if ( req_ctx.IsSetHitID() ) {
-        KNSManagerSetPageHitID(kns_mgr, req_ctx.GetHitID().c_str());
-    }
     CNcbiApplicationGuard app = CNcbiApplication::InstanceGuard();
     if ( app && app->GetConfig().GetBool("VDB", "ALLOW_ALL_CERTS", false) ) {
         if ( rc_t rc = KNSManagerSetAllowAllCerts(kns_mgr, true) ) {
@@ -638,32 +639,6 @@ static void s_InitStaticKNS(KNSManager* kns_mgr)
 static void s_InitLocalKNS(KNSManager* kns_mgr)
 {
     s_InitAllKNS(kns_mgr);
-    /*
-    if ( 1 ) { // log effective http parameters
-        const String* path = 0;
-        if ( KNSManagerGetHTTPProxyPath(kns_mgr, &path) ) {
-            LOG_POST("CVDBMgr: HTTP proxy path is not set");
-        }
-        else {
-            LOG_POST("CVDBMgr: HTTP proxy path: "<<
-                     CTempString(path->addr, path->size));
-            StringWhack(path);
-        }
-        bool enabled = KNSManagerGetHTTPProxyEnabled(kns_mgr);
-        LOG_POST("CVDBMgr: HTTP proxy "<<(enabled? "enabled": "disabled"));
-        bool allow_all_certs = false;
-        KNSManagerGetAllowAllCerts(kns_mgr, &allow_all_certs);
-        LOG_POST("CVDBMgr: allow all certificates "<<(allow_all_certs? "true": "false"));
-
-        const char* agent = 0;
-        if ( KNSManagerGetUserAgent(&agent) ) {
-            LOG_POST("CVDBMgr: user agent is not set");
-        }
-        else {
-            LOG_POST("CVDBMgr: user agent: "<<agent);
-        }
-    }
-    */
 }
 
 
@@ -762,6 +737,7 @@ CVDB::CVDB(const CVDBMgr& mgr, const string& acc_or_path)
     : m_Name(acc_or_path)
 {
     DECLARE_SDK_GUARD();
+    s_UpdateVDBRequestContext();
     string path = CVPath::ConvertAccOrSysPathToPOSIX(acc_or_path);
     if ( rc_t rc = VDBManagerOpenDBRead(mgr, x_InitPtr(), 0, "%.*s",
                                         int(path.size()), path.data()) ) {
@@ -825,6 +801,7 @@ CVDBTable::CVDBTable(const CVDB& db,
       m_Name(table_name)
 {
     DECLARE_SDK_GUARD();
+    s_UpdateVDBRequestContext();
     if ( rc_t rc = VDatabaseOpenTableRead(db, x_InitPtr(), table_name) ) {
         *x_InitPtr() = 0;
         RCState rc_state = GetRCState(rc);
@@ -855,6 +832,7 @@ CVDBTable::CVDBTable(const CVDBMgr& mgr,
 {
     *x_InitPtr() = 0;
     DECLARE_SDK_GUARD();
+    s_UpdateVDBRequestContext();
     string path = CVPath::ConvertAccOrSysPathToPOSIX(acc_or_path);
     if ( rc_t rc = VDBManagerOpenTableRead(mgr, x_InitPtr(), 0, "%.*s",
                                            int(path.size()), path.data()) ) {
@@ -921,6 +899,7 @@ CVDBTableIndex::CVDBTableIndex(const CVDBTable& table,
     : m_Table(table),
       m_Name(index_name)
 {
+    s_UpdateVDBRequestContext();
     if ( rc_t rc = VTableOpenIndexRead(table, x_InitPtr(), index_name) ) {
         *x_InitPtr() = 0;
         if ( GetRCObject(rc) == RCObject(rcIndex) &&
@@ -984,6 +963,7 @@ CNcbiOstream& operator<<(CNcbiOstream& out, const CVDBCursor& obj)
 
 void CVDBCursor::Init(const CVDBTable& table)
 {
+    s_UpdateVDBRequestContext();
     if ( *this ) {
         NCBI_THROW2(CSraException, eInvalidState,
                     "Cannot init VDB cursor again",
@@ -1022,6 +1002,7 @@ void CVDBCursor::CloseRow(void)
 rc_t CVDBCursor::OpenRowRc(TVDBRowId row_id)
 {
     CloseRow();
+    s_UpdateVDBRequestContext();
     if ( rc_t rc = VCursorSetRowId(*this, row_id) ) {
         return rc;
     }
@@ -1064,6 +1045,7 @@ TVDBRowId CVDBCursor::GetMaxRowId(void) const
 
 void CVDBCursor::SetParam(const char* name, const CTempString& value) const
 {
+    s_UpdateVDBRequestContext();
     if ( rc_t rc = VCursorParamsSet
          ((struct VCursorParams *)GetPointer(),
           name, "%.*s", value.size(), value.data()) ) {
@@ -1078,6 +1060,7 @@ uint32_t CVDBCursor::GetElementCount(TVDBRowId row, const CVDBColumn& column,
                                      uint32_t elem_bits) const
 {
     DECLARE_SDK_GET_GUARD();
+    s_UpdateVDBRequestContext();
     uint32_t read_count, remaining_count;
     if ( rc_t rc = VCursorReadBitsDirect(*this, row, column.GetIndex(),
                                          elem_bits, 0, 0, 0, 0,
@@ -1096,6 +1079,7 @@ void CVDBCursor::ReadElements(TVDBRowId row, const CVDBColumn& column,
                               void* buffer) const
 {
     DECLARE_SDK_GET_GUARD();
+    s_UpdateVDBRequestContext();
     uint32_t read_count, remaining_count;
     if ( rc_t rc = VCursorReadBitsDirect(*this, row, column.GetIndex(),
                                          elem_bits, start, buffer, 0, count,
@@ -1208,6 +1192,7 @@ void CVDBColumn::Init(const CVDBCursor& cursor,
                       EMissing missing)
 {
     DECLARE_SDK_GUARD();
+    s_UpdateVDBRequestContext();
     m_Name = name;
     if ( rc_t rc = VCursorAddColumn(cursor, &m_Index, name) ) {
         if ( backup_name &&
@@ -1293,6 +1278,7 @@ CNcbiOstream& operator<<(CNcbiOstream& out, const CVDBValue& obj)
 void CVDBValue::x_Get(const CVDBCursor& cursor, const CVDBColumn& column)
 {
     DECLARE_SDK_GET_GUARD();
+    s_UpdateVDBRequestContext();
     uint32_t bit_offset, bit_length;
     if ( rc_t rc = VCursorCellData(cursor, column.GetIndex(),
                                    &bit_length, &m_Data, &bit_offset,
@@ -1316,6 +1302,7 @@ void CVDBValue::x_Get(const CVDBCursor& cursor,
                       EMissing missing)
 {
     DECLARE_SDK_GET_GUARD();
+    s_UpdateVDBRequestContext();
     uint32_t bit_offset, bit_length;
     if ( rc_t rc = VCursorCellDataDirect(cursor, row, column.GetIndex(),
                                          &bit_length, &m_Data, &bit_offset,
@@ -1429,6 +1416,7 @@ void CVDBValueFor4Bits::x_Get(const CVDBCursor& cursor,
                               const CVDBColumn& column)
 {
     DECLARE_SDK_GET_GUARD();
+    s_UpdateVDBRequestContext();
     uint32_t bit_offset, bit_length, elem_count;
     const void* data;
     if ( rc_t rc = VCursorCellDataDirect(cursor, row, column.GetIndex(),
@@ -1509,6 +1497,7 @@ void CVDBValueFor2Bits::x_Get(const CVDBCursor& cursor,
                               const CVDBColumn& column)
 {
     DECLARE_SDK_GET_GUARD();
+    s_UpdateVDBRequestContext();
     uint32_t bit_offset, bit_length, elem_count;
     const void* data;
     if ( rc_t rc = VCursorCellDataDirect(cursor, row, column.GetIndex(),

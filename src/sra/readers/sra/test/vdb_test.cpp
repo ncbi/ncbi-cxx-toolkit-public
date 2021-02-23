@@ -34,6 +34,7 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbi_process.hpp>
+#include <corelib/request_ctx.hpp>
 #include <sra/readers/sra/csraread.hpp>
 #include <sra/readers/ncbi_traces_path.hpp>
 #include <insdc/sra.h>
@@ -181,6 +182,13 @@ void CCSRATestApp::Init(void)
                             CArgDescriptions::eOutputFile,
                             "-");
 
+    arg_desc->AddOptionalKey("session-id", "SessionID",
+                             "request session ID",
+                             CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("client-ip", "ClientIP",
+                             "request client IP",
+                             CArgDescriptions::eString);
+    
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
 }
@@ -570,6 +578,13 @@ int CCSRATestApp::Run(void)
 
     bool verbose = args["verbose"];
     bool fasta = args["fasta"];
+
+    if ( args["session-id"] ) {
+        CDiagContext::GetRequestContext().SetSessionID(args["session-id"].AsString());
+    }
+    if ( args["client-ip"] ) {
+        CDiagContext::GetRequestContext().SetClientIP(args["client-ip"].AsString());
+    }
 
     CVDBMgr mgr;
     if ( args["get-cache"] ) {
