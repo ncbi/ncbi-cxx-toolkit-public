@@ -387,7 +387,7 @@ void CHTMLPage::x_LoadTemplate(CNcbiIstream& is, string& str)
     if ( m_TemplateSize ) {
         str.reserve(m_TemplateSize);
     }
-    while ( is ) {
+    while (is.good()) {
         is.read(buf, sizeof(buf));
         if (m_TemplateSize == 0  &&  is.gcount() > 0
             &&  str.size() == str.capacity()) {
@@ -423,7 +423,7 @@ CNCBINode* CHTMLPage::x_PrintTemplate(CNcbiIstream& is, CNcbiOstream* out,
     char   buf[kBufferSize];
     unique_ptr<CNCBINode> node(new CNCBINode);
 
-    while (is) {
+    while (is.good()) {
         is.read(buf, sizeof(buf));
         str.append(buf, (SIZE_TYPE)is.gcount());
         SIZE_TYPE pos = str.rfind('\n');
@@ -643,7 +643,7 @@ void CHTMLPage::x_LoadTemplateLib(CNcbiIstream& istrm, SIZE_TYPE size,
         } else {
             // Use faster block read
             char buf[kBufferSize];
-            while (is) {
+            while (is->good()) {
                 is->read(buf, sizeof(buf));
                 if (pstr->size() == pstr->capacity()  &&
                     is->gcount() > 0) {
