@@ -333,7 +333,7 @@ clear_and_exit:
 /*/////////////////////////////////////////////////////////////////////////////
 //                  SERVICE MAPPING VIRTUAL FUNCTION TABLE                   //
 /////////////////////////////////////////////////////////////////////////////*/
-static const SSERV_VTable s_lbos_op =  {
+static const SSERV_VTable kLbosOp =  {
         s_LBOS_GetNextInfo, /**< Use open()'ed iterator to get next found
                              *   server*/
         0,                  /**< Feedback, not used                          */
@@ -523,7 +523,7 @@ int/*bool*/ g_LBOS_CheckIterator(SERV_ITER              iter,
         && iter->data != NULL) {
         return 0;
     }
-    if (strcmp(iter->op->mapper, s_lbos_op.mapper) != 0) {
+    if (strcmp(iter->op->mapper, kLbosOp.mapper) != 0) {
         return 0;
     }
     return 1;
@@ -1938,7 +1938,7 @@ const SSERV_VTable* SERV_LBOS_Open(SERV_ITER           iter,
     if (info != NULL) {
         *info = NULL;
     }
-    return &s_lbos_op;
+    return &kLbosOp;
 }
 
 
