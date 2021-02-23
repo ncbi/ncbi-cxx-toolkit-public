@@ -113,6 +113,7 @@
           CONN_LOG_EX(subcode, func_name, eLOG_Critical,                \
                       "Corrupt connection handle", 0);                  \
           assert(0);                                                    \
+          return retval;                                                \
       }                                                                 \
   } while (0)
 
@@ -270,8 +271,10 @@ static EIO_Status x_ReInit(CONN conn, CONNECTOR connector, int/*bool*/ close)
     assert(!close  ||  !connector);
     assert(!conn->meta.list == !(conn->state != eCONN_Unusable));
 
-    /* flush connection first, if open */
-    status = conn->meta.list  &&  conn->state == eCONN_Open
+    /* flush connection first, if open & not flushed */
+    status = conn->meta.list 
+        &&  conn->state == eCONN_Open
+        &&  !(conn->flags & fCONN_Flush)
         ? x_Flush(conn, conn->c_timeout, 0/*no-flush*/) : eIO_Success;
 
     for (x_conn = conn->meta.list;  x_conn;  x_conn = x_conn->next) {
@@ -1222,7 +1225,7 @@ extern EIO_Status CONN_SetFlags(CONN conn, TCONN_Flags flags)
         return eIO_InvalidArg;
 
     flags &= (TCONN_Flags)(~fCONN_Flush);
-    flags |= conn->flags & fCONN_Flush;
+    flags |=  conn->flags & fCONN_Flush;
     conn->flags = flags;
     return eIO_Success;
 }
