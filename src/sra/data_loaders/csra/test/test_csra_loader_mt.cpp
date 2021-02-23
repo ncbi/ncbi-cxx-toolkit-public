@@ -34,6 +34,7 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbi_system.hpp>
+#include <corelib/request_ctx.hpp>
 #include <corelib/test_mt.hpp>
 #include <util/random_gen.hpp>
 #include <sra/data_loaders/csra/csraloader.hpp>
@@ -266,6 +267,9 @@ void CCSRATestApp::LoadRefSeqs()
 
 bool CCSRATestApp::Thread_Run(int idx)
 {
+    CDiagContext::GetRequestContext().SetClientIP("1.2.3."+to_string(idx));
+    CDiagContext::GetRequestContext().SetSessionID("session_"+to_string(idx));
+    CDiagContext::GetRequestContext().SetHitID("hit_"+to_string(idx));
     if ( m_TestRefSeqs ) {
         return TestRefSeqs(idx);
     }
