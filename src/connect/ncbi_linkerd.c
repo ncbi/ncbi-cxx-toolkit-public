@@ -50,13 +50,13 @@
 #define NCBI_USE_ERRCODE_X   Connect_NamerdLinkerd
 
 
-/* LINKERD subcodes for CORE_LOG*X() macros */
+/* LINKERD subcodes [11-20] for CORE_LOG*X() macros */
 enum ELINKERD_Subcodes {
     eLSub_Message         = 0,   /**< not an error */
     eLSub_Alloc           = 11,  /**< memory allocation failed */
     eLSub_BadData         = 12,  /**< bad data was provided */
-    eLSub_Connect         = 13,  /**< problem in connect library */
-    eLSub_Logic           = 14   /**< logic error */
+    eLSub_TooLong         = 13,  /**< data was too long to fit in a buffer */
+    eLSub_Connect         = 14   /**< problem in connect library */
 };
 
 
@@ -82,21 +82,6 @@ enum ELINKERD_Subcodes {
 #define REG_LINKERD_PORT         REG_CONN_PORT
 #define DEF_LINKERD_PORT         "4140"
 
-#define REG_LINKERD_USER         REG_CONN_USER
-#define DEF_LINKERD_USER         ""
-
-#define REG_LINKERD_PASS         REG_CONN_PASS
-#define DEF_LINKERD_PASS         ""
-
-#define REG_LINKERD_PATH         REG_CONN_PATH
-#define DEF_LINKERD_PATH         ""
-
-#define REG_LINKERD_ARGS         REG_CONN_ARGS
-#define DEF_LINKERD_ARGS         ""
-
-#define REG_NAMERD_FOR_LINKERD   "NAMERD_FOR_LINKERD"
-#define DEF_NAMERD_FOR_LINKERD   ""
-
 
 #define LINKERD_VHOST_DOMAIN     ".linkerd.ncbi.nlm.nih.gov"
 
@@ -109,7 +94,7 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER, HOST_INFO*);
 static void        s_Reset      (SERV_ITER);
 static void        s_Close      (SERV_ITER);
 
-static const SSERV_VTable s_op = {
+static const SSERV_VTable kLinkerdOp = {
     s_GetNextInfo, 0/*Feedback*/, 0/*Update*/, s_Reset, s_Close, "LINKERD"
 };
 
@@ -118,404 +103,117 @@ static const SSERV_VTable s_op = {
 #endif /*__cplusplus*/
 
 
+/* NB: CUrl("scheme+ncbilb://user:pass@service/path?args") can be supported */
 struct SLINKERD_Data {
-    SConnNetInfo* net_info;
-    int/*bool*/   reset;
-    SSERV_Info*   info;
+    SConnNetInfo*  net_info;
+    unsigned       reset:1;
+    TSERV_TypeOnly types;
+    SSERV_Info*    info;
 };
-
-
-/* For the purposes of linkerd resolution, endpoint data doesn't include
-   host and port, because the linkerd host and port are constants.
-   Username and password wouldn't normally be part of an endpoint definition,
-   but they are supported so that constructs like
-   CUrl("scheme+ncbilb://user:pass@service/path?args") can be supported. */
-typedef struct {
-    EURLScheme      scheme;
-    char            user[CONN_USER_LEN+1];
-    char            pass[CONN_PASS_LEN+1];
-    char            path[CONN_PATH_LEN+1];
-} SEndpoint;
-
-
-typedef enum {
-    eEndStat_Success,
-    eEndStat_Error,
-    eEndStat_NoData,
-    eEndStat_NoScheme
-} EEndpointStatus;
-
-
-/* LINKERD_TODO - this is copied from ncbi_connutil.c (but modified) */
-static EURLScheme x_ParseScheme(const char* str)
-{
-    size_t len = str  &&  *str ? strlen(str) : 0;
-    if (len == 5  &&  strncasecmp(str, "https", len) == 0)
-        return eURL_Https;
-    if (len == 4  &&  strncasecmp(str, "http",  len) == 0)
-        return eURL_Http;
-    if (len == 4  &&  strncasecmp(str, "file",  len) == 0)
-        return eURL_File;
-    if (len == 3  &&  strncasecmp(str, "ftp",   len) == 0)
-        return eURL_Ftp;
-    return eURL_Unspec;
-}
-
-
-/* LINKERD_TODO - this is copied from ncbi_connutil.c (but modified) */
-static const char* x_Scheme(EURLScheme scheme)
-{
-    switch (scheme) {
-    case eURL_Https:
-        return "HTTPS";
-    case eURL_Http:
-        return "HTTP";
-    case eURL_File:
-        return "FILE";
-    case eURL_Ftp:
-        return "FTP";
-    case eURL_Unspec:
-        break;
-    }
-    return NULL;
-}
-
-
-static EEndpointStatus s_SetEndpoint(
-    SEndpoint *end, const char *scheme, const char *user,
-    const char *pass, const char *path, const char *args)
-{
-    size_t userlen = user ? strlen(user) : 0;
-    size_t passlen = pass ? strlen(pass) : 0;
-    size_t pathlen = path ? strlen(path) : 0;
-    size_t argslen = args ? strlen(args) : 0;
-
-    end->scheme = x_ParseScheme(scheme);
-
-    if (end->scheme == eURL_Unspec) {
-        if (userlen | passlen | pathlen | argslen) {
-            return eEndStat_NoScheme;
-        }
-        return eEndStat_NoData;
-    }
-    if (end->scheme != eURL_Http  &&  end->scheme != eURL_Https) {
-        CORE_LOGF_X(eLSub_BadData, eLOG_Error,
-                   ("Invalid scheme %s for linkerd.", scheme));
-        return eEndStat_Error;
-    }
-
-    if (userlen) {
-        if (userlen++ >= sizeof(end->user)) {
-            CORE_LOG_X(eLSub_BadData, eLOG_Error,
-                       "Configured linkerd user too long.");
-            return eEndStat_Error;
-        }
-        memcpy(end->user, user, userlen);
-    } else {
-        end->user[0] = '\0';
-    }
-
-    if (passlen) {
-        if (passlen++ >= sizeof(end->pass)) {
-            CORE_LOG_X(eLSub_BadData, eLOG_Error,
-                       "Configured linkerd password too long.");
-            return eEndStat_Error;
-        }
-        memcpy(end->pass, pass, passlen);
-    } else {
-        end->pass[0] = '\0';
-    }
-
-    if (pathlen | argslen) {
-        if (pathlen + 1 + argslen >= sizeof(end->path)) {
-            CORE_LOG_X(eLSub_BadData, eLOG_Error,
-                       "Configured linkerd path/args too long.");
-            return eEndStat_Error;
-        }
-        memcpy(end->path, path ? path : "", pathlen + !argslen);
-        if (argslen) {
-            if (*args != '#')
-                end->path[pathlen++] = '?';
-            memcpy(end->path + pathlen, args, argslen + 1);
-        }
-    } else {
-        end->path[0] = '\0';
-    }
-
-    return eEndStat_Success;
-}
-
-
-static EEndpointStatus s_EndpointFromNetInfo(SEndpoint *end,
-                                             const SConnNetInfo *net_info,
-                                             int warn)
-{
-    const char      *scheme;
-    EEndpointStatus end_stat;
-
-    /* use the endpoint scheme if it's already been determined */
-    scheme = x_Scheme(end->scheme == eURL_Unspec
-                      ? (EURLScheme) net_info->scheme : end->scheme);
-
-    end_stat = s_SetEndpoint(end, scheme, net_info->user,
-                             net_info->pass, net_info->path, 0);
-    switch (end_stat) {
-    case eEndStat_Success:
-    case eEndStat_NoData:
-        break;
-    case eEndStat_NoScheme: {
-        if (warn) {
-            static void* s_Once = 0;
-            if (CORE_Once(&s_Once)) {
-                CORE_LOG_X(eLSub_BadData, eLOG_Warning,
-                    "Endpoint info in net_info is missing a scheme.");
-            }
-        }
-        break;
-    }
-    case eEndStat_Error:
-        CORE_LOG_X(eLSub_BadData, eLOG_Error,
-            "Failed to check net_info for endpoint override.");
-        break;
-    }
-
-    return end_stat;
-}
-
-
-static EEndpointStatus s_EndpointFromRegistry(SEndpoint *end)
-{
-    EEndpointStatus end_stat;
-
-    char    scheme[12];
-    char    user[CONN_USER_LEN+1];
-    char    pass[CONN_PASS_LEN+1];
-    char    path[(CONN_PATH_LEN+1)/2];
-    char    args[(CONN_PATH_LEN+1)/2];
-
-    if ( ! ConnNetInfo_GetValueService(DEF_LINKERD_REG_SECTION,
-                                       REG_LINKERD_SCHEME,
-                                       scheme, sizeof(scheme),
-                                       DEF_LINKERD_SCHEME)) {
-        CORE_LOG_X(eLSub_Alloc, eLOG_Critical,
-                   "Couldn't alloc for scheme from registry.");
-        return eEndStat_Error;
-    }
-
-    if ( ! ConnNetInfo_GetValueService(DEF_LINKERD_REG_SECTION,
-                                       REG_LINKERD_USER,
-                                       user, sizeof(user),
-                                       DEF_LINKERD_USER)) {
-        CORE_LOG_X(eLSub_Alloc, eLOG_Critical,
-                   "Couldn't alloc for user from registry.");
-        return eEndStat_Error;
-    }
-
-    if ( ! ConnNetInfo_GetValueService(DEF_LINKERD_REG_SECTION,
-                                       REG_LINKERD_PASS,
-                                       pass, sizeof(pass),
-                                       DEF_LINKERD_PASS)) {
-        CORE_LOG_X(eLSub_Alloc, eLOG_Critical,
-                   "Couldn't alloc for password from registry.");
-        return eEndStat_Error;
-    }
-
-    if ( ! ConnNetInfo_GetValueService(DEF_LINKERD_REG_SECTION,
-                                       REG_LINKERD_PATH,
-                                       path, sizeof(path),
-                                       DEF_LINKERD_PATH)) {
-        CORE_LOG_X(eLSub_Alloc, eLOG_Critical,
-                   "Couldn't alloc for path from registry.");
-        return eEndStat_Error;
-    }
-
-    if ( ! ConnNetInfo_GetValueService(DEF_LINKERD_REG_SECTION,
-                                       REG_LINKERD_ARGS,
-                                       args, sizeof(args),
-                                       DEF_LINKERD_ARGS)) {
-        CORE_LOG_X(eLSub_Alloc, eLOG_Critical,
-                   "Couldn't alloc for args from registry.");
-        return eEndStat_Error;
-    }
-
-    end_stat = s_SetEndpoint(end, scheme, user, pass, path, args);
-    switch (end_stat) {
-    case eEndStat_Success:
-    case eEndStat_NoData:
-        break;
-    case eEndStat_NoScheme: {
-        static void* s_Once = 0;
-        if (CORE_Once(&s_Once)) {
-            CORE_LOG_X(eLSub_BadData, eLOG_Warning,
-                "Endpoint info in registry is missing a scheme.");
-        }
-        break;
-    }
-    case eEndStat_Error:
-        CORE_LOG_X(eLSub_BadData, eLOG_Error,
-            "Failed to check registry for endpoint override.");
-        break;
-    }
-
-    return end_stat;
-}
-
-
-static EEndpointStatus s_EndpointFromNamerd(SEndpoint* end, SERV_ITER iter)
-{
-    const SSERV_VTable  *op;
-    const SSERV_Info    *nd_srv_info = NULL;
-    SConnNetInfo        *nd_net_info = NULL;
-    SERV_ITER           nd_iter;
-    EEndpointStatus     retval = eEndStat_Error;
-    char                use_namerd[10];
-    const char*         path, *args;
-    size_t              pathlen, argslen;
-
-    /* Make sure namerd is enabled for linkerd. */
-    if ( ! ConnNetInfo_GetValueService(DEF_LINKERD_REG_SECTION,
-                                       REG_NAMERD_FOR_LINKERD,
-                                       use_namerd, sizeof(use_namerd),
-                                       DEF_NAMERD_FOR_LINKERD)) {
-        CORE_LOG_X(eLSub_Alloc, eLOG_Critical,
-                   "Couldn't alloc for namerd-for-linkerd flag.");
-        return eEndStat_Error;
-    }
-    if ( ! ConnNetInfo_Boolean(use_namerd))
-        return eEndStat_NoData;
-
-    /* Set up the namerd server iterator. */
-    if ( ! (nd_iter = (SERV_ITER) calloc(1, sizeof(*nd_iter)))) {
-        CORE_LOG_X(eLSub_Alloc, eLOG_Critical,
-                   "Couldn't alloc for server iterator.");
-        retval = eEndStat_Error;
-        goto out;
-    }
-    nd_iter->name  = strdup(iter->name);
-    nd_iter->types = fSERV_Http;
-
-    /* Connect directly to namerd. */
-    nd_net_info = ConnNetInfo_CreateInternal(iter->name);
-    if ( ! (op = SERV_NAMERD_Open(nd_iter, nd_net_info, NULL))) {
-        CORE_LOG_X(eLSub_Alloc, eLOG_Critical,
-                   "Couldn't open namerd.");
-        retval = eEndStat_Error;
-        goto out;
-    }
-
-    /* Fetch the service info from namerd. */
-    nd_srv_info = op->GetNextInfo(nd_iter, NULL);
-    if ( ! nd_srv_info) {
-        CORE_LOG_X(eLSub_Alloc, eLOG_Critical,
-                   "Couldn't get service info from namerd.");
-        retval = eEndStat_Error;
-        goto out;
-    }
-
-    /* Sanity checks */
-    if (nd_srv_info == (SSERV_Info*)(-1L)) {
-        CORE_LOG_X(eLSub_Logic, eLOG_Critical,
-                   "Unexpected (-1L) service info pointer from namerd.");
-        retval = eEndStat_Error;
-        goto out;
-    }
-    /* FIXME: I assume it's always HTTP but there's no paranoia check unlike
-     * for everything else like the impossible (-1L) above: */
-    assert(nd_srv_info->type & fSERV_Http);
-    /* FIXME: What about the method: ANY, GET, POST? */
-    path = SERV_HTTP_PATH(&nd_srv_info->u.http);
-    args = SERV_HTTP_ARGS(&nd_srv_info->u.http);
-    pathlen = strlen(path);
-    argslen = strlen(args);
-    if (pathlen + 1 + argslen >= CONN_PATH_LEN) {
-        CORE_LOG_X(eLSub_Alloc, eLOG_Critical,
-                   "Too long path/args from namerd.");
-        retval = eEndStat_Error;
-        goto out;
-    }
-
-    /* Assign the endpoint data */
-    end->scheme = nd_srv_info->mode & fSERV_Secure ? eURL_Https : eURL_Http;
-    end->user[0] = '\0'; /* username and password wouldn't be in namerd */
-    end->pass[0] = '\0';
-    memcpy(end->path, path, pathlen + !argslen);
-    if (argslen) {
-        if (*args != '#')
-            end->path[pathlen++] = '?';
-        memcpy(end->path + pathlen, args, argslen + 1);
-    }
-
-    /* Got the namerd endpoint info. */
-    retval = eEndStat_Success;
-
-out:
-    ConnNetInfo_Destroy(nd_net_info);
-    SERV_Close(nd_iter);
-    if (nd_srv_info  &&  nd_srv_info != (SSERV_Info*)(-1L)) {
-        free((void*)nd_srv_info);
-    }
-    return retval;
-}
 
 
 static int/*bool*/ s_Resolve(SERV_ITER iter)
 {
-    struct SLINKERD_Data* data = (struct SLINKERD_Data*) iter->data;
+    char                  vhost[CONN_HOST_LEN + 1], hostport[80/*IP:port*/];
+    struct SLINKERD_Data* data     = (struct SLINKERD_Data*) iter->data;
     SConnNetInfo*         net_info = data->net_info;
-    size_t                size = strlen(iter->name);
-    char                  vhost[CONN_HOST_LEN + 1];
-    char*                 server_descr;
-    char                  hostport[80];
-    /*  SSERV_Info member to format string mapping:
-        secure ----------------------------------------------------+
-        time -------------------------------------------------+    |
-        rate -----------------------------------------+       |    |
-        vhost -----------------------------------+    |       |    |
-        path --------------------------------+   |    |       |    |
-        host:port ------------------------+  |   |    |       |    |
-        type ------------------------+    |  |   |    |       |    |
-                                     [__] [] |   []   [___]   []   [] */
-    static const char kDescrFmt[] = "HTTP %s / H=%s R=%.3lf T=%u $=%s";
+    char*                 infostr;
+    ESERV_Type            atype;
+    const char*           type;
+    unsigned int          host;
+    size_t                size;
+    /*  SSERV_Info must match the "iter" contents:
+        secure --------------------------------------------+
+        time --------------------------------------------+ |
+        rate ------------------------------------+       | |
+        local ------------------------------+    |       | |
+        vhost -------------------------+    |    |       | |
+        path ---------------------+    |    |    |       | |
+        host:port -------------+  |    |    |    |       | |
+        type ---------------+  |  |    |    |    |       | |  */
+    /*                      |  |  |    |    |    |       | |  */
+    static const        /*  [] [] []   []   []   [___]   [][] */
+        char kDescrFmt[] = "%s %s %s H=%s L=%s R=%.2lf T=%u%s";
 
-    /* Vhost */
+    assert(!data->info);
+
+    /* Type */
+    switch (net_info->req_method) {
+    case eReqMethod_Any:
+    case eReqMethod_Any11:
+        atype = fSERV_Http;
+        break;
+    case eReqMethod_Get:
+    case eReqMethod_Get11:
+        atype = fSERV_HttpGet;
+        break;
+    case eReqMethod_Post:
+    case eReqMethod_Post11:
+        atype = fSERV_HttpPost;
+        break;
+    default:
+        atype = SERV_GetImplicitServerTypeInternal(iter->name);
+        break;
+    }
+    /* make sure the server type matches */
+    if ((data->types  &&  !(atype &= data->types))
+        ||  !*(type = SERV_TypeStr(atype))) {
+        CORE_LOGF_X(eLSub_BadData, eLOG_Error,
+                    ("[%s]  Cannot match request method (%d)"
+                     " with a server type", iter->name, net_info->req_method));
+        return 0/*failure*/;
+    }
+
+    /* VHost */
+    size = strlen(iter->name);
     if (size + sizeof(LINKERD_VHOST_DOMAIN) >= sizeof(vhost)) {
-        CORE_LOGF_X(eLSub_Alloc, eLOG_Critical,
-                    ("vhost '%s%s' is too long.",
+        CORE_LOGF_X(eLSub_TooLong, eLOG_Critical,
+                    ("[%s]  VHost \"%s%s\" is too long", iter->name,
                      iter->name, LINKERD_VHOST_DOMAIN));
-        return 0;
+        return 0/*failure*/;
     }
     memcpy((char*) memcpy(vhost, iter->name, size) + size,
            LINKERD_VHOST_DOMAIN, sizeof(LINKERD_VHOST_DOMAIN));
 
     /* Host:port */
-    SOCK_HostPortToString(SOCK_gethostbyname(net_info->host), net_info->port,
-                          hostport, sizeof(hostport));
+    if (!(host = SOCK_gethostbyname(net_info->host))
+        ||  !SOCK_HostPortToString(host, net_info->port,
+                                   hostport, sizeof(hostport))) {
+        CORE_LOGF_X(host ? eLSub_TooLong : eLSub_BadData, eLOG_Error,
+                    ("[%s]  Cannot convert \"%s:%hu\": %s", iter->name,
+                     net_info->host, net_info->port,
+                     host ? "too long" : "host unknown"));
+        return 0/*failure*/;
+    }
 
     /* Prepare descriptor */
-    size = sizeof(kDescrFmt) + strlen(hostport) + strlen(vhost)
-        + 40/*ample room for R,T,$*/;
-    if ( ! (server_descr = (char*) malloc(size))) {
-        CORE_LOG_X(eLSub_Alloc, eLOG_Critical,
-                   "Couldn't alloc for server descriptor.");
-        return 0;
+    size += sizeof(kDescrFmt) + sizeof(LINKERD_VHOST_DOMAIN) + 40/*L,R,T,$*/
+        + strlen(type) + strlen(net_info->path) + strlen(hostport);
+    if ( ! (infostr = (char*) malloc(size))) {
+        CORE_LOGF_X(eLSub_Alloc, eLOG_Critical,
+                    ("[%s]  Failed to allocate for server descriptor",
+                     iter->name));
+        return 0/*failure*/;
     }
-    verify(sprintf(server_descr, kDescrFmt, hostport, vhost, LBSM_DEFAULT_RATE,
-                   iter->time + LBSM_DEFAULT_TIME,
-                   net_info->scheme == eURL_Https ? "YES" : "NO") < size);
+    verify(sprintf(infostr, kDescrFmt, type, hostport,
+                   net_info->path[0] ? net_info->path : "/",
+                   vhost, iter->external ? "No" : "Yes",
+                   LBSM_DEFAULT_RATE, iter->time + LBSM_DEFAULT_TIME,
+                   net_info->scheme == eURL_Https ? " $=Yes" : "") < size);
 
     /* Parse descriptor into SSERV_Info */
-    CORE_TRACEF(("Parsing server descriptor: '%s'", server_descr));
-    data->info = SERV_ReadInfoEx(server_descr, iter->reverse_dns
-                                 ? iter->name : "", 0/*false*/);
-    if ( ! data->info) {
-        CORE_LOGF_X(eLSub_BadData, eLOG_Warning,
-                    ("Unable to add server info '%s'.", server_descr));
-        free(server_descr);
-        return 0;
+    CORE_TRACEF(("Parsing server descriptor \"%s\"", infostr));
+    if ( ! (data->info = SERV_ReadInfoEx(infostr, iter->reverse_dns
+                                         ? iter->name : "", 0/*false*/))) {
+        CORE_LOGF_X(eLSub_BadData, eLOG_Error,
+                    ("[%s]  Failed to parse server descriptor \"%s\"",
+                     iter->name, infostr));
+        free(infostr);
+        return 0/*failure*/;
     }
 
-    free(server_descr);
-    return 1;
+    free(infostr);
+    return 1/*success*/;
 }
 
 
@@ -531,8 +229,8 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
 
     data->reset = 0/*false*/;
     if (!data->info  &&  !s_Resolve(iter)) {
-        CORE_LOG_X(eLSub_BadData, eLOG_Warning,
-                   "Unable to resolve endpoint.");
+        CORE_LOGF_X(eLSub_Connect, eLOG_Error,
+                    ("[%s]  Unable to resolve", iter->name));
         return 0;
     }
 
@@ -562,11 +260,192 @@ static void s_Close(SERV_ITER iter)
 {
     struct SLINKERD_Data* data = (struct SLINKERD_Data*) iter->data;
     iter->data = 0;
-    assert(data);
+    assert(data  &&  !data->info);
     ConnNetInfo_Destroy(data->net_info);
     free(data);
 }
 
+
+/* Return -1 if did nothing;  0 if failed;  1 if succeeded */
+static int/*tri-state bool*/ x_SetupFromNamerd(SERV_ITER iter)
+{
+    struct SLINKERD_Data* data     = (struct SLINKERD_Data*) iter->data;
+    SConnNetInfo*         net_info = data->net_info;
+    int/*bool*/           progress = -1/*nothing*/;
+    TSERV_TypeOnly        types    = iter->types;
+    const SSERV_VTable*   op       = iter->op;
+    SSERV_Info*           info;
+    const char*           temp;
+
+    assert(data  &&  !data->info  &&  !net_info->scheme);
+    assert(!op  ||  op == &kLinkerdOp);
+
+    iter->op = 0;
+    iter->data = 0;
+    if (!data->types)
+        iter->types  = fSERV_Http;
+    else
+        iter->types &= fSERV_Http;
+
+    /* Try to open NAMERD on our own iterator */
+    if ( ! (iter->op = SERV_NAMERD_Open(iter, data->net_info, 0))) {
+        CORE_TRACEF(("[%s]  Failed to open NAMERD", iter->name));
+        goto out;
+    }
+
+    /* Fetch the service info from namerd */
+    if ( ! (info = iter->op->GetNextInfo(iter, 0))) {
+        CORE_LOGF_X(eLSub_Message, eLOG_Trace,
+                    ("[%s]  Failed to look up in NAMERD", iter->name));
+        goto err;
+    }
+    progress = 0/*failure*/;
+    assert(!(info->type ^ (info->type & iter->types)));
+    CORE_DEBUG_ARG(temp = SERV_WriteInfo(info));
+    CORE_TRACEF(("[%s]  Found a match in NAMERD: %s%s%s", iter->name,
+                 &"\""[!temp], temp ? temp : "NULL", &"\""[!temp]));
+    CORE_DEBUG_ARG(if (temp) free((void*) temp));
+
+    /* Populate net_info from info */
+    temp = SERV_HTTP_PATH(&info->u.http);
+    if (!ConnNetInfo_SetPath(net_info, temp)) {
+        CORE_LOGF_X(eLSub_TooLong, eLOG_Error,
+                    ("[%s]  Failed to set path from NAMERD server descriptor"
+                     " \"%s\"", iter->name, temp));
+        goto err;
+    }
+    temp = SERV_HTTP_ARGS(&info->u.http);
+    if (!ConnNetInfo_PostOverrideArg(net_info, temp, 0)) {
+        CORE_LOGF_X(eLSub_TooLong, eLOG_Error,
+                    ("[%s]  Failed to set args from NAMERD server descriptor"
+                     " \"%s\"", iter->name, temp));
+        goto err;
+    }
+    if (net_info->req_method >=  eReqMethod_v1)
+        net_info->req_method &= ~eReqMethod_v1;
+    if (!net_info->req_method) {
+        switch (info->type) {
+        case fSERV_HttpGet:
+            net_info->req_method = eReqMethod_Get;
+            break;
+        case fSERV_HttpPost:
+            net_info->req_method = eReqMethod_Post;
+            break;
+        default:
+            /* leave ANY */
+            break;
+        }
+    }
+    net_info->scheme = info->mode & fSERV_Secure ? eURL_Https : eURL_Http;
+    progress = 1/*success*/;
+
+ err:
+    if (info)
+        free(info);
+    iter->op->Reset(iter);
+    iter->op->Close(iter);
+
+ out:
+    assert(!iter->data);
+    iter->types = types;
+    iter->data = data;
+    iter->op = op;
+
+    return progress;
+}
+
+
+static int/*bool*/ x_SetupConnectionParams(SERV_ITER iter)
+{
+    SConnNetInfo* net_info = ((struct SLINKERD_Data*) iter->data)->net_info;
+    char buf[40];
+    int  n;
+
+    if (!net_info->scheme) {
+        if ( ! ConnNetInfo_GetValueService(DEF_LINKERD_REG_SECTION,
+                                           REG_LINKERD_SCHEME,
+                                           buf, sizeof(buf),
+                                           DEF_LINKERD_SCHEME)) {
+            CORE_LOGF_X(eLSub_TooLong, eLOG_Error,
+                        ("[%s]  Unable to get LINKERD scheme", iter->name));
+            return 0/*failed*/;
+        }
+        if (!*buf)
+            ;
+        else if (strcasecmp(buf, "http") == 0)
+            net_info->scheme = eURL_Http;
+        else if (strcasecmp(buf, "https") == 0)
+            net_info->scheme = eURL_Https;
+        else {
+            CORE_LOGF_X(eLSub_BadData, eLOG_Error,
+                        ("[%s]  Unrecognized LINKERD scheme \"%s\"",
+                         iter->name, buf));
+            return 0/*failed*/;
+        }
+    }
+    if (!net_info->scheme) {
+        int retval;
+        if (SERV_IsMapperConfiguredInternal(iter->name,
+                                            REG_CONN_NAMERD_ENABLE)) {
+            retval =  x_SetupFromNamerd(iter);
+            if (!retval)
+                return 0/*failed*/;
+        } else
+            retval = -1;
+        if (retval <  0)
+            net_info->scheme = eURL_Http;
+        else
+            assert(net_info->scheme);
+    }
+
+    /* N.B. Proxy configuration (including 'http_proxy' env. var. detected and
+       parsed by the toolkit) may be used to override the default host:port for
+       Linkerd.  But connections via Linkerd should be made directly to the
+       Linkerd host:port as the authority part of the URL, not by using the
+       proxy settings.  Therefore, this code sets 'net_info->host', not
+       'net_info->http_proxy_host' (same for port). */
+    if (!net_info->http_proxy_host[0]  ||
+        !net_info->http_proxy_port     ||
+        !net_info->http_proxy_only) {
+        if ( ! ConnNetInfo_GetValueService(DEF_LINKERD_REG_SECTION,
+                                           REG_LINKERD_HOST,
+                                           net_info->host,
+                                           sizeof(net_info->host),
+                                           DEF_LINKERD_HOST)) {
+            CORE_LOGF_X(eLSub_TooLong, eLOG_Error,
+                        ("[%s]  Unable to get LINKERD host", iter->name));
+            return 0/*failed*/;
+        }
+        if (!net_info->host[0]
+            ||  NCBI_HasSpaces(net_info->host, strlen(net_info->host))) {
+            CORE_LOGF_X(eLSub_BadData, eLOG_Error,
+                        ("[%s]  %s LINKERD host \"%s\"", iter->name,
+                         net_info->http_proxy_host[0] ? "Bad" : "Empty",
+                         net_info->http_proxy_host));
+            return 0/*failed*/;
+        }
+        if ( ! ConnNetInfo_GetValueService(DEF_LINKERD_REG_SECTION,
+                                           REG_LINKERD_PORT,
+                                           buf, sizeof(buf),
+                                           DEF_LINKERD_PORT)) {
+            CORE_LOGF_X(eLSub_TooLong, eLOG_Error,
+                        ("[%s]  Unable to get LINKERD port", iter->name));
+            return 0/*failed*/;
+        }
+        if (!*buf  ||  sscanf(buf, "%hu%n", &net_info->port, &n) < 1
+            ||  buf[n]  ||  !net_info->port) {
+            CORE_LOGF_X(eLSub_BadData, eLOG_Error,
+                        ("[%s]  %s LINKERD port \"%s\"", iter->name,
+                         *buf ? "Bad" : "Empty", buf));
+            return 0/*failed*/;
+        }
+    } else {
+        strcpy(net_info->host,  net_info->http_proxy_host);
+               net_info->port = net_info->http_proxy_port;
+    }
+
+    return 1/*succeeded*/;
+}
 
 
 /***********************************************************************
@@ -574,131 +453,60 @@ static void s_Close(SERV_ITER iter)
  ***********************************************************************/
 
 extern const SSERV_VTable* SERV_LINKERD_Open(SERV_ITER           iter,
-                                             const SConnNetInfo* x_net_info,
+                                             const SConnNetInfo* net_info,
                                              SSERV_Info**        info)
 {
     struct SLINKERD_Data* data;
-    SConnNetInfo* net_info;
-    SEndpoint endpoint;
+    TSERV_TypeOnly types;
 
-    assert(iter  &&  x_net_info  &&  !iter->data  &&  !iter->op);
+    assert(iter  &&  net_info  &&  !iter->data  &&  !iter->op);
     if (iter->ismask)
         return 0/*LINKERD doesn't support masks*/;
     assert(iter->name  &&  *iter->name);
+    if (iter->reverse_dns)
+        return 0/*LINKERD cannot do that, either*/;
 
-    if ( ! (x_net_info->scheme == eURL_Http   ||
-            x_net_info->scheme == eURL_Https  ||
-            x_net_info->scheme == eURL_Unspec)
-         ||  !(iter->types & fSERV_Http)) {
+    types = iter->types & ~(fSERV_Stateless | fSERV_Firewall);
+    if ( ! (net_info->scheme == eURL_Http   ||
+            net_info->scheme == eURL_Https  ||
+            net_info->scheme == eURL_Unspec)
+         ||  (types  &&  !(types &= fSERV_Http))) {
         return 0/*Unsupported scheme*/;
     }
+
+    CORE_TRACEF(("Enter SERV_LINKERD_Open(\"%s\")", iter->name));
 
     /* Prohibit catalog-prefixed services (e.g. "/lbsm/<svc>") */
     if (iter->name[0] == '/') {
         CORE_LOGF_X(eLSub_BadData, eLOG_Error,
-                    ("Invalid service name \"%s\" - must not begin with '/'.",
-                     iter->name));
+                    ("[%s]  Invalid LINKERD service name", iter->name));
         return 0;
     }
 
     if ( ! (data = (struct SLINKERD_Data*) calloc(1, sizeof(*data)))) {
-        CORE_LOG_X(eLSub_Alloc, eLOG_Critical,
-                   "Could not allocate for SLINKERD_Data.");
+        CORE_LOGF_X(eLSub_Alloc, eLOG_Critical,
+                    ("[%s]  Failed to allocate for SLINKERD_Data",
+                     iter->name));
         return 0;
     }
     iter->data = data;
+    data->types = types;
 
-    if ( ! (net_info = ConnNetInfo_Clone(x_net_info))) {
-        CORE_LOG_X(eLSub_Alloc, eLOG_Critical, "Couldn't clone net_info.");
+    if ( ! (data->net_info = ConnNetInfo_Clone(net_info))) {
+        CORE_LOGF_X(eLSub_Alloc, eLOG_Critical,
+                    ("[%s]  Failed to clone net_info", iter->name));
         s_Close(iter);
         return 0;
     }
-    data->net_info = net_info;
- 
-    /* Check for sufficient endpoint info in incoming net_info */
-    endpoint.scheme = eURL_Unspec;
-    if (s_EndpointFromNetInfo(&endpoint, net_info, 0) == eEndStat_Error) {
-        CORE_LOG_X(eLSub_BadData, eLOG_Error,
-            "Failed to check incoming net_info for endpoint.");
-        s_Close(iter);
-        return 0;
-    }
-
-    /* Check registry for endpoint override */
-    if (s_EndpointFromRegistry(&endpoint) == eEndStat_Error) {
-        CORE_LOG_X(eLSub_BadData, eLOG_Error,
-            "Failed to check registry for endpoint override.");
-        s_Close(iter);
-        return 0;
-    }
-
-    /* Check namerd if still missing endpoint data */
-    if (endpoint.scheme == eURL_Unspec) {
-        if (s_EndpointFromNamerd(&endpoint, iter) == eEndStat_Error) {
-            CORE_LOG_X(eLSub_BadData, eLOG_Error,
-                "Failed to check namerd for endpoint override.");
-            s_Close(iter);
-            return 0;
-        }
-    }
-
-    /* If still unset, try a default scheme */
-    if (endpoint.scheme == eURL_Unspec) {
-        endpoint.scheme = eURL_Http;
-        if (s_EndpointFromNetInfo(&endpoint, net_info, 1) == eEndStat_Error) {
-            CORE_LOG_X(eLSub_BadData, eLOG_Error,
-                "Failed to check incoming net_info for endpoint - "
-                "even with default scheme.");
-            s_Close(iter);
-            return 0;
-        }
-    }
-
-    /* By now, endpoint must be set */
-    if (endpoint.scheme != eURL_Http  &&  endpoint.scheme != eURL_Https) {
-        CORE_LOG_X(eLSub_BadData, eLOG_Error, "No endpoint data found.");
-        s_Close(iter);
-        return 0;
-    }
-
-    /* Populate linkerd endpoint */
-    /* N.B. Proxy configuration (including 'http_proxy' env. var. detected
-       and parsed by the toolkit) may be used to override the default
-       host:port for Linkerd.  But connections via Linkerd should be made
-       directly to the Linkerd host:port as the authority part of the URL,
-       not by using the proxy settings.  Therefore, this code sets
-       'net_info->host', not 'net_info->http_proxy_host' (same for port). */
-    if (net_info->http_proxy_host[0]  &&  net_info->http_proxy_port
-        &&  net_info->http_proxy_only) {
-        strcpy(net_info->host, net_info->http_proxy_host);
-        net_info->port =       net_info->http_proxy_port;
-    } else  {
-        char port[40];
-        /* FIXME: check for errors */
-        ConnNetInfo_GetValueService(DEF_LINKERD_REG_SECTION,
-                                    REG_LINKERD_HOST,
-                                    net_info->host, sizeof(net_info->host),
-                                    DEF_LINKERD_HOST);
-        ConnNetInfo_GetValueService(DEF_LINKERD_REG_SECTION,
-                                    REG_LINKERD_PORT,
-                                    port, sizeof(port),
-                                    DEF_LINKERD_PORT);
-        sscanf(port, "%hu", &net_info->port);
-    }
-
-    net_info->scheme = endpoint.scheme;
-    strcpy(net_info->user, endpoint.user);
-    strcpy(net_info->pass, endpoint.pass);
-    ConnNetInfo_SetPath(net_info, endpoint.path);
-    
-    if ( ! (net_info->scheme == eURL_Http  ||  net_info->scheme == eURL_Https)) {
-        CORE_LOGF_X(eLSub_Logic, eLOG_Critical,
-                    ("Unexpected non-HTTP(S) 'net_info->scheme' %d.", net_info->scheme));
+    if (!x_SetupConnectionParams(iter)) {
         s_Close(iter);
         return 0;
     }
 
     if ( ! s_Resolve(iter)) {
+        CORE_LOGF_X(eLSub_Message, eLOG_Trace,
+                    ("SERV_LINKERD_Open(\"%s\"): Service not found",
+                     iter->name));
         s_Close(iter);
         return 0;
     }
@@ -706,5 +514,6 @@ extern const SSERV_VTable* SERV_LINKERD_Open(SERV_ITER           iter,
     /* call GetNextInfo subsequently if info is actually needed */
     if (info)
         *info = 0;
-    return &s_op;
+    CORE_TRACE("Leave SERV_LINKERD_Open() -- success");
+    return &kLinkerdOp;
 }
