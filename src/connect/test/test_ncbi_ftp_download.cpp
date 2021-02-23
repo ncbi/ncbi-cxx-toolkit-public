@@ -807,6 +807,14 @@ int CTestFTPDownloadApp::Run(void)
 
     // Process stream data
     size_t files = processor->Run();
+    // NB: tar, having seeing the EOT -- 2 consecutive zero blocks in the last
+    // read record, can stop processing without actually hitting the data EOF.
+    // So the FTP data connection may remain open and pending (proceeding with
+    // closing the FTP stream like that would result in an unreasonable abort).
+    // All other processors actually stop reading at EOF, so they reach it.
+    // This dummy read makes it to proceed to closing the data connection for
+    // tar;  for all others, it will be a no-op (read failure because of EOF).
+    ftp >> val;  // dummy read to finalize tar processing, if any active
 
     // These should not matter, and can be issued in any order
     // ...so do the "wrong" order on purpose for the proof of concept!
