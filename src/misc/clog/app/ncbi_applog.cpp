@@ -1833,36 +1833,46 @@ int CNcbiApplogApp::Run()
         // Set minimal allowed posting level to API
         NcbiLog_SetPostLevel(eNcbiLog_Trace);
 
-        if (sev == "trace")
+        if (sev == "trace") {
             if (note) {
                 NcbiLog_Note(eNcbiLog_Trace, msg.c_str());
-            } else {
+            }
+            else {
                 NcbiLog_Trace(msg.c_str());
             }
-        else if (sev == "info")
+        } 
+        else if (sev == "info") {
             if (note) {
                 NcbiLog_Note(eNcbiLog_Info, msg.c_str());
-            } else {
+            }
+            else {
                 NcbiLog_Info(msg.c_str());
             }
-        else if (sev == "warning")
+        }
+        else if (sev == "warning") {
             if (note) {
                 NcbiLog_Note(eNcbiLog_Warning, msg.c_str());
-            } else {
+            }
+            else {
                 NcbiLog_Warning(msg.c_str());
             }
-        else if (sev == "error")
+        }
+        else if (sev == "error") {
             if (note) {
                 NcbiLog_Note(eNcbiLog_Error, msg.c_str());
-            } else {
+            }
+            else {
                 NcbiLog_Error(msg.c_str());
             }
-        else if (sev == "critical")
+        }
+        else if (sev == "critical") {
             if (note) {
                 NcbiLog_Note(eNcbiLog_Critical, msg.c_str());
-            } else {
+            }
+            else {
                 NcbiLog_Critical(msg.c_str());
             }
+        }
         // otherwise ignore
     } else 
 
