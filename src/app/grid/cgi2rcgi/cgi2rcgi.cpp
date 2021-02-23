@@ -210,14 +210,14 @@ void SInputValidator::CheckCancel(const string& value)
 {
     // Cannot use NStr::StringToBool here as cgi2rcgi.inc.html uses "Cancel the job" as a value
     if (!NStr::MatchesMask(value, "[ 0-9a-zA-Z_-]*")) {
-        NCBI_THROW(CCgiRequestException, eData, "Cancel check failed");
+        NCBI_THROW(CCgiRequestException, eData, "Invalid cancel value (not shown for safety reasons)");
     }
 }
 
 void SInputValidator::CheckAffinity(const string& value)
 {
     if (!NStr::MatchesMask(value, "[0-9a-zA-Z_-]*")) {
-        NCBI_THROW(CCgiRequestException, eData, "Affinity check failed");
+        NCBI_THROW(CCgiRequestException, eData, "Invalid affinity value (not shown for safety reasons)");
     }
 }
 
