@@ -563,61 +563,68 @@ int CTestWriter::GetTimeout() const
 
 void CTestWriter::WriteData(ostream& sout)
 {
-    m_Out = &sout;
-    if (m_Case.m_Err == eErr_JunkInCompressed || m_Case.m_Err == eErr_EofInCompressed) {
-        // Need to create compressed stream over temporary string stream to modify it.
-        m_CompStream.reset(new CCompressOStream(m_StrStream, m_Case.m_Comp));
-    }
-    else if (m_Case.m_Comp != CCompressStream::eNone) {
-        m_CompStream.reset(new CCompressOStream(*m_Out, m_Case.m_Comp));
-    }
-    m_ObjStream.reset(CObjectOStream::Open(m_Case.m_Format, m_CompStream ? *m_CompStream : *m_Out));
-    // Write good objects, if any.
-    for (int i = 1; i < m_Case.m_ObjCount; ++i) {
-        *m_ObjStream << *TestObjects[m_Case.m_Dataset];
-    }
+    try {
+        m_Out = &sout;
+        if (m_Case.m_Err == eErr_JunkInCompressed || m_Case.m_Err == eErr_EofInCompressed) {
+            // Need to create compressed stream over temporary string stream to modify it.
+            m_CompStream.reset(new CCompressOStream(m_StrStream, m_Case.m_Comp));
+        }
+        else if (m_Case.m_Comp != CCompressStream::eNone) {
+            m_CompStream.reset(new CCompressOStream(*m_Out, m_Case.m_Comp));
+        }
+        m_ObjStream.reset(CObjectOStream::Open(m_Case.m_Format, m_CompStream ? *m_CompStream : *m_Out));
+        // Write good objects, if any.
+        for (int i = 1; i < m_Case.m_ObjCount; ++i) {
+            *m_ObjStream << *TestObjects[m_Case.m_Dataset];
+        }
 
-    switch (m_Case.m_Err) {
-    case eErr_JunkInObject:
-    case eErr_EofInObject:
-        x_WriteObjectError();
-        break;
-    case eErr_JunkInCompressed:
-    case eErr_EofInCompressed:
-    {
-        x_WriteCompressedError();
-        break;
+        switch (m_Case.m_Err) {
+        case eErr_JunkInObject:
+        case eErr_EofInObject:
+            x_WriteObjectError();
+            break;
+        case eErr_JunkInCompressed:
+        case eErr_EofInCompressed:
+        {
+            x_WriteCompressedError();
+            break;
+        }
+        case eErr_Delay:
+        case eErr_Timeout:
+            x_WriteSocketError();
+            break;
+        case eErr_UnexpectedMember:
+            x_WriteUnexpectedMember();
+            break;
+        case eErr_UnexpectedChoice:
+            x_WriteUnexpectedChoice();
+            break;
+        case eErr_BadValue:
+            x_WriteBadValue();
+            break;
+        default: // No error
+            *m_ObjStream << *TestObjects[m_Case.m_Dataset];
+            // NOTE: If object stream is not closed before Finalize(), sometimes an error is reported:
+            // Error: (802.4) [Cannot close serializing output stream] Exception: eStatus_Error: iostream stream error
+            m_ObjStream.reset();
+            if (m_CompStream) m_CompStream->Finalize();
+            break;
+        }
+        try {
+            m_Out->flush();
+        }
+        catch (...) {}
+        try {
+            m_CompStream.reset();
+        }
+        catch (...) {}
+        m_Out = nullptr;
     }
-    case eErr_Delay:
-    case eErr_Timeout:
-        x_WriteSocketError();
-        break;
-    case eErr_UnexpectedMember:
-        x_WriteUnexpectedMember();
-        break;
-    case eErr_UnexpectedChoice:
-        x_WriteUnexpectedChoice();
-        break;
-    case eErr_BadValue:
-        x_WriteBadValue();
-        break;
-    default: // No error
-        *m_ObjStream << *TestObjects[m_Case.m_Dataset];
-        // NOTE: If object stream is not closed before Finalize(), sometimes an error is reported:
-        // Error: (802.4) [Cannot close serializing output stream] Exception: eStatus_Error: iostream stream error
-        m_ObjStream.reset();
-        if (m_CompStream) m_CompStream->Finalize();
-        break;
+    catch (...) {
+        try { m_ObjStream.reset(); } catch (...) {}
+        try { m_CompStream.reset(); } catch (...) {}
+        m_Out = nullptr;
     }
-    try {
-        m_Out->flush();
-    }
-    catch (...) {}
-    try {
-        m_CompStream.reset();
-    }
-    catch (...) {}
-    m_Out = nullptr;
 }
 
 
@@ -1141,8 +1148,8 @@ protected:
     void* Main(void) override;
 
 private:
+    void x_DoTest(const STestCase& test_case);
 };
-
 
 class CFileGuard
 {
@@ -1171,48 +1178,7 @@ void* CTestThread::Main(void)
             << " -obj_count " << test_case.m_ObjCount
             << " -err " << ErrorTypeNames[test_case.m_Err]
             << " -err_pos " << ErrorPositionNames[test_case.m_ErrPos] << endl; }
-        switch (test_case.m_IO) {
-        case eIO_File:
-        {
-            CTestWriter writer(test_case);
-            stringstream fnamestr;
-            fnamestr << "iodata-" << test_case.m_Index;
-            string fname = fnamestr.str();
-            CFileGuard fguard(fname);
-            {
-                ofstream fout(fname,
-                    (test_case.m_Format == eSerial_AsnBinary || test_case.m_Comp != CCompressStream::eNone) ? ios_base::binary : ios_base::openmode(0));
-                writer.WriteData(fout);
-            }
-            {
-                ifstream fin(fname,
-                    (test_case.m_Format == eSerial_AsnBinary || test_case.m_Comp != CCompressStream::eNone) ? ios_base::binary : ios_base::openmode(0));
-                s_CheckStream(writer, fin, test_case);
-            }
-            break;
-        }
-        case eIO_Socket:
-        {
-            CTestWriter writer(test_case);
-            CRef<CWriterThread> thr(new CWriterThread(writer));
-            thr->Run();
-            try {
-                STimeout timeout;
-                int ms = writer.GetTimeout();
-                timeout.sec = ms / 1000;
-                timeout.usec = (ms % 1000) * 1000;
-                CConn_SocketStream sstr("127.0.0.1", thr->GetPort(), 1, &timeout);
-                s_CheckStream(writer, sstr, test_case);
-                sstr.Close();
-            }
-            catch (...) {
-                thr->Join();
-                throw;
-            }
-            thr->Join();
-            break;
-        }
-        }
+        CHECK_NO_THROW(test_case.m_Index, x_DoTest(test_case));
         int failed = 0;
         {
             CFastMutexGuard guard(ResultsMutex);
@@ -1223,6 +1189,53 @@ void* CTestThread::Main(void)
         }
     }
     return nullptr;
+}
+
+
+void CTestThread::x_DoTest(const STestCase& test_case)
+{
+    switch (test_case.m_IO) {
+    case eIO_File:
+    {
+        CTestWriter writer(test_case);
+        stringstream fnamestr;
+        fnamestr << "iodata-" << test_case.m_Index;
+        string fname = fnamestr.str();
+        CFileGuard fguard(fname);
+        {
+            ofstream fout(fname,
+                (test_case.m_Format == eSerial_AsnBinary || test_case.m_Comp != CCompressStream::eNone) ? ios_base::binary : ios_base::openmode(0));
+            writer.WriteData(fout);
+        }
+        {
+            ifstream fin(fname,
+                (test_case.m_Format == eSerial_AsnBinary || test_case.m_Comp != CCompressStream::eNone) ? ios_base::binary : ios_base::openmode(0));
+            s_CheckStream(writer, fin, test_case);
+        }
+        break;
+    }
+    case eIO_Socket:
+    {
+        CTestWriter writer(test_case);
+        CRef<CWriterThread> thr(new CWriterThread(writer));
+        thr->Run();
+        try {
+            STimeout timeout;
+            int ms = writer.GetTimeout();
+            timeout.sec = ms / 1000;
+            timeout.usec = (ms % 1000) * 1000;
+            CConn_SocketStream sstr("127.0.0.1", thr->GetPort(), 1, &timeout);
+            s_CheckStream(writer, sstr, test_case);
+            sstr.Close();
+        }
+        catch (...) {
+            thr->Join();
+            throw;
+        }
+        thr->Join();
+        break;
+    }
+    }
 }
 
 
