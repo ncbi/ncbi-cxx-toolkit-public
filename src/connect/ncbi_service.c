@@ -458,39 +458,44 @@ static void s_SkipSkip(SERV_ITER iter)
 
 #if defined(_DEBUG)  &&  !defined(NDEBUG)
 
-#define RETURN(retval)  return x_Return(str, retval)
+#define RETURN(retval)  return x_Return((SSERV_Info*) info, infostr, retval)
 
 
 #  ifdef __GNUC__
 inline
 #  endif /*__GNUC__*/
-static int/*bool*/ x_Return(const char* str, int/*bool*/ retval)
+static int/*bool*/ x_Return(SSERV_Info* info,
+                            const char* infostr,
+                            int/*bool*/ retval)
 {
-    if (str)
-        free((void*) str);
+    if (infostr)
+        free((void*) infostr);
+    if (!retval)
+        free(info);
     return retval;
 }
 
 
-/* Do some basic set of consistency checks for the returned server info */
+/* Do some basic set of consistency checks for the returned server info.
+ * Return 0 if failed (also free(info) if so);  return 1 if passed. */
 static int/*bool*/ x_ConsistencyCheck(SERV_ITER iter, const SSERV_Info* info)
 {
     const char* name = SERV_NameOfInfo(info);
-    const char* str = SERV_WriteInfo(info);
+    const char* infostr = SERV_WriteInfo(info);
     TSERV_TypeOnly types;
     size_t n;
 
     if (!name) {
         CORE_LOGF(eLOG_Critical,
                   ("[%s]  NULL name\n%s", iter->name,
-                   str ? str : "<NULL>"));
+                   infostr ? infostr : "<NULL>"));
         RETURN(0/*failure*/);
     }
     if (!(iter->ismask | iter->reverse_dns) != !*name) {
         CORE_LOGF(eLOG_Critical,
                   ("[%s]  %s name\n%s", iter->name,
                    *name ? "Unexpected" : "Empty",
-                   str ? str : "<NULL>"));
+                   infostr ? infostr : "<NULL>"));
         RETURN(0/*failure*/);
     }
     if (!info->host  ||  !info->port) {
@@ -499,13 +504,13 @@ static int/*bool*/ x_ConsistencyCheck(SERV_ITER iter, const SSERV_Info* info)
                       ("[%s]  Non-DNS server with empty %s:\n%s", iter->name,
                        !(info->host | info->port) ? "host:port"
                        : info->host ? "port" : "host",
-                       str ? str : "<NULL>"));
-            return x_Return(str, 0/*failure*/);
+                       infostr ? infostr : "<NULL>"));
+            RETURN(0/*failure*/);
         }
         if (!info->host  &&  (iter->last  ||  iter->ismask)) {
             CORE_LOGF(eLOG_Critical,
                       ("[%s]  Interim DNS server w/o host:\n%s", iter->name,
-                       str ? str : "<NULL>"));
+                       infostr ? infostr : "<NULL>"));
             RETURN(0/*failure*/);
         }
     }
@@ -514,14 +519,14 @@ static int/*bool*/ x_ConsistencyCheck(SERV_ITER iter, const SSERV_Info* info)
             CORE_LOGF(eLOG_Critical,
                       ("[%s]  Expired entry (%u < %u):\n%s", iter->name,
                        info->time, iter->time,
-                       str ? str : "<NULL>"));
+                       infostr ? infostr : "<NULL>"));
             RETURN(0/*failure*/);
         }
         if (info->time > iter->time + LBSM_DEFAULT_TIME) {
             CORE_LOGF(eLOG_Critical,
                       ("[%s]  Excessive expiration (%u > %u):\n%s", iter->name,
                        info->time, iter->time + LBSM_DEFAULT_TIME,
-                       str ? str : "<NULL>"));
+                       infostr ? infostr : "<NULL>"));
             RETURN(0/*failure*/);
         }
     }
@@ -529,7 +534,7 @@ static int/*bool*/ x_ConsistencyCheck(SERV_ITER iter, const SSERV_Info* info)
         if (info->u.firewall.type == fSERV_Dns) {
             CORE_LOGF(eLOG_Critical,
                       ("[%s]  Firewall DNS entry not allowed:\n%s", iter->name,
-                       str ? str : "<NULL>"));
+                       infostr ? infostr : "<NULL>"));
             RETURN(0/*failure*/);
         }
         if (info->vhost | info->extra) {
@@ -538,7 +543,7 @@ static int/*bool*/ x_ConsistencyCheck(SERV_ITER iter, const SSERV_Info* info)
                        info->vhost                  ? "vhost" : "",
                        info->extra  &&  info->vhost ? " and " : "",
                        info->extra                  ? "extra" : "",
-                       str ? str : "<NULL>"));
+                       infostr ? infostr : "<NULL>"));
             RETURN(0/*failure*/);
         }
     }
@@ -546,13 +551,13 @@ static int/*bool*/ x_ConsistencyCheck(SERV_ITER iter, const SSERV_Info* info)
         if (info->site & fSERV_Private) {
             CORE_LOGF(eLOG_Critical,
                       ("[%s]  DNS entry cannot be private:\n%s", iter->name,
-                       str ? str : "<NULL>"));
+                       infostr ? infostr : "<NULL>"));
             RETURN(0/*failure*/);
         }
         if (info->mode & fSERV_Stateful) {
             CORE_LOGF(eLOG_Critical,
                       ("[%s]  DNS entry cannot be stateful:\n%s", iter->name,
-                       str ? str : "<NULL>"));
+                       infostr ? infostr : "<NULL>"));
             RETURN(0/*failure*/);
         }
         if (info->mime_t != eMIME_T_Undefined  ||
@@ -560,14 +565,14 @@ static int/*bool*/ x_ConsistencyCheck(SERV_ITER iter, const SSERV_Info* info)
             info->mime_e != eENCOD_None) {
             CORE_LOGF(eLOG_Critical,
                       ("[%s]  DNS entry with MIME type:\n%s", iter->name,
-                       str ? str : "<NULL>"));
+                       infostr ? infostr : "<NULL>"));
             RETURN(0/*failure*/);
         }
     }
     if ((info->type & fSERV_Http)  &&  (info->mode & fSERV_Stateful)) {
         CORE_LOGF(eLOG_Critical,
                   ("[%s]  HTTP entry cannot be stateful:\n%s", iter->name,
-                   str ? str : "<NULL>"));
+                   infostr ? infostr : "<NULL>"));
         RETURN(0/*failure*/);
     }
     if (!(types = iter->types &
@@ -575,7 +580,7 @@ static int/*bool*/ x_ConsistencyCheck(SERV_ITER iter, const SSERV_Info* info)
         if (info->type == fSERV_Dns  &&  !iter->reverse_dns) {
             CORE_LOGF(eLOG_Critical,
                       ("[%s]  DNS entry unwarranted:\n%s", iter->name,
-                       str ? str : "<NULL>"));
+                       infostr ? infostr : "<NULL>"));
             RETURN(0/*failure*/);
         }
     } else if ((info->type != fSERV_Firewall
@@ -588,52 +593,52 @@ static int/*bool*/ x_ConsistencyCheck(SERV_ITER iter, const SSERV_Info* info)
                        (int)(info->type == fSERV_Firewall
                              ? info->u.firewall.type
                              : info->type), (int) types,
-                       str ? str : "<NULL>"));
+                       infostr ? infostr : "<NULL>"));
             RETURN(0/*failure*/);
         }
     }
     if (iter->external  &&  (info->site & (fSERV_Local | fSERV_Private))) {
         CORE_LOGF(eLOG_Critical,
                   ("[%s]  Local/private entry for external:\n%s", iter->name,
-                   str ? str : "<NULL>"));
+                   infostr ? infostr : "<NULL>"));
         RETURN(0/*failure*/);
     }
     if ((info->site & fSERV_Private)  &&  !iter->ok_private
         &&  iter->localhost  &&  info->host != iter->localhost) {
         CORE_LOGF(eLOG_Critical,
                   ("[%s]  Private entry unwarranted:\n%s", iter->name,
-                   str ? str : "<NULL>"));
+                   infostr ? infostr : "<NULL>"));
         RETURN(0/*failure*/);
     }
     if ((iter->types & fSERV_Stateless)  &&  (info->mode & fSERV_Stateful)) {
         CORE_LOGF(eLOG_Critical,
                   ("[%s]  Steteful entry in stateless search:\n%s", iter->name,
-                   str ? str : "<NULL>"));
+                   infostr ? infostr : "<NULL>"));
         RETURN(0/*failure*/);
     }
     if (info->type != fSERV_Dns  ||  info->host) {
         if (!info->time  &&  !info->rate) {
             CORE_LOGF(eLOG_Critical,
                       ("[%s]  Off entry returned:\n%s", iter->name,
-                       str ? str : "<NULL>"));
+                       infostr ? infostr : "<NULL>"));
             RETURN(0/*failure*/);
         }
         if (SERV_IsDown(info)  &&  !iter->ok_down) {
             CORE_LOGF(eLOG_Critical,
                       ("[%s]  Down entry unwarranted:\n%s", iter->name,
-                       str ? str : "<NULL>"));
+                       infostr ? infostr : "<NULL>"));
             RETURN(0/*failure*/);
         }
         if (SERV_IfSuppressed(info)  &&  !iter->ok_suppressed) {
             CORE_LOGF(eLOG_Critical,
                       ("[%s]  Suppressed entry unwarranted:\n%s", iter->name,
-                       str ? str : "<NULL>"));
+                       infostr ? infostr : "<NULL>"));
             RETURN(0/*failure*/);
         }
         if (SERV_IsReserved(info)  &&  !iter->ok_reserved) {
             CORE_LOGF(eLOG_Critical,
                       ("[%s]  Reserved entry unwarranted:\n%s", iter->name,
-                       str ? str : "<NULL>"));
+                       infostr ? infostr : "<NULL>"));
             RETURN(0/*failure*/);
         }
         if (SERV_IsStandby(info)  &&  !iter->ok_standby) {
@@ -641,7 +646,7 @@ static int/*bool*/ x_ConsistencyCheck(SERV_ITER iter, const SSERV_Info* info)
                 if (!SERV_IsStandby(iter->skip[n])) {
                     CORE_LOGF(eLOG_Critical,
                               ("[%s]  Standby entry unwarranted:\n%s",
-                               iter->name, str ? str : "<NULL>"));
+                               iter->name, infostr ? infostr : "<NULL>"));
                     RETURN(0/*failure*/);
                 }
             }
@@ -654,10 +659,14 @@ static int/*bool*/ x_ConsistencyCheck(SERV_ITER iter, const SSERV_Info* info)
             CORE_LOGF(eLOG_Critical,
                       ("[%s]  Entry is a duplicate and must be skipped:\n"
                        "%s%s%s%s", iter->name, &"\""[!*name], name,
-                       *name ? "\" " : "", str ? str : "<NULL>"));
+                       *name ? "\" " : "", infostr ? infostr : "<NULL>"));
             RETURN(0/*failure*/);
         }
     }
+
+    CORE_LOGF(eLOG_Trace, ("[%s]  Consistency check passed:\n%s%s%s%s",
+                           iter->name, &"\""[!*name], name,
+                           *name ? "\" " : "", infostr ? infostr : "<NULL>"));
     RETURN(1/*success*/);
 }
 
@@ -681,12 +690,7 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER   iter,
         /* Obtain a fresh entry from the actual mapper */
         while ((info = iter->op->GetNextInfo(iter, host_info)) != 0) {
             int/*bool*/ go;
-#if defined(_DEBUG)  &&  !defined(NDEBUG)
-            if (!x_ConsistencyCheck(iter, info)) {
-                free(info);
-                return 0;
-            }
-#endif /*_DEBUG && !NDEBUG*/
+            CORE_DEBUG_ARG(if (!x_ConsistencyCheck(iter, info)) return 0);
             /* This should never be actually used for LBSMD dispatcher,
              * as all exclusion logic is already done in it internally. */
             go =
