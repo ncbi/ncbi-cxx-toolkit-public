@@ -8,7 +8,7 @@ NCBI_begin_app(dbapi_svc_test)
   NCBI_project_watchers(ucko mcelhany)
   NCBI_requires(-MSWin)
 
-  NCBI_set_test_requires(in-house-resources)
+  NCBI_set_test_requires(in-house-resources xconnext)
   NCBI_set_test_timeout(600)
   NCBI_set_test_assets(dbapi_svc_test.bash dbapi_svc_test.ini interfaces)
   NCBI_begin_test(dbapi_svc_test_lbsmd_nosyb)
