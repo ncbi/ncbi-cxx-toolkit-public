@@ -4,6 +4,7 @@
 # Basic check: headers, functions and types
 
 include(CheckIncludeFile)
+include(CheckIncludeFiles)
 check_include_file(alloca.h HAVE_ALLOCA_H)
 check_include_file(arpa/inet.h HAVE_ARPA_INET_H)
 check_include_file(atomic.h HAVE_ATOMIC_H)
@@ -51,6 +52,7 @@ check_include_file(sys/statvfs.h HAVE_SYS_STATVFS_H)
 check_include_file(sys/sysinfo.h HAVE_SYS_SYSINFO_H)
 check_include_file(sys/sysmacros.h HAVE_SYS_SYSMACROS_H)
 check_include_file(sys/time.h HAVE_SYS_TIME_H)
+check_include_files("sys/time.h;time.h" TIME_WITH_SYS_TIME)
 check_include_file(sys/types.h HAVE_SYS_TYPES_H)
 check_include_file(sys/vfs.h HAVE_SYS_VFS_H)
 check_include_file(sys/wait.h HAVE_SYS_WAIT_H)
