@@ -280,7 +280,7 @@ CSubSource::CSubSource(const string& subtype, const TName& name)
 //
 //    e_NoResult  = 0,    ""
 //    e_Valid     = 1,    "USA: Colorado"
-//    e_Corrected = 2,    "USA: Hamilton, MT" to "USA: Montana, Hamilton"
+//    e_Corrected = 2,    "USA: Hamilton, MT" -> "USA: Montana, Hamilton"
 //    e_Ambiguous = 3,    "USA: Oregon, Wisconsin"
 //    e_Missing   = 4,    "USA: Springfield"
 //    e_NotUSA    = 5     "Puerto Rico: San Juan"
@@ -298,12 +298,13 @@ public:
     static bool ContainsMultipleCountryNames (const string &phrase);
     static string GetCorrectedCountryCapitalization(const string& country);
     static string NewFixCountry (const string& input);
-    static string USAStateCleanup (const string& country );
-    static string USAStateCleanup (const string& country, int& type );
-    static string USAStateCleanup (const string& country, int& type, const string& exception_file );
     static bool ChangeExtraColonsToCommas(string& country);
     static string CountryFixupItem(const string &input, bool capitalize_after_colon);
     typedef CStaticPairArrayMap<const char*, const char*, PCase_CStr> TCStringPairsMap;
+    // call LoadUSAExceptionMap before calling USAStateCleanup methods
+    static string USAStateCleanup (const string& country );
+    static string USAStateCleanup (const string& country, int& type );
+    static void LoadUSAExceptionMap (const string& exception_file );
 private:
     static const string sm_Countries[];
     static const string sm_Former_Countries[];

@@ -4359,45 +4359,52 @@ EStateCleanup s_DoUSAStateCleanup ( string& country ) {
     return e_Missing;
 }
 
-
-string CCountries::USAStateCleanup ( const string& country ) {
-
-    string working = country;
-    s_DoUSAStateCleanup ( working );
-    return working;
-}
-
-string CCountries::USAStateCleanup ( const string& country, int& type ) {
-
-    string working = country;
-    EStateCleanup res = s_DoUSAStateCleanup ( working );
-    type = (int) res;
-    return working;
-}
-
 typedef CRowReader<CRowReaderStream_NCBI_TSV> TNCBITSVStream;
 
-string CCountries::USAStateCleanup (const string& country, int& type, const string& exception_file ) {
+static std::map<std::string, std::string> exception_map;
+static bool exceptions_initialized = false;
 
-    string working = country;
-    EStateCleanup res = s_DoUSAStateCleanup ( working );
-    type = (int) res;
+void CCountries::LoadUSAExceptionMap (const string& exception_file ) {
 
-    // will need to initialize exception_file once, use on result string regardless of type
-    if ( ! exception_file.empty()) {
+    if ( ! exceptions_initialized && ! exception_file.empty()) {
 
         TNCBITSVStream my_stream(exception_file);
-        for (const auto &  row :  my_stream) {
+        for ( const auto &  row :  my_stream ) {
             TFieldNo  number_of_fields = row. GetNumberOfFields();
             if ( number_of_fields != 2 ) continue;
             string fr = row[0].Get<string>();
             string to = row[1].Get<string>();
-            // for now just print values
-            cout << "From '" << fr << "' to '" << to << "'" << endl;
+            exception_map[fr] = to;
+        }
+        exceptions_initialized = true;
+    }
+}
+
+string CCountries::USAStateCleanup ( const string& country, int& type ) {
+
+    // call algorithmic mapping function
+    string working = country;
+    EStateCleanup res = s_DoUSAStateCleanup ( working );
+    type = (int) res;
+
+    // apply exceptions from preloaded data file
+    if ( exceptions_initialized ) {
+        string corrected = exception_map[working];
+        if ( ! corrected.empty()) {
+            if ( ! NStr::Equal ( corrected, working )) {
+                type = e_Corrected;
+            }
+            return corrected;
         }
     }
 
     return working;
+}
+
+string CCountries::USAStateCleanup ( const string& country ) {
+
+    int type = 0;
+    return USAStateCleanup ( country, type );
 }
 
 // end of RW-1278

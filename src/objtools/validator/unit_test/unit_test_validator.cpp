@@ -20835,9 +20835,8 @@ BOOST_AUTO_TEST_CASE(Test_USAStateCleanup)
     BOOST_CHECK_EQUAL(CCountries::USAStateCleanup("USA: Oregon, Wisconsin"), "USA: Oregon, Wisconsin");
     BOOST_CHECK_EQUAL(CCountries::USAStateCleanup("USA: San  Diego  County, CA"), "USA: California, San Diego County");
     BOOST_CHECK_EQUAL(CCountries::USAStateCleanup("USA: Madison"), "USA: Madison");
-    BOOST_CHECK_EQUAL(CCountries::USAStateCleanup("USA: New York City"), "USA: New York, New York City");
     BOOST_CHECK_EQUAL(CCountries::USAStateCleanup("USA"), "USA");
-    BOOST_CHECK_NE(CCountries::USAStateCleanup("USA: Frostbite Falls"), "USA: Minnesota, Frostbite Falls");
+    BOOST_CHECK_NE(CCountries::USAStateCleanup("USA: New York City"), "USA: New York, New York City");
     BOOST_CHECK_NE(CCountries::USAStateCleanup("USA: Los Angeles"), "USA: California, Los Angeles");
     BOOST_CHECK_NE(CCountries::USAStateCleanup("USA: PR"), "USA: Puerto Rico");
 }
