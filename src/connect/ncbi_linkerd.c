@@ -156,7 +156,7 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
         break;
     }
     /* make sure the server type matches */
-    if ((data->types  &&  !(atype &= data->types))
+    if ((data->types  &&  !(atype = (ESERV_Type)(atype & data->types)))
         ||  !*(type = SERV_TypeStr(atype))) {
         CORE_LOGF_X(eLSub_BadData, eLOG_Error,
                     ("[%s]  Cannot match request method (%d)"
@@ -195,12 +195,12 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
                      iter->name));
         return 0/*failure*/;
     }
-    verify(sprintf(infostr, kDescrFmt, type, hostport,
+    verify((size_t)
+           sprintf(infostr, kDescrFmt, type, hostport,
                    net_info->path[0] ? net_info->path : "/",
                    vhost, iter->external ? "No" : "Yes",
                    LBSM_DEFAULT_RATE, iter->time + LBSM_DEFAULT_TIME,
                    net_info->scheme == eURL_Https ? " $=Yes" : "") < size);
-
     /* Parse descriptor into SSERV_Info */
     CORE_TRACEF(("Parsing server descriptor \"%s\"", infostr));
     if ( ! (data->info = SERV_ReadInfoEx(infostr, iter->reverse_dns

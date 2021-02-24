@@ -193,7 +193,7 @@ static CONNECTOR s_CreateConnectorMemory(SERV_ITER iter)
 static void s_RemoveServerInfo(struct SNAMERD_Data* data, size_t n, int del)
 {
     CORE_TRACEF(("%s server info " FMT_SIZE_T ": %p",
-                 del ? "Deleting" : "Removing",
+                 del ? "Deleting" : "Releasing",
                  n, data->cand[n].info));
 
     assert(n < data->n_cand  &&  data->cand[n].info);
@@ -463,7 +463,7 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
     /* Iterate through addresses, adding to "candidates" */
     n = x_json_array_get_count(addrs);
     for (i = 0;  i < n;  ++i) {
-        const char*    host, *extra, *mime, *mode, *local, *private, *stateful;
+        const char*    host, *extra, *mime, *mode, *local, *privat, *stateful;
         x_JSON_Object* address;
         char*          infostr;
         ESERV_Type     atype;
@@ -477,7 +477,7 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
             meta.expires|time|time ---------------------------------+
             meta.stateful|mode|stateful -----------------------+    |
             meta.rate|rate|rate --------------------------+    |    |
-            meta.mode|site|private ------------------+    |    |    |
+            meta.mode|site|privat -------------------+    |    |    |
             meta.mode|site|local ------------------+ |    |    |    |
             meta.contentType|mime_*|mime ---+      | |    |    |    |
             meta.extra|extra|extra -----+   |      | |    |    |    |
@@ -575,8 +575,8 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
             stateful = "";
 
         /* SSERV_Info.site <=== addrs[i].meta.mode */
-        private = "";
-        local   = "No";
+        privat = "";
+        local  = "No";
         if (x_json_object_dothas_value_of_type(address, "meta.mode",
                                                JSONString)) {
             mode = x_json_object_dotget_string(address, "meta.mode");
@@ -589,9 +589,9 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
             if (strcmp(mode, "L") == 0)
                 local = "Yes";
             else if (strcmp(mode, "P") == 0)
-                private = " P=Yes";
+                privat = " P=Yes";
             else if (strcmp(mode, "H") == 0)
-                local = "Yes", private = " P=Yes";
+                local = "Yes", privat = " P=Yes";
             else {
                 CORE_LOGF_X(eNSub_Json, eLOG_Error,
                             ("[%s]  Unrecognized JSON {\"addrs[" FMT_SIZE_T
@@ -599,12 +599,12 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
                              mode));
                 continue;
             }
-            if (*private  &&  atype == fSERV_Dns) {
+            if (*privat  &&  atype == fSERV_Dns) {
                 CORE_LOGF_X(eNSub_BadData, eLOG_Warning,
                             ("[%s]  Bogus JSON {\"addrs[" FMT_SIZE_T
                              "].meta.mode\"} private value for '%s' server"
                              " type ignored", iter->name, i, type));
-                private = "";
+                privat = "";
             }
         }
 
@@ -672,9 +672,9 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
             continue;
         }
         /* Make sure no local/private servers in external search */
-        if (iter->external  &&  (*private  ||  *local != 'N')) {
+        if (iter->external  &&  (*privat  ||  *local != 'N')) {
             CORE_TRACEF(("Ignoring %s server info %s:%d '%s' in"
-                         " external search", *private ? "private" : "local",
+                         " external search", *privat ? "private" : "local",
                          host, port, type));
             continue;
         }
@@ -688,7 +688,7 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
         /* Prepare server descriptor */
         size = sizeof(kDescrFmt) + strlen(type) + strlen(host) + 5/*port*/
             + strlen(extra) + (mime  &&  *mime ? 3 + strlen(mime) : 0)
-            + strlen(local) + strlen(private) + 10/*rate*/
+            + strlen(local) + strlen(privat) + 10/*rate*/
             + strlen(stateful) + 10/*time*/ + 40/*slack room*/;
         if (!(infostr = (char*) malloc(size))) {
             CORE_LOGF_X(eNSub_Alloc, eLOG_Critical,
@@ -696,10 +696,11 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
                          iter->name));
             goto out;
         }
-        verify(sprintf(infostr, kDescrFmt, type, host, port,
+        verify((size_t)
+               sprintf(infostr, kDescrFmt, type, host, port,
                        &" "[!(extra  &&  *extra)], extra ? extra : "",
                        mime  &&  *mime ? " C=" : "", mime ? mime : "",
-                       local, private, rate < LBSM_STANDBY_THRESHOLD ? 3 : 2,
+                       local, privat, rate < LBSM_STANDBY_THRESHOLD ? 3 : 2,
                        /* 3-digit precision for standby; else 2-digits */
                        rate, stateful, time) < size);
 
@@ -981,7 +982,7 @@ static char* x_GetDtabFromHeader(const char* header)
     for (line = header;  line  &&  *line;  line += linelen) {
         const char* end = strchr(line, '\n');
         linelen = end ? (size_t)(end - line) + 1 : strlen(line);
-        if (!(end = memchr(line, ':', linelen)))
+        if (!(end = (const char*) memchr(line, ':', linelen)))
             continue;
         if ((size_t)(end - line) != sizeof(DTAB_HTTP_HEADER_TAG)-2/*":\0"*/)
             continue;

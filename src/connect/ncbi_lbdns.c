@@ -339,11 +339,12 @@ static int unpack_rr(const unsigned char* msg, const unsigned char* eom,
         NS_GET16(rr->rdlength, ptr);
         if (!rr->rdlength) {
             CORE_LOGF(level == eLOG_Trace ? eLOG_Trace : eLOG_Warning,
-                      ("DNS RR %s RDATA empty", x_TypeStr(rr->type, buf)));
+                      ("DNS RR %s RDATA empty",
+                       x_TypeStr(ns_rr_type(*rr), buf)));
         } else if (ptr + rr->rdlength > eom) {
             CORE_LOGF(level,
                       ("DNS RR %s RDATA overrun",
-                       x_TypeStr(rr->type, buf)));
+                       x_TypeStr(ns_rr_type(*rr), buf)));
             return -1;
         }
         size += rr->rdlength;
@@ -560,7 +561,7 @@ static void x_BlankInfo(SSERV_Info* info, TSERV_TypeOnly type)
 {
     assert(type == fSERV_Dns  ||  type == fSERV_Standalone);
     memset(info, 0, sizeof(*info));
-    info->type   = type;
+    info->type   = (ESERV_Type) type;
     info->site   = fSERV_Local;
     info->time   = LBSM_DEFAULT_TIME;
     info->mime_t = eMIME_T_Undefined;
@@ -1135,7 +1136,7 @@ static void x_Finalize(SERV_ITER iter)
             assert(name  &&  *name);
             if (iter->reverse_dns) {
                 char* ptr;
-                if ((ptr = strchr(name, '.')) != 0)
+                if ((ptr = (char*) strchr(name, '.')) != 0)
                     *ptr = '\0';
                 strupr((char*) name);
                 if (info->type == fSERV_Standalone) {
