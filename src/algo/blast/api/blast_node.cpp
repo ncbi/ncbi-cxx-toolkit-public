@@ -55,11 +55,9 @@ void CBlastNodeMailbox::SendMsg(CRef<CBlastNodeMsg> msg)
 }
 
 CBlastNode::CBlastNode (int node_num, const CNcbiArguments & ncbi_args, const CArgs& args,
-		                CBlastAppDiagHandler & bah, EProgram blast_program,
-                        int query_index, int num_queries, CBlastNodeMailbox * mailbox):
+		                CBlastAppDiagHandler & bah, int query_index, int num_queries, CBlastNodeMailbox * mailbox):
                         m_NodeNum(node_num), m_NcbiArgs(ncbi_args), m_Args(args),
-                        m_Bah(bah), m_BlastProgram(blast_program),
-                        m_QueryIndex(query_index), m_NumOfQueries(num_queries),
+                        m_Bah(bah), m_QueryIndex(query_index), m_NumOfQueries(num_queries),
                         m_QueriesLength(0)
 {
 	if(mailbox != NULL) {

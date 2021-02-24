@@ -36,7 +36,6 @@
 #include <algo/blast/api/local_blast.hpp>
 #include <algo/blast/api/remote_blast.hpp>
 #include <algo/blast/blastinput/blast_fasta_input.hpp>
-#include <algo/blast/blastinput/rpsblast_args.hpp>
 #include <algo/blast/api/objmgr_query_data.hpp>
 #include <algo/blast/format/blast_format.hpp>
 #include "blast_app_util.hpp"
@@ -51,7 +50,7 @@ USING_SCOPE(objects);
 CBlastnNode::CBlastnNode (int node_num, const CNcbiArguments & ncbi_args, const CArgs& args,
 		                      CBlastAppDiagHandler & bah, const string & input,
                               int query_index, int num_queries,  CBlastNodeMailbox * mailbox):
-                              CBlastNode(node_num, ncbi_args, args, bah, eRPSBlast, query_index, num_queries, mailbox), m_Input(input)
+                              CBlastNode(node_num, ncbi_args, args, bah, query_index, num_queries, mailbox), m_Input(input)
 {
 	m_CmdLineArgs.Reset(new CBlastnNodeArgs(m_Input));
 	SetState(eInitialized);

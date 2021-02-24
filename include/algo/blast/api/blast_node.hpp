@@ -93,8 +93,7 @@ public :
 		eDone,
 	};
 	CBlastNode (int node_num, const CNcbiArguments & ncbi_args, const CArgs& args,
-			    CBlastAppDiagHandler & bah, EProgram blast_program,
-			    int query_index, int num_queries, CBlastNodeMailbox * mailbox);
+			    CBlastAppDiagHandler & bah, int query_index, int num_queries, CBlastNodeMailbox * mailbox);
 
 	 virtual int GetBlastResults(string & results) = 0;
 	 int GetNodeNum() { return m_NodeNum;}
@@ -118,7 +117,6 @@ private:
 	const CNcbiArguments & m_NcbiArgs;
 	const CArgs & m_Args;
 	 CBlastAppDiagHandler & m_Bah;
-	EProgram m_BlastProgram;
 	int m_QueryIndex;
 	int m_NumOfQueries;
 	string m_NodeIdStr;

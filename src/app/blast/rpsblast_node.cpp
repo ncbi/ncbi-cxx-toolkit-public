@@ -53,7 +53,7 @@ USING_SCOPE(objects);
 CRPSBlastNode::CRPSBlastNode (int node_num, const CNcbiArguments & ncbi_args, const CArgs& args,
 		                      CBlastAppDiagHandler & bah, const string & input,
                               int query_index, int num_queries,  CBlastNodeMailbox * mailbox):
-                              CBlastNode(node_num, ncbi_args, args, bah, eRPSBlast, query_index, num_queries, mailbox), m_Input(input)
+                              CBlastNode(node_num, ncbi_args, args, bah, query_index, num_queries, mailbox), m_Input(input)
 {
 	m_CmdLineArgs.Reset(new CRPSBlastNodeArgs(m_Input));
 	SetState(eInitialized);
