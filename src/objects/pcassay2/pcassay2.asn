@@ -217,14 +217,11 @@ PC-AssayDRAttr ::=SEQUENCE {
 PC-AssayTargetInfo ::= SEQUENCE {
    name                    UTF8String,                     -- Molecular name of target
    mol-id                  CHOICE {                           -- database and identifier of the target molecule
-                            -- protein-gi           INTEGER,          (1) target is a 64-bit NCBI Protein GI (deprecated in favor of protein-accession)
-                            -- dna-gi               INTEGER,          (2) target is a 64-bit NCBI DNA Nucleotide GI (deprecated in favor of nucleotide-accession)
-                            -- rna-gi               INTEGER,          (3) target is a 64-bit NCBI RNA Nucleotide GI (deprecated in favor of nucleotide-accession)
-                               gene-id              INTEGER,       -- (4) target is a NCBI Gene ID
-                            -- biosystem-id         INTEGER,          (5) target is a NCBI BioSystems ID (deprecated in favor of other)
-                               protein-accession    VisibleString, -- (6) target is a NCBI Protein Accession
-                               nucleotide-accession VisibleString, -- (7) target is a NCBI Nucleotide Accession
-                               other                VisibleString  -- (255) target is beyond supported type (format = TYPE::RESOURCE::IDENTIFIER)
+                               gene-id              INTEGER,       -- target is a NCBI Gene ID
+                               protein-accession    VisibleString, -- target is a NCBI Protein Accession
+                               nucleotide-accession VisibleString, -- target is a NCBI Nucleotide Accession
+                               other                VisibleString, -- target is beyond supported type (format = TYPE::RESOURCE::IDENTIFIER)
+                               tax-id               INTEGER        -- target is a NCBI Taxonomy ID
                            },
    organism                BioSource               OPTIONAL,  -- Target Organism
    descr                   UTF8String              OPTIONAL,  -- Target Description  (e.g., cellular functionality and location)
