@@ -306,35 +306,8 @@ void CJsonResponse::Fill(shared_ptr<CPSG_BioseqInfo> bioseq_info)
 
 void CJsonResponse::Fill(shared_ptr<CPSG_NamedAnnotInfo> named_annot_info)
 {
-    Set("name", named_annot_info->GetName());
-
-// TODO: Pending server change
-try {
-    Set("annotated_id", named_annot_info->GetAnnotatedId());
-}
-catch (exception& e) {
-    cerr << e.what() << endl;
-}
-
-    const auto range = named_annot_info->GetRange();
-    CJson_Object range_obj = m_JsonObj.insert_object("range");
-    Set(range_obj["from"], range.GetFrom());
-    Set(range_obj["to"],   range.GetTo());
-
     Set("blob_id", named_annot_info->GetBlobId());
-
-    CJson_Array zoom_level_array = m_JsonObj.insert_array("zoom_levels");
-    for (const auto zoom_level : named_annot_info->GetZoomLevels()) {
-        zoom_level_array.push_back(zoom_level);
-    }
-
-    CJson_Array annot_info_array = m_JsonObj.insert_array("annot_info_list");
-    for (const auto annot_info : named_annot_info->GetAnnotInfoList()) {
-        CJson_Object annot_info_obj = annot_info_array.push_back_object();
-        Set(annot_info_obj["annot_type"],   annot_info.annot_type);
-        Set(annot_info_obj["feat_type"],    annot_info.feat_type);
-        Set(annot_info_obj["feat_subtype"], annot_info.feat_subtype);
-    }
+    Set("id2_annot_info", named_annot_info->GetId2AnnotInfo());
 }
 
 void CJsonResponse::Fill(shared_ptr<CPSG_PublicComment> public_comment)
@@ -420,6 +393,7 @@ struct SDataOnlyCopy
 
     void operator()(shared_ptr<CPSG_BlobInfo> blob_info);
     void operator()(shared_ptr<CPSG_BlobData> blob_data);
+    void operator()(shared_ptr<CPSG_NamedAnnotInfo> named_annot_info);
 
 private:
     void Process(shared_ptr<CPSG_BlobInfo> blob_info, shared_ptr<CPSG_BlobData> blob_data);
@@ -522,9 +496,22 @@ void SDataOnlyCopy::Process(shared_ptr<CPSG_BlobInfo> blob_info, shared_ptr<CPSG
     cout << ss.rdbuf();
 }
 
+void SDataOnlyCopy::operator()(shared_ptr<CPSG_NamedAnnotInfo> named_annot_info)
+{
+    if (m_Params.output_format == eSerial_None) {
+        cout << NStr::Base64Decode(named_annot_info->GetId2AnnotInfo());
+        return;
+    }
+
+    for (const auto& info : named_annot_info->GetId2AnnotInfoList() ) {
+        cout << MSerial_Format(m_Params.output_format) << *info;
+    }
+}
+
 bool s_GetDataOnly(const CArgs& args)
 {
-    return args.Exist("blob-only") && args["blob-only"].HasValue();
+    return (args.Exist("blob-only") && args["blob-only"].HasValue()) ||
+        (args.Exist("annot-only") && args["annot-only"].HasValue());
 }
 
 CProcessing::SParams::SParams(const CArgs& args) :
@@ -608,6 +595,9 @@ int CProcessing::OneRequest(const string& service, shared_ptr<CPSG_Request> requ
 
                 } else if (reply_item->GetType() == CPSG_ReplyItem::eBlobData) {
                     data_only_copy(static_pointer_cast<CPSG_BlobData>(reply_item));
+
+                } else if (reply_item->GetType() == CPSG_ReplyItem::eNamedAnnotInfo) {
+                    data_only_copy(static_pointer_cast<CPSG_NamedAnnotInfo>(reply_item));
                 }
             } else {
                 ++it;
