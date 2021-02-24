@@ -371,7 +371,7 @@ static void* s_MbedTlsCreate(ESOCK_Side side, SNcbiSSLctx* ctx, int* error)
     mbedtls_ssl_set_bio(session, ctx, x_MbedTlsPush, x_MbedTlsPull, 0);
  
     CORE_DEBUG_ARG(if (s_MbedTlsLogLevel))
-        CORE_TRACEF(("MbedTlsCreate(%p): Leave", session));
+        CORE_TRACEF(("MbedTlsCreate(): Leave(%p)", session));
 
     return session;
 }

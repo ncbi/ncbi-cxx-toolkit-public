@@ -410,7 +410,7 @@ static void* s_GnuTlsCreate(ESOCK_Side side, SNcbiSSLctx* ctx, int* error)
 #  endif /*LIBGNUTLS_VERSION_NUMBER>=3.0.0*/
 
     CORE_DEBUG_ARG(if (s_GnuTlsLogLevel))
-        CORE_TRACEF(("GnuTlsCreate(%p): Leave", session));
+        CORE_TRACEF(("GnuTlsCreate(): Leave(%p)", session));
 
     return session;
 }
@@ -450,7 +450,7 @@ static EIO_Status s_GnuTlsOpen(void* session, int* error, char** desc)
     }
 
     CORE_DEBUG_ARG(if (s_GnuTlsLogLevel))
-        CORE_TRACEF(("GnuTlsOpen(%p): Leave", session));
+        CORE_TRACEF(("GnuTlsOpen(%p): Leave(%d)", session, status));
 
     return status;
 }
