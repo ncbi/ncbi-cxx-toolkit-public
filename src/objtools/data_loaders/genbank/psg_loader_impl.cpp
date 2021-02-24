@@ -1837,7 +1837,7 @@ s_CreateNAChunk(const CPSG_NamedAnnotInfo& psg_annot_info,
 {
     pair<CRef<CTSE_Chunk_Info>, string> ret;
     CRef<CTSE_Chunk_Info> chunk(new CTSE_Chunk_Info(kDelayedMain_ChunkId));
-    auto id2_annot_info = psg_annot_info.GetId2AnnotInfo();
+    auto id2_annot_info = psg_annot_info.GetId2AnnotInfoList();
     const char* source_type = "";
     unsigned main_count = 0;
     unsigned zoom_count = 0;

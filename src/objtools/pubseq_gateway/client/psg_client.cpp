@@ -858,12 +858,19 @@ CPSG_NamedAnnotInfo::CPSG_NamedAnnotInfo(string name) :
 }
 
 
-CPSG_NamedAnnotInfo::TId2AnnotInfoList CPSG_NamedAnnotInfo::GetId2AnnotInfo() const
+string CPSG_NamedAnnotInfo::GetId2AnnotInfo() const
+{
+    auto node = m_Data.GetByKeyOrNull("seq_annot_info");
+    return node && node.IsString() ? node.AsString() : string();
+}
+
+
+CPSG_NamedAnnotInfo::TId2AnnotInfoList CPSG_NamedAnnotInfo::GetId2AnnotInfoList() const
 {
     TId2AnnotInfoList ret;
-    auto info_node = m_Data.GetByKeyOrNull("seq_annot_info");
-    if ( info_node && info_node.IsString() ) {
-        auto in_string = NStr::Base64Decode(info_node.AsString());
+    auto info_str = GetId2AnnotInfo();
+    if (!info_str.empty()) {
+        auto in_string = NStr::Base64Decode(info_str);
         istringstream in_stream(in_string);
         CObjectIStreamAsnBinary in(in_stream);
         while ( in.HaveMoreData() ) {

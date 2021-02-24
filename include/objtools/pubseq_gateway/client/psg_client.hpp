@@ -763,10 +763,16 @@ public:
     using TAnnotInfoList = list<SAnnotInfo>;
     TAnnotInfoList GetAnnotInfoList() const;
 
-    /// detailed ID2-Seq-annot-Info structure
+    /// Base64 encoded asn.1 of ID2-Seq-annot-Info
+    string GetId2AnnotInfo() const;
+
+    /// Detailed ID2-Seq-annot-Info structures (from GetId2AnnotInfo, decoded)
+    /// @sa GetId2AnnotInfo
+    /// @{
     using TId2AnnotInfo = objects::CID2S_Seq_annot_Info;
     using TId2AnnotInfoList = list<CRef<TId2AnnotInfo>>;
-    TId2AnnotInfoList GetId2AnnotInfo() const;
+    TId2AnnotInfoList GetId2AnnotInfoList() const;
+    /// @}
     
 private:
     CPSG_NamedAnnotInfo(string name);
