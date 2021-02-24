@@ -394,8 +394,9 @@ fbsdstd_g needs3party $(ORIG_LIBS)
 fcgi needs3party $(ORIG_LIBS)
 featdef needs xser
 filter_snps needs xalnmgr
+fix_pub needs $(OBJEDIT_LIBS)
 fix_pub needs eutils_client
-fix_pub needs mlacli
+fix_pub needs xobjutil
 freetype needs $(BZ2_LIB)
 freetype needs3party $(BZ2_LIBS)
 freetype needs3party $(ORIG_LIBS)
