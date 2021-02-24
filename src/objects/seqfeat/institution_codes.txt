@@ -3009,6 +3009,7 @@ ICBB	c	ICBB Culture Collection for Microorganisms and Cell Culture
 ICBR	s	International Centre for Bamboo and Rattan			
 ICBU	s	Bishop's University, Natural History Museum			
 ICCF	c	Collection of Industrial Microorganisms			
+ICCM	s	Institute of Chinese Materia Medica			
 ICEB	s	Eurouniversity			
 ICEBB	c	Indonesian Centre for Extremophile Bioresources and Biotechnology			
 ICEL	s	Icelandic Institute of Natural History			

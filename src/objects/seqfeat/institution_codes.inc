@@ -3042,6 +3042,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "ICBR\ts\tInternational Centre for Bamboo and Rattan\t\t\t",
 "ICBU\ts\tBishop's University, Natural History Museum\t\t\t",
 "ICCF\tc\tCollection of Industrial Microorganisms\t\t\t",
+"ICCM\ts\tInstitute of Chinese Materia Medica\t\t\t",
 "ICEB\ts\tEurouniversity\t\t\t",
 "ICEBB\tc\tIndonesian Centre for Extremophile Bioresources and Biotechnology\t\t\t",
 "ICEL\ts\tIcelandic Institute of Natural History\t\t\t",
