@@ -165,7 +165,49 @@ EIO_Status CSocket::Connect(const string&   host,
     if (status == eIO_Success) {
         SOCK_SetTimeout(m_Socket, eIO_Read,  r_timeout);
         SOCK_SetTimeout(m_Socket, eIO_Write, w_timeout);
-        SOCK_SetTimeout(m_Socket, eIO_Close, c_timeout);        
+        SOCK_SetTimeout(m_Socket, eIO_Close, c_timeout);
+    } else
+        assert(!m_Socket);
+    return status;
+}
+
+
+EIO_Status CSocket::Connect(const string&   hostport,
+                            const STimeout* timeout,
+                            TSOCK_Flags     flags)
+{
+    const char*    end;
+    unsigned int x_host;
+    unsigned short port;
+    char           host[16/*sizeof("255.255.255.255")*/];
+    if ( m_Socket ) {
+        if (SOCK_Status(m_Socket, eIO_Open) != eIO_Closed)
+            return eIO_Unknown;
+        if (m_IsOwned != eNoOwnership)
+            SOCK_Close(m_Socket);
+    }
+    if (timeout != kDefaultTimeout) {
+        if ( timeout ) {
+            if (&oo_timeout != timeout)
+                oo_timeout = *timeout;
+            o_timeout = &oo_timeout;
+        } else
+            o_timeout = 0/*kInfiniteTimeout*/;
+    }
+    EIO_Status status;
+    if (!(end = SOCK_StringToHostPort(hostport.c_str(), &x_host, &port))
+        ||  *end  ||  !x_host  ||  !port
+        ||  SOCK_ntoa(x_host, host, sizeof(host)) != 0) {
+        status = eIO_Unknown;
+        m_Socket = 0;
+    } else {
+        status = SOCK_CreateEx(host, port, o_timeout,
+                               &m_Socket, 0, 0, flags);
+    }
+    if (status == eIO_Success) {
+        SOCK_SetTimeout(m_Socket, eIO_Read,  r_timeout);
+        SOCK_SetTimeout(m_Socket, eIO_Write, w_timeout);
+        SOCK_SetTimeout(m_Socket, eIO_Close, c_timeout);
     } else
         assert(!m_Socket);
     return status;
@@ -195,7 +237,7 @@ EIO_Status CUNIXSocket::Connect(const string&   path,
     if (status == eIO_Success) {
         SOCK_SetTimeout(m_Socket, eIO_Read,  r_timeout);
         SOCK_SetTimeout(m_Socket, eIO_Write, w_timeout);
-        SOCK_SetTimeout(m_Socket, eIO_Close, c_timeout);        
+        SOCK_SetTimeout(m_Socket, eIO_Close, c_timeout);
     } else
         assert(!m_Socket);
     return status;
@@ -417,12 +459,28 @@ void CSocket::Reset(SOCK sock, EOwnership if_to_own, ECopyTimeout whence)
 EIO_Status CDatagramSocket::Connect(unsigned int   host,
                                     unsigned short port)
 {
-    char addr[40];
+    char addr[16/*sizeof("255.255.255.255")*/];
     if (host  &&  SOCK_ntoa(host, addr, sizeof(addr)) != 0)
         return eIO_Unknown;
     return m_Socket
         ? DSOCK_Connect(m_Socket, host ? addr : 0, port)
         : eIO_Closed;
+}
+
+
+EIO_Status CDatagramSocket::Connect(const string& hostport)
+{
+    const char*    end;
+    unsigned int x_host;
+    unsigned short port;
+    char           host[16/*sizeof("255.255.255.255")*/];
+    if (!m_Socket)
+        return eIO_Closed;
+    if (!(end = SOCK_StringToHostPort(hostport.c_str(), &x_host, &port))  ||
+        *end  ||  (x_host  &&  SOCK_ntoa(x_host, host, sizeof(host)) != 0)) {
+        return eIO_Unknown;
+    }
+    return DSOCK_Connect(m_Socket, x_host ? host : 0, port);
 }
 
 
@@ -592,9 +650,9 @@ EIO_Status CSocketAPI::Poll(vector<SPoll>&  polls,
 }
 
 
-string CSocketAPI::ntoa(unsigned int host)
+string       CSocketAPI::ntoa(unsigned int host)
 {
-    char addr[40];
+    char addr[16/*sizeof("255.255.255.255")*/];
     if (SOCK_ntoa(host, addr, sizeof(addr)) != 0)
         *addr = 0;
     return string(addr);

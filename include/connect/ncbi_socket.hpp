@@ -213,6 +213,22 @@ public:
                        const STimeout* timeout = kDefaultTimeout,
                        TSOCK_Flags     flags   = fSOCK_LogDefault);
 
+    /// Connect to "host:port".
+    /// @note  Should not be called if already connected;
+    /// @note  Timeout from the argument becomes new eIO_Open timeout.
+    ///
+    /// @param hostport
+    ///  "host:port" as a string
+    /// @param timeout
+    ///  maximal time to wait for connection to be established
+    /// @param flags
+    ///  additional socket properties (including logging)
+    /// @sa
+    ///  SOCK_Create
+    EIO_Status Connect(const string&   hostport,
+                       const STimeout* timeout = kDefaultTimeout,
+                       TSOCK_Flags     flags   = fSOCK_LogDefault);
+
     /// Reconnect to the same address.
     /// @note  The socket must not be closed by the time this call is made;
     /// @note  Not for the sockets created by CListeningSocket::Accept();
@@ -519,16 +535,18 @@ public:
     CDatagramSocket(TSOCK_Flags flags = fSOCK_LogDefault);
 
     /// @param port
-    ///
+    ///  port is in host byte order
     EIO_Status Bind(unsigned short port);
-
   
     /// @param host
-    ///
+    ///  host name or IP address as a string
     /// @param port
     ///  "port" is in host byte order
     EIO_Status Connect(const string& host, unsigned short port);
 
+    /// @param hostport
+    ///   "host:port" as a string (no-port and no-host accepted, such as ":0")
+    EIO_Status Connect(const string& hostport);
     
     /// @param host
     ///  "host" is accepted in network byte order
@@ -552,8 +570,8 @@ public:
     ///
     /// @param maxmsglen
     ///
-    EIO_Status Recv(void*           buf         = 0,
-                    size_t          buflen      = 0,
+    EIO_Status Recv(void*           buf,
+                    size_t          buflen,
                     size_t*         msglen      = 0,
                     string*         sender_host = 0,
                     unsigned short* sender_port = 0,
@@ -567,8 +585,8 @@ public:
     ///
     /// @param port
     ///  host byte order
-    EIO_Status Send(const void*     data    = 0,
-                    size_t          datalen = 0,
+    EIO_Status Send(const void*     data,
+                    size_t          datalen,
                     const string&   host    = string(),
                     unsigned short  port    = 0);
 
