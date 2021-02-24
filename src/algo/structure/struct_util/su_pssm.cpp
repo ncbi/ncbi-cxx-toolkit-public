@@ -524,7 +524,7 @@ BLAST_Matrix * CreateBlastMatrix(const BlockMultipleAlignment *bma)
 #ifdef DEBUG_PSSM
         CNcbiOfstream ofs("psimsa.txt", IOS_BASE::out | IOS_BASE::app);
         if (ofs) {
-            CObjectOStreamAsn oosa(ofs, false);
+            CObjectOStreamAsn oosa(ofs, eNoOwnership);
             oosa << *pssm;
         }
 #endif

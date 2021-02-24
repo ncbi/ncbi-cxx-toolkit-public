@@ -261,8 +261,8 @@ static bool VerifyAlignmentData(const AlignmentSet *alignmentSet, const Alignmen
         }
 
         // check sequence lengths
-        if (masterLoc != alignment->master->sequenceString.size() - 1 ||
-            slaveLoc != alignment->slave->sequenceString.size() - 1) {
+        if (masterLoc != int(alignment->master->sequenceString.size() - 1) ||
+            slaveLoc != int(alignment->slave->sequenceString.size() - 1)) {
             ERR_POST_X(18, Error << "bad sequence lengths at row " << (i+2));
             return false;
         }
@@ -383,7 +383,7 @@ int CAV_DisplayMultiple(
 }
 
 int CAV_DisplayMultiple(
-    const void *asnDataBlock,
+    const void *asnDataBlock,  // originally created as  const SeqEntryList*
     int asnSize,
     unsigned int options,
     unsigned int paragraphWidth,
@@ -399,7 +399,8 @@ int CAV_DisplayMultiple(
         ERR_POST_X(29, Critical << "NULL asnDataBlock parameter");
         return CAV_ERROR_BAD_ASN;
     }
-    CNcbiIstrstream asnIstrstream(static_cast<const char*>(asnDataBlock), asnSize);
+
+    CNcbiIstrstream asnIstrstream(static_cast<const char*>(asnDataBlock));
 
     // load asn data block
     const SeqEntryList *seqs;
