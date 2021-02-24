@@ -187,14 +187,14 @@ public:
             const bool debug;
         };
 
-        struct SBlobOnly
+        struct SDataOnly
         {
             const bool enabled;
             const ESerialDataFormat output_format;
         };
 
         SLatency latency;
-        SBlobOnly blob_only;
+        SDataOnly data_only;
 
         SParams(const CArgs& args);
     };

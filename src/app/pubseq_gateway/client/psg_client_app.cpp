@@ -169,7 +169,7 @@ void s_InitPsgOptions(CArgDescriptions& arg_desc)
     arg_desc.AddFlag("verbose", "Verbose output");
 }
 
-void s_InitBlobOnly(CArgDescriptions& arg_desc)
+void s_InitDataOnly(CArgDescriptions& arg_desc)
 {
     arg_desc.AddFlag("blob-only", "Output blob data only");
     arg_desc.AddOptionalKey("output-fmt", "FORMAT", "Format for blob data to return in (instead of raw data)", CArgDescriptions::eString);
@@ -184,7 +184,7 @@ void CPsgClientApp::s_InitRequest(CArgDescriptions& arg_desc)
     arg_desc.AddPositional("ID", "ID part of Bio ID", CArgDescriptions::eString);
     arg_desc.AddOptionalKey("type", "TYPE", "Type part of bio ID", CArgDescriptions::eString);
     arg_desc.AddOptionalKey("acc-substitution", "ACC_SUB", "ACC substitution", CArgDescriptions::eString);
-    s_InitBlobOnly(arg_desc);
+    s_InitDataOnly(arg_desc);
     s_InitDataFlags(arg_desc);
 }
 
@@ -208,7 +208,7 @@ void CPsgClientApp::s_InitRequest<CPSG_Request_Blob>(CArgDescriptions& arg_desc)
 {
     arg_desc.AddPositional("ID", "Blob ID", CArgDescriptions::eString);
     arg_desc.AddOptionalKey("last-modified", "LAST_MODIFIED", "LastModified", CArgDescriptions::eInt8);
-    s_InitBlobOnly(arg_desc);
+    s_InitDataOnly(arg_desc);
     s_InitDataFlags(arg_desc);
 }
 
@@ -226,7 +226,7 @@ void CPsgClientApp::s_InitRequest<CPSG_Request_Chunk>(CArgDescriptions& arg_desc
 {
     arg_desc.AddPositional("ID2_CHUNK", "ID2 chunk number", CArgDescriptions::eInt8);
     arg_desc.AddPositional("ID2_INFO", "ID2 info", CArgDescriptions::eString);
-    s_InitBlobOnly(arg_desc);
+    s_InitDataOnly(arg_desc);
 }
 
 template<>

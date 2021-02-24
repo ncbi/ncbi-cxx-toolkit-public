@@ -414,9 +414,9 @@ void s_ReportErrors(ostream& os, EPSG_Status status, TItem item, TStr prefix, co
     os << '\n';
 }
 
-struct SBlobOnlyCopy
+struct SDataOnlyCopy
 {
-    SBlobOnlyCopy(const CProcessing::SParams::SBlobOnly& params) : m_Params(params) {}
+    SDataOnlyCopy(const CProcessing::SParams::SDataOnly& params) : m_Params(params) {}
 
     void operator()(shared_ptr<CPSG_BlobInfo> blob_info);
     void operator()(shared_ptr<CPSG_BlobData> blob_data);
@@ -424,7 +424,7 @@ struct SBlobOnlyCopy
 private:
     void Process(shared_ptr<CPSG_BlobInfo> blob_info, shared_ptr<CPSG_BlobData> blob_data);
 
-    const CProcessing::SParams::SBlobOnly& m_Params;
+    const CProcessing::SParams::SDataOnly& m_Params;
     unordered_map<string, pair<shared_ptr<CPSG_BlobInfo>, shared_ptr<CPSG_BlobData>>> m_Data;
 };
 
@@ -462,7 +462,7 @@ TTypeInfo s_GetInputType(const shared_ptr<CPSG_BlobData>& blob_data)
     return CSeq_entry::GetTypeInfo();
 }
 
-void SBlobOnlyCopy::operator()(shared_ptr<CPSG_BlobInfo> blob_info)
+void SDataOnlyCopy::operator()(shared_ptr<CPSG_BlobInfo> blob_info)
 {
     auto& p = m_Data[blob_info->GetId()->Repr()];
 
@@ -473,7 +473,7 @@ void SBlobOnlyCopy::operator()(shared_ptr<CPSG_BlobInfo> blob_info)
     }
 }
 
-void SBlobOnlyCopy::operator()(shared_ptr<CPSG_BlobData> blob_data)
+void SDataOnlyCopy::operator()(shared_ptr<CPSG_BlobData> blob_data)
 {
     auto& p = m_Data[blob_data->GetId()->Repr()];
 
@@ -484,7 +484,7 @@ void SBlobOnlyCopy::operator()(shared_ptr<CPSG_BlobData> blob_data)
     }
 }
 
-void SBlobOnlyCopy::Process(shared_ptr<CPSG_BlobInfo> blob_info, shared_ptr<CPSG_BlobData> blob_data)
+void SDataOnlyCopy::Process(shared_ptr<CPSG_BlobInfo> blob_info, shared_ptr<CPSG_BlobData> blob_data)
 {
     auto& is = blob_data->GetStream();
 
@@ -522,20 +522,20 @@ void SBlobOnlyCopy::Process(shared_ptr<CPSG_BlobInfo> blob_info, shared_ptr<CPSG
     cout << ss.rdbuf();
 }
 
-bool s_GetBlobOnly(const CArgs& args)
+bool s_GetDataOnly(const CArgs& args)
 {
     return args.Exist("blob-only") && args["blob-only"].HasValue();
 }
 
 CProcessing::SParams::SParams(const CArgs& args) :
     latency({args["latency"].HasValue(), args["debug-printout"].HasValue()}),
-    blob_only({s_GetBlobOnly(args), s_GetOutputFormat(args)})
+    data_only({s_GetDataOnly(args), s_GetOutputFormat(args)})
 {
 }
 
 int CProcessing::OneRequest(const string& service, shared_ptr<CPSG_Request> request, SParams params)
 {
-    SBlobOnlyCopy blob_only_copy(params.blob_only);
+    SDataOnlyCopy data_only_copy(params.data_only);
     CLogLatencyReport latency_report{
         R"(\d+/\d+/\d+/P  \S+ \d+/\d+ (\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})\.(\d{6}) .+ ncbi::SDebugPrintout::Print\(\) --- \S+: (\S+:[0-9]+)/\S+?\S+&client_id=\S+)",
         R"(\d+/\d+/\d+/P  \S+ \d+/\d+ (\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})\.(\d{6}) .+ ncbi::SDebugPrintout::Print\(\) --- \S+: Closed with status \S+)"
@@ -568,7 +568,7 @@ int CProcessing::OneRequest(const string& service, shared_ptr<CPSG_Request> requ
                 case EPSG_Status::eSuccess:    break;
                 case EPSG_Status::eInProgress: break;
                 default:
-                    if (params.blob_only.enabled) {
+                    if (params.data_only.enabled) {
                         stringstream ss;
                         s_ReportErrors(ss, status, reply, "Reply error: ");
                         cerr << ss.rdbuf();
@@ -595,7 +595,7 @@ int CProcessing::OneRequest(const string& service, shared_ptr<CPSG_Request> requ
             if (reply_item_status != EPSG_Status::eInProgress) {
                 it = reply_items.erase(it);
 
-                if (!params.blob_only.enabled) {
+                if (!params.data_only.enabled) {
                     json_out << CJsonResponse(reply_item_status, reply_item);
 
                 } else if (reply_item_status != EPSG_Status::eSuccess) {
@@ -604,10 +604,10 @@ int CProcessing::OneRequest(const string& service, shared_ptr<CPSG_Request> requ
                     cerr << ss.rdbuf();
 
                 } else if (reply_item->GetType() == CPSG_ReplyItem::eBlobInfo) {
-                    blob_only_copy(static_pointer_cast<CPSG_BlobInfo>(reply_item));
+                    data_only_copy(static_pointer_cast<CPSG_BlobInfo>(reply_item));
 
                 } else if (reply_item->GetType() == CPSG_ReplyItem::eBlobData) {
-                    blob_only_copy(static_pointer_cast<CPSG_BlobData>(reply_item));
+                    data_only_copy(static_pointer_cast<CPSG_BlobData>(reply_item));
                 }
             } else {
                 ++it;
