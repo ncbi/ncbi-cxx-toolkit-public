@@ -281,10 +281,9 @@ CSubSource::CSubSource(const string& subtype, const TName& name)
 //    e_NoResult  = 0,    ""
 //    e_Valid     = 1,    "USA: Colorado"
 //    e_Corrected = 2,    "USA: Hamilton, MT" to "USA: Montana, Hamilton"
-//    e_Invalid   = 3,    "USA: Bethesda, Maryland, Montgomery County"
-//    e_Ambiguous = 4,    "USA: Oregon, Wisconsin"
-//    e_Missing   = 5,    "USA: Los Angeles"
-//    e_NotUSA    = 6     "Puerto Rico: San Juan"
+//    e_Ambiguous = 3,    "USA: Oregon, Wisconsin"
+//    e_Missing   = 4,    "USA: Springfield"
+//    e_NotUSA    = 5     "Puerto Rico: San Juan"
 
 class NCBI_SEQFEAT_EXPORT CCountries
 {
@@ -301,6 +300,7 @@ public:
     static string NewFixCountry (const string& input);
     static string USAStateCleanup (const string& country );
     static string USAStateCleanup (const string& country, int& type );
+    static string USAStateCleanup (const string& country, int& type, const string& exception_file );
     static bool ChangeExtraColonsToCommas(string& country);
     static string CountryFixupItem(const string &input, bool capitalize_after_colon);
     typedef CStaticPairArrayMap<const char*, const char*, PCase_CStr> TCStringPairsMap;

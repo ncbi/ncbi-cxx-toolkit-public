@@ -45,6 +45,8 @@
 #include <objects/misc/sequence_util_macros.hpp>
 #include <corelib/ncbitime.hpp>
 
+#include <util/row_reader_ncbi_tsv.hpp>
+
 // generated classes
 
 BEGIN_NCBI_SCOPE
@@ -4243,10 +4245,9 @@ enum EStateCleanup {
     e_NoResult  = 0,
     e_Valid     = 1,
     e_Corrected = 2,
-    e_Invalid   = 3,
-    e_Ambiguous = 4,
-    e_Missing   = 5,
-    e_NotUSA    = 6
+    e_Ambiguous = 3,
+    e_Missing   = 4,
+    e_NotUSA    = 5
 };
 
 EStateCleanup s_DoUSAStateCleanup ( string& country ) {
@@ -4263,126 +4264,62 @@ EStateCleanup s_DoUSAStateCleanup ( string& country ) {
     if ( NStr::StartsWith ( working, "\"" ) && NStr::EndsWith ( working, "\"" )) {
         working = working.substr ( 1, working.length() - 2 );
     }
-    NStr::TruncateSpacesInPlace ( working );
 
-    // remove flanking spaces and other punctuation
+    // remove flanking spaces
     NStr::TruncateSpacesInPlace ( working );
-
-    // check if no colon, just name of country
-    if ( NStr::Find ( working, ":" ) == NPOS ) {
-        if ( NStr::EqualNocase ( working, "USA") || NStr::EqualNocase ( working, "US")) {
-            country = "USA";
-            return e_Missing;
-        }
-        return e_NotUSA;
-    }
 
     // separate strings before and after colon
     string frst, scnd;
     NStr::SplitInTwo ( working, ":", frst, scnd );
 
-    // handle pathological case of leading colon
-    if ( frst.empty()) {
-        if ( scnd.empty()) {
-            return e_NotUSA;
-        }
-        NStr::TruncateSpacesInPlace ( scnd );
-        if ( NStr::EqualNocase ( scnd, "USA") || NStr::EqualNocase ( scnd, "US")) {
-            country = "USA";
-            return e_Missing;
-        }
-        return e_NotUSA;
-    }
+    NStr::TruncateSpacesInPlace ( frst );
+    NStr::TruncateSpacesInPlace ( scnd );
 
     // confirm that country is USA
-    NStr::TruncateSpacesInPlace ( frst );
     if ( ! NStr::EqualNocase ( frst, "USA") && ! NStr::EqualNocase ( frst, "US")) {
         return e_NotUSA;
-    }
-
-    // handle pathological case of trailing colon
-    NStr::TruncateSpacesInPlace ( scnd );
-    if ( scnd.empty()) {
-        country = "USA";
-        return e_Missing;
     }
 
     // split state/county/city clauses at commas
     vector<string> components;
     NStr::Split(scnd, ",", components);
 
+    // check for only country
     if ( components.size() < 1 ) {
         country = "USA";
-        return e_Missing;
+        return e_Valid;
     }
 
-    // remove flanking spaces around components
     for ( int j = 0; j < components.size(); j++ ) {
+        // remove flanking spaces around components
         NStr::TruncateSpacesInPlace ( components[j] );
         s_CompressRunsOfSpaces ( components[j] );
-    }
-
-    // clean up runon strings like EastBatonRougeParish
-    for ( int j = 0; j < components.size(); j++ ) {
+        // clean up runon strings like EastBatonRougeParish
         if ( NStr::EndsWith ( components[j], "Parish", NStr::eNocase )) {
             s_IsParish( components[j] );
         }
     }
 
-    // single component must be state
-    if ( components.size() == 1 ) {
-        // string before = components[0];
-        bool modified = false;
-        if ( s_IsState  ( components[0], modified )) {
-            country = "USA: " + components[0];
-            if (modified) {
-                return e_Corrected;
-            } else {
-                return e_Valid;
-            }
-
-        // hard-coding of several cities - placeholder for (single clause) exception list processing
-
-        } else if ( NStr::EqualNocase ( components[0], "New York City") ) {
-
-            country = "USA: New York, New York City";
-            return e_Corrected;
-
-        } else if ( NStr::EqualNocase ( components[0], "Philadelphia") ) {
-
-            country = "USA: Pennsylvania, Philadelphia";
-            return e_Corrected;
-
-        } else if ( NStr::EqualNocase ( components[0], "Atlanta") ) {
-
-            country = "USA: Georgia, Atlanta";
-            return e_Corrected;
-
-        // otherwise report missing state information
-
-        } else {
-
-            country = "USA: " + components[0];
-            return e_Missing;
-        }
-    }
-
     bool any_modified = false;
     int num_states = 0;
-
-    // only set first and last if s_IsState returned true
+    int match = -1;
+  
     string* first = 0;
     string* last = 0;
 
     // has multiple components
     int max = components.size() - 1;
     for ( int j = 0; j < components.size(); j++ ) {
-        string before = components[j];
         bool modified = false;
         if ( s_IsState  ( components[j], modified )) {
             if (modified) {
                 any_modified = true;
             }
+            if ( match < 0 ) {
+                // record position of first s_IsState match
+                match = j;
+            }
+            // count successful matches
             num_states++;
             if ( j == 0 ) {
                 first = &(components[j]);
@@ -4393,59 +4330,37 @@ EStateCleanup s_DoUSAStateCleanup ( string& country ) {
         }
     }
 
-    // code expects state to be in first or last clause
-
-    if ( num_states > 1 ) {
-
-        return e_Ambiguous;
-
-    } else if ( first != 0 ) {
+    // move first state matched to first position
+    if ( match >= 0 ) {
 
         string res;
-        string pfx = "";
+        string pfx = ", ";
         res.append ("USA: ");
+        res.append ( components[match] );
+
         for ( int j = 0; j < components.size(); j++ ) {
-            res.append ( pfx );
+            if ( j == match) continue;
+            res.append ( ", " );
             res.append ( components[j] );
-            pfx = ", ";
         }
+
         country = res;
-        if ( ! NStr::Equal ( original, res )) {
+
+        if ( num_states > 1 ) {
+            return e_Ambiguous;
+        } else if ( ! NStr::Equal ( original, res )) {
             return e_Corrected;
-         } else {
-             return e_Valid;
-         }
-
-    } else if ( last != 0 ) {
-
-      string res;
-      string pfx = ", ";
-      res.append ("USA: ");
-      res.append ( *last );
-      for ( int j = 0; j < max; j++ ) {
-          res.append ( ", " );
-          res.append ( components[j] );
-      }
-      country = res;
-      if ( ! NStr::Equal ( original, res )) {
-          return e_Corrected;
-       } else {
-           return e_Valid;
-       }
-
-    } else {
-
-        // code not expected to rescue a state hidden in middle of three or more clauses
-
-        return e_Invalid;
+        } else {
+            return e_Valid;
+        }
     }
 
-    return e_NoResult;
+    // state information is missing
+    return e_Missing;
 }
 
 
 string CCountries::USAStateCleanup ( const string& country ) {
-
 
     string working = country;
     s_DoUSAStateCleanup ( working );
@@ -4454,10 +4369,34 @@ string CCountries::USAStateCleanup ( const string& country ) {
 
 string CCountries::USAStateCleanup ( const string& country, int& type ) {
 
+    string working = country;
+    EStateCleanup res = s_DoUSAStateCleanup ( working );
+    type = (int) res;
+    return working;
+}
+
+typedef CRowReader<CRowReaderStream_NCBI_TSV> TNCBITSVStream;
+
+string CCountries::USAStateCleanup (const string& country, int& type, const string& exception_file ) {
 
     string working = country;
     EStateCleanup res = s_DoUSAStateCleanup ( working );
     type = (int) res;
+
+    // will need to initialize exception_file once, use on result string regardless of type
+    if ( ! exception_file.empty()) {
+
+        TNCBITSVStream my_stream(exception_file);
+        for (const auto &  row :  my_stream) {
+            TFieldNo  number_of_fields = row. GetNumberOfFields();
+            if ( number_of_fields != 2 ) continue;
+            string fr = row[0].Get<string>();
+            string to = row[1].Get<string>();
+            // for now just print values
+            cout << "From '" << fr << "' to '" << to << "'" << endl;
+        }
+    }
+
     return working;
 }
 
