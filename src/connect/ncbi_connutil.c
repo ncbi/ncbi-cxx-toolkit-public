@@ -144,7 +144,7 @@ typedef int (*FStrNCmp)(const char* s1, const char* s2, size_t n);
  * [in]
  *    if "svclen" == 0: ignored;
  *    if "svclen" != 0, is a boolean "service_only" (if non-zero then no
- *    fallback to generic search in the "CONN_param" environment or the
+ *    fallback to generic search in the "CONN_param" environment, or the
  *    "[CONN]param" registry entry, gets performed);
  * [out]
  *    0 if the search ended up with a service-specific value returned (always
@@ -152,7 +152,7 @@ typedef int (*FStrNCmp)(const char* s1, const char* s2, size_t n);
  *    1 if the search ended up looking at the "CONN_param" enviroment or the
  *      "[CONN]param" registry entry (always so if "svclen" == 0).
  *
- * The strncompar parameter:
+ * The "strncompar" parameter:
  *    if strncmp()'s address is passed in, "param" is assumed all-CAPS and is
  *    not uppercased unnecessarily (compared to when strncasecmp() passed in).
  */
@@ -239,7 +239,7 @@ static const char* x_GetValue(const char* svc, size_t svclen,
                 return 0;
             s = buf;
         } else
-            s = (char*) param;
+            s = (char*) param; /*NB: "s" is "const char*" from this point on*/
         if (s != param) {
             memcpy(s, param, parlen);
             if (strncompar != strncmp)
@@ -263,8 +263,8 @@ static const char* x_GetValue(const char* svc, size_t svclen,
 }
 
 
-/* Trim leading and trailing spaces first, then drop enveloping quotes,
- * if any.  Do not trim any spaces within the quotes, though. */
+/* Trim leading and trailing spaces first, then drop enveloping quotes, if any.
+ * Do not trim any spaces within the quotes, though. */
 static void s_Trim(char* str)
 {
     size_t len;
@@ -279,11 +279,9 @@ static void s_Trim(char* str)
     /* then strip enveloping quotes, if any */
     if (len > 1  &&  (*ptr == '"'  ||  *ptr == '\'') &&  ptr[len - 1] == *ptr)
         len -= 2, ++ptr;
-    if (ptr != str) {
-        if (len)
-            memmove(str, ptr, len);
-        str[len] = '\0';
-    }
+    if (ptr != str  &&  len)
+        memmove(str, ptr, len);
+    str[len] = '\0';
 }
 
 
@@ -329,9 +327,8 @@ const char* ConnNetInfo_GetValueService(const char* service, const char* param,
                                         char* value, size_t value_size,
                                         const char* def_value)
 {
-    int/*bool*/ service_only = 1/*true*/;
     const char* retval;
-
+    int/*bool*/ service_only = 1/*true*/;
     assert(service  &&  *service  &&  !strpbrk(service, "?*["));
     assert(value  &&  value_size  &&  param  &&  *param);
     *value = '\0';
@@ -418,9 +415,9 @@ extern int/*bool*/ ConnNetInfo_Boolean(const char* str)
         break;
     }
 #if defined(_DEBUG)  &&  !defined(NDEBUG)
-    CORE_LOGF(eLOG_Warning,
-              ("Unrecognized boolean value %s%s%s treated as FALSE",
-               &"\""[!str], str ? str : "NULL", &"\""[!str]));
+    CORE_LOGF_X(13, eLOG_Warning,
+                ("Unrecognized boolean value %s%s%s treated as FALSE",
+                 &"\""[!str], str ? str : "NULL", &"\""[!str]));
 #endif /*_DEBUG && !NDEBUG*/
     return 0/*false*/;
 }
@@ -478,7 +475,7 @@ static EFWMode x_ParseFirewall(const char* str, int/*bool*/ generic)
 }
 
 
-/* Return -1 if nothing to do; 0 if failed; 1 if succeeded, */
+/* Return -1 if nothing to do; 0 if failed; 1 if succeeded */
 static int/*tri-state*/ x_SetupHttpProxy(SConnNetInfo* info, const char* env)
 {
     SConnNetInfo* x_info;
@@ -503,7 +500,7 @@ static int/*tri-state*/ x_SetupHttpProxy(SConnNetInfo* info, const char* env)
         return  0/*failure*/;
     }
     if (*val == '"'  ||  *val == '\'') {
-        /* strip enveloping quotes if any:  note that '' and ""  have already
+        /* strip enveloping quotes, if any:  note that '' and ""  have already
          * been excluded, so the resulting string is always non-empty... */
         size_t len = strlen(val);
         assert(len);
