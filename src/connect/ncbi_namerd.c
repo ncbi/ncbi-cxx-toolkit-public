@@ -939,7 +939,9 @@ static int/*bool*/ x_UpdateDtabInArgs(SConnNetInfo* net_info,
     bufsize = (arglen ? arglen + 3/*"%3B"*/ : 0) + dtablen * 3 + 1/*'\0'*/;
     if (!(buf = (char*) malloc(bufsize))) {
         CORE_LOGF_X(eNSub_Alloc, eLOG_Critical,
-                    ("[%s]  Failed to allocate for service dtab", name));
+                    ("[%s]  Failed to %s service dtab %s\"%s\"", name,
+                     arglen ? "extend" : "allocate for", dtab,
+                     arglen ? "with "  : ""));
         return 0/*failure*/;
     }
     if (arglen) {
@@ -1215,7 +1217,7 @@ static int/*bool*/ x_SetupConnectionParams(const SERV_ITER iter)
     }
 
     /* Lastly, DTABs */
-    /*  If net_info->http_user_header contains a DTab-Local: header, that value
+    /*  If net_info->http_user_header contains a DTab-Local: tag, that value
      *  must be moved to net_info->args, which in turn populates the "dtab"
      *  argument in the HTTP query string.  It must not be in a header because
      *  if it was, it would apply to the namerd service itself, not the
