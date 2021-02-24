@@ -1262,6 +1262,9 @@ version  1 # of file format
 2+6  MX  gb_patent
 2+8  MX  gb_other_nuc
 2+10 MX  gb_other_nuc
+2+6  MY  gb_patent
+2+8  MY  gb_other_nuc
+2+10 MY  gb_other_nuc
 2+6  M?  gb_other_nuc
 2+8  M?  gb_other_nuc
 2+10 M?  gb_other_nuc
@@ -1316,6 +1319,45 @@ version  1 # of file format
 2+6  OH  ddbj_est
 2+8  OH  ddbj_other_nuc
 2+10 OH  ddbj_other_nuc
+2+6  OI  ddbj_other_nuc
+2+8  OI  ddbj_other_nuc
+2+10 OI  ddbj_other_nuc
+2+6  OJ  ddbj_other_nuc
+2+8  OJ  ddbj_other_nuc
+2+10 OJ  ddbj_other_nuc
+2+6  OK  gb_other_nuc
+2+8  OK  gb_other_nuc
+2+10 OK  gb_other_nuc
+2+6  OL  gb_other_nuc
+2+8  OL  gb_other_nuc
+2+10 OL  gb_other_nuc
+2+6  OM  gb_other_nuc
+2+8  OM  gb_other_nuc
+2+10 OM  gb_other_nuc
+2+6  ON  gb_other_nuc
+2+8  ON  gb_other_nuc
+2+10 ON  gb_other_nuc
+2+6  OO  gb_other_nuc
+2+8  OO  gb_other_nuc
+2+10 OO  gb_other_nuc
+2+6  OP  gb_other_nuc
+2+8  OP  gb_other_nuc
+2+10 OP  gb_other_nuc
+2+6  OQ  gb_other_nuc
+2+8  OQ  gb_other_nuc
+2+10 OQ  gb_other_nuc
+2+6  OR  gb_other_nuc
+2+8  OR  gb_other_nuc
+2+10 OR  gb_other_nuc
+2+6  OS  gb_other_nuc
+2+8  OS  gb_other_nuc
+2+10 OS  gb_other_nuc
+2+6  OT  gb_other_nuc
+2+8  OT  gb_other_nuc
+2+10 OT  gb_other_nuc
+2+6  O?  embl_other_nuc
+2+8  O?  embl_other_nuc
+2+10 O?  embl_other_nuc
 2+6  TI  unreserved_nuc # deliberately skipped
 2+8  TI  unreserved_nuc # deliberately skipped
 2+10 TI  unreserved_nuc # deliberately skipped
