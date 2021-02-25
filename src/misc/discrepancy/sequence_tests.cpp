@@ -77,7 +77,7 @@ DISCREPANCY_CASE(DUP_DEFLINE, SEQUENCE, eOncaller, "Definition lines should be u
 {
     const CBioseq& bioseq = context.CurrentBioseq();
     if (bioseq.CanGetInst() && !bioseq.GetInst().IsAa() && bioseq.IsSetDescr()) {
-        for (auto& desc : context.GetSeqdesc()) { // not searching on the parend nodes!
+        for (const auto& desc : context.GetSeqdesc()) { // not searching on the parend nodes!
             if (desc.IsTitle()) {
                 m_Objs[desc.GetTitle()].Add(*context.SeqdescObjRef(desc), false);
             }
@@ -155,7 +155,7 @@ DISCREPANCY_SUMMARIZE(SHORT_PROT_SEQUENCES)
 
 DISCREPANCY_CASE(COMMENT_PRESENT, DESC, eOncaller, "Comment descriptor present")
 {
-    for (auto& desc : context.GetSeqdesc()) {
+    for (const auto& desc : context.GetSeqdesc()) {
         if (desc.IsComment()) {
             m_Objs[desc.GetComment()].Add(*context.SeqdescObjRef(desc));
         }
@@ -168,8 +168,8 @@ DISCREPANCY_SUMMARIZE(COMMENT_PRESENT)
     if (!m_Objs.empty()) {
         CReportNode rep;
         string label = m_Objs.GetMap().size() == 1 ? "[n] comment descriptor[s] were found (all same)" : "[n] comment descriptor[s] were found (some different)";
-        for (auto it: m_Objs.GetMap()) {
-            for (auto obj: it.second->GetObjects()) {
+        for (auto it : m_Objs.GetMap()) {
+            for (auto obj : it.second->GetObjects()) {
                 rep[label].Add(*obj);
             }
         }
@@ -197,7 +197,7 @@ DISCREPANCY_CASE(MRNA_ON_WRONG_SEQUENCE_TYPE, SEQUENCE, eDisc | eOncaller, "Euka
             !context.IsEukaryotic(&biosrc->GetSource())) {
         return;
     }
-    for (auto& feat : context.FeatMRNAs()) {
+    for (const auto* feat : context.FeatMRNAs()) {
         m_Objs["[n] mRNA[s] [is] located on eukaryotic sequence[s] that [does] not have genomic or plasmid source[s]"].Add(*context.SeqFeatObjRef(*feat));
     }
 }
@@ -228,7 +228,7 @@ DISCREPANCY_CASE(GAPS, SEQUENCE, eDisc | eSubmitter | eSmart | eBig, "Sequences 
                 }
             }
             if (annot) {
-                for (auto feat : annot->GetData().GetFtable()) {
+                for (const auto& feat : annot->GetData().GetFtable()) {
                     if (feat->IsSetData() && feat->GetData().GetSubtype() == CSeqFeatData::eSubtype_gap) {
                         has_gaps = true;
                         break;
@@ -255,11 +255,11 @@ DISCREPANCY_CASE(BIOPROJECT_ID, SEQUENCE, eOncaller, "Sequences with BioProject 
 {
     const CBioseq& bioseq = context.CurrentBioseq();
     if (bioseq.CanGetInst() && bioseq.GetInst().IsNa()) {
-        for (auto& desc : context.GetAllSeqdesc()) {
+        for (const auto& desc : context.GetAllSeqdesc()) {
             if (desc.IsUser()) {
                 const CUser_object& user = desc.GetUser();
                 if (user.IsSetData() && user.IsSetType() && user.GetType().IsStr() && user.GetType().GetStr() == "DBLink") {
-                    for (auto& user_field : user.GetData()) {
+                    for (const auto& user_field : user.GetData()) {
                         if (user_field->IsSetLabel() && user_field->GetLabel().IsStr() && user_field->GetLabel().GetStr() == "BioProject" && user_field->IsSetData() && user_field->GetData().IsStrs()) {
                             const CUser_field::C_Data::TStrs& strs = user_field->GetData().GetStrs();
                             if (!strs.empty() && !strs[0].empty()) {
@@ -365,7 +365,7 @@ DISCREPANCY_SUMMARIZE(10_PERCENTN)
 DISCREPANCY_CASE(FEATURE_COUNT, FEAT, eOncaller | eSubmitter | eSmart, "Count features present or missing from sequences")
 {
     // context.SetGui(true); // for debug only!
-    for (auto& feat : context.GetFeat()) {
+    for (const auto& feat : context.GetFeat()) {
         if (!feat.IsSetData() || feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_prot) {
             continue;
         }
@@ -379,7 +379,7 @@ DISCREPANCY_CASE(FEATURE_COUNT, FEAT, eOncaller | eSubmitter | eSmart, "Count fe
             na = true;
         }
         CRef<CReportObj> rep(context.BioseqObjRef());
-        for (auto& feat : context.GetAllFeat()) {
+        for (const auto& feat : context.GetAllFeat()) {
             if (!feat.IsSetData() || feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_prot) {
                 continue;
             }
@@ -507,7 +507,7 @@ DISCREPANCY_SUMMARIZE(INCONSISTENT_MOLINFO_TECH)
     size_t num_of_missing = 0,
            num_of_bioseqs = 0;
 
-    for (auto it: the_map) {
+    for (auto it : the_map) {
         num_of_bioseqs += it.second->GetObjects().size();
         if (it.first.empty()) {
             num_of_missing += it.second->GetObjects().size();
@@ -777,7 +777,7 @@ void AnalyzeField(CReportNode& node, bool& all_present, bool& all_same)
     all_present = true;
     all_same = true;
     size_t num_values = 0;
-    string value = kEmptyStr;
+    string value;
     bool first = true;
     for (auto& s : node.GetMap()) {
         if (NStr::Find(s.first, " missing field ") != string::npos) {
@@ -1603,7 +1603,7 @@ static bool IsSegmentSubtype(const CBioSource& bio_src)
 {
     bool ret = false;
     if (bio_src.IsSetSubtype()) {
-        for (auto& subtype : bio_src.GetSubtype()) {
+        for (const auto& subtype : bio_src.GetSubtype()) {
             if (subtype->IsSetSubtype() && subtype->GetSubtype() == CSubSource::eSubtype_segment) {
                 ret = true;
                 break;
@@ -1999,7 +1999,7 @@ DISCREPANCY_CASE(ALL_SEQS_CIRCULAR, SEQUENCE, eDisc | eSubmitter | eSmart, "All 
                     }
                 }
                 if (bioseq.IsSetDescr() && bioseq.GetDescr().IsSet()) {
-                    for (auto descr: bioseq.GetDescr().Get()) {
+                    for (const auto& descr : bioseq.GetDescr().Get()) {
                         if (descr->IsMolinfo() && descr->GetMolinfo().CanGetTech()) {
                             if (descr->GetMolinfo().GetTech() == CMolInfo::eTech_wgs || descr->GetMolinfo().GetTech() == CMolInfo::eTech_tsa || descr->GetMolinfo().GetTech() == CMolInfo::eTech_targeted) {
                                 m_Objs["F"].Incr();
@@ -2040,7 +2040,7 @@ DISCREPANCY_CASE(SUSPICIOUS_SEQUENCE_ID, SEQUENCE, eOncaller | eSubmitter | eSma
     const CBioseq& bioseq = context.CurrentBioseq();
     if (bioseq.CanGetId()) {
         bool report = false;
-        for (auto& id : bioseq.GetId()) {
+        for (const auto& id : bioseq.GetId()) {
             if (id->IsLocal()) {
                 if (id->GetLocal().IsStr() && SuspiciousId(id->GetLocal().GetStr())) {
                     report = true;

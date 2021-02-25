@@ -51,17 +51,17 @@ public:
         eType_submit_block,
         eType_string
     };
-    virtual ~CReportObj(void){}
-    virtual const string GetText(void) const = 0;
-    virtual const string GetPath(void) const = 0;
-    virtual const string GetFeatureType() const = 0;
-    virtual const string GetProductName() const = 0;
-    virtual const string GetLocation(void) const = 0;
-    virtual const string GetLocusTag() const = 0;
-    virtual const string GetShort(void) const = 0;
-    virtual EType GetType(void) const = 0;
-    virtual bool CanAutofix(void) const = 0;
-    virtual bool IsFixed(void) const = 0;
+    virtual ~CReportObj(){}
+    virtual string GetText() const = 0;
+    virtual string GetPath() const = 0;
+    virtual string GetFeatureType() const = 0;
+    virtual string GetProductName() const = 0;
+    virtual string GetLocation() const = 0;
+    virtual string GetLocusTag() const = 0;
+    virtual string GetShort() const = 0;
+    virtual EType GetType() const = 0;
+    virtual bool CanAutofix() const = 0;
+    virtual bool IsFixed() const = 0;
     virtual void SetMoreInfo(CObject* data) = 0;
 };
 typedef vector<CRef<CReportObj> > TReportObjectList;
@@ -90,22 +90,22 @@ public:
         eSeverity_warning = 1,
         eSeverity_error   = 2
     };
-    virtual ~CReportItem(void){}
-    virtual string GetTitle(void) const = 0;
-    virtual string GetStr(void) const = 0;
-    virtual string GetMsg(void) const = 0;
-    virtual string GetXml(void) const = 0;
-    virtual string GetUnit(void) const = 0;
-    virtual size_t GetCount(void) const = 0;
-    virtual TReportObjectList GetDetails(void) const = 0;
-    virtual vector<CRef<CReportItem> > GetSubitems(void) const = 0;
-    virtual bool CanAutofix(void) const = 0;
-    virtual ESeverity GetSeverity(void) const = 0;
-    virtual bool IsFatal(void) const = 0;
-    virtual bool IsInfo(void) const = 0;
-    virtual bool IsExtended(void) const = 0;
-    virtual bool IsSummary(void) const = 0;
-    virtual bool IsReal(void) const = 0;
+    virtual ~CReportItem(){}
+    virtual string GetTitle() const = 0;
+    virtual string GetStr() const = 0;
+    virtual string GetMsg() const = 0;
+    virtual string GetXml() const = 0;
+    virtual string GetUnit() const = 0;
+    virtual size_t GetCount() const = 0;
+    virtual TReportObjectList GetDetails() const = 0;
+    virtual vector<CRef<CReportItem> > GetSubitems() const = 0;
+    virtual bool CanAutofix() const = 0;
+    virtual ESeverity GetSeverity() const = 0;
+    virtual bool IsFatal() const = 0;
+    virtual bool IsInfo() const = 0;
+    virtual bool IsExtended() const = 0;
+    virtual bool IsSummary() const = 0;
+    virtual bool IsReal() const = 0;
     static CRef<CReportItem> CreateReportItem(const string& test, const CReportObj& obj, const string& msg, bool autofix = false);
 };
 typedef vector<CRef<CReportItem> > TReportItemList;
@@ -114,11 +114,11 @@ typedef vector<CRef<CReportItem> > TReportItemList;
 class NCBI_DISCREPANCY_EXPORT CDiscrepancyCase : public CObject
 {
 public:
-    virtual ~CDiscrepancyCase(void){}
-    virtual string GetName(void) const = 0;
-    virtual string GetType(void) const = 0;
-    virtual TReportItemList GetReport(void) const = 0;
-    virtual TReportObjectList GetObjects(void) const = 0;
+    virtual ~CDiscrepancyCase(){}
+    virtual string GetName() const = 0;
+    virtual string GetType() const = 0;
+    virtual TReportItemList GetReport() const = 0;
+    virtual TReportObjectList GetObjects() const = 0;
 };
 typedef map<string, CRef<CDiscrepancyCase> > TDiscrepancyCaseMap;
 
@@ -127,7 +127,7 @@ class NCBI_DISCREPANCY_EXPORT CDiscrepancySet : public CObject
 {
 public:
     CDiscrepancySet() : m_SesameStreetCutoff(0.75), /*m_Eucariote(false),*/ m_Gui(false), m_UserData(nullptr) {}
-    virtual ~CDiscrepancySet(void){}
+    virtual ~CDiscrepancySet(){}
 
     template<typename Container>
     bool AddTests(const Container& cont)
@@ -144,9 +144,9 @@ public:
     virtual void ParseStream(CObjectIStream& stream, const string& fname, bool skip, const string& default_header = kEmptyStr) = 0;
     virtual void ParseStrings(const string& fname) = 0;
     virtual void TestString(const string& str) = 0;
-    virtual unsigned Summarize(void) = 0;
+    virtual unsigned Summarize() = 0;
     virtual void Autofix(TReportObjectList& tofix, map<string, size_t>& rep, const string& default_header = kEmptyStr) = 0;
-    virtual const TDiscrepancyCaseMap& GetTests(void) = 0;
+    virtual const TDiscrepancyCaseMap& GetTests() const = 0;
 
     enum EOutput {
         eOutput_Summary = 1 << 0,   // only summary
@@ -157,10 +157,10 @@ public:
     virtual void OutputText(CNcbiOstream& out, unsigned short flags, char group = 0) = 0;
     virtual void OutputXML(CNcbiOstream& out, unsigned short flags) = 0;
 
-    bool IsGui(void) const { return m_Gui;}
-    const string& GetLineage(void) const { return m_Lineage; }
-    float GetSesameStreetCutoff(void) const { return m_SesameStreetCutoff; }
-    void* GetUserData(void) const { return m_UserData; }
+    bool IsGui() const { return m_Gui; }
+    const string& GetLineage() const { return m_Lineage; }
+    float GetSesameStreetCutoff() const { return m_SesameStreetCutoff; }
+    void* GetUserData() const { return m_UserData; }
     //virtual void SetFile(const string& fname) = 0;
     void SetLineage(const string& s) { m_Lineage = s; }
     //void SetEucariote(bool b){ m_Eucariote = b; }

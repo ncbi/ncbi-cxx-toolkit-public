@@ -182,7 +182,7 @@ CRef<CReportItem> CReportNode::Export(CDiscrepancyCase& test, bool unique) const
         if (severity < sub->GetSeverity()) {
             severity = sub->GetSeverity();
         }
-        autofix |= sub->CanAutofix();
+        autofix = autofix || sub->CanAutofix();
         if (unit.empty()) {
             unit = sub->GetUnit();
         }
@@ -213,7 +213,7 @@ CRef<CReportItem> CReportNode::Export(CDiscrepancyCase& test, bool unique) const
     }
     string msg = str;
     string xml = str;
-    size_t count = m_Count ? m_Count : objs.size();
+    size_t count = m_Count > 0 ? m_Count : objs.size();
 
     NStr::ReplaceInPlace(msg, "[n]", NStr::Int8ToString(count));
     NStr::ReplaceInPlace(msg, "[n/2]", NStr::Int8ToString(count / 2));
@@ -247,7 +247,7 @@ CRef<CReportItem> CReportNode::Export(CDiscrepancyCase& test, bool unique) const
         if ((n = str.find("[s]")) != string::npos) {
             unit = str.substr(0, n);
         }
-        else if (!str.find("CDS ")) {
+        else if (0 == str.find("CDS ")) {
             unit = "CDS";
         }
         else if ((n = str.find("s ")) != string::npos) {
@@ -261,11 +261,11 @@ CRef<CReportItem> CReportNode::Export(CDiscrepancyCase& test, bool unique) const
     item->m_Summ = m_Summ;
     item->m_Subs = subs;
     item->m_Objs = objs;
-    return CRef<CReportItem>((CReportItem*)item);
+    return CRef<CReportItem>(item);
 }
 
 
-TReportObjectList CDiscrepancyCore::GetObjects(void) const
+TReportObjectList CDiscrepancyCore::GetObjects() const
 {
     TReportObjectList ret;
     TReportObjectSet hash;
@@ -295,7 +295,7 @@ CRef<CReportItem> CReportItem::CreateReportItem(const string& test, const CRepor
         x->m_Fix = dobj.m_Ref;
     }
     item->m_Objs.push_back(CRef<CReportObj>(x));
-    return CRef<CReportItem>((CReportItem*)item);
+    return CRef<CReportItem>(item);
 }
 
 
@@ -402,11 +402,6 @@ REGISTER_DISCREPANCY_TYPE(STRING)
 
 void CDiscrepancyContext::Push(const CSerialObject& root, const string& fname)
 {
-    const CBioseq* bs = dynamic_cast<const CBioseq*>(&root);
-    const CBioseq_set* st = dynamic_cast<const CBioseq_set*>(&root);
-    const CSeq_entry* se = dynamic_cast<const CSeq_entry*>(&root);
-    const CSeq_submit* ss = dynamic_cast<const CSeq_submit*>(&root);
-
     if (!fname.empty()) {
         m_RootNode.Reset(new CParseNode(eFile, 0));
         m_RootNode->m_Ref->m_Text = fname;
@@ -417,16 +412,16 @@ void CDiscrepancyContext::Push(const CSerialObject& root, const string& fname)
     m_NodeMap[m_RootNode->m_Ref] = &*m_RootNode;
     m_CurrentNode.Reset(m_RootNode);
 
-    if (bs) {
+    if (const CBioseq* bs = dynamic_cast<const CBioseq*>(&root)) {
         ParseObject(*bs);
     }
-    else if (st) {
+    else if (const CBioseq_set* st = dynamic_cast<const CBioseq_set*>(&root)) {
         ParseObject(*st);
     }
-    else if (se) {
+    else if (const CSeq_entry* se = dynamic_cast<const CSeq_entry*>(&root)) {
         ParseObject(*se);
     }
-    else if (ss) {
+    else if (const CSeq_submit* ss = dynamic_cast<const CSeq_submit*>(&root)) {
         ParseObject(*ss);
     }
 }
@@ -479,7 +474,7 @@ TReportItemList CDiscrepancyGroup::Collect(TDiscrepancyCaseMap& tests, bool all)
         bool empty = true;
         for (const auto& tt : out) {
             TReportObjectList details = tt->GetDetails();
-            if (!details.empty() || tt->GetCount()) {
+            if (!details.empty() || tt->GetCount() > 0) {
                 empty = false;
             }
             for (auto& ob : details) {

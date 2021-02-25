@@ -45,7 +45,7 @@ static bool HasBadWord(const string& s, string& word)
 {
     static const char* BadWords[] = { "putative", "fragment", "gene", "orf", "like" };
     for (size_t i = 0; i < ArraySize(BadWords); i++) {
-        if (NStr::FindNoCase(s, BadWords[i]) != string::npos) {
+        if (NStr::FindNoCase(s, BadWords[i]) != NPOS) {
             word = BadWords[i];
             return true;
         }
@@ -149,7 +149,7 @@ DISCREPANCY_CASE(EC_NUMBER_ON_UNKNOWN_PROTEIN, FEAT, eDisc | eSubmitter | eSmart
             if (!names.empty()) {
                 string str = *names.begin();
                 NStr::ToLower(str);
-                //if (NStr::FindNoCase(*names.begin(), "hypothetical protein") != string::npos || NStr::FindNoCase(*names.begin(), "unknown protein") != string::npos) {
+                //if (NStr::FindNoCase(*names.begin(), "hypothetical protein") != NPOS || NStr::FindNoCase(*names.begin(), "unknown protein") != NPOS) {
                 if (str == "hypothetical protein" || str == "unknown protein") {
                     m_Objs["[n] protein feature[s] [has] an EC number and a protein name of 'unknown protein' or 'hypothetical protein'"].Add(*context.SeqFeatObjRef(feat, &feat)).Fatal();
                 }
@@ -192,7 +192,7 @@ DISCREPANCY_CASE(SHOW_HYPOTHETICAL_CDS_HAVING_GENE_NAME, FEAT, eDisc | eSubmitte
                         const CProt_ref& prot = feat_it->GetOriginalFeature().GetData().GetProt();
                         if (prot.CanGetName()) {
                             const auto& names = prot.GetName();
-                            if (!names.empty() && NStr::FindNoCase(names.front(), "hypothetical protein") != string::npos) {
+                            if (!names.empty() && NStr::FindNoCase(names.front(), "hypothetical protein") != NPOS) {
                                 m_Objs["[n] hypothetical coding region[s] [has] a gene name"].Fatal().Add(*context.SeqFeatObjRef(feat, gene));
                             }
                         }

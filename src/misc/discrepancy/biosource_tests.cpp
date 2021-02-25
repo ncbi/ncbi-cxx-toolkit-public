@@ -1243,7 +1243,7 @@ static void GetOrgnameDifferences(const COrgName& first, const COrgName& second,
     }
 
     if (!CCompareValues<COrgName, int>::IsEqualInt(first, second, &COrgName::IsSetMgcode, &COrgName::GetMgcode, -1)) {
-        if (first.IsSetMgcode() && first.GetMgcode() || second.IsSetMgcode() && second.GetMgcode()) {
+        if ((first.IsSetMgcode() && first.GetMgcode()) || (second.IsSetMgcode() && second.GetMgcode())) {
             diffs.push_back("mitochondrial genetic codes differ");
         }
     }
@@ -2049,14 +2049,8 @@ DISCREPANCY_SUMMARIZE(MISSING_PRIMER)
 
 static bool EqualPrimerSets(const CPCRPrimerSet::Tdata& a, const CPCRPrimerSet::Tdata& b)
 {
-    size_t count_a = 0;
-    size_t count_b = 0;
-    for (const auto& it : a) {
-        count_a++;
-    }
-    for (const auto& jt : b) {
-        count_b++;
-    }
+    size_t count_a = a.size();
+    size_t count_b = b.size();
     if (count_a != count_b) {
         return false;
     }

@@ -542,7 +542,7 @@ DISCREPANCY_CASE(BACTERIAL_PARTIAL_NONEXTENDABLE_EXCEPTION, SEQUENCE, eDisc | eS
         return;
     }
     for (const CSeq_feat& feat : context.GetAllFeat()) {
-        if (feat.IsSetData() && feat.GetData().IsCdregion() && feat.IsSetExcept_text() && NStr::FindNoCase(feat.GetExcept_text(), kNonExtendableException) != string::npos && IsNonExtendable(feat.GetLocation(), bioseq, &(context.GetScope()))) {
+        if (feat.IsSetData() && feat.GetData().IsCdregion() && feat.IsSetExcept_text() && NStr::FindNoCase(feat.GetExcept_text(), kNonExtendableException) != NPOS && IsNonExtendable(feat.GetLocation(), bioseq, &(context.GetScope()))) {
             m_Objs["[n] feature[s] [has] partial ends that do not abut the end of the sequence or a gap, and cannot be extended by 3 or fewer nucleotides to do so, but [has] the correct exception"].Add(*context.SeqFeatObjRef(feat));
         }
     }
@@ -1111,7 +1111,7 @@ const size_t kNumSuspiciousNotePhrases = sizeof(kSuspiciousNotePhrases) / sizeof
 static void FindSuspiciousNotePhrases(const string& s, CDiscrepancyContext& context, CReportNode& rep, const CSeq_feat& feat)
 {
     for (size_t k = 0; k < kNumSuspiciousNotePhrases; k++) {
-        if (NStr::FindNoCase(s, kSuspiciousNotePhrases[k]) != string::npos) {
+        if (NStr::FindNoCase(s, kSuspiciousNotePhrases[k]) != NPOS) {
             rep["[n] note text[s] contain suspicious phrase[s]"]["[n] note text[s] contain '" + kSuspiciousNotePhrases[k] + "'"].Ext().Add(*context.SeqFeatObjRef(feat));
         }
     }
@@ -1174,7 +1174,7 @@ DISCREPANCY_CASE(CDS_HAS_NEW_EXCEPTION, FEAT, eDisc | eOncaller | eSmart, "Codin
     for (const CSeq_feat& feat : context.GetFeat()) {
         if (feat.IsSetData() && feat.GetData().IsCdregion() && feat.IsSetExcept_text()) {
             for (size_t i = 0; i < max; i++) {
-                if (NStr::FindNoCase(feat.GetExcept_text(), kNewExceptions[i]) != string::npos) {
+                if (NStr::FindNoCase(feat.GetExcept_text(), kNewExceptions[i]) != NPOS) {
                     m_Objs["[n] coding region[s] [has] new exception[s]"].Add(*context.SeqFeatObjRef(feat));
                     break;
                 }
@@ -1683,7 +1683,7 @@ DISCREPANCY_CASE(UNWANTED_SPACER, FEAT, eOncaller, "Intergenic spacer without pl
     for (const CSeq_feat& feat : context.GetFeat()) {
         if (feat.IsSetData() && feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_misc_feature) {
             for (size_t i = 0; i < kIntergenicSpacerNames_len; i++) {
-                if (NStr::FindNoCase(feat.GetComment(), kIntergenicSpacerNames[i]) != string::npos) {
+                if (NStr::FindNoCase(feat.GetComment(), kIntergenicSpacerNames[i]) != NPOS) {
                     m_Objs["[n] suspect intergenic spacer note[s] not organelle"].Add(*context.SeqFeatObjRef(feat));
                     break;
                 }
@@ -2005,7 +2005,7 @@ DISCREPANCY_CASE(SUSPECT_PHRASES, FEAT, eDisc | eSubmitter | eSmart, "Suspect Ph
             }
             if (!check.empty()) {
                 for (size_t i = 0; i < sizeof(suspect_phrases) / sizeof(string); i++) {
-                    if (NStr::FindNoCase(check, suspect_phrases[i]) != string::npos) {
+                    if (NStr::FindNoCase(check, suspect_phrases[i]) != NPOS) {
                         m_Objs["[n] cds comment[s] or protein description[s] contain[S] suspect_phrase[s]"]["[n] cds comment[s] or protein description[s] contain[S] '" + suspect_phrases[i] + "'"].Summ().Add(*context.SeqFeatObjRef(feat));
                         break;
                     }
@@ -2192,16 +2192,17 @@ static CSeq_annot_EditHandle GetAnnotHandle(CScope& scope, CBioseq_Handle bsh)
 
 DISCREPANCY_AUTOFIX(CDS_WITHOUT_MRNA)
 {
+    CScope& scope = context.GetScope();
     const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(context.FindObject(*obj));
-    CConstRef<CSeq_feat> old_mRNA = sequence::GetmRNAforCDS(*sf, context.GetScope());
-    CRef<CSeq_feat> new_mRNA = edit::MakemRNAforCDS(*sf, context.GetScope());
+    CConstRef<CSeq_feat> old_mRNA = sequence::GetmRNAforCDS(*sf, scope);
+    CRef<CSeq_feat> new_mRNA = edit::MakemRNAforCDS(*sf, scope);
     if (old_mRNA.Empty()) {
-        CBioseq_Handle bh = context.GetScope().GetBioseqHandle(new_mRNA->GetLocation());
-        CSeq_annot_EditHandle annot_handle = GetAnnotHandle(context.GetScope(), bh);
+        CBioseq_Handle bh = scope.GetBioseqHandle(new_mRNA->GetLocation());
+        CSeq_annot_EditHandle annot_handle = GetAnnotHandle(scope, bh);
         annot_handle.AddFeat(*new_mRNA);
     }
     else {
-        CSeq_feat_EditHandle old_mRNA_edit(context.GetScope().GetSeq_featHandle(*old_mRNA));
+        CSeq_feat_EditHandle old_mRNA_edit(scope.GetSeq_featHandle(*old_mRNA));
         old_mRNA_edit.Replace(*new_mRNA);
     }
     obj->SetFixed();

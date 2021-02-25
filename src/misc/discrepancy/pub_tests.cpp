@@ -70,7 +70,7 @@ const string kTitleAuthorConflictEnd = "' but do not have the same author list";
 
 string GetAuthorString(const CName_std& name_std)
 {
-    string author = kEmptyStr;
+    string author;
 
     if (name_std.IsSetInitials() && !NStr::IsBlank(name_std.GetInitials())) {
         author += name_std.GetInitials();
@@ -87,7 +87,7 @@ string GetAuthorString(const CAuthor& author)
     if (!author.IsSetName()) {
         return kEmptyStr;
     }
-    string rval = kEmptyStr;
+    string rval;
     switch (author.GetName().Which()) {
         case CPerson_id::e_Name:
             rval = GetAuthorString(author.GetName().GetName());
@@ -110,7 +110,7 @@ string GetAuthorString(const CAuthor& author)
 
 string GetAuthorString(const CAuth_list& auth_list)
 {
-    string authors = kEmptyStr;
+    string authors;
     if (auth_list.IsSetNames()) {
         switch (auth_list.GetNames().Which()) {
             case CAuth_list::C_Names::e_Std:
@@ -205,8 +205,8 @@ void GetPubTitleAndAuthors(const CPub& pub, string& title, string & authors)
 
 void GetPubTitleAndAuthors(const CPubdesc& pubdesc, string& title, string& authors)
 {
-    title = kEmptyStr;
-    authors = kEmptyStr;
+    title.clear();
+    authors.clear();
     if (pubdesc.IsSetPub()) {
         for (const auto& it : pubdesc.GetPub().Get()) {
             GetPubTitleAndAuthors(*it, title, authors);
@@ -319,7 +319,7 @@ bool IsPubUnpublished(const CPub& pub)
 
     switch (pub.Which()) {
         case CPub::e_Gen:
-            if (pub.GetGen().IsSetCit() && NStr::FindNoCase(pub.GetGen().GetCit(), "unpublished") != string::npos) {
+            if (pub.GetGen().IsSetCit() && NStr::FindNoCase(pub.GetGen().GetCit(), "unpublished") != NPOS) {
                 is_unpublished = true;
             }
             break;
@@ -364,8 +364,8 @@ bool HasUnpubWithoutTitle(const CPubdesc& pubdesc)
     }
     for (const auto& it : pubdesc.GetPub().Get()) {
         if (IsPubUnpublished(*it)) {
-            string title = kEmptyStr;
-            string authors = kEmptyStr;
+            string title;
+            string authors;
             GetPubTitleAndAuthors(*it, title, authors);
             if (NStr::IsBlank(title) || NStr::EqualNocase(title, "Direct Submission")) {
                 return true;
@@ -1018,7 +1018,7 @@ DISCREPANCY_SUMMARIZE(USA_STATE)
 
 static bool ReplaceStateAbbreviation(CAffil* affil)
 {
-    if (affil == nullptr) {
+    if (!affil) {
         return false;
     }
     if (affil->GetStd().IsSetSub()) {
@@ -1047,7 +1047,7 @@ DISCREPANCY_AUTOFIX(USA_STATE)
     if (desc && desc->IsPub() && desc->GetPub().CanGetPub() && desc->GetPub().GetPub().CanGet()) {
         CPub_equiv::Tdata& data = desc->SetPub().SetPub().Set();
         CCit_sub* cit_sub = nullptr;
-        for (auto pub : data) {
+        for (auto& pub : data) {
             cit_sub = const_cast<CCit_sub*>(GetCitSubFromPub(*pub));
             if (cit_sub) {
                 break;

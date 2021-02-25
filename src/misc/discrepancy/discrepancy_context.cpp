@@ -106,7 +106,7 @@ bool CDiscrepancyContext::IsUnculturedNonOrganelleName(const string& taxname)
 
 bool CDiscrepancyContext::HasLineage(const CBioSource& biosrc, const string& def_lineage, const string& type)
 {
-    return NStr::FindNoCase(def_lineage, type) != string::npos || (def_lineage.empty() && biosrc.IsSetLineage() && NStr::FindNoCase(biosrc.GetLineage(), type) != string::npos);
+    return NStr::FindNoCase(def_lineage, type) != NPOS || (def_lineage.empty() && biosrc.IsSetLineage() && NStr::FindNoCase(biosrc.GetLineage(), type) != NPOS);
 }
 
 
@@ -455,7 +455,7 @@ void CDiscrepancyContext::BuildSeqSummary(const CBioseq& bs, CSeqSummary& summar
 }
 
 
-string CDiscrepancyContext::GetGenomeName(int n)
+string CDiscrepancyContext::GetGenomeName(unsigned n)
 {
     static vector<string> G;
     if (G.empty()) {

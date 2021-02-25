@@ -295,7 +295,7 @@ void CDiscrepancyContext::ParseObject(const CBioseq& root)
 {
     CRef<CParseNode> current = m_CurrentNode;
     PushNode(eBioseq);
-    m_CurrentNode->m_Obj.Reset((CObject*)&root);
+    m_CurrentNode->m_Obj.Reset(&root);
     m_CurrentNode = current;
 }
 
@@ -329,7 +329,7 @@ void CDiscrepancyContext::ParseObject(const CBioseq_set& root)
         }
     }
     PushNode(type);
-    m_CurrentNode->m_Obj.Reset((CObject*)&root);
+    m_CurrentNode->m_Obj.Reset(&root);
     if (root.CanGetSeq_set()) {
         for (const auto& entry : root.GetSeq_set()) {
             ParseObject(*entry);
@@ -354,7 +354,7 @@ void CDiscrepancyContext::ParseObject(const CSeq_submit& root)
 {
     CRef<CParseNode> current = m_CurrentNode;
     PushNode(eSubmit);
-    m_CurrentNode->m_Obj.Reset((CObject*)&root);
+    m_CurrentNode->m_Obj.Reset(&root);
     if (root.CanGetData() && root.GetData().IsEntrys()) {
         for (const auto& entry : root.GetData().GetEntrys()) {
             ParseObject(*entry);
@@ -523,8 +523,8 @@ CDiscrepancyContext::CParseNode* CDiscrepancyContext::FindNode(const CRefNode& r
 
 const CSerialObject* CDiscrepancyContext::FindObject(CReportObj& obj, bool alt)
 {
-    CDiscrepancyObject* p = static_cast<CDiscrepancyObject*>(&obj);
-    CParseNode* node = FindNode(alt ? *p->m_Fix : *p->m_Ref);
+    CDiscrepancyObject& p = static_cast<CDiscrepancyObject&>(obj);
+    CParseNode* node = FindNode(alt ? *p.m_Fix : *p.m_Ref);
     return node ? dynamic_cast<const CSerialObject*>(&*node->m_Obj) : nullptr;
 }
 
@@ -716,7 +716,7 @@ unique_ptr<CObjectIStream> OpenUncompressedStream(const string& fname, bool& com
 
 void CDiscrepancyContext::Autofix(TReportObjectList& tofix, map<string, size_t>& rep, const string& default_header)
 {
-    if (tofix.size()) {
+    if (!tofix.empty()) {
         sort(tofix.begin(), tofix.end(), CompareRefs);
         bool in_file = false;
         for (const CRefNode* node = static_cast<CDiscrepancyObject&>(*tofix[0]).m_Fix; node; node = node->m_Parent) {

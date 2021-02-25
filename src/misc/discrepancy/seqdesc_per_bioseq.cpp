@@ -359,7 +359,7 @@ DISCREPANCY_CASE(AUTODEF_USER_OBJECT, SEQUENCE, eOncaller, "Nucleotide sequence 
     const CBioseq& bioseq = context.CurrentBioseq();
     size_t count = 0;
     if (bioseq.IsNa()) {
-        for (auto& desc : context.GetAllSeqdesc()) {
+        for (const auto& desc : context.GetAllSeqdesc()) {
             if (desc.IsUser() && desc.GetUser().GetObjectType() == CUser_object::eObjectType_AutodefOptions) {
                 count++;
             }
@@ -376,7 +376,6 @@ DISCREPANCY_CASE(AUTODEF_USER_OBJECT, SEQUENCE, eOncaller, "Nucleotide sequence 
 
 DISCREPANCY_SUMMARIZE(AUTODEF_USER_OBJECT)
 {
-    auto& M = m_Objs.GetMap();
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 

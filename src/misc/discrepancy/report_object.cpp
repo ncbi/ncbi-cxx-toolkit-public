@@ -67,7 +67,7 @@ CConstRef<CSeq_id> GetBestId(const CBioseq& bioseq);
 
 string GetLocusTagForFeature(const CSeq_feat& seq_feat, CScope& scope)
 {
-    string tag(kEmptyStr);
+    string tag;
     if (seq_feat.GetData().IsGene()) {
         const CGene_ref& gene = seq_feat.GetData().GetGene();
         tag =  (gene.CanGetLocus_tag()) ? gene.GetLocus_tag() : kEmptyStr;
@@ -121,8 +121,8 @@ string GetProductForCDS(const CSeq_feat& cds, CScope& scope)
 
 void GetSeqFeatLabel(const CSeq_feat& seq_feat, string& label)
 {
-     label = kEmptyStr;
-     
+     label;
+
      feature::GetLabel(seq_feat, &label, feature::fFGL_Content);
      size_t pos;
      if (seq_feat.GetData().IsRna() && !label.empty() && (string::npos != (pos = label.find("RNA-")) ) ) {
@@ -266,7 +266,7 @@ void UpgradeSeqLocId(CSeq_loc& loc, CScope& scope)
 
 string GetSeqLocDescription(const CSeq_loc& loc, CScope& scope)
 {
-    string location = "";    
+    string location;
 
     CRef<CSeq_loc> cpy(new CSeq_loc());
     cpy->Assign(loc);
@@ -294,7 +294,7 @@ string CDiscrepancyObject::GetTextObjectDescription(const CSeq_feat& seq_feat, C
     return rval;
 }
 
-//                                               CDiscrepancyObject::GetTextObjectDescription(*feat, scope, m_FeatureType, m_Product, m_Location, m_LocusTag);
+//CDiscrepancyObject::GetTextObjectDescription(*feat, scope, m_FeatureType, m_Product, m_Location, m_LocusTag);
 
 void CDiscrepancyObject::GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& scope, string &label, string &context, string &location, string &locus_tag)
 {
@@ -339,7 +339,7 @@ void CDiscrepancyObject::GetTextObjectDescription(const CSeq_feat& seq_feat, CSc
 }
 
 
-const string CDiscrepancyObject::GetFeatureType() const
+string CDiscrepancyObject::GetFeatureType() const
 {
     if (m_Ref->m_Type == CDiscrepancyContext::eSeqFeat) {
         size_t n = m_Ref->m_Text.find('\t');
@@ -351,7 +351,7 @@ const string CDiscrepancyObject::GetFeatureType() const
 }
 
 
-const string CDiscrepancyObject::GetProductName() const
+string CDiscrepancyObject::GetProductName() const
 {
     if (m_Ref->m_Type == CDiscrepancyContext::eSeqFeat) {
         size_t n = m_Ref->m_Text.find('\t');
@@ -367,7 +367,7 @@ const string CDiscrepancyObject::GetProductName() const
 }
 
 
-const string CDiscrepancyObject::GetLocation() const
+string CDiscrepancyObject::GetLocation() const
 {
     if (m_Ref->m_Type == CDiscrepancyContext::eSeqFeat) {
         size_t n = m_Ref->m_Text.find('\t');
@@ -387,7 +387,7 @@ const string CDiscrepancyObject::GetLocation() const
 }
 
 
-const string CDiscrepancyObject::GetLocusTag() const
+string CDiscrepancyObject::GetLocusTag() const
 {
     if (m_Ref->m_Type == CDiscrepancyContext::eSeqFeat) {
         size_t n = m_Ref->m_Text.find('\t');
@@ -421,8 +421,8 @@ string CDiscrepancyObject::GetTextObjectDescription(const CSeq_feat& seq_feat, C
 
 string CDiscrepancyObject::GetTextObjectDescription(const CSeqdesc& sd)
 {
-    string label(kEmptyStr);
-    switch (sd.Which()) 
+    string label;
+    switch (sd.Which())
     {
         case CSeqdesc::e_Comment: return (sd.GetComment());
         case CSeqdesc::e_Region: return (sd.GetRegion());
@@ -470,7 +470,7 @@ string CDiscrepancyObject::GetTextObjectDescription(const CSeqdesc& sd)
             const COrg_ref& org = sd.GetSource().GetOrg();
             label = (org.CanGetTaxname() ? org.GetTaxname() 
                        : (org.CanGetCommon()? org.GetCommon(): kEmptyStr));
-          }  
+          }
           break;
         case CSeqdesc::e_Maploc:
             sd.GetMaploc().GetLabel(&label);

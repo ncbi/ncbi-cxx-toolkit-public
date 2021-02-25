@@ -284,7 +284,7 @@ static string ReplaceNoCase(const string& input, const string& search, const str
         return input;
     }
     size_t p;
-    if ((p = NStr::FindNoCase(input, find)) != string::npos) {
+    if ((p = NStr::FindNoCase(input, find)) != NPOS) {
         string tail = input.substr(p + find.length());
         return input.substr(0, p) + replace + ReplaceNoCase(tail, find, replace);
     }
@@ -458,7 +458,7 @@ DISCREPANCY_AUTOFIX(ORGANELLE_PRODUCTS) // LCOV_EXCL_START // There are currentl
 } // LCOV_EXCL_STOP
 
 
-static CConstRef<CSuspect_rule_set> s_GetrRNAProductsSuspectRuleSet(void)
+static CConstRef<CSuspect_rule_set> s_GetrRNAProductsSuspectRuleSet()
 {
     DEFINE_STATIC_FAST_MUTEX(sx_RuleMutex);
     CFastMutexGuard guard(sx_RuleMutex);
