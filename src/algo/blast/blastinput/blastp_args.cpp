@@ -96,7 +96,7 @@ CBlastpAppArgs::CBlastpAppArgs()
     arg.Reset(m_FormattingArgs);
     m_Args.push_back(arg);
 
-    m_MTArgs.Reset(new CMTArgs);
+    m_MTArgs.Reset(new CMTArgs(CThreadable::kMinNumThreads, CMTArgs::eSplitByDB));
     arg.Reset(m_MTArgs);
     m_Args.push_back(arg);
 
@@ -130,6 +130,49 @@ CBlastpAppArgs::GetQueryBatchSize() const
     bool is_remote = (m_RemoteArgs.NotEmpty() && m_RemoteArgs->ExecuteRemotely());
     return blast::GetQueryBatchSize(eBlastp, m_IsUngapped, is_remote);
 }
+
+/// Get the input stream
+CNcbiIstream&
+CBlastpNodeArgs::GetInputStream()
+{
+	if ( !m_InputStream ) {
+		abort();
+	}
+	return *m_InputStream;
+}
+/// Get the output stream
+CNcbiOstream&
+CBlastpNodeArgs::GetOutputStream()
+{
+	return m_OutputStream;
+}
+
+CBlastpNodeArgs::CBlastpNodeArgs(const string & input)
+{
+	m_InputStream = new CNcbiIstrstream(input.c_str(), input.length());
+}
+
+CBlastpNodeArgs::~CBlastpNodeArgs()
+{
+	if (m_InputStream) {
+		free(m_InputStream);
+		m_InputStream = NULL;
+	}
+}
+
+int
+CBlastpNodeArgs::GetQueryBatchSize() const
+{
+    bool is_remote = (m_RemoteArgs.NotEmpty() && m_RemoteArgs->ExecuteRemotely());
+    return blast::GetQueryBatchSize(ProgramNameToEnum(GetTask()), m_IsUngapped, is_remote, true);
+}
+
+CRef<CBlastOptionsHandle>
+CBlastpNodeArgs::x_CreateOptionsHandle(CBlastOptions::EAPILocality locality, const CArgs& args)
+{
+    return CBlastpAppArgs::x_CreateOptionsHandle(locality, args);
+}
+
 
 END_SCOPE(blast)
 END_NCBI_SCOPE
