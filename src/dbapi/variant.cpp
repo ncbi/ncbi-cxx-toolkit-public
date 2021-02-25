@@ -67,9 +67,19 @@ CVariant CVariant::BigInt(Int8 *p)
     return CVariant(p ? new CDB_BigInt(*p) : new CDB_BigInt());
 }
 
+CVariant CVariant::BigInt(const CNullable<Int8>& n)
+{
+    return CVariant(n.IsNull() ? new CDB_BigInt() : new CDB_BigInt(n));
+}
+
 CVariant CVariant::Int(Int4 *p)
 {
     return CVariant(p ? new CDB_Int(*p) : new CDB_Int());
+}
+
+CVariant CVariant::Int(const CNullable<Int4>& n)
+{
+    return CVariant(n.IsNull() ? new CDB_Int() : new CDB_Int(n));
 }
 
 CVariant CVariant::SmallInt(Int2 *p)
@@ -77,9 +87,19 @@ CVariant CVariant::SmallInt(Int2 *p)
     return CVariant(p ? new CDB_SmallInt(*p) : new CDB_SmallInt());
 }
 
+CVariant CVariant::SmallInt(const CNullable<Int2>& n)
+{
+    return CVariant(n.IsNull() ? new CDB_SmallInt() : new CDB_SmallInt(n));
+}
+
 CVariant CVariant::TinyInt(Uint1 *p)
 {
     return CVariant(p ? new CDB_TinyInt(*p) : new CDB_TinyInt());
+}
+
+CVariant CVariant::TinyInt(const CNullable<Uint1>& n)
+{
+    return CVariant(n.IsNull() ? new CDB_TinyInt() : new CDB_TinyInt(n));
 }
 
 CVariant CVariant::Float(float *p)
@@ -87,9 +107,19 @@ CVariant CVariant::Float(float *p)
     return CVariant(p ? new CDB_Float(*p) : new CDB_Float());
 }
 
+CVariant CVariant::Float(const CNullable<float>& x)
+{
+    return CVariant(x.IsNull() ? new CDB_Float() : new CDB_Float(x));
+}
+
 CVariant CVariant::Double(double *p)
 {
     return CVariant(p ? new CDB_Double(*p) : new CDB_Double());
+}
+
+CVariant CVariant::Double(const CNullable<double>& x)
+{
+    return CVariant(x.IsNull() ? new CDB_Double() : new CDB_Double(x));
 }
 
 CVariant CVariant::Bit(bool *p)
@@ -97,14 +127,20 @@ CVariant CVariant::Bit(bool *p)
     return CVariant(p ? new CDB_Bit(*p) : new CDB_Bit());
 }
 
+CVariant CVariant::Bit(const CNullable<bool>& b)
+{
+    return CVariant(b.IsNull() ? new CDB_Bit() : new CDB_Bit(b));
+}
+
 CVariant CVariant::LongChar(const char *p, size_t len)
 {
     return CVariant(p ? new CDB_LongChar(len, p) : new CDB_LongChar(len));
 }
 
-CVariant CVariant::LongChar(const TStringUCS2 &s, size_t len)
+CVariant CVariant::LongChar(const CNullable<const TStringUCS2&>& s, size_t len)
 {
-    return CVariant(new CDB_LongChar(len, s));
+    return CVariant(s.IsNull() ? new CDB_LongChar(len)
+                    : new CDB_LongChar(len, s));
 }
 
 CVariant CVariant::VarChar(const char *p, size_t len)
@@ -112,9 +148,10 @@ CVariant CVariant::VarChar(const char *p, size_t len)
     return CVariant(p ? (len ? new CDB_VarChar(p, len) : new CDB_VarChar(p))
                     : new CDB_VarChar());
 }
-CVariant CVariant::VarChar(const TStringUCS2 &s, size_t len)
+CVariant CVariant::VarChar(const CNullable<const TStringUCS2&>& s, size_t len)
 {
-    return CVariant(len ? new CDB_VarChar(s, len) : new CDB_VarChar(s));
+    return CVariant(s.IsNull() ? new CDB_VarChar()
+                    : (len ? new CDB_VarChar(s, len) : new CDB_VarChar(s)));
 }
 
 CVariant CVariant::VarCharMax(const char *p, size_t len)
@@ -123,9 +160,12 @@ CVariant CVariant::VarCharMax(const char *p, size_t len)
                          : new CDB_VarCharMax(p))
                     : new CDB_VarCharMax());
 }
-CVariant CVariant::VarCharMax(const TStringUCS2 &s, size_t len)
+CVariant CVariant::VarCharMax(const CNullable<const TStringUCS2&>& s,
+                              size_t len)
 {
-    return CVariant(len ? new CDB_VarCharMax(s, len) : new CDB_VarCharMax(s));
+    return CVariant(s.IsNull() ? new CDB_VarCharMax()
+                    : (len ? new CDB_VarCharMax(s, len)
+                       : new CDB_VarCharMax(s)));
 }
 
 CVariant CVariant::Char(size_t size, const char *p)
@@ -133,9 +173,9 @@ CVariant CVariant::Char(size_t size, const char *p)
     return CVariant(p ? new CDB_Char(size, p) : new CDB_Char(size));
 }
 
-CVariant CVariant::Char(size_t size, const TStringUCS2 &s)
+CVariant CVariant::Char(size_t size, const CNullable<const TStringUCS2&>& s)
 {
-    return CVariant(new CDB_Char(size, s));
+    return CVariant(s.IsNull() ? new CDB_Char(size) : new CDB_Char(size, s));
 }
 
 CVariant CVariant::LongBinary(size_t maxSize, const void *p, size_t len)
@@ -163,25 +203,49 @@ CVariant CVariant::SmallDateTime(CTime *p)
     return CVariant(p ? new CDB_SmallDateTime(*p) : new CDB_SmallDateTime());
 }
 
+CVariant CVariant::SmallDateTime(const CNullable<const CTime&>& t)
+{
+    return CVariant(t.IsNull() ? new CDB_SmallDateTime()
+                    : new CDB_SmallDateTime(t));
+}
+
 CVariant CVariant::DateTime(CTime *p)
 {
     return CVariant(p ? new CDB_DateTime(*p) : new CDB_DateTime());
 }
 
-CVariant CVariant::BigDateTime(CTime *p, EDateTimeFormat fmt)
+CVariant CVariant::DateTime(const CNullable<const CTime&>& t)
 {
-    CDB_BigDateTime::ESQLType sql_type;
+    return CVariant(t.IsNull() ? new CDB_DateTime() : new CDB_DateTime(t));
+}
+
+inline
+static CDB_BigDateTime::ESQLType s_TranslateDateTimeFormat(EDateTimeFormat fmt)
+{
     switch (fmt) {
-    case eLonger:         sql_type = CDB_BigDateTime::eDateTime;        break;
-    case eDateOnly:       sql_type = CDB_BigDateTime::eDate;            break;
-    case eTimeOnly:       sql_type = CDB_BigDateTime::eTime;            break;
-    case eDateTimeOffset: sql_type = CDB_BigDateTime::eDateTimeOffset;  break;
+    case eLonger:         return CDB_BigDateTime::eDateTime;
+    case eDateOnly:       return CDB_BigDateTime::eDate;
+    case eTimeOnly:       return CDB_BigDateTime::eTime;
+    case eDateTimeOffset: return CDB_BigDateTime::eDateTimeOffset;
     default:
         NCBI_THROW(CVariantException, eVariant | Retriable(eRetriable_No),
                    FORMAT("Unsupported BigDateTime format " << fmt));
     }
+}
+
+CVariant CVariant::BigDateTime(CTime *p, EDateTimeFormat fmt)
+{
+    auto sql_type = s_TranslateDateTimeFormat(fmt);
     return CVariant(p ? new CDB_BigDateTime(*p, sql_type)
                     : new CDB_BigDateTime(CTime::eEmpty, sql_type));
+}
+
+CVariant CVariant::BigDateTime(const CNullable<const CTime&>& t,
+                               EDateTimeFormat fmt)
+{
+    auto sql_type = s_TranslateDateTimeFormat(fmt);
+    return CVariant(t.IsNull() ? new CDB_BigDateTime(CTime::eEmpty, sql_type)
+                    : new CDB_BigDateTime(t, sql_type));
 }
 
 CVariant CVariant::Numeric(unsigned int precision,

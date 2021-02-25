@@ -114,27 +114,42 @@ public:
     // Factories for different types
     // NOTE: pass p = 0 to make NULL value
     static CVariant BigInt       (Int8 *p);
+    static CVariant BigInt       (const CNullable<Int8>& n);
     static CVariant Int          (Int4 *p);
+    static CVariant Int          (const CNullable<Int4>& n);
     static CVariant SmallInt     (Int2 *p);
+    static CVariant SmallInt     (const CNullable<Int2>& n);
     static CVariant TinyInt      (Uint1 *p);
+    static CVariant TinyInt      (const CNullable<Uint1>& n);
     static CVariant Float        (float *p);
+    static CVariant Float        (const CNullable<float>& x);
     static CVariant Double       (double *p);
+    static CVariant Double       (const CNullable<double>& x);
     static CVariant Bit          (bool *p);
+    static CVariant Bit          (const CNullable<bool>& b);
     static CVariant LongChar     (const char *p, size_t len = 0);
-    static CVariant LongChar     (const TStringUCS2 &s, size_t len = 0);
+    static CVariant LongChar     (const CNullable<const TStringUCS2&>& s,
+                                  size_t len = 0);
     static CVariant VarChar      (const char *p, size_t len = 0);
-    static CVariant VarChar      (const TStringUCS2 &s, size_t len = 0);
+    static CVariant VarChar      (const CNullable<const TStringUCS2&>& s,
+                                  size_t len = 0);
     static CVariant VarCharMax   (const char *p, size_t len = 0);
-    static CVariant VarCharMax   (const TStringUCS2 &s, size_t len = 0);
+    static CVariant VarCharMax   (const CNullable<const TStringUCS2&>& s,
+                                  size_t len = 0);
     static CVariant Char         (size_t size, const char *p);
-    static CVariant Char         (size_t size, const TStringUCS2& s);
+    static CVariant Char         (size_t size,
+                                  const CNullable<const TStringUCS2&>& s);
     static CVariant LongBinary   (size_t maxSize, const void *p, size_t len);
     static CVariant VarBinary    (const void *p, size_t len);
     static CVariant VarBinaryMax (const void *p, size_t len);
     static CVariant Binary       (size_t size, const void *p, size_t len);
     static CVariant SmallDateTime(CTime *p);
+    static CVariant SmallDateTime(const CNullable<const CTime&>& t);
     static CVariant DateTime     (CTime *p);
+    static CVariant DateTime     (const CNullable<const CTime&>& t);
     static CVariant BigDateTime  (CTime *p, EDateTimeFormat fmt = eLonger);
+    static CVariant BigDateTime  (const CNullable<const CTime&>& t,
+                                  EDateTimeFormat fmt = eLonger);
     static CVariant Numeric      (unsigned int precision,
                                   unsigned int scale,
                                   const char* p);

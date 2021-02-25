@@ -892,7 +892,7 @@ protected:
     void   x_SetEncoding(EBulkEnc e);
     size_t x_Append(const void* buff, size_t nof_bytes);
     size_t x_Append(const CTempString& s, EEncoding enc);
-    size_t x_Append(const TStringUCS2& s);
+    size_t x_Append(const TStringUCS2& s, size_t l = TStringUCS2::npos);
 
     EBulkEnc m_Encoding;
 
@@ -976,7 +976,7 @@ public:
     CDB_VarCharMax(const string& s,         EEncoding enc = eEncoding_Unknown);
     CDB_VarCharMax(const char* s,           EEncoding enc = eEncoding_Unknown);
     CDB_VarCharMax(const char* s, size_t l, EEncoding enc = eEncoding_Unknown);
-    CDB_VarCharMax(const TStringUCS2& s);
+    CDB_VarCharMax(const TStringUCS2& s, size_t l = TStringUCS2::npos);
     virtual ~CDB_VarCharMax(void);
 
 public:
@@ -987,7 +987,7 @@ public:
     virtual size_t Append(const void* buff, size_t nof_bytes);
     virtual size_t Append(const CTempString& s,
                           EEncoding enc = eEncoding_Unknown);
-    virtual size_t Append(const TStringUCS2& s);
+    virtual size_t Append(const TStringUCS2& s, size_t l = TStringUCS2::npos);
 
     CDB_VarCharMax& SetValue(const string& s,
                              EEncoding enc = eEncoding_Unknown)
@@ -998,8 +998,9 @@ public:
     CDB_VarCharMax& SetValue(const char* s, size_t l,
                              EEncoding enc = eEncoding_Unknown)
         { Truncate(); Append(CTempString(s, l), enc); return *this; }
-    CDB_VarCharMax& SetValue(const TStringUCS2& s)
-        { Truncate(); Append(s); return *this; }
+    CDB_VarCharMax& SetValue(const TStringUCS2& s,
+                             size_t l = TStringUCS2::npos)
+        { Truncate(); Append(s, l); return *this; }
 
     CDB_VarCharMax& operator= (const string& s)      { return SetValue(s); }
     CDB_VarCharMax& operator= (const char*   s)      { return SetValue(s); }

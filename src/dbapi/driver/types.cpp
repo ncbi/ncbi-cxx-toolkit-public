@@ -2081,11 +2081,14 @@ size_t CDB_Stream::x_Append(const CTempString& s, EEncoding enc)
     }
 }
 
-size_t CDB_Stream::x_Append(const TStringUCS2& s)
+size_t CDB_Stream::x_Append(const TStringUCS2& s, size_t l)
 {
     x_SetEncoding(eBulkEnc_RawUCS2);
 #ifdef WORDS_BIGENDIAN
-    TStringUCS2 s2(s);
+    if (l == TStringUCS2::npos) {
+        l = s.size();
+    }
+    TStringUCS2 s2(s, l);
     s_MakeLittleEndian(s2);
     return Append(s2.data(), s2.size() * sizeof(TCharUCS2));
 #else
@@ -2262,7 +2265,7 @@ CDB_VarCharMax::CDB_VarCharMax(const char* s, size_t l, EEncoding enc)
     SetValue(s, l, enc);
 }
 
-CDB_VarCharMax::CDB_VarCharMax(const TStringUCS2& s)
+CDB_VarCharMax::CDB_VarCharMax(const TStringUCS2& s, size_t l)
 {
     SetValue(s);
 }
@@ -2286,7 +2289,7 @@ size_t CDB_VarCharMax::Append(const CTempString& s, EEncoding enc)
     return x_Append(s, enc);
 }
 
-size_t CDB_VarCharMax::Append(const TStringUCS2& s)
+size_t CDB_VarCharMax::Append(const TStringUCS2& s, size_t l)
 {
     return x_Append(s);
 }
