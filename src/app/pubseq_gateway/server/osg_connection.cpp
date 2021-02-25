@@ -47,7 +47,6 @@
 #include <cmath>
 #include <corelib/ncbi_system.hpp>
 #include <corelib/impl/ncbi_dbsvcmapper.hpp>
-#include <dbapi/driver/driver_mgr.hpp>
 #include "osg_processor_base.hpp"
 #include "osg_mapper.hpp"
 
@@ -522,15 +521,14 @@ TSvrRef COSGConnectionPool::x_GetServer()
     if ( m_NonresolutionRetryDeadline && !m_NonresolutionRetryDeadline->IsExpired() ) {
         return null;
     }
-    unique_ptr<I_DriverContext> m_Context;
     TSvrRef server;
     do {
         if ( !m_Balancer ) {
             IDBServiceMapper::TOptions options;
             m_Mapper->GetServerOptions(m_ServiceName, &options);
-            m_Balancer.Reset(new CDBPoolBalancer(m_ServiceName, kEmptyStr, options, nullptr));
+            m_Balancer.Reset(new CPoolBalancer(m_ServiceName, options, true));
         }
-        server = m_Balancer->GetServer(nullptr, nullptr);
+        server = m_Balancer->GetServer();
         if ( !server ) {
             ERR_POST(Warning <<
                      "Unable to resolve OSG service name "

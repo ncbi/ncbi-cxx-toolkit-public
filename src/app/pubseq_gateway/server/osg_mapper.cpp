@@ -33,20 +33,13 @@
 
 #include <ncbi_pch.hpp>
 #include "osg_mapper.hpp"
-//#include "osgtime.hpp"
 
+#include <corelib/ncbiapp.hpp>
 #include <connect/ncbi_socket.hpp>
-#include <dbapi/driver/public.hpp>
 
 #include <cmath>
 
-//#include <internal/cppcore/os_gateway/error_codes.hpp>
-
 BEGIN_NCBI_NAMESPACE;
-
-//#define NCBI_USE_ERRCODE_X OSG_Lib_ServiceMapper
-//NCBI_DEFINE_ERR_SUBCODE_X(14);
-
 BEGIN_NAMESPACE(psg);
 BEGIN_NAMESPACE(osg);
 
@@ -63,6 +56,11 @@ COSGServiceMapper::COSGServiceMapper(const IRegistry* registry)
     m_AllServerRatingsTimer.Start();
     m_Random.Randomize();
     Configure(registry);
+}
+
+
+COSGServiceMapper::~COSGServiceMapper()
+{
 }
 
 
@@ -411,17 +409,6 @@ void COSGServiceMapper::GetServerOptions(const string& service,
 }
 
 
-void COSGServiceMapper::AcceptFeedback(const CDB_Connection* connection,
-                                       EFeedback feedback)
-{
-    // Must parse service name out of pool name. :-/
-    const string& pool = connection->PoolName();
-    SIZE_TYPE at_pos = pool.find('@');
-    _ASSERT(at_pos != NPOS);
-    string service(pool, at_pos + 1, pool.find(':') - at_pos - 1);
-    AcceptFeedback(service, connection->Host(), connection->Port(), feedback);
-}
- 
 void COSGServiceMapper::AcceptFeedback(const string& service,
                                        unsigned int host, unsigned short port,
                                        EFeedback feedback)

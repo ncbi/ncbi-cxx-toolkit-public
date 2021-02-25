@@ -34,8 +34,7 @@
 
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbimtx.hpp>
-#include <dbapi/driver/impl/dbapi_pool_balancer.hpp>
-#include <corelib/impl/ncbi_dbsvcmapper.hpp>
+#include <corelib/ncbi_pool_balancer.hpp>
 #include <list>
 
 BEGIN_NCBI_NAMESPACE;
@@ -159,7 +158,7 @@ private:
     int m_ConnectFailureCount;
     list<CRef<COSGConnection>> m_FreeConnections;
     CRef<COSGServiceMapper> m_Mapper;
-    CRef<CDBPoolBalancer>  m_Balancer;
+    CRef<CPoolBalancer>  m_Balancer;
     unique_ptr<CDeadline>  m_NonresolutionRetryDeadline;
 };
 

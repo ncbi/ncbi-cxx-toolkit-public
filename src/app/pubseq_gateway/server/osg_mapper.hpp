@@ -34,10 +34,8 @@
 /// PSG to OSG connection service mapper.
 
 
-//#include "osgdbconnfactory.hpp"
-
 #include <util/random_gen.hpp>
-#include <dbapi/driver/dbapi_svc_mapper.hpp>
+#include <connect/ext/ncbi_dblb_svcmapper.hpp>
 
 
 /** @addtogroup OS_Gateway
@@ -76,6 +74,7 @@ class COSGServiceMapper : public CDBLB_ServiceMapper
 {
 public:
     COSGServiceMapper(const IRegistry* registry = NULL);
+    virtual ~COSGServiceMapper();
 
     static void InitDefaults(IRWRegistry& reg);
     
@@ -95,8 +94,6 @@ public:
     };
     TSvrRef GetServer(const string& service, const TTried& tried)
         { return x_GetServer(service, &tried); }
-    void    AcceptFeedback(const CDB_Connection* connection,
-                           EFeedback feedback);
     void    AcceptFeedback(const string& service,
                            unsigned int host, unsigned short port,
                            EFeedback feedback);
