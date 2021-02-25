@@ -1134,6 +1134,7 @@ bool CMultiReader::ApplyAnnotFromSequences(CScope& scope)
 {
     if (m_featuresFromSequenceFile.Empty())
         return false;
+    x_PostProcessAnnot(*m_featuresFromSequenceFile);
 
     for (auto& rec: m_featuresFromSequenceFile->SetSeq().SetAnnot())
     {
