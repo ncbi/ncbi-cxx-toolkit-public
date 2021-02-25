@@ -1088,7 +1088,6 @@ pathogen_cluster_loader needs xasmcompare
 pathogen_cluster_loader needs xconnect
 pathogen_cluster_loader needs3party $(SDBAPI_LIBS)
 pathogen_connection needs gpipe_common
-pathogen_connection needs gpipe_dateutil
 pathogen_connection needs taxon1
 pathogen_ctl needs $(GPIPE_COMMON_LIBS)
 pathogen_ctl needs bag_access
