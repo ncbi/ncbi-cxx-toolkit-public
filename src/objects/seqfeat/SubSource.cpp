@@ -4361,22 +4361,44 @@ EStateCleanup s_DoUSAStateCleanup ( string& country ) {
 
 typedef CRowReader<CRowReaderStream_NCBI_TSV> TNCBITSVStream;
 
-static std::map<std::string, std::string> exception_map;
+static CCountries::TUsaExceptionMap exception_map;
 static bool exceptions_initialized = false;
 
-void CCountries::LoadUSAExceptionMap (const string& exception_file ) {
+void CCountries::ReadUSAExceptionMap (CCountries::TUsaExceptionMap& exceptions, const string& exception_file ) {
 
-    if ( ! exceptions_initialized && ! exception_file.empty()) {
+    if ( ! exception_file.empty()) {
 
-        TNCBITSVStream my_stream(exception_file);
-        for ( const auto &  row :  my_stream ) {
-            TFieldNo  number_of_fields = row. GetNumberOfFields();
+        TNCBITSVStream my_stream (exception_file);
+        for ( const auto & row : my_stream ) {
+            TFieldNo number_of_fields = row. GetNumberOfFields();
             if ( number_of_fields != 2 ) continue;
             string fr = row[0].Get<string>();
             string to = row[1].Get<string>();
-            exception_map[fr] = to;
+            exceptions [fr] = to;
         }
-        exceptions_initialized = true;
+    }
+}
+
+void CCountries::LoadUSAExceptionMap (TUsaExceptionMap& exceptions) {
+
+  if ( ! exceptions_initialized) {
+
+      for ( const auto & itm : exceptions ) {
+          string fr = itm.first;
+          string to = itm.second;
+          exception_map [fr] = to;
+      }
+      exceptions_initialized = true;
+  }
+}
+
+void CCountries::LoadUSAExceptionMap (const string& exception_file ) {
+
+    if ( ! exception_file.empty()) {
+
+        TUsaExceptionMap exceptions;
+        ReadUSAExceptionMap ( exceptions, exception_file );
+        LoadUSAExceptionMap ( exceptions );
     }
 }
 
@@ -4389,7 +4411,7 @@ string CCountries::USAStateCleanup ( const string& country, int& type ) {
 
     // apply exceptions from preloaded data file
     if ( exceptions_initialized ) {
-        string corrected = exception_map[working];
+        string corrected = exception_map [working];
         if ( ! corrected.empty()) {
             if ( ! NStr::Equal ( corrected, working )) {
                 type = e_Corrected;

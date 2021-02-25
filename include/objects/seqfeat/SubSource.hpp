@@ -301,10 +301,14 @@ public:
     static bool ChangeExtraColonsToCommas(string& country);
     static string CountryFixupItem(const string &input, bool capitalize_after_colon);
     typedef CStaticPairArrayMap<const char*, const char*, PCase_CStr> TCStringPairsMap;
-    // call LoadUSAExceptionMap before calling USAStateCleanup methods
+
+    typedef map<string, string, PNocase> TUsaExceptionMap;
+    static void ReadUSAExceptionMap (TUsaExceptionMap& exceptions, const string& filepath);
+    static void LoadUSAExceptionMap (TUsaExceptionMap& exceptions);
+    static void LoadUSAExceptionMap (const string& exception_file );
+
     static string USAStateCleanup (const string& country );
     static string USAStateCleanup (const string& country, int& type );
-    static void LoadUSAExceptionMap (const string& exception_file );
 private:
     static const string sm_Countries[];
     static const string sm_Former_Countries[];
