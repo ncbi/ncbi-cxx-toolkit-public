@@ -126,10 +126,6 @@ public:
     objects::CGapsEditor::TEvidenceSet m_DefaultEvidence;
     objects::CGapsEditor::TCountToEvidenceMap m_GapsizeToEvidence;
 
-
-
-
-
     int    m_gap_type{ -1 };
     bool   m_fcs_trim{ false };
     bool   m_split_log_files{ false };
@@ -149,10 +145,10 @@ public:
     bool   m_accumulate_mods{ false };
     NDiscrepancy::EGroup m_discrepancy_group{ NDiscrepancy::eOncaller };
 
-    CRef<objects::CSeq_descr>  m_descriptors;
-    unique_ptr<objects::edit::CRemoteUpdater>  m_remote_updater;
-    unique_ptr<CMemorySrcFileMap>     mp_named_src_map;
-
+    CRef<objects::CSeq_descr> m_descriptors;
+    unique_ptr<objects::edit::CRemoteUpdater> m_remote_updater;
+    unique_ptr<CMemorySrcFileMap> mp_named_src_map;
+    
     objects::CFixSuspectProductName m_suspect_rules;
 
     //string conffile;

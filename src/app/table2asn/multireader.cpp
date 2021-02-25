@@ -369,7 +369,8 @@ CFormatGuess::EFormat CMultiReader::xInputGetFormat(CNcbiIstream& istr) const
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eBinaryASN);
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eFasta);
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eTextASN);
-    FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eXml);
+    //FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eXml);
+    FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eGff3);
     FG.GetFormatHints().DisableAllNonpreferred();
 
     return FG.GuessFormat();
@@ -407,7 +408,8 @@ void CMultiReader::WriteObject(
 }
 
 CMultiReader::CMultiReader(CTable2AsnContext& context)
-    :m_context(context)
+    :m_context(context),
+    mAtSequenceData(false)
 {
 }
 
@@ -761,7 +763,7 @@ namespace
     }
 };
 
-CFormatGuess::EFormat CMultiReader::OpenFile(const string& filename, CRef<CSerialObject>& obj)
+CFormatGuess::EFormat CMultiReader::OpenFile(const string& filename, CRef<CSerialObject>& input_sequence)
 {
 	CFormatGuess::EFormat format;
 	{
@@ -769,9 +771,24 @@ CFormatGuess::EFormat CMultiReader::OpenFile(const string& filename, CRef<CSeria
 		format = xInputGetFormat(*istream);
 	}
 
+    if (format != CFormatGuess::eUnknown)
+        LOG_POST("Recognized input file as format: " << CFormatGuess::GetFormatName(format));
+
     if (format == CFormatGuess::eTextASN) {
 		m_obj_stream.reset(CObjectIStream::Open(eSerial_AsnText, filename));
-        obj = xReadASN1(*m_obj_stream);
+        input_sequence = xReadASN1(*m_obj_stream);
+    } else
+    if (format == CFormatGuess::eGff3) {
+        unique_ptr<istream> in(new CNcbiIfstream(filename.c_str()));        
+        m_featuresFromSequenceFile = xReadGFF3_NoPostProcessing(*in);
+        if (!AtSeqenceData()) {
+            NCBI_THROW2(CObjReaderParseException, eFormat, 
+                "Specified GFF3 file does not include any sequence data", 0);
+        }
+        m_iFlags = 0;
+        m_iFlags |= CFastaReader::fNoUserObjs;
+		input_sequence = xReadFasta(*in);
+        //std::cerr << MSerial_AsnText << MSerial_VerifyNo << *obj;
     }
     else { // RW-616 - Assume FASTA
         m_iFlags = 0;
@@ -779,15 +796,15 @@ CFormatGuess::EFormat CMultiReader::OpenFile(const string& filename, CRef<CSeria
 
 		CBufferedInput istream;
 		istream.get().open(filename.c_str());
-		obj = xReadFasta(istream);
+		input_sequence = xReadFasta(istream);
     }
-    if (obj.Empty())
+    if (input_sequence.Empty())
         NCBI_THROW2(CObjReaderParseException, eFormat,
             "File format not recognized", 0);
 
     //rw-617: apply template descriptors only if input is *not* ASN1:
     bool merge_template_descriptors = (format != CFormatGuess::eTextASN);
-    obj = xApplyTemplate(obj, merge_template_descriptors);
+    input_sequence = xApplyTemplate(input_sequence, merge_template_descriptors);
 
     return format;
 }
@@ -868,8 +885,25 @@ CRef<CSeq_entry> CMultiReader::xReadGFF3(CNcbiIstream& instream)
     CRef<CSeq_entry> entry(new CSeq_entry);
     entry->SetSeq();
     reader.ReadSeqAnnots(entry->SetAnnot(), lr, m_context.m_logger);
-    
+    mAtSequenceData = reader.AtSequenceData();
     x_PostProcessAnnot(*entry, reader.SequenceSize());
+    return entry;
+}
+
+CRef<CSeq_entry> CMultiReader::xReadGFF3_NoPostProcessing(CNcbiIstream& instream)
+{
+    int flags = 0;
+    flags |= CGff3Reader::fGenbankMode;
+    flags |= CGff3Reader::fRetainLocusIds;
+    flags |= CGff3Reader::fGeneXrefs;
+    flags |= CGff3Reader::fAllIdsAsLocal;
+
+    CGff3Reader reader(flags, m_AnnotName, m_AnnotTitle);
+    CStreamLineReader lr(instream);
+    CRef<CSeq_entry> entry(new CSeq_entry);
+    entry->SetSeq();
+    reader.ReadSeqAnnots(entry->SetAnnot(), lr, m_context.m_logger);
+    mAtSequenceData = reader.AtSequenceData();
 
     return entry;
 }
@@ -1072,6 +1106,7 @@ bool CMultiReader::xGetAnnotLoader(CAnnotationLoader& loader, const string& file
     case CFormatGuess::eGff2:
     case CFormatGuess::eGff3:
         entry = xReadGFF3(*in);
+        //x_PostProcessAnnot(*entry, this.);
         break;
     case CFormatGuess::eGtf:
     case CFormatGuess::eGffAugustus:
@@ -1095,126 +1130,139 @@ bool CMultiReader::xGetAnnotLoader(CAnnotationLoader& loader, const string& file
     return false;
 }
 
-bool CMultiReader::LoadAnnot(objects::CSeq_entry& entry, const string& filename)
+bool CMultiReader::ApplyAnnotFromSequences(CScope& scope)
 {
+    if (m_featuresFromSequenceFile.Empty())
+        return false;
 
+    for (auto& rec: m_featuresFromSequenceFile->SetSeq().SetAnnot())
+    {
+        xFixupAnnot(scope, rec);
+    }
+    return true;
+}
+
+bool CMultiReader::LoadAnnot(CScope& scope, const string& filename)
+{
     CAnnotationLoader annot_loader;
 
-    if (xGetAnnotLoader(annot_loader, filename))
+    if (!xGetAnnotLoader(annot_loader, filename)) {
+        return false;
+    }
+    
+    CRef<CSeq_annot> annot_it;
+    while ((annot_it = annot_loader.GetNextAnnot()).NotEmpty())
     {
-        CScope scope(*m_context.m_ObjMgr);
-        scope.AddTopLevelSeqEntry(entry);
+        xFixupAnnot(scope, annot_it);
+    }
+    return true;
+}
 
-        CRef<CSeq_annot> annot_it;
-        while ((annot_it = annot_loader.GetNextAnnot()).NotEmpty())
+bool CMultiReader::xFixupAnnot(CScope& scope, CRef<CSeq_annot>& annot_it)
+{
+    CRef<CSeq_id> annot_id;
+    if (annot_it->IsSetId())
+    {
+        annot_id.Reset(new CSeq_id);
+        const CAnnot_id& tmp_annot_id = *(*annot_it).GetId().front();
+        if (tmp_annot_id.IsLocal())
+            annot_id->SetLocal().Assign(tmp_annot_id.GetLocal());
+        else
+            if (tmp_annot_id.IsGeneral())
+            {
+                annot_id->SetGeneral().Assign(tmp_annot_id.GetGeneral());
+            }
+            else
+            {
+                //cerr << "Unknown id type:" << annot_id.Which() << endl;
+                return false;
+            }
+    }
+    else
+        if (!annot_it->GetData().GetFtable().empty())
         {
-            CRef<CSeq_id> annot_id;
-            if (annot_it->IsSetId())
-            {
-                annot_id.Reset(new CSeq_id);
-                const CAnnot_id& tmp_annot_id = *(*annot_it).GetId().front();
-                if (tmp_annot_id.IsLocal())
-                    annot_id->SetLocal().Assign(tmp_annot_id.GetLocal());
-                else
-                    if (tmp_annot_id.IsGeneral())
-                    {
-                        annot_id->SetGeneral().Assign(tmp_annot_id.GetGeneral());
-                    }
-                    else
-                    {
-                        //cerr << "Unknown id type:" << annot_id.Which() << endl;
-                        continue;
-                    }
-            }
-            else
-                if (!annot_it->GetData().GetFtable().empty())
-                {
-                    // get a reference to CSeq_id instance, we'd need to update it recently
-                    // 5 column feature reader has a single shared instance for all features 
-                    // update one at once would change all the features
-                    annot_id.Reset((CSeq_id*)annot_it->GetData().GetFtable().front()->GetLocation().GetId());
-                }
-
-
-            CBioseq::TId ids;
-            CBioseq_Handle bioseq_h = scope.GetBioseqHandle(*annot_id);
-            if (!bioseq_h && annot_id->IsLocal() && annot_id->GetLocal().IsStr())
-            {
-                CSeq_id::ParseIDs(ids, annot_id->GetLocal().GetStr());
-                if (ids.size() == 1)
-                {
-                    bioseq_h = scope.GetBioseqHandle(*ids.front());
-                }
-                if (!bioseq_h && !m_context.m_genome_center_id.empty())
-                {
-                    string id = "gnl|" + m_context.m_genome_center_id + "|" + annot_id->GetLocal().GetStr();
-                    ids.clear();
-                    CSeq_id::ParseIDs(ids, id);
-                    if (ids.size() == 1)
-                    {
-                        bioseq_h = scope.GetBioseqHandle(*ids.front());
-                    }
-                }
-            }
-            if (!bioseq_h)
-            {
-                CRef<CSeq_id> alt_id = GetSeqIdWithoutVersion(*annot_id);
-                if (alt_id)
-                {
-                    bioseq_h = scope.GetBioseqHandle(*alt_id);
-                }
-            }
-            if (bioseq_h)
-            {
-                // update ids
-                CBioseq_EditHandle edit_handle = bioseq_h.GetEditHandle();
-                CBioseq& bioseq = (CBioseq&)*edit_handle.GetBioseqCore();
-                CRef<CSeq_id> matching_id = GetIdByKind(*annot_id, bioseq.GetId());
-
-                if (matching_id.Empty())
-                    matching_id = ids.front();
-
-                if (matching_id && !annot_id->Equals(*matching_id))
-                {
-                    x_ModifySeqIds(*annot_it, annot_id, matching_id);                    
-                }
-
-                CRef<CSeq_annot> existing;
-                for (auto feat_it : bioseq.SetAnnot())
-                {
-                    if (feat_it->IsFtable())
-                    {
-                        existing = feat_it;
-                        break;
-                    }
-                }
-               
-
-                if (existing.Empty())
-                    bioseq.SetAnnot().push_back(annot_it);
-                else {
-                    objects::edit::CFeatTableEdit featEdit(*existing);
-                    featEdit.MergeFeatures(annot_it->SetData().SetFtable());
-                }
-            }
-#ifdef _DEBUG
-            else
-            {
-                cerr << MSerial_AsnText << "Found unmatched annot: " << *annot_id << endl;
-            }
-            if (false)
-            {
-                CNcbiOfstream debug_annot("annot.sqn");
-                debug_annot << MSerial_AsnText
-                    << MSerial_VerifyNo
-                    << *annot_it;
-            }
-#endif
+            // get a reference to CSeq_id instance, we'd need to update it recently
+            // 5 column feature reader has a single shared instance for all features 
+            // update one at once would change all the features
+            annot_id.Reset((CSeq_id*)annot_it->GetData().GetFtable().front()->GetLocation().GetId());
         }
 
-        return true;
+
+    CBioseq::TId ids;
+    CBioseq_Handle bioseq_h = scope.GetBioseqHandle(*annot_id);
+    if (!bioseq_h && annot_id->IsLocal() && annot_id->GetLocal().IsStr())
+    {
+        CSeq_id::ParseIDs(ids, annot_id->GetLocal().GetStr());
+        if (ids.size() == 1)
+        {
+            bioseq_h = scope.GetBioseqHandle(*ids.front());
+        }
+        if (!bioseq_h && !m_context.m_genome_center_id.empty())
+        {
+            string id = "gnl|" + m_context.m_genome_center_id + "|" + annot_id->GetLocal().GetStr();
+            ids.clear();
+            CSeq_id::ParseIDs(ids, id);
+            if (ids.size() == 1)
+            {
+                bioseq_h = scope.GetBioseqHandle(*ids.front());
+            }
+        }
     }
-    return false;
+    if (!bioseq_h)
+    {
+        CRef<CSeq_id> alt_id = GetSeqIdWithoutVersion(*annot_id);
+        if (alt_id)
+        {
+            bioseq_h = scope.GetBioseqHandle(*alt_id);
+        }
+    }
+    if (bioseq_h)
+    {
+        // update ids
+        CBioseq_EditHandle edit_handle = bioseq_h.GetEditHandle();
+        CBioseq& bioseq = (CBioseq&)*edit_handle.GetBioseqCore();
+        CRef<CSeq_id> matching_id = GetIdByKind(*annot_id, bioseq.GetId());
+
+        if (matching_id.Empty())
+            matching_id = ids.front();
+
+        if (matching_id && !annot_id->Equals(*matching_id))
+        {
+            x_ModifySeqIds(*annot_it, annot_id, matching_id);                    
+        }
+
+        CRef<CSeq_annot> existing;
+        for (auto feat_it : bioseq.SetAnnot())
+        {
+            if (feat_it->IsFtable())
+            {
+                existing = feat_it;
+                break;
+            }
+        }
+               
+
+        if (existing.Empty())
+            bioseq.SetAnnot().push_back(annot_it);
+        else {
+            objects::edit::CFeatTableEdit featEdit(*existing);
+            featEdit.MergeFeatures(annot_it->SetData().SetFtable());
+        }
+    }
+#ifdef _DEBUG
+    else
+    {
+        cerr << MSerial_AsnText << "Found unmatched annot: " << *annot_id << endl;
+    }
+    if (false)
+    {
+        CNcbiOfstream debug_annot("annot.sqn");
+        debug_annot << MSerial_AsnText
+            << MSerial_VerifyNo
+            << *annot_it;
+    }
+#endif
+    return true;
 }
 
 CRef<CSeq_entry> CMultiReader::xReadGTF(CNcbiIstream& instream)

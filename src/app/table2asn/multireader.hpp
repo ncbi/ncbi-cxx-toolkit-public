@@ -8,6 +8,7 @@ BEGIN_NCBI_SCOPE
 
 namespace objects
 {
+class CScope;
 class CSeq_entry;
 class CSeq_submit;
 class CSeq_descr;
@@ -30,7 +31,8 @@ public:
    CMultiReader(CTable2AsnContext& context);
    ~CMultiReader();
  
-   CFormatGuess::EFormat OpenFile(const string& filename, CRef<CSerialObject>& entry);
+   CFormatGuess::EFormat OpenFile(
+        const string& filename, CRef<CSerialObject>& input_sequence);
    CRef<CSerialObject> ReadNextEntry();
    void Cleanup(CRef<objects::CSeq_entry>);
    void WriteObject(const CSerialObject&, ostream&);
@@ -41,12 +43,15 @@ public:
    void MergeDescriptors(objects::CSeq_descr & dest, const objects::CSeq_descr & source);
    void MergeDescriptors(objects::CSeq_descr & dest, const objects::CSeqdesc & source);
    void ApplyDescriptors(objects::CSeq_entry & obj, const objects::CSeq_descr & source);
-   bool LoadAnnot(objects::CSeq_entry& obj, const string& filename);
+   bool LoadAnnot(objects::CScope& scope, const string& filename);
+   bool ApplyAnnotFromSequences(objects::CScope& scope);
 
    static
    void GetSeqEntry(CRef<objects::CSeq_entry>& entry, CRef<objects::CSeq_submit>& submit, CRef<CSerialObject> obj);
 
     CRef<objects::CSeq_entry> ReadAlignment(CNcbiIstream& instream, const CArgs& args);
+    bool AtSeqenceData() const { return mAtSequenceData; };
+
 protected:
 private:
     CFormatGuess::EFormat xReadFile(CNcbiIstream& in, CRef<objects::CSeq_entry>& entry, CRef<objects::CSeq_submit>& submit);
@@ -54,10 +59,12 @@ private:
     CRef<CSerialObject> xApplyTemplate(CRef<CSerialObject> obj, bool merge_template_descriptors);
     CRef<CSerialObject> xReadASN1(CObjectIStream& pObjIstrm);
     CRef<objects::CSeq_entry> xReadGFF3(CNcbiIstream& instream);
+    CRef<objects::CSeq_entry> xReadGFF3_NoPostProcessing(CNcbiIstream& instream);
     CRef<objects::CSeq_entry> xReadGTF(CNcbiIstream& instream);
     CRef<objects::CSeq_entry> xReadFlatfile(CFormatGuess::EFormat format, const string& filename);
     void x_PostProcessAnnot(objects::CSeq_entry& entry, unsigned int sequenceSize =0);
     bool xGetAnnotLoader(CAnnotationLoader& loader, const string& filename);
+    bool xFixupAnnot(objects::CScope&, CRef<objects::CSeq_annot>&);
 
     unique_ptr<CObjectIStream> xCreateASNStream(const string& filename);
     unique_ptr<CObjectIStream> xCreateASNStream(CFormatGuess::EFormat format, unique_ptr<istream>& instream);
@@ -71,6 +78,8 @@ private:
     string m_AnnotTitle;
     CTable2AsnContext& m_context;
     unique_ptr<CObjectIStream> m_obj_stream;
+    bool mAtSequenceData;
+    CRef<objects::CSeq_entry> m_featuresFromSequenceFile;
 };
 
 END_NCBI_SCOPE

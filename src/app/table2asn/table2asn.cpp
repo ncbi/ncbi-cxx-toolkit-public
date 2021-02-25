@@ -168,7 +168,7 @@ private:
     void ProcessPEPFile(const string& pathname, CSeq_entry& result);
     void ProcessRNAFile(const string& pathname, CSeq_entry& result);
     void ProcessPRTFile(const string& pathname, CSeq_entry& result);
-    void ProcessAnnotFile(const string& pathname, CSeq_entry& result);
+    void ProcessAnnotFile(const string& pathname, CScope& scope);
     void x_SetAlnArgs(CArgDescriptions& arg_desc);
 
 
@@ -958,6 +958,7 @@ void CTbl2AsnApp::ProcessOneEntry(
         m_reader->ApplyDescriptors(*entry, *m_context.m_descriptors);
 
    // m_reader->ApplyAdditionalProperties(*entry);
+    
     const bool readModsFromTitle = 
         inputFormat == CFormatGuess::eFasta ||
         inputFormat == CFormatGuess::eAlignment;
@@ -1354,18 +1355,23 @@ void CTbl2AsnApp::ProcessSecretFiles1Phase(bool readModsFromTitle, CSeq_entry& r
     ProcessRNAFile(name + ".rna", result);
     ProcessPRTFile(name + ".prt", result);
 
+    CScope scope(*m_context.m_ObjMgr);
+    scope.AddTopLevelSeqEntry(result);
+
+    m_reader->ApplyAnnotFromSequences(scope);
+
     if (!m_context.m_single_annot_file.empty())
     {
-        ProcessAnnotFile(m_context.m_single_annot_file, result);
+        ProcessAnnotFile(m_context.m_single_annot_file, scope);
     }
     else
     {
-        ProcessAnnotFile(name + ".gbf", result);
-        ProcessAnnotFile(name + ".tbl", result);
-        ProcessAnnotFile(name + ".gff", result);
-        ProcessAnnotFile(name + ".gff3", result);
-        ProcessAnnotFile(name + ".gff2", result);
-        ProcessAnnotFile(name + ".gtf", result);
+        ProcessAnnotFile(name + ".gbf", scope);
+        ProcessAnnotFile(name + ".tbl", scope);
+        ProcessAnnotFile(name + ".gff", scope);
+        ProcessAnnotFile(name + ".gff3", scope);
+        ProcessAnnotFile(name + ".gff2", scope);
+        ProcessAnnotFile(name + ".gtf", scope);
     }
 }
 
@@ -1449,10 +1455,17 @@ void CTbl2AsnApp::ProcessPRTFile(const string& pathname, CSeq_entry& entry)
     m_possible_proteins = prts.ReadProtein(*reader);
 }
 
-void CTbl2AsnApp::ProcessAnnotFile(const string& pathname, CSeq_entry& entry)
+void CTbl2AsnApp::ProcessAnnotFile(const string& pathname, CScope& scope)
 {
     CFile file(pathname);
+
     if (!file.Exists()) return;
+
+    if (file.IsIdentical(m_context.m_current_file)) {
+        LOG_POST("Ignorning annotation " << pathname << " because it was already used as input source");
+        return;
+    }
+
     if (file.GetLength() == 0) {
         m_logger->PutError(*unique_ptr<CLineError>(
             CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Warning, "", 0,
@@ -1460,7 +1473,7 @@ void CTbl2AsnApp::ProcessAnnotFile(const string& pathname, CSeq_entry& entry)
         return;
     }
 
-	m_reader->LoadAnnot(entry, pathname);
+	m_reader->LoadAnnot(scope, pathname);
 }
 
 /////////////////////////////////////////////////////////////////////////////
