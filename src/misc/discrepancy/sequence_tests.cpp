@@ -197,7 +197,7 @@ DISCREPANCY_CASE(MRNA_ON_WRONG_SEQUENCE_TYPE, SEQUENCE, eDisc | eOncaller, "Euka
             !context.IsEukaryotic(&biosrc->GetSource())) {
         return;
     }
-    for (const auto* feat : context.FeatMRNAs()) {
+    for (const CSeq_feat* feat : context.FeatMRNAs()) {
         m_Objs["[n] mRNA[s] [is] located on eukaryotic sequence[s] that [does] not have genomic or plasmid source[s]"].Add(*context.SeqFeatObjRef(*feat));
     }
 }
@@ -718,8 +718,7 @@ void AddUserObjectFieldItems
             string field_name = field_prefix + f->GetLabel().GetStr();
             // add missing field to all previous objects that do not have this field
             if (already_seen && !collector.Exist(field_name)) {
-                //ITERATE(TReportObjectList, ro, previously_seen[kPreviouslySeenObjects][object_name].GetObjects()) {
-                for (auto& ro: previously_seen[kPreviouslySeenObjects][object_name].GetObjects()) {
+                for (auto& ro : previously_seen[kPreviouslySeenObjects][object_name].GetObjects()) {
                     string missing_label = "[n] " + object_name + "[s] [is] missing field " + field_name;
                     //CRef<CDiscrepancyObject> seq_disc_obj(dynamic_cast<CDiscrepancyObject*>(ro->GetNCPointer()));
                     //collector[field_name][missing_label].Add(*seq_disc_obj, false);
@@ -780,11 +779,11 @@ void AnalyzeField(CReportNode& node, bool& all_present, bool& all_same)
     string value;
     bool first = true;
     for (auto& s : node.GetMap()) {
-        if (NStr::Find(s.first, " missing field ") != string::npos) {
+        if (NStr::Find(s.first, " missing field ") != NPOS) {
             all_present = false;
         } else {
-            size_t pos = NStr::Find(s.first, " value '");
-            if (pos != string::npos) {
+            SIZE_TYPE pos = NStr::Find(s.first, " value '");
+            if (pos != NPOS) {
                 if (first) {
                     value = s.first.substr(pos);
                     num_values++;
@@ -1280,7 +1279,7 @@ DISCREPANCY_CASE(MULTIPLE_CDS_ON_MRNA, SEQUENCE, eOncaller | eSubmitter | eSmart
         size_t count_pseudo = 0;
         size_t count_disrupt = 0;
         for (auto feat : cds) {
-            if (feat->IsSetComment() && NStr::Find(feat->GetComment(), "coding region disrupted by sequencing gap") != string::npos) {
+            if (feat->IsSetComment() && NStr::Find(feat->GetComment(), "coding region disrupted by sequencing gap") != NPOS) {
                 count_disrupt++;
             }
             if (context.IsPseudo(*feat)) {
@@ -1388,7 +1387,7 @@ DISCREPANCY_CASE(DEFLINE_ON_SET, SEQ_SET, eOncaller, "Titles on sets")
 {
     const CBioseq_set& set = context.CurrentBioseq_set();
     if (set.IsSetDescr()) {
-        for (auto descr : set.GetDescr().Get()) {
+        for (const auto& descr : set.GetDescr().Get()) {
             if (descr->IsTitle()) {
                 m_Objs["[n] title[s] on sets were found"].Add(*context.SeqdescObjRef(*descr));
             }

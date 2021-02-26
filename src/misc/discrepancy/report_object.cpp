@@ -89,7 +89,7 @@ string GetLocusTagForFeature(const CSeq_feat& seq_feat, CScope& scope)
 
 string GetProduct(const CProt_ref& prot_ref)
 {
-    string rval = "";
+    string rval;
     if (prot_ref.CanGetName() && !prot_ref.GetName().empty()) {
         rval = prot_ref.GetName().front();
     }
@@ -108,7 +108,7 @@ string GetProductForCDS(const CSeq_feat& cds, CScope& scope)
     // should be the longest protein feature on the bioseq pointed by the cds.GetProduct()
     if (cds.IsSetProduct()) {
         CConstRef <CSeq_feat> prot_seq_feat = sequence::GetBestOverlappingFeat(cds.GetProduct(),
-                                                CSeqFeatData::e_Prot, 
+                                                CSeqFeatData::e_Prot,
                                                 sequence::eOverlap_Contains,
                                                 scope);
         if (prot_seq_feat && prot_seq_feat->GetData().IsProt()) {
@@ -121,24 +121,23 @@ string GetProductForCDS(const CSeq_feat& cds, CScope& scope)
 
 void GetSeqFeatLabel(const CSeq_feat& seq_feat, string& label)
 {
-     label;
+    label.clear();
 
-     feature::GetLabel(seq_feat, &label, feature::fFGL_Content);
-     size_t pos;
-     if (seq_feat.GetData().IsRna() && !label.empty() && (string::npos != (pos = label.find("RNA-")) ) ) {
-          label = CTempString(label).substr(pos+4);
-     }
-     string number = "/number=";
-     if (!label.empty() 
-            && (seq_feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_exon 
-                   || seq_feat.GetData().GetSubtype() 
-                              == CSeqFeatData::eSubtype_intron)
-            && (string::npos != (pos = label.find(number)))) {
-          label = label.substr(pos + number.size());
-          if (label.find("exon") == 0 || label.find("intron") == 0) { // pos
-             label = label.substr(0, label.find(' '));
-          }
-     }
+    feature::GetLabel(seq_feat, &label, feature::fFGL_Content);
+    size_t pos;
+    if (seq_feat.GetData().IsRna() && !label.empty() && (string::npos != (pos = label.find("RNA-")))) {
+        label = CTempString(label).substr(pos + 4);
+    }
+    string number = "/number=";
+    if (!label.empty()
+        && (seq_feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_exon
+         || seq_feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_intron)
+        && (string::npos != (pos = label.find(number)))) {
+        label = label.substr(pos + number.size());
+        if (label.find("exon") == 0 || label.find("intron") == 0) { // pos
+            label = label.substr(0, label.find(' '));
+        }
+    }
 }
 
 
@@ -556,7 +555,7 @@ string CDiscrepancyObject::GetTextObjectDescription(CBioseq_set_Handle bssh)
         }
     }
 
-    return (string)CNcbiOstrstreamToString(result_strm);
+    return string(CNcbiOstrstreamToString(result_strm));
 }
 
 
