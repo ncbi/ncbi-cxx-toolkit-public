@@ -324,8 +324,8 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ g_CORE_RegistrySET
 
 typedef enum {
     eCORE_SetSSL  = 1,
-    eCORE_SetLOG  = 2,
-    eCORE_SetREG  = 4,
+    eCORE_SetREG  = 2,
+    eCORE_SetLOG  = 4,
     eCORE_SetLOCK = 8
 } ECORE_Set;
 typedef unsigned int TCORE_Set;
