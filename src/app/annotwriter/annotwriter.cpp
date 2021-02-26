@@ -103,7 +103,7 @@ USING_SCOPE(objects);
 static const CDataLoadersUtil::TLoaders default_loaders = CDataLoadersUtil::fAsnCache | CDataLoadersUtil::fGenbank;
 
 
-#define CANCELER_CODE
+//#define CANCELER_CODE
 #if defined(CANCELER_CODE)
 //  ============================================================================
 class TestCanceler: public ICanceled
