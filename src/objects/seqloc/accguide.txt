@@ -96,7 +96,7 @@ version  1 # of file format
 3+7  U??  gb_prot
 3+9  U??  gb_prot
 3+11 U??  gb_prot
-3+5  V??  embl_prot
+3+5  V??  embl_prot *
 3+7  V??  embl_prot
 3+9  V??  embl_prot
 3+11 V??  embl_prot
@@ -12737,6 +12737,31 @@ special  SCC98881-SCC98885  embl_tpa_prot
 special  SFW93197-SFW93317  embl_tpa_prot
 special  SNU76807-SNU78093  embl_tpa_prot
 special  SOR70182-SOR70392  embl_tpa_prot
+
+special  VDK10822-VDK11088  embl_tpa_prot
+special  VDM91303-VDM91304  embl_tpa_prot
+special  VZP20049-VZP20110  embl_tpa_prot
+special  VZP20112-VZP20320  embl_tpa_prot
+special  VZQ70899-VZQ70905  embl_tpa_prot
+special  VZQ70907           embl_tpa_prot
+special  VZQ70910-VZQ70913  embl_tpa_prot
+special  VZQ70915-VZQ70917  embl_tpa_prot
+special  VZQ70919-VZQ70923  embl_tpa_prot
+special  VZQ70925           embl_tpa_prot
+special  VZQ70927-VZQ70929  embl_tpa_prot
+special  VZQ70931-VZQ70936  embl_tpa_prot
+special  VZQ70938-VZQ70939  embl_tpa_prot
+special  VZQ70941           embl_tpa_prot
+special  VZQ70943           embl_tpa_prot
+special  VZQ70946-VZQ70949  embl_tpa_prot
+special  VZQ70951-VZQ70955  embl_tpa_prot
+special  VZQ70957           embl_tpa_prot
+special  VZQ70959-VZQ70961  embl_tpa_prot
+special  VZQ70964-VZQ70965  embl_tpa_prot
+special  VZQ70967           embl_tpa_prot
+special  VZQ70969-VZQ70989  embl_tpa_prot
+special  VZQ70993           embl_tpa_prot
+special  VZQ70996-VZQ70999  embl_tpa_prot
 
 special  CAA9999660             embl_tpa_prot
 special  CAA9999677-CAA9999678  embl_tpa_prot
