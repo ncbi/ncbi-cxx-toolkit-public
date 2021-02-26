@@ -109,7 +109,7 @@ static const CDataLoadersUtil::TLoaders default_loaders = CDataLoadersUtil::fAsn
 class TestCanceler: public ICanceled
 //  ============================================================================
 {
-    static const unsigned int CALLS_UNTIL_CANCELLED = 1000;
+    static const unsigned int CALLS_UNTIL_CANCELLED = 25;
     bool IsCanceled() const { 
         if (0 == ++mNumCalls % 100) {
             cerr << "Iterations until cancelled: " 

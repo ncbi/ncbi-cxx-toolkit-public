@@ -615,6 +615,14 @@ void CAlnWriter::WriteContiguous(const string& defline, const string& seqdata)
     }
     size_t pos=0;
     while (pos < seqdata.size()) {
+
+        if (IsCanceled()) {
+            NCBI_THROW(
+                CObjWriterException,
+                eInterrupted,
+                "Processing terminated by user");
+        }
+
         m_Os << seqdata.substr(pos, m_Width) << "\n";
         pos += m_Width;
     }

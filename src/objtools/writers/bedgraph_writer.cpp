@@ -127,6 +127,13 @@ bool CBedGraphWriter::xWriteAnnotSeqTable(
     const CSeq_table& table = annot.GetData().GetSeq_table();
     int numRows = table.GetNum_rows();
     for (int row=0; row < numRows; ++row) {
+        if (IsCanceled()) {
+            NCBI_THROW(
+                CObjWriterException,
+                eInterrupted,
+                "Processing terminated by user");
+        }
+
         string chromId;
         {{
             const vector<CRef<CSeqTable_column> > columns = table.GetColumns();
@@ -297,6 +304,13 @@ bool CBedGraphWriter::xWriteSingleFeature(
     const CSeq_feat& feature)
 //  ----------------------------------------------------------------------------
 {
+    if (IsCanceled()) {
+        NCBI_THROW(
+            CObjWriterException,
+            eInterrupted,
+            "Processing terminated by user");
+    }
+
     CBedGraphRecord bedRecord;
 
     const CSeq_loc& location = feature.GetLocation();
@@ -355,6 +369,13 @@ bool CBedGraphWriter::xWriteSingleGraphInt(
     size_t numValues = graph.GetNumval();
     const vector<int> values = graph.GetGraph().GetInt().GetValues();
     for (size_t valIndex = 0; valIndex < numValues; ++valIndex) {
+        if (IsCanceled()) {
+            NCBI_THROW(
+                CObjWriterException,
+                eInterrupted,
+                "Processing terminated by user");
+        }
+
         bedRecord.SetChromId(chromId);
 
         size_t recordStart = valIndex * chromStep;
@@ -387,6 +408,13 @@ bool CBedGraphWriter::xWriteSingleGraphByte(
     size_t numValues = graph.GetNumval();
     const vector<char> values = graph.GetGraph().GetByte().GetValues();
     for (size_t valIndex = 0; valIndex < numValues; ++valIndex) {
+        if (IsCanceled()) {
+            NCBI_THROW(
+                CObjWriterException,
+                eInterrupted,
+                "Processing terminated by user");
+        }
+
         bedRecord.SetChromId(chromId);
 
         size_t recordStart = valIndex * chromStep;
@@ -420,6 +448,13 @@ bool CBedGraphWriter::xWriteSingleGraphReal(
     size_t numValues = graph.GetNumval();
     const vector<double> values = graph.GetGraph().GetReal().GetValues();
     for (size_t valIndex = 0; valIndex < numValues; ++valIndex) {
+        if (IsCanceled()) {
+            NCBI_THROW(
+                CObjWriterException,
+                eInterrupted,
+                "Processing terminated by user");
+        }
+
         bedRecord.SetChromId(chromId);
 
         size_t recordStart = valIndex * chromStep;

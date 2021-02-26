@@ -322,6 +322,14 @@ bool CWiggleWriter::xWriteSingleGraphRecordsByte(
     const vector<char>& values = graph.GetGraph().GetByte().GetValues();
 
     for ( size_t u=0; u + uStartRecord < uNumVals && u < m_uTrackSize; ++u ) {
+
+        if (IsCanceled()) {
+            NCBI_THROW(
+                CObjWriterException,
+                eInterrupted,
+                "Processing terminated by user");
+        }
+
         int iVal = (unsigned char)values[u + uStartRecord];
         m_Os << ROUND( dA*iVal+dB ) << '\n';
     }
@@ -350,6 +358,14 @@ bool CWiggleWriter::xWriteSingleGraphRecordsInt(
     const vector<int>& values = graph.GetGraph().GetInt().GetValues();
 
     for ( size_t u=0; u + uStartRecord < uNumVals && u < m_uTrackSize; ++u ) {
+
+        if (IsCanceled()) {
+            NCBI_THROW(
+                CObjWriterException,
+                eInterrupted,
+                "Processing terminated by user");
+        }
+
         double dVal = values[u + uStartRecord];
         m_Os << (dA*dVal+dB) << '\n';
     }
@@ -378,6 +394,14 @@ bool CWiggleWriter::xWriteSingleGraphRecordsReal(
     const vector<double>& values = graph.GetGraph().GetReal().GetValues();
 
     for ( size_t u=0; u + uStartRecord < uNumVals && u < m_uTrackSize; ++u ) {
+
+        if (IsCanceled()) {
+            NCBI_THROW(
+                CObjWriterException,
+                eInterrupted,
+                "Processing terminated by user");
+        }
+
         double dVal = values[u + uStartRecord];
         m_Os << ( dA*dVal+dB ) << '\n';
     }
@@ -595,6 +619,14 @@ bool CWiggleWriter::xWriteTableFixedStep(
     //write "value" lines
     int numRows = table.GetNum_rows();
     for (int i=0; i < numRows; ++i) {
+
+        if (IsCanceled()) {
+            NCBI_THROW(
+                CObjWriterException,
+                eInterrupted,
+                "Processing terminated by user");
+        }
+
         double value(0);
         if (!xTableGetValue(table, i, value)) {
             return false;
@@ -630,6 +662,14 @@ bool CWiggleWriter::xWriteTableVariableStep(
     //write "posIn value pairs"
     int numRows = table.GetNum_rows();
     for (int i=0; i < numRows; ++i) {
+
+        if (IsCanceled()) {
+            NCBI_THROW(
+                CObjWriterException,
+                eInterrupted,
+                "Processing terminated by user");
+        }
+
         int posIn(0);
         if (!xTableGetPosIn(table, i, posIn)) {
             return false;
@@ -653,6 +693,14 @@ bool CWiggleWriter::xWriteTableBedStyle(
 {
     int numRows = table.GetNum_rows();
     for (int i=0; i < numRows; ++i) {
+
+        if (IsCanceled()) {
+            NCBI_THROW(
+                CObjWriterException,
+                eInterrupted,
+                "Processing terminated by user");
+        }
+
         string chrom;
         if (!xTableGetChromName(table, i, chrom)) {
             return false;

@@ -111,6 +111,13 @@ bool CPslWriter::WriteAlign(
     const string& descr) 
 //  ----------------------------------------------------------------------------
 {
+    if (IsCanceled()) {
+        NCBI_THROW(
+            CObjWriterException,
+            eInterrupted,
+            "Processing terminated by user");
+    }
+
     ++mRecordCounter;
     if (m_uFlags & CPslWriter::fDebugOutput) {
         cerr << ".";
