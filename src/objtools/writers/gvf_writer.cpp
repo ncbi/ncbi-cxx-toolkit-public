@@ -192,6 +192,13 @@ bool CGvfWriter::xWriteFeatureVariationRef(
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
+    if (IsCanceled()) {
+        NCBI_THROW(
+            CObjWriterException,
+            eInterrupted,
+            "Processing terminated by user");
+    }
+
     CRef<CGvfWriteRecord> pRecord( new CGvfWriteRecord( fc ) );
 
     if (!xAssignFeature(*pRecord, fc, mf)) {

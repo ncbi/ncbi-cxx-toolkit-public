@@ -363,6 +363,12 @@ bool CVcfWriter::x_WriteFeature(
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 { 
+    if (IsCanceled()) {
+        NCBI_THROW(
+            CObjWriterException,
+            eInterrupted,
+            "Processing terminated by user");
+    }
 
     const CVariation_ref& vr = mf.GetData().GetVariation();
     int type = CVariation_inst::eType_identity;

@@ -417,6 +417,12 @@ bool CGff3Writer::xWriteAlignSpliced(
 
     const CSpliced_seg& spliced = align.GetSegs().GetSpliced();
     for (EXONS::const_iterator cit = exons.begin(); cit != exons.end(); ++cit) {
+        if (IsCanceled()) {
+            NCBI_THROW(
+                CObjWriterException,
+                eInterrupted,
+                "Processing terminated by user");
+        }
         const CSpliced_exon& exon = **cit;
         CRef<CGffAlignRecord> pRecord(new CGffAlignRecord(alignId));      
         if (!xAssignAlignmentSpliced(*pRecord, spliced, exon)) {
@@ -756,6 +762,12 @@ bool CGff3Writer::xWriteAlignDenseg(
     CBioseq_Handle sourceH = m_pScope->GetBioseqHandle(sourceId);
 
     for (CAlnMap::TDim sourceRow = 1; sourceRow < alnMap.GetNumRows(); ++sourceRow) {
+        if (IsCanceled()) {
+            NCBI_THROW(
+                CObjWriterException,
+                eInterrupted,
+                "Processing terminated by user");
+        }
         CRef<CGffAlignRecord> pSource(new CGffAlignRecord(alignId));
         const CSeq_id& targetId = alnMap.GetSeqId(sourceRow);
         CBioseq_Handle targetH = m_pScope->GetBioseqHandle(targetId);
