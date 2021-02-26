@@ -71,7 +71,7 @@ static const char kParamPreference[] = "preference";
 // Default configuration parameters' values
 static const char kDefaultServiceName[] = "ID2_SNP2";
 static const int kMinMaxConnectionCount = 1;
-static const int kDefaultMaxConnectionCount = 8;
+static const int kDefaultMaxConnectionCount = 64;
 static const EDebugLevel kDefaultDebugLevel = eDebug_error;
 static const double kMinExpirationTimeout = 1;
 static const double kDefaultExpirationTimeout = 60;
