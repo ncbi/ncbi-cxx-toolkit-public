@@ -548,7 +548,16 @@ BOOST_AUTO_TEST_CASE(test_tax1_getTaxId4GI)
     BOOST_REQUIRE( taxid == 9749 );
     // Not found
     b = tax1.GetTaxId4GI( 0, taxid );
-    BOOST_REQUIRE( b == false );
+    BOOST_REQUIRE( b == true );
+    BOOST_REQUIRE( taxid == 0 );
+
+    b = tax1.GetTaxId4GI( 0x100000000LL + 1000, taxid );
+    BOOST_REQUIRE( b == true );
+    if( ncbi::NStr::EndsWith( CNcbiApplicationAPI::Instance()->GetArgs()["service"].AsString(), "dev", ncbi::NStr::eNocase ) ) {
+        BOOST_REQUIRE( taxid == 9749 );
+    } else {
+        BOOST_REQUIRE( taxid == 0 );
+    }
 }
 
 /***************************************************
