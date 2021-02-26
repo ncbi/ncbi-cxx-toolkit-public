@@ -630,7 +630,6 @@ gpipe_xlsx needs xncbi
 gpipe_xlsx needs3party $(LIBXLSXWRITER_LIBS)
 gpipe_xlsx needs3party $(Z_LIBS)
 gpipe_xml needs gpipe_attr
-gpipe_xml needs gpipe_dateutil
 gpipe_xmlutil needs xmlwrapp
 gpr needs3party $(ORIG_LIBS)
 gpr needs3party absl_int128
