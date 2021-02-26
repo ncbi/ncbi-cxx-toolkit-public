@@ -470,6 +470,14 @@ public:
         eAcc_embl_tpa_other      = e_Tpe | eAcc_other,
         eAcc_embl_tpa_nuc        = e_Tpe | eAcc_other | fAcc_nuc,       // BN
         eAcc_embl_tpa_prot       = e_Tpe | eAcc_other | fAcc_prot,      // CAD29848
+        eAcc_embl_tpa_tsa_nuc    = e_Tpe | eAcc_tsa        | fAcc_nuc,
+        eAcc_embl_tpa_tsa_prot   = e_Tpe | eAcc_tsa        | fAcc_prot,
+        eAcc_embl_tpa_tsam_nuc   = e_Tpe | eAcc_tsa_master | fAcc_nuc,
+        eAcc_embl_tpa_tsam_prot  = e_Tpe | eAcc_tsa_master | fAcc_prot,
+        eAcc_embl_tpa_tsav_nuc   = e_Tpe | eAcc_tsa_vdb_only   | fAcc_nuc,
+        eAcc_embl_tpa_tsav_prot  = e_Tpe | eAcc_tsa_vdb_only   | fAcc_prot,
+        eAcc_embl_tpa_tsavm_nuc  = e_Tpe | eAcc_tsa_vdb_master | fAcc_nuc,
+        eAcc_embl_tpa_tsavm_prot = e_Tpe | eAcc_tsa_vdb_master | fAcc_prot,
         eAcc_embl_tpa_wgs_nuc    = e_Tpe | eAcc_wgs        | fAcc_nuc,  // unused
         eAcc_embl_tpa_wgs_prot   = e_Tpe | eAcc_wgs        | fAcc_prot, // unused
         eAcc_embl_tpa_wgsm_nuc   = e_Tpe | eAcc_wgs_master | fAcc_nuc,
