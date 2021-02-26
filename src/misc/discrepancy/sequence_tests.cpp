@@ -2102,10 +2102,10 @@ static bool s_areCompatible(CBioSource::EGenome Location, CSubSource::ESubtype Q
 
 }
 
-DISCREPANCY_CASE(CHROMOSOME_PRESENT, SEQ_SET, eSubmitter | eSmart | eFatal, "Chromosome present")
+DISCREPANCY_CASE(CHROMOSOME_PRESENT, SEQ_SET, eSubmitter | eSmart, "Chromosome present")
 {
     const CBioseq_set& set = context.CurrentBioseq_set();
-    if (set.IsSetSeq_set() && set.IsSetClass() && set.GetClass() == CBioseq_set::eClass_genbank) {
+    if (set.IsSetSeq_set()) {
         for (const auto& se : set.GetSeq_set()) {
             if (!se->IsSetDescr()) {
                 continue;
@@ -2133,12 +2133,12 @@ DISCREPANCY_CASE(CHROMOSOME_PRESENT, SEQ_SET, eSubmitter | eSmart | eFatal, "Chr
                             Qualifier = static_cast<CSubSource::ESubtype>(subtype->GetSubtype());
                         }
                         if (!s_areCompatible(Location, Qualifier)) {
-                            m_Objs["[n] chromosome[s] [is] present"].Add(*context.BioseqSetObjRef()).Fatal();
+                            m_Objs["[n] chromosome[s] [is] present"].Add(*context.BioseqSetObjRef());
                         }
                     }
                 } else {
                     if (!s_areCompatible(Location, eSubtype_unknown)) {
-                        m_Objs["[n] chromosome[s] [is] present"].Add(*context.BioseqSetObjRef()).Fatal();
+                        m_Objs["[n] chromosome[s] [is] present"].Add(*context.BioseqSetObjRef());
                     }
                 }
             }
