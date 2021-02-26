@@ -256,21 +256,18 @@
 #endif
 
 #ifdef __cplusplus
-#  if __cplusplus >= 201103L  ||  defined(__GXX_EXPERIMENTAL_CXX0X__) \
-      ||  defined(__GXX_EXPERIMENTAL_CPP0X__)  \
-      ||  (defined(NCBI_COMPILER_MSVC)  &&  _MSC_VER >= 1800)
-#    define NCBI_HAVE_CXX11 1
-#  endif
-#  if defined(NCBI_HAVE_CXX11) \
-      ||  (defined(NCBI_COMPILER_MSVC)  &&  _MSC_VER >= 1600)
-#    define HAVE_IS_SORTED 1
-#    define HAVE_NULLPTR 1
-#  endif
-#  if defined(NCBI_HAVE_CXX11)
-#    if !defined(NCBI_COMPILER_ICC)  ||  NCBI_COMPILER_VERSION >= 1400
-       /* Exclude ICC 13.x and below, which don't support using "enum class"
-        * in conjunction with switch. */
-#      define HAVE_ENUM_CLASS 1
+#  define NCBI_HAVE_CXX11 1
+#  define HAVE_IS_SORTED 1
+#  define HAVE_NULLPTR 1
+#  define HAVE_ENUM_CLASS 1
+
+#  if defined(NCBI_COMPILER_MSVC) && defined(_MSVC_LANG)
+#    if (_MSVC_LANG >= 201700)
+#      define NCBI_HAVE_CXX17 1
+#    endif
+#  else
+#    if (__cplusplus >= 201700)
+#      define NCBI_HAVE_CXX17 1
 #    endif
 #  endif
 #endif
