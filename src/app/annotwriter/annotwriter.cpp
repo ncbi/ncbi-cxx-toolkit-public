@@ -103,17 +103,23 @@ USING_SCOPE(objects);
 static const CDataLoadersUtil::TLoaders default_loaders = CDataLoadersUtil::fAsnCache | CDataLoadersUtil::fGenbank;
 
 
-//#define CANCELER_CODE
+#define CANCELER_CODE
 #if defined(CANCELER_CODE)
-#include <conio.h>
 //  ============================================================================
 class TestCanceler: public ICanceled
 //  ============================================================================
 {
+    static const unsigned int CALLS_UNTIL_CANCELLED = 1000;
     bool IsCanceled() const { 
-        return kbhit(); 
+        if (0 == ++mNumCalls % 100) {
+            cerr << "Iterations until cancelled: " 
+                 << (CALLS_UNTIL_CANCELLED - mNumCalls) << "\n";
+        }
+        return (mNumCalls > CALLS_UNTIL_CANCELLED);
     };
+    static unsigned int mNumCalls;
 };
+unsigned int TestCanceler::mNumCalls = 0; 
 #endif
 
 CWriterMessage InternalError(

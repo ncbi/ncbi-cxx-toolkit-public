@@ -232,6 +232,12 @@ bool CGtfWriter::xWriteFeature(
     const CMappedFeat& mf)
 //  ----------------------------------------------------------------------------
 {
+    if (IsCanceled()) {
+        NCBI_THROW(
+            CObjWriterException,
+            eInterrupted,
+            "Processing terminated by user");
+    }
     auto subtype = mf.GetFeatSubtype();
 
     //const auto& feat = mf.GetMappedFeature();

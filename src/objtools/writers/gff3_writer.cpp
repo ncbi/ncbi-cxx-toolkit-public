@@ -1409,6 +1409,13 @@ bool CGff3Writer::xWriteProteinFeature(
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
+    if (IsCanceled()) {
+        NCBI_THROW(
+            CObjWriterException,
+            eInterrupted,
+            "Processing terminated by user");
+    }
+
     // Skip feature if it lies outside the display interval - RW-158
     if (!GetRange().IsWhole() &&
         mf.GetLocation().GetTotalRange().IntersectionWith(GetRange()).Empty()) {
@@ -1436,6 +1443,13 @@ bool CGff3Writer::xWriteNucleotideFeature(
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
+    if (IsCanceled()) {
+        NCBI_THROW(
+            CObjWriterException,
+            eInterrupted,
+            "Processing terminated by user");
+    }
+
     // Skip feature if it lies outside the display interval - RW-158
     if (!GetRange().IsWhole() &&
         mf.GetLocation().GetTotalRange().IntersectionWith(GetRange()).Empty()) {
