@@ -202,7 +202,8 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
                    LBSM_DEFAULT_RATE, iter->time + LBSM_DEFAULT_TIME,
                    net_info->scheme == eURL_Https ? " $=Yes" : "") < size);
     /* Parse descriptor into SSERV_Info */
-    CORE_TRACEF(("Parsing server descriptor \"%s\"", infostr));
+    CORE_TRACEF(("[%s]  LINKERD parsing server descriptor \"%s\"",
+                 iter->name, infostr));
     if ( ! (data->info = SERV_ReadInfoEx(infostr, iter->reverse_dns
                                          ? iter->name : "", 0/*false*/))) {
         CORE_LOGF_X(eLSub_BadData, eLOG_Error,
@@ -224,8 +225,11 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
 
     assert(data);
 
-    if (!data->info  &&  !data->reset)
+    CORE_TRACEF(("Enter LINKERD::s_GetNextInfo(\"%s\")", iter->name));
+    if (!data->info  &&  !data->reset) {
+        CORE_TRACEF(("Leave LINKERD::s_GetNextInfo(\"%s\"): EOF", iter->name));
         return 0;
+    }
 
     data->reset = 0/*false*/;
     if (!data->info  &&  !s_Resolve(iter)) {
@@ -240,6 +244,8 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
 
     if (host_info)
         *host_info = 0;
+    CORE_TRACEF(("Leave LINKERD::s_GetNextInfo(\"%s\"): \"%s\" %p",
+                 iter->name, SERV_NameOfInfo(info), info));
     return info;
 }
 
@@ -247,22 +253,27 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
 static void s_Reset(SERV_ITER iter)
 {
     struct SLINKERD_Data* data = (struct SLINKERD_Data*) iter->data;
+    CORE_TRACEF(("Enter LINKERD::s_Reset(\"%s\"): %u", iter->name,
+                 data->info ? 1 : 0));
     assert(data);
     if (data->info) {
         free(data->info);
         data->info = 0;
     }
     data->reset = 1/*true*/;
+    CORE_TRACEF(("Leave LINKERD::s_Reset(\"%s\")", iter->name));
 }
 
 
 static void s_Close(SERV_ITER iter)
 {
     struct SLINKERD_Data* data = (struct SLINKERD_Data*) iter->data;
+    CORE_TRACEF(("Enter LINKERD::s_Close(\"%s\")", iter->name));
     iter->data = 0;
     assert(data  &&  !data->info);
     ConnNetInfo_Destroy(data->net_info);
     free(data);
+    CORE_TRACEF(("Leave LINKERD::s_Close(\"%s\")", iter->name));
 }
 
 
@@ -392,9 +403,17 @@ static int/*bool*/ x_SetupConnectionParams(SERV_ITER iter)
                 return 0/*failed*/;
         } else
             retval = -1;
-        if (retval <  0)
+        if (retval <  0) {
+            if (iter->arglen) {
+                assert(iter->arg);
+                CORE_LOGF_X(eLSub_BadData, eLOG_Warning,
+                            ("[%s]  LINKERD does not support argument affinity"
+                             ": %s%s%s%s%s, use at your own risk!", iter->name,
+                             iter->arg, &"="[!iter->val], &"\""[!iter->val],
+                             iter->val ? iter->val : "",  &"\""[!iter->val]));
+            }
             net_info->scheme = eURL_Http;
-        else
+        } else
             assert(net_info->scheme);
     }
 
@@ -483,6 +502,12 @@ extern const SSERV_VTable* SERV_LINKERD_Open(SERV_ITER           iter,
         return 0;
     }
 
+    if (iter->reverse_dns  &&  (!types  ||  (types & fSERV_Standalone))) {
+        CORE_LOGF_X(eLSub_BadData, eLOG_Warning,
+                    ("[%s]  LINKERD does not support Reverse-DNS service"
+                     " name resolutions, use at your own risk!", iter->name));
+    }
+
     if ( ! (data = (struct SLINKERD_Data*) calloc(1, sizeof(*data)))) {
         CORE_LOGF_X(eLSub_Alloc, eLOG_Critical,
                     ("[%s]  Failed to allocate for SLINKERD_Data",
@@ -514,6 +539,6 @@ extern const SSERV_VTable* SERV_LINKERD_Open(SERV_ITER           iter,
     /* call GetNextInfo subsequently if info is actually needed */
     if (info)
         *info = 0;
-    CORE_TRACE("Leave SERV_LINKERD_Open() -- success");
+    CORE_TRACEF(("Leave SERV_LINKERD_Open(\"%s\"): success", iter->name));
     return &kLinkerdOp;
 }

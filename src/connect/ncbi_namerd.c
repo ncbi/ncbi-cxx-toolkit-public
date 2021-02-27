@@ -175,7 +175,7 @@ static CONNECTOR s_CreateConnectorHttp(SERV_ITER iter)
 {
     struct SNAMERD_Data* data = (struct SNAMERD_Data*) iter->data;
 
-    CORE_TRACE("NAMERD::s_CreateConnectorHttp()");
+    CORE_TRACEF(("NAMERD::s_CreateConnectorHttp(\"%s\")", iter->name));
 
     return HTTP_CreateConnector(data->net_info, 0/*user-headers*/, 0/*flags*/);
 }
@@ -184,17 +184,21 @@ static CONNECTOR s_CreateConnectorHttp(SERV_ITER iter)
 static CONNECTOR s_CreateConnectorMemory(SERV_ITER iter)
 {
     BUF buf = 0;
-    CORE_TRACE("NAMERD::s_CreateConnectorMemory()");
+    CORE_TRACEF(("NAMERD::s_CreateConnectorMemory(\"%s\")", iter->name));
     BUF_Append(&buf, s_mock_body, strlen(s_mock_body));
     return MEMORY_CreateConnectorEx(buf, 1/*own it!*/);
 }
 
 
-static void s_RemoveServerInfo(struct SNAMERD_Data* data, size_t n, int del)
+static void s_RemoveServerInfo(struct SNAMERD_Data* data, size_t n, int del
+#ifdef _DEBUG
+                               , const char* name
+#endif /*_DEBUG*/
+                               )
 {
-    CORE_TRACEF(("%s server info " FMT_SIZE_T ": %p",
-                 del ? "Deleting" : "Releasing",
-                 n, data->cand[n].info));
+    CORE_TRACEF(("[%s]  %s server info " FMT_SIZE_T ": \"%s\" %p",
+                 name, del ? "Deleting" : "Releasing", n,
+                 SERV_NameOfInfo(data->cand[n].info), data->cand[n].info));
 
     assert(n < data->n_cand  &&  data->cand[n].info);
     if (del)
@@ -206,9 +210,12 @@ static void s_RemoveServerInfo(struct SNAMERD_Data* data, size_t n, int del)
 }
 
 
-static void s_ProcessForStandby(SERV_ITER iter)
+static void s_ProcessForStandby(struct SNAMERD_Data* data
+#ifdef _DEBUG
+                                , const char* name
+#endif /*_DEBUG*/
+                                )
 {
-    struct SNAMERD_Data* data = (struct SNAMERD_Data*) iter->data;
     double  max_rate = 0.0;
     int     all_standby = 1;
     size_t  i;
@@ -234,23 +241,32 @@ static void s_ProcessForStandby(SERV_ITER iter)
     for (i = data->n_cand;  i > 0;  ) {
         if (data->cand[--i].info->rate
             < (all_standby ? max_rate : LBSM_STANDBY_THRESHOLD)) {
-            s_RemoveServerInfo(data, i, 1/*del*/);
+            s_RemoveServerInfo(data, i, 1/*del*/
+#ifdef _DEBUG
+                               , name
+#endif /*_DEBUG*/
+                               );
         }
     }
 }
 
 
-static int/*bool*/ s_AddServerInfo(struct SNAMERD_Data* data, SSERV_Info* info)
+static int/*bool*/ s_AddServerInfo(struct SNAMERD_Data* data, SSERV_Info* info
+#ifdef _DEBUG
+                                   , const char* name
+#endif /*_DEBUG*/
+                                   )
 {
-    const char* name = SERV_NameOfInfo(info);
+    const char* infoname = SERV_NameOfInfo(info);
     size_t n;
 
     /* First check if the new server info updates an existing one */
     for (n = 0;  n < data->n_cand;  ++n) {
-        if (strcasecmp(name, SERV_NameOfInfo(data->cand[n].info)) == 0
+        if (strcasecmp(infoname, SERV_NameOfInfo(data->cand[n].info)) == 0
             &&  SERV_EqualInfo(info, data->cand[n].info)) {
             /* Replace older version */
-            CORE_TRACEF(("Replacing server info " FMT_SIZE_T ": %p", n, info));
+            CORE_TRACEF(("[%s]  Replacing server info " FMT_SIZE_T
+                         ": \"%s\" %p", name, n, infoname, info));
             free((void*) data->cand[n].info);
             data->cand[n].info   = info;
             data->cand[n].status = info->rate;
@@ -273,7 +289,8 @@ static int/*bool*/ s_AddServerInfo(struct SNAMERD_Data* data, SSERV_Info* info)
     }
 
     /* Add the new service to the array */
-    CORE_TRACEF(("Adding server info " FMT_SIZE_T ": %p", data->n_cand, info));
+    CORE_TRACEF(("[%s]  Adding server info " FMT_SIZE_T ": \"%s\" %p",
+                 name, data->n_cand, infoname, info));
     data->cand[data->n_cand].info   = info;
     data->cand[data->n_cand].status = info->rate;
     data->n_cand++;
@@ -358,7 +375,7 @@ static const char* s_ReadFullResponse(CONN conn, const char* name)
     EIO_Status status;
     size_t     len;
 
-    CORE_TRACE("Enter NAMERD::s_ReadFullResponse()");
+    CORE_TRACEF(("Enter NAMERD::s_ReadFullResponse(\"%s\")", name));
 
     do {
         char block[2000];
@@ -383,8 +400,8 @@ static const char* s_ReadFullResponse(CONN conn, const char* name)
     }
     BUF_Destroy(buf);
 
-    CORE_TRACEF(("Leave NAMERD::s_ReadFullResponse(): " FMT_SIZE_T ", %s",
-                 len, IO_StatusStr(status)));
+    CORE_TRACEF(("Leave NAMERD::s_ReadFullResponse(\"%s\"): " FMT_SIZE_T
+                 ", %s", name, len, IO_StatusStr(status)));
     return response;
 }
 
@@ -400,7 +417,7 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
     size_t               i, n;
     x_JSON_Object*       top;
 
-    CORE_TRACE("Enter NAMERD::s_ParseResponse()");
+    CORE_TRACEF(("Enter NAMERD::s_ParseResponse(\"%s\")", iter->name));
 
     if (!(response = s_ReadFullResponse(conn, iter->name)))
         goto out;
@@ -705,7 +722,7 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
                        rate, stateful, time) < size);
 
         /* Parse the descriptor into SSERV_Info */
-        CORE_TRACEF(("[%s]  Parsing server descriptor: \"%s\"",
+        CORE_TRACEF(("[%s]  NAMERD parsing server descriptor: \"%s\"",
                      iter->name, infostr));
         info = SERV_ReadInfoEx(infostr, iter->reverse_dns
                                ? iter->name : "", 0/*false*/);
@@ -717,30 +734,38 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
             continue;
         }
         free(infostr);
-        CORE_TRACEF(("Created server info: %p", info));
+        CORE_TRACEF(("Created server info: \"%s\" %p", iter->name, info));
 
         /*FIXME: the skip array*/
 
         /* Add new info to collection */
-        if (!s_AddServerInfo(data, info)) {
+        if (!s_AddServerInfo(data, info
+#ifdef _DEBUG
+                             , iter->name
+#endif /*_DEBUG*/
+                             )) {
             CORE_LOGF_X(eNSub_Alloc, eLOG_Critical,
                         ("[%s]  Failed to add server info", iter->name));
-            CORE_TRACEF(("Freeing server info: %p", info));
+            CORE_TRACEF(("Freeing server info: \"%s\" %p", iter->name, info));
             free(info); /* not freed by failed s_AddServerInfo() */
             goto out;
         }
     }
 
     /* Post process for standby's */
-    s_ProcessForStandby(iter);
+    s_ProcessForStandby(data
+#ifdef _DEBUG
+                        , iter->name
+#endif /*_DEBUG*/
+                        );
 
 out:
     if (root)
         x_json_value_free(root);
     if (response)
         free((void*) response);
-    CORE_TRACEF(("Leave NAMERD::s_ParseResponse(): " FMT_SIZE_T "/"
-                 FMT_SIZE_T " found, " FMT_SIZE_T " available",
+    CORE_TRACEF(("Leave NAMERD::s_ParseResponse(\"%s\"): " FMT_SIZE_T "/"
+                 FMT_SIZE_T " found, " FMT_SIZE_T " available", iter->name,
                  found, n, data->n_cand));
     return found ? 1/*success*/ : 0/*failure*/;
 }
@@ -753,7 +778,7 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
     CONN        conn;
     CONNECTOR   c;
 
-    CORE_TRACE("Enter NAMERD::s_Resolve()");
+    CORE_TRACEF(("Enter NAMERD::s_Resolve(\"%s\")", iter->name));
 
     /* Create connector and connection, and fetch and parse the response */
     if (!(c = s_CreateConnector(iter))
@@ -775,13 +800,17 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
     }
 
     ((struct SNAMERD_Data*) iter->data)->resolved = 1/*true*/;
-    CORE_TRACEF(("Leave NAMERD::s_Resolve(): %s",
+    CORE_TRACEF(("Leave NAMERD::s_Resolve(\"%s\"): %s", iter->name,
                  retval ? "success" : "failure"));
     return retval;
 }
 
 
-static int/*bool*/ s_IsUpdateNeeded(TNCBI_Time now, struct SNAMERD_Data *data)
+static int/*bool*/ s_IsUpdateNeeded(struct SNAMERD_Data* data, TNCBI_Time now
+#ifdef _DEBUG
+                                    , const char* name
+#endif /*_DEBUG*/
+                                    )
 {
     int/*bool*/ expired = 0/*false*/;
     size_t i;
@@ -791,9 +820,13 @@ static int/*bool*/ s_IsUpdateNeeded(TNCBI_Time now, struct SNAMERD_Data *data)
     for (i = data->n_cand;  i > 0;  ) {
         const SSERV_Info* info = data->cand[--i].info;
         if (info->time < now) {
-            CORE_TRACEF(("Expired server info (%u < %u): %p",
-                         info->time, now, info));
-            s_RemoveServerInfo(data, i, 1/*del*/);
+            CORE_TRACEF(("NAMERD expired server info (%u < %u): \"%s\" %p",
+                         info->time, now, name, info));
+            s_RemoveServerInfo(data, i, 1/*del*/
+#ifdef _DEBUG
+                               , name
+#endif /*_DEBUG*/
+                               );
             expired = 1/*true*/;
         }
     }
@@ -815,21 +848,22 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
     SSERV_Info* info;
     size_t n;
 
-    CORE_TRACE("Enter NAMERD::s_GetNextInfo()");
+    CORE_TRACEF(("Enter NAMERD::s_GetNextInfo(\"%s\")", iter->name));
 
     assert(data);
 
-    if (!data->n_cand  &&  data->resolved) {
-        CORE_TRACE("Leave NAMERD::s_GetNextInfo() -- end of candidates");
-        return 0;
-    }
-
-    if (!data->n_cand  ||  s_IsUpdateNeeded(iter->time, data)) {
+    if ((!data->n_cand  &&  !data->resolved)
+        ||  s_IsUpdateNeeded(data, iter->time
+#ifdef _DEBUG
+                             , iter->name
+#endif /*_DEBUG*/
+                             )) {
         (void) s_Resolve(iter);
-        if (!data->n_cand) {
-            CORE_TRACE("Leave NAMERD::s_GetNextInfo() -- no candidates");
-            return 0;
-        }
+        assert(data->resolved);
+    }
+    if (!data->n_cand  &&  data->resolved) {
+        CORE_TRACEF(("Leave NAMERD::s_GetNextInfo(\"%s\"): EOF", iter->name));
+        return 0;
     }
 
     /* Pick a randomized candidate */
@@ -839,12 +873,17 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
     info->rate =               data->cand[n].status;
 
     /* Remove returned info */
-    s_RemoveServerInfo(data, n, 0/*keep*/);
+    s_RemoveServerInfo(data, n, 0/*keep*/
+#ifdef _DEBUG
+                       , iter->name
+#endif /*_DEBUG*/
+                       );
 
     if (host_info)
         *host_info = 0;
 
-    CORE_TRACEF(("Leave NAMERD::s_GetNextInfo(): %p", info));
+    CORE_TRACEF(("Leave NAMERD::s_GetNextInfo(\"%s\"): \"%s\" %p", iter->name,
+                 SERV_NameOfInfo(info), info));
     return info;
 }
 
@@ -853,14 +892,15 @@ static void s_Reset(SERV_ITER iter)
 {
     struct SNAMERD_Data* data = (struct SNAMERD_Data*) iter->data;
 
-    CORE_TRACE("Enter NAMERD::s_Reset()");
+    CORE_TRACEF(("Enter NAMERD::s_Reset(\"%s\"): " FMT_SIZE_T,
+                 iter->name, data->n_cand));
 
     if (data->cand) {
         size_t i;
         assert(data->a_cand  &&  data->n_cand <= data->a_cand);
         for (i = 0;  i < data->n_cand;  ++i) {
-            CORE_TRACEF(("Freeing server info " FMT_SIZE_T ": %p",
-                         i, data->cand[i].info));
+            CORE_TRACEF(("Freeing server info " FMT_SIZE_T ": \"%s\" %p",
+                         i, iter->name, data->cand[i].info));
             free((void*) data->cand[i].info);
         }
         data->n_cand = 0;
@@ -868,7 +908,7 @@ static void s_Reset(SERV_ITER iter)
     data->resolved = 0/*false*/;
     data->standby = 0/*false*/;
 
-    CORE_TRACE("Leave NAMERD::s_Reset()");
+    CORE_TRACEF(("Leave NAMERD::s_Reset(\"%s\")", iter->name));
 }
 
 
@@ -876,7 +916,7 @@ static void s_Close(SERV_ITER iter)
 {
     struct SNAMERD_Data* data = (struct SNAMERD_Data*) iter->data;
 
-    CORE_TRACE("Enter NAMERD::s_Close()");
+    CORE_TRACEF(("Enter NAMERD::s_Close(\"%s\")", iter->name));
     iter->data = 0;
 
     assert(data  &&  !data->n_cand); /*s_Reset() had to be called before*/
@@ -886,7 +926,7 @@ static void s_Close(SERV_ITER iter)
     ConnNetInfo_Destroy(data->net_info);
     free(data);
 
-    CORE_TRACE("Leave NAMERD::s_Close()");
+    CORE_TRACEF(("Leave NAMERD::s_Close(\"%s\")", iter->name));
 }
 
 
@@ -899,7 +939,8 @@ static int/*bool*/ x_UpdateDtabInArgs(SConnNetInfo* net_info,
     const char* arg;
     char* buf;
 
-    CORE_TRACEF(("Enter NAMERD::x_UpdateDtabInArgs(): \"%s\"", dtab));
+    CORE_TRACEF(("Enter NAMERD::x_UpdateDtabInArgs(\"%s\"): \"%s\"",
+                 name, dtab));
 
     /* Trim off all surrounding whitespace */
     while (*dtab  &&  isspace((unsigned char)(*dtab)))
@@ -910,7 +951,8 @@ static int/*bool*/ x_UpdateDtabInArgs(SConnNetInfo* net_info,
     assert(!*dtab == !dtablen);
 
     if (!*dtab) {
-        CORE_TRACE("Leave NAMERD::x_UpdateDtabInArgs() -- nothing to do");
+        CORE_TRACEF(("Leave NAMERD::x_UpdateDtabInArgs(\"%s\"): nothing to do",
+                     name));
         return 1/*success*/;
     }
 
@@ -930,8 +972,8 @@ static int/*bool*/ x_UpdateDtabInArgs(SConnNetInfo* net_info,
     }
     if (*arg  &&  *arg != '#') {
         assert(arglen);
-        CORE_TRACEF(("NAMERD::x_UpdateDtabInArgs() existing dtab \"%.*s\"",
-                     (int) arglen, arg));
+        CORE_TRACEF(("Found NAMERD::x_UpdateDtabInArgs(\"%s\") existing dtab"
+                     " \"%.*s\"", name, (int) arglen, arg));
     } else
         arglen = 0;
 
@@ -967,18 +1009,23 @@ static int/*bool*/ x_UpdateDtabInArgs(SConnNetInfo* net_info,
         return 0/*failure*/;
     }
 
-    CORE_TRACEF(("Leave NAMERD::x_UpdateDtabInArgs() -- new dtab \"%s\"",buf));
+    CORE_TRACEF(("Leave NAMERD::x_UpdateDtabInArgs(\"%s\"): new dtab \"%s\"",
+                 name, buf));
     free(buf);
     return 1/*success*/;
 }
 
 
-static char* x_GetDtabFromHeader(const char* header)
+static char* x_GetDtabFromHeader(const char* header
+#ifdef _DEBUG
+                                 , const char* name
+#endif /*_DEBUG*/
+                                 )
 {
     const char* line;
     size_t linelen;
 
-    CORE_TRACEF(("Enter NAMERD::x_GetDtabFromHeader(): %s%s%s",
+    CORE_TRACEF(("Enter NAMERD::x_GetDtabFromHeader(\"%s\"): %s%s%s", name,
                  &"\""[!header], header ? header : "NULL", &"\""[!header]));
 
     for (line = header;  line  &&  *line;  line += linelen) {
@@ -992,15 +1039,15 @@ static char* x_GetDtabFromHeader(const char* header)
                         sizeof(DTAB_HTTP_HEADER_TAG)-2/*":\0"*/) == 0) {
             line    += sizeof(DTAB_HTTP_HEADER_TAG)-1/*"\0"*/;
             linelen -= sizeof(DTAB_HTTP_HEADER_TAG)-1/*"\0"*/;
-            CORE_TRACEF(("Leave NAMERD::x_GetDtabFromHeader(): "
-                         DTAB_HTTP_HEADER_TAG " \"%.*s\"",
+            CORE_TRACEF(("Leave NAMERD::x_GetDtabFromHeader(\"%s\"): "
+                         DTAB_HTTP_HEADER_TAG " \"%.*s\"", name,
                          (int) linelen, line));
             return strndup(line, linelen);
         }
     }
 
-    CORE_TRACE("Leave NAMERD::x_GetDtabFromHeader() -- " DTAB_HTTP_HEADER_TAG
-               " not found");
+    CORE_TRACEF(("Leave NAMERD::x_GetDtabFromHeader(\"%s\"): "
+                 DTAB_HTTP_HEADER_TAG " not found", name));
     return (char*)(-1L);
 }
 
@@ -1081,7 +1128,7 @@ static int/*bool*/ x_SetupConnectionParams(const SERV_ITER iter)
     if (!net_info->host[0]
         ||  NCBI_HasSpaces(net_info->host, strlen(net_info->host))) {
         CORE_LOGF_X(eNSub_BadData, eLOG_Error,
-                    ("%s NAMERD host \"%s\"",
+                    ("[%s]  %s NAMERD host \"%s\"", iter->name,
                      net_info->host[0] ? "Bad" : "Empty", net_info->host));
         return 0/*failed*/;
     }
@@ -1091,15 +1138,15 @@ static int/*bool*/ x_SetupConnectionParams(const SERV_ITER iter)
                                        REG_NAMERD_API_PORT,
                                        buf, sizeof(buf),
                                        DEF_NAMERD_API_PORT)) {
-        CORE_LOG_X(eNSub_TooLong, eLOG_Error,
-                   "Unable to check NAMERD port");
+        CORE_LOGF_X(eNSub_TooLong, eLOG_Error,
+                    ("[%s]  Unable to check NAMERD port", iter->name));
         return 0/*failed*/;
     }
     /* namerd doesn't support port -- make sure none given */
     if (*buf  &&  (sscanf(buf, "%hu%n", &net_info->port, &n) < 1
                    ||  buf[n]  ||  net_info->port != DEF_NAMERD_API_PORT)) {
         CORE_LOGF_X(eNSub_BadData, eLOG_Error,
-                    ("Bad NAMERD port \"%s\"", buf));
+                    ("[%s]  Bad NAMERD port \"%s\"", iter->name, buf));
         return 0/*failed*/;
     } else
         net_info->port = DEF_NAMERD_API_PORT;
@@ -1109,13 +1156,14 @@ static int/*bool*/ x_SetupConnectionParams(const SERV_ITER iter)
                                        REG_NAMERD_API_PATH,
                                        buf, sizeof(buf),
                                        DEF_NAMERD_API_PATH)) {
-        CORE_LOG_X(eNSub_TooLong, eLOG_Error,
-                   "Unable to get NAMERD path");
+        CORE_LOGF_X(eNSub_TooLong, eLOG_Error,
+                    ("[%s]  Unable to get NAMERD path", iter->name));
         return 0/*failed*/;
     }
     if (!ConnNetInfo_SetPath(net_info, buf)) {
         CORE_LOGF_X(eNSub_TooLong, eLOG_Error,
-                    ("Failed to set NAMERD path \"%s\"", buf));
+                    ("[%s]  Failed to set NAMERD path \"%s\"", iter->name,
+                     buf));
         return 0/*failed*/;
     }
 
@@ -1124,15 +1172,16 @@ static int/*bool*/ x_SetupConnectionParams(const SERV_ITER iter)
                                        REG_NAMERD_API_ENV,
                                        buf + 1, sizeof(buf) - 1,
                                        DEF_NAMERD_API_ENV)) {
-        CORE_LOG_X(eNSub_TooLong, eLOG_Error,
-                   "Unable to get NAMERD env");
+        CORE_LOGF_X(eNSub_TooLong, eLOG_Error,
+                    ("[%s]  Unable to get NAMERD env", iter->name));
         return 0/*failed*/;
     }
     if (buf[1]) {
         *buf = '/';
         if (!ConnNetInfo_AddPath(net_info, buf)) {
             CORE_LOGF_X(eNSub_TooLong, eLOG_Error,
-                        ("Failed to set NAMERD env \"%s\"", buf));
+                        ("[%s]  Failed to set NAMERD env \"%s\"", iter->name,
+                         buf));
             return 0/*failed*/;
         }
     }
@@ -1142,8 +1191,8 @@ static int/*bool*/ x_SetupConnectionParams(const SERV_ITER iter)
                                        REG_NAMERD_API_ARGS,
                                        buf, sizeof(buf),
                                        DEF_NAMERD_API_ARGS)) {
-        CORE_LOG_X(eNSub_TooLong, eLOG_Error,
-                   "Unable to get NAMERD args");
+        CORE_LOGF_X(eNSub_TooLong, eLOG_Error,
+                    ("[%s] Unable to get NAMERD args", iter->name));
         return 0/*failed*/;
     }
     argslen = strlen(buf);
@@ -1172,7 +1221,8 @@ static int/*bool*/ x_SetupConnectionParams(const SERV_ITER iter)
     }
     if (len >= sizeof(buf)  ||  !ConnNetInfo_PreOverrideArg(net_info, buf, 0)){
         CORE_LOGF_X(eNSub_TooLong, eLOG_Error,
-                    ("Failed to set NAMERD args \"%s\"", buf));
+                    ("[%s] Failed to set NAMERD args \"%s\"", iter->name,
+                     buf));
         return 0/*failed*/;
     }
 
@@ -1185,15 +1235,16 @@ static int/*bool*/ x_SetupConnectionParams(const SERV_ITER iter)
                                            net_info->http_proxy_host,
                                            sizeof(net_info->http_proxy_host),
                                            DEF_NAMERD_PROXY_HOST)) {
-            CORE_LOG_X(eNSub_TooLong, eLOG_Error,
-                       "Unable to get NAMERD http proxy host");
+            CORE_LOGF_X(eNSub_TooLong, eLOG_Error,
+                        ("[%s]  Unable to get NAMERD http proxy host",
+                         iter->name));
             return 0/*failed*/;
         }
         if (!net_info->http_proxy_host[0]
             ||  NCBI_HasSpaces(net_info->http_proxy_host,
                                strlen(net_info->http_proxy_host))) {
             CORE_LOGF_X(eNSub_BadData, eLOG_Error,
-                        ("%s NAMERD http proxy host \"%s\"",
+                        ("[%s]  %s NAMERD http proxy host \"%s\"", iter->name,
                          net_info->http_proxy_host[0] ? "Bad" : "Empty",
                          net_info->http_proxy_host));
             return 0/*failed*/;
@@ -1202,14 +1253,15 @@ static int/*bool*/ x_SetupConnectionParams(const SERV_ITER iter)
                                            REG_NAMERD_PROXY_PORT,
                                            buf, sizeof(buf),
                                            DEF_NAMERD_PROXY_PORT)) {
-            CORE_LOG_X(eNSub_TooLong, eLOG_Error,
-                       "Unable to get NAMERD http proxy port");
+            CORE_LOGF_X(eNSub_TooLong, eLOG_Error,
+                        ("[%s]  Unable to get NAMERD http proxy port",
+                         iter->name));
             return 0/*failed*/;
         }
         if (!*buf  ||  sscanf(buf, "%hu%n", &net_info->http_proxy_port, &n) < 1
             ||  buf[n]  ||  !net_info->http_proxy_port) {
             CORE_LOGF_X(eNSub_BadData, eLOG_Error,
-                        ("%s NAMERD http proxy port \"%s\"",
+                        ("[%s]  %s NAMERD http proxy port \"%s\"", iter->name,
                          *buf ? "Bad" : "Empty", buf));
             return 0/*failed*/;
         }
@@ -1224,7 +1276,12 @@ static int/*bool*/ x_SetupConnectionParams(const SERV_ITER iter)
      *  requested service.  Instead, the namerd service uses the dtab argument
      *  for resolution. */
     /* 1: service DTAB (either service-specific or global) */
-    if (!(dtab = x_GetDtabFromHeader(net_info->http_user_header))) {
+    dtab = x_GetDtabFromHeader(net_info->http_user_header
+#ifdef _DEBUG
+                               , iter->name
+#endif /*_DEBUG*/
+                               );
+    if (!dtab) {
         CORE_LOGF_X(eNSub_Alloc, eLOG_Critical,
                     ("[%s]  Unable to get service dtab from http header",
                      iter->name));
@@ -1242,15 +1299,16 @@ static int/*bool*/ x_SetupConnectionParams(const SERV_ITER iter)
                                        sizeof(buf)
                                        - sizeof(DTAB_HTTP_HEADER_TAG),
                                        DEF_NAMERD_DTAB)) {
-        CORE_LOG_X(eNSub_TooLong, eLOG_Error,
-                   "Unable to get NAMERD dtab");
+        CORE_LOGF_X(eNSub_TooLong, eLOG_Error,
+                    ("[%s]  Unable to get NAMERD dtab", iter->name));
         return 0/*failed*/;
     }
     memcpy(buf, DTAB_HTTP_HEADER_TAG " ", sizeof(DTAB_HTTP_HEADER_TAG));
     /* note that it also clears remnants of a service DTAB if "buf" is empty */
     if (!ConnNetInfo_OverrideUserHeader(net_info, buf)) {
-        CORE_LOG_X(eNSub_Alloc, eLOG_Critical,
-                   "Failed to set NAMERD dtab in http header");
+        CORE_LOGF_X(eNSub_Alloc, eLOG_Critical,
+                    ("[%s]  Failed to set NAMERD dtab in http header",
+                     iter->name));
         return 0/*failed*/;
     }
 
@@ -1286,7 +1344,7 @@ extern const SSERV_VTable* SERV_NAMERD_Open(SERV_ITER           iter,
     types = iter->types & ~(fSERV_Stateless | fSERV_Firewall);
     if (iter->reverse_dns  &&  (!types  ||  (types & fSERV_Standalone))) {
         CORE_LOGF_X(eNSub_BadData, eLOG_Warning,
-                    ("[%s]  NAMERD does not fully support Reverse-DNS service"
+                    ("[%s]  NAMERD does not support Reverse-DNS service"
                      " name resolutions, use at your own risk!", iter->name));
     }
 
@@ -1344,7 +1402,7 @@ extern const SSERV_VTable* SERV_NAMERD_Open(SERV_ITER           iter,
     /* call GetNextInfo subsequently if info is actually needed */
     if (info)
         *info = 0;
-    CORE_TRACE("Leave SERV_NAMERD_Open() -- success");
+    CORE_TRACEF(("Leave SERV_NAMERD_Open(\"%s\"): success", iter->name));
     return &kNamerdOp;
 }
 

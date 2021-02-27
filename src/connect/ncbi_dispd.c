@@ -296,7 +296,7 @@ static int/*bool*/ s_Update(SERV_ITER iter, const char* text, int code)
 }
 
 
-static int/*bool*/ s_IsUpdateNeeded(TNCBI_Time now, struct SDISPD_Data *data)
+static int/*bool*/ s_IsUpdateNeeded(struct SDISPD_Data *data, TNCBI_Time now)
 {
     double status = 0.0, total = 0.0;
 
@@ -340,7 +340,7 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
         data->eof = 0/*false*/;
     data->n_skip = iter->n_skip;
 
-    if (s_IsUpdateNeeded(iter->time, data)) {
+    if (s_IsUpdateNeeded(data, iter->time)) {
         if (!(data->eof | data->fail))
             s_Resolve(iter);
         if (!data->n_cand)
