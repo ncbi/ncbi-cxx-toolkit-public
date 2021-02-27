@@ -303,12 +303,12 @@ static void s_LOG_Handler(void*             /*data*/,
             diag <<
                 "\n#################### [BEGIN] Raw Data (" <<
                 mess->raw_size <<
-                " byte" << (mess->raw_size != 1 ? "s" : "") << ")\n" <<
+                " byte" << (mess->raw_size != 1 ? "s" : "") << "):\n" <<
                 NStr::PrintableString
                 (CTempString(static_cast<const char*>(mess->raw_data),
                              mess->raw_size),
                  NStr::fNewLine_Passthru | NStr::fNonAscii_Quote) <<
-                "\n#################### [END] Raw Data";
+                "\n#################### [_END_] Raw Data";
         }
     }
     NCBI_CATCH_ALL_X(4, "s_LOG_Handler(" + x_Log(mess->level) + ") failed");

@@ -291,9 +291,9 @@ extern NCBI_XCONNECT_EXPORT TLOG_FormatFlags CORE_SetLOGFormatFlags
 /** Compose a message using the "call_data" info.
  * Full log record format:
  *     mm/dd/yy HH:MM:SS "<file>", line <line>: [<module>::<function>] <level>: <message>
- *     \n----- [BEGIN] Raw Data (<raw_size> bytes) -----\n
+ *     \n#################### [BEGIN] Raw Data (<raw_size> byte[s]):\n
  *     <raw_data>
- *     \n----- [END] Raw Data -----\n
+ *     \n#################### [_END_] Raw Data\n
  *
  * @note
  *  The returned string must be deallocated using "free()".
