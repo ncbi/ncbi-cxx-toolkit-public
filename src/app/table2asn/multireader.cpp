@@ -771,32 +771,37 @@ CFormatGuess::EFormat CMultiReader::OpenFile(const string& filename, CRef<CSeria
 		format = xInputGetFormat(*istream);
 	}
 
-    if (format != CFormatGuess::eUnknown)
-        LOG_POST("Recognized input file as format: " << CFormatGuess::GetFormatName(format));
+    switch (format)
+    {
+        case CFormatGuess::eTextASN:
+		    m_obj_stream.reset(CObjectIStream::Open(eSerial_AsnText, filename));
+            input_sequence = xReadASN1(*m_obj_stream);
+            break;
+        case CFormatGuess::eGff3: 
+            {
+            LOG_POST("Recognized input file as format: " << CFormatGuess::GetFormatName(format));
+            unique_ptr<istream> in(new CNcbiIfstream(filename.c_str()));        
+            m_featuresFromSequenceFile = xReadGFF3_NoPostProcessing(*in);
+            if (!AtSeqenceData()) {
+                NCBI_THROW2(CObjReaderParseException, eFormat, 
+                    "Specified GFF3 file does not include any sequence data", 0);
+            }
+            m_iFlags = 0;
+            m_iFlags |= CFastaReader::fNoUserObjs;
+		    input_sequence = xReadFasta(*in);
+            //std::cerr << MSerial_AsnText << MSerial_VerifyNo << *obj;
+            }
+            break;
+        default: // RW-616 - Assume FASTA
+            {
+            m_iFlags = 0;
+            m_iFlags |= CFastaReader::fNoUserObjs;
 
-    if (format == CFormatGuess::eTextASN) {
-		m_obj_stream.reset(CObjectIStream::Open(eSerial_AsnText, filename));
-        input_sequence = xReadASN1(*m_obj_stream);
-    } else
-    if (format == CFormatGuess::eGff3) {
-        unique_ptr<istream> in(new CNcbiIfstream(filename.c_str()));        
-        m_featuresFromSequenceFile = xReadGFF3_NoPostProcessing(*in);
-        if (!AtSeqenceData()) {
-            NCBI_THROW2(CObjReaderParseException, eFormat, 
-                "Specified GFF3 file does not include any sequence data", 0);
-        }
-        m_iFlags = 0;
-        m_iFlags |= CFastaReader::fNoUserObjs;
-		input_sequence = xReadFasta(*in);
-        //std::cerr << MSerial_AsnText << MSerial_VerifyNo << *obj;
-    }
-    else { // RW-616 - Assume FASTA
-        m_iFlags = 0;
-        m_iFlags |= CFastaReader::fNoUserObjs;
-
-		CBufferedInput istream;
-		istream.get().open(filename.c_str());
-		input_sequence = xReadFasta(istream);
+		    CBufferedInput istream;
+		    istream.get().open(filename.c_str());
+		    input_sequence = xReadFasta(istream);
+            }
+            break;
     }
     if (input_sequence.Empty())
         NCBI_THROW2(CObjReaderParseException, eFormat,
