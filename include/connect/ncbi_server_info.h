@@ -128,7 +128,7 @@ typedef struct {
 } SSERV_NcbidInfo;
 
 typedef struct {
-    char                  _pad; /* placeholder, not used                     */
+    char                  _pad; /* placeholder, must be same size as DNS's   */
 } SSERV_StandaloneInfo;
 
 typedef struct {
