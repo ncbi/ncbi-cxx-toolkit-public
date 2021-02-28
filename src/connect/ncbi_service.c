@@ -493,8 +493,8 @@ static int/*bool*/ x_ConsistencyCheck(SERV_ITER iter, const SSERV_Info* info)
     }
     if (!(iter->ismask | iter->reverse_dns) != !*name) {
         CORE_LOGF(eLOG_Critical,
-                  ("[%s]  %s name @%p\n%s", iter->name,
-                   *name ? "Unexpected" : "Empty",
+                  ("[%s]  %s name \"%s\" @%p\n%s", iter->name,
+                   *name ? "Unexpected" : "Empty", name,
                    info, infostr ? infostr : "<NULL>"));
         RETURN(0/*failure*/);
     }
@@ -524,8 +524,8 @@ static int/*bool*/ x_ConsistencyCheck(SERV_ITER iter, const SSERV_Info* info)
         }
         if (info->time > iter->time + LBSM_DEFAULT_TIME) {
             CORE_LOGF(eLOG_Critical,
-                      ("[%s]  Excessive expiration (%u > %u) @%p:\n%s",
-                       iter->name, info->time, iter->time + LBSM_DEFAULT_TIME,
+                      ("[%s]  Excessive expiration (%u) @%p:\n%s", iter->name,
+                       info->time - iter->time,
                        info, infostr ? infostr : "<NULL>"));
             RETURN(0/*failure*/);
         }
@@ -557,6 +557,12 @@ static int/*bool*/ x_ConsistencyCheck(SERV_ITER iter, const SSERV_Info* info)
         if (info->mode & fSERV_Stateful) {
             CORE_LOGF(eLOG_Critical,
                       ("[%s]  DNS entry cannot be stateful @%p:\n%s",
+                       iter->name, info, infostr ? infostr : "<NULL>"));
+            RETURN(0/*failure*/);
+        }
+        if (info->mode & fSERV_Secure) {
+            CORE_LOGF(eLOG_Critical,
+                      ("[%s]  DNS entry cannot be secure @%p:\n%s",
                        iter->name, info, infostr ? infostr : "<NULL>"));
             RETURN(0/*failure*/);
         }
@@ -612,20 +618,14 @@ static int/*bool*/ x_ConsistencyCheck(SERV_ITER iter, const SSERV_Info* info)
     }
     if ((iter->types & fSERV_Stateless)  &&  (info->mode & fSERV_Stateful)) {
         CORE_LOGF(eLOG_Critical,
-                  ("[%s]  Steteful entry in stateless search @%p:\n%s",
+                  ("[%s]  Stateful entry in stateless search @%p:\n%s",
                    iter->name, info, infostr ? infostr : "<NULL>"));
         RETURN(0/*failure*/);
     }
     if (info->type != fSERV_Dns  ||  info->host) {
         if (!info->time  &&  !info->rate) {
             CORE_LOGF(eLOG_Critical,
-                      ("[%s]  Off entry returned @%p:\n%s", iter->name,
-                       info, infostr ? infostr : "<NULL>"));
-            RETURN(0/*failure*/);
-        }
-        if (SERV_IsDown(info)  &&  !iter->ok_down) {
-            CORE_LOGF(eLOG_Critical,
-                      ("[%s]  Down entry unwarranted @%p:\n%s", iter->name,
+                      ("[%s]  Off entry not allowed @%p:\n%s", iter->name,
                        info, infostr ? infostr : "<NULL>"));
             RETURN(0/*failure*/);
         }
@@ -633,6 +633,12 @@ static int/*bool*/ x_ConsistencyCheck(SERV_ITER iter, const SSERV_Info* info)
             CORE_LOGF(eLOG_Critical,
                       ("[%s]  Suppressed entry unwarranted @%p:\n%s",
                        iter->name, info, infostr ? infostr : "<NULL>"));
+            RETURN(0/*failure*/);
+        }
+        if (SERV_IsDown(info)  &&  !iter->ok_down) {
+            CORE_LOGF(eLOG_Critical,
+                      ("[%s]  Down entry unwarranted @%p:\n%s", iter->name,
+                       info, infostr ? infostr : "<NULL>"));
             RETURN(0/*failure*/);
         }
         if (SERV_IsReserved(info)  &&  !iter->ok_reserved) {
