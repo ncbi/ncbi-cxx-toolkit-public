@@ -1362,7 +1362,8 @@ extern CConn_IOStream* NcbiOpenURL(const string& url, size_t buf_size)
     AutoPtr<SConnNetInfo> net_info
         (ConnNetInfo_CreateInternal
          (svc
-          ? TTempCharPtr(SERV_ServiceName(url.c_str())).get()
+          ? unique_ptr<char, void (*)(void*)>(SERV_ServiceName(url.c_str()),
+                                              &free).get()
           : NStr::StartsWith(url, "ftp://", NStr::eNocase)
           ? "_FTP" : 0));
     if (svc)
