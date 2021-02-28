@@ -832,7 +832,7 @@ void CHttpRequest::x_InitConnection(bool use_form_data)
         x_extra.adjust = sx_Adjust;
         x_extra.parse_header = sx_ParseHeader;
         x_extra.flags = m_Session->GetHttpFlags() | fHTTP_AdjustOnRedirect;
-        ConnNetInfo_SetUserHeader(net_info.get(), headers.c_str());
+        ConnNetInfo_OverrideUserHeader(net_info.get(), headers.c_str());
         m_Stream.reset(new CConn_ServiceStream(
             m_Url.GetService(), // Ignore other fields now, set them in sx_Adjust
             fSERV_Http,
