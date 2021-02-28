@@ -2772,7 +2772,8 @@ static EIO_Status s_CreateHttpConnector
         ConnNetInfo_SetFrag(xxx, "");
     }
 
-    if (!ConnNetInfo_OverrideUserHeader(xxx, user_header)) {
+    if (user_header  &&  *user_header
+        &&  !ConnNetInfo_OverrideUserHeader(xxx, user_header)) {
         ConnNetInfo_Destroy(xxx);
         return eIO_Unknown;
     }
