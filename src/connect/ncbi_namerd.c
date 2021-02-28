@@ -480,7 +480,8 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
     /* Iterate through addresses, adding to "candidates" */
     n = x_json_array_get_count(addrs);
     for (i = 0;  i < n;  ++i) {
-        const char*    host, *extra, *mime, *mode, *local, *privat, *stateful;
+        const char*    host, *extra, *mime, *mode, *local,
+                       *privat, *stateful, *secure;
         x_JSON_Object* address;
         char*          infostr;
         ESERV_Type     atype;
@@ -491,19 +492,20 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
         size_t         size;
 
         /*  JSON|SSERV_Info|variable mapping to format string:
-            meta.expires|time|time ---------------------------------+
-            meta.stateful|mode|stateful -----------------------+    |
-            meta.rate|rate|rate --------------------------+    |    |
-            meta.mode|site|privat -------------------+    |    |    |
-            meta.mode|site|local ------------------+ |    |    |    |
-            meta.contentType|mime_*|mime ---+      | |    |    |    |
-            meta.extra|extra|extra -----+   |      | |    |    |    |
-            port|port|port -----------+ |   |      | |    |    |    |
-            ip|host|host ----------+  | |   |      | |    |    |    |
-            meta.serviceType       |  | |   |      | |    |    |    |  */
-        /*        |type|type ---+  |  | |   |      | |    |    |    |  */
-        static const        /*  [] [] [][__][__]   [][]   [___][]   [] */
-            char kDescrFmt[] = "%s %s:%u%s%s%s%s L=%s%s R=%.*lf%s T=%u";
+            meta.secure|mode|secure ----------------------------------+
+            meta.expires|time|time ---------------------------------+ |
+            meta.stateful|mode|stateful -----------------------+    | |
+            meta.rate|rate|rate --------------------------+    |    | |
+            meta.mode|site|privat -------------------+    |    |    | |
+            meta.mode|site|local ------------------+ |    |    |    | |
+            meta.contentType|mime_*|mime ---+      | |    |    |    | |
+            meta.extra|extra|extra -----+   |      | |    |    |    | |
+            port|port|port -----------+ |   |      | |    |    |    | |
+            ip|host|host ----------+  | |   |      | |    |    |    | |
+            meta.serviceType       |  | |   |      | |    |    |    | |  */
+        /*        |type|type ---+  |  | |   |      | |    |    |    | |  */
+        static const        /*  [] [] [][__][__]   [][]   [___][]   [][] */
+            char kDescrFmt[] = "%s %s:%u%s%s%s%s L=%s%s R=%.*lf%s T=%u%s";
         /*  NOTE: Some fields must not be included in certain situations
             because SERV_ReadInfoEx() does not expect them in those
             situations, and if they are present then SERV_ReadInfoEx()
@@ -564,10 +566,41 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
                          type));
             continue;
         }
+        if (!*type  ||
+            !(atype
+              & (fSERV_Ncbid | fSERV_Standalone | fSERV_Http | fSERV_Dns))) {
+            CORE_LOGF_X(eNSub_Json, eLOG_Error,
+                        ("[%s]  Bogus {\"addrs[" FMT_SIZE_T
+                         "].meta.serviceType\"} value \"%s\" (%u)", iter->name,
+                         i, type, atype));
+            continue;
+        }
 
         CORE_TRACEF(("[%s]  Parsing for %s:%d '%s'",
                      iter->name, host, port, type));
         ++found;
+
+        /* SSERV_Info.mode <=== addrs[i].meta.secure */
+        if (x_json_object_dothas_value_of_type(address, "meta.secure",
+                                               JSONBoolean)) {
+            int sec = x_json_object_dotget_boolean(address, "meta.secure");
+            if (sec == 0) {
+                secure = "";
+            } else if (sec != 1) {
+                CORE_LOGF_X(eNSub_Json, eLOG_Error,
+                            ("[%s]  Invalid JSON {\"addrs[" FMT_SIZE_T
+                             "].meta.secure\"} value %d", iter->name, i, sec));
+                continue;
+            } else if (atype == fSERV_Dns) {
+                CORE_LOGF_X(eNSub_BadData, eLOG_Warning,
+                            ("[%s]  Bogus JSON {\"addrs[" FMT_SIZE_T
+                             "].meta.secure\"} value for '%s' server"
+                             " type ignored", iter->name, i, type));
+                secure = "";
+            } else
+                secure = " $=Yes";
+        } else
+            secure = "";
 
         /* SSERV_Info.mode <=== addrs[i].meta.stateful */
         if (x_json_object_dothas_value_of_type(address, "meta.stateful",
@@ -654,6 +687,15 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
            SSERV_Info.mime_s
            SSERV_Info.mime_e <=== addrs[i].meta.contentType */
         mime = x_json_object_dotget_string(address, "meta.contentType");
+        if (mime  &&  !*mime)
+            mime = 0;
+        if (mime  &&  atype == fSERV_Dns) {
+            CORE_LOGF_X(eNSub_BadData, eLOG_Warning,
+                        ("[%s]  Bogus JSON {\"addrs[" FMT_SIZE_T
+                         "].meta.contentType\"} value \"%s\" for '%s' server"
+                         " type ignored", iter->name, i, mime, type));
+            mime = 0;
+        }
 
         /* SSERV_Info.extra <=== addrs[i].meta.extra */
         extra = x_json_object_dotget_string(address, "meta.extra");
@@ -719,7 +761,7 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
                        mime  &&  *mime ? " C=" : "", mime ? mime : "",
                        local, privat, rate < LBSM_STANDBY_THRESHOLD ? 3 : 2,
                        /* 3-digit precision for standby; else 2-digits */
-                       rate, stateful, time) < size);
+                       rate, stateful, time, secure) < size);
 
         /* Parse the descriptor into SSERV_Info */
         CORE_TRACEF(("[%s]  NAMERD parsing server descriptor: \"%s\"",
@@ -759,7 +801,7 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
 #endif /*_DEBUG*/
                         );
 
-out:
+ out:
     if (root)
         x_json_value_free(root);
     if (response)
