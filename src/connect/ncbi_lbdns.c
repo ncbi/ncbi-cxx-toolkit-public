@@ -1523,19 +1523,19 @@ const SSERV_VTable* SERV_LBDNS_Open(SERV_ITER iter, SSERV_Info** info)
     CORE_TRACEF(("LBDNS open(\"%s\")", iter->name));
     if (iter->arg) {
         assert(iter->arglen);
-        CORE_LOGF(eLOG_Warning,
+        CORE_LOGF(eLOG_Error,
                   ("[%s]  Argument affinity lookup not supported by LBDNS:"
                    " %s%s%s%s%s", iter->name, iter->arg, &"="[!iter->val],
                    &"\""[!iter->val], iter->val ? iter->val : "",
                    &"\""[!iter->val]));
-        goto out;
+        goto err;
     }
     if (!(data = (struct SLBDNS_Data*) calloc(1, sizeof(*data)
                                               + (LBDNS_INITIAL_ALLOC - 1)
                                               * sizeof(data->cand)))) {
         CORE_LOG_ERRNO(eLOG_Error, errno,
                        "LBDNS failed to create private data structure");
-        return 0;
+        goto err;
     }
     data->debug = ConnNetInfo_Boolean(ConnNetInfo_GetValue
                                       (0, REG_CONN_LBDNS_DEBUG,
@@ -1615,6 +1615,7 @@ const SSERV_VTable* SERV_LBDNS_Open(SERV_ITER iter, SSERV_Info** info)
  out:
     s_Reset(iter);
     s_Close(iter);
+ err:
     CORE_TRACEF(("LBDNS open(\"%s\") failed", iter->name));
     return 0/*failure*/;
 }
