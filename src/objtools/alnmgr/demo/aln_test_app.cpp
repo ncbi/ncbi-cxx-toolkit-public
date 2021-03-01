@@ -418,7 +418,7 @@ TAlnSeqIdIRef ArgToSeq_id(const CArgValue& arg)
     }
 
     CRef<CSeq_id> id;
-    CNcbiIstrstream in(str.c_str());
+    CNcbiIstrstream in(str);
     try {
         id.Reset(new CSeq_id());
         in >> MSerial_AsnText >> *id;
