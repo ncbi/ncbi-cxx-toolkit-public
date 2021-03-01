@@ -1435,7 +1435,7 @@ unique_ptr<T, TDeleter> make_c_unique(T* p, TDeleter d)
 
 /// Overload for the above for all types of allocated memory that are to be deallocated by free()
 template <class T>
-unique_ptr<T, void(*)(T*)> make_c_unique(T* p)
+unique_ptr<T, void(*)(void*)> make_c_unique(T* p)
 {
     return make_c_unique(p, &free);
 }
