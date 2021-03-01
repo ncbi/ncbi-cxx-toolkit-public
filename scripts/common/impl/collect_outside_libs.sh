@@ -9,6 +9,7 @@ search=`echo ${2-$LD_LIBRARY_PATH} | tr : ' '`
 output=$base/path-`echo "$search" | cksum | tr '	 ' __`
 mkdir -p $output/new
 cd $output
+echo '*' > .gitignore
 rm -f new/*
 
 if [ -f stamp2 ]; then
