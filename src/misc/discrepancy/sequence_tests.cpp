@@ -2091,7 +2091,7 @@ static bool s_areCompatible(CBioSource::EGenome Location, CSubSource::ESubtype Q
         case CSubSource::eSubtype_chromosome:
         case CSubSource::eSubtype_linkage_group:
             return false;
-        case eSubtype_unknown: // not present
+//      case eSubtype_unknown: // not present
         default:
             return true;
         }
