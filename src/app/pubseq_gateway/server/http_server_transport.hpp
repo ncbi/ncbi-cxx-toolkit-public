@@ -1162,7 +1162,11 @@ private:
         m_HttpAcceptCtx.ssl_ctx = SSL_CTX_new(SSLv23_server_method());
         m_HttpAcceptCtx.expect_proxy_line = 0;
 
-        SSL_CTX_set_options(m_HttpAcceptCtx.ssl_ctx, SSL_OP_NO_SSLv2);
+        const long  ssl_flags = SSL_OP_NO_SSLv2 |
+                                SSL_OP_NO_SSLv3 |
+                                SSL_OP_NO_TLSv1 |
+                                SSL_OP_NO_TLSv1_1;
+        SSL_CTX_set_options(m_HttpAcceptCtx.ssl_ctx, ssl_flags);
         SSL_CTX_set_ecdh_auto(m_HttpAcceptCtx.ssl_ctx, 1);
 
         if (SSL_CTX_use_certificate_chain_file(m_HttpAcceptCtx.ssl_ctx,
