@@ -483,7 +483,7 @@ void ASNParser::BeginComponentsDefinition(void)
         m_MapDefinitions[reftype] = collected;
     }
 
-    CNcbiIstream* in = new CNcbiIstrstream(m_MapDefinitions[reftype].c_str());
+    CNcbiIstream* in = new CNcbiIstrstream(m_MapDefinitions[reftype]);
     AbstractLexer *lexer = new ASNLexer(*in,lexer_name);
     Lexer().FlushCommentsTo(*lexer);
     m_StackLexer.push(lexer);
