@@ -641,11 +641,10 @@ BOOST_AUTO_TEST_CASE(TestRegistry)
     CNcbiOstrstream os;
     BOOST_CHECK ( reg.Write(os) );
     string os_string = CNcbiOstrstreamToString(os);
-    const char* os_str = os_string.c_str();
-    NcbiCerr << "\nRegistry:\n" << os_str << NcbiEndl;
+    NcbiCerr << "\nRegistry:\n" << os_string << NcbiEndl;
 
     // "Persistent" load
-    CNcbiIstrstream is1(os_str);
+    CNcbiIstrstream is1(os_string);
     CNcbiRegistry  reg1(is1);
     BOOST_CHECK(  reg1.Get("Section2", "Name21", CNcbiRegistry::ePersistent) ==
               "Val21" );
@@ -659,7 +658,7 @@ BOOST_AUTO_TEST_CASE(TestRegistry)
                        CNcbiRegistry::ePersistent) );
 
     // "Transient" load
-    CNcbiIstrstream is2(os_str);
+    CNcbiIstrstream is2(os_string);
     CNcbiRegistry  reg2(is2, CNcbiRegistry::eTransient);
     BOOST_CHECK(  reg2.Get("Section2", "Name21",
                        CNcbiRegistry::ePersistent).empty() );
