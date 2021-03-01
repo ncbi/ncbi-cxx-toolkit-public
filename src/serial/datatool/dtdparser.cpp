@@ -706,7 +706,7 @@ DTDEntity* DTDParser::PushEntityLexer(const string& name)
         m_StackLexerName.push_back(fullname);
         lexer_name = fullname;
     } else {
-        in = new CNcbiIstrstream(m_MapEntity[name].GetData().c_str());
+        in = new CNcbiIstrstream(m_MapEntity[name].GetData());
         m_StackPath.push("");
         m_StackLexerName.push_back(name);
         lexer_name = name;
