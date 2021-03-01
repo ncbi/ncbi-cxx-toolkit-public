@@ -119,7 +119,6 @@ BOOST_AUTO_TEST_CASE(s_TestObjectHooks)
     InitializeTestObject( env, obj, write1);
 
     string data;
-    const char* buf = 0;
     {
         // write hook
         CNcbiOstrstream ostrs;
@@ -133,12 +132,11 @@ BOOST_AUTO_TEST_CASE(s_TestObjectHooks)
             *os << obj;
         }
 		data = CNcbiOstrstreamToString(ostrs);
-		buf = data.c_str();
     }
     {
         // read hook
         // use CObjectHookGuard
-        CNcbiIstrstream istrs(buf);
+        CNcbiIstrstream istrs(data);
         unique_ptr<CObjectIStream> is(
             CObjectIStream::Open(eSerial_AsnText, istrs));
         CTestSerialObject obj_copy;
@@ -163,11 +161,10 @@ BOOST_AUTO_TEST_CASE(s_TestObjectHooks)
             *os << obj;
         }
 		data = CNcbiOstrstreamToString(ostrs);
-		buf = data.c_str();
     }
     {
         // read hook
-        CNcbiIstrstream istrs(buf);
+        CNcbiIstrstream istrs(data);
         unique_ptr<CObjectIStream> is(
             CObjectIStream::Open(eSerial_AsnText, istrs));
         CTestSerialObject obj_copy;
@@ -199,7 +196,6 @@ BOOST_AUTO_TEST_CASE(s_TestObjectStackPathHooks)
     InitializeTestObject( env, obj, write1);
 
     string data;
-    const char* buf = 0;
 
     TTypeInfo type_info = CTestSerialObject::GetTypeInfo();
     {
@@ -215,11 +211,10 @@ BOOST_AUTO_TEST_CASE(s_TestObjectStackPathHooks)
 //                os.get(), "CTestSerialObject.*", NULL);
         }
 		data = CNcbiOstrstreamToString(ostrs);
-		buf = data.c_str();
     }
     {
         // read, stack path hook
-        CNcbiIstrstream istrs(buf);
+        CNcbiIstrstream istrs(data);
         unique_ptr<CObjectIStream> is(
             CObjectIStream::Open(eSerial_AsnText, istrs));
         CTestSerialObject obj_copy;
@@ -253,7 +248,6 @@ BOOST_AUTO_TEST_CASE(s_TestSerialFilter)
     InitializeTestObject( env, obj, write1);
 
     string data;
-    const char* buf = 0;
     {
         // prepare data to read later
         CNcbiOstrstream ostrs;
@@ -265,12 +259,11 @@ BOOST_AUTO_TEST_CASE(s_TestSerialFilter)
             *os << obj;
         }
 		data = CNcbiOstrstreamToString(ostrs);
-		buf = data.c_str();
     }
     {
         // find serial objects of a specific type
         // process them in CTestSerialObjectHook::Process()
-        CNcbiIstrstream istrs(buf);
+        CNcbiIstrstream istrs(data);
         unique_ptr<CObjectIStream> is(
             CObjectIStream::Open(eSerial_AsnText, istrs));
         Serial_FilterObjects<CTestSerialObject>(*is, new CTestSerialObjectHook);
@@ -278,7 +271,7 @@ BOOST_AUTO_TEST_CASE(s_TestSerialFilter)
     {
         // find non-serial objects, here - strings
         // process them in CStringObjectHook::Process()
-        CNcbiIstrstream istrs(buf);
+        CNcbiIstrstream istrs(data);
         unique_ptr<CObjectIStream> is(
             CObjectIStream::Open(eSerial_AsnText, istrs));
         Serial_FilterStdObjects<CTestSerialObject>(*is, new CStringObjectHook);
@@ -287,7 +280,7 @@ BOOST_AUTO_TEST_CASE(s_TestSerialFilter)
     {
         // find serial objects of a specific type
         // process them right here
-        CNcbiIstrstream istrs(buf);
+        CNcbiIstrstream istrs(data);
         unique_ptr<CObjectIStream> is(
             CObjectIStream::Open(eSerial_AsnText, istrs));
         CObjectIStreamIterator<CTestSerialObject> i(*is);
@@ -300,7 +293,7 @@ BOOST_AUTO_TEST_CASE(s_TestSerialFilter)
     {
         // find serial objects of a specific type
         // process them right here
-        CNcbiIstrstream istrs(buf);
+        CNcbiIstrstream istrs(data);
         for (const CTestSerialObject& obj : CObjectIStreamIterator<CTestSerialObject>(
                 *CObjectIStream::Open(eSerial_AsnText, istrs), eTakeOwnership)) {
             LOG_POST("CTestSerialObject @ " << NStr::PtrToString(&obj));
@@ -310,7 +303,7 @@ BOOST_AUTO_TEST_CASE(s_TestSerialFilter)
     {
         // find serial objects of a specific type
         // process them right here
-        CNcbiIstrstream istrs(buf);
+        CNcbiIstrstream istrs(data);
         CObjectIStreamIterator<CTestSerialObject>::CParams params;
         params.FilterByMember(1,
             [](const CObjectIStream& istr, CTestSerialObject& obj,
@@ -325,7 +318,7 @@ BOOST_AUTO_TEST_CASE(s_TestSerialFilter)
     }
     // with exception transfer
     {
-        CNcbiIstrstream istrs(buf);
+        CNcbiIstrstream istrs(data);
         CObjectIStreamIterator<CTestSerialObject>::CParams params;
         params.FilterByMember(1,
             [](const CObjectIStream& istr, CTestSerialObject& obj,
@@ -347,7 +340,7 @@ BOOST_AUTO_TEST_CASE(s_TestSerialFilter)
     }
     // with exception transfer
     {
-        CNcbiIstrstream istrs(buf);
+        CNcbiIstrstream istrs(data);
         CObjectIStreamIterator<CTestSerialObject>::CParams params;
         params.FilterByMember(1,
             [](const CObjectIStream& istr, CTestSerialObject& obj,
@@ -371,7 +364,7 @@ BOOST_AUTO_TEST_CASE(s_TestSerialFilter)
     {
         // find serial objects of a specific type
         // process them right here
-        CNcbiIstrstream istrs(buf);
+        CNcbiIstrstream istrs(data);
         CObjectIStreamIterator<CTestSerialObject>::CParams params;
         params.FilterByMember(2,
             [](const CObjectIStream& istr, CTestSerialObject& obj,
@@ -387,7 +380,7 @@ BOOST_AUTO_TEST_CASE(s_TestSerialFilter)
     {
         // find serial objects of a specific type
         // process them right here
-        CNcbiIstrstream istrs(buf);
+        CNcbiIstrstream istrs(data);
         unique_ptr<CObjectIStream> is(
             CObjectIStream::Open(eSerial_AsnText, istrs));
         CObjectIStreamAsyncIterator<CTestSerialObject> i(*is);
@@ -400,7 +393,7 @@ BOOST_AUTO_TEST_CASE(s_TestSerialFilter)
     {
         // find serial objects of a specific type
         // process them right here
-        CNcbiIstrstream istrs(buf);
+        CNcbiIstrstream istrs(data);
         for (CTestSerialObject& obj : CObjectIStreamAsyncIterator<CTestSerialObject>(
             *CObjectIStream::Open(eSerial_AsnText, istrs), eTakeOwnership)) {
             LOG_POST("CTestSerialObject @ " << NStr::PtrToString(&obj));
@@ -409,7 +402,7 @@ BOOST_AUTO_TEST_CASE(s_TestSerialFilter)
     }
     // with exception transfer
     {
-        CNcbiIstrstream istrs(buf);
+        CNcbiIstrstream istrs(data);
         // generates NCBI exception (wrong format)
         bool gotit = false;
         try {
@@ -426,7 +419,7 @@ BOOST_AUTO_TEST_CASE(s_TestSerialFilter)
     {
         // find serial objects of a specific type
         // process them right here
-        CNcbiIstrstream istrs(buf);
+        CNcbiIstrstream istrs(data);
         unique_ptr<CObjectIStream> is(
             CObjectIStream::Open(eSerial_AsnText, istrs));
         CObjectIStreamAsyncIterator<CTestSerialObject> i(*is);
@@ -439,7 +432,7 @@ BOOST_AUTO_TEST_CASE(s_TestSerialFilter)
     {
         // find serial objects of a specific type
         // process them right here
-        CNcbiIstrstream istrs(buf);
+        CNcbiIstrstream istrs(data);
         unique_ptr<CObjectIStream> is(
             CObjectIStream::Open(eSerial_AsnText, istrs));
         CObjectIStreamIterator<CTestSerialObject,CWeb_Env> i(*is);
@@ -453,7 +446,7 @@ BOOST_AUTO_TEST_CASE(s_TestSerialFilter)
     {
         // find serial objects of a specific type
         // process them right here
-        CNcbiIstrstream istrs(buf);
+        CNcbiIstrstream istrs(data);
         unique_ptr<CObjectIStream> is(
             CObjectIStream::Open(eSerial_AsnText, istrs));
         CObjectIStreamAsyncIterator<CTestSerialObject,CWeb_Env> i(*is);
@@ -466,7 +459,7 @@ BOOST_AUTO_TEST_CASE(s_TestSerialFilter)
     {
         // find serial objects of a specific type
         // process them right here
-        CNcbiIstrstream istrs(buf);
+        CNcbiIstrstream istrs(data);
         for ( const CWeb_Env& obj : CObjectIStreamIterator<CTestSerialObject,CWeb_Env>(
                 *CObjectIStream::Open(eSerial_AsnText, istrs), eTakeOwnership)) {
             LOG_POST("CWeb_Env @ " << NStr::PtrToString(&obj));
@@ -476,7 +469,7 @@ BOOST_AUTO_TEST_CASE(s_TestSerialFilter)
     {
         // find serial objects of a specific type with filter
         // process them right here
-        CNcbiIstrstream istrs(buf);
+        CNcbiIstrstream istrs(data);
         CObjectIStreamIterator<CWeb_Env>::CParams params;
         params.FilterByMember(1,
             [](const CObjectIStream& istr, CWeb_Env& obj,
@@ -491,7 +484,7 @@ BOOST_AUTO_TEST_CASE(s_TestSerialFilter)
     }
     // with exception transfer
     {
-        CNcbiIstrstream istrs(buf);
+        CNcbiIstrstream istrs(data);
         CObjectIStreamIterator<CWeb_Env>::CParams params;
         params.FilterByMember(1,
             [](const CObjectIStream& istr, CWeb_Env& obj,
@@ -513,7 +506,7 @@ BOOST_AUTO_TEST_CASE(s_TestSerialFilter)
     }
     // with exception transfer
     {
-        CNcbiIstrstream istrs(buf);
+        CNcbiIstrstream istrs(data);
         CObjectIStreamIterator<CWeb_Env>::CParams params;
         params.FilterByMember(1,
             [](const CObjectIStream& istr, CWeb_Env& obj,
@@ -537,7 +530,7 @@ BOOST_AUTO_TEST_CASE(s_TestSerialFilter)
     {
         // find non-serial objects, here - strings
         // process them right here
-        CNcbiIstrstream istrs(buf);
+        CNcbiIstrstream istrs(data);
         unique_ptr<CObjectIStream> is(
             CObjectIStream::Open(eSerial_AsnText, istrs));
         CObjectIStreamIterator<CTestSerialObject,string> i(*is);
@@ -550,7 +543,7 @@ BOOST_AUTO_TEST_CASE(s_TestSerialFilter)
     {
         // find non-serial objects, here - strings
         // process them right here
-        CNcbiIstrstream istrs(buf);
+        CNcbiIstrstream istrs(data);
         unique_ptr<CObjectIStream> is(
             CObjectIStream::Open(eSerial_AsnText, istrs));
         CObjectIStreamIterator<CTestSerialObject,string> i(*is);
@@ -641,7 +634,6 @@ BOOST_AUTO_TEST_CASE(s_TestMemberHooks)
     InitializeTestObject( env, obj, write1);
 
     string data;
-    const char* buf = 0;
     {
         // write hook
         // use CObjectHookGuard
@@ -653,12 +645,11 @@ BOOST_AUTO_TEST_CASE(s_TestMemberHooks)
         *os << obj;
 		os->FlushBuffer();
 		data = CNcbiOstrstreamToString(ostrs);
-		buf = data.c_str();
     }
     {
         // read hook
         // use CObjectHookGuard
-        CNcbiIstrstream istrs(buf);
+        CNcbiIstrstream istrs(data);
         unique_ptr<CObjectIStream> is(
             CObjectIStream::Open(eSerial_AsnText, istrs));
         CTestSerialObject obj_copy;
@@ -683,11 +674,10 @@ BOOST_AUTO_TEST_CASE(s_TestMemberHooks)
         *os << obj;
 		os->FlushBuffer();
 		data = CNcbiOstrstreamToString(ostrs);
-		buf = data.c_str();
     }
     {
         // read hook
-        CNcbiIstrstream istrs(buf);
+        CNcbiIstrstream istrs(data);
         unique_ptr<CObjectIStream> is(
             CObjectIStream::Open(eSerial_AsnText, istrs));
         CTestSerialObject obj_copy;
@@ -703,7 +693,7 @@ BOOST_AUTO_TEST_CASE(s_TestMemberHooks)
     }
     {
         // read, stack path hook
-        CNcbiIstrstream istrs(buf);
+        CNcbiIstrstream istrs(data);
         unique_ptr<CObjectIStream> is(
             CObjectIStream::Open(eSerial_AsnText, istrs));
         CTestSerialObject obj_copy;
