@@ -454,10 +454,10 @@ static void TestCgi(const CNcbiArguments& args)
     assert( !X_PUTENV("CONTENT_TYPE=application/x-www-form-urlencoded") );
 
     try { // POST only
-        char inp_str[] = "post11=val11&post12void=&post13=val13";
+        string inp_str = "post11=val11&post12void=&post13=val13";
         CNcbiIstrstream istr(inp_str);
         char len[64];
-        assert(::sprintf(len, "CONTENT_LENGTH=%ld", (long) ::strlen(inp_str)));
+        assert(::sprintf(len, "CONTENT_LENGTH=%ld", (long)inp_str.size()));
         assert( !NcbiSysChar_putenv(len) );
 
         assert( !X_PUTENV("SERVER_PORT=") );
@@ -469,10 +469,10 @@ static void TestCgi(const CNcbiArguments& args)
     } STD_CATCH("TestCgi(POST only)");
 
     try { // POST, fDoNotParseContent
-        char inp_str[] = "post11=val11&post12void=&post13=val13";
+        string inp_str = "post11=val11&post12void=&post13=val13";
         CNcbiIstrstream istr(inp_str);
         char len[64];
-        assert(::sprintf(len, "CONTENT_LENGTH=%ld", (long) ::strlen(inp_str)));
+        assert(::sprintf(len, "CONTENT_LENGTH=%ld", (long)inp_str.size()));
         assert( !NcbiSysChar_putenv(len) );
 
         assert( !X_PUTENV("SERVER_PORT=") );
@@ -484,10 +484,10 @@ static void TestCgi(const CNcbiArguments& args)
     } STD_CATCH("TestCgi(POST only)");
 
     try { // POST + aux. functions
-        char inp_str[] = "post22void=&post23void=";
+        string inp_str = "post22void=&post23void=";
         CNcbiIstrstream istr(inp_str);
         char len[64];
-        assert(::sprintf(len, "CONTENT_LENGTH=%ld", (long) ::strlen(inp_str)));
+        assert(::sprintf(len, "CONTENT_LENGTH=%ld", (long)inp_str.size()));
         assert( !NcbiSysChar_putenv(len) );
 
         assert( !X_PUTENV("SERVER_PORT=9999") );
@@ -498,9 +498,9 @@ static void TestCgi(const CNcbiArguments& args)
     } STD_CATCH("TestCgi(POST + aux. functions)");
 
     // this is for all following tests...
-    char inp_str[] = "postXXX=valXXX";
+    string inp_str = "postXXX=valXXX";
     char len[64];
-    assert( ::sprintf(len, "CONTENT_LENGTH=%ld", (long) ::strlen(inp_str)) );
+    assert( ::sprintf(len, "CONTENT_LENGTH=%ld", (long)inp_str.size()) );
     assert( !NcbiSysChar_putenv(len) );
 
     try { // POST + ISINDEX(action)
@@ -536,7 +536,7 @@ static void TestCgi(const CNcbiArguments& args)
     } STD_CATCH("TestCgi(GET REGULAR + COOKIES)");
 
     try { // ERRONEOUS STDIN
-        CNcbiIstrstream istr("123");
+        CNcbiIstrstream istr(string("123"));
         assert( !X_PUTENV("QUERY_STRING=get_query1=gq1&get_query2=") );
         assert( !X_PUTENV("HTTP_COOKIE=_cook1=_val1;_cook2=_val2") );
         TestCgi_Request_Full(&istr);
