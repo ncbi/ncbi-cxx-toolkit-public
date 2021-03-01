@@ -193,7 +193,7 @@ void CBlastUsageReport::x_CheckBlastUsageEnv()
 		}
 	}
 
-	CNcbiIstrstream empty_stream(kEmptyCStr);
+	CNcbiIstrstream empty_stream(kEmptyStr);
 	CRef<CNcbiRegistry> registry(new CNcbiRegistry(empty_stream, IRegistry::fWithNcbirc));
 	if (registry->HasEntry("BLAST", "BLAST_USAGE_REPORT")) {
 		bool enable = NStr::StringToBool(registry->Get("BLAST", "BLAST_USAGE_REPORT"));
