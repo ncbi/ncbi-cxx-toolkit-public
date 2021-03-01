@@ -396,7 +396,7 @@ s_FindPathToGeneInfoFiles(void)
 {
     string retval = kEmptyStr;
     const string kSection("BLAST");
-    CNcbiIstrstream empty_stream(kEmptyCStr);
+    CNcbiIstrstream empty_stream(kEmptyStr);
     CRef<CNcbiRegistry> reg(new CNcbiRegistry(empty_stream,
                                               IRegistry::fWithNcbirc));
     CRef<CSimpleEnvRegMapper> mapper(new CSimpleEnvRegMapper(kSection,
