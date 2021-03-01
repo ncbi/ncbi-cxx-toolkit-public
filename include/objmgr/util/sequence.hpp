@@ -875,6 +875,8 @@ protected:
     //virtual void x_WriteModifiers ( const CBioseq_Handle & handle );
     virtual void x_WriteSeqTitle( const CBioseq_Handle & handle,
                                     const string& custom_title);
+    virtual void x_WriteBuffer( const char* buf, unsigned int count) { m_Out.write(buf, count); };
+ 
     TFlags              m_Flags;
 
 private:

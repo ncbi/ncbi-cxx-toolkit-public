@@ -50,13 +50,31 @@ BEGIN_objects_SCOPE
 
 class CMappedFeat;
 
+class NCBI_XOBJWRITE_EXPORT CInterruptable: public ICanceled
+{
+public:
+    CInterruptable(): mpCancelled(nullptr) {};
+    void SetCanceler(
+        ICanceled* pCanceller) { mpCancelled = pCanceller; };
+
+    bool IsCanceled() const {
+        if (0 == mpCancelled) {
+            return false;
+        }
+        return mpCancelled->IsCanceled();
+    }
+
+protected:
+    ICanceled* mpCancelled;
+};
+
 //  ============================================================================
 /// Defines and provides stubs for a general interface to a variety of file
 /// formatters. These writers take Genbank object in raw or handle form, and 
 /// render them to an output stream in their respective formats.
 ///
 class NCBI_XOBJWRITE_EXPORT CWriterBase:
-    public CObject
+    public CInterruptable, public CObject
 //  ============================================================================
 {
 public:
@@ -74,7 +92,6 @@ protected:
         unsigned int uFlags=0 ) :
         m_Os( ostr ),
         m_uFlags( uFlags ),
-        mpCancelled(0), 
         m_Range(CRange<TSeqPos>::GetWhole()),
         mpMessageListener(nullptr)
     {
@@ -236,20 +253,9 @@ public:
         return m_Range;
     }
 
-    void SetCanceler(
-        ICanceled* pCanceller) { mpCancelled = pCanceller; };
-
-    bool IsCanceled() const {
-        if (0 == mpCancelled) {
-            return false;
-        }
-        return mpCancelled->IsCanceled();
-    };
-
 protected:
     CNcbiOstream& m_Os;
     unsigned int m_uFlags;
-    ICanceled* mpCancelled;
     unique_ptr<SAnnotSelector> m_Selector;
     CRange<TSeqPos> m_Range;
     CWriterListener* mpMessageListener;

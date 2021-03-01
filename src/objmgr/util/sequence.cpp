@@ -3110,13 +3110,13 @@ void CFastaOstream::x_WriteSequence(const CSeqVector& vec,
             } else {
                 TSeqPos rem_gap = gap_size;
                 while (rem_gap >= rem_line) {
-                    m_Out.write(alt_gap_str.data(), rem_line);
+                    x_WriteBuffer(alt_gap_str.data(), rem_line);
                     m_Out << '\n';
                     rem_gap -= rem_line;
                     rem_line = m_Width;
                 }
                 if (rem_gap > 0) {
-                    m_Out.write(alt_gap_str.data(), rem_gap);
+                    x_WriteBuffer(alt_gap_str.data(), rem_gap);
                     rem_line -= rem_gap;
                 }
             }
@@ -3151,7 +3151,7 @@ void CFastaOstream::x_WriteSequence(const CSeqVector& vec,
                 ptr = lc_buffer.data();
             }
             while ( count >= rem_line ) {
-                m_Out.write(ptr, rem_line);
+                x_WriteBuffer(ptr, rem_line);
                 if ( !(current_state & eHardMask) ) {
                     ptr += rem_line;
                 }
@@ -3160,7 +3160,7 @@ void CFastaOstream::x_WriteSequence(const CSeqVector& vec,
                 rem_line = m_Width;
             }
             if ( count > 0 ) {
-                m_Out.write(ptr, count);
+                x_WriteBuffer(ptr, count);
                 rem_line -= count;
             }
             it.SetPos(new_pos);

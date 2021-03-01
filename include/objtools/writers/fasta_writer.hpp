@@ -48,7 +48,7 @@ class CSeq_entry_Handle;
 
 
 class NCBI_XOBJWRITE_EXPORT CFastaOstreamEx 
-: public CFeatWriter, public CFastaOstream
+: public CFeatWriter, public CInterruptable, public CFastaOstream
 {
 public:
 
@@ -174,6 +174,8 @@ protected:
 
     string x_GetOtherIdString(const CSeq_feat& feat,
         CScope& scope);
+
+    virtual void x_WriteBuffer( const char* buf, unsigned int count) override;
 
     bool m_TranslateCds;
     TSeqPos m_FeatCount;

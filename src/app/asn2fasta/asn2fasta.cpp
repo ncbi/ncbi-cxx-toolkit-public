@@ -70,6 +70,26 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
+//#define CANCELER_CODE
+#if defined(CANCELER_CODE)
+//  ============================================================================
+class TestCanceler: public ICanceled
+//  ============================================================================
+{
+public:
+    static const unsigned int CALLS_UNTIL_CANCELLED = 25;
+    bool IsCanceled() const { 
+        if (0 == ++mNumCalls % 100) {
+            cerr << "Iterations until cancelled: " 
+                 << (CALLS_UNTIL_CANCELLED - mNumCalls) << "\n";
+        }
+        return (mNumCalls > CALLS_UNTIL_CANCELLED);
+    };
+    static unsigned int mNumCalls;
+};
+unsigned int TestCanceler::mNumCalls = 0; 
+TestCanceler canceller;
+#endif
 
 
 //  ==========================================================================
@@ -913,7 +933,6 @@ CFastaOstreamEx* CAsn2FastaApp::x_GetFastaOstream(CBioseq_Handle& bsh)
             return nullptr;
         }
     }
-
     return fasta_os;
 }
 
@@ -975,6 +994,9 @@ bool CAsn2FastaApp::HandleSeqEntry(CSeq_entry_Handle& seh)
             if (!bsh)
                 continue;
             CFastaOstreamEx* fasta_os = x_GetFastaOstream(bsh);
+            #if defined(CANCELER_CODE)
+                fasta_os->SetCanceler(&canceller);
+            #endif
 
             if ( !fasta_os ) continue;
 
@@ -983,6 +1005,9 @@ bool CAsn2FastaApp::HandleSeqEntry(CSeq_entry_Handle& seh)
             } else {
                 fasta_os->Write(bsh);
             }
+            #if defined(CANCELER_CODE)
+                fasta_os->SetCanceler(nullptr);
+            #endif
         }
         return true;
     }

@@ -1188,6 +1188,19 @@ void CFastaOstreamComp::x_Write(const CBioseq_Handle& handle, const CSeq_loc* lo
 }
 
 
+void CFastaOstreamEx::x_WriteBuffer(const char* buff,
+                                    unsigned int count)
+{
+    if (IsCanceled()) {
+        NCBI_THROW(
+            CObjWriterException,
+            eInterrupted,
+            "Processing terminated by user");
+    }
+    CFastaOstream::x_WriteBuffer(buff, count);
+}
+
+
 CQualScoreWriter::CQualScoreWriter(CNcbiOstream& ostr,
                                    bool enable_gi)
     : m_Ostr(ostr),
