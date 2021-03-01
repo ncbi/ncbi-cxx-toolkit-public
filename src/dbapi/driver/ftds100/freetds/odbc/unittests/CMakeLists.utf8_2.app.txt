@@ -2,6 +2,7 @@
 
 NCBI_begin_app(odbc100_utf8_2)
   NCBI_sources(utf8_2 common)
+  NCBI_set_test_requires(-MSWin)
   NCBI_add_test(test-odbc100 odbc100_utf8_2)
 NCBI_end_app()
 
