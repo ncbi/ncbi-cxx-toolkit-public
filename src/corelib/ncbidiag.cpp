@@ -436,7 +436,6 @@ static CSafeStatic<NCBI_PARAM_TYPE(Diag, Disable_AppLog_Messages)> s_DisableAppL
 
 
 static bool s_FinishedSetupDiag = false;
-static bool s_MergeLinesSetBySetupDiag = false;
 
 
 CDiagCollectGuard::CDiagCollectGuard(void)
@@ -3718,17 +3717,12 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
     SetApplogSeverityLocked(false);
     if ( to_applog ) {
         ctx.SetOldPostFormat(false);
-        SetDiagPostFlag(eDPF_MergeLines);
-        s_MergeLinesSetBySetupDiag = true;
         s_LogSizeLimit->Set(0); // No log size limit
         SetDiagPostLevel(eDiag_Warning);
         // Lock severity level
         SetApplogSeverityLocked(true);
     }
     else {
-        if ( s_MergeLinesSetBySetupDiag ) {
-            UnsetDiagPostFlag(eDPF_MergeLines);
-        }
         // Disable throttling
         ctx.SetLogRate_Limit(eLogRate_App, CRequestRateControl::kNoLimit);
         ctx.SetLogRate_Limit(eLogRate_Err, CRequestRateControl::kNoLimit);
@@ -5910,8 +5904,6 @@ static void s_SetDiagPostFlag(TDiagPostFlags& flags, EDiagPostFlag flag)
 
     CDiagLock lock(CDiagLock::eWrite);
     flags |= flag;
-    // Assume flag is set by user
-    s_MergeLinesSetBySetupDiag = false;
 }
 
 
@@ -5922,8 +5914,6 @@ static void s_UnsetDiagPostFlag(TDiagPostFlags& flags, EDiagPostFlag flag)
 
     CDiagLock lock(CDiagLock::eWrite);
     flags &= ~flag;
-    // Assume flag is set by user
-    s_MergeLinesSetBySetupDiag = false;
 }
 
 
