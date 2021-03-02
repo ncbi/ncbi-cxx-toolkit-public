@@ -364,8 +364,8 @@ NLM_EXTERN void * LIBCALL  Nlm_MemDup (const void *orig, size_t size)
 
 NLM_EXTERN void * LIBCALL  Nlm_MemMove (void * dst, const void *src, size_t bytes)
 {
-	register char *dest = (char*) dst;
-	register const char *sorc = (const char*) src;
+	char *dest = (char*) dst;
+	const char *sorc = (const char*) src;
 
 	if (dest > sorc) {
 		sorc += bytes;

@@ -508,7 +508,7 @@ NLM_EXTERN size_t LIBCALL Nlm_StrCnt(const char FAR *s, const char FAR *x_list)
 #ifndef COMP_MSC
 NLM_EXTERN char * LIBCALL Nlm_StrUpper (char *string)
 {
-	register char *p = string;
+	char *p = string;
 	_ASSERT(string != NULL);
 	while (*p)
 	{
@@ -523,7 +523,7 @@ NLM_EXTERN char * LIBCALL Nlm_StrUpper (char *string)
 #ifndef COMP_MSC
 NLM_EXTERN char * LIBCALL Nlm_StrLower (char *string)
 {
-	register char *p = string;
+	char *p = string;
 	_ASSERT(string != NULL);
 	while (*p)
 	{

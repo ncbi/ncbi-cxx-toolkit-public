@@ -219,7 +219,7 @@ inline CRandom::TValue CRandom::x_GetRand32Bits(void)
     if (m_RandMethod == eGetRand_Sys)
         return x_GetSysRand32Bits();
 
-    register TValue r;
+    TValue r;
 
     r = m_State[m_RK] + m_State[m_RJ--];
     m_State[m_RK--] = r;
