@@ -124,8 +124,8 @@ public:
     virtual int  Run (void);
 
 protected:
-    void Client(int num);
-    int  Server(void);
+    int Client(int num);
+    int Server(void);
 
     string   m_PipeName;
     STimeout m_Timeout;
@@ -209,7 +209,9 @@ int CTest::Run(void)
     if     (args["mode"].AsString() == "client") {
         SetDiagPostPrefix("Client");
         for (int i = 1;  i <= 3;  ++i) {
-            Client(i);
+            int exitcode = Client(i);
+            if (exitcode)
+                return exitcode;
         }
     }
     else if (args["mode"].AsString() == "server") {
@@ -227,8 +229,10 @@ int CTest::Run(void)
 // Named pipe client
 //
 
-void CTest::Client(int num)
+int CTest::Client(int num)
 {
+    int exitcode = 0;
+
     if (::rand() & 1) {
         SleepMilliSec(100);
     }
@@ -260,6 +264,17 @@ void CTest::Client(int num)
     char buf[kSubBlobSize];
     size_t n_read    = 0;
     size_t n_written = 0;
+
+    if (num > 2  &&  (rand() & 1)) {
+        // Super quick write-and-flee behavior
+        ERR_POST(Info << "Quitting the server!");
+        assert(s_WritePipe(pipe, "Quit!", 5, &n_written) == eIO_Success);
+        assert(n_written == 5);
+        if (rand() & 1)
+            pipe.Close();
+        exitcode = 2;
+        goto out;
+    }
 
     // "Hello" test
     {{
@@ -313,7 +328,9 @@ void CTest::Client(int num)
         status = s_ReadPipe(pipe, buf, sizeof(buf), sizeof(buf), &n_read);
         _ASSERT(status == eIO_Unknown);
     }
+ out:
     ERR_POST(Info << "TEST completed successfully");
+    return exitcode;
 }
 
 
@@ -323,6 +340,8 @@ void CTest::Client(int num)
 
 int CTest::Server(void)
 {
+    int exitcode = 1;  //  Normally getting killed at the test completion
+
     ERR_POST(Info << "Starting server...");
 
     char buf[kSubBlobSize];
@@ -355,6 +374,11 @@ int CTest::Server(void)
             {{
                 assert(s_ReadPipe(pipe, buf, sizeof(buf), 5, &n_read) == eIO_Success);
                 assert(n_read == 5);
+                if (memcmp(buf, "Quit!", 5) == 0) {
+                    ERR_POST(Info << "Quit received!");
+                    exitcode = 0;
+                    goto done;
+                }
                 assert(memcmp(buf, "Hello", 5) == 0);
                 assert(s_WritePipe(pipe, "OK", 2, &n_written) == eIO_Success);
                 assert(n_written == 2);
@@ -421,11 +445,11 @@ int CTest::Server(void)
         }
     }
 
+ done:
     // Close named pipe
     status = pipe.Close();
     assert(status == eIO_Success  ||  status == eIO_Closed);
-    // Not supposed to reach here -- but get killed instead at test completion
-    return 1;
+    return exitcode;
 }
 
 

@@ -28,10 +28,17 @@ spid=$!
 trap 'kill -9 $spid 2>/dev/null; rm -f ./.ncbi_test_pipename_$$; echo "`date`."' 0 1 2 3 15
 
 t=0
+quit_code=3
 while true; do
   if [ -s $server_log ]; then
     sleep 2
-    $CHECK_EXEC test_ncbi_namedpipe -suffix $$ client >$client_log 2>&1  ||  exit_code=1
+    $CHECK_EXEC test_ncbi_namedpipe -suffix $$ client >$client_log 2>&1
+    status=$?
+    if   [ $status -eq 2 ]; then
+      quit_code=0 ; sleep 2
+    elif [ $status -ne 0 ]; then
+      exit_code=1
+    fi
     break
   fi
   t="`expr $t + 1`"
@@ -43,7 +50,7 @@ while true; do
   sleep 1
 done
 
-( kill    $spid ) >/dev/null 2>&1  ||  exit_code=3
+( kill    $spid ) >/dev/null 2>&1  ||  exit_code=$quit_code
 ( kill -9 $spid ) >/dev/null 2>&1
 wait $spid 2>/dev/null
 

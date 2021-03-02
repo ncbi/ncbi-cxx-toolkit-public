@@ -183,7 +183,7 @@ public:
 
 private:
     EIO_Status x_Flush(void);
-    EIO_Status x_Disconnect(bool abort = true);
+    EIO_Status x_Disconnect(bool orderly = true);
     EIO_Status x_WaitForRead(const STimeout* timeout, DWORD* in_avail);
 
     HANDLE     m_Pipe;         // pipe I/O handle
@@ -397,7 +397,7 @@ EIO_Status CNamedPipeHandle::Listen(const STimeout* timeout)
             
             // NB: status == eIO_Unknown
             if (error == ERROR_NO_DATA/*not disconnected???*/) {
-                if (x_Disconnect(/*abort*/) == eIO_Success) {
+                if (x_Disconnect(false/*abort*/) == eIO_Success) {
                     continue; // try again
                 }
                 NAMEDPIPE_THROW(error,
@@ -442,7 +442,7 @@ EIO_Status CNamedPipeHandle::Listen(const STimeout* timeout)
 
 EIO_Status CNamedPipeHandle::x_Flush(void)
 {
-    if (m_Connected < 0  &&  !::FlushFileBuffers(m_Pipe)) {
+    if (m_Connected  &&  !::FlushFileBuffers(m_Pipe)) {
         NAMEDPIPE_THROW(::GetLastError(),
                         "Named pipe \"" + m_PipeName
                         + "\" failed to flush");
@@ -451,17 +451,17 @@ EIO_Status CNamedPipeHandle::x_Flush(void)
 }
 
 
-EIO_Status CNamedPipeHandle::x_Disconnect(bool abort)
+EIO_Status CNamedPipeHandle::x_Disconnect(bool orderly)
 {
     EIO_Status status = eIO_Unknown;
 
     try {
-        if (!abort  &&  m_Connected <= 0) {
+        if (m_Connected <= 0  &&  orderly) {
             if (m_Pipe == INVALID_HANDLE_VALUE  ||  !m_Connected) {
                 status = eIO_Closed;
                 NAMEDPIPE_THROW(0,
                                 "Named pipe \"" + m_PipeName
-                                + "\" already closed");
+                                + "\" already disconnected");
             }
             status = x_Flush();
         } else {
@@ -469,7 +469,7 @@ EIO_Status CNamedPipeHandle::x_Disconnect(bool abort)
         }
         if (m_Connected <= 0  &&  !::DisconnectNamedPipe(m_Pipe)) {
             status = eIO_Unknown;
-            if (!abort) {
+            if (orderly) {
                 NAMEDPIPE_THROW(::GetLastError(),
                                 "Named pipe \"" + m_PipeName
                                 + "\" failed to disconnect");
@@ -491,7 +491,7 @@ EIO_Status CNamedPipeHandle::x_Disconnect(bool abort)
 
 EIO_Status CNamedPipeHandle::Disconnect(void)
 {
-    return x_Disconnect(false/*orderly*/);
+    return x_Disconnect(/*orderly*/);
 }
 
 
@@ -982,7 +982,8 @@ EIO_Status CNamedPipeHandle::x_Disconnect(const char* where)
                                            x_FormatError(0,
                                                          "Named pipe \""
                                                          + m_PipeName + "\""
-                                                         " failed to close")));
+                                                         " failed to"
+                                                         " disconnect")));
     }
     return status;
 }
@@ -993,7 +994,7 @@ EIO_Status CNamedPipeHandle::Disconnect(void)
     if ( !m_IoSocket ) {
         ERR_POST_X(13, s_FormatErrorMessage("Disconnect",
                                             "Named pipe \"" + m_PipeName
-                                            + "\" already closed"));
+                                            + "\" already disconnected"));
         return eIO_Closed;
     }
     return x_Disconnect("Disconnect");
