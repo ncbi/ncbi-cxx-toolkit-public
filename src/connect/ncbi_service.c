@@ -1253,12 +1253,20 @@ extern int/*bool*/ SERV_SetImplicitServerType(const char* service,
         }                                                                   \
         return type;                                                        \
     }                                                                       \
-    
 
-extern SERV_GET_IMPLICIT_SERVER_TYPE()
+
+#define SERV_NOTHING
+extern SERV_GET_IMPLICIT_SERVER_TYPE(SERV_NOTHING)
+#undef  SERV_NOTHING
 
 
 SERV_GET_IMPLICIT_SERVER_TYPE(Internal)
+
+
+#undef SERV_GET_IMPLICIT_SERVER_TYPE
+
+#undef SERV_MERGE
+
 
 
 ESERV_Type SERV_GetImplicitServerTypeDefault(void)
