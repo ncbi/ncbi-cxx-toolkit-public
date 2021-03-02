@@ -146,7 +146,10 @@ set(NCBI_COMPONENT_FreeTDS_NCBILIB ct_ftds100 ncbi_xdbapi_ftds)
 set(NCBI_COMPONENT_connext_NCBILIB xconnext)
 
 #############################################################################
-if (MSVC)
+if (CONANCOMPONENTS)
+  message("Using CONAN components")
+  include(${NCBI_TREE_CMAKECFG}/CMake.NCBIComponentsConan.cmake)
+elseif (MSVC)
   include(${NCBI_TREE_CMAKECFG}/CMake.NCBIComponentsMSVC.cmake)
 elseif (APPLE)
   include(${NCBI_TREE_CMAKECFG}/CMake.NCBIComponentsXCODE.cmake)

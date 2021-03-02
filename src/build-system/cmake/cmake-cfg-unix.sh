@@ -85,6 +85,7 @@ OPTIONS:
   --without-distcc           -- do not use distcc
   --without-analysis         -- skip source tree analysis
   --with-generator="X"       -- use generator X
+  --with-conan-components    -- use conan to fetch dependencies
 EOF
 
   Check_function_exists configure_ext_Usage && configure_ext_Usage
@@ -211,6 +212,9 @@ do
       prebuilt_dir=`dirname $prebuilt_path`
       prebuilt_name=`basename $prebuilt_path`
       ;; 
+    --with-conan-components)
+      CONANCOMPONENTS="ON"
+      ;;
     [A-Z]*)
       cxx_name=$arg
       ;; 
@@ -365,6 +369,10 @@ CMAKE_ARGS="$CMAKE_ARGS -DBUILD_SHARED_LIBS=$BUILD_SHARED_LIBS"
 if test "$CMAKE_GENERATOR" != "Xcode"; then
   CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_USE_CCACHE=$USE_CCACHE"
   CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_USE_DISTCC=$USE_DISTCC"
+fi
+
+if test "$CONANCOMPONENTS" == "ON"; then
+  CMAKE_ARGS="$CMAKE_ARGS -DCONANCOMPONENTS=ON"
 fi
 
 #CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY"
