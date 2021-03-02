@@ -97,8 +97,9 @@ CBlastnNode::Main()
         CRef<CBlastDatabaseArgs> db_args(m_CmdLineArgs->GetBlastDatabaseArgs());
         CRef<CLocalDbAdapter> db_adapter;
         CRef<CScope> scope;
-        InitializeSubject(db_args, opts_hndl, m_CmdLineArgs->ExecuteRemotely(),
-                         db_adapter, scope);
+        string dl_name = InitializeSubject(db_args, opts_hndl, m_CmdLineArgs->ExecuteRemotely(),
+                         	 	 	 	   db_adapter, scope);
+        SetDataLoaderName(dl_name);
         _ASSERT(db_adapter && scope);
 
         /*** Get the query sequence(s) ***/

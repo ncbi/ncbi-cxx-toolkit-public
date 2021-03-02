@@ -112,6 +112,7 @@ protected:
 	void SetState(EState state) { m_State = state; }
 	void SetStatus(int status) { m_Status = status; }
 	void SetQueriesLength(int l) { m_QueriesLength = l;}
+	void SetDataLoaderName(string & dl_name ) { m_DataLoaderName = dl_name;}
 	int m_NodeNum;
 private:
 	const CNcbiArguments & m_NcbiArgs;
@@ -124,6 +125,7 @@ private:
 	EState m_State;
 	int m_Status;
 	int m_QueriesLength;
+	string m_DataLoaderName;
 };
 
 

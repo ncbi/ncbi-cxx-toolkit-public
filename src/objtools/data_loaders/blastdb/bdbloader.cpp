@@ -150,14 +150,29 @@ CBlastDbDataLoader::SBlastDbParam::SBlastDbParam(CRef<CSeqDB> db_handle,
 static const string kPrefix = "BLASTDB_";
 string CBlastDbDataLoader::GetLoaderNameFromArgs(const SBlastDbParam& param)
 {
-    return kPrefix + param.m_DbName + DbTypeToStr(param.m_DbType);
+	int t_id = CThread::GetSelf();
+	if (t_id != 0) {
+		string thread_id = NStr::IntToString(t_id);
+		return kPrefix + param.m_DbName + DbTypeToStr(param.m_DbType) + "_" + thread_id;
+	}
+	else {
+		return kPrefix + param.m_DbName + DbTypeToStr(param.m_DbType);
+	}
 }
 
 string CBlastDbDataLoader::GetLoaderNameFromArgs(CConstRef<CSeqDB> db_handle)
 {
     _ASSERT(db_handle.NotEmpty());
-    return kPrefix + db_handle->GetDBNameList() + 
-        DbTypeToStr(SeqTypeToDbType(db_handle->GetSequenceType()));
+	int t_id = CThread::GetSelf();
+	if (t_id != 0) {
+		string thread_id = NStr::IntToString(t_id);
+		return kPrefix + db_handle->GetDBNameList() +
+				DbTypeToStr(SeqTypeToDbType(db_handle->GetSequenceType())) + "_" + thread_id;
+	}
+	else {
+		return kPrefix + db_handle->GetDBNameList() +
+				DbTypeToStr(SeqTypeToDbType(db_handle->GetSequenceType()));
+	}
 }
 
 

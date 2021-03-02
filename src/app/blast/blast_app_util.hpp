@@ -122,7 +122,8 @@ InitializeRemoteBlast(CRef<blast::IQueryFactory> queries,
 /// @param is_remote_search true if it's a remote search, otherwise false [in]
 /// @param db_adapter Database/subject adapter [out]
 /// @param scope subject scope [out]
-void
+/// @ return name of dbloader registered
+string
 InitializeSubject(CRef<blast::CBlastDatabaseArgs> db_args, 
                   CRef<blast::CBlastOptionsHandle> opts_hndl,
                   bool is_remote_search,

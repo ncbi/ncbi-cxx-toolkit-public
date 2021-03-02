@@ -175,13 +175,14 @@ InitializeQueryDataLoaderConfiguration(bool query_is_protein,
     return retval;
 }
 
-void
+string
 InitializeSubject(CRef<blast::CBlastDatabaseArgs> db_args, 
                   CRef<blast::CBlastOptionsHandle> opts_hndl,
                   bool is_remote_search,
                   CRef<blast::CLocalDbAdapter>& db_adapter, 
                   CRef<objects::CScope>& scope)
 {
+	string rv = kEmptyStr;
     db_adapter.Reset();
 
     _ASSERT(db_args.NotEmpty());
@@ -224,10 +225,12 @@ InitializeSubject(CRef<blast::CBlastDatabaseArgs> db_args,
             // sequence data for formatting from this (local) source
             CRef<CSeqDB> seqdb = search_db->GetSeqDb();
             db_adapter.Reset(new CLocalDbAdapter(*search_db));
-            scope->AddDataLoader(RegisterOMDataLoader(seqdb));
+            rv = RegisterOMDataLoader(seqdb);
+            scope->AddDataLoader(rv);
         } catch (const CSeqDBException&) {
             // The BLAST database couldn't be found, report this for local
             // searches, but for remote searches go on.
+        	rv = kEmptyStr;
             if (is_remote_search ) {
                 db_adapter.Reset(new CLocalDbAdapter(*search_db));
             } else {
@@ -238,18 +241,15 @@ InitializeSubject(CRef<blast::CBlastDatabaseArgs> db_args,
 
     /// Set the BLASTDB data loader as the default data loader (if applicable)
     if (search_db.NotEmpty()) {
-        string dbloader_name =
-            s_FindBlastDbDataLoaderName(search_db->GetDatabaseName(),
-                                        search_db->IsProtein());
-        if ( !dbloader_name.empty() ) {
+        if ( rv != kEmptyStr) {
             // FIXME: will this work with multiple BLAST DBs?
-            scope->AddDataLoader(dbloader_name, 
-                             CBlastDatabaseArgs::kSubjectsDataLoaderPriority);
-            _TRACE("Setting " << dbloader_name << " priority to "
+            scope->AddDataLoader(rv,  CBlastDatabaseArgs::kSubjectsDataLoaderPriority);
+            _TRACE("Setting " << rv << " priority to "
                    << (int)CBlastDatabaseArgs::kSubjectsDataLoaderPriority
                    << " for subjects");
         }
     }
+    return rv;
 }
 
 string RegisterOMDataLoader(CRef<CSeqDB> db_handle)
@@ -979,4 +979,5 @@ void LogRPSCmdOptions(blast::CBlastUsageReport & report, const CBlastAppArgs & a
 		report.AddParam(CBlastUsageReport::eOutputFmt, args.GetFormattingArgs()->GetFormattedOutputChoice());
 	}
 }
+
 END_NCBI_SCOPE

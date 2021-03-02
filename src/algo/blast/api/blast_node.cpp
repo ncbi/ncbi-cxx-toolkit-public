@@ -46,6 +46,24 @@ USING_NCBI_SCOPE;
 USING_SCOPE(blast);
 USING_SCOPE(objects);
 #endif
+static void
+s_UnregisterDataLoader(const string & dbloader_name)
+{
+	try {
+		if (dbloader_name != kEmptyStr ) {
+ 	   	CRef<CObjectManager> om = CObjectManager::GetInstance();
+  	 		if(om->RevokeDataLoader(dbloader_name)){
+   			 	_TRACE("Unregistered Data Loader:  " + dbloader_name);
+   			}
+   			else {
+   				_TRACE("Failed to Unregistered Data Loader:  " + dbloader_name);
+   			}
+   		}
+	}
+	catch(CException &) {
+		_TRACE("Failed to unregister data loader: " + dbloader_name);
+	}
+}
 
 void CBlastNodeMailbox::SendMsg(CRef<CBlastNodeMsg> msg)
 {
@@ -58,7 +76,7 @@ CBlastNode::CBlastNode (int node_num, const CNcbiArguments & ncbi_args, const CA
 		                CBlastAppDiagHandler & bah, int query_index, int num_queries, CBlastNodeMailbox * mailbox):
                         m_NodeNum(node_num), m_NcbiArgs(ncbi_args), m_Args(args),
                         m_Bah(bah), m_QueryIndex(query_index), m_NumOfQueries(num_queries),
-                        m_QueriesLength(0)
+                        m_QueriesLength(0), m_DataLoaderName(kEmptyStr)
 {
 	if(mailbox != NULL) {
 		m_Mailbox.Reset(mailbox);
@@ -69,6 +87,9 @@ CBlastNode::CBlastNode (int node_num, const CNcbiArguments & ncbi_args, const CA
 }
 
 CBlastNode::~CBlastNode () {
+
+
+	s_UnregisterDataLoader(m_DataLoaderName);
 	if(m_Mailbox.NotEmpty()) {
 		m_Mailbox.Reset();
 	}
@@ -140,7 +161,7 @@ bool CBlastMasterNode::Processing()
 								CRef<CBlastNodeMsg> empty_msg;
 								pair<int,CRef<CBlastNodeMsg> > m(chunk_num, empty_msg);
 								m_FormatQueue.insert(m);
-								_TRACE("Starting Chunk # " << chunk_num) ;
+								INFO_POST("Starting Chunk # " << chunk_num) ;
 							}
 							else {
 		 						NCBI_THROW(CBlastException, eCoreBlastError, "Invalid mailbox node number" );
@@ -163,7 +184,7 @@ bool CBlastMasterNode::Processing()
 						double diff = m_StopWatch.Elapsed() - m_ActiveNodes[itr->first];
 						m_ActiveNodes.erase(chunk_num);
 						CTimeSpan s(diff);
-						_TRACE("Chunk #" << chunk_num << " completed in " << s.AsSmartString());
+						INFO_POST("Chunk #" << chunk_num << " completed in " << s.AsSmartString());
 						break;
 					}
 					case CBlastNodeMsg::ePostLog:
