@@ -2,6 +2,5 @@
 
 NCBI_begin_app(odbc100_oldpwd)
   NCBI_sources(oldpwd common)
-  NCBI_add_test(test-odbc100 odbc100_oldpwd)
 NCBI_end_app()
 
