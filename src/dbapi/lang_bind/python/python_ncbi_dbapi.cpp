@@ -4535,7 +4535,7 @@ PyObject* init_common(const string& module_name)
     pythonpp::CModuleExt::AddConst("apilevel", "2.0");
     pythonpp::CModuleExt::AddConst("__version__", string( rev_str + 11, strlen( rev_str + 11 ) - 2 ));
     pythonpp::CModuleExt::AddConst("threadsafety", 1);
-    pythonpp::CModuleExt::AddConst("paramstyle", "named");
+    pythonpp::CModuleExt::AddConst("paramstyle", "qmark");
 
     module = pythonpp::CModuleExt::GetPyModule();
 
