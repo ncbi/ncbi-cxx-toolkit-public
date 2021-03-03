@@ -26,11 +26,11 @@ DEFAULT_CONFIGURATIONS: Linux64-Centos:O2g
 # Release configurator assumes that this script will eventually call standard configure script and pass all options
 # to it. So some standard options may be added by release configurator, such as --build-root-sfx, --with-projects,
 # --with-distcc, --with-action etc.
-Linux64-Centos : Release  : GCC.sh 7.3.0 --without-debug                 --with-mt --with-flat-makefile --with-libuv=$NCBI/libuv-1.35.0 --with-cassandra=$NCBI/datastax-cpp-driver-2.15.1 --with-h2o=$NCBI/h2o-2.2.5 --with-lmdb=$NCBI/lmdb-0.9.24
-Linux64-Centos : Debug    : GCC.sh 7.3.0 --with-debug                    --with-mt --with-flat-makefile --with-libuv=$NCBI/libuv-1.35.0 --with-cassandra=$NCBI/datastax-cpp-driver-2.15.1 --with-h2o=$NCBI/h2o-2.2.5 --with-lmdb=$NCBI/lmdb-0.9.24
-Linux64-Centos : O2g      : GCC.sh 7.3.0 --without-debug  --with-symbols --with-mt --with-flat-makefile --with-libuv=$NCBI/libuv-1.35.0 --with-cassandra=$NCBI/datastax-cpp-driver-2.15.1 --with-h2o=$NCBI/h2o-2.2.5 --with-lmdb=$NCBI/lmdb-0.9.24
+Linux64-Centos : Release  : GCC.sh 7.3.0 --without-debug                 --with-mt --with-flat-makefile --with-libuv=$NCBI/libuv-1.35.0 --with-cassandra=$NCBI/datastax-cpp-driver-2.15.1 --with-h2o=$NCBI/h2o-2.2.6 --with-lmdb=$NCBI/lmdb-0.9.24
+Linux64-Centos : Debug    : GCC.sh 7.3.0 --with-debug                    --with-mt --with-flat-makefile --with-libuv=$NCBI/libuv-1.35.0 --with-cassandra=$NCBI/datastax-cpp-driver-2.15.1 --with-h2o=$NCBI/h2o-2.2.6 --with-lmdb=$NCBI/lmdb-0.9.24
+Linux64-Centos : O2g      : GCC.sh 7.3.0 --without-debug  --with-symbols --with-mt --with-flat-makefile --with-libuv=$NCBI/libuv-1.35.0 --with-cassandra=$NCBI/datastax-cpp-driver-2.15.1 --with-h2o=$NCBI/h2o-2.2.6 --with-lmdb=$NCBI/lmdb-0.9.24
 
 # --with-max-debug builds with a GCC sanitizer
-Linux64-Centos : MaxDebug : GCC.sh 7.3.0 --with-max-debug                --with-mt --with-flat-makefile --with-libuv=$NCBI/libuv-1.35.0 --with-cassandra=$NCBI/datastax-cpp-driver-2.15.1 --with-h2o=$NCBI/h2o-2.2.5 --with-lmdb=$NCBI/lmdb-0.9.24
+Linux64-Centos : MaxDebug : GCC.sh 7.3.0 --with-max-debug                --with-mt --with-flat-makefile --with-libuv=$NCBI/libuv-1.35.0 --with-cassandra=$NCBI/datastax-cpp-driver-2.15.1 --with-h2o=$NCBI/h2o-2.2.6 --with-lmdb=$NCBI/lmdb-0.9.24
 
 USE_COMPONENTS
