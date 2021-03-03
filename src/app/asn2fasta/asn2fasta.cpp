@@ -173,6 +173,13 @@ CAsn2FastaApp::~CAsn2FastaApp()
 {
 }
 
+
+static const CDataLoadersUtil::TLoaders kDefaultLoaders =
+        CDataLoadersUtil::fGenbank | 
+        CDataLoadersUtil::fVDB |
+        CDataLoadersUtil::fSRA |
+        CDataLoadersUtil::fVDBOnByDefault;
+
 //  --------------------------------------------------------------------------
 void CAsn2FastaApp::Init(void)
 //  --------------------------------------------------------------------------
@@ -339,7 +346,7 @@ void CAsn2FastaApp::Init(void)
                            "Do internal data cleanup prior to formatting");
     }}
 
-    CDataLoadersUtil::AddArgumentDescriptions(*arg_desc);
+    CDataLoadersUtil::AddArgumentDescriptions(*arg_desc, kDefaultLoaders);
 
     SetupArgDescriptions(arg_desc.release());
 }
@@ -441,14 +448,9 @@ int CAsn2FastaApp::Run(void)
                    "Could not create object manager");
     }
 
-    static const CDataLoadersUtil::TLoaders default_loaders = 
-        CDataLoadersUtil::fGenbank | 
-        CDataLoadersUtil::fVDB |
-        CDataLoadersUtil::fSRA;
-        
     try {
         const CArgs& args = GetArgs();
-        CDataLoadersUtil::SetupObjectManager(args, *m_Objmgr, default_loaders);
+        CDataLoadersUtil::SetupObjectManager(args, *m_Objmgr, kDefaultLoaders);
 
         m_Scope.Reset(new CScope(*m_Objmgr));
         m_Scope->AddDefaults();
