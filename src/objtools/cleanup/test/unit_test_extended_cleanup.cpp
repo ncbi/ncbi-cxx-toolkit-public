@@ -78,8 +78,8 @@ USING_SCOPE(objects);
 
 using namespace unit_test_util;
 
-extern const char* sc_TestEntryRemoveOldName;
-extern const char *sc_TestEntryDontRemoveOldName;
+extern const string sc_TestEntryRemoveOldName;
+extern const string sc_TestEntryDontRemoveOldName;
 
 BOOST_AUTO_TEST_CASE(Test_RemoveOldName)
 {
@@ -312,7 +312,7 @@ BOOST_AUTO_TEST_CASE(Test_RemoveRedundantMapQuals)
 }
 
 
-const char *sc_TestEntryRemoveOldName = "\
+const string sc_TestEntryRemoveOldName = "\
 Seq-entry ::= seq {\
           id {\
             local\
@@ -336,7 +336,7 @@ Seq-entry ::= seq {\
               iupacna \"TTGCCCTAAAAATAAGAGTAAAACTAA\" } }\
 ";
 
-const char *sc_TestEntryDontRemoveOldName = "\
+const string sc_TestEntryDontRemoveOldName = "\
 Seq-entry ::= seq {\
           id {\
             local\
