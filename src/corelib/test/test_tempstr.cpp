@@ -532,6 +532,28 @@ BOOST_AUTO_TEST_CASE(TestTempString)
         res = t2 + t1;
         BOOST_CHECK(res == "231" );
     }}
+
+
+    /// ----------------------------------------------------------------------
+    ///
+    /// string_view
+    ///
+    /// ----------------------------------------------------------------------
+    {{
+        #ifdef NCBI_HAVE_CXX17
+        char            text[] = "hello";
+
+        string_view     str_view1(text);
+        CTempString     t1(str_view1);
+        BOOST_CHECK(t1.length() == str_view1.length());
+        BOOST_CHECK(strncmp(t1.data(), str_view1.data(), str_view1.length()) == 0);
+
+        CTempString     t2(text);
+        string_view     str_view2 = t2;
+        BOOST_CHECK(str_view2.length() == t2.length());
+        BOOST_CHECK(strncmp(t2.data(), str_view2.data(), str_view2.length()) == 0);
+        #endif
+    }}
 }
 
 

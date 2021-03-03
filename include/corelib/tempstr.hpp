@@ -38,6 +38,10 @@
 #include <corelib/ncbiexpt.hpp>
 #include <algorithm>
 
+#ifdef NCBI_HAVE_CXX17
+    #include <string_view>
+#endif
+
 
 BEGIN_NCBI_SCOPE
 
@@ -82,6 +86,10 @@ public:
     CTempString(const CTempString& str);
     CTempString(const CTempString& str, size_type pos);
     CTempString(const CTempString& str, size_type pos, size_type len);
+
+    #ifdef NCBI_HAVE_CXX17
+        CTempString(const string_view&  str_view);
+    #endif
 
     /// Copy a substring into a string
     /// Somewhat similar to basic_string::assign()
@@ -187,6 +195,10 @@ public:
     /// @}
 
     operator string(void) const;
+
+    #ifdef NCBI_HAVE_CXX17
+        operator string_view(void) const;
+    #endif
 
 private:
     const char* m_String;  ///< Stored pointer to string
@@ -488,6 +500,15 @@ CTempString::CTempString(const CTempString& str, size_type pos, size_type len)
     NCBI_TEMPSTR_MAKE_COPY();
 }
 
+#ifdef NCBI_HAVE_CXX17
+inline
+CTempString::CTempString(const string_view&  str_view)
+    : m_String(str_view.data()), m_Length(str_view.size())
+{
+    NCBI_TEMPSTR_MAKE_COPY();
+}
+#endif
+
 
 inline
 void CTempString::erase(size_type pos)
@@ -770,6 +791,15 @@ CTempString::operator string(void) const
 {
     return string(data(), length());
 }
+
+
+#ifdef NCBI_HAVE_CXX17
+inline
+CTempString::operator string_view(void) const
+{
+    return string_view(data(), length());
+}
+#endif
 
 
 inline
