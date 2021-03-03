@@ -65,7 +65,7 @@ USING_SCOPE(objects);
 USING_SCOPE(sequence);
 
 
-extern const char* sc_TestEntry;
+extern const string sc_TestEntry;
 
 CScope& GetScope()
 {
@@ -136,7 +136,7 @@ CRef<CSeq_loc> MakePoint(TIntId gi, TSeqPos pos)
 
 
 template<class C>
-CRef<C> s_Parse(const char* asn)
+CRef<C> s_Parse(const string& asn)
 {
     CRef<C> obj(new C());
     CNcbiIstrstream istr(asn);
@@ -4087,7 +4087,7 @@ BOOST_AUTO_TEST_CASE(Test_TestForOverlapEx_Circular)
 }
 
 
-const char* sc_TestEntry = "\
+const string sc_TestEntry = "\
 Seq-entry ::= set {\
   class nuc-prot,\
   seq-set {\
@@ -4195,7 +4195,7 @@ GTCAAACCTGCAAATTCAGTAGTAACAGAGTTCTTTTATAACTTTTAAACAAAGCTTTAGAGCA\"\
 }";
 
 
-static const char * sc_TestFramePlus = "\
+static const string sc_TestFramePlus = "\
 Seq-entry ::= set {\
   class nuc-prot ,\
   descr {\
@@ -4440,7 +4440,7 @@ BOOST_AUTO_TEST_CASE(Test_SourceToProductFrame)
 }
 
 
-const char* sc_TestRevCmpEntryRaw = "\
+const string sc_TestRevCmpEntryRaw = "\
 Seq-entry ::= seq {\
   id {\
     local str \"seq_1\" } , \
@@ -4454,7 +4454,7 @@ Seq-entry ::= seq {\
 ";
 
 
-const char* sc_TestRevCmpEntryDelta = "\
+const string sc_TestRevCmpEntryDelta = "\
 Seq-entry ::= seq { \
   id {\
     local str \"seq_2\" } , \
@@ -4483,7 +4483,7 @@ Seq-entry ::= seq { \
 ";
 
 
-const char* sc_TestRevCmpEntryDeltaFar = "\
+const string sc_TestRevCmpEntryDeltaFar = "\
 Seq-entry ::= seq { \
   id {\
     local str \"seq_3\" } , \
@@ -4508,7 +4508,7 @@ Seq-entry ::= seq { \
 ";
 
 
-const char* sc_TestRevCmpError = "\
+const string sc_TestRevCmpError = "\
 Seq-entry ::= seq { \
     id { \
         local str \"Euplotes\", \
