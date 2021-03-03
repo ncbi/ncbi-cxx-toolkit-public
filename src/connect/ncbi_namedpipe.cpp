@@ -377,7 +377,9 @@ EIO_Status CNamedPipeHandle::Listen(const STimeout* timeout)
             status = eIO_Closed;
             NAMEDPIPE_THROW(0,
                             "Named pipe \"" + m_PipeName
-                            + "\" not listening");
+                            + '"' + string(m_Pipe == INVALID_HANDLE_VALUE
+                                           ? " closed"
+                                           : " busy"));
         }
 
         DWORD x_timeout = timeout ? NcbiTimeoutToMs(timeout) : INFINITE;
@@ -605,7 +607,7 @@ EIO_Status CNamedPipeHandle::Read(void* buf, size_t count, size_t* n_read,
                 m_ReadStatus = eIO_Unknown;
                 NAMEDPIPE_THROW(!ok ? ::GetLastError() : 0,
                                 "Named pipe \"" + m_PipeName
-                                    + "\" read failed");
+                                + "\" read failed");
             } else {
                 // NB: status == eIO_Success
                 m_ReadStatus = eIO_Success;
@@ -825,8 +827,8 @@ EIO_Status CNamedPipeHandle::Open(const string&            pipename,
     try {
         if (m_LSocket  ||  m_IoSocket) {
             NAMEDPIPE_THROW(0,
-                            "Named pipe \""
-                            + m_PipeName + "\" already open");
+                            "Named pipe \"" + m_PipeName
+                            + "\" already open");
         }
 
         status = SOCK_CreateUNIX(pipename.c_str(), timeout, &m_IoSocket,
@@ -837,8 +839,8 @@ EIO_Status CNamedPipeHandle::Open(const string&            pipename,
         }
         if (status != eIO_Success) {
             NAMEDPIPE_THROW(0,
-                            "Named pipe \""
-                            + pipename + "\" failed to open UNIX socket: "
+                            "Named pipe \"" + pipename
+                            + "\" failed to open UNIX socket: "
                             + string(IO_StatusStr(status)));
         }
         SOCK_SetTimeout(m_IoSocket, eIO_Close, timeout);
@@ -852,8 +854,8 @@ EIO_Status CNamedPipeHandle::Open(const string&            pipename,
                     int error = errno;
                     _ASSERT(error);
                     NAMEDPIPE_THROW(error,
-                                    "Named pipe \""
-                                    + pipename + "\" failed to set"
+                                    "Named pipe \"" + pipename
+                                    + "\" failed to set"
                                     " UNIX socket buffer size "
                                     + NStr::NumericToString(pipesize));
                 }
@@ -880,8 +882,8 @@ EIO_Status CNamedPipeHandle::Create(const string& pipename,
     try {
         if (m_LSocket  ||  m_IoSocket) {
             NAMEDPIPE_THROW(0,
-                            "Named pipe \""
-                            + m_PipeName + "\" already exists");
+                            "Named pipe \"" + m_PipeName
+                            + "\" already exists");
         }
 
         CDirEntry pipe(pipename);
@@ -895,8 +897,8 @@ EIO_Status CNamedPipeHandle::Create(const string& pipename,
         default:
             status = eIO_Unknown;
             NAMEDPIPE_THROW(0,
-                            "Named pipe path \""
-                            + pipename + "\" already exists");
+                            "Named pipe path \"" + pipename
+                            + "\" already exists");
         }
 
         status = LSOCK_CreateUNIX(pipename.c_str(),
@@ -904,8 +906,8 @@ EIO_Status CNamedPipeHandle::Create(const string& pipename,
                                   &m_LSocket, 0);
         if (status != eIO_Success) {
             NAMEDPIPE_THROW(0,
-                            "Named pipe \""
-                            + pipename + "\" failed to create listening"
+                            "Named pipe \"" + pipename
+                            + "\" failed to create listening"
                             " UNIX socket: " + string(IO_StatusStr(status)));
         }
 
@@ -929,8 +931,10 @@ EIO_Status CNamedPipeHandle::Listen(const STimeout* timeout)
         if (!m_LSocket  ||  m_IoSocket) {
             status = eIO_Closed;
             NAMEDPIPE_THROW(0,
-                            "Named pipe \""
-                            + m_PipeName + "\" not listening");
+                            "Named pipe \"" + m_PipeName
+                            + '"' + string(m_LSocket
+                                           ? " closed"
+                                           : " busy"));
         }
 
         status = LSOCK_Accept(m_LSocket, timeout, &m_IoSocket);
@@ -939,9 +943,9 @@ EIO_Status CNamedPipeHandle::Listen(const STimeout* timeout)
         }
         if (status != eIO_Success) {
             NAMEDPIPE_THROW(0,
-                            "Named pipe \""
-                            + m_PipeName + "\" failed to accept in UNIX"
-                            " socket: " + string(IO_StatusStr(status)));
+                            "Named pipe \"" + m_PipeName
+                            + "\" failed to accept in UNIX socket: "
+                            + string(IO_StatusStr(status)));
         }
         _ASSERT(m_IoSocket);
 
@@ -952,10 +956,9 @@ EIO_Status CNamedPipeHandle::Listen(const STimeout* timeout)
                 if (!x_SetSocketBufSize(fd, m_PipeSize, SO_SNDBUF)  ||
                     !x_SetSocketBufSize(fd, m_PipeSize, SO_RCVBUF)) {
                     NAMEDPIPE_THROW(errno,
-                                    "Named pipe \""
-                                    + m_PipeName + "\" failed to set"
-                                    " UNIX socket buffer size "
-                                    + NStr::NumericToString(m_PipeSize));
+                                    "Named pipe \"" + m_PipeName
+                                    + "\" failed to set UNIX socket buffer "
+                                    "size "+NStr::NumericToString(m_PipeSize));
                 }
             }
         }

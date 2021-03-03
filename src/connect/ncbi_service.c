@@ -1268,7 +1268,6 @@ SERV_GET_IMPLICIT_SERVER_TYPE(Internal)
 #undef SERV_MERGE
 
 
-
 ESERV_Type SERV_GetImplicitServerTypeDefault(void)
 {
     return fSERV_Http;
