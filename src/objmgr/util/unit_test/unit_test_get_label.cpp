@@ -74,7 +74,7 @@
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
-extern const char* sc_TestEntry; //
+extern const string sc_TestEntry; //
 
 
 void CheckOneFeatureType
@@ -144,7 +144,7 @@ BOOST_AUTO_TEST_CASE(Test_feature_GetLabel)
 
 //////////////////////////////////////////////////////////////////////////////
 
-const char* sc_TestEntry ="\
+const string sc_TestEntry ="\
 Seq-entry ::= set {\
   class nuc-prot,\
   seq-set {\
