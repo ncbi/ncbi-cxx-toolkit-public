@@ -201,7 +201,7 @@ private:
 #if PY_MAJOR_VERSION < 3 || (PY_MAJOR_VERSION == 3 && PY_MINOR_VERSION < 8)
         tp_print = NULL;
 #else
-        tp_vectorcall_offset = NULL;
+        tp_vectorcall_offset = 0;
 #endif
 
         tp_getattr = NULL;              // This field is deprecated.
