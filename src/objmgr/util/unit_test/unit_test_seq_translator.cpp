@@ -74,24 +74,24 @@
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
-extern const char* sc_TestEntry; //
-extern const char* sc_TestEntry_code_break; //
-extern const char* sc_TestEntry_alt_frame; //
-extern const char* sc_TestEntry_internal_stop; //
-extern const char* sc_TestEntry_5prime_partial;
-extern const char* sc_TestEntry_3prime_partial;
-extern const char* sc_TestEntry_5prime_partial_minus;
-extern const char* sc_TestEntry_TerminalTranslExcept;
-extern const char* sc_TestEntry_ShortCDS;
-extern const char* sc_TestEntry_FirstCodon;
-extern const char* sc_TestEntry_FirstCodon2;
-extern const char* sc_TestEntry_GapInSeq1;
-extern const char* sc_TestEntry_GapInSeq2;
-extern const char* sc_TestEntry_GapInSeq3;
-extern const char* sc_TestEntry_GapInSeq4;
-extern const char* sc_TestEntry_GapInSeq5;
-extern const char* sc_TestEntry_CodeBreakForStopCodon;
-extern const char* sc_TestEntry_GB_2236;
+extern const string sc_TestEntry; //
+extern const string sc_TestEntry_code_break; //
+extern const string sc_TestEntry_alt_frame; //
+extern const string sc_TestEntry_internal_stop; //
+extern const string sc_TestEntry_5prime_partial;
+extern const string sc_TestEntry_3prime_partial;
+extern const string sc_TestEntry_5prime_partial_minus;
+extern const string sc_TestEntry_TerminalTranslExcept;
+extern const string sc_TestEntry_ShortCDS;
+extern const string sc_TestEntry_FirstCodon;
+extern const string sc_TestEntry_FirstCodon2;
+extern const string sc_TestEntry_GapInSeq1;
+extern const string sc_TestEntry_GapInSeq2;
+extern const string sc_TestEntry_GapInSeq3;
+extern const string sc_TestEntry_GapInSeq4;
+extern const string sc_TestEntry_GapInSeq5;
+extern const string sc_TestEntry_CodeBreakForStopCodon;
+extern const string sc_TestEntry_GB_2236;
 
 static string GetProteinString (CFeat_CI fi, CScope& scope)
 {
@@ -1023,7 +1023,7 @@ static void SetLocationSkipGap (CRef<CSeq_feat> feat, const CBioseq& bioseq)
 }
 
 
-static void TestOneGapSeq(const char *asn, string seg1, string seg2)
+static void TestOneGapSeq(const string& asn, string seg1, string seg2)
 {
     CSeq_entry entry;
     {{
@@ -1201,7 +1201,7 @@ BOOST_AUTO_TEST_CASE(Test_FindBestFrame)
     BOOST_CHECK_EQUAL(CSeqTranslator::FindBestFrame(*cds, scope), CCdregion::eFrame_two);
 }
 
-const char* sc_TestBestFrameEntry ="\
+const string sc_TestBestFrameEntry ="\
 Seq-entry ::= seq {\
   id { local str \"nuc1\" } , \
   inst { repr raw, mol dna, length 45,\
@@ -1236,7 +1236,7 @@ BOOST_AUTO_TEST_CASE(Test_FindFrame2)
 }
 
 
-const char* sc_TestAmbiguousBestFrameEntry ="\
+const string sc_TestAmbiguousBestFrameEntry ="\
 Seq-entry ::= seq {\
   id { local str \"nuc1\" } , \
   inst { repr raw, mol dna, length 45,\
@@ -1269,7 +1269,7 @@ BOOST_AUTO_TEST_CASE(Test_FindFrame3)
 }
 
 
-const char* sc_TestSQD_4334_1 ="\
+const string sc_TestSQD_4334_1 ="\
 Seq-entry ::= seq {\
   id { local str \"nuc1\" } , \
   inst { repr raw, mol dna, length 14,\
@@ -1284,7 +1284,7 @@ Seq-entry ::= seq {\
 }";
 
 
-const char* sc_TestSQD_4334_2 ="\
+const string sc_TestSQD_4334_2 ="\
 Seq-entry ::= seq {\
   id { local str \"nuc1\" } , \
   inst { repr raw, mol dna, length 14,\
@@ -1328,7 +1328,7 @@ BOOST_AUTO_TEST_CASE(Test_SQD_4334)
 
 
 
-const char* sc_PickFrameWithEndStopIf3CompleteEntry = "\
+const string sc_PickFrameWithEndStopIf3CompleteEntry = "\
 Seq-entry ::= seq {\
   id { local str \"nuc1\" } , \
   inst { repr raw, mol dna, length 60,\
@@ -1361,7 +1361,7 @@ BOOST_AUTO_TEST_CASE(Test_PickFrameWithEndStopIf3Complete)
 }
 
 
-const char * sc_MinusOrigin = "\
+const string sc_MinusOrigin = "\
 Seq-entry ::= seq {\
   id { \
     local str \"test\" } , \
@@ -1449,7 +1449,7 @@ BOOST_AUTO_TEST_CASE(Test_FindOverlappingFeatureForMinusStrandCrossingOrigin)
 }
 
 
-const char * sc_TooManyOverlap = "\
+const string sc_TooManyOverlap = "\
 Seq-entry ::= seq {\
   id { \
     local str \"test\" } , \
@@ -1596,7 +1596,7 @@ BOOST_AUTO_TEST_CASE(Test_GB_2236)
 
 //////////////////////////////////////////////////////////////////////////////
 
-const char* sc_TestEntry ="\
+const string sc_TestEntry ="\
 Seq-entry ::= set {\
   class nuc-prot,\
   seq-set {\
@@ -1698,7 +1698,7 @@ LSGWSQTPDLR\"\
   }\
 }";
 
-const char* sc_TestEntry_code_break ="\
+const string sc_TestEntry_code_break ="\
 Seq-entry ::= set {\
   class nuc-prot,\
   seq-set {\
@@ -1812,7 +1812,7 @@ LSGWSQTPDLR\"\
 }";
 
 
-const char* sc_TestEntry_alt_frame ="\
+const string sc_TestEntry_alt_frame ="\
 Seq-entry ::= set {\
   class nuc-prot,\
   seq-set {\
@@ -1914,7 +1914,7 @@ LSGWSQTPDLR\"\
   }\
 }";
 
-const char* sc_TestEntry_internal_stop ="\
+const string sc_TestEntry_internal_stop ="\
 Seq-entry ::= set {\
   class nuc-prot,\
   seq-set {\
@@ -2016,7 +2016,7 @@ LSGWSQTPDLR\"\
   }\
 }";
 
-const char* sc_TestEntry_5prime_partial ="\
+const string sc_TestEntry_5prime_partial ="\
 Seq-entry ::= set {\
   class nuc-prot,\
   seq-set {\
@@ -2119,7 +2119,7 @@ LSGWSQTPDLR\"\
   }\
 }";
 
-const char* sc_TestEntry_3prime_partial ="\
+const string sc_TestEntry_3prime_partial ="\
 Seq-entry ::= set {\
   class nuc-prot,\
   seq-set {\
@@ -2222,7 +2222,7 @@ LSGWSQTPDL\"\
   }\
 }";
 
-const char* sc_TestEntry_5prime_partial_minus ="\
+const string sc_TestEntry_5prime_partial_minus ="\
 Seq-entry ::= set {\
   class nuc-prot,\
   seq-set {\
@@ -2290,7 +2290,7 @@ Seq-entry ::= set {\
   }\
 }";
 
-const char *sc_TestEntry_TerminalTranslExcept = "\
+const string sc_TestEntry_TerminalTranslExcept = "\
 Seq-entry ::= set {\
       class nuc-prot ,\
       descr {\
@@ -2526,7 +2526,7 @@ EAVPLEHFENWSSLMLEDA\" } ,\
                         accession \"GQ409967\" } } } } } } }\
 ";
 
-const char *sc_TestEntry_ShortCDS = "\
+const string sc_TestEntry_ShortCDS = "\
 Seq-entry ::= seq {\
           id {\
             local\
@@ -2570,7 +2570,7 @@ Seq-entry ::= seq {\
                             str \"ShortCDS\" } } } } } }\
 ";
 
-const char *sc_TestEntry_FirstCodon = "\
+const string sc_TestEntry_FirstCodon = "\
 Seq-entry ::= seq {\
           id {\
             local\
@@ -2586,7 +2586,7 @@ Seq-entry ::= seq {\
               iupacna \"AAAATGGGAATGTGCTTTTTGAGAGGATGGAAAGGTGTT\" } }\
 ";
 
-const char *sc_TestEntry_FirstCodon2 = "\
+const string sc_TestEntry_FirstCodon2 = "\
 Seq-entry ::= seq {\
           id {\
             local\
@@ -2603,7 +2603,7 @@ Seq-entry ::= seq {\
 ";
 
 
-const char *sc_TestEntry_GapInSeq1 = "\
+const string sc_TestEntry_GapInSeq1 = "\
 Seq-entry ::= seq {\
       id {\
         local\
@@ -2630,7 +2630,7 @@ Seq-entry ::= seq {\
 ";
 
 
-const char *sc_TestEntry_GapInSeq2 = "\
+const string sc_TestEntry_GapInSeq2 = "\
 Seq-entry ::= seq {\
       id {\
         local\
@@ -2656,7 +2656,7 @@ Seq-entry ::= seq {\
                 iupacna \"ACCCAAATAA\" } } } } \
 ";
 
-const char *sc_TestEntry_GapInSeq3 = "\
+const string sc_TestEntry_GapInSeq3 = "\
 Seq-entry ::= seq {\
       id {\
         local\
@@ -2683,7 +2683,7 @@ Seq-entry ::= seq {\
 ";
 
 
-const char *sc_TestEntry_GapInSeq4 = "\
+const string sc_TestEntry_GapInSeq4 = "\
 Seq-entry ::= seq {\
       id {\
         local\
@@ -2710,7 +2710,7 @@ Seq-entry ::= seq {\
 ";
 
 
-const char *sc_TestEntry_GapInSeq5 = "\
+const string sc_TestEntry_GapInSeq5 = "\
 Seq-entry ::= seq {\
       id {\
         local\
@@ -2736,7 +2736,7 @@ Seq-entry ::= seq {\
                 iupacna \"CCCAAATAA\" } } } } \
 ";
 
-const char* sc_TestEntry_CodeBreakForStopCodon = "\
+const string sc_TestEntry_CodeBreakForStopCodon = "\
 Seq-entry ::= set {\
   seq-set {\
     seq {\
@@ -2849,7 +2849,7 @@ ESEEKMTELRVLKKKTWQDLWHEDLDNFLSELQQRRLS\"\
 }\
 ";
 
-const char* sc_TestEntry_GB_2236 = "\
+const string sc_TestEntry_GB_2236 = "\
 Seq-entry ::= seq {\
   id {\
     local str \"CMW8541SA\"\
