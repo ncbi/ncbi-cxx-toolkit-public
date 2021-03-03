@@ -189,7 +189,7 @@ private:
     HANDLE     m_Pipe;         // pipe I/O handle
     string     m_PipeName;     // pipe name
     bool       m_Flushed;      // false if data written
-    int        m_Connected;    // if connected (-1=server; 1=client)
+    int        m_Connected;    // if connected (-1=server; 1|3=client)
     EIO_Status m_ReadStatus;   // last read status
     EIO_Status m_WriteStatus;  // last write status
 };
@@ -484,7 +484,7 @@ EIO_Status CNamedPipeHandle::x_Disconnect(bool orderly)
         }
     } else {
         // Per documentation, another client can now connect again
-        m_Connected = 0;
+        m_Connected  = 0;
     }
     return status;
 }
@@ -607,7 +607,9 @@ EIO_Status CNamedPipeHandle::Read(void* buf, size_t count, size_t* n_read,
         if (m_Pipe == INVALID_HANDLE_VALUE  ||  !m_Connected) {
             NAMEDPIPE_THROW(0,
                             "Named pipe \"" + m_PipeName
-                            + "\" closed");
+                            + '"' + string(m_Pipe == INVALID_HANDLE_VALUE
+                                           ? " closed"
+                                           : " not connected"));
         }
         if (m_ReadStatus == eIO_Closed) {
             return eIO_Closed;
@@ -665,7 +667,9 @@ EIO_Status CNamedPipeHandle::Write(const void* buf, size_t count,
         if (m_Pipe == INVALID_HANDLE_VALUE  ||  !m_Connected) {
             NAMEDPIPE_THROW(0,
                             "Named pipe \"" + m_PipeName
-                            + "\" closed");
+                            + '"' + string(m_Pipe == INVALID_HANDLE_VALUE
+                                           ? " closed"
+                                           : " not connected"));
         }
         if (m_WriteStatus == eIO_Closed) {
             return eIO_Closed;
@@ -741,8 +745,10 @@ EIO_Status CNamedPipeHandle::Wait(EIO_Event event, const STimeout* timeout)
 {
     if (m_Pipe == INVALID_HANDLE_VALUE  ||  !m_Connected) {
         ERR_POST_X(9, s_FormatErrorMessage("Wait",
-                                           "Named pipe \"" + m_PipeName
-                                           + "\" closed"));
+                                           "Named pipe \"" + m_PipeName + '"'
+                                           + string(m_Pipe == INVALID_HANDLE_VALUE
+                                                    ? " closed"
+                                                    : " not connected")));
         return eIO_Unknown;
     }
     if (m_ReadStatus  == eIO_Closed) {
@@ -1006,13 +1012,14 @@ EIO_Status CNamedPipeHandle::x_Disconnect(const char* where)
     m_IoSocket = 0;
 
     if (status != eIO_Success) {
+        string verb(where);
         ERR_POST_X(8, s_FormatErrorMessage(where,
                                            x_FormatError(0,
                                                          "Named pipe \""
                                                          + m_PipeName + "\""
                                                          " failed to "
                                                          + NStr::ToLower
-                                                         (string(where))));
+                                                         (verb))));
     }
     return status;
 }
@@ -1056,7 +1063,9 @@ EIO_Status CNamedPipeHandle::Read(void* buf, size_t count, size_t* n_read,
         if ( !m_IoSocket ) {
             NAMEDPIPE_THROW(0,
                             "Named pipe \"" + m_PipeName
-                            + "\" closed");
+                            + '"' + string(m_LSocket
+                                           ? " not connected"
+                                           : " closed"));
         }
         if ( !count ) {
             return eIO_Success;
@@ -1092,7 +1101,9 @@ EIO_Status CNamedPipeHandle::Write(const void* buf, size_t count,
         if ( !m_IoSocket ) {
             NAMEDPIPE_THROW(0,
                             "Named pipe \"" + m_PipeName
-                            + "\" closed");
+                            + '"' + string(m_LSocket
+                                           ? " not connected"
+                                           : " closed"));
         }
         if ( !count ) {
             return eIO_Success;
@@ -1120,8 +1131,10 @@ EIO_Status CNamedPipeHandle::Wait(EIO_Event event, const STimeout* timeout)
 {
     if ( !m_IoSocket ) {
         ERR_POST_X(9, s_FormatErrorMessage("Wait",
-                                           "Named pipe \"" + m_PipeName
-                                           + "\" closed"));
+                                           "Named pipe \"" + m_PipeName + '"'
+                                           + (m_LSocket
+                                              ? " not connected"
+                                              : " closed")));
         return eIO_Unknown;
     }
     return SOCK_Wait(m_IoSocket, event, timeout);
