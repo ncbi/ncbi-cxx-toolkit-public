@@ -76,7 +76,7 @@
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
-extern const char* sc_TestEntry;
+extern const string sc_TestEntry;
 
 CRef<CSeq_entry> s_ReadData()
 {
@@ -119,13 +119,13 @@ BOOST_AUTO_TEST_CASE(Test_FastaRaw)
           }}
          os.flush();
          string s = string(CNcbiOstrstreamToString(os));
-         static const char* sc_Expected = 
+         static const string sc_Expected = 
 ">lcl|test-seq test sequence\n"
 "CGGTTGCTTGGGTTTTATAACATCAGTCAGTGACAGGCATTTCCAGAGTTGCCCTGTTCAACAATCGATA\n"
 "GCTGCCTTTGGCCACCAAAATCCCAAACT--------------------AATTAAAGAATTAAATAATTC\n"
 "GAATAATAATTAAGCCCAGTAACCTACGCAGCTTGAGTGCGTAACCGATATCTAGTATACATTTCGATAC\n"
 "ATCGAAAT\n";
-         BOOST_CHECK_EQUAL(s, string(sc_Expected));
+         BOOST_CHECK_EQUAL(s, sc_Expected);
      }}
 
 }
@@ -158,13 +158,13 @@ BOOST_AUTO_TEST_CASE(Test_FastaGap)
           }}
          os.flush();
          string s = string(CNcbiOstrstreamToString(os));
-         static const char* sc_Expected = 
+         static const string sc_Expected = 
 ">lcl|test-seq test sequence\n"
 "CGGTTGCTTGGGTTTTATAACATCAGTCAGTGACAGGCATTTCCAGAGTTGCCCTGTTCAACAATCGATA\n"
 "GCTGCCTTTGGCCACCAAAATCCCAAACT-\n"
 "AATTAAAGAATTAAATAATTCGAATAATAATTAAGCCCAGTAACCTACGCAGCTTGAGTGCGTAACCGAT\n"
 "ATCTAGTATACATTTCGATACATCGAAAT\n";
-         BOOST_CHECK_EQUAL(s, string(sc_Expected));
+         BOOST_CHECK_EQUAL(s, sc_Expected);
      }}
 }
 
@@ -205,13 +205,13 @@ BOOST_AUTO_TEST_CASE(Test_FastaMask_SimpleSoft)
           }}
          os.flush();
          string s = string(CNcbiOstrstreamToString(os));
-         static const char* sc_Expected = 
+         static const string sc_Expected = 
 ">lcl|test-seq test sequence\n"
 "CGGTTGCTTGggttttataaCATCAGTCAGTGACAGGcatttccagaGTTGCCCTGTTCAACAAtcgata\n"
 "gctgCCTTTGGCCACCAAAATcccaaactnnNNNNNNNNNNNNNNNNNnaattaaagaATTAAATAATTC\n"
 "GAATAataattaagcCCAGTAACCTACGCAGCttgagtgcgtAACCGATATCTAGTATAcatttcgataC\n"
 "ATCGAAAT\n";
-         BOOST_CHECK_EQUAL(s, string(sc_Expected));
+         BOOST_CHECK_EQUAL(s, sc_Expected);
      }}
 }
 
@@ -253,13 +253,13 @@ BOOST_AUTO_TEST_CASE(Test_FastaMask_SimpleHard)
           }}
          os.flush();
          string s = string(CNcbiOstrstreamToString(os));
-         static const char* sc_Expected = 
+         static const string sc_Expected = 
 ">lcl|test-seq test sequence\n"
 "CGGTTGCTTGNNNNNNNNNNCATCAGTCAGTGACAGGNNNNNNNNNNGTTGCCCTGTTCAACAANNNNNN\n"
 "NNNNCCTTTGGCCACCAAAATNNNNNNNN--------------------NNNNNNNNNATTAAATAATTC\n"
 "GAATANNNNNNNNNNCCAGTAACCTACGCAGCNNNNNNNNNNAACCGATATCTAGTATANNNNNNNNNNC\n"
 "ATCGAAAT\n";
-         BOOST_CHECK_EQUAL(s, string(sc_Expected));
+         BOOST_CHECK_EQUAL(s, sc_Expected);
      }}
 }
 
@@ -310,7 +310,7 @@ BOOST_AUTO_TEST_CASE(Test_FastaMask_ComplexSoft)
           }}
          os.flush();
          string s = string(CNcbiOstrstreamToString(os));
-         static const char* sc_Expected = 
+         static const string sc_Expected = 
 ">lcl|test-seq test sequence\n"
 "CGGTTGCTTGggttttataaCATCAGTCAGTGACAGGcatttccagaGTTGCCCTGTTCAACAAtcgata\n"
 "gctgCCTTTGGCCACCAAAATcccaaactnnnnnnnnnnnnnnnnnnnnaattaaagaattaaataattc\n"
@@ -318,7 +318,7 @@ BOOST_AUTO_TEST_CASE(Test_FastaMask_ComplexSoft)
 "ATCGAAAT\n"
 ">lcl|test-seq:1-25 test sequence\n"
 "CGGTTGCTTGGGTTTTATAACATCA\n";
-         BOOST_CHECK_EQUAL(s, string(sc_Expected));
+         BOOST_CHECK_EQUAL(s, sc_Expected);
      }}
 }
 
@@ -372,13 +372,13 @@ BOOST_AUTO_TEST_CASE(Test_FastaMask_ComplexSoftHard)
           }}
          os.flush();
          string s = string(CNcbiOstrstreamToString(os));
-         static const char* sc_Expected = 
+         static const string sc_Expected = 
 ">lcl|test-seq test sequence\n"
 "CGGTTGCTTGggttttataaCATCAGTCAGTGACAGGcatttccagaGTTGCCCTGTTCAACAAtcgata\n"
 "gctgCCTTTGGCCACCAAAATcccaaactnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn\n"
 "nnnnnntaattaagcCCAGTAACCTACGCAGCttgagtgcgtAACCGATATCTAGTATAcatttcgataC\n"
 "ATCGAAAT\n";
-         BOOST_CHECK_EQUAL(s, string(sc_Expected));
+         BOOST_CHECK_EQUAL(s, sc_Expected);
      }}
 
     ///
@@ -423,7 +423,7 @@ BOOST_AUTO_TEST_CASE(Test_FastaMask_ComplexSoftHard)
           }}
          os.flush();
          string s = string(CNcbiOstrstreamToString(os));
-         static const char* sc_Expected = 
+         static const string sc_Expected = 
 ">lcl|test-seq test sequence\n"
 "CGGTTGCTTGggttttataaCATCAGTCAGTGACAGGcatttccagaGTTGCCCTGTTCAACAAtcgata\n"
 "gctgCCTTTGGCCACCAAAATcccaaactnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn\n"
@@ -444,7 +444,7 @@ BOOST_AUTO_TEST_CASE(Test_FastaMask_ComplexSoftHard)
 "gctgCCTTTGGCCACCAAAATcccaaactnnnnnnnnnnnnnnnnnnnnaattaaagaattaaataattc\n"
 "gaataataattaagcCCAGTAACCTACGCAGCttgagtgcgtAACCGATATCTAGTATAcatttcgataC\n"
 "ATCGAAAT\n";
-         BOOST_CHECK_EQUAL(s, string(sc_Expected));
+         BOOST_CHECK_EQUAL(s, sc_Expected);
      }}
 }
 
@@ -490,13 +490,13 @@ BOOST_AUTO_TEST_CASE(Test_FastaMask_SoftHardSimpleOverlap)
           }}
          os.flush();
          string s = string(CNcbiOstrstreamToString(os));
-         static const char* sc_Expected = 
+         static const string sc_Expected = 
 ">lcl|test-seq test sequence\n"
 "CGGTTGCTTGGGTTTTATAACATCAGTCAGTGACAGGCATTTCCAGAGTTgccctgttcannnnnnnnnn\n"
 "nnnnnnNNNNNCCACCAAAATCCCAAACTNNNNNNNNNNNNNNNNNNNNAATTAAAGAATTAAATAATTC\n"
 "GAATAATAATTAAGCCCAGTAACCTACGCAGCTTGAGTGCGTAACCGATATCTAGTATACATTTCGATAC\n"
 "ATCGAAAT\n";
-         BOOST_CHECK_EQUAL(s, string(sc_Expected));
+         BOOST_CHECK_EQUAL(s, sc_Expected);
      }}
 }
 
@@ -528,13 +528,13 @@ BOOST_AUTO_TEST_CASE(Test_FastaMods)
           }}
          os.flush();
          string s = string(CNcbiOstrstreamToString(os));
-         static const char* sc_Expected = 
+         static const string sc_Expected = 
 ">lcl|test-seq [organism=\"Sarcophilus='harrisii\"] [pathovar=fake data] [strain=some strain] [gcode=1] [tech=physical map] test sequence\n"
 "CGGTTGCTTGGGTTTTATAACATCAGTCAGTGACAGGCATTTCCAGAGTTGCCCTGTTCAACAATCGATA\n"
 "GCTGCCTTTGGCCACCAAAATCCCAAACT--------------------AATTAAAGAATTAAATAATTC\n"
 "GAATAATAATTAAGCCCAGTAACCTACGCAGCTTGAGTGCGTAACCGATATCTAGTATACATTTCGATAC\n"
 "ATCGAAAT\n";
-         BOOST_CHECK_EQUAL(s, string(sc_Expected));
+         BOOST_CHECK_EQUAL(s, sc_Expected);
     }}
 
     // check with topology circular
@@ -552,13 +552,13 @@ BOOST_AUTO_TEST_CASE(Test_FastaMods)
         }}
         os.flush();
         string s = string(CNcbiOstrstreamToString(os));
-        static const char* sc_Expected = 
+        static const string sc_Expected = 
             ">lcl|test-seq [topology=circular] [organism=\"Sarcophilus='harrisii\"] [pathovar=fake data] [strain=some strain] [gcode=1] [tech=physical map] test sequence\n"
             "CGGTTGCTTGGGTTTTATAACATCAGTCAGTGACAGGCATTTCCAGAGTTGCCCTGTTCAACAATCGATA\n"
             "GCTGCCTTTGGCCACCAAAATCCCAAACT--------------------AATTAAAGAATTAAATAATTC\n"
             "GAATAATAATTAAGCCCAGTAACCTACGCAGCTTGAGTGCGTAACCGATATCTAGTATACATTTCGATAC\n"
             "ATCGAAAT\n";
-        BOOST_CHECK_EQUAL(s, string(sc_Expected));
+        BOOST_CHECK_EQUAL(s, sc_Expected);
     }}
 }
 
@@ -711,7 +711,7 @@ BOOST_AUTO_TEST_CASE(Test_AutoGenerateData)
 #endif
 
 
-const char* sc_TestEntry = "\
+const string sc_TestEntry = "\
 Seq-entry ::= seq {\
   id {\
     local str \"test-seq\"\
@@ -758,7 +758,7 @@ Seq-entry ::= seq {\
 BOOST_AUTO_TEST_CASE(Test_LocationMitochondrion)
 {
     // RW-1277
-    auto testEntry = 
+    string testEntry = 
     R"(Seq-entry ::= seq {
         id {
             local str "id1"
