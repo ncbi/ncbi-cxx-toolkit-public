@@ -217,7 +217,7 @@ BOOST_AUTO_TEST_CASE(TTestDiag_ErrCodeInfo)
     CDiagErrCodeInfo        info;
     SDiagErrCodeDescription desc;
 
-    CNcbiIstrstream is("\
+    static const string data("\
 # Comment line\n\
 \n\
 MODULE coretest\n\
@@ -236,6 +236,7 @@ $^   EmptyString, 1, info:Error with subcode 1.\n\
 $^   BadFormat, 2\n\
 Message for warning error PRINT_BadFormat.\n\
 ");
+    CNcbiIstrstream is(data);
 
     info.Read(is);
     info.SetDescription(ErrCode(2,3), 
@@ -492,7 +493,8 @@ BOOST_AUTO_TEST_CASE(TestException_AuxTrace)
 
 BOOST_AUTO_TEST_CASE(TestIostream)
 {
-    CNcbiIstrstream is("abc\r\nx0123456789\ny012345\r \tcba");
+    static const string data("abc\r\nx0123456789\ny012345\r \tcba");
+    CNcbiIstrstream is(data);
     string str;
 
     while (NcbiGetline(is, str, "\r\n")) {
@@ -739,7 +741,7 @@ BOOST_AUTO_TEST_CASE(TestRegistry)
     NcbiCout << endl;
     NcbiCout << "---------------------------------------------------" << endl;
 
-    CNcbiIstrstream is("\n\
+    static const string data("\n\
 ############################################\n\
 #\n\
 #  Registry file comment\n\
@@ -773,6 +775,7 @@ n22 = value22\n\
 [section3]\n\
 n31 = value31\n\
 ");
+    CNcbiIstrstream is(data);
 
     reg.Read(is);
     reg.Write(NcbiCout);
