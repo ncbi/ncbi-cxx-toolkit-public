@@ -128,13 +128,13 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-extern const char* sc_TestEntry;
-extern const char* sc_TestEntry2;
-const char* sc_TestEntry3 = "cds_fix_test_cases/GB-8277.asn";
-extern const char* sc_mrna_loc;
-extern const char* sc_mrna1;
-extern const char* sc_mrna2;
-extern const char* sc_mrna3;
+extern const string sc_TestEntry;
+extern const string sc_TestEntry2;
+const string sc_TestEntry3 = "cds_fix_test_cases/GB-8277.asn";
+extern const string sc_mrna_loc;
+extern const string sc_mrna1;
+extern const string sc_mrna2;
+extern const string sc_mrna3;
 
 NCBITEST_INIT_TREE()
 {
@@ -982,7 +982,7 @@ BOOST_AUTO_TEST_CASE(Test_GetNewProtIdFromExistingProt)
 
 
 //////////////////////////////////////////////////////////////////////////////////
-const char* sc_TestEntry ="\
+const string sc_TestEntry ="\
 Seq-entry ::= set {\
   class nuc-prot,\
   seq-set {\
@@ -1086,7 +1086,7 @@ LSGWSQTPDLR\"\
 
 
 //////////////////////////////////////////////////////////////////////////////////
-const char* sc_TestEntry2 ="\
+const string sc_TestEntry2 ="\
 Seq-entry ::= set {\
   class genbank,\
   descr {\
@@ -1624,7 +1624,7 @@ SLLLYRQILDEIEANDYNNFTRRAYVSKPKKILALPLAYAKSLVPPSSKPSSTLVKT\"\
 }";
 
 
-const char* sc_mrna_loc = "\
+const string sc_mrna_loc = "\
 Seq-loc ::= packed-int {\
   {\
     from 0,\
@@ -1694,7 +1694,7 @@ Seq-loc ::= packed-int {\
 
 
 
-const char* sc_mrna1 = "Seq-feat ::= {\
+const string sc_mrna1 = "Seq-feat ::= {\
   data rna {\
     type mRNA,\
     ext name \"F-box protein\"\
@@ -1709,7 +1709,7 @@ const char* sc_mrna1 = "Seq-feat ::= {\
   }\
 }";
 
-const char* sc_mrna2 = "Seq-feat ::= {\
+const string sc_mrna2 = "Seq-feat ::= {\
   data rna {\
     type mRNA,\
     ext name \"S haplotype-specific F-box7\"\
@@ -1735,7 +1735,7 @@ const char* sc_mrna2 = "Seq-feat ::= {\
   }\
 }";
 
-const char* sc_mrna3 = "Seq-feat ::= {\
+const string sc_mrna3 = "Seq-feat ::= {\
   data rna {\
     type mRNA,\
     ext name \"ribonuclease\"\
