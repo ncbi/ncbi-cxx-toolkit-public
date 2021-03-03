@@ -66,7 +66,7 @@
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
-extern const char* sc_TestEntry_FixOrgnames;
+extern const string sc_TestEntry_FixOrgnames;
 
 NCBITEST_INIT_TREE()
 {
@@ -305,7 +305,7 @@ BOOST_AUTO_TEST_CASE(Test_FixOrgnames)
     BOOST_CHECK_EQUAL(title, "Unpublished Candida cf. auringiensis UWO(PS)99-304.7");
 }
 
-const char * sc_TestEntry_FixOrgnames = "\
+const string sc_TestEntry_FixOrgnames = "\
 Seq-entry ::= set {\
     class phy-set,\
     seq-set {\
