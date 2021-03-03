@@ -67,7 +67,7 @@
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
-extern const char *sc_TestBioseq_1;
+extern const string sc_TestBioseq_1;
 
 BOOST_AUTO_TEST_CASE(Test_RawString)
 {
@@ -108,7 +108,7 @@ BOOST_AUTO_TEST_CASE(Test_Bioseq)
 
 }
 
-const char* sc_TestBioseq_1 = "\
+const string sc_TestBioseq_1 = "\
 Bioseq ::= {\
     id {\
         local str \"1\"\
