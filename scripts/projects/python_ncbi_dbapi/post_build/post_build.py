@@ -8,7 +8,7 @@ common_stems  = ('python_ncbi_dbapi', 'ncbi_xdbapi_*')
 unix_stems    = ('dbapi', 'dbapi_driver', 'ct_ftds*', 'tds_ftds*',
                  'xconne?t', 'xutil', 'xncbi')
 windows_stems = ('ncbi_core', 'ncbi_dbapi', 'ncbi_dbapi_driver')
-installations = ('3.6', '3.7', '3.8')
+installations = ('3.7', '3.8', '3.9')
 
 os.mkdir(install_dir + '/lib')
 if os.path.exists(lib_dir + '/python_ncbi_dbapi.so'):
