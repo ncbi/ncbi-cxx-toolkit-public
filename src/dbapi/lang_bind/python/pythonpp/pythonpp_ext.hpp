@@ -198,7 +198,11 @@ private:
 
         // Methods to implement standard operations
         tp_dealloc = NULL;
+#if PY_MAJOR_VERSION < 3 || (PY_MAJOR_VERSION == 3 && PY_MINOR_VERSION < 8)
         tp_print = NULL;
+#else
+        tp_vectorcall_offset = NULL;
+#endif
 
         tp_getattr = NULL;              // This field is deprecated.
         tp_setattr = NULL;              // This field is deprecated.
@@ -276,6 +280,8 @@ private:
         tp_subclasses = NULL;
         tp_weaklist = NULL;
         tp_del = NULL;
+
+        tp_version_tag = 0U;
 
 #ifdef COUNT_ALLOCS
 #  if PY_MAJOR_VERSION >= 3
