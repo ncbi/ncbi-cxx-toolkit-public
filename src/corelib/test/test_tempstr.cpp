@@ -552,6 +552,17 @@ BOOST_AUTO_TEST_CASE(TestTempString)
         string_view     str_view2 = t2;
         BOOST_CHECK(str_view2.length() == t2.length());
         BOOST_CHECK(strncmp(t2.data(), str_view2.data(), str_view2.length()) == 0);
+
+        CTempString     t3(text);
+        string_view     str_view3;
+        str_view3 = t3;
+        BOOST_CHECK(str_view3.length() == t3.length());
+        BOOST_CHECK(strncmp(t3.data(), str_view3.data(), str_view3.length()) == 0);
+
+        CTempString     t4(text);
+        string_view     str_view4 = t4;
+        BOOST_CHECK(NStr::CompareCase(t4, str_view4) == 0);
+        BOOST_CHECK(NStr::CompareNocase(t4, str_view4) == 0);
         #endif
     }}
 }

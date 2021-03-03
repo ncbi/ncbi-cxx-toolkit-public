@@ -948,6 +948,13 @@ public:
           m_ZeroAtEnd(eNoZeroAtEnd)
         {
         }
+    #ifdef NCBI_HAVE_CXX17
+    CTempStringEx(const string_view&  str_view)
+        : CTempString(str_view),
+          m_ZeroAtEnd(eNoZeroAtEnd)
+        {
+        }
+    #endif
     CTempStringEx(const CTempString& str, size_type pos)
         : CTempString(str, pos),
           m_ZeroAtEnd(eNoZeroAtEnd)
