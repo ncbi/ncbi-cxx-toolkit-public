@@ -89,7 +89,7 @@ void throw_exception( std::exception const & e ) {
 
 #endif
 
-extern const char* sc_TestEntryCleanRptUnitSeq;
+extern const string sc_TestEntryCleanRptUnitSeq;
 
 BOOST_AUTO_TEST_CASE(Test_CleanRptUnitSeq)
 {
@@ -133,7 +133,7 @@ BOOST_AUTO_TEST_CASE(Test_CleanRptUnitSeq)
 }
 
 
-const char *sc_TestEntryCleanRptUnitSeq = "\
+const string sc_TestEntryCleanRptUnitSeq = "\
 Seq-entry ::= seq {\
           id {\
             local\
@@ -223,7 +223,7 @@ public:
     }
 };
 
-const char *sc_TestEntryCleanAssemblyDate = "\
+const string sc_TestEntryCleanAssemblyDate = "\
 Seq-entry ::= seq {\
           id {\
             local\
@@ -303,7 +303,7 @@ BOOST_AUTO_TEST_CASE(Test_CleanAssemblyDate)
 }
 
 
-const char *sc_TestEntryCleanStructuredVoucher2 = "\
+const string sc_TestEntryCleanStructuredVoucher2 = "\
 Seq-entry ::= seq {\
           id {\
             local\
@@ -372,7 +372,7 @@ BOOST_AUTO_TEST_CASE(Test_CleanStructuredVoucher2)
 }
 
 
-const char *sc_TestEntryCleanPCRPrimerSeq = "\
+const string sc_TestEntryCleanPCRPrimerSeq = "\
 Seq-entry ::= seq {\
           id {\
             local\
