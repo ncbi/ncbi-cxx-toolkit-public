@@ -126,7 +126,7 @@
 #include <serial/objostrasn.hpp>
 #include <serial/objostrasnb.hpp>
 
-extern const char* sc_TestEntryCollidingLocusTags;
+extern const std::string sc_TestEntryCollidingLocusTags;
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -1053,7 +1053,7 @@ BOOST_AUTO_TEST_CASE(Test_CollidingLocusTags)
 }
 
 
-const char* sc_TestEntryCollidingLocusTags ="Seq-entry ::= seq {\
+const string sc_TestEntryCollidingLocusTags ="Seq-entry ::= seq {\
     id {\
       local str \"LocusCollidesWithLocusTag\" } ,\
     inst {\
