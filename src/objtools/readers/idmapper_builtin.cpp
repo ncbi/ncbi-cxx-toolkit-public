@@ -46,7 +46,7 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 
-extern const char* sc_BuiltinConfig;
+extern const string sc_BuiltinConfig;
 
 CIdMapperBuiltin::CIdMapperBuiltin(const std::string& strContext,
                                    bool bInvert,
@@ -59,7 +59,7 @@ CIdMapperBuiltin::CIdMapperBuiltin(const std::string& strContext,
 
 void CIdMapperBuiltin::Initialize()
 {
-    CNcbiIstrstream is(sc_BuiltinConfig, strlen(sc_BuiltinConfig));
+    CNcbiIstrstream is(sc_BuiltinConfig);
     CIdMapperConfig::Initialize(is);
 }
 

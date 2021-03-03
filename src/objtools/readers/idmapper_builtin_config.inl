@@ -1,4 +1,4 @@
-const char* sc_BuiltinConfig = "\
+const string sc_BuiltinConfig = "\
 [rn4] \n\
 map_from = UCSC Rn4 \n\
 map_to = NCBI Rat build 4.1 \n\
