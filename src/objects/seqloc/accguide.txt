@@ -151,7 +151,7 @@ version  1 # of file format
 4+8   G???    gb_tsa_nuc
 4+9   G???    gb_tsa_nuc
 4+10  G???    gb_tsa_nuc
-4+8   H???    embl_tsa_nuc
+4+8   H???    embl_tsa_nuc *
 4+9   H???    embl_tsa_nuc
 4+10  H???    embl_tsa_nuc
 4+8   I???    ddbj_tsa_nuc
@@ -3579,6 +3579,10 @@ special  CAJJIG000000000-CAJJIK999999999  embl_tpa_wgs_nuc # 6+9
 special  CAJJIM000000000-CAJJIM999999999  embl_tpa_wgs_nuc # 6+9
 special  CAJJIQ000000000-CAJJJK999999999  embl_tpa_wgs_nuc # 6+9
 special  CAJJJM000000000-CAJMTE999999999  embl_tpa_wgs_nuc # 6+9
+
+# Some "EMBL" TPA nucleotide accessions are really third-party annotations.
+special  HBHG00000000-HBHG99999999  embl_tpa_wgs_nuc # Fallback for old clients
+special  HBHG00000000-HBHG99999999  embl_tpa_tsa_nuc
 
 # Some "EMBL" 8- and 10-character protein accessions are really third-party
 # annotations.
@@ -12947,6 +12951,178 @@ special  CAB0000563-CAB0000565  embl_tpa_prot
 special  CAB0000567-CAB0000569  embl_tpa_prot
 special  CAB0000571-CAB0000576  embl_tpa_prot
 special  CAB0000578-CAB0000580  embl_tpa_prot
+special  CAD9653957             embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9653957             embl_tpa_tsa_prot
+special  CAD9653960-CAD9653962  embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9653960-CAD9653962  embl_tpa_tsa_prot
+special  CAD9653965-CAD9653966  embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9653965-CAD9653966  embl_tpa_tsa_prot
+special  CAD9653968-CAD9653969  embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9653968-CAD9653969  embl_tpa_tsa_prot
+special  CAD9653971-CAD9653975  embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9653971-CAD9653975  embl_tpa_tsa_prot
+special  CAD9653982             embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9653982             embl_tpa_tsa_prot
+special  CAD9653984-CAD9653987  embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9653984-CAD9653987  embl_tpa_tsa_prot
+special  CAD9653990-CAD9653992  embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9653990-CAD9653992  embl_tpa_tsa_prot
+special  CAD9653995-CAD9653999  embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9653995-CAD9653999  embl_tpa_tsa_prot
+special  CAD9654001-CAD9654011  embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654001-CAD9654011  embl_tpa_tsa_prot
+special  CAD9654015             embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654015             embl_tpa_tsa_prot
+special  CAD9654019-CAD9654026  embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654019-CAD9654026  embl_tpa_tsa_prot
+special  CAD9654028-CAD9654040  embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654028-CAD9654040  embl_tpa_tsa_prot
+special  CAD9654042-CAD9654043  embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654042-CAD9654043  embl_tpa_tsa_prot
+special  CAD9654045-CAD9654046  embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654045-CAD9654046  embl_tpa_tsa_prot
+special  CAD9654048-CAD9654049  embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654048-CAD9654049  embl_tpa_tsa_prot
+special  CAD9654051-CAD9654053  embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654051-CAD9654053  embl_tpa_tsa_prot
+special  CAD9654057-CAD9654060  embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654057-CAD9654060  embl_tpa_tsa_prot
+special  CAD9654062-CAD9654067  embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654062-CAD9654067  embl_tpa_tsa_prot
+special  CAD9654075-CAD9654078  embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654075-CAD9654078  embl_tpa_tsa_prot
+special  CAD9654080             embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654080             embl_tpa_tsa_prot
+special  CAD9654082-CAD9654085  embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654082-CAD9654085  embl_tpa_tsa_prot
+special  CAD9654087             embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654087             embl_tpa_tsa_prot
+special  CAD9654090-CAD9654093  embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654090-CAD9654093  embl_tpa_tsa_prot
+special  CAD9654095             embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654095             embl_tpa_tsa_prot
+special  CAD9654099-CAD9654102  embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654099-CAD9654102  embl_tpa_tsa_prot
+special  CAD9654104-CAD9654109  embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654104-CAD9654109  embl_tpa_tsa_prot
+special  CAD9654111             embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654111             embl_tpa_tsa_prot
+special  CAD9654117-CAD9654118  embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654117-CAD9654118  embl_tpa_tsa_prot
+special  CAD9654121             embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654121             embl_tpa_tsa_prot
+special  CAD9654125             embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654125             embl_tpa_tsa_prot
+special  CAD9654127-CAD9654131  embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654127-CAD9654131  embl_tpa_tsa_prot
+special  CAD9654134-CAD9654136  embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654134-CAD9654136  embl_tpa_tsa_prot
+special  CAD9654138             embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654138             embl_tpa_tsa_prot
+special  CAD9654142-CAD9654147  embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654142-CAD9654147  embl_tpa_tsa_prot
+special  CAD9654150-CAD9654154  embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654150-CAD9654154  embl_tpa_tsa_prot
+special  CAD9654157-CAD9654158  embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654157-CAD9654158  embl_tpa_tsa_prot
+special  CAD9654160-CAD9654161  embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654160-CAD9654161  embl_tpa_tsa_prot
+special  CAD9654166             embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654166             embl_tpa_tsa_prot
+special  CAD9654170-CAD9654177  embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654170-CAD9654177  embl_tpa_tsa_prot
+special  CAD9654181-CAD9654187  embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654181-CAD9654187  embl_tpa_tsa_prot
+special  CAD9654195             embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654195             embl_tpa_tsa_prot
+special  CAD9654197             embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654197             embl_tpa_tsa_prot
+special  CAD9654199-CAD9654200  embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654199-CAD9654200  embl_tpa_tsa_prot
+special  CAD9654206             embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654206             embl_tpa_tsa_prot
+special  CAD9654209             embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654209             embl_tpa_tsa_prot
+special  CAD9654213             embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654213             embl_tpa_tsa_prot
+special  CAD9654215             embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654215             embl_tpa_tsa_prot
+special  CAD9654217             embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654217             embl_tpa_tsa_prot
+special  CAD9654223             embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654223             embl_tpa_tsa_prot
+special  CAD9654225             embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654225             embl_tpa_tsa_prot
+special  CAD9654229             embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654229             embl_tpa_tsa_prot
+special  CAD9654240-CAD9654242  embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654240-CAD9654242  embl_tpa_tsa_prot
+special  CAD9654256             embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654256             embl_tpa_tsa_prot
+special  CAD9654258             embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654258             embl_tpa_tsa_prot
+special  CAD9654260             embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654260             embl_tpa_tsa_prot
+special  CAD9654263-CAD9654264  embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654263-CAD9654264  embl_tpa_tsa_prot
+special  CAD9654270             embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654270             embl_tpa_tsa_prot
+special  CAD9654274             embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654274             embl_tpa_tsa_prot
+special  CAD9654280             embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654280             embl_tpa_tsa_prot
+special  CAD9654282             embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654282             embl_tpa_tsa_prot
+special  CAD9654284             embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654284             embl_tpa_tsa_prot
+special  CAD9654290             embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654290             embl_tpa_tsa_prot
+special  CAD9654294             embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654294             embl_tpa_tsa_prot
+special  CAD9654296-CAD9654297  embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654296-CAD9654297  embl_tpa_tsa_prot
+special  CAD9654301             embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654301             embl_tpa_tsa_prot
+special  CAD9654304-CAD9654305  embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654304-CAD9654305  embl_tpa_tsa_prot
+special  CAD9654315             embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654315             embl_tpa_tsa_prot
+special  CAD9654324-CAD9654326  embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654324-CAD9654326  embl_tpa_tsa_prot
+special  CAD9654332             embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654332             embl_tpa_tsa_prot
+special  CAD9654334-CAD9654335  embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654334-CAD9654335  embl_tpa_tsa_prot
+special  CAD9654339             embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654339             embl_tpa_tsa_prot
+special  CAD9654345             embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654345             embl_tpa_tsa_prot
+special  CAD9654348             embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654348             embl_tpa_tsa_prot
+special  CAD9654354             embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654354             embl_tpa_tsa_prot
+special  CAD9654357             embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654357             embl_tpa_tsa_prot
+special  CAD9654360-CAD9654361  embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654360-CAD9654361  embl_tpa_tsa_prot
+special  CAD9654363             embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654363             embl_tpa_tsa_prot
+special  CAD9654365             embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654365             embl_tpa_tsa_prot
+special  CAD9654369             embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654369             embl_tpa_tsa_prot
+special  CAD9654376             embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654376             embl_tpa_tsa_prot
+special  CAD9654378-CAD9654379  embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654378-CAD9654379  embl_tpa_tsa_prot
+special  CAD9654382             embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654382             embl_tpa_tsa_prot
+special  CAD9654393             embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654393             embl_tpa_tsa_prot
+special  CAD9654401             embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654401             embl_tpa_tsa_prot
+special  CAD9654407-CAD9654408  embl_tpa_wgs_prot # Fallback for older clients
+special  CAD9654407-CAD9654408  embl_tpa_tsa_prot
 ## Err on the side of caution on as yet unassigned IDs, and hope that
 ## there's not *too* much more backfilling.
-#special CAB0045401-CZZ9999999  unreserved_prot
+#special CAE9574355-CZZ9999999  unreserved_prot
