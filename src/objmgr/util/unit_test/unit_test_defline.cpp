@@ -65,7 +65,7 @@ USING_SCOPE(objects);
 USING_SCOPE(sequence);
 
 
-extern const char* sc_TestEntry;
+extern const string sc_TestEntry;
 
 
 BOOST_AUTO_TEST_CASE(Test_DoNotAddRedundantStrain)
@@ -91,7 +91,7 @@ BOOST_AUTO_TEST_CASE(Test_DoNotAddRedundantStrain)
 
 
 
-const char* sc_TestEntry = "\
+const string sc_TestEntry = "\
 Seq-entry ::= set {\
   class nuc-prot,\
   descr {\
@@ -212,7 +212,7 @@ GTCAAACCTGCAAATTCAGTAGTAACAGAGTTCTTTTATAACTTTTAAACAAAGCTTTAGAGCA\"\
 BOOST_AUTO_TEST_CASE(Test_LocationMitochondrion)
 {
     // RW-1277
-    auto testEntry = 
+    string testEntry = 
     R"(Seq-entry ::= seq {
         id {
             local str "id1"
