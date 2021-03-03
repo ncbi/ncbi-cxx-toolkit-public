@@ -188,6 +188,7 @@ private:
 
     HANDLE     m_Pipe;         // pipe I/O handle
     string     m_PipeName;     // pipe name
+    bool       m_Flushed;      // false if data written
     int        m_Connected;    // if connected (-1=server; 1=client)
     EIO_Status m_ReadStatus;   // last read status
     EIO_Status m_WriteStatus;  // last write status
@@ -195,7 +196,7 @@ private:
 
 
 CNamedPipeHandle::CNamedPipeHandle(void)
-    : m_Pipe(INVALID_HANDLE_VALUE),
+    : m_Pipe(INVALID_HANDLE_VALUE), m_Flushed(true),
       m_Connected(0), m_ReadStatus(eIO_Closed), m_WriteStatus(eIO_Closed)
 {
     return;
@@ -444,10 +445,13 @@ EIO_Status CNamedPipeHandle::Listen(const STimeout* timeout)
 
 EIO_Status CNamedPipeHandle::x_Flush(void)
 {
-    if (m_Connected  &&  !::FlushFileBuffers(m_Pipe)) {
-        NAMEDPIPE_THROW(::GetLastError(),
-                        "Named pipe \"" + m_PipeName
-                        + "\" failed to flush");
+    if (!m_Flushed) {
+        if (m_Connected  &&  !::FlushFileBuffers(m_Pipe)) {
+            NAMEDPIPE_THROW(::GetLastError(),
+                            "Named pipe \"" + m_PipeName
+                            + "\" failed to flush");
+        }
+        m_Flushed = true;
     }
     return eIO_Success;
 }
@@ -536,6 +540,7 @@ EIO_Status CNamedPipeHandle::x_WaitForRead(const STimeout* timeout,
             if (!(m_Connected & 2)) {
                 m_Connected |= 2;
             }
+            m_Flushed = true;
             break;
         }
         if ( !ok ) {
@@ -612,6 +617,7 @@ EIO_Status CNamedPipeHandle::Read(void* buf, size_t count, size_t* n_read,
                 // NB: status == eIO_Success
                 m_ReadStatus = eIO_Success;
                 *n_read = bytes_avail;
+                _ASSERT(m_Flushed);
             }
         } else if (status == eIO_Timeout) {
             m_ReadStatus = eIO_Timeout;
@@ -664,6 +670,7 @@ EIO_Status CNamedPipeHandle::Write(const void* buf, size_t count,
                     m_Connected |= 2;
                 }
                 m_WriteStatus = ok ? eIO_Success : eIO_Unknown;
+                m_Flushed = false;
                 break;
             }
             if ( !ok ) {                
