@@ -550,17 +550,17 @@ int CThreadedApp::Run(void)
     // Wait for all threads
     if ( cascading ) {
         for (unsigned int i = 0;  i < s_NumThreads;  i++) {
-            void* ok;
+            void* join_result;
             // make sure all threads have started
             assert(thr[i].NotEmpty());
 #ifdef USE_NATIVE_THREADS
             if (thr[i]) {
-                thr[i]->JoinNative(&ok);
-                assert(ok);
+                thr[i]->JoinNative(&join_result);
+                assert(join_result != nullptr);
             }
 #else
-            thr[i]->Join(&ok);
-            assert(ok);
+            thr[i]->Join(&join_result);
+            assert(join_result != nullptr);
 #endif
         }
     } else {
@@ -569,9 +569,9 @@ int CThreadedApp::Run(void)
         for (unsigned int g = 0;  g < m_NextGroup;  ++g) {
             for (unsigned int t = 0;
                  t < m_ThreadGroups[g].number_of_threads; ++t, ++i) {
-                void* ok;
-                thr[i]->Join(&ok);
-                assert(ok);
+                void* join_result;
+                thr[i]->Join(&join_result);
+                assert(join_result != nullptr);
             }
         }
         assert(m_Reached.size() >= m_Min);
