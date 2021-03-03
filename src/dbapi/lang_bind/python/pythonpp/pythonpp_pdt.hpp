@@ -766,7 +766,12 @@ public:
         if (g_PythonStrDefToUnicode) {
 #endif
             basic_string<Py_UNICODE> str_uni(CUtf8::AsBasicString<Py_UNICODE>(str));
+#if PY_MAJOR_VERSION >= 3
+            Set(PyUnicode_FromWideChar(str_uni.data(), str_uni.size()),
+                eTakeOwnership);
+#else
             Set(PyUnicode_FromUnicode(str_uni.data(), str_uni.size()), eTakeOwnership);
+#endif
 #if PY_MAJOR_VERSION < 3
         }
         else {
@@ -784,7 +789,11 @@ public:
     size_t GetSize (void) const
     {
         if ( PyUnicode_Check(Get()) ) {
+#if PY_VERSION_HEX >= 0x03030000
+            return static_cast<size_t>( PyUnicode_GET_LENGTH( Get() ) );
+#else
             return static_cast<size_t>( PyUnicode_GET_SIZE( Get() ) );
+#endif
         } else {
 #if PY_MAJOR_VERSION >= 3
             return static_cast<size_t>( PyBytes_Size ( Get() ) );
@@ -801,9 +810,15 @@ public:
     string AsStdSring(void) const
     {
         if( PyUnicode_Check(Get()) ) {
+#if PY_VERSION_HEX >= 0x03030000
+            Py_ssize_t size;
+            auto utf = PyUnicode_AsUTF8AndSize(Get(), &size);
+            return string(utf, size);
+#else
             return CUtf8::AsUTF8(
                                PyUnicode_AS_UNICODE( Get() ),
                                static_cast<size_t>( PyUnicode_GET_SIZE( Get() ) ) );
+#endif
         } else {
 #if PY_MAJOR_VERSION >= 3
             return string(PyBytes_AsString(Get()),

@@ -169,9 +169,9 @@ public:
     /// Call with keywords
     CObject Apply(const CTuple& args, const CDict& key_words) const
     {
-        PyObject* tmp_obj = PyEval_CallObjectWithKeywords( Get(), args.Get(), key_words.Get() );
+        PyObject* tmp_obj = PyObject_Call(Get(), args.Get(), key_words.Get());
         if ( !tmp_obj ) {
-            throw CSystemError("PyEval_CallObjectWithKeywords error");
+            throw CSystemError("PyObject_Call error");
         }
         return CObject(tmp_obj, eTakeOwnership);
     }
@@ -231,7 +231,15 @@ public:
     }
     string GetFileName(void) const
     {
+#if PY_VERSION_HEX >= 0x03030000
+        CObject fno(PyModule_GetFilenameObject(Get()), eTakeOwnership);
+        const char* tmp_str = nullptr;
+        if (fno.Get() != NULL) {
+            tmp_str = PyUnicode_AsUTF8(fno.Get());
+        }
+#else
         const char* tmp_str = PyModule_GetFilename(Get());
+#endif
 
         CError::Check(tmp_str);
         return tmp_str;

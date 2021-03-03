@@ -404,7 +404,11 @@ public:
 protected:
     virtual void SetInternal( PyObject* value ) const
     {
-#if PY_MAJOR_VERSION >= 3
+#if PY_VERSION_HEX >= 0x03030000
+        Py_ssize_t size;
+        auto utf = PyUnicode_AsUTF8AndSize(Get(), &size);
+        string tmp_value(utf, size);
+#elif PY_MAJOR_VERSION >= 3
         string tmp_value
             = CUtf8::AsUTF8(PyUnicode_AsUnicode(Get()),
                             static_cast<size_t>(PyUnicode_GetSize(Get())));
