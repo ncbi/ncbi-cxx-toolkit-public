@@ -196,8 +196,8 @@ private:
 
 
 CNamedPipeHandle::CNamedPipeHandle(void)
-    : m_Pipe(INVALID_HANDLE_VALUE), m_Flushed(true),
-      m_Connected(0), m_ReadStatus(eIO_Closed), m_WriteStatus(eIO_Closed)
+    : m_Pipe(INVALID_HANDLE_VALUE), m_Flushed(true), m_Connected(0),
+      m_ReadStatus(eIO_Closed), m_WriteStatus(eIO_Closed)
 {
     return;
 }
@@ -222,6 +222,7 @@ EIO_Status CNamedPipeHandle::Open(const string&            pipename,
                             "Named pipe \"" + m_PipeName
                             + "\" already open");
         }
+        _ASSERT(m_Flushed  &&  !m_Connected);
 
         // Set the base security attributes
         SECURITY_ATTRIBUTES attr;
@@ -319,6 +320,7 @@ EIO_Status CNamedPipeHandle::Create(const string& pipename,
                             "Named pipe \"" + m_PipeName
                             + "\" already exists");
         }
+        _ASSERT(m_Flushed  &&  !m_Connected);
 
         if (pipesize > numeric_limits<DWORD>::max()) {
             NAMEDPIPE_THROW(0,
@@ -355,7 +357,6 @@ EIO_Status CNamedPipeHandle::Create(const string& pipename,
                             + "\" failed to create");
         }
 
-        _ASSERT(!m_Connected);
         m_PipeName    = pipename;
         m_ReadStatus  = eIO_Success;
         m_WriteStatus = eIO_Success;
@@ -382,6 +383,7 @@ EIO_Status CNamedPipeHandle::Listen(const STimeout* timeout)
                                            ? " closed"
                                            : " busy"));
         }
+        _ASSERT(m_Flushed  &&  !m_Connected);
 
         DWORD x_timeout = timeout ? NcbiTimeoutToMs(timeout) : INFINITE;
 
@@ -445,6 +447,7 @@ EIO_Status CNamedPipeHandle::Listen(const STimeout* timeout)
 
 EIO_Status CNamedPipeHandle::x_Flush(void)
 {
+    _ASSERT(m_Pipe != INVALID_HANDLE_VALUE);
     if (!m_Flushed) {
         if (m_Connected  &&  !::FlushFileBuffers(m_Pipe)) {
             NAMEDPIPE_THROW(::GetLastError(),
@@ -459,59 +462,74 @@ EIO_Status CNamedPipeHandle::x_Flush(void)
 
 EIO_Status CNamedPipeHandle::x_Disconnect(bool orderly)
 {
-    EIO_Status status = eIO_Unknown;
-
-    try {
-        if (m_Connected <= 0  &&  orderly) {
-            if (m_Pipe == INVALID_HANDLE_VALUE  ||  !m_Connected) {
-                status = eIO_Closed;
-                NAMEDPIPE_THROW(0,
-                                "Named pipe \"" + m_PipeName
-                                + "\" already disconnected");
-            }
-            status = x_Flush();
-        } else {
-            status = eIO_Success;
+    EIO_Status status;
+    if (m_Connected <= 0  &&  orderly) {
+        if (m_Pipe == INVALID_HANDLE_VALUE  ||  !m_Connected) {
+            status = eIO_Closed;
+            NAMEDPIPE_THROW(0,
+                            "Named pipe \"" + m_PipeName
+                            + "\" already disconnected");
         }
-        if (m_Connected <= 0  &&  !::DisconnectNamedPipe(m_Pipe)) {
-            status = eIO_Unknown;
-            if (orderly) {
-                NAMEDPIPE_THROW(::GetLastError(),
-                                "Named pipe \"" + m_PipeName
-                                + "\" failed to disconnect");
-            }
-        } else {
-            // Per documentation, another client can now connect again
-            m_Connected = 0;
+        status = x_Flush();
+    } else {
+        m_Flushed = true;
+        status = eIO_Success;
+    }
+    if (m_Connected <= 0  &&  !::DisconnectNamedPipe(m_Pipe)) {
+        status = eIO_Unknown;
+        if (orderly) {
+            NAMEDPIPE_THROW(::GetLastError(),
+                            "Named pipe \"" + m_PipeName
+                            + "\" failed to disconnect");
         }
+    } else {
+        // Per documentation, another client can now connect again
+        m_Connected = 0;
     }
-    catch (string& what) {
-        ERR_POST_X(13, s_FormatErrorMessage("Disconnect", what));
-    }
-
-    m_ReadStatus  = eIO_Closed;
-    m_WriteStatus = eIO_Closed;
     return status;
 }
 
 
 EIO_Status CNamedPipeHandle::Disconnect(void)
 {
-    return x_Disconnect(/*orderly*/);
+    EIO_Status status = eIO_Unknown;
+
+    try {
+        status = x_Disconnect(/*orderly*/);
+
+        _ASSERT(m_Flushed  &&  !m_Connected);
+        m_ReadStatus  = eIO_Closed;
+        m_WriteStatus = eIO_Closed;
+    }
+    catch (string& what) {
+        ERR_POST_X(13, s_FormatErrorMessage("Disconnect", what));
+    }
+
+    return status;
 }
 
 
 EIO_Status CNamedPipeHandle::Close(void)
 {
     if (m_Pipe == INVALID_HANDLE_VALUE) {
+        _ASSERT(m_Flushed  &&  !m_Connected);
         return eIO_Closed;
     }
     EIO_Status status = eIO_Unknown;
     try {
-        status = x_Flush();
+        if (m_Connected < 0) {
+            status = x_Disconnect(/*orderly*/);
+            _ASSERT(m_Flushed  &&  !m_Connected);
+        } else {
+            status = x_Flush();
+            _ASSERT(m_Flushed);
+            m_Connected = 0;
+        }
     }
     catch (string& what) {
         ERR_POST_X(8, s_FormatErrorMessage("Close", what));
+        m_Flushed = true;
+        m_Connected = 0;
     }
     (void) ::CloseHandle(m_Pipe);
     m_Pipe = INVALID_HANDLE_VALUE;
@@ -992,8 +1010,9 @@ EIO_Status CNamedPipeHandle::x_Disconnect(const char* where)
                                            x_FormatError(0,
                                                          "Named pipe \""
                                                          + m_PipeName + "\""
-                                                         " failed to"
-                                                         " disconnect")));
+                                                         " failed to "
+                                                         + NStr::ToLower
+                                                         (string(where))));
     }
     return status;
 }
@@ -1013,19 +1032,16 @@ EIO_Status CNamedPipeHandle::Disconnect(void)
 
 EIO_Status CNamedPipeHandle::Close(void)
 {
-    if ( !m_LSocket  &&  !m_IoSocket) {
+    if (!m_LSocket  &&  !m_IoSocket) {
         return eIO_Closed;
     }
-
-    // Disconnect if connected
-    EIO_Status status = m_IoSocket ? x_Disconnect("Close") : eIO_Success;
-
     // Close listening socket
     if ( m_LSocket ) {
         (void) LSOCK_Close(m_LSocket);
         m_LSocket = 0;
     }
-    return status;
+    // Disconnect if connected
+    return m_IoSocket ? x_Disconnect("Close") : eIO_Success;
 }
 
 

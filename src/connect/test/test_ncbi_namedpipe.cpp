@@ -253,8 +253,11 @@ int CTest::Client(int num)
         if (status == eIO_Success) {
             break;
         }
-        if(timeout.IsExpired()  ||  status != eIO_Closed) {
-            ERR_POST(Error << IO_StatusStr(status));
+        if (timeout.IsExpired()) {
+            status  = eIO_Timeout;
+        }
+        if (status != eIO_Closed) {
+            ERR_POST(Error << "Open() failed: " << IO_StatusStr(status));
             _TROUBLE;
         }
         ERR_POST(Info << "Waiting for server...");
@@ -270,8 +273,13 @@ int CTest::Client(int num)
         ERR_POST(Info << "Quitting the server!");
         assert(s_WritePipe(pipe, "Quit!", 5, &n_written) == eIO_Success);
         assert(n_written == 5);
-        if (rand() & 1)
-            pipe.Close();
+        if (rand() & 1) {
+            status = pipe.Close();
+            if (status != eIO_Success) {
+                ERR_POST(Error << "Close() failed: " << IO_StatusStr(status));
+                _TROUBLE;
+            }
+        }
         exitcode = 2;
         goto out;
     }
@@ -315,14 +323,15 @@ int CTest::Client(int num)
     if (::rand() & 1) {
         status = s_ReadPipe(pipe, buf, sizeof(buf), sizeof(buf), &n_read);
         if (status == eIO_Success) {
+            ERR_POST(Error << "Extra read succeeded");
             _TROUBLE;
         }
-        ERR_POST(Error << IO_StatusStr(status));
+        ERR_POST(Info << "Error expected, " << IO_StatusStr(status));
     }
     if (::rand() & 1) {
         status = pipe.Close();
         if (status != eIO_Success) {
-            ERR_POST(Error << IO_StatusStr(status));
+            ERR_POST(Error << "Close() failed: " << IO_StatusStr(status));
             _TROUBLE;
         }
         status = s_ReadPipe(pipe, buf, sizeof(buf), sizeof(buf), &n_read);
@@ -360,7 +369,8 @@ int CTest::Server(void)
         if (::rand() & 1) {
             SleepMilliSec(100);
         }
-        ERR_POST(Info << "Listening pipe " + NStr::IntToString(n) + "...");
+        ERR_POST(Info << "Listening on \"" + m_PipeName + "\", round "
+                 + NStr::IntToString(n) + "...");
 
         status = pipe.Listen();
         switch (status) {
@@ -418,14 +428,15 @@ int CTest::Server(void)
             if (::rand() & 1) {
                 status = s_ReadPipe(pipe, buf, sizeof(buf), sizeof(buf), &n_read);
                 if (status == eIO_Success) {
+                    ERR_POST(Error << "Extra read succeeded");
                     _TROUBLE;
                 }
-                ERR_POST(Error << IO_StatusStr(status));
+                ERR_POST(Info << "Error expected, " << IO_StatusStr(status));
             }
             ERR_POST(Info << "Disconnecting client...");
             status = pipe.Disconnect();
             if (status != eIO_Success) {
-                ERR_POST(Error << IO_StatusStr(status));
+                ERR_POST(Error << "Disconnect() failed: " << IO_StatusStr(status));
                 _TROUBLE;
             }
             if (::rand() & 1) {
