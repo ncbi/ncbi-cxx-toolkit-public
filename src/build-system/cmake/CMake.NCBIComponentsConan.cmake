@@ -59,6 +59,14 @@ else ()
 endif ()
 set(ORIG_LIBS   ${DL_LIBS} ${RT_LIBS} ${MATH_LIBS} ${CMAKE_THREAD_LIBS_INIT})
 
+# Use LocalLMDB as we don't have it in conan yet
+if(NOT NCBI_COMPONENT_LMDB_FOUND)
+    set(NCBI_COMPONENT_LMDB_FOUND ${NCBI_COMPONENT_LocalLMDB_FOUND})
+    set(NCBI_COMPONENT_LMDB_INCLUDE ${NCBI_COMPONENT_LocalLMDB_INCLUDE})
+    set(NCBI_COMPONENT_LMDB_NCBILIB ${NCBI_COMPONENT_LocalLMDB_NCBILIB})
+endif()
+
+
 function(fetch_build_package packageurl)
   set(BASEDIR "/tmp/xxx.cmake.0123")
   execute_process(COMMAND rm -rf ${BASEDIR})
