@@ -118,7 +118,14 @@ void CDataLoadersUtil::AddArgumentDescriptions(CArgDescriptions& arg_desc,
 
 #ifdef HAVE_NCBI_VDB
     if (loaders & fVDB) {
-        arg_desc.AddFlag("vdb", "Use VDB data loader.");
+        if (loaders & fVDBOnByDefault) {
+            arg_desc.AddFlag("vdb", "Use VDB data loader.",
+                    CArgDescriptions::eFlagHasValueIfSet,
+                    CArgDescriptions::fHidden);
+                    
+        } else {
+            arg_desc.AddFlag("vdb", "Use VDB data loader.");
+        }
         arg_desc.AddFlag("novdb", "Do not use VDB data loader.");
         arg_desc.SetDependency("vdb",
                                CArgDescriptions::eExcludes,
@@ -206,7 +213,8 @@ void CDataLoadersUtil::x_SetupVDBDataLoader(const CArgs& args,
 {
 #ifdef HAVE_NCBI_VDB
     const CNcbiRegistry& reg = CNcbiApplication::Instance()->GetConfig();
-    bool use_vdb_loader = args.Exist("vdb") && args["vdb"];
+    bool use_vdb_loader = (loaders & fVDBOnByDefault) || 
+                          (args.Exist("vdb") && args["vdb"]);
     if ( !use_vdb_loader ) {
         string vdbEnabled = reg.Get("Gpipe","enable_vdb");
         if (vdbEnabled == "Y") {

@@ -61,7 +61,8 @@ public:
 
         fDefault    = 0x0fff,
 
-        fGenbankOffByDefault = 1<<16
+        fGenbankOffByDefault = 1<<16,
+        fVDBOnByDefault      = 1<<17
     };
     typedef unsigned int TLoaders;
 
