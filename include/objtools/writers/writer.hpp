@@ -54,6 +54,8 @@ class NCBI_XOBJWRITE_EXPORT CInterruptable: public ICanceled
 {
 public:
     CInterruptable(): mpCancelled(nullptr) {};
+    virtual ~CInterruptable() {};
+
     void SetCanceler(
         ICanceled* pCanceller) { mpCancelled = pCanceller; };
 
