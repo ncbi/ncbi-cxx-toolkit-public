@@ -205,6 +205,7 @@ namespace ct
         using _MyBase = const_set_map_base<_Key, _Pair>;
 
         using hashed_key      = typename _MyBase::hashed_key;
+        using intermediate    = typename _MyBase::intermediate;
 
         using value_type      = typename _MyBase::value_type;
         using key_type        = typename value_type::first_type;
@@ -222,30 +223,27 @@ namespace ct
 
         using _MyBase::_MyBase;
 
-        template<typename K>
-        const_iterator find(K&& _key) const
+        const_iterator find(intermediate _key) const
         {
-            key_type temp(std::forward<K>(_key));
-            auto it = _MyBase::lower_bound(temp);
-            if (it == _MyBase::end() || (it->first != temp))
+            auto it = _MyBase::lower_bound(_key);
+            if (it == _MyBase::end() || (it->first != _key))
                 return _MyBase::end();
             else
                 return it;
         }
 
-        template<typename K>
-        const mapped_type& at(K&& _key) const
+        const mapped_type& at(intermediate _key) const
         {
-            auto it = find(std::forward<K>(_key));
+            auto it = find(_key);
             if (it == _MyBase::end())
-                throw std::out_of_range("invalid const_map<K, T> key");
+                throw std::out_of_range("invalid const_unordered_map<K, T> key");
 
             return it->second;
         }
-        template<typename K>
-        const mapped_type& operator[](K&& _key) const
+
+        const mapped_type& operator[](intermediate _key) const
         {
-            return at(std::forward<K>(_key));
+            return at(_key);
         }
 
     protected:
@@ -306,12 +304,10 @@ namespace ct
 
         using _MyBase::_MyBase;
 
-        template<typename K>
-        const_iterator find(K&& _key) const
+        const_iterator find(const key_type& _key) const
         {
-            key_type temp(std::forward<K>(_key));
-            auto it = _MyBase::lower_bound(temp);
-            if (it == _MyBase::end() || (*it != temp))
+            auto it = _MyBase::lower_bound(_key);
+            if (it == _MyBase::end() || (*it != _key))
                 return _MyBase::end();
             else
                 return it;

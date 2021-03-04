@@ -38,13 +38,21 @@
 #include <cstddef>
 #include <utility>
 #include <cstdint>
-#include <corelib/tempstr.hpp>
 
-#include "ct_crc32.hpp"
+#include <corelib/tempstr.hpp>
 #include <corelib/ncbistr.hpp>
+#include "ct_crc32.hpp"
+
+#ifdef NCBI_HAVE_CXX17
+#   include "ct_string_cxx17.hpp"
+#else
+#   include "ct_string_cxx14.hpp"
+#endif
+
+#include "ctsort_cxx14.hpp"
 
 namespace compile_time_bits
-{
+{    
     template<class T, size_t N>
     struct const_array
     {
@@ -158,104 +166,63 @@ namespace compile_time_bits
         }
     };
 
-    template<ncbi::NStr::ECase case_sensitive>
-    struct string_view
-    {
-        using sv = ncbi::CTempString;
-
-        constexpr string_view() = default;
-
-        template<size_t N>
-        constexpr string_view(const char(&s)[N]) noexcept
-            : m_len{ N - 1 }, m_data{ s }
-        {}
-
-        constexpr string_view(const char* s, size_t len) noexcept
-            : m_len{ len }, m_data{ s }
-        {}
-
-        string_view(const ncbi::CTempString& view)
-            :m_len{ view.size() }, m_data{ view.data() }
-        {}
-
-        constexpr const char* c_str() const noexcept { return m_data; }
-        constexpr const char* data() const noexcept { return m_data; }
-        constexpr size_t size() const noexcept { return m_len; }
-
-        operator ncbi::CTempStringEx() const noexcept
-        {
-            return ncbi::CTempStringEx(m_data, m_len, ncbi::CTempStringEx::eNoZeroAtEnd);
-        }
-        operator ncbi::CTempString() const noexcept
-        {
-            return ncbi::CTempString(m_data, m_len);
-        }
-        template<class C, class T, class A>
-        operator std::basic_string<C, T, A>() const
-        {
-            return std::string(m_data, m_len);
-        }
-        constexpr char operator[](size_t pos) const
-        {
-            return m_data[pos];
-        }
-        bool operator!=(const sv& o) const noexcept
-        {
-            return (case_sensitive == ncbi::NStr::eCase ? ncbi::NStr::CompareCase(*this, o) : ncbi::NStr::CompareNocase(*this, o)) != 0;
-        }
-        bool operator==(const sv& o) const noexcept
-        {
-            return (case_sensitive == ncbi::NStr::eCase ? ncbi::NStr::CompareCase(*this, o) : ncbi::NStr::CompareNocase(*this, o)) == 0;
-        }
-        size_t m_len{ 0 };
-        const char* m_data{ nullptr };
-    };
-
     template<ncbi::NStr::ECase case_sensitive, class _Hash = ct::SaltedCRC32<case_sensitive>>
     class CHashString
     {
     public:
         using hash_func = _Hash;
         using hash_type = typename _Hash::type;
-        using sv = string_view<case_sensitive>;
+        using sv = ct_string<case_sensitive>;
 
         constexpr CHashString() noexcept = default;
 
         template<size_t N>
         constexpr CHashString(const char(&s)[N]) noexcept
-            : m_data{s}, m_len{N-1},  m_hash{hash_func::ct(s)}
+            : m_view{s, N-1},  m_hash{hash_func::ct(s)}
         {}
 
         CHashString(const sv& s) noexcept
-            : m_data{s.data()}, m_len{s.size()}, m_hash(hash_func::rt(s.data(), s.size()))
+            : m_view{s}, m_hash(hash_func::rt(s.data(), s.size()))
         {}
 
-        constexpr bool operator<(const CHashString& o) const noexcept
-        {
-            return m_hash < o.m_hash;
-        }
-        constexpr bool operator!=(const CHashString& o) const noexcept
-        {
-            return m_hash != o.m_hash;
-        }
-        constexpr bool operator==(const CHashString& o) const noexcept
-        {
-            return m_hash == o.m_hash;
-        }
         constexpr operator hash_type() const noexcept
         {
             return m_hash;
         }
-        constexpr operator sv() const noexcept
+        constexpr operator const sv&() const noexcept
         {
-            return sv(m_data, m_len);
+            return m_view;
         }
-    protected:
- 
-        const char* m_data{nullptr};
-        size_t m_len{ 0 };
+        constexpr hash_type get_hash() const noexcept
+        {
+            return m_hash;
+        }
+        constexpr const sv& get_view() const noexcept
+        {
+            return m_view;
+        }
+
+    private:
+        sv        m_view;
         hash_type m_hash{ 0 };
     };
+
+    template<ncbi::NStr::ECase _cs, typename _hash>
+    constexpr bool operator<(const CHashString<_cs, _hash>& l, const CHashString<_cs, _hash>& r) noexcept
+    {
+        return l.get_hash() < r.get_hash();
+    }
+    template<ncbi::NStr::ECase _cs, typename _hash>
+    constexpr bool operator!=(const CHashString<_cs, _hash>& l, const CHashString<_cs, _hash>& r) noexcept
+    {
+        return l.get_hash() != r.get_hash();
+    }
+    template<ncbi::NStr::ECase _cs, typename _hash>
+    constexpr bool operator==(const CHashString<_cs, _hash>& l, const CHashString<_cs, _hash>& r) noexcept
+    {
+        return l.get_hash() == r.get_hash();
+    }
+
 }
 
 namespace ct
@@ -263,11 +230,16 @@ namespace ct
     using namespace compile_time_bits;
 }
 
+#ifndef __cpp_lib_hardware_interference_size
 namespace std
 {// these are backported implementations of C++17 methods
     constexpr size_t hardware_destructive_interference_size = 64;
     constexpr size_t hardware_constructive_interference_size = 64;
+}
+#endif
 
+namespace std
+{// these are backported implementations of C++17 methods
     template<size_t i, class T, size_t N>
     constexpr const T& get(const ct::const_array<T, N>& in) noexcept
     {
@@ -325,17 +297,16 @@ namespace std
         return (((const _Ttype&)_Tuple)._Myfirst);
     }
 
-    template<class _Traits, ncbi::NStr::ECase cs> inline
-        basic_ostream<char, _Traits>& operator<<(basic_ostream<char, _Traits>& _Ostr, const ct::string_view<cs>& v)
-    {// Padding is not implemented yet
-        _Ostr.write(v.data(), v.size());
-        return _Ostr;
-    }
-
     template<class T, size_t N>
     class tuple_size<ct::const_array<T, N>>:
         public integral_constant<size_t, N>
     { };
+
+    template<class _Traits, ncbi::NStr::ECase cs> inline
+        basic_ostream<char, _Traits>& operator<<(basic_ostream<char, _Traits>& _Ostr, const compile_time_bits::CHashString<cs>& v)
+    {
+        return operator<<(_Ostr, v.get_view());
+    }
 }
 
 namespace compile_time_bits
@@ -476,172 +447,6 @@ namespace compile_time_bits
         const size_t     m_aligned_size = 0;
     };
 
-    // compile time sort algorithm
-    // uses insertion sort https://en.wikipedia.org/wiki/Insertion_sort
-    template<typename _Traits, bool remove_duplicates>
-    class TInsertSorter
-    {
-    public:
-        using sort_traits = _Traits;
-        using init_type  = typename _Traits::init_type;
-        using value_type = typename _Traits::value_type;
-        using hash_type  = typename _Traits::hash_type;
-
-        template<size_t N>
-        constexpr auto operator()(const init_type(&init)[N]) const noexcept
-        {
-            auto indices = make_indices(init);
-            auto hashes = construct_hashes(init, indices, std::make_index_sequence<aligned_index<hash_type, N>::aligned_size > {});
-            auto values = construct_values(init, indices, std::make_index_sequence<N>{});
-            return std::make_pair(hashes, values);
-        }
-
-    protected:
-
-        template<typename _Indices, typename _Value>
-        static constexpr void insert_down(_Indices& indices, size_t head, size_t tail, _Value current)
-        {
-            auto saved = current;
-            while (head != tail)
-            {
-                auto prev = tail--;
-                indices[prev] = indices[tail];
-            }
-            indices[head] = saved;
-        }
-        template<typename _Indices, typename _Input>
-        static constexpr size_t const_lower_bound(const _Indices& indices, const _Input& input, size_t last, size_t value)
-        {
-            typename _Traits::Pred pred{};
-            size_t _UFirst = 0;
-            size_t _Count = last;
-
-            while (0 < _Count)
-            {	// divide and conquer, find half that contains answer
-                const size_t _Count2 = _Count >> 1; // TRANSITION, VSO#433486
-                const size_t _UMid = _UFirst + _Count2;
-                if (pred(input, indices[_UMid], value))
-                {	// try top half
-                    _UFirst = (_UMid + 1); // _Next_iter(_UMid);
-                    _Count -= _Count2 + 1;
-                }
-                else
-                {
-                    _Count = _Count2;
-                }
-            }
-
-            return _UFirst;
-        }
-        template<typename _Indices, typename _Input>
-        static constexpr size_t const_upper_bound(const _Indices& indices, const _Input& input, size_t last, size_t value)
-        {
-            typename _Traits::Pred pred{};
-            size_t _UFirst = 0;
-            size_t _Count = last;
-
-            while (0 < _Count)
-            {	// divide and conquer, find half that contains answer
-                const size_t _Count2 = _Count >> 1; // TRANSITION, VSO#433486
-                const size_t _UMid = _UFirst + _Count2;
-                if (pred(input, value, indices[_UMid]))
-                {
-                    _Count = _Count2;
-                }
-                else
-                {	// try top half
-                    _UFirst = (_UMid + 1); // _Next_iter(_UMid);
-                    _Count -= _Count2 + 1;
-                }
-            }
-
-            return (_UFirst);
-        }
-
-        template<typename _Indices, typename _Input>
-        static constexpr size_t insert_sort_indices(_Indices& result, const _Input& input)
-        {
-            typename _Traits::Pred pred{};
-            auto size = result.size();
-            if (size < 2)
-                return size;
-
-            // current is the first element of the unsorted part of the array
-            size_t current = 0;
-            // the last inserted element into sorted part of the array
-            size_t last = current;
-            result[0] = 0;
-            current++;
-
-            while (current != result.size())
-            {
-                if (pred(input, result[last], current))
-                {// optimization for presorted arrays
-                    result[++last] = current;
-                }
-                else {
-                    // we may exclude last element since it's already known as smaller then current
-                    // using const_upper_bound helps to preserve the order of rows with identical hash values
-                    // using const_upper_bound will reverse that order
-                    auto fit = const_upper_bound(result, input, last, current);
-                    bool move_it = !remove_duplicates;
-                    if (remove_duplicates)
-                    {
-                        move_it = (fit == 0) || pred(input, result[fit-1], current);
-                    }
-                    if (move_it)
-                    {
-                        ++last;
-                        insert_down(result, fit, last, current);
-                    }
-                }
-                ++current;
-            }
-            if (remove_duplicates)
-            {// fill the rest of the indices with maximum value
-                current = last;
-                while (++current != result.size())
-                {
-                    result[current] = result[last];
-                }
-            }
-            return 1 + last;
-        }
-
-        template<typename T, size_t N>
-        static constexpr auto make_indices(const T(&input)[N]) noexcept
-        {
-            const_array<size_t, N> indices{};
-            auto real_size = insert_sort_indices(indices, input);
-            return std::make_pair(real_size, indices);
-        }
-
-        template<size_t I, typename _Input, typename _Indices>
-        static constexpr hash_type select_hash(const _Input& init, const _Indices& indices) noexcept
-        {
-            size_t real_size = indices.first;
-            if (I < real_size)
-                return sort_traits::get_hash(init[indices.second[I]]);
-            else
-                return std::numeric_limits<hash_type>::max();
-        }
-
-        template<size_t N, typename _Indices, std::size_t... I>
-        static constexpr auto construct_hashes(const init_type(&init)[N], const _Indices& indices, std::index_sequence<I...> /*is_unused*/) noexcept
-            -> aligned_index<hash_type, N>
-        {
-            return { { select_hash<I>(init, indices) ...} };
-        }
-
-        template<typename _Input, typename _Indices, std::size_t... I>
-        static constexpr auto construct_values(const _Input& input, const _Indices& indices, std::index_sequence<I...>) noexcept
-            -> const_array<value_type, sizeof...(I)> 
-        {
-            auto real_size = indices.first;
-            return { { sort_traits::construct(input, indices.second[I < real_size ? I : real_size - 1]) ...} };
-        }
-    };
-
     using tagStrCase = std::integral_constant<ncbi::NStr::ECase, ncbi::NStr::eCase>;
     using tagStrNocase = std::integral_constant<ncbi::NStr::ECase, ncbi::NStr::eNocase>;
 
@@ -672,7 +477,7 @@ namespace compile_time_bits
 
     template<ncbi::NStr::ECase case_sensitive>
     struct DeduceHashedType<std::integral_constant<ncbi::NStr::ECase, case_sensitive>>
-        : DeduceHashedType<string_view<case_sensitive>, CHashString<case_sensitive>, typename CHashString<case_sensitive>::hash_type>
+        : DeduceHashedType<typename CHashString<case_sensitive>::sv, CHashString<case_sensitive>, typename CHashString<case_sensitive>::hash_type>
     {
     };
 
@@ -697,10 +502,10 @@ namespace compile_time_bits
     template<typename _First, typename _Second>
     struct DeduceHashedType<std::pair<_First, _Second>>
     {
-        using first_type = DeduceHashedType<_First>;
+        using first_type  = DeduceHashedType<_First>;
         using second_type = DeduceHashedType<_Second>;
-        using value_type = std::pair<typename first_type::value_type, typename second_type::value_type>;
-        using init_type = value_type;
+        using value_type  = std::pair<typename first_type::value_type, typename second_type::value_type>;
+        using init_type   = value_type;
     };
     template<typename..._Types>
     struct DeduceHashedType<std::tuple<_Types...>>
@@ -716,8 +521,10 @@ namespace compile_time_bits
     public:
         using hashed_key      = DeduceHashedType<_Key>;
         using hashed_value    = DeduceHashedType<_Value>;
+        using key_value_type  = typename hashed_key::value_type;
+        using init_key_type   = typename hashed_key::init_type;
 
-        using value_type      = typename hashed_value::value_type;
+        using value_type      = typename hashed_value::value_type;        
         using size_type       = std::size_t;
         using difference_type = std::ptrdiff_t;
         using reference       = const value_type&;
@@ -729,7 +536,10 @@ namespace compile_time_bits
         using reverse_iterator = std::reverse_iterator<iterator>;
         using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
-        using intermediate = typename hashed_key::value_type;
+        using intermediate = typename std::conditional<
+            sizeof(key_value_type) <= sizeof(uintptr_t)*2,
+            const key_value_type,
+            const key_value_type& >::type;
 
         constexpr const_set_map_base() = default;
 
@@ -754,33 +564,25 @@ namespace compile_time_bits
         using if_available = typename std::enable_if<
             std::is_constructible<intermediate, _K>::value, _Arg>::type;
 
-        template<typename K>
-        if_available<K, const_iterator>
-            lower_bound(K&& _key) const
+        const_iterator lower_bound(intermediate _key) const
         {
-            intermediate temp = std::forward<K>(_key);
-            typename hashed_key::init_type key(temp);
+            init_key_type key(_key);
             hash_type hash(std::move(key));
             auto offset = m_index.lower_bound(hash);
             return begin() + offset;
         }
-        template<typename K>
-        if_available<K, const_iterator>
-            upped_bound(K&& _key) const
+        const_iterator upped_bound(intermediate _key) const
         {
-            intermediate temp = std::forward<K>(_key);
-            typename hashed_key::init_type key(temp);
+            init_key_type key(_key);
             hash_type hash(std::move(key));
             auto offset = m_index.upped_bound(hash);
             return begin() + offset;
         }
 
-        template<typename K>
-        if_available<K, std::pair<const_iterator, const_iterator>>
-            equal_range(K&& _key) const
+        std::pair<const_iterator, const_iterator>
+            equal_range(intermediate _key) const
         {
-            intermediate temp = std::forward<K>(_key);
-            typename hashed_key::init_type key(temp);
+            init_key_type key(_key);
             hash_type hash(std::move(key));
             auto _range = m_index.equal_range(hash);
             return std::make_pair(

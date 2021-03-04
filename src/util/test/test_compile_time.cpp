@@ -42,17 +42,14 @@
  //#define DEBUG_MAKE_CONST_SET(name)
 
 #include <util/compile_time.hpp>
-//#include <util/cpubound.hpp>
-//#include <util/impl/getmember.h>
 #include <array>
+
 #include <corelib/test_boost.hpp>
 
 //#include <cassert>
 
 
 //static_assert(name ## _proxy.in_order(), "ct::const_unordered_map " #name "is not in order");
-
-
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -278,6 +275,9 @@ BOOST_AUTO_TEST_CASE(TestConstMap)
     test_two_way1.first.find("SO:0000001");
     test_two_way1.first.find(ncbi::CTempString("SO:0000001"));
     test_two_way1.first.find(std::string("SO:0000001"));
+#ifdef __cpp_lib_string_view
+    test_two_way1.first.find(std::string_view("SO:0000001"));
+#endif    
 
     auto t1 = test_two_way1.first.find("SO:0000001");
     BOOST_CHECK((t1 != test_two_way1.first.end()) && (ncbi::NStr::CompareCase(t1->second, "region") == 0));
@@ -901,7 +901,7 @@ public:
         typename _ColumnType::value_type temp = std::forward<_K>(_key);
         typename _ColumnType::init_type  key(temp);
         const auto& hashes = std::get<i>(m_indices).first;
-        auto hash_it = std::distance(hashes.m_array.begin(), std::lower_bound(hashes.m_array.begin(), hashes.m_array.begin() + _Rows::size(), key));
+        size_t hash_it = std::distance(hashes.m_array.begin(), std::lower_bound(hashes.m_array.begin(), hashes.m_array.begin() + _Rows::size(), key));
         if (hash_it != _Rows::size())
         {
             if (hashes.m_array[hash_it] == key)
@@ -1133,4 +1133,71 @@ struct selected_tuple
 };
 
 //using tuple_type = selected_tuple<select, int, int, int>::type;
+#endif
+
+
+#ifdef NCBI_HAVE_CXX17
+
+using namespace std::literals;
+
+namespace compile_time_bits
+{
+    template<typename _T>
+    struct DeduceOrderedType: DeduceHashedType<_T>
+    {                
+    };
+
+    template<ncbi::NStr::ECase case_sensitive>
+    struct DeduceOrderedType<std::integral_constant<ncbi::NStr::ECase, case_sensitive>>
+            : DeduceHashedType<ct_string<case_sensitive>, ct_string<case_sensitive>, ct_string<case_sensitive>>
+    {
+    };
+}
+
+namespace ct
+{   
+    template<typename _T>
+    struct MakeOrderedConstSet
+    {
+        using deduced = DeduceOrderedType<_T>;
+        //using type = const_unordered_set<_T>;
+
+        using sorter_t = TInsertSorter<simple_sort_traits<deduced>, true>;
+        using init_type = typename sorter_t::init_type;
+
+        template<size_t N>
+        constexpr auto operator()(const init_type(&input)[N]) const 
+        {
+            return sorter_t{}(input);
+        }
+
+    };
+}
+
+template<typename _Array>
+static void PrintSorted(const _Array& sorted)
+{
+    std::cout << "sorted: " << sorted.second.m_size;
+    for (auto rec: sorted.second.m_data)
+    {
+        std::string_view v = rec;
+        std::cout << " " << v;
+    }
+    std::cout << std::endl;
+}
+
+BOOST_AUTO_TEST_CASE(TestCXX17StringCompare)
+{
+    using maker = ct::MakeOrderedConstSet<compile_time_bits::tagStrNocase>;
+
+    //maker::init_type _init[] = {"AA", "C", "aA", "b", "a", "B"};
+    //maker::init_type _init[] = {"a", "ab", "aA"};
+
+    constexpr auto sorted1 = maker{}({"a", "ab", "aA"});
+    constexpr auto sorted2 = maker{}({"AA", "C", "aA", "b", "a", "B"});
+
+    PrintSorted(sorted1);
+    PrintSorted(sorted2);
+}
+
 #endif
