@@ -168,7 +168,7 @@ string CVersionInfo::PrintJson(void) const
     }
     if ( !m_Name.empty() ) {
         if ( need_separator ) os << ", ";
-        os << "\"name\": \"" << NStr::JsonEncode(m_Name) << "\"";
+        os << "\"name\": " << NStr::JsonEncode(m_Name, NStr::eJsonEnc_Quoted);
     }
     os << "}";
     return CNcbiOstrstreamToString(os);
@@ -432,12 +432,9 @@ string CComponentVersionInfoAPI::PrintXml(void) const
 string CComponentVersionInfoAPI::PrintJson(void) const
 {
     CNcbiOstrstream os;
-    os << "{ \"name\": \"" <<
-        NStr::JsonEncode(GetComponentName()) <<
-            "\", \"version_info\": " <<
-            CVersionInfo::PrintJson() << ",\n" <<
-            "        \"build_info\": " <<
-            m_BuildInfo.PrintJson() << "}";
+    os << "{ \"name\": " << NStr::JsonEncode(GetComponentName(),NStr::eJsonEnc_Quoted) <<
+            ", \"version_info\": " << CVersionInfo::PrintJson() << ",\n" <<
+            "        \"build_info\": " << m_BuildInfo.PrintJson() << "}";
     return CNcbiOstrstreamToString(os);
 }
 
@@ -576,17 +573,17 @@ string SBuildInfo::PrintJson(void) const
     bool need_separator = false;
     os << '{';
     if ( !date.empty() ) {
-        os << "\"" << ExtraNameJson(eBuildDate) << "\": \"" << NStr::JsonEncode(date) << '\"';
+        os << "\"" << ExtraNameJson(eBuildDate) << "\": " << NStr::JsonEncode(date, NStr::eJsonEnc_Quoted);
         need_separator = true;
     }
     if ( !tag.empty() ) {
         if ( need_separator ) os << ", ";
-        os << '\"' << ExtraNameJson(eBuildTag) << "\": \"" << NStr::JsonEncode(tag) << '\"';
+        os << '\"' << ExtraNameJson(eBuildTag) << "\": " << NStr::JsonEncode(tag, NStr::eJsonEnc_Quoted);
         need_separator = true;
     }
     for( const auto& e : m_extra) {
         if ( need_separator ) os << ", ";
-        os << '\"' << ExtraNameJson(e.first) << "\": \"" << NStr::JsonEncode(e.second) << '\"';
+        os << '\"' << ExtraNameJson(e.first) << "\": " << NStr::JsonEncode(e.second, NStr::eJsonEnc_Quoted);
         need_separator = true;
     }
     os << '}';
@@ -809,7 +806,7 @@ string CVersionAPI::PrintJson(const string& appname, TPrintFlags flags) const
 
     if (flags & fVersionInfo) {
         if ( !appname.empty() ) {
-            os << "    \"appname\": \"" << NStr::JsonEncode(appname) << "\",\n";
+            os << "    \"appname\": " << NStr::JsonEncode(appname, NStr::eJsonEnc_Quoted) << ",\n";
         }
         os << "    \"version_info\": " << m_VersionInfo->PrintJson();
         need_separator = true;
@@ -832,11 +829,11 @@ string CVersionAPI::PrintJson(const string& appname, TPrintFlags flags) const
     if (flags & ( fPackageShort | fPackageFull )) {
         if ( need_separator ) os << ",\n";
         os << "    \"package\": {\n" <<
-            "      \"name\": \"" << NStr::JsonEncode(GetPackageName()) << "\",\n" <<
+            "      \"name\": " << NStr::JsonEncode(GetPackageName(), NStr::eJsonEnc_Quoted) << ",\n" <<
             "      \"version_info\": " << GetPackageVersion().PrintJson() << ",\n" <<
             "      \"build_info\": " << NCBI_SBUILDINFO_DEFAULT().PrintJson();
         if (flags & fPackageFull) {
-            os << ",\n      \"config\": \"" << NStr::JsonEncode(GetPackageConfig()) << "\"";
+            os << ",\n      \"config\": " << NStr::JsonEncode(GetPackageConfig(), NStr::eJsonEnc_Quoted);
         }
         os << "}";
         need_separator = true;
@@ -846,7 +843,7 @@ string CVersionAPI::PrintJson(const string& appname, TPrintFlags flags) const
 #ifdef NCBI_SIGNATURE
     if (flags & fBuildSignature) {
         if ( need_separator ) os << ",\n";
-        os << "    \"build_signature\": \"" << NStr::JsonEncode(NCBI_SIGNATURE) << "\"";
+        os << "    \"build_signature\": " << NStr::JsonEncode(NCBI_SIGNATURE, NStr::eJsonEnc_Quoted);
         need_separator = true;
     }
 #endif
