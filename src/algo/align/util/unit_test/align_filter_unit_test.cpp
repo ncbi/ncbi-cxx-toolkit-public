@@ -43,7 +43,7 @@
 
 #include <common/test_assert.h>  /* This header must go last */
 
-extern const char *sc_TestEntries;
+extern const std::string sc_TestEntries;
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -144,7 +144,7 @@ BOOST_AUTO_TEST_CASE(Test_Align_Filter)
     }
 }
 
-const char *sc_TestEntries = "\
+const string sc_TestEntries = "\
 Seq-entry ::= seq {\
   id {\
     general {\
