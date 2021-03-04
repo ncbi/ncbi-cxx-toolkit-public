@@ -90,6 +90,26 @@ int CNCBITestHttpSessionApp::Run(void)
         CHttpRequest  request = session.NewRequest(bad_url);
         CHttpResponse response = request.Execute();
     }}
+    {{
+        const string  good_url{"http://www.ncbi.nlm.nih.gov/Service/dispd.cgi?service=test"};
+        CHttpSession  session;
+        CHttpRequest  request = session.NewRequest(good_url);
+        CHttpResponse response = request.Execute();
+        _ASSERT(response.GetStatusCode() == CRequestStatus::e200_Ok);
+        CNcbiIstream& in = response.ContentStream();
+        if (in.good())
+            NcbiStreamCopy(cout, in);
+    }}
+    {{
+        const string  good_url{"http://www.ncbi.nlm.nih.gov/Service/index.html"};
+        CHttpSession  session;
+        CHttpRequest  request = session.NewRequest(good_url);
+        CHttpResponse response = request.Execute();
+        _ASSERT(response.GetStatusCode() == CRequestStatus::e200_Ok);
+        CNcbiIstream& in = response.ContentStream();
+        if (in.good())
+            NcbiStreamCopy(cout, in);
+    }}
     return 0;
 }
 
