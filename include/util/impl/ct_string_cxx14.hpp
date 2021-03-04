@@ -74,8 +74,8 @@ namespace compile_time_bits
         constexpr const char* data() const noexcept { return m_data; }
         constexpr size_t size() const noexcept { return m_len; }
 
-        template<class _T, class _Ty=if_available_to<_T>>
-        constexpr operator _T() const noexcept { return _T{sv{data(), size()}}; }
+        template<class _Ty, class _Ty1=if_available_to<_Ty>>
+        constexpr operator _Ty() const noexcept { return _Ty{sv{data(), size()}}; }
         
         constexpr char operator[](size_t pos) const
         {

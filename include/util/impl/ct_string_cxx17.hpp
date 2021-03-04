@@ -132,8 +132,8 @@ namespace compile_time_bits
 
         constexpr operator const std::string_view&() const noexcept { return m_view; }
 
-        template<class _T, class _Ty=if_available_to<_T>>
-        constexpr operator _T() const noexcept { return _T{m_view}; }
+        template<class _Ty, class _Ty1=if_available_to<_Ty>>
+        constexpr operator _Ty() const noexcept { return _Ty{m_view}; }
 
         constexpr const char* c_str() const noexcept { return m_view.data(); }
         constexpr const char* data() const noexcept { return m_view.data(); }
