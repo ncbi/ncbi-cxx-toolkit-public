@@ -497,7 +497,12 @@ bool CGff3Writer::xAssignAlignmentSplicedSeqId(
     const CSeq_id& genomicId = spliced.GetGenomic_id();
     CSeq_id_Handle bestH = sequence::GetId(
          genomicId, *m_pScope, sequence::eGetId_Best);
-    bestH.GetSeqId()->GetLabel(&seqId, CSeq_id::eContent);
+    if (bestH) {
+        bestH.GetSeqId()->GetLabel(&seqId, CSeq_id::eContent);
+    }
+    else {
+        genomicId.GetLabel(&seqId, CSeq_id::eContent);
+    }
     record.SetSeqId(seqId);
     return true;
 }
@@ -544,9 +549,13 @@ bool CGff3Writer::xAssignAlignmentSplicedMethod(
     const CSeq_id& genomicId = spliced.GetGenomic_id();
     CSeq_id_Handle bestH = sequence::GetId(
         genomicId, *m_pScope, sequence::eGetId_Best);
-    const CSeq_id& bestId = *bestH.GetSeqId();
-    CWriteUtil::GetIdType(bestId, method);
-    record.SetMethod(method);
+    if (bestH) {
+        const CSeq_id& bestId = *bestH.GetSeqId();
+        CWriteUtil::GetIdType(bestId, method);
+        record.SetMethod(method);
+    }
+    // give up and move on
+    record.SetMethod(".");
     return true;
 }
 
