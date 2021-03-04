@@ -1,3 +1,11 @@
+Version 1.23.0 (2021-03-04):
+* Advance to version 25.0 of the stable C++ Toolkit components.
+* Update Python version coverage, substituting 3.9 for 3.6 (and keeping
+  3.7 and 3.8).
+* Correct reported parameter style to quoted, because our named style
+  uses a non-standard prefix from the specification's perspective.
+* Clean up deprecation warnings.
+
 Version 1.22.0 (2021-01-05):
 * Advance to version 24.0 of the stable C++ Toolkit components.
 * Correct error reporting, particularly in cases of internal exception
