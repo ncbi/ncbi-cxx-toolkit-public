@@ -523,10 +523,12 @@ bool CGff3Writer::xAssignAlignmentSplicedMethod(
         const CSeq_id& productId = spliced.GetProduct_id();
         CSeq_id_Handle bestH = sequence::GetId(
             productId, *m_pScope, sequence::eGetId_Best);
-        const CSeq_id& bestId = *bestH.GetSeqId();
-        CWriteUtil::GetIdType(bestId, method);
-        record.SetMethod(method);
-        return true;
+        if (bestH) {
+            const CSeq_id& bestId = *bestH.GetSeqId();
+            CWriteUtil::GetIdType(bestId, method);
+            record.SetMethod(method);
+            return true;
+        }
     }
 
     //if parent has a ModelEvidence user objcet, use that
