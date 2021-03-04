@@ -4241,19 +4241,10 @@ bool s_IsState ( string& state, bool& modified ) {
     return false;
 }
 
-enum EStateCleanup {
-    e_NoResult  = 0,
-    e_Valid     = 1,
-    e_Corrected = 2,
-    e_Ambiguous = 3,
-    e_Missing   = 4,
-    e_NotUSA    = 5
-};
-
-EStateCleanup s_DoUSAStateCleanup ( string& country ) {
+CCountries::EStateCleanup s_DoUSAStateCleanup ( string& country ) {
 
     if ( country.empty() ) {
-        return e_NoResult;
+        return CCountries::e_NoResult;
     }
 
     // make working copy
@@ -4277,7 +4268,7 @@ EStateCleanup s_DoUSAStateCleanup ( string& country ) {
 
     // confirm that country is USA
     if ( ! NStr::EqualNocase ( frst, "USA") && ! NStr::EqualNocase ( frst, "US")) {
-        return e_NotUSA;
+        return CCountries::e_NotUSA;
     }
 
     // split state/county/city clauses at commas
@@ -4287,7 +4278,7 @@ EStateCleanup s_DoUSAStateCleanup ( string& country ) {
     // check for only country
     if ( components.size() < 1 ) {
         country = "USA";
-        return e_Valid;
+        return CCountries::e_Valid;
     }
 
     for ( int j = 0; j < components.size(); j++ ) {
@@ -4347,16 +4338,16 @@ EStateCleanup s_DoUSAStateCleanup ( string& country ) {
         country = res;
 
         if ( num_states > 1 ) {
-            return e_Ambiguous;
+            return CCountries::e_Ambiguous;
         } else if ( ! NStr::Equal ( original, res )) {
-            return e_Corrected;
+            return CCountries::e_Corrected;
         } else {
-            return e_Valid;
+            return CCountries::e_Valid;
         }
     }
 
     // state information is missing
-    return e_Missing;
+  return CCountries::e_Missing;
 }
 
 typedef CRowReader<CRowReaderStream_NCBI_TSV> TNCBITSVStream;
@@ -4379,17 +4370,19 @@ void CCountries::ReadUSAExceptionMap (CCountries::TUsaExceptionMap& exceptions, 
     }
 }
 
-void CCountries::LoadUSAExceptionMap (TUsaExceptionMap& exceptions) {
+void CCountries::LoadUSAExceptionMap (const TUsaExceptionMap& exceptions) {
 
-  if ( ! exceptions_initialized) {
+    // clear previous map
+    exception_map.clear();
 
-      for ( const auto & itm : exceptions ) {
-          string fr = itm.first;
-          string to = itm.second;
-          exception_map [fr] = to;
-      }
-      exceptions_initialized = true;
-  }
+    // initialize internal exception map
+    for ( const auto & itm : exceptions ) {
+        string fr = itm.first;
+        string to = itm.second;
+        exception_map [fr] = to;
+    }
+
+    exceptions_initialized = true;
 }
 
 void CCountries::LoadUSAExceptionMap (const string& exception_file ) {
@@ -4402,18 +4395,21 @@ void CCountries::LoadUSAExceptionMap (const string& exception_file ) {
     }
 }
 
-string CCountries::USAStateCleanup ( const string& country, int& type ) {
+string CCountries::USAStateCleanup ( const string& country, CCountries::EStateCleanup& type ) {
 
     // call algorithmic mapping function
     string working = country;
-    EStateCleanup res = s_DoUSAStateCleanup ( working );
-    type = (int) res;
+    type = s_DoUSAStateCleanup ( working );
 
     // apply exceptions from preloaded data file
     if ( exceptions_initialized ) {
         string corrected = exception_map [working];
         if ( ! corrected.empty()) {
-            if ( ! NStr::Equal ( corrected, working )) {
+            // presence in map here will disambiguate otherwise ambiguous name pair,
+            // thus self-entries need to be added to the ambiguous state exception list
+            if ( NStr::Equal ( corrected, working ) && NStr::Equal ( corrected, country )) {
+                type = e_Valid;
+            } else {
                 type = e_Corrected;
             }
             return corrected;
@@ -4425,7 +4421,7 @@ string CCountries::USAStateCleanup ( const string& country, int& type ) {
 
 string CCountries::USAStateCleanup ( const string& country ) {
 
-    int type = 0;
+    CCountries::EStateCleanup type = e_NoResult;
     return USAStateCleanup ( country, type );
 }
 

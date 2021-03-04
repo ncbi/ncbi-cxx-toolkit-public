@@ -20824,21 +20824,46 @@ BOOST_AUTO_TEST_CASE(Test_DetectDateFormat)
 }
 
 
+static void s_USAStateTest(string before, string after, CCountries::EStateCleanup expected)
+{
+    CCountries::EStateCleanup type = CCountries::e_NoResult;
+    string result = CCountries::USAStateCleanup(before, type);
+    BOOST_CHECK_EQUAL(result, after);
+    BOOST_CHECK_EQUAL((int) type, (int) expected);
+}
+
+
 BOOST_AUTO_TEST_CASE(Test_USAStateCleanup)
 {
-    BOOST_CHECK_EQUAL(CCountries::USAStateCleanup("USA: Bethesda, State Of maryland"), "USA: Maryland, Bethesda");
-    BOOST_CHECK_EQUAL(CCountries::USAStateCleanup("USA:NY"), "USA: New York");
-    BOOST_CHECK_EQUAL(CCountries::USAStateCleanup("USA: Delaware, county South carolina"), "USA: Delaware, county South carolina");
-    BOOST_CHECK_EQUAL(CCountries::USAStateCleanup("USA:LA, EastBatonRougeParish"), "USA: Louisiana, East Baton Rouge Parish");
-    BOOST_CHECK_EQUAL(CCountries::USAStateCleanup("USA: DeSoto Parish, Louisiana"), "USA: Louisiana, DeSoto Parish");
-    BOOST_CHECK_EQUAL(CCountries::USAStateCleanup("USA: Napa, Solano, Yolo, Marin Counties, CA"), "USA: California, Napa, Solano, Yolo, Marin Counties");
-    BOOST_CHECK_EQUAL(CCountries::USAStateCleanup("USA: Oregon, Wisconsin"), "USA: Oregon, Wisconsin");
-    BOOST_CHECK_EQUAL(CCountries::USAStateCleanup("USA: San  Diego  County, CA"), "USA: California, San Diego County");
-    BOOST_CHECK_EQUAL(CCountries::USAStateCleanup("USA: Madison"), "USA: Madison");
-    BOOST_CHECK_EQUAL(CCountries::USAStateCleanup("USA"), "USA");
-    BOOST_CHECK_NE(CCountries::USAStateCleanup("USA: New York City"), "USA: New York, New York City");
-    BOOST_CHECK_NE(CCountries::USAStateCleanup("USA: Los Angeles"), "USA: California, Los Angeles");
-    BOOST_CHECK_NE(CCountries::USAStateCleanup("USA: PR"), "USA: Puerto Rico");
+    s_USAStateTest("USA: Bethesda, State Of maryland", "USA: Maryland, Bethesda", CCountries::e_Corrected );
+    s_USAStateTest("USA:NY", "USA: New York", CCountries::e_Corrected );
+    s_USAStateTest("USA: Delaware, county South carolina", "USA: Delaware, county South carolina", CCountries::e_Valid );
+    s_USAStateTest("USA:LA, EastBatonRougeParish", "USA: Louisiana, East Baton Rouge Parish", CCountries::e_Corrected );
+    s_USAStateTest("USA: DeSoto Parish, Louisiana", "USA: Louisiana, DeSoto Parish", CCountries::e_Corrected );
+    s_USAStateTest("USA: Napa, Solano, Yolo, Marin Counties, CA", "USA: California, Napa, Solano, Yolo, Marin Counties", CCountries::e_Corrected );
+    s_USAStateTest("USA: Montana, Maine", "USA: Montana, Maine", CCountries::e_Ambiguous );
+    s_USAStateTest("USA: San  Diego  County, CA", "USA: California, San Diego County", CCountries::e_Corrected );
+    s_USAStateTest("USA: Madison", "USA: Madison", CCountries::e_Missing );
+    s_USAStateTest("Puerto Rico: San Juan", "Puerto Rico: San Juan", CCountries::e_NotUSA );
+    s_USAStateTest("USA", "USA", CCountries::e_Valid );
+
+    s_USAStateTest("USA: Arkansas, Washington", "USA: Arkansas, Washington", CCountries::e_Ambiguous );
+    s_USAStateTest("USA: Washington, Arkansas", "USA: Washington, Arkansas", CCountries::e_Ambiguous );
+    s_USAStateTest("USA: AR, Washington", "USA: Arkansas, Washington", CCountries::e_Ambiguous );
+    s_USAStateTest("USA: Washington, AR", "USA: Washington, Arkansas", CCountries::e_Ambiguous );
+    s_USAStateTest("USA: Wisconsin, Oregon", "USA: Wisconsin, Oregon", CCountries::e_Ambiguous );
+
+    CCountries::TUsaExceptionMap exm;
+    exm["USA: Washington, Arkansas"] = "USA: Arkansas, Washington";
+    // self-entry is needed for converting e_Ambiguous to e_Valid (from full name) or e_Corrected (from abbreviation)
+    exm["USA: Arkansas, Washington"] = "USA: Arkansas, Washington";
+    CCountries::LoadUSAExceptionMap (exm);
+
+    s_USAStateTest("USA: Arkansas, Washington", "USA: Arkansas, Washington", CCountries::e_Valid );
+    s_USAStateTest("USA: Washington, Arkansas", "USA: Arkansas, Washington", CCountries::e_Corrected );
+    s_USAStateTest("USA: AR, Washington", "USA: Arkansas, Washington", CCountries::e_Corrected );
+    s_USAStateTest("USA: Washington, AR", "USA: Arkansas, Washington", CCountries::e_Corrected );
+    s_USAStateTest("USA: Wisconsin, Oregon", "USA: Wisconsin, Oregon", CCountries::e_Ambiguous );
 }
 
 

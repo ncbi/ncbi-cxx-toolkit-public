@@ -276,18 +276,19 @@ CSubSource::CSubSource(const string& subtype, const TName& name)
 //                 Country Names (legal values found in country subtype)
 // =============================================================================
 
-// USAStateCleanup return types and examples:
-//
-//    e_NoResult  = 0,    ""
-//    e_Valid     = 1,    "USA: Colorado"
-//    e_Corrected = 2,    "USA: Hamilton, MT" -> "USA: Montana, Hamilton"
-//    e_Ambiguous = 3,    "USA: Oregon, Wisconsin"
-//    e_Missing   = 4,    "USA: Springfield"
-//    e_NotUSA    = 5     "Puerto Rico: San Juan"
-
 class NCBI_SEQFEAT_EXPORT CCountries
 {
 public:
+    // USAStateCleanup return types and examples:
+    enum EStateCleanup {
+        e_NoResult  = 0, //  ""
+        e_Valid     = 1, //  "USA: Colorado"
+        e_Corrected = 2, //  "USA: Hamilton, MT" -> "USA: Montana, Hamilton"
+        e_Ambiguous = 3, //  "USA: Montana, Maine"
+        e_Missing   = 4, //  "USA: Springfield"
+        e_NotUSA    = 5  //  "Puerto Rico: San Juan"
+    };
+
     static bool IsValid(const string& country);
     static bool IsValid(const string& country, bool& is_miscapitalized);
     static bool WasValid(const string& country);
@@ -304,11 +305,11 @@ public:
 
     typedef map<string, string, PNocase> TUsaExceptionMap;
     static void ReadUSAExceptionMap (TUsaExceptionMap& exceptions, const string& filepath);
-    static void LoadUSAExceptionMap (TUsaExceptionMap& exceptions);
+    static void LoadUSAExceptionMap (const TUsaExceptionMap& exceptions);
     static void LoadUSAExceptionMap (const string& exception_file );
 
     static string USAStateCleanup (const string& country );
-    static string USAStateCleanup (const string& country, int& type );
+    static string USAStateCleanup (const string& country, EStateCleanup& type );
 private:
     static const string sm_Countries[];
     static const string sm_Former_Countries[];
