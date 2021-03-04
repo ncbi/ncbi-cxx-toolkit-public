@@ -204,7 +204,7 @@ BOOST_AUTO_TEST_CASE(Test_UpdateWithBioSample)
 }
 
 
-const char *sc_TestSQD1833_Src = "\
+const string sc_TestSQD1833_Src = "\
 BioSource ::= { \
   genome genomic, \
   org { \
@@ -230,7 +230,7 @@ BioSource ::= { \
 ";
 
 
-const char *sc_TestSQD1833_Smpl = "\
+const string sc_TestSQD1833_Smpl = "\
 BioSource ::= { \
   org { \
     taxname \"Escherichia coli\", \
