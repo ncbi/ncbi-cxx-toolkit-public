@@ -656,7 +656,7 @@ BOOST_AUTO_TEST_CASE(Test_TenAuthorsProcess)
 
 BOOST_AUTO_TEST_CASE(Test_FixPub)
 {
-    static const char* TEST_PUB =
+    static const string TEST_PUB =
       "Pub ::= \
        equiv { \
          pmid 17659802, \
@@ -803,7 +803,7 @@ BOOST_AUTO_TEST_CASE(Test_FixPub)
 
 BOOST_AUTO_TEST_CASE(Test_FixPubPreserveOriginalListOfAuthors)
 {
-    static const char* TEST_PUB = 
+    static const string TEST_PUB = 
         "Pub ::= \
          equiv { \
            pmid 1302004, \
