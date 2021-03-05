@@ -479,8 +479,8 @@ public:
     void SetRetries(THttpRetries retries) { m_Retries = retries; }
 
     /// Get current deadline for Execute().
-    /// For now, effective only for if waiting for actual response
-    /// (as opposed to a recognized 'retry later' response), infinite by default.
+    /// For now, effective only if waiting for actual response (as opposed to
+    /// a recognized 'retry later' response), infinite by default.
     /// @sa Execute() GetRetryProcessing()
     const CTimeout& GetDeadline() const { return m_Deadline; }
     /// Set new deadline for Execute().
@@ -543,7 +543,9 @@ private:
 
     // CConn_HttpStream callback for parsing headers.
     // 'user_data' must point to a CHttpRequest object.
-    static EHTTP_HeaderParse sx_ParseHeader(const char*, void*, int);
+    static EHTTP_HeaderParse sx_ParseHeader(const char* headers,
+                                            void*       user_data,
+                                            int         server_error);
     // CConn_HttpStream callback for handling retries and redirects.
     // 'user_data' must point to a CHttpRequest object.
     static int sx_Adjust(SConnNetInfo* net_info,
