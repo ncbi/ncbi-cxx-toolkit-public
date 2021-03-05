@@ -57,6 +57,14 @@ static volatile unsigned int s_NextIndex = 0;
 
 #define TESTAPP_LOG_POST(x)  do { ++m_LogMsgCount; LOG_POST(x); } while (0)
 
+#define TESTAPP_ASSERT(expr, msg) \
+    do { \
+        if (!(expr)) { \
+            cerr << "Assertion failed: (" << #expr << ") --- " << msg << endl; \
+            assert(false); \
+        } \
+    } while (0)
+
 /////////////////////////////////////////////////////////////////////////////
 // Randomization parameters
 
@@ -120,23 +128,28 @@ CTestThread::CTestThread(int idx)
        them register themselves */
     s_NumberOfThreads.Add(1);
     if ( s_Application != 0 )
-        assert(s_Application->Thread_Init(m_Idx));
+        TESTAPP_ASSERT(s_Application->Thread_Init(m_Idx),
+            "CTestThread::CTestThread() - failed to initialize thread " << m_Idx);
 }
 
 
 CTestThread::~CTestThread(void)
 {
     s_NumberOfThreads.Add(-1);
-    assert(s_NumberOfThreads.Get() >= 0);
+    auto num = s_NumberOfThreads.Get();
+    TESTAPP_ASSERT(num >= 0,
+        "CTestThread::~CTestThread() - invalid number of threads: " << num);
     if ( s_Application != 0 )
-        assert(s_Application->Thread_Destroy(m_Idx));
+        TESTAPP_ASSERT(s_Application->Thread_Destroy(m_Idx),
+            "CTestThread::~CTestThread() - failed to destroy thread " << m_Idx);
 }
 
 
 void CTestThread::OnExit(void)
 {
     if ( s_Application != 0 )
-        assert(s_Application->Thread_Exit(m_Idx));
+        TESTAPP_ASSERT(s_Application->Thread_Exit(m_Idx),
+            "CTestThread::OnExit() - error exiting thread " << m_Idx);
 }
 
 
@@ -199,25 +212,30 @@ void CTestThread::RunNative(void)
     DWORD creation_flags = 0;
     m_Handle = CreateThread(NULL, 0, NativeWrapperCaller,
                             this, creation_flags, &thread_id);
-    _ASSERT(m_Handle != NULL);
+    TESTAPP_ASSERT(m_Handle != NULL, "CTestThread::RunNative() - failed to create thread");
     // duplicate handle to adjust security attributes
     HANDLE oldHandle = m_Handle;
-    _ASSERT(DuplicateHandle(GetCurrentProcess(), oldHandle,
-                            GetCurrentProcess(), &m_Handle,
-                            0, FALSE, DUPLICATE_SAME_ACCESS));
-    _ASSERT(CloseHandle(oldHandle));
+    TESTAPP_ASSERT(DuplicateHandle(GetCurrentProcess(), oldHandle,
+                                   GetCurrentProcess(), &m_Handle,
+                                   0, FALSE, DUPLICATE_SAME_ACCESS),
+        "CTestThread::RunNative() - failed to duplicate thread handle");
+    TESTAPP_ASSERT(CloseHandle(oldHandle),
+        "CTestThread::RunNative() - failed to close thread handle");
 #elif defined(NCBI_POSIX_THREADS)
     pthread_attr_t attr;
-    _ASSERT(pthread_attr_init(&attr) == 0);
-    _ASSERT(pthread_create(&m_Handle, &attr,
-                           NativeWrapperCaller, this) == 0);
-    _ASSERT(pthread_attr_destroy(&attr) == 0);
+    TESTAPP_ASSERT(pthread_attr_init(&attr) == 0,
+        "CTestThread::RunNative() - failed to init thread attributes");
+    TESTAPP_ASSERT(pthread_create(&m_Handle, &attr,
+                                  NativeWrapperCaller, this) == 0,
+        "CTestThread::RunNative() - failed to create thread");
+    TESTAPP_ASSERT(pthread_attr_destroy(&attr) == 0,
+        "CTestThread::RunNative() - failed to destroy thread attributes");
 #else
     if (flags & fRunAllowST) {
         Wrapper(this);
     }
     else {
-        _ASSERT(0);
+        TESTAPP_ASSERT(0, "CTestThread::RunNative() - threads are not supported");
     }
 #endif
 }
@@ -227,14 +245,18 @@ void CTestThread::JoinNative(void** result)
 {
     // Join (wait for) and destroy
 #if defined(NCBI_WIN32_THREADS)
-    _ASSERT(WaitForSingleObject(m_Handle, INFINITE) == WAIT_OBJECT_0);
+    TESTAPP_ASSERT(WaitForSingleObject(m_Handle, INFINITE) == WAIT_OBJECT_0,
+        "CTestThread::JoinNative() - failed to join thread");
     DWORD status;
-    _ASSERT(GetExitCodeThread(m_Handle, &status)
-            &&  status != DWORD(STILL_ACTIVE));
-    _ASSERT(CloseHandle(m_Handle));
+    TESTAPP_ASSERT(GetExitCodeThread(m_Handle, &status)
+                   &&  status != DWORD(STILL_ACTIVE),
+        "CTestThread::JoinNative() - failed to get thread exit code");
+    TESTAPP_ASSERT(CloseHandle(m_Handle),
+        "CTestThread::JoinNative() - failed to close thread handle");
     m_Handle = NULL;
 #elif defined(NCBI_POSIX_THREADS)
-    _ASSERT(pthread_join(m_Handle, 0) == 0);
+    TESTAPP_ASSERT(pthread_join(m_Handle, 0) == 0,
+        "CTestThread::JoinNative() - failed to join thread");
 #endif
     *result = this;
 }
@@ -404,7 +426,9 @@ inline
 void CThreadGroup::ThreadWait(void)
 {
     s_NumberOfThreads.Add(-1);
-    assert(s_NumberOfThreads.Get() >= 0);
+    auto num = s_NumberOfThreads.Get();
+    TESTAPP_ASSERT(num >= 0,
+        "CThreadGroup::ThreadWait() - invalid number of threads: " << num);
     m_Semaphore.Wait();
 }
 
@@ -505,7 +529,8 @@ int CThreadedApp::Run(void)
 
     s_SpawnBy = args["spawnby"].AsInteger();
 
-    assert(TestApp_Init());
+    TESTAPP_ASSERT(TestApp_Init(),
+        "CThreadedApp::Run() - failed to initialize application");
 
     unsigned int seed = GetArgs()["seed"]
         ? static_cast<unsigned int>(GetArgs()["seed"].AsInteger())
@@ -552,15 +577,18 @@ int CThreadedApp::Run(void)
         for (unsigned int i = 0;  i < s_NumThreads;  i++) {
             void* join_result;
             // make sure all threads have started
-            assert(thr[i].NotEmpty());
+            TESTAPP_ASSERT(thr[i].NotEmpty(),
+                "CThreadedApp::Run() - thread " << i << " has not started");
 #ifdef USE_NATIVE_THREADS
             if (thr[i]) {
                 thr[i]->JoinNative(&join_result);
-                assert(join_result != nullptr);
+                TESTAPP_ASSERT(join_result,
+                    "CThreadedApp::Run() - thread " << i << " failed to pass result to Join()");
             }
 #else
             thr[i]->Join(&join_result);
-            assert(join_result != nullptr);
+            TESTAPP_ASSERT(join_result,
+                "CThreadedApp::Run() - thread " << i << " failed to pass result to Join()");
 #endif
         }
     } else {
@@ -571,13 +599,16 @@ int CThreadedApp::Run(void)
                  t < m_ThreadGroups[g].number_of_threads; ++t, ++i) {
                 void* join_result;
                 thr[i]->Join(&join_result);
-                assert(join_result != nullptr);
+                TESTAPP_ASSERT(join_result,
+                    "CThreadedApp::Run() - thread " << i << " failed to pass result to Join()");
             }
         }
-        assert(m_Reached.size() >= m_Min);
+        TESTAPP_ASSERT(m_Reached.size() >= m_Min,
+            "CThreadedApp::Run() - ivalid number of started threads: " << m_Reached.size());
     }
 
-    assert(TestApp_Exit());
+    TESTAPP_ASSERT(TestApp_Exit(),
+        "CThreadedApp::Run() - error exiting application");
 
     // Destroy all threads
     for (unsigned int i=0; i<s_NumThreads; i++) {
