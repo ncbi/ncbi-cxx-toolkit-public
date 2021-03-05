@@ -52,7 +52,7 @@ CInternalStopFinder::CInternalStopFinder(CScope& a_scope)
     generator.SetAllowedUnaligned(10);
 }
 
-typedef map<TSeqRange, bool> TStarts;
+typedef map<TSeqRange, string> TStarts;
 
 pair<set<TSeqPos>, set<TSeqPos> > CInternalStopFinder::FindStartsStops(const CSeq_align& align, int padding)
 {
@@ -122,6 +122,7 @@ pair<TStarts, set<TSeqRange> > CInternalStopFinder::FindStartStopRanges(const CS
 
     string seq = GetCDSNucleotideSequence(*clean_align);
     if (seq.size()%3 != 0) {
+        cerr << MSerial_AsnText << align << endl;
         _ASSERT(seq.size()%3 == 0);
         NCBI_USER_THROW("CDSNucleotideSequence not divisible by 3");
     }
@@ -140,9 +141,11 @@ pair<TStarts, set<TSeqRange> > CInternalStopFinder::FindStartStopRanges(const CS
 
     size_t state = 0;
     int k = 0;
+    string codon = "NNN";
 
     ITERATE(string, s, seq) {
         state = tbl.NextCodonState(state, *s);
+        codon[k%3] = *s;
 
         if (++k%3)
             continue;
@@ -164,7 +167,7 @@ pair<TStarts, set<TSeqRange> > CInternalStopFinder::FindStartStopRanges(const CS
             TSeqPos mapped_pos2 = mapper.Map(*query_loc)->GetStop(eExtreme_Biological);
 
             if (tbl.IsOrfStart(state)) {
-                starts[TSeqRange(mapped_pos, mapped_pos2)] = tbl.IsATGStart(state);
+                starts[TSeqRange(mapped_pos, mapped_pos2)] = codon;
             }
             if (tbl.IsOrfStop(state)) {
                 stops.insert(TSeqRange(mapped_pos, mapped_pos2));

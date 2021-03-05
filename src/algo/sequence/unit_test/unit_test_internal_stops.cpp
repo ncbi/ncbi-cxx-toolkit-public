@@ -439,12 +439,12 @@ Seq-align ::= { \
 
     CInternalStopFinder int_stop_finder(scope);
 
-    typedef map<TSeqRange, bool> TStarts;
+    typedef map<TSeqRange, string> TStarts;
     TStarts starts = int_stop_finder.FindStartStopRanges(align,3).first;
 
     int atg_starts = 0;
     ITERATE(TStarts, s, starts) {
-        if (s->second)
+        if (s->second == "ATG")
             ++atg_starts;
     }
 
@@ -505,10 +505,10 @@ Seq-align ::= { \
     CInternalStopFinder int_stop_finder(scope);
 
     for (int pad=33; pad > 30; --pad) {
-        pair<map<TSeqRange, bool>, set<TSeqRange> > starts_stops_ranges = int_stop_finder.FindStartStopRanges(align, pad);
+        auto starts_stops_ranges = int_stop_finder.FindStartStopRanges(align, pad);
 
         BOOST_CHECK( starts_stops_ranges.first.find(TSeqRange(5333941,5333939)) != starts_stops_ranges.first.end() );
-        BOOST_CHECK_EQUAL( starts_stops_ranges.first[TSeqRange(5333941,5333939)], true );
+        BOOST_CHECK_EQUAL( starts_stops_ranges.first[TSeqRange(5333941,5333939)], "ATG" );
     }
 }
 

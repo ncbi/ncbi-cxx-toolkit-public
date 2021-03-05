@@ -54,7 +54,7 @@ public:
     pair<set<TSeqPos>, set<TSeqPos> > FindStartsStops(const CSeq_align& align, int padding=0);
 
     //ranges are biological, i.e. inverted if minus strand or cross-origin.
-    //starts returned as map to bool (true - ATG, false - alt. start).
+    //starts returned as a map from range to its sequence, i.e. the actual codon (ATG, GTG,...)
     //
     // Does not look inside introns or large insertions -
     //  clean alignment with fMaximizeTranslation first if you want to.
@@ -64,7 +64,7 @@ public:
     // (gaps parameter if provided will be filled with runs of Ns found,
     //  fake gaps beyond contig ends if within padding will be added too)
     //
-    pair<map<TSeqRange, bool>, set<TSeqRange> > FindStartStopRanges(const CSeq_align& align, int padding=0,
+    pair<map<TSeqRange, string>, set<TSeqRange> > FindStartStopRanges(const CSeq_align& align, int padding=0,
                                                                     set<TSignedSeqRange>* gaps = nullptr);
 
 private:
