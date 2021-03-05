@@ -232,7 +232,7 @@ void CTable2AsnContext::ClearOstream(const CTempString& suffix)
 
     it->second.first.clear();
     if (it->second.second) {
-        it->second.second.release();
+        it->second.second.reset();
     }
 }
 
