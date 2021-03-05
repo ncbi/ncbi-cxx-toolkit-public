@@ -1187,7 +1187,9 @@ void CMultiReaderApp::xProcessFasta(
 //  ----------------------------------------------------------------------------
 {
     CFastaReader::TFlags fFlags = 0;
-    fFlags |= CFastaReader::fNoSplit;
+    fFlags |= CFastaReader::fNoSplit 
+           |  CFastaReader::fDisableParseRange;
+
     if( args["parse-mods"] ) {
         fFlags |= CFastaReader::fAddMods;
     }
