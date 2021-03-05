@@ -98,6 +98,14 @@ namespace {
     };
 };
 
+
+static void s_FailOnMissingInput(const string& specifics, IObjtoolsListener& listener)
+{
+    listener.PutMessage(CObjtoolsMessage(specifics, eDiag_Fatal));
+    throw CMissingInputException();
+}
+
+
 class CTable2AsnLogger: public CMessageListenerLenient
 {
 public:
@@ -539,12 +547,6 @@ int CTbl2AsnApp::Run(void)
     {
         m_context.mCommandLineMods = args["j"].AsString();
     }
-    if (args["src-file"])
-        m_context.m_single_source_qual_file = args["src-file"].AsString();
-
-    if (args["f"])
-        m_context.m_single_annot_file = args["f"].AsString();
-
     if (args["w"])
         m_context.m_single_structure_cmt = args["w"].AsString();
 
@@ -805,11 +807,35 @@ int CTbl2AsnApp::Run(void)
     if (m_logger->Count() == 0)
     try
     {
+        if (args["f"]) {
+            string annot_file = args["f"].AsString();
+            if (!CFile(annot_file).Exists()) {
+                s_FailOnMissingInput(
+                    "The specified annotation file \"" + annot_file + "\" does not exist.", 
+                    *m_logger);
+            }
+            m_context.m_single_annot_file = args["f"].AsString();
+        }
+        if (args["src-file"]) {
+            string src_file = args["src-file"].AsString();
+            if (!CFile(src_file).Exists()) {
+                s_FailOnMissingInput(
+                    "The specified source qualifier file \"" + src_file + "\" does not exist.", 
+                    *m_logger);
+            }
+            m_context.m_single_source_qual_file = args["src-file"].AsString();
+        }
+
         // Designate where do we get input: single file or a folder or folder structure
         if (args["i"])
         {
             m_context.m_current_file = args["i"].AsString();
-            ProcessOneFile();
+            if (!CFile(m_context.m_current_file).Exists()) {
+                s_FailOnMissingInput(
+                    "The specified input file \"" + m_context.m_current_file + "\" does not exist.", 
+                    *m_logger);
+            }
+             ProcessOneFile();
         }
         else
         if (args["indir"]) 
@@ -817,23 +843,30 @@ int CTbl2AsnApp::Run(void)
             // initiate validator output
             string indir = args["indir"].AsString();
             CDir directory(indir);
-            if (directory.Exists())
-            {                                
-                string basename = m_context.m_output_filename.empty() ? 
-                    CDir(CDir::CreateAbsolutePath(indir, CDir::eRelativeToCwd)).GetBase() : 
-                    m_context.m_output_filename;
-
-                m_context.m_base_name = basename;
-
-                CMaskFileName masks;
-                masks.Add("*" + args["x"].AsString());
-
-                ProcessOneDirectory(directory, masks, args["E"].AsBoolean());
+            if (!directory.Exists()) {
+                s_FailOnMissingInput(
+                    "The specified input directory \"" + indir + "\" does not exist.", 
+                    *m_logger);
             }
+            string basename = m_context.m_output_filename.empty() ? 
+                CDir(CDir::CreateAbsolutePath(indir, CDir::eRelativeToCwd)).GetBase() : 
+                m_context.m_output_filename;
+
+            m_context.m_base_name = basename;
+
+            CMaskFileName masks;
+            masks.Add("*" + args["x"].AsString());
+
+            ProcessOneDirectory(directory, masks, args["E"].AsBoolean());
         }
         else
         if (args["aln-file"]) {
             m_context.m_current_file = args["aln-file"].AsString();
+            if (!CFile(m_context.m_current_file).Exists()) {
+                s_FailOnMissingInput(
+                    "The specified alignment file \"" + m_context.m_current_file + "\" does not exist.", 
+                    *m_logger);
+            }
             const bool isAlignment = true;
             ProcessOneFile(isAlignment);
         }
@@ -943,7 +976,6 @@ void CTbl2AsnApp::ProcessOneEntry(
     {
         m_context.SetSeqId(*entry);
     }
-
 
     m_context.ApplyAccession(*entry);
 
@@ -1078,24 +1110,10 @@ void CTbl2AsnApp::ProcessOneEntry(
 }
 
 
-static void s_ReportMissingFile(const string& filename, IObjtoolsListener& listener)
-{
-    listener.PutMessage(
-        CObjtoolsMessage("Missing input file. '" + filename + "' does not exist.", eDiag_Fatal));
-    throw CMissingInputException();
-}
-
 void CTbl2AsnApp::ProcessOneFile(bool isAlignment)
 {
     if (m_context.m_split_log_files)
         m_context.m_logger->ClearAll();
-
-    CFile file(m_context.m_current_file);
-    if (!file.Exists())
-    {
-        s_ReportMissingFile(m_context.m_current_file, *m_logger);
-        throw CMissingInputException();
-    }
 
     CFile log_name;
     if (!IsDryRun() && m_context.m_split_log_files)
@@ -1312,15 +1330,11 @@ void CTbl2AsnApp::ProcessSecretFiles1Phase(bool readModsFromTitle, CSeq_entry& r
     
     const auto& namedSrcFile = m_context.m_single_source_qual_file;
     if (!NStr::IsBlank(namedSrcFile)) {
-        if (!CFile(namedSrcFile).Exists()) {
-            s_ReportMissingFile(namedSrcFile, *m_logger);
-        }
         if (!m_context.mp_named_src_map) {
             m_context.mp_named_src_map.reset(new CMemorySrcFileMap(m_logger));
         }
         m_context.mp_named_src_map->MapFile(namedSrcFile, m_context.m_allow_accession);
     }
-
 
     unique_ptr<CMemorySrcFileMap> pDefaultSrcFileMap; 
     const string defaultSrcFile = name + ".src";
