@@ -303,7 +303,8 @@ CMultiReader::xReadFasta(CNcbiIstream& instream)
 
     m_iFlags |= CFastaReader::fIgnoreMods
              |  CFastaReader::fValidate
-             |  CFastaReader::fHyphensIgnoreAndWarn;
+             |  CFastaReader::fHyphensIgnoreAndWarn 
+             |  CFastaReader::fDisableParseRange;
 
     if (m_context.m_allow_accession)
         m_iFlags |= CFastaReader::fParseRawID;
