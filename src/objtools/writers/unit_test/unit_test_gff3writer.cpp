@@ -46,6 +46,7 @@
 #include <objmgr/seq_entry_ci.hpp>
 #include <objmgr/bioseq_ci.hpp>
 #include <objmgr/annot_ci.hpp>
+#include <objects/seqalign/Seq_align_set.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <dbapi/driver/drivers.hpp>
 
@@ -127,13 +128,13 @@ public:
             (*m_pTestNameToInfoMap)[vecFileNamePieces[0]];
 
         // assign object type contained in test input
-        if (sObjType == "align"  ||  sObjType == "annot"  ||  
-                sObjType == "entry"  ||  sObjType == "bioseq"  ||  sObjType == "bioset") {
-            test_info_to_load.mObjType = sObjType;
-        }
-        else {
+        list<string> supportedObjectTypes{
+            "align", "align-set", "annot", "bioseq", "bioset", "entry"};
+        auto typeIt = std::find(supportedObjectTypes.begin(), supportedObjectTypes.end(), sObjType);
+        if (typeIt == supportedObjectTypes.end()) {
             BOOST_FAIL("Unknown object type " << sObjType << ".");
         }
+        test_info_to_load.mObjType = sObjType;
 
         // figure out what type of file we have and set appropriately
         if (sFileType == mExtInput) {
@@ -221,6 +222,15 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
             pWriter->WriteAlign(*pAlign);
             pWriter->WriteFooter();
         }
+    }
+    else if (test_type == "align-set") {
+        CRef<CSeq_align_set> pAlignSet(new CSeq_align_set);
+        *pI >> *pAlignSet;
+        pWriter->WriteHeader();
+        for (const auto alignIt: pAlignSet->Get()) {
+            pWriter->WriteAlign(*alignIt);
+        }
+        pWriter->WriteFooter();
     }
     else if (test_type == "bioseq") {
         CRef<CBioseq> pBioseq(new CBioseq);
