@@ -1534,6 +1534,9 @@ enum EDiagTrace {
 NCBI_XNCBI_EXPORT
 extern void SetDiagTrace(EDiagTrace how, EDiagTrace dflt = eDT_Default);
 
+/// Check if traces are enabled.
+NCBI_XNCBI_EXPORT
+extern bool GetDiagTrace(void);
 
 
 /// Forward declarations

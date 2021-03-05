@@ -97,6 +97,8 @@ class CDiagBuffer
     // Others
     NCBI_XNCBI_EXPORT
     friend void SetDiagTrace(EDiagTrace how, EDiagTrace dflt);
+    NCBI_XNCBI_EXPORT
+    friend bool GetDiagTrace(void);
     NCBI_XNCBI_EXPORT friend bool IsDiagStream(const CNcbiOstream* os);
 
     // Handler

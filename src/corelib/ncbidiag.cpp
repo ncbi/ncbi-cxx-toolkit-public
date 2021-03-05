@@ -6092,6 +6092,12 @@ extern void SetDiagTrace(EDiagTrace how, EDiagTrace dflt)
 }
 
 
+extern bool GetDiagTrace(void)
+{
+    return CDiagBuffer::GetTraceEnabled();
+}
+
+
 CTeeDiagHandler::CTeeDiagHandler(CDiagHandler* orig, bool own_orig)
     : m_MinSev(NCBI_PARAM_TYPE(Diag, Tee_Min_Severity)::GetDefault()),
       m_OrigHandler(orig, own_orig ? eTakeOwnership : eNoOwnership)
