@@ -4407,7 +4407,9 @@ string CCountries::USAStateCleanup ( const string& country, CCountries::EStateCl
         if ( ! corrected.empty()) {
             // presence in map here will disambiguate otherwise ambiguous name pair,
             // thus self-entries need to be added to the ambiguous state exception list
-            if ( NStr::Equal ( corrected, working ) && NStr::Equal ( corrected, country )) {
+            if ( ! NStr::StartsWith ( corrected, "USA" )) {
+                type = e_NotUSA;
+            } else if ( NStr::Equal ( corrected, working ) && NStr::Equal ( corrected, country )) {
                 type = e_Valid;
             } else {
                 type = e_Corrected;
@@ -4416,6 +4418,9 @@ string CCountries::USAStateCleanup ( const string& country, CCountries::EStateCl
         }
     }
 
+    if ( ! NStr::StartsWith ( working, "USA" )) {
+        type = e_NotUSA;
+    }
     return working;
 }
 

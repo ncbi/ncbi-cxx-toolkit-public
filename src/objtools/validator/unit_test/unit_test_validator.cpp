@@ -20844,7 +20844,6 @@ BOOST_AUTO_TEST_CASE(Test_USAStateCleanup)
     s_USAStateTest("USA: Montana, Maine", "USA: Montana, Maine", CCountries::e_Ambiguous );
     s_USAStateTest("USA: San  Diego  County, CA", "USA: California, San Diego County", CCountries::e_Corrected );
     s_USAStateTest("USA: Madison", "USA: Madison", CCountries::e_Missing );
-    s_USAStateTest("Puerto Rico: San Juan", "Puerto Rico: San Juan", CCountries::e_NotUSA );
     s_USAStateTest("USA", "USA", CCountries::e_Valid );
 
     s_USAStateTest("USA: Arkansas, Washington", "USA: Arkansas, Washington", CCountries::e_Ambiguous );
@@ -20853,10 +20852,17 @@ BOOST_AUTO_TEST_CASE(Test_USAStateCleanup)
     s_USAStateTest("USA: Washington, AR", "USA: Washington, Arkansas", CCountries::e_Ambiguous );
     s_USAStateTest("USA: Wisconsin, Oregon", "USA: Wisconsin, Oregon", CCountries::e_Ambiguous );
 
+    s_USAStateTest("Puerto Rico: San Juan", "Puerto Rico: San Juan", CCountries::e_NotUSA );
+    s_USAStateTest("USA: Puerto Rico", "USA: Puerto Rico", CCountries::e_Missing );
+    s_USAStateTest("USA: Puerto Rico, Florida", "USA: Florida, Puerto Rico", CCountries::e_Corrected );
+    s_USAStateTest("USA: Florida, Puerto Rico", "USA: Florida, Puerto Rico", CCountries::e_Valid );
+
     CCountries::TUsaExceptionMap exm;
     exm["USA: Washington, Arkansas"] = "USA: Arkansas, Washington";
     // self-entry is needed for converting e_Ambiguous to e_Valid (from full name) or e_Corrected (from abbreviation)
     exm["USA: Arkansas, Washington"] = "USA: Arkansas, Washington";
+    exm["USA: Puerto Rico, Florida"] = "Puerto Rico: Florida";
+    exm["USA: Florida, Puerto Rico"] = "Puerto Rico: Florida";
     CCountries::LoadUSAExceptionMap (exm);
 
     s_USAStateTest("USA: Arkansas, Washington", "USA: Arkansas, Washington", CCountries::e_Valid );
@@ -20864,6 +20870,11 @@ BOOST_AUTO_TEST_CASE(Test_USAStateCleanup)
     s_USAStateTest("USA: AR, Washington", "USA: Arkansas, Washington", CCountries::e_Corrected );
     s_USAStateTest("USA: Washington, AR", "USA: Arkansas, Washington", CCountries::e_Corrected );
     s_USAStateTest("USA: Wisconsin, Oregon", "USA: Wisconsin, Oregon", CCountries::e_Ambiguous );
+
+    s_USAStateTest("Puerto Rico: San Juan", "Puerto Rico: San Juan", CCountries::e_NotUSA );
+    s_USAStateTest("USA: Puerto Rico", "USA: Puerto Rico", CCountries::e_Missing );
+    s_USAStateTest("USA: Puerto Rico, Florida", "Puerto Rico: Florida", CCountries::e_NotUSA );
+    s_USAStateTest("USA: Florida, Puerto Rico", "Puerto Rico: Florida", CCountries::e_NotUSA );
 }
 
 
