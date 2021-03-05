@@ -5515,6 +5515,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "ODAC\ts\tOregon Department of Agriculture\t\t\t",
 "ODU\ts\tOld Dominion University, Department of Biological Sciences\t\t\t",
 "OEKO\ts\tOekoteam-Institute for Animal Ecology and Landscape Planning\t\t\t",
+"OF\ts\tOslo Fungarium\t\t\t",
 "OFC\ts\tOrielton Field Centre\t\t\t",
 "OGDF\ts\tForest Service Region 4, USDA\t\t\t",
 "OGL\tb\tOcean Genome Legacy\t\t\t",

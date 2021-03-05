@@ -5482,6 +5482,7 @@ OCU	s	Oklahoma City University
 ODAC	s	Oregon Department of Agriculture			
 ODU	s	Old Dominion University, Department of Biological Sciences			
 OEKO	s	Oekoteam-Institute for Animal Ecology and Landscape Planning			
+OF	s	Oslo Fungarium			
 OFC	s	Orielton Field Centre			
 OGDF	s	Forest Service Region 4, USDA			
 OGL	b	Ocean Genome Legacy			
