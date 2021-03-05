@@ -1,12 +1,12 @@
 [components]
-infrastructure  22.0
-core            22.0
-dbase           22.0
-web             22.0
-objects         22.0
-objtools        22.0
-algo            22.0
-app             22.0
-doc             22.0
-misc            22.0
-sra             22.0
+infrastructure  24.0
+core            24.0
+dbase           24.0
+web             24.0
+objects         24.0
+objtools        24.1
+algo            24.1
+app             24.1
+doc             24.0
+misc            24.0
+sra             24.0
