@@ -13,7 +13,7 @@ LIBS = $(SDBAPI_LIBS) $(SYBASE_LIBS) $(SYBASE_dllS) $(ORIG_LIBS)
 
 # LINK = purify $(C_LINK)
 
-CHECK_REQUIRES = in-house-resources xconnext
+CHECK_REQUIRES = in-house-resources connext
 CHECK_COPY = dbapi_svc_test.bash dbapi_svc_test.ini interfaces
 CHECK_CMD = dbapi_svc_test.bash LBSMD  NOSYBASE /CHECK_NAME=dbapi_svc_test_lbsmd_nosyb
 CHECK_CMD = dbapi_svc_test.bash LBSMD  SYBASE   /CHECK_NAME=dbapi_svc_test_lbsmd_syb
