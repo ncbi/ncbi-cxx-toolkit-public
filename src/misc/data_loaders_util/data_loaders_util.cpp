@@ -469,7 +469,7 @@ void CDataLoadersUtil::SetupObjectManager(const CArgs& args,
     }
 
     // VDB data loader
-    if (loaders & fVDB) {
+    if (loaders & (fVDB | fVDBOnByDefault)) {
         x_SetupVDBDataLoader(args, obj_mgr, priority, loaders);
     }
 #endif
