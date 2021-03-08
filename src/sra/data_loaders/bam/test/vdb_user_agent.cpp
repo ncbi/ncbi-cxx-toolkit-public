@@ -245,7 +245,7 @@ CVDBUserAgentMonitor& CVDBUserAgentMonitor::GetInstance()
 }
 
 
-#if _DEBUGGING
+#if HAVE_LIBCONNEXT // external builds do not have debug version of VDB library
 static rc_t CC s_VDBOutWriter(void* self, const char* buffer, size_t bufsize, size_t* num_writ)
 {
     CVDBUserAgentMonitor::GetInstance().Append(buffer, bufsize);
@@ -257,6 +257,7 @@ static rc_t CC s_VDBOutWriter(void* self, const char* buffer, size_t bufsize, si
 
 void CVDBUserAgentMonitor::Initialize()
 {
+#if HAVE_LIBCONNEXT // external builds do not have debug version of VDB library
     KLogLevelSet(klogDebug);
     if ( rc_t rc = KDbgHandlerSet(s_VDBOutWriter, 0) ) {
         NCBI_THROW_FMT(CException, eUnknown,
@@ -268,6 +269,7 @@ void CVDBUserAgentMonitor::Initialize()
                        "CVDBUserAgentMonitor:"
                        " KDbgSetString() failed: "<<rc);
     }
+#endif
 }
 
 END_NAMESPACE(objects);
