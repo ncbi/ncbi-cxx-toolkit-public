@@ -491,7 +491,8 @@ private:
         eNoError         =  0,   /// Lookup was successful
         eBadVersion      =  -10, /// The format version of the ISAM file is unsupported.
         eBadType         =  -11, /// The requested ISAM type did not match the file.
-        eWrongFile       =  -12  /// The file was not found, or was the wrong length.
+        eWrongFile       =  -12, /// The file was not found, or was the wrong length.
+        eInitFailed      =  -13  /// The file was not found, or was the wrong length.
     };
 
     /// Load and extract all index samples into array at once
@@ -554,22 +555,11 @@ private:
 
         gis.InsureOrder(CSeqDBGiList::eGi);
 
-        x_InitLease();//Map files if needed
         if(m_Initialized == false) {
-            EErrorCode error = x_InitSearch();
-
-            if(error != eNoError) {
-                // Most ordinary errors (missing GIs for example) are
-                // ignored for "multi" mode searches.  But if a GI list is
-                // specified, and cannot be interpreted, it is an error.
-
                 NCBI_THROW(CSeqDBException,
                        eArgErr,
                        "Error: Unable to use ISAM index in batch mode.");
-            }
         }
-
-        //CSeqDBMemLease lease(m_Atlas);
 
         vector<T> sample_keys;
         vector<TIndx> page_offs;
@@ -1183,11 +1173,6 @@ private:
                                 char           file_ext_char,
                                 string       & index_name,
                                 string       & data_name);
-
-    void x_InitLease(void) {
-        if(!m_IndexLease.IsMapped()) m_IndexLease.Init();
-        if(!m_DataLease.IsMapped()) m_DataLease.Init();
-    }
 
     // Data
 

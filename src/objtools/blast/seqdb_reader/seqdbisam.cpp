@@ -63,8 +63,6 @@ CSeqDBIsam::x_InitSearch(void)
 
     TIndx info_needed = 10 * sizeof(Int4);
 
-    //m_Atlas.Lock(locked);
-        
     bool found_index_file =
         m_Atlas.GetFileSizeL(m_IndexFname, m_IndexFileLength);
     
@@ -146,16 +144,10 @@ CSeqDBIsam::x_SearchIndexNumeric(Int8             Number,
                                  bool           & done)
                                  
 {
-    //m_Atlas.Lock(locked);
-    
-    //x_InitLease();//Map files if needed
     if(m_Initialized == false) {
-        EErrorCode error = x_InitSearch();
-
-        if(error != eNoError) {
-            done = true;
-            return error;
-        }
+        done = true;
+        // Return just any error
+        return eInitFailed;
     }
 
     if (x_OutOfBounds(Number)) {
@@ -230,21 +222,10 @@ CSeqDBIsam::x_SearchNegativeMulti(int                  vol_start,
                                   bool                 use_tis)
                                   
 {
-    //m_Atlas.Lock(locked);
-    
-    x_InitLease();//Map files if needed
     if(m_Initialized == false) {
-        EErrorCode error = x_InitSearch();
-
-        if(error != eNoError) {
-            // Most ordinary errors (missing IDs for example) are
-            // ignored for "multi" mode searches.  But if a GI list is
-            // specified, and cannot be interpreted, it is an error.
-
-            NCBI_THROW(CSeqDBException,
-                       eArgErr,
-                       "Error: Unable to use ISAM index in batch mode.");
-        }
+        NCBI_THROW(CSeqDBException,
+                      eArgErr,
+                      "Error: Unable to use ISAM index in batch mode.");
     }
 
     //m_Atlas.Lock(locked);
@@ -357,19 +338,14 @@ CSeqDBIsam::x_SearchNegativeMultiSeq(int              vol_start,
         int gilist_size = ids.ListSize();
         if (! gilist_size) return;
         
-        x_InitLease();//Map files if needed
         if(m_Initialized == false) {
-            EErrorCode error = x_InitSearch();
+            // Most ordinary errors (missing GIs for example) are
+            // ignored for "multi" mode searches.  But if a GI list is
+            // specified, and cannot be interpreted, it is an error.
 
-            if(error != eNoError) {
-                // Most ordinary errors (missing GIs for example) are
-                // ignored for "multi" mode searches.  But if a GI list is
-                // specified, and cannot be interpreted, it is an error.
-
-                NCBI_THROW(CSeqDBException,
+            NCBI_THROW(CSeqDBException,
                        eArgErr,
                        "Error: Unable to use ISAM index in batch mode.");
-            }
         }
         
         
@@ -969,13 +945,8 @@ CSeqDBIsam::x_StringSearch(const string   & term_in,
 
     size_t preexisting_data_count = values_out.size();
 
-    x_InitLease();//Map files if needed
     if (m_Initialized == false) {
-        EErrorCode error = x_InitSearch();
-
-        if(error != eNoError) {
-            return error;
-        }
+        return eInitFailed;
     }
 
     if (x_OutOfBounds(term_in)) {
@@ -1192,7 +1163,9 @@ CSeqDBIsam::CSeqDBIsam(CSeqDBAtlas  & atlas,
     } else {
         m_PageSize = DEFAULT_SISAM_SIZE;
     }
-    x_InitSearch();
+    if (eNoError !=x_InitSearch()) {
+    	m_Initialized = false;
+    }
     x_FindIndexBounds();
 }
 
@@ -1270,13 +1243,8 @@ void CSeqDBIsam::StringToOids(const string   & acc,
 
     _ASSERT(m_IdentType == eStringId);
 
-    //m_Atlas.Lock(locked);
-    
-    x_InitLease();//Map files if needed
     if(m_Initialized == false) {
-        if (eNoError != x_InitSearch()) {
             return;
-        }
     }
 
     bool found = false;
@@ -1615,10 +1583,6 @@ void CSeqDBIsam::x_FindIndexBounds()
 
 bool CSeqDBIsam::x_OutOfBounds(Int8 key)
 {
-    if (! m_FirstKey.IsSet()) {
-        x_FindIndexBounds();
-    }
-
     if (! (m_FirstKey.IsSet() && m_LastKey.IsSet())) {
         return false;
     }
@@ -1638,10 +1602,6 @@ bool CSeqDBIsam::x_OutOfBounds(Int8 key)
 
 bool CSeqDBIsam::x_OutOfBounds(string key)
 {
-    if (! m_FirstKey.IsSet()) {
-        x_FindIndexBounds();
-    }
-
     if (! (m_FirstKey.IsSet() && m_LastKey.IsSet())) {
         return false;
     }
@@ -1667,20 +1627,14 @@ void CSeqDBIsam::GetIdBounds(Int8           & low_id,
                              
                              
 {
-    //m_Atlas.Lock(locked);
-    
-    x_InitLease();//Map files if needed
     if(m_Initialized == false) {
-        EErrorCode error = x_InitSearch();
-
-        if(error != eNoError) {
-            count = 0;
-            return;
-        }
+        count = 0;
+        return;
     }
 
     if (! (m_FirstKey.IsSet() && m_LastKey.IsSet())) {
-        x_FindIndexBounds();
+        count = 0;
+        return;
     }
 
     low_id = m_FirstKey.GetNumeric();
@@ -1694,20 +1648,14 @@ void CSeqDBIsam::GetIdBounds(string         & low_id,
                              
                              
 {
-    //m_Atlas.Lock(locked);
-    
-    x_InitLease();//Map files if needed
     if(m_Initialized == false) {
-        EErrorCode error = x_InitSearch();
-
-        if(error != eNoError) {
-            count = 0;
-            return;
-        }
+        count = 0;
+        return;
     }
 
     if (! (m_FirstKey.IsSet() && m_LastKey.IsSet())) {
-        x_FindIndexBounds();
+        count = 0;
+        return;
     }
 
     low_id = m_FirstKey.GetString();
@@ -1721,14 +1669,8 @@ void CSeqDBIsam::HashToOids(unsigned         hash,
                             
 {
     _ASSERT(m_IdentType == eHashId);
-
-    //m_Atlas.Lock(locked);
-    
-    x_InitLease();//Map files if needed
     if(m_Initialized == false) {
-        if (eNoError != x_InitSearch()) {
-            return;
-        }
+        return;
     }
 
     bool found = false;
