@@ -3,7 +3,7 @@
 PROJ_TAG = test
 
 APP = test_wgs_loader_mt
-SRC = test_wgs_loader_mt
+SRC = test_wgs_loader_mt ../../bam/test/vdb_user_agent
 
 REQUIRES = Boost.Test.Included MT
 
