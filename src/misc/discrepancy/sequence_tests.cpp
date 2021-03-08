@@ -1805,7 +1805,7 @@ static SpellFixData kSpellFixes[] = {
     { "mithocon", nullptr, false },
 };
 
-static const size_t kSpellFixesSize = sizeof(kSpellFixes) / sizeof(kSpellFixes[0]);
+static const size_t kSpellFixesSize = ArraySize(kSpellFixes);
 static const string kFixable = "Fixable";
 static const string kNonFixable = "Non-fixable";
 

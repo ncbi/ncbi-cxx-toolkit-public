@@ -141,7 +141,7 @@ DISCREPANCY_CASE(COUNT_TRNAS, SEQUENCE, eDisc, "Count tRNAs")
         if (total) {
             static CSafeStatic<map<string, size_t> > DesiredCount;
             if (DesiredCount->empty()) {
-                for (size_t i = 0; i < sizeof(desired_aaList) / sizeof(desired_aaList[0]); i++) {
+                for (size_t i = 0; i < ArraySize(desired_aaList); i++) {
                     (*DesiredCount)[desired_aaList[i].long_symbol] = desired_aaList[i].num_expected;
                 }
             }
@@ -155,7 +155,7 @@ DISCREPANCY_CASE(COUNT_TRNAS, SEQUENCE, eDisc, "Count tRNAs")
                 m_Objs[item][subitem].Ext().Add(it.second->GetObjects());
             }
             // extra tRNAs
-            for (size_t i = 0; i < sizeof(desired_aaList) / sizeof(desired_aaList[0]); i++) {
+            for (size_t i = 0; i < ArraySize(desired_aaList); i++) {
                 const size_t n = tmp[desired_aaList[i].long_symbol].GetObjects().size();
                 if (n > desired_aaList[i].num_expected) {
                     subitem = "Sequence [(]" + short_name + "[)] has [(]" + to_string(n) + "[)] trna-[(]" + desired_aaList[i].long_symbol + "[)] feature" + (n == 1 ? kEmptyStr : "s");
@@ -172,7 +172,7 @@ DISCREPANCY_CASE(COUNT_TRNAS, SEQUENCE, eDisc, "Count tRNAs")
                 }
             }
             // missing tRNAs
-            for (size_t i = 0; i < sizeof(desired_aaList) / sizeof(desired_aaList[0]); i++) {
+            for (size_t i = 0; i < ArraySize(desired_aaList); i++) {
                 const size_t n = tmp[desired_aaList[i].long_symbol].GetObjects().size();
                 if (n < desired_aaList[i].num_expected) {
                     subitem = "Sequence [(]" + short_name + "[)] is missing trna-[(]" + desired_aaList[i].long_symbol;

@@ -1106,7 +1106,7 @@ static const string kSuspiciousNotePhrases[] =
     "intronless gene"
 };
 
-const size_t kNumSuspiciousNotePhrases = sizeof(kSuspiciousNotePhrases) / sizeof(string);
+const size_t kNumSuspiciousNotePhrases = ArraySize(kSuspiciousNotePhrases);
 
 static void FindSuspiciousNotePhrases(const string& s, CDiscrepancyContext& context, CReportNode& rep, const CSeq_feat& feat)
 {
@@ -1170,7 +1170,7 @@ static const string kNewExceptions[] =
 
 DISCREPANCY_CASE(CDS_HAS_NEW_EXCEPTION, FEAT, eDisc | eOncaller | eSmart, "Coding region has new exception")
 {
-    static const size_t max = sizeof(kNewExceptions) / sizeof(string);
+    static const size_t max = ArraySize(kNewExceptions);
     for (const CSeq_feat& feat : context.GetFeat()) {
         if (feat.IsSetData() && feat.GetData().IsCdregion() && feat.IsSetExcept_text()) {
             for (size_t i = 0; i < max; i++) {
@@ -1321,8 +1321,8 @@ DISCREPANCY_CASE(RIBOSOMAL_SLIPPAGE, FEAT, eDisc | eSmart | eFatal, " Only a sel
                     string product = context.GetProdForFeature(feat);
                     static string ignore1[] = { "transposase", "chain release" };
                     static string ignore2[] = { "IS150 protein InsAB", "PCRF domain-containing protein" };
-                    static size_t len1 = sizeof(ignore1) / sizeof(ignore1[0]);
-                    static size_t len2 = sizeof(ignore2) / sizeof(ignore2[0]);
+                    static size_t len1 = ArraySize(ignore1);
+                    static size_t len2 = ArraySize(ignore2);
                     for (size_t n = 0; n < len1; n++) {
                         if (product.find(ignore1[n]) != string::npos) {
                             return;
@@ -1668,7 +1668,7 @@ static const string kIntergenicSpacerNames[] = {
     "psbA-trnH intergenic spacer",
     "trnG-trnS intergenic spacer" };
 
-static const size_t kIntergenicSpacerNames_len = sizeof(kIntergenicSpacerNames) / sizeof(kIntergenicSpacerNames[0]);
+static const size_t kIntergenicSpacerNames_len = ArraySize(kIntergenicSpacerNames);
 
 
 DISCREPANCY_CASE(UNWANTED_SPACER, FEAT, eOncaller, "Intergenic spacer without plastid location")
@@ -2004,7 +2004,7 @@ DISCREPANCY_CASE(SUSPECT_PHRASES, FEAT, eDisc | eSubmitter | eSmart, "Suspect Ph
                 check = feat.GetData().GetProt().GetDesc();
             }
             if (!check.empty()) {
-                for (size_t i = 0; i < sizeof(suspect_phrases) / sizeof(string); i++) {
+                for (size_t i = 0; i < ArraySize(suspect_phrases); i++) {
                     if (NStr::FindNoCase(check, suspect_phrases[i]) != NPOS) {
                         m_Objs["[n] cds comment[s] or protein description[s] contain[S] suspect_phrase[s]"]["[n] cds comment[s] or protein description[s] contain[S] '" + suspect_phrases[i] + "'"].Summ().Add(*context.SeqFeatObjRef(feat));
                         break;

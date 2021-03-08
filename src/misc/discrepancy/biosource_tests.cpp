@@ -1872,7 +1872,7 @@ static const pair<int, string> srcqual_keywords[] = {
     { COrgMod::eSubtype_pathovar, " pv." }
 };
 
-static const size_t srcqual_keywords_sz = sizeof(srcqual_keywords) / sizeof(srcqual_keywords[0]);
+static const size_t srcqual_keywords_sz = ArraySize(srcqual_keywords);
 
 static string GetSrcQual(const CBioSource& bs, int qual)
 {

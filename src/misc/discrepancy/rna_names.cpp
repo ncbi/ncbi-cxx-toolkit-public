@@ -59,7 +59,7 @@ static const char* rrna_standard_name[] = {
     "small subunit ribosomal RNA"
 };
 
-static const size_t rrna_standard_name_len = sizeof(rrna_standard_name) / sizeof(rrna_standard_name[0]);
+static const size_t rrna_standard_name_len = ArraySize(rrna_standard_name);
 
 static const pair<const char*, const char*> rrna_name_replace[] = {
     { "16S rRNA. Bacterial SSU", "16S ribosomal RNA" },
@@ -71,7 +71,7 @@ static const pair<const char*, const char*> rrna_name_replace[] = {
     { "Large Subunit Ribosomal RNA; lsuRNA; LSU ribosomal RNA", "large subunit ribosomal RNA" }
 };
 
-static const size_t rrna_name_replace_len = sizeof(rrna_name_replace) / sizeof(rrna_name_replace[0]);
+static const size_t rrna_name_replace_len = ArraySize(rrna_name_replace);
 
 
 DISCREPANCY_CASE(RRNA_NAME_CONFLICTS, FEAT, eDisc | eSubmitter | eSmart | eFatal, "rRNA name conflicts")

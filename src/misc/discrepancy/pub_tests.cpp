@@ -965,7 +965,7 @@ static pair<string, string> us_state_abbreviations[] = {
     { "WY", "Wyo" }
 };
 
-static size_t kNumOfAbbreviations = sizeof(us_state_abbreviations) / sizeof(us_state_abbreviations[0]);
+static size_t kNumOfAbbreviations = ArraySize(us_state_abbreviations);
 
 static bool IsValidStateAbbreviation(const string& state)
 {

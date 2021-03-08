@@ -223,7 +223,7 @@ DISCREPANCY_SUMMARIZE(PERCENT_N)
 // INTERNAL_TRANSCRIBED_SPACER_RRNA
 
 static const char* kRRNASpacer[] = { "internal", "transcribed", "spacer" };
-static const size_t kRRNASpacer_len = sizeof(kRRNASpacer) / sizeof(kRRNASpacer[0]);
+static const size_t kRRNASpacer_len = ArraySize(kRRNASpacer);
 
 DISCREPANCY_CASE(INTERNAL_TRANSCRIBED_SPACER_RRNA, FEAT, eOncaller, "Look for rRNAs that contain either 'internal', 'transcribed' or 'spacer'")
 {
@@ -255,10 +255,10 @@ static bool StrandsMatch(ENa_strand strand1, ENa_strand strand2)
 
 
 static const char* kSimilarProductWords[] = { "transposase", "integrase" };
-static const int   kNumSimilarProductWords = sizeof (kSimilarProductWords) / sizeof (char *);
+static const size_t kNumSimilarProductWords = ArraySize(kSimilarProductWords);
 
 static const char* kIgnoreSimilarProductWords[] = { "hypothetical protein", "phage", "predicted protein" };
-static const int   kNumIgnoreSimilarProductWords = sizeof (kIgnoreSimilarProductWords) / sizeof (char *);
+static const size_t kNumIgnoreSimilarProductWords = ArraySize(kIgnoreSimilarProductWords);
 
 
 static bool ProductNamesAreSimilar(const string& product1, const string& product2)

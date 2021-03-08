@@ -77,7 +77,7 @@ static string OrderQual(const string& s)
         "altitude",
         "location"
     };
-    const size_t sz = sizeof(names) / sizeof(names[0]);
+    const size_t sz = ArraySize(names);
     size_t n;
     for (n = 0; n < sz; n++) {
         if (names[n] == s) {

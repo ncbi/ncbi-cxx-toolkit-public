@@ -679,8 +679,8 @@ static void s_InitializeOrganelleProductRules(const string& name)
     }
     if (!s_OrganelleProductRules->IsSet()) {
         //LOG_POST("Falling back on built-in data for organelle products");
-        size_t num_lines = sizeof(s_Defaultorganelleproducts) / sizeof(char *);
-        string all_rules = "";
+        size_t num_lines = ArraySize(s_Defaultorganelleproducts);
+        string all_rules;
         for (size_t i = 0; i < num_lines; i++) {
             all_rules += s_Defaultorganelleproducts[i];
         }
@@ -724,8 +724,8 @@ static void s_InitializeProductRules(const string& name)
     }
     if (!s_ProductRules->IsSet()) {
         //LOG_POST("Falling back on built-in data for suspect product rules");
-        size_t num_lines = sizeof(s_Defaultproductrules) / sizeof(char *);
-        string all_rules = "";
+        size_t num_lines = ArraySize(s_Defaultproductrules);
+        string all_rules;
         for (size_t i = 0; i < num_lines; i++) {
             all_rules += s_Defaultproductrules[i];
         }
