@@ -42,6 +42,8 @@
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objects/seqalign/seqalign__.hpp>
 #include <corelib/ncbi_system.hpp>
+#include <corelib/request_ctx.hpp>
+#include "vdb_user_agent.hpp"
 #include <thread>
 
 #include <corelib/test_boost.hpp>
@@ -1331,4 +1333,208 @@ BOOST_AUTO_TEST_CASE(FetchSeqMT3)
         }
     }
 }
+
+
+BEGIN_LOCAL_NAMESPACE;
+
+static string get_cip(size_t index)
+{
+    return "1.2.3."+to_string(index);
+}
+
+static string get_sid(size_t index)
+{
+    return "session_"+to_string(index);
+}
+
+static string get_hid(size_t index)
+{
+    return "hit_"+to_string(index);
+}
+
+END_LOCAL_NAMESPACE;
+
+
+BOOST_AUTO_TEST_CASE(CheckBAMUserAgent)
+{
+    LOG_POST("Checking BAM retrieval User-Agent");
+    CBAMDataLoader::SetPileupGraphsParamDefault(true);
+
+    CRef<CObjectManager> om = sx_GetOM();
+
+    const size_t BAM_COUNT = 8;
+    string bam_name[BAM_COUNT] = {
+        "http://ftp.ncbi.nlm.nih.gov/toolbox/gbench/samples/udc_seqgraphic_rmt_testing/remote_BAM_remap_UUD-324/human/grch38_wgsim_gb_accs.bam",
+        "http://ftp.ncbi.nlm.nih.gov/toolbox/gbench/samples/udc_seqgraphic_rmt_testing/remote_BAM_remap_UUD-324/human/grch38_wgsim_mixed.bam",
+        "http://ftp.ncbi.nlm.nih.gov/toolbox/gbench/samples/udc_seqgraphic_rmt_testing/remote_BAM_remap_UUD-324/human/grch38_wgsim_rs_accs.bam",
+        "http://ftp.ncbi.nlm.nih.gov/toolbox/gbench/samples/udc_seqgraphic_rmt_testing/remote_BAM_remap_UUD-324/human/grch38_wgsim_short.bam",
+        "http://ftp.ncbi.nlm.nih.gov/toolbox/gbench/samples/udc_seqgraphic_rmt_testing/remote_BAM_remap_UUD-324/yeast/yeast_wgsim_gb_accs.bam",
+        "http://ftp.ncbi.nlm.nih.gov/toolbox/gbench/samples/udc_seqgraphic_rmt_testing/remote_BAM_remap_UUD-324/yeast/yeast_wgsim_mixed.bam",
+        "http://ftp.ncbi.nlm.nih.gov/toolbox/gbench/samples/udc_seqgraphic_rmt_testing/remote_BAM_remap_UUD-324/yeast/yeast_wgsim_rs_accs.bam",
+        "http://ftp.ncbi.nlm.nih.gov/toolbox/gbench/samples/udc_seqgraphic_rmt_testing/remote_BAM_remap_UUD-324/yeast/yeast_wgsim_short.bam"
+    };
+    string annot_name[BAM_COUNT] = {
+        "grch38_wgsim_gb_accs",
+        "grch38_wgsim_mixed",
+        "grch38_wgsim_rs_accs",
+        "grch38_wgsim_short",
+        "yeast_wgsim_gb_accs",
+        "yeast_wgsim_mixed",
+        "yeast_wgsim_rs_accs",
+        "yeast_wgsim_short"
+    };
+    string id[BAM_COUNT] = {
+        "CM000663.2",
+        "NC_000001.11",
+        "NC_000001.11",
+        "NC_000001.11",
+        "BK006938.2",
+        "NC_001136.10",
+        "NC_001136.10",
+        "NC_001136.10"
+    };
+    string map_label[BAM_COUNT] = {
+        "",
+        "1",
+        "",
+        "1",
+        "",
+        "IV",
+        "",
+        "IV"
+    };
+    /*
+    // full counts
+    size_t graph_count[BAM_COUNT] = {
+        536,
+        531,
+        536,
+        531,
+        471,
+        471,
+        471,
+        471
+    };
+    size_t align_count[BAM_COUNT] = {
+        159722,
+        159722,
+        159722,
+        159722,
+        243416,
+        243416,
+        243416,
+        243416
+    };
+    */
+    // counts up to 100000
+    size_t graph_count[BAM_COUNT] = {
+        6,
+        6,
+        6,
+        6,
+        36,
+        36,
+        36,
+        36
+    };
+    size_t align_count[BAM_COUNT] = {
+        45,
+        45,
+        45,
+        45,
+        14993,
+        14993,
+        14993,
+        14993
+    };
+    CVDBUserAgentMonitor::Initialize();
+    for ( size_t i = 0; i < BAM_COUNT; ++i ) {
+        CVDBUserAgentMonitor::SUserAgentValues values = {
+            get_cip(i),
+            get_sid(i),
+            get_hid(i)
+        };
+        CVDBUserAgentMonitor::SetExpectedUserAgentValues(bam_name[i], values);
+        CVDBUserAgentMonitor::SetExpectedUserAgentValues(bam_name[i]+".bai", values);
+    }
+    for ( int pass = 0; pass < 2; ++pass ) {
+        vector<thread> tt(BAM_COUNT);
+        for ( size_t i = 0; i < BAM_COUNT; ++i ) {
+            tt[i] =
+                thread([&]
+                       (size_t i)
+                    {
+                        try {
+                            _TRACE("i="<<i<<" bam="<<bam_name[i]);
+                            {
+                                auto& ctx = CDiagContext::GetRequestContext();
+                                ctx.SetClientIP(get_cip(i));
+                                ctx.SetSessionID(get_sid(i));
+                                ctx.SetHitID(get_hid(i));
+                            }
+                            
+                            CBAMDataLoader::SLoaderParams params;
+                            params.m_BamFiles.push_back(CBAMDataLoader::SBamFileName(bam_name[i]));
+                            if ( !map_label[i].empty() ) {
+                                AutoPtr<CIdMapper> mapper(new CIdMapper());
+                                mapper->AddMapping(CSeq_id_Handle::GetHandle("lcl|"+map_label[i]),
+                                                   CSeq_id_Handle::GetHandle(id[i]));
+                                params.m_IdMapper.reset(mapper.release());
+                            }
+                            string bam_loader_name =
+                                CBAMDataLoader::RegisterInObjectManager(*om, params)
+                                .GetLoader()->GetName();
+                            CScope scope(*om);
+                            scope.AddDefaults();
+                            scope.AddDataLoader(bam_loader_name);
+                           
+                            CRef<CSeq_id> seqid(new CSeq_id(id[i]));
+                            CRef<CSeq_loc> loc(new CSeq_loc);
+                            loc->SetInt().SetId(*seqid);
+                            loc->SetInt().SetFrom(0);
+                            loc->SetInt().SetTo(100000);
+                            string name = annot_name[i];
+                            SAnnotSelector sel;
+                            sel.SetSearchUnresolved();
+                            sel.AddNamedAnnots(name);
+                            sel.AddNamedAnnots(name+" pileup graphs");
+                            size_t count = 0;
+                            size_t exp_count;
+                            if ( pass == 0 ) {
+                                for ( CGraph_CI it(scope, *loc, sel); it; ++it ) {
+                                    ++count;
+                                }
+                                exp_count = graph_count[i];
+                            }
+                            else {
+                                for ( CAlign_CI it(scope, *loc, sel); it; ++it ) {
+                                    ++count;
+                                }
+                                exp_count = align_count[i];
+                            }
+                            if ( count != exp_count ) {
+                                ERR_POST("MT4["<<i<<"]: "<<count<<" != "<<exp_count);
+                                BOOST_CHECK_EQUAL_MT_SAFE(count, exp_count);
+                            }
+                        }
+                        catch ( CException& exc ) {
+                            ERR_POST("MT4["<<i<<"]: "<<exc);
+                            BOOST_CHECK_EQUAL_MT_SAFE(exc.what(), "---");
+                        }
+                    }, i);
+        }
+        for ( size_t i = 0; i < BAM_COUNT; ++i ) {
+            tt[i].join();
+        }
+        CVDBUserAgentMonitor::ReportErrors();
+        BOOST_CHECK_MT_SAFE(!CVDBUserAgentMonitor::GetErrorFlags());
+    }
+}
 #endif
+
+NCBITEST_INIT_TREE()
+{
+#ifdef NCBI_THREADS
+    NCBITEST_DISABLE(CheckBAMUserAgent); // fails with current VDB library 2.10.9
+#endif
+}
