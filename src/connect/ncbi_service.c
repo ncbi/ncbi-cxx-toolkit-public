@@ -387,7 +387,7 @@ static SERV_ITER x_Open(const char*         service,
         (!do_linkerd                                                         ||
          (do_linkerd < 0  &&  !(do_linkerd = s_IsMapperConfigured
                                 (svc, REG_CONN_LINKERD_ENABLE)))             ||
-         !(op = SERV_LINKERD_Open(iter, net_info, info)))
+         !(op = SERV_LINKERD_Open(iter, net_info, info, &do_namerd)))
         &&
         (!do_namerd                                                          ||
          (do_namerd < 0  &&  !(do_namerd = s_IsMapperConfigured

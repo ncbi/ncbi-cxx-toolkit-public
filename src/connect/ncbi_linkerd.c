@@ -278,7 +278,7 @@ static void s_Close(SERV_ITER iter)
 
 
 /* Return -1 if did nothing;  0 if failed;  1 if succeeded */
-static int/*tri-state bool*/ x_SetupFromNamerd(SERV_ITER iter)
+static int/*tri-state bool*/ x_SetupFromNamerd(SERV_ITER iter, int* do_namerd)
 {
     struct SLINKERD_Data* data     = (struct SLINKERD_Data*) iter->data;
     SConnNetInfo*         net_info = data->net_info;
@@ -290,6 +290,7 @@ static int/*tri-state bool*/ x_SetupFromNamerd(SERV_ITER iter)
 
     assert(data  &&  !data->info  &&  !net_info->scheme);
     assert(!op  ||  op == &kLinkerdOp);
+    assert(*do_namerd == 1/*true*/);
 
     iter->op = 0;
     iter->data = 0;
@@ -301,6 +302,8 @@ static int/*tri-state bool*/ x_SetupFromNamerd(SERV_ITER iter)
     /* Try to open NAMERD on our own iterator */
     if ( ! (iter->op = SERV_NAMERD_Open(iter, data->net_info, 0))) {
         CORE_TRACEF(("[%s]  Failed to open NAMERD", iter->name));
+        if (iter->types == data->types)
+            *do_namerd = 0/*false*/;
         goto out;
     }
 
@@ -366,7 +369,7 @@ static int/*tri-state bool*/ x_SetupFromNamerd(SERV_ITER iter)
 }
 
 
-static int/*bool*/ x_SetupConnectionParams(SERV_ITER iter)
+static int/*bool*/ x_SetupConnectionParams(SERV_ITER iter, int* do_namerd)
 {
     SConnNetInfo* net_info = ((struct SLINKERD_Data*) iter->data)->net_info;
     char buf[40];
@@ -396,9 +399,12 @@ static int/*bool*/ x_SetupConnectionParams(SERV_ITER iter)
     }
     if (!net_info->scheme) {
         int retval;
-        if (SERV_IsMapperConfiguredInternal(iter->name,
-                                            REG_CONN_NAMERD_ENABLE)) {
-            retval =  x_SetupFromNamerd(iter);
+        /*NB: ncbi_service.c*/
+        if (!(!*do_namerd  ||
+              (*do_namerd < 0  &&  !(*do_namerd
+                                     = SERV_IsMapperConfiguredInternal
+                                     (iter->name, REG_CONN_NAMERD_ENABLE))))) {
+            retval =  x_SetupFromNamerd(iter, do_namerd);
             if (!retval)
                 return 0/*failed*/;
         } else
@@ -473,12 +479,13 @@ static int/*bool*/ x_SetupConnectionParams(SERV_ITER iter)
 
 extern const SSERV_VTable* SERV_LINKERD_Open(SERV_ITER           iter,
                                              const SConnNetInfo* net_info,
-                                             SSERV_Info**        info)
+                                             SSERV_Info**        info,
+                                             int*                do_namerd)
 {
     struct SLINKERD_Data* data;
     TSERV_TypeOnly types;
 
-    assert(iter  &&  net_info  &&  !iter->data  &&  !iter->op);
+    assert(iter  &&  net_info  &&  !iter->data  &&  !iter->op  &&  do_namerd);
     if (iter->ismask)
         return 0/*LINKERD doesn't support masks*/;
     assert(iter->name  &&  *iter->name);
@@ -523,7 +530,7 @@ extern const SSERV_VTable* SERV_LINKERD_Open(SERV_ITER           iter,
         s_Close(iter);
         return 0;
     }
-    if (!x_SetupConnectionParams(iter)) {
+    if (!x_SetupConnectionParams(iter, do_namerd)) {
         s_Close(iter);
         return 0;
     }

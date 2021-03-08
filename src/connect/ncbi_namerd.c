@@ -411,10 +411,10 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
     struct SNAMERD_Data* data = (struct SNAMERD_Data*) iter->data;
     size_t               found = 0;
     x_JSON_Value*        root = 0;
+    size_t               i, n = 0;
     const char*          response;
     x_JSON_Array*        addrs;
     const char*          type;
-    size_t               i, n;
     x_JSON_Object*       top;
 
     CORE_TRACEF(("Enter NAMERD::s_ParseResponse(\"%s\")", iter->name));
@@ -463,7 +463,8 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
         goto out;
     }
     if (strcmp(type, "bound") != 0) {
-        CORE_TRACEF(("[%s]  Service unknown: \"%s\"", iter->name, type));
+        CORE_TRACEF(("[%s]  Service unknown to NAMERD: \"%s\"",
+                     iter->name, type));
         goto out;
     }
 
