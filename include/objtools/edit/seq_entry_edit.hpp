@@ -35,6 +35,7 @@
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seq/Seq_gap.hpp>
 #include <objects/seq/Linkage_evidence.hpp>
+#include <objects/general/User_object.hpp>
 #include <objects/submit/Seq_submit.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -160,6 +161,14 @@ void AddLocalIdUserObjects(CSeq_entry& entry);
 /// the contents of the OriginalID User-object descriptor
 NCBI_XOBJEDIT_EXPORT
 bool HasRepairedIDs(const CSeq_entry& entry);
+
+/// Removes User-object descriptors of a certain type from the seq-entry
+NCBI_XOBJEDIT_EXPORT
+void RemoveUserObjectType(CSeq_entry& entry, CUser_object::EObjectType type);
+
+NCBI_XOBJEDIT_EXPORT
+void HandleCollidingIds(CSeq_entry& entry);
+
 
 NCBI_XOBJEDIT_EXPORT
 void ConvertRawToDeltaByNs(CSeq_inst& inst, 

@@ -31,7 +31,6 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbi_autoinit.hpp>
-#include <objects/general/User_object.hpp>
 #include <objects/misc/sequence_macros.hpp>
 #include <objects/pub/Pub.hpp>
 #include <objects/pub/Pub_equiv.hpp>
@@ -1715,6 +1714,40 @@ bool HasRepairedIDs(const CSeq_entry& entry)
         }
     }
     return rval;
+}
+
+
+void RemoveUserObjectType(CSeq_entry& entry, CUser_object::EObjectType type)
+{
+    if (entry.IsSeq()) {
+        CBioseq& seq = entry.SetSeq();
+        EDIT_EACH_SEQDESC_ON_BIOSEQ(desc_it, seq) {
+            if ((*desc_it)->IsUser() && (*desc_it)->GetUser().GetObjectType() == type) {
+                ERASE_SEQDESC_ON_BIOSEQ(desc_it, seq);
+            }
+        }
+    }
+    else if (entry.IsSet() && entry.GetSet().IsSetSeq_set()) {
+        CBioseq_set& set = entry.SetSet();
+        EDIT_EACH_SEQDESC_ON_SEQSET(desc_it, set) {
+            if ((*desc_it)->IsUser() && (*desc_it)->GetUser().GetObjectType() == type) {
+                ERASE_SEQDESC_ON_SEQSET(desc_it, set);
+            }
+        }
+        for (auto& entry_it : entry.SetSet().SetSeq_set()) {
+            RemoveUserObjectType(*entry_it, type);
+        }
+    }
+}
+
+
+void HandleCollidingIds(CSeq_entry& entry)
+{
+    AddLocalIdUserObjects(entry);
+    entry.ReassignConflictingIds();
+    if (!edit::HasRepairedIDs(entry)) {
+        edit::RemoveUserObjectType(entry, CUser_object::eObjectType_OriginalId);
+    }
 }
 
 

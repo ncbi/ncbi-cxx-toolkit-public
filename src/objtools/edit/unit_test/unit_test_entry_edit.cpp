@@ -385,6 +385,15 @@ BOOST_AUTO_TEST_CASE(FixCollidingIds)
     good_set->ReassignConflictingIds();
     BOOST_CHECK_EQUAL(false, edit::HasRepairedIDs(*good_set));
 
+    edit::RemoveUserObjectType(*good_set, CUser_object::eObjectType_OriginalId);
+    {
+        short count_users = 0;
+        FOR_EACH_SEQDESC_ON_SEQENTRY(desc_it, *good_set) {
+            if ((*desc_it)->IsUser() && (*desc_it)->GetUser().GetObjectType() == CUser_object::eObjectType_OriginalId)
+                count_users++;
+        }
+        BOOST_CHECK(count_users == 0);
+    }
     // fix DDBJ duplicates
     CRef<CSeq_id> id(new CSeq_id());
     id->SetDdbj().SetAccession("X");
