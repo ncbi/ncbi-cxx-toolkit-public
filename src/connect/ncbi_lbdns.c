@@ -555,11 +555,11 @@ static void x_UpdatePort(SERV_ITER iter, unsigned short port)
 }
 
 
-static void x_BlankInfo(SSERV_Info* info, TSERV_TypeOnly type)
+static void x_BlankInfo(SSERV_Info* info, ESERV_Type type)
 {
     assert(type == fSERV_Dns  ||  type == fSERV_Standalone);
     memset(info, 0, sizeof(*info));
-    info->type   = (ESERV_Type) type;
+    info->type   = type;
     info->site   = fSERV_Local;
     info->time   = LBSM_DEFAULT_TIME;
     info->mime_t = eMIME_T_Undefined;
@@ -833,7 +833,7 @@ static const unsigned char* x_ProcessReply(SERV_ITER iter,
             }
             if (!n  &&  !same_domain(fqdn, ns_rr_name(rr))) {
                 CORE_LOGF(eLOG_Warning,
-                          ("DNS reply AN %u \"%s\" mismatch QN \"%s\"",
+                          ("DNS reply AN %u \"%s\" mismatch FQDN \"%s\"",
                            c + 1, ns_rr_name(rr), fqdn));
                 continue;
             }
@@ -856,6 +856,7 @@ static const unsigned char* x_ProcessReply(SERV_ITER iter,
                 continue;
             }
             if (!n  &&  type == ns_t_srv) {
+                /*NB: FQDN match*/
                 assert(ns_rr_type(rr) == ns_t_srv);
                 rv = dns_srv(iter, msg, eom,
                              ns_rr_name(rr), ns_rr_rdlen(rr), ns_rr_rdata(rr));
@@ -869,12 +870,15 @@ static const unsigned char* x_ProcessReply(SERV_ITER iter,
                 continue;
             }
             if (!n  &&  type != ns_t_srv  &&  ns_rr_type(rr) == ns_t_txt) {
+                /*NB: FQDN match*/
                 dns_txt(iter,
                         ns_rr_name(rr), ns_rr_rdlen(rr), ns_rr_rdata(rr));
                 continue;
             }
             if (ns_rr_type(rr) != ns_t_a  &&  ns_rr_type(rr) != ns_t_aaaa)
                 continue;
+            assert(!n/*AN for ANY, so FQDN match*/
+                   ||  type == ns_t_srv/*AR for SRV*/);
             rv = dns_a(iter, type, ns_rr_type(rr),
                        ns_rr_name(rr), ns_rr_rdlen(rr), ns_rr_rdata(rr));
             if (rv)
@@ -1232,7 +1236,7 @@ static void x_Finalize(SERV_ITER iter)
             data->n_cand = 1;
         }
     }
-    CORE_TRACEF(("LBDNS done ready result-set for \"%s\": %lu",
+    CORE_TRACEF(("LBDNS ready-made result-set for \"%s\": %lu",
                  iter->name, (unsigned long) data->n_cand));
 }
 
