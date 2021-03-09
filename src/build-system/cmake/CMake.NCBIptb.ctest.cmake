@@ -164,7 +164,7 @@ function(NCBI_internal_add_cmake_test _test)
         -DNCBITEST_ASSETS=${_assets}
         -DNCBITEST_XOUTDIR=${_xoutdir}
         -DNCBITEST_WATCHER=${_watcher}
-        -DNCBITEST_PARAMS=../${NCBI_DIRNAME_TESTING}/TestParams.cmake
+        -DNCBITEST_PARAMS=${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_TESTING}/TestParams.cmake
         ${_extra}
         -P ${_root}/${NCBITEST_DRIVER}
         WORKING_DIRECTORY .
@@ -217,9 +217,9 @@ function(NCBI_internal_FinalizeCMakeTest)
 
     # Directories
     
-    string(APPEND _info "set(NCBITEST_BINDIR ../${NCBI_DIRNAME_RUNTIME})\n")
-    string(APPEND _info "set(NCBITEST_LIBDIR ../${NCBI_DIRNAME_ARCHIVE})\n")
-    string(APPEND _info "set(NCBITEST_OUTDIR ../${NCBI_DIRNAME_TESTING})\n")
+    string(APPEND _info "set(NCBITEST_BINDIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})\n")
+    string(APPEND _info "set(NCBITEST_LIBDIR ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY})\n")
+    string(APPEND _info "set(NCBITEST_OUTDIR ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_TESTING})\n")
     string(APPEND _info "set(NCBITEST_SOURCEDIR ${NCBI_SRC_ROOT})\n")
     string(APPEND _info "set(NCBITEST_SCRIPTDIR ${_root}/${NCBI_DIRNAME_SCRIPTS})\n")
     string(APPEND _info "\n")
