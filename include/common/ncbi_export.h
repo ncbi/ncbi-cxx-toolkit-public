@@ -408,14 +408,6 @@
 #  define NCBI_DBAPIDRIVER_CTLIB_EXPORT NCBI_DLL_IMPORT
 #endif
 
-/* Export specifier for library dbapi_driver_dblib
- */
-#ifdef NCBI_DBAPIDRIVER_DBLIB_EXPORTS
-#  define NCBI_DBAPIDRIVER_DBLIB_EXPORT NCBI_DLL_EXPORT
-#else
-#  define NCBI_DBAPIDRIVER_DBLIB_EXPORT NCBI_DLL_IMPORT
-#endif
-
 /* Export specifier for library dbapi_driver_mysql
  */
 #ifdef NCBI_DBAPIDRIVER_MYSQL_EXPORTS

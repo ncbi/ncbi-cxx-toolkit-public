@@ -5,7 +5,6 @@ DLL = _ncbi
 HOSTED_LIBS    = _ncbi
 
 DEPENDENCIES   = ncbi_xdbapi_ctlib    \
-                 ncbi_xdbapi_dblib    \
                  ncbi_xdbapi_mysql    \
                  ncbi_xdbapi_odbc     \
                  ncbi_algo             \
@@ -43,6 +42,4 @@ DEPENDENCIES   = ncbi_xdbapi_ctlib    \
                  ncbi_xreader_cache    \
                  dbapi_util_blobstore \
                  \
-                 gui_objects gui_core gui_utils gui_config gui_graph \
-                 \
-                 ncbi_xdbapi_ftds64
+                 gui_objects gui_core gui_utils gui_config gui_graph

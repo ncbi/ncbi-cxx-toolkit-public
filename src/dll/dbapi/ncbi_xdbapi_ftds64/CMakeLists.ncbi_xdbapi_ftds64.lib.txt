@@ -1,8 +1,0 @@
-# $Id$
-
-NCBI_begin_lib(ncbi_xdbapi_ftds64 SHARED)
-  NCBI_hosts_projects(
-    dbapi/driver/ftds64/ctlib/ncbi_xdbapi_ftds64
-  )
-  NCBI_add_definitions(NCBI_DBAPIDRIVER_CTLIB_EXPORTS)
-NCBI_end_lib()
