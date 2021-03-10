@@ -1,7 +1,0 @@
-# $Id$
-
-NCBI_begin_app(odbc95_testodbc)
-  NCBI_sources(testodbc common)
-  NCBI_add_test(test-odbc95 --no-auto odbc95_testodbc)
-NCBI_end_app()
-

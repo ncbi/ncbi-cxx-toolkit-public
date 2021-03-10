@@ -1,9 +1,0 @@
-# $Id$
-
-NCBI_begin_app(odbc95_attributes)
-  NCBI_sources(attributes  common)
-  NCBI_add_definitions(NEED_FREETDS_SRCDIR)
-  NCBI_set_test_assets(odbc.ini attributes.in)
-  NCBI_add_test(test-odbc95 odbc95_attributes)
-NCBI_end_app()
-

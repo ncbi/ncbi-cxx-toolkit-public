@@ -7,5 +7,5 @@ WATCHERS = ucko satskyse
 
 
 
-USES_LIBRARIES = ncbi_xdbapi_ftds ncbi_xdbapi_ftds95 ncbi_xdbapi_ftds100 \
+USES_LIBRARIES = ncbi_xdbapi_ftds ncbi_xdbapi_ftds100 \
                  dbapi $(XCONNEXT) xconnect

@@ -1,9 +1,0 @@
-# $Id$
-
-NCBI_begin_lib(sybdb_ftds95)
-  NCBI_sources(dblib dbutil rpc bcp xact dbpivot dbopen)
-  NCBI_add_definitions(_FREETDS_LIBRARY_SOURCE HAVE_CONFIG_H=1)
-  NCBI_uses_toolkit_libraries(tds_ftds95)
-  NCBI_project_watchers(ucko satskyse)
-NCBI_end_lib()
-

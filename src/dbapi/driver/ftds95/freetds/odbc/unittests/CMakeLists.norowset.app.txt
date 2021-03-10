@@ -1,7 +1,0 @@
-# $Id$
-
-NCBI_begin_app(odbc95_norowset)
-  NCBI_sources(norowset common)
-  NCBI_add_test(test-odbc95 --no-auto odbc95_norowset)
-NCBI_end_app()
-

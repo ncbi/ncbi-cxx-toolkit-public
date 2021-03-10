@@ -1,7 +1,0 @@
-# $Id$
-
-NCBI_begin_app(tds95_mutex1)
-  NCBI_sources(mutex1)
-  NCBI_add_test()
-NCBI_end_app()
-

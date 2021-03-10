@@ -1,8 +1,0 @@
-# $Id$
-
-NCBI_begin_app(db95_t0006)
-  NCBI_sources(t0006 common)
-  NCBI_set_test_assets(t0006.sql)
-  NCBI_add_test(test-db95 db95_t0006)
-NCBI_end_app()
-

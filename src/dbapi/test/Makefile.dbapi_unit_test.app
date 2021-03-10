@@ -8,7 +8,7 @@ SRC = dbapi_unit_test dbapi_unit_test_object dbapi_unit_test_lob dbapi_unit_test
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
-LIB  = ncbi_xdbapi_ftds ncbi_xdbapi_ftds95 $(FTDS95_LIB) \
+LIB  = ncbi_xdbapi_ftds
        ncbi_xdbapi_ftds100 $(FTDS100_LIB) $(DBAPI_CTLIB) $(DBAPI_ODBC) \
        dbapi$(STATIC) dbapi_util_blobstore$(STATIC) dbapi_driver$(STATIC) \
        $(XCONNEXT) xconnect $(COMPRESS_LIBS) xutil test_boost xncbi
@@ -24,16 +24,12 @@ CHECK_COPY = dbapi_unit_test.ini namerd.ini
 
 CHECK_TIMEOUT = 600
 
-CHECK_CMD = dbapi_unit_test -dr ftds95     -S MsSql
-CHECK_CMD = dbapi_unit_test -dr ftds95     -S MsSql -V 72
 CHECK_CMD = dbapi_unit_test -dr ftds100    -S MsSql
 CHECK_CMD = dbapi_unit_test -dr ftds100    -S MsSql -V 74
 CHECK_CMD = dbapi_unit_test -dr odbc       -S MsSql --log_level=test_suite
 CHECK_CMD = dbapi_unit_test -dr ctlib      -S Sybase
-CHECK_CMD = dbapi_unit_test -dr ftds95     -S Sybase
 CHECK_CMD = dbapi_unit_test -dr ftds100    -S Sybase
 CHECK_CMD = dbapi_unit_test -dr ctlib      -S DBAPI_DEV16_16K
-CHECK_CMD = dbapi_unit_test -dr ftds95     -S DBAPI_DEV16_16K
 CHECK_CMD = dbapi_unit_test -dr ftds100    -S DBAPI_DEV16_16K
 
 # Test for successful NAMERD service name resolution by using a service name

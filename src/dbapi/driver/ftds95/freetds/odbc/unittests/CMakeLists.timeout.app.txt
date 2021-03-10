@@ -1,7 +1,0 @@
-# $Id$
-
-NCBI_begin_app(odbc95_timeout)
-  NCBI_sources(timeout common)
-  NCBI_add_test(test-odbc95 --no-auto odbc95_timeout)
-NCBI_end_app()
-

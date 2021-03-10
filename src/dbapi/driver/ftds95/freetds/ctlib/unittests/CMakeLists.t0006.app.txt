@@ -1,7 +1,0 @@
-# $Id$
-
-NCBI_begin_app(ct95_t0006)
-  NCBI_sources(t0006)
-  NCBI_add_test()
-NCBI_end_app()
-

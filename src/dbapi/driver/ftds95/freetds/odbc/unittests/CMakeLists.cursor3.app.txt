@@ -1,7 +1,0 @@
-# $Id$
-
-NCBI_begin_app(odbc95_cursor3)
-  NCBI_sources(cursor3 common)
-  NCBI_add_test(test-odbc95 odbc95_cursor3)
-NCBI_end_app()
-

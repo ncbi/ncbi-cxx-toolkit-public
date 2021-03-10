@@ -1,7 +1,0 @@
-# $Id$
-
-NCBI_begin_app(tds95_strings)
-  NCBI_sources(strings)
-  NCBI_add_test()
-NCBI_end_app()
-

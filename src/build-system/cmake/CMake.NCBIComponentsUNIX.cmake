@@ -235,13 +235,6 @@ set(SYBASE_DBLIBS "${SYBASE_LIBS}")
 # FreeTDS
 # FIXME: do we need these anymore?
 #
-set(ftds95   ftds95)
-set(FTDS95_CTLIB_LIBS  ${ICONV_LIBS} ${KRB5_LIBS})
-set(FTDS95_CTLIB_LIB   ct_ftds95 tds_ftds95)
-set(FTDS95_CTLIB_INCLUDE ${includedir}/dbapi/driver/ftds95/freetds)
-set(FTDS95_LIBS        ${FTDS95_CTLIB_LIBS})
-set(FTDS95_LIB        ${FTDS95_CTLIB_LIB})
-set(FTDS95_INCLUDE    ${FTDS95_CTLIB_INCLUDE})
 
 set(ftds100   ftds100)
 set(FTDS100_CTLIB_LIBS  ${ICONV_LIBS} ${KRB5_LIBS})

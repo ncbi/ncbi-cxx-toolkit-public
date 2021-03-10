@@ -1,7 +1,0 @@
-# $Id$
-
-NCBI_begin_app(odbc95_cancel)
-  NCBI_sources(cancel common)
-  NCBI_add_test(test-odbc95 --no-auto odbc95_cancel)
-NCBI_end_app()
-

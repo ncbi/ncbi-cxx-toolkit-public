@@ -1,7 +1,0 @@
-# $Id$
-
-NCBI_begin_app(tds95_charconv)
-  NCBI_sources(charconv)
-  NCBI_add_test()
-NCBI_end_app()
-

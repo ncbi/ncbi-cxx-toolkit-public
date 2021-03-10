@@ -1,9 +1,0 @@
-# $Id$
-
-NCBI_begin_app(tds95_readconf)
-  NCBI_sources(readconf common)
-  NCBI_add_definitions(NEED_FREETDS_SRCDIR)
-  NCBI_set_test_assets(readconf.in)
-  NCBI_add_test()
-NCBI_end_app()
-

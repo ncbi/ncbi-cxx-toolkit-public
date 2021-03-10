@@ -1,8 +1,0 @@
-# $Id$
-
-NCBI_begin_app(odbc95_connect)
-  NCBI_sources(connect common)
-  NCBI_set_test_assets(freetds.conf odbc.ini)
-  NCBI_add_test(test-odbc95 --set-env FREETDSCONF=freetds.conf odbc95_connect)
-NCBI_end_app()
-

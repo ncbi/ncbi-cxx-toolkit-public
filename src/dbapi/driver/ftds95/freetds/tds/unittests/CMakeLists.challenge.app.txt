@@ -1,7 +1,0 @@
-# $Id$
-
-NCBI_begin_app(tds95_challenge)
-  NCBI_sources(challenge common)
-  NCBI_add_test()
-NCBI_end_app()
-

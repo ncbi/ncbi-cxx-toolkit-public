@@ -1,7 +1,0 @@
-# $Id$
-
-NCBI_begin_app(tds95_utf8_2)
-  NCBI_sources(utf8_2 common)
-  NCBI_add_test(test-tds95 tds95_utf8_2)
-NCBI_end_app()
-

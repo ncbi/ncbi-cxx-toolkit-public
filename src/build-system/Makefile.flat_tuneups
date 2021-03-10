@@ -55,13 +55,11 @@ all_dirs ?= $(expendable_dirs) $(spec_bearing_dirs) $(plain_dirs)
 # Lists of directories in any branch which can benefit from the
 # aforementioned hints because some of their projects have files in common.
 
-ftds95_ut  = ctlib dblib odbc tds
 ftds100_ut = ctlib dblib odbc tds
 
 main_hintees = algo/cobalt/demo app/grid/remote_app cgi connect \
     connect/daemons connect/ext connect/test dbapi/driver/ctlib/samples \
-    dbapi/driver/ftds95/ctlib/samples dbapi/driver/ftds100/ctlib/samples \
-    $(ftds95_ut:%=dbapi/driver/ftds95/freetds/%/unittests) \
+    dbapi/driver/ftds100/ctlib/samples \
     $(ftds100_ut:%=dbapi/driver/ftds100/freetds/%/unittests) \
     dbapi/test dbapi/test/driver objmgr/test \
     sample/app/cgi sample/app/cgi/cgires

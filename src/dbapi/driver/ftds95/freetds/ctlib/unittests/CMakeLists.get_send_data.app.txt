@@ -1,7 +1,0 @@
-# $Id$
-
-NCBI_begin_app(ct95_get_send_data)
-  NCBI_sources(get_send_data common)
-  NCBI_add_test(test-ct95 --ms-ver 7.1 ct95_get_send_data)
-NCBI_end_app()
-

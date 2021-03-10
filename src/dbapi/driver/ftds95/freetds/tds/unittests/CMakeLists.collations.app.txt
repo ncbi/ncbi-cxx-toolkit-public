@@ -1,6 +1,0 @@
-# $Id$
-
-NCBI_begin_app(tds95_collations)
-  NCBI_sources(collations common)
-NCBI_end_app()
-

@@ -1,7 +1,0 @@
-# $Id$
-
-NCBI_begin_app(db95_hang)
-  NCBI_sources(hang common)
-  NCBI_add_test(test-db95 db95_hang)
-NCBI_end_app()
-

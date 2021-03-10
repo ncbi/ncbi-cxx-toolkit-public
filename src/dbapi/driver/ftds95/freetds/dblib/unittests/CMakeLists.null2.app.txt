@@ -1,7 +1,0 @@
-# $Id$
-
-NCBI_begin_app(db95_null2)
-  NCBI_sources(null2 common)
-  NCBI_add_test(test-db95 db95_null2)
-NCBI_end_app()
-

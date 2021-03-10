@@ -1,7 +1,0 @@
-# $Id$
-
-NCBI_begin_app(db95_thread)
-  NCBI_sources(thread common)
-  NCBI_add_test(test-db95 --no-auto db95_thread)
-NCBI_end_app()
-

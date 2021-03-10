@@ -1,9 +1,0 @@
-# $Id$
-
-NCBI_begin_lib(ncbi_xdbapi_ftds95 SHARED)
-  NCBI_sources(bcp connection context cursor lang_cmd result rpc ftds95_ctlib_utils)
-  NCBI_add_definitions(FTDS_IN_USE NCBI_DBAPIDRIVER_CTLIB_EXPORTS)
-  NCBI_uses_toolkit_libraries(ct_ftds95 dbapi_driver)
-  NCBI_project_watchers(ucko satskyse)
-NCBI_end_lib()
-

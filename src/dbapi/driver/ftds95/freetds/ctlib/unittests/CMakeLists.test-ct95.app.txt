@@ -1,7 +1,0 @@
-# $Id$
-
-NCBI_begin_app(test-ct95)
-  NCBI_sources(test-ct95)
-  NCBI_uses_toolkit_libraries(xncbi)
-NCBI_end_app()
-

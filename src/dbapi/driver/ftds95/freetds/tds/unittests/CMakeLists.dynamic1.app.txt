@@ -1,7 +1,0 @@
-# $Id$
-
-NCBI_begin_app(tds95_dynamic1)
-  NCBI_sources(dynamic1 common)
-  NCBI_add_test(test-tds95 tds95_dynamic1)
-NCBI_end_app()
-

@@ -1,7 +1,0 @@
-# $Id$
-
-NCBI_begin_app(ct95_cancel)
-  NCBI_sources(cancel common)
-  NCBI_add_test(test-ct95 ct95_cancel)
-NCBI_end_app()
-

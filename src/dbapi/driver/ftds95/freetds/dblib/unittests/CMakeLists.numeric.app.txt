@@ -1,8 +1,0 @@
-# $Id$
-
-NCBI_begin_app(db95_numeric)
-  NCBI_sources(numeric common)
-  NCBI_set_test_assets(numeric.sql numeric_2.sql)
-  NCBI_add_test(test-db95 --no-auto db95_numeric)
-NCBI_end_app()
-

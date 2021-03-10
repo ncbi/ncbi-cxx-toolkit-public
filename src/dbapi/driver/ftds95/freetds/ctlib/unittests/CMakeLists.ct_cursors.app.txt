@@ -1,7 +1,0 @@
-# $Id$
-
-NCBI_begin_app(ct95_ct_cursors)
-  NCBI_sources(ct_cursors common)
-  NCBI_add_test(test-ct95 ct95_ct_cursors)
-NCBI_end_app()
-

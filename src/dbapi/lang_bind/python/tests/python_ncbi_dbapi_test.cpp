@@ -104,7 +104,7 @@ ExecuteSQL(const string& sql)
 
 NCBITEST_INIT_CMDLINE(arg_desc)
 {
-#define ALL_DRIVERS   "ctlib", "ftds", "ftds95", "ftds100", "odbc"
+#define ALL_DRIVERS   "ctlib", "ftds", "ftds100", "odbc"
 #if defined(NCBI_OS_MSWIN)
 #define DEF_SERVER    "MSDEV1"
 #define DEF_DRIVER    "ftds"

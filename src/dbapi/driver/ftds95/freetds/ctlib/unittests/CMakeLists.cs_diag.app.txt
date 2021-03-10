@@ -1,7 +1,0 @@
-# $Id$
-
-NCBI_begin_app(ct95_cs_diag)
-  NCBI_sources(cs_diag common)
-  NCBI_add_test()
-NCBI_end_app()
-

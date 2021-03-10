@@ -1,7 +1,0 @@
-# $Id$
-
-NCBI_begin_app(ct95_blk_out)
-  NCBI_sources(blk_out common)
-  NCBI_add_test(test-ct95 ct95_blk_out)
-NCBI_end_app()
-

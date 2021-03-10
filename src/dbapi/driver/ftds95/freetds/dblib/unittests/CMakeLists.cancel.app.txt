@@ -1,8 +1,0 @@
-# $Id$
-
-NCBI_begin_app(db95_cancel)
-  NCBI_sources(cancel common)
-  NCBI_set_test_assets(cancel.sql)
-  NCBI_add_test(test-db95 db95_cancel)
-NCBI_end_app()
-

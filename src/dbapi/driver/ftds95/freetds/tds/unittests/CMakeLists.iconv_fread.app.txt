@@ -1,7 +1,0 @@
-# $Id$
-
-NCBI_begin_app(tds95_iconv_fread)
-  NCBI_sources(iconv_fread)
-  NCBI_add_test()
-NCBI_end_app()
-

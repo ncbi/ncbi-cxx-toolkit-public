@@ -1,7 +1,0 @@
-# $Id$
-
-NCBI_begin_app(odbc95_print)
-  NCBI_sources(print common)
-  NCBI_add_test(test-odbc95 odbc95_print)
-NCBI_end_app()
-
