@@ -1366,7 +1366,9 @@ void CCgiRequest::x_ProcessInputStream(TFlags flags, CNcbiIstream* istr, int ifd
                 try {
                     ParseRemainingContent();
                 } NCBI_CATCH_ALL_X(8, "CCgiRequest: POST/PUT with no content type");
-                CStreamUtils::Pushback(*istr, pstr->data(), pstr->length());
+                if (pstr) {
+                    CStreamUtils::Pushback(*istr, pstr->data(), pstr->length());
+                }
                 m_Input    = istr;
                 // m_InputFD  = ifd; // would be exhausted
                 m_InputFD  = -1;
