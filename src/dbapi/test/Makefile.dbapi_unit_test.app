@@ -8,7 +8,7 @@ SRC = dbapi_unit_test dbapi_unit_test_object dbapi_unit_test_lob dbapi_unit_test
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
-LIB  = ncbi_xdbapi_ftds
+LIB  = ncbi_xdbapi_ftds \
        ncbi_xdbapi_ftds100 $(FTDS100_LIB) $(DBAPI_CTLIB) $(DBAPI_ODBC) \
        dbapi$(STATIC) dbapi_util_blobstore$(STATIC) dbapi_driver$(STATIC) \
        $(XCONNEXT) xconnect $(COMPRESS_LIBS) xutil test_boost xncbi
