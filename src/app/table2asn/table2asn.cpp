@@ -99,7 +99,7 @@ namespace {
 };
 
 
-static void s_FailOnMissingInput(const string& specifics, IObjtoolsListener& listener)
+static void s_FailOnBadInput(const string& specifics, IObjtoolsListener& listener)
 {
     listener.PutMessage(CObjtoolsMessage(specifics, eDiag_Fatal));
     throw CMissingInputException();
@@ -189,6 +189,8 @@ private:
     CRef<CTable2AsnLogger> m_logger;
     unique_ptr<CForeignContaminationScreenReportReader> m_fcs_reader;
     CTable2AsnContext    m_context;
+
+    static const Int8 TBL2ASN_MAX_ALLOWED_FASTA_SIZE = INT8_C(0x7FFFFFFF);
 };
 
 
@@ -810,7 +812,7 @@ int CTbl2AsnApp::Run(void)
         if (args["f"]) {
             string annot_file = args["f"].AsString();
             if (!CFile(annot_file).Exists()) {
-                s_FailOnMissingInput(
+                s_FailOnBadInput(
                     "The specified annotation file \"" + annot_file + "\" does not exist.", 
                     *m_logger);
             }
@@ -819,7 +821,7 @@ int CTbl2AsnApp::Run(void)
         if (args["src-file"]) {
             string src_file = args["src-file"].AsString();
             if (!CFile(src_file).Exists()) {
-                s_FailOnMissingInput(
+                s_FailOnBadInput(
                     "The specified source qualifier file \"" + src_file + "\" does not exist.", 
                     *m_logger);
             }
@@ -830,12 +832,21 @@ int CTbl2AsnApp::Run(void)
         if (args["i"])
         {
             m_context.m_current_file = args["i"].AsString();
-            if (!CFile(m_context.m_current_file).Exists()) {
-                s_FailOnMissingInput(
+            CFile argAsFile(m_context.m_current_file);
+            if (!argAsFile.Exists()) {
+                s_FailOnBadInput(
                     "The specified input file \"" + m_context.m_current_file + "\" does not exist.", 
                     *m_logger);
             }
-             ProcessOneFile();
+            if (argAsFile.GetLength() > TBL2ASN_MAX_ALLOWED_FASTA_SIZE) {
+                if (CFormatGuess::Format(m_context.m_current_file) == CFormatGuess::eFasta) {
+                    s_FailOnBadInput(
+                        "The specified input file \"" + m_context.m_current_file + "\" is too long.", 
+                        *m_logger);
+                }
+            }
+                
+            ProcessOneFile();
         }
         else
         if (args["indir"]) 
@@ -844,7 +855,7 @@ int CTbl2AsnApp::Run(void)
             string indir = args["indir"].AsString();
             CDir directory(indir);
             if (!directory.Exists()) {
-                s_FailOnMissingInput(
+                s_FailOnBadInput(
                     "The specified input directory \"" + indir + "\" does not exist.", 
                     *m_logger);
             }
@@ -863,7 +874,7 @@ int CTbl2AsnApp::Run(void)
         if (args["aln-file"]) {
             m_context.m_current_file = args["aln-file"].AsString();
             if (!CFile(m_context.m_current_file).Exists()) {
-                s_FailOnMissingInput(
+                s_FailOnBadInput(
                     "The specified alignment file \"" + m_context.m_current_file + "\" does not exist.", 
                     *m_logger);
             }
