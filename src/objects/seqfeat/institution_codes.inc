@@ -2152,6 +2152,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "FIOC\ts\tFundacao Instituto Oswaldo Cruz\t\t\t",
 "FIOC:ColTryp\tc\tFundacao Instituto Oswaldo Cruz, Collection of Trypanosoma from Wild and Domestic Mammals and Vectors\t\t",
 "Fiocruz/COLPROT\tc\tColecao de Protozoarios da FIOCRUZ\t\t\t",
+"Fiocruz/COLTRYP\ts\tColecao de Trypanosoma de Mamiferos Silvestres, Domesticos e Vetores\t\t\t",
 "FIP\ts\tFlorida Institute of Paleontology\t\t\t",
 "FIPF\ts\tUniversita di Firenze\t\t\t",
 "FIPIA\ts\tInstitut Teknologi Bandung, Jurusan Biologi\t\t\t",

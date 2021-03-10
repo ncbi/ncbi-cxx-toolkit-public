@@ -2119,6 +2119,7 @@ FINH	s	The Falkland Islands National Herbarium
 FIOC	s	Fundacao Instituto Oswaldo Cruz			
 FIOC:ColTryp	c	Fundacao Instituto Oswaldo Cruz, Collection of Trypanosoma from Wild and Domestic Mammals and Vectors		
 Fiocruz/COLPROT	c	Colecao de Protozoarios da FIOCRUZ			
+Fiocruz/COLTRYP	s	Colecao de Trypanosoma de Mamiferos Silvestres, Domesticos e Vetores			
 FIP	s	Florida Institute of Paleontology			
 FIPF	s	Universita di Firenze			
 FIPIA	s	Institut Teknologi Bandung, Jurusan Biologi			
