@@ -534,12 +534,12 @@ bool CTL_Connection::IsAlive()
 void 
 CTL_Connection::SetTimeout(size_t nof_secs)
 {
-    // DATABASE_DRIVER_ERROR( "SetTimeout is not supported.", 100011 );
-#ifdef FTDS_IN_USE
-    x_GetSybaseConn()->tds_socket->query_timeout = nof_secs;
-#else
-    _TRACE("SetTimeout is not supported.");
-#endif
+    CS_INT timeout = nof_secs ? (CS_INT) nof_secs : CS_NO_LIMIT;
+    CS_RETCODE rc = ct_con_props(x_GetSybaseConn(), CS_SET, CS_TIMEOUT,
+                                 &timeout, CS_UNUSED, nullptr);
+    if (rc != CS_SUCCEED) {
+        _TRACE("SetTimeout is not supported.");
+    }
 }
 
 
@@ -553,11 +553,14 @@ CTL_Connection::SetCancelTimeout(size_t nof_secs)
 size_t
 CTL_Connection::GetTimeout(void) const
 {
-#ifdef FTDS_IN_USE
-    return x_GetSybaseConn()->tds_socket->query_timeout;
-#else
-    return GetCTLibContext().GetTimeout();
-#endif
+    CS_INT timeout = 0, outlen = sizeof(timeout);
+    CS_RETCODE rc = ct_con_props(x_GetSybaseConn(), CS_GET, CS_TIMEOUT,
+                                 &timeout, CS_UNUSED, &outlen);
+    if (rc == CS_SUCCEED  &&  outlen == sizeof(timeout)) {
+        return timeout == CS_NO_LIMIT ? 0 : timeout;
+    } else {
+        return GetCTLibContext().GetTimeout();
+    }
 }
 
 
@@ -571,13 +574,9 @@ size_t
 CTL_Connection::PrepareToCancel(void)
 {
     m_CancelInProgress = true;
-#ifdef FTDS_IN_USE
-    size_t was_timeout = x_GetSybaseConn()->tds_socket->query_timeout;
-    x_GetSybaseConn()->tds_socket->query_timeout = GetCTLibContext().GetCancelTimeout();
+    size_t was_timeout = GetTimeout();
+    SetTimeout(GetCTLibContext().GetCancelTimeout());
     return was_timeout;
-#else
-    return 0;
-#endif
 }
 
 
@@ -585,9 +584,7 @@ void
 CTL_Connection::CancelFinished(size_t was_timeout)
 {
     m_CancelInProgress = false;
-#ifdef FTDS_IN_USE
-    x_GetSybaseConn()->tds_socket->query_timeout = was_timeout;
-#endif
+    SetTimeout(was_timeout);
 }
 
 
