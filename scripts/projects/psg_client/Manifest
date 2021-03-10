@@ -24,7 +24,7 @@ APP: psg_client
 # --with-mt - ?
 # --with-symbols - otherwise stripped?
 
-Linux64-Centos         : Release : GCC.sh --without-debug --with-optimization --with-symbols --with-mt --without-bdb --without-runpath
-Linux64-Centos         : Debug : GCC.sh --with-debug --with-mt --without-bdb  --without-runpath --without-dll --with-bin-release
+Linux64-Centos         : Release : GCC.sh --without-debug --with-optimization --with-symbols --with-mt --without-bdb --without-runpath --without-dll --with-bin-release --with-local-lbsm --with-connext
+Linux64-Centos         : Debug : GCC.sh --with-debug --with-mt --without-bdb  --without-runpath
 Linux64-Ubuntu         : Release : GCC.sh --without-debug --with-optimization --with-symbols --with-mt --without-bdb --without-runpath
-Linux64-Ubuntu         : Debug : GCC.sh --with-debug --with-mt --without-bdb  --without-runpath --with-local-lbsm --with-connext
+Linux64-Ubuntu         : Debug : GCC.sh --with-debug --with-mt --without-bdb  --without-runpath
