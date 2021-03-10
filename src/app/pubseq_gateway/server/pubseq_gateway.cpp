@@ -79,7 +79,9 @@ const unsigned int      kTimeoutDefault = 30000;
 const unsigned int      kMaxRetriesDefault = 1;
 const unsigned int      kMaxRetriesMin = 0;
 const unsigned int      kMaxRetriesMax = UINT_MAX;
+const EDiagSev          kDefaultSeverity = eDiag_Critical;
 const bool              kDefaultLog = true;
+const bool              kDefaultTrace = false;
 const string            kDefaultRootKeyspace = "sat_info";
 const unsigned int      kDefaultExcludeCacheMaxSize = 1000;
 const unsigned int      kDefaultExcludeCachePurgePercentage = 20;
@@ -103,7 +105,11 @@ static const string     kDaemonizeArgName = "daemonize";
 
 // Memorize the configured severity level to check before using ERR_POST.
 // Otherwise some expensive operations are executed without a real need.
-EDiagSev                g_ConfiguredSeverity = eDiag_Critical;
+EDiagSev                g_ConfiguredSeverity = kDefaultSeverity;
+
+// Memorize the configured tracing to check before using ERR_POST.
+// Otherwise some expensive operations are executed without a real need.
+bool                    g_Trace = kDefaultTrace;
 
 // Memorize the configured log on/off flag.
 // It is used in the context resetter to avoid unnecessary context resets
@@ -175,6 +181,9 @@ void CPubseqGatewayApp::Init(void)
 
     // Memorize the configured severity
     g_ConfiguredSeverity = GetDiagPostLevel();
+
+    // Memorize the configure trace
+    g_Trace = GetDiagTrace();
 }
 
 

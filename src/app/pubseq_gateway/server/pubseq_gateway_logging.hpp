@@ -36,37 +36,38 @@
 USING_NCBI_SCOPE;
 
 
-extern EDiagSev  g_ConfiguredSeverity;
+extern EDiagSev     g_ConfiguredSeverity;
+extern bool         g_Trace;
 
 
 #define PSG_TRACE(message)                          \
     do {                                            \
-        if (g_ConfiguredSeverity == eDiag_Trace)    \
+        if (g_Trace)                                \
             ERR_POST(Trace << message);             \
     } while (0)
 
-#define PSG_INFO(message)                                                               \
-    do {                                                                                \
-        if (g_ConfiguredSeverity == eDiag_Trace || g_ConfiguredSeverity == eDiag_Info)  \
-            ERR_POST(Info << message);                                                  \
+#define PSG_INFO(message)                           \
+    do {                                            \
+        if (g_ConfiguredSeverity == eDiag_Info)     \
+            ERR_POST(Info << message);              \
     } while (0)
 
-#define PSG_WARNING(message) \
-    do {                                                                                    \
-        if (g_ConfiguredSeverity == eDiag_Trace || (g_ConfiguredSeverity <= eDiag_Warning)) \
-            ERR_POST(Warning << message);                                                   \
+#define PSG_WARNING(message)                        \
+    do {                                            \
+        if (g_ConfiguredSeverity <= eDiag_Warning)  \
+            ERR_POST(Warning << message);           \
     } while (0)
 
-#define PSG_ERROR(message)                                                                  \
-    do {                                                                                    \
-        if (g_ConfiguredSeverity == eDiag_Trace || (g_ConfiguredSeverity <= eDiag_Error))   \
-            ERR_POST(message);                                                              \
+#define PSG_ERROR(message)                          \
+    do {                                            \
+        if (g_ConfiguredSeverity <= eDiag_Error)    \
+            ERR_POST(message);                      \
     } while (0)
 
-#define PSG_CRITICAL(message)                                                                   \
-    do {                                                                                        \
-        if (g_ConfiguredSeverity == eDiag_Trace || (g_ConfiguredSeverity <= eDiag_Critical))    \
-            ERR_POST(Critical << message);                                                      \
+#define PSG_CRITICAL(message)                       \
+    do {                                            \
+        if (g_ConfiguredSeverity <= eDiag_Critical) \
+            ERR_POST(Critical << message);          \
     } while (0)
 
 #define PSG_MESSAGE(message)                        \
