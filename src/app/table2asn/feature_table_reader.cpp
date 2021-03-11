@@ -1756,7 +1756,7 @@ CRef<CDelta_seq> CFeatureTableReader::MakeGap(objects::CBioseq& bioseq, const CS
         gap_length++;
     }
 
-    CGapsEditor gap_edit(gap_type, evidences, 0, 0);
+    CGapsEditor gap_edit(gap_type, evidences, 0, 100);
     //return gap_edit.CreateGap((CBioseq&)*bsh.GetEditHandle().GetCompleteBioseq(), gap_start, gap_length);
     return gap_edit.CreateGap(bioseq, gap_start, gap_length);
 }
