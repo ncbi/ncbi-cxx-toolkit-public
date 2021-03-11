@@ -449,7 +449,7 @@ void CGFFReader::x_ParseTypeComment(const TStr& moltype, const TStr& seqname)
 
 void CGFFReader::x_ReadFastaSequences(ILineReader& in)
 {
-    CFastaReader reader(in, fReadFasta_AssumeNuc);
+    CFastaReader reader(in, CFastaReader::fAssumeNuc);
     CRef<CSeq_entry> seqs = reader.ReadSet();
     for (CTypeIterator<CBioseq> it(*seqs);  it;  ++it) {
         if (it->GetId().empty()) { // can this happen?

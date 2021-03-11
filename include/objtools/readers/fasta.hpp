@@ -173,14 +173,6 @@ public:
     /// Re-allow previously seen IDs even if fUniqueIds is on.
     //void ResetIDTracker(void) { m_IDTracker.clear(); }
     void ResetIDTracker(void) { m_IDHandler->ClearIdCache(); }
-    
-    NCBI_DEPRECATED const CSourceModParser::TMods & GetUnusedMods(void) const { return m_UnusedMods; }
-    NCBI_DEPRECATED const CSourceModParser::TMods & GetBadMods(void) const { return m_BadMods; }
-    NCBI_DEPRECATED void  ClearBadMods(void) {}
-
-    NCBI_DEPRECATED void SetModFilter( CRef<CSourceModParser::CModFilter> /*pModFilter*/ ) {}
-
-    NCBI_DEPRECATED void SetModFilter(FModFilter) {}
 
     void SetExcludedMods(const vector<string>& excluded_mods);
 
@@ -237,25 +229,13 @@ protected:
     };
 
 
-    NCBI_DEPRECATED virtual CRef<CSeq_entry> x_ReadSegSet(ILineErrorListener * pMessageListener);
-
     virtual void ParseDefLine (const TStr& s, ILineErrorListener * pMessageListener);
-
-    NCBI_STD_DEPRECATED("Superseded by CFastaDeflineReader::ParseIDs(). Not used by non-static CFastaReader::ParseDefLine().") 
-    virtual bool ParseIDs(const TStr& s, ILineErrorListener * pMessageListener);
 
     virtual void PostProcessIDs(const CBioseq::TId& defline_ids, 
         const string& defline,
         bool has_range=false,
         TSeqPos range_start=kInvalidSeqPos,
         TSeqPos range_end=kInvalidSeqPos);
-
-    NCBI_STD_DEPRECATED("Superseded by CFastaDeflineReader::ParseIDs(). Not used by static CFastaReader::ParseDefLine().") 
-    static bool ParseIDs (const TStr& s, 
-        const SDefLineParseInfo& info,
-        const TIgnoredProblems& ignoredErrors,
-        list<CRef<CSeq_id>>& ids, 
-        ILineErrorListener* pMessageListener);
 
     static size_t ParseRange    (const TStr& s, TSeqPos& start, TSeqPos& end, ILineErrorListener * pMessageListener);
     virtual void   ParseTitle    (const SLineTextAndLoc & lineInfo, ILineErrorListener * pMessageListener);
@@ -274,16 +254,11 @@ protected:
         const TStr& sLineText, 
         TSeqPos iLineNum,
         ILineErrorListener * pMessageListener) const;
-    NCBI_STD_DEPRECATED("") static bool ExcessiveSeqDataInTitle(const string& title, 
-                                        TFlags fFastaFlags);
     virtual void   PostWarning(ILineErrorListener * pMessageListener,
             EDiagSev _eSeverity, size_t _uLineNum, CTempString _MessageStrmOps, 
             CObjReaderParseException::EErrCode _eErrCode, 
             ILineError::EProblem _eProblem, 
             CTempString _sFeature, CTempString _sQualName, CTempString _sQualValue) const;
-
-    NCBI_STD_DEPRECATED("CFastaReader no longer utilizes CSourceModParser.") 
-    CSourceModParser* xCreateSourceModeParser(ILineErrorListener* pErrorListener);
 
     typedef int                         TRowNum;
     typedef map<TRowNum, TSignedSeqPos> TSubMap;
@@ -327,10 +302,6 @@ protected:
         ePosWithGapsAndSegs
     };
     TSeqPos GetCurrentPos(EPosType pos_type);
-
-    NCBI_DEPRECATED void x_ApplyAllMods(CBioseq & /*bioseq*/, 
-        TSeqPos /*iLineNum*/, 
-        ILineErrorListener * /*pMessageListener*/) {}
 
     std::string x_NucOrProt(void) const;
 
@@ -404,12 +375,10 @@ protected:
     TMask                   m_CurrentMask;
     TMask                   m_NextMask;
     TMasks *                m_MaskVec;
-    NCBI_DEPRECATED CRef<CSeqIdGenerator>   m_IDGenerator;
     CRef<CFastaIdHandler>   m_IDHandler;
     string                  m_SeqData;
     TGaps                   m_Gaps;
     TSeqPos                 m_CurrentPos; // does not count gaps
-    NCBI_DEPRECATED TSeqPos m_ExpectedEnd;
     TSeqPos                 m_MaskRangeStart;
     TSeqPos                 m_SegmentBase;
     TSeqPos                 m_CurrentGapLength;
@@ -430,7 +399,6 @@ protected:
 
     using TCountToLinkEvidMap = map<TSeqPos, SGap::TLinkEvidSet>;
     TCountToLinkEvidMap     m_GapsizeToLinkageEvidence;
-    NCBI_STD_DEPRECATED("") SGap::TLinkEvidSet      m_gap_linkage_evidence;
 private:
     SGap::TLinkEvidSet      m_DefaultLinkageEvidence;
 protected:
@@ -443,37 +411,13 @@ protected:
 };
 
 
-enum NCBI_STD_DEPRECATED("") EReadFastaFlags {
-    fReadFasta_AssumeNuc  = CFastaReader::fAssumeNuc,
-    fReadFasta_AssumeProt = CFastaReader::fAssumeProt,
-    fReadFasta_ForceType  = CFastaReader::fForceType,
-    fReadFasta_NoParseID  = CFastaReader::fNoParseID,
-    fReadFasta_ParseGaps  = CFastaReader::fParseGaps,
-    fReadFasta_OneSeq     = CFastaReader::fOneSeq,
-//    fReadFasta_AllSeqIds  = CFastaReader::fAllSeqIds,
-    fReadFasta_NoSeqData  = CFastaReader::fNoSeqData,
-    fReadFasta_RequireID  = CFastaReader::fRequireID
-};
 typedef CFastaReader::TFlags TReadFastaFlags;
 
-
-/// Traditional interface for reading FASTA files which is not
-/// just deprecated but dangerous due to an unsafe reinterpret_cast that
-/// occurs within and affects the caller's params.
-///
-/// @deprecated
-/// @sa CFastaReader
-NCBI_DEPRECATED
-NCBI_XOBJREAD_EXPORT
-CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags = 0,
-                           int* counter = 0,
-                           vector<CConstRef<CSeq_loc> >* lcv = 0,
-                           ILineErrorListener * pMessageListener = 0);
 
 /// A const-correct replacement for the deprecated ReadFasta function
 /// @sa CFastaReader
 NCBI_XOBJREAD_EXPORT
-CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags=0,
+CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, CFastaReader::TFlags flags=0,
                            int* counter = nullptr,
                            CFastaReader::TMasks* lcv=nullptr,
                            ILineErrorListener* pMessageListener=nullptr);
@@ -524,7 +468,7 @@ void NCBI_XOBJREAD_EXPORT ReadFastaFileMap(SFastaFileMap* fasta_map,
 /// Scan FASTA files, call IFastaEntryScan::EntryFound (payload function)
 void NCBI_XOBJREAD_EXPORT ScanFastaFile(IFastaEntryScan* scanner, 
                                         CNcbiIfstream&   input,
-                                        TReadFastaFlags  fread_flags);
+                                        CFastaReader::TFlags fread_flags);
 
 
 /////////////////// CFastaReader inline methods

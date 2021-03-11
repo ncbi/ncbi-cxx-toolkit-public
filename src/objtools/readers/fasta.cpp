@@ -401,62 +401,6 @@ CRef<CSeq_entry> CFastaReader::ReadOneSeq(ILineErrorListener * pMessageListener)
     return entry;
 }
 
-CRef<CSeq_entry> CFastaReader::x_ReadSegSet(ILineErrorListener * pMessageListener)
-{
-    CFlagGuard guard(m_Flags, GetFlags() | fInSegSet);
-    CRef<CSeq_entry> entry(new CSeq_entry), master(new CSeq_entry), parts;
-
-    _ASSERT(GetLineReader().PeekChar() == '[');
-    try {
-        ++GetLineReader();
-        parts = ReadSet(kMax_Int, pMessageListener);
-    } catch (CObjReaderParseException&) {
-        if (GetLineReader().AtEOF()) {
-            throw;
-        } else if (GetLineReader().PeekChar() == ']') {
-            ++GetLineReader();
-        } else {
-            throw;
-        }
-    }
-    if (GetLineReader().AtEOF()) {
-        NCBI_THROW2(CObjReaderParseException, eBadSegSet,
-                    "CFastaReader: Segmented set not properly terminated around line " + NStr::NumericToString(LineNumber()),
-                    LineNumber());
-    } else if (!parts->IsSet()  ||  parts->GetSet().GetSeq_set().empty()) {
-        NCBI_THROW2(CObjReaderParseException, eBadSegSet,
-                    "CFastaReader: Segmented set contains no sequences around line " + NStr::NumericToString(LineNumber()),
-                    LineNumber());
-    }
-
-    const CBioseq& first_seq = parts->GetSet().GetSeq_set().front()->GetSeq();
-    CBioseq& master_seq = master->SetSeq();
-    CSeq_inst& inst = master_seq.SetInst();
-    // XXX - work out less generic ID?
-    CRef<CSeq_id> id(m_IDHandler->SetGenerator().GenerateID(true));
-    if (m_CurrentMask) {
-        m_CurrentMask->SetId(*id);
-    }
-    master_seq.SetId().push_back(id);
-    inst.SetRepr(CSeq_inst::eRepr_seg);
-    inst.SetMol(first_seq.GetInst().GetMol());
-    inst.SetLength(GetCurrentPos(ePosWithGapsAndSegs));
-    CSeg_ext& ext = inst.SetExt().SetSeg();
-    ITERATE (CBioseq_set::TSeq_set, it, parts->GetSet().GetSeq_set()) {
-        CRef<CSeq_loc>      seg_loc(new CSeq_loc);
-        const CBioseq::TId& seg_ids = (*it)->GetSeq().GetId();
-        CRef<CSeq_id>       seg_id = FindBestChoice(seg_ids, CSeq_id::BestRank);
-        seg_loc->SetWhole(*seg_id);
-        ext.Set().push_back(seg_loc);
-    }
-
-    parts->SetSet().SetClass(CBioseq_set::eClass_parts);
-    entry->SetSet().SetClass(CBioseq_set::eClass_segset);
-    entry->SetSet().SetSeq_set().push_back(master);
-    entry->SetSet().SetSeq_set().push_back(parts);
-    return entry;
-}
-
 CRef<CSeq_entry> CFastaReader::ReadSet(int max_seqs, ILineErrorListener * pMessageListener)
 {
     CRef<CSeq_entry> entry(new CSeq_entry);
@@ -659,27 +603,6 @@ void CFastaReader::PostProcessIDs(
 
         m_CurrentSeq->SetInst().SetHist().SetAssembly().push_back(align);
     }
-}
-
-
-bool CFastaReader::ParseIDs(
-    const TStr& s, 
-    const SDefLineParseInfo& info,
-    const TIgnoredProblems& ignoredErrors,
-    list<CRef<CSeq_id>>& ids, 
-    ILineErrorListener * pMessageListener) 
-{
-    return CFastaDeflineReader::ParseIDs(s, info, ignoredErrors, ids, pMessageListener);
-}
-
-
-bool CFastaReader::ParseIDs(
-    const TStr& s, ILineErrorListener * pMessageListener)
-{
-    SDefLineParseInfo info;
-    x_SetDeflineParseInfo(info);
-    
-    return CFastaDeflineReader::ParseIDs(s, info, m_ignorable, SetIDs(), pMessageListener);
 }
 
 
@@ -1653,50 +1576,6 @@ void CFastaReader::AssignMolType(ILineErrorListener * pMessageListener)
     } 
 }
 
-bool 
-CFastaReader::ExcessiveSeqDataInTitle(const string& title, TFlags fFastaFlags) 
-{
-    if (fFastaFlags & fAssumeProt) {
-        return false;
-    }
-
-    // Check for nuc or aa sequence at the end of the title
-    const size_t kWarnNumNucCharsAtEnd = 20;
-    const size_t kWarnNumAminoAcidCharsAtEnd = 50;
-
-    // Check for nuc sequence
-    if (title.length() > kWarnNumNucCharsAtEnd) {
-        size_t numNucChars = 0;
-        for (auto rit=title.crbegin(); rit!=title.crend(); ++rit) {
-            if (!s_ASCII_IsUnAmbigNuc(*rit)) {
-                break;
-            }
-            ++numNucChars;
-        }
-        if (numNucChars > kWarnNumNucCharsAtEnd) {
-            return true;
-        }
-    }
-
-    // Check for Aa sequence
-    if (title.length() > kWarnNumAminoAcidCharsAtEnd) {
-        size_t numAaChars = 0;
-        for (auto rit=title.crbegin(); rit!=title.crend(); ++rit) {
-            const auto ch = *rit;
-            if ( !(ch >= 'A' && ch <= 'Z')  &&
-                 !(ch >= 'a' && ch <= 'z') ) {
-                break;
-            }
-            ++numAaChars;
-        }
-        if (numAaChars > kWarnNumAminoAcidCharsAtEnd) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
 
 bool
 CFastaReader::CreateWarningsForSeqDataInTitle(
@@ -1933,28 +1812,7 @@ void CFastaReader::x_AddMultiwayAlignment(CSeq_annot& annot, const TIds& ids)
 }
 
 
-CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags,
-                           int* counter, vector<CConstRef<CSeq_loc> >* lcv,
-                           ILineErrorListener * pMessageListener)
-{
-    CRef<ILineReader> lr(ILineReader::New(in));
-    CFastaReader      reader(*lr, flags);
-    if (counter) {
-        reader.SetIDGenerator().SetCounter(*counter);
-    }
-
-    if (lcv) {
-        reader.SaveMasks(reinterpret_cast<CFastaReader::TMasks*>(lcv));
-    }
-    CRef<CSeq_entry> seq_entry = reader.ReadSet(kMax_Int, pMessageListener);
-
-    if (counter) {
-        *counter = reader.GetIDGenerator().GetCounter();
-    }
-    return seq_entry;
-}
-
-CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags,
+CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, CFastaReader::TFlags flags,
                            int* counter, CFastaReader::TMasks* lcv,
                            ILineErrorListener* pMessageListener)
 {
@@ -2054,7 +1912,7 @@ void ReadFastaFileMap(SFastaFileMap* fasta_map, CNcbiIfstream& input)
 
 void ScanFastaFile(IFastaEntryScan* scanner, 
                    CNcbiIfstream&   input,
-                   TReadFastaFlags  fread_flags)
+                   CFastaReader::TFlags fread_flags)
 {
     if ( !input.is_open() ) {
         return;
@@ -2076,21 +1934,6 @@ void ScanFastaFile(IFastaEntryScan* scanner,
             }
         }
     }
-}
-
-CSourceModParser* CFastaReader::xCreateSourceModeParser(
-    ILineErrorListener* pErrorListener)
-{
-    // first of all, honor any explicit fBadModThrow flag given to the reader:
-//    if (TestFlag(fBadModThrow) || TestFlag(fUnknModThrow)) {
-//        return new CSourceModParser(CSourceModParser::eHandleBadMod_Throw);
-//    }
-    // otherwise, try to construct the parser around any given error listener:
-    if (pErrorListener != nullptr) {
-        return new CSourceModParser(pErrorListener, m_uLineNumber+1);
-    }
-    // ignore errors as a last resort:
-    return new CSourceModParser(CSourceModParser::eHandleBadMod_Ignore);
 }
 
 
