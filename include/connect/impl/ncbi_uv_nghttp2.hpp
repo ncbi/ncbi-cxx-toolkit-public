@@ -403,7 +403,7 @@ struct NCBI_XXCONNECT2_EXPORT SUvNgHttp2_Tls
 {
     virtual ~SUvNgHttp2_Tls() {}
 
-    virtual int Read(const char* buf, ssize_t nread) = 0;
+    virtual int Read(const char*& buf, ssize_t& nread) = 0;
     virtual int Write() = 0;
     virtual int Close() = 0;
 

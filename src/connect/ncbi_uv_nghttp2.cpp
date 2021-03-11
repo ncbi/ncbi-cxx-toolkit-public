@@ -533,7 +533,12 @@ struct SUvNgHttp2_TlsNoOp : SUvNgHttp2_Tls
 {
     SUvNgHttp2_TlsNoOp(TGetWriteBuf get_write_buf) : m_GetWriteBuf(get_write_buf) {}
 
-    int Read(const char* buf, ssize_t nread) override { m_IncomingData = buf; return static_cast<int>(nread); }
+    int Read(const char*& buf, ssize_t& nread) override
+    {
+        m_IncomingData = exchange(buf, buf + nread);
+        return static_cast<int>(exchange(nread, 0));
+    }
+
     int Write() override { return 0; }
     int Close() override { return 0; }
 
@@ -550,7 +555,7 @@ struct SUvNgHttp2_TlsImpl : SUvNgHttp2_Tls
     SUvNgHttp2_TlsImpl(const SSocketAddress& address, size_t rd_buf_size, size_t wr_buf_size, TGetWriteBuf get_write_buf);
     ~SUvNgHttp2_TlsImpl() override;
 
-    int Read(const char* buf, ssize_t nread) override;
+    int Read(const char*& buf, ssize_t& nread) override;
     int Write() override;
     int Close() override;
 
@@ -590,7 +595,7 @@ private:
 
     vector<char> m_ReadBuffer;
     vector<char> m_WriteBuffer;
-    pair<const char*, ssize_t> m_IncomingData;
+    pair<const char**, ssize_t*> m_IncomingData;
     TGetWriteBuf m_GetWriteBuf;
 
     mbedtls_ssl_context m_Ssl;
@@ -607,7 +612,7 @@ bool s_WantReadOrWrite(int rv)
 
 SUvNgHttp2_TlsImpl::SUvNgHttp2_TlsImpl(const SSocketAddress& address, size_t rd_buf_size, size_t wr_buf_size, TGetWriteBuf get_write_buf) :
     m_ReadBuffer(rd_buf_size),
-    m_IncomingData(nullptr, 0),
+    m_IncomingData(nullptr, nullptr),
     m_GetWriteBuf(get_write_buf),
     m_Protocols({ "h2", nullptr })
 {
@@ -715,9 +720,9 @@ int SUvNgHttp2_TlsImpl::GetReady()
     return 0;
 }
 
-int SUvNgHttp2_TlsImpl::Read(const char* buf, ssize_t nread)
+int SUvNgHttp2_TlsImpl::Read(const char*& buf, ssize_t& nread)
 {
-    m_IncomingData = make_pair(buf, nread);
+    m_IncomingData = make_pair(&buf, &nread);
 
     if (auto rv = Init()) return rv;
 
@@ -743,7 +748,7 @@ int SUvNgHttp2_TlsImpl::Read(const char* buf, ssize_t nread)
             m_ReadBuffer.resize(2 * m_ReadBuffer.size());
         }
     }
-    while (m_IncomingData.second > 0);
+    while (*m_IncomingData.second > 0);
 
     return static_cast<int>(m_ReadBuffer.size() - output_buf_size);
 }
@@ -792,13 +797,13 @@ int SUvNgHttp2_TlsImpl::Close()
 int SUvNgHttp2_TlsImpl::OnRecv(unsigned char* buf, size_t len)
 {
     if (m_IncomingData.first && m_IncomingData.second) {
-        auto copied = min(len, static_cast<size_t>(m_IncomingData.second));
+        auto copied = min(len, static_cast<size_t>(*m_IncomingData.second));
         NCBI_UVNGHTTP2_TLS_TRACE(this << " on receiving: " << copied);
 
         if (copied) {
-            memcpy(buf, m_IncomingData.first, copied);
-            m_IncomingData.first += copied;
-            m_IncomingData.second -= copied;
+            memcpy(buf, *m_IncomingData.first, copied);
+            *m_IncomingData.first += copied;
+            *m_IncomingData.second -= copied;
             return static_cast<int>(copied);
         }
     } else {
