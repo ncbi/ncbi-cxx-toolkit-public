@@ -472,20 +472,9 @@ ssize_t SNgHttp2_Session::Send(vector<char>& buffer)
 {
     if (auto rv = Init()) return rv;
 
-    if (nghttp2_session_want_write(m_Session) == 0) {
-        if (nghttp2_session_want_read(m_Session) == 0) {
-            NCBI_NGHTTP2_SESSION_TRACE(this << " does not want to write and read");
-            x_DelOnError(-1);
-            return eWantsClose;
-        }
-
-        NCBI_NGHTTP2_SESSION_TRACE(this << " does not want to write");
-        return eDoesNotWantTo;
-    }
-
     _DEBUG_ARG(ssize_t total = 0);
 
-    for (;;) {
+    while (nghttp2_session_want_write(m_Session)) {
         const uint8_t* data;
         auto rv = nghttp2_session_mem_send(m_Session, &data);
 
@@ -502,6 +491,15 @@ ssize_t SNgHttp2_Session::Send(vector<char>& buffer)
             return eSent;
         }
     }
+
+    if (nghttp2_session_want_read(m_Session) == 0) {
+        NCBI_NGHTTP2_SESSION_TRACE(this << " does not want to write and read");
+        x_DelOnError(-1);
+        return eWantsClose;
+    }
+
+    NCBI_NGHTTP2_SESSION_TRACE(this << " does not want to write");
+    return eDoesNotWantTo;
 }
 
 ssize_t SNgHttp2_Session::Recv(const uint8_t* buffer, size_t size)
