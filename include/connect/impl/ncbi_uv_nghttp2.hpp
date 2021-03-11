@@ -361,7 +361,7 @@ struct NCBI_XXCONNECT2_EXPORT SNgHttp2_Session
     int Resume(int32_t stream_id);
 
     // Send() returns either an nghttp2 error or one of the special values below
-    enum ESendResult : ssize_t { eSent, eDoesNotWantTo, eWantsClose };
+    enum ESendResult : ssize_t { eOkay, eWantsClose };
     ssize_t Send(vector<char>& buffer);
     ssize_t Recv(const uint8_t* buffer, size_t size);
 
@@ -437,8 +437,6 @@ private:
     {
         return [this, member](TArgs&&... args) -> TR { return (this->*member)(forward<TArgs>(args)...); };
     };
-
-    bool Write();
 
     void OnConnect(int status);
     void OnWrite(int status);

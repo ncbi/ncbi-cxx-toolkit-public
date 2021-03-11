@@ -488,7 +488,7 @@ ssize_t SNgHttp2_Session::Send(vector<char>& buffer)
 
         } else {
             NCBI_NGHTTP2_SESSION_TRACE(this << " sent: " << total);
-            return eSent;
+            return eOkay;
         }
     }
 
@@ -499,14 +499,14 @@ ssize_t SNgHttp2_Session::Send(vector<char>& buffer)
     }
 
     NCBI_NGHTTP2_SESSION_TRACE(this << " does not want to write");
-    return eDoesNotWantTo;
+    return eOkay;
 }
 
 ssize_t SNgHttp2_Session::Recv(const uint8_t* buffer, size_t size)
 {
     if (auto rv = Init()) return rv;
 
-    _DEBUG_ARG(size_t total = 0);
+    ssize_t total = 0;
 
     while (size > 0) {
         auto rv = nghttp2_session_mem_recv(m_Session, buffer, size);
@@ -514,19 +514,16 @@ ssize_t SNgHttp2_Session::Recv(const uint8_t* buffer, size_t size)
         if (rv > 0) {
             buffer += rv;
             size -= rv;
-            _DEBUG_CODE(total += rv;);
+            total += rv;
 
-        } else if (rv < 0) {
+        } else  {
             NCBI_NGHTTP2_SESSION_TRACE(this << " receive failed: " << SUvNgHttp2_Error::NgHttp2Str(rv));
             return x_DelOnError(rv);
-
-        } else {
-            break;
         }
     }
 
     NCBI_NGHTTP2_SESSION_TRACE(this << " received: " << total);
-    return 0;
+    return total;
 }
 
 struct SUvNgHttp2_TlsNoOp : SUvNgHttp2_Tls
@@ -837,19 +834,12 @@ bool SUvNgHttp2_SessionBase::Send()
     if (send_rv < 0) {
         Reset(SUvNgHttp2_Error::FromNgHttp2(send_rv, "on send"));
 
-    } else if (send_rv == SNgHttp2_Session::eSent) {
-        return Write();
-
     } else if (send_rv == SNgHttp2_Session::eWantsClose) {
         m_Tls->Close();
         m_Tcp.Close();
+        return false;
     }
 
-    return false;
-}
-
-bool SUvNgHttp2_SessionBase::Write()
-{
     auto tls_rv = m_Tls->Write();
 
     if ((tls_rv < 0) && !s_WantReadOrWrite(tls_rv)) {
@@ -871,7 +861,7 @@ void SUvNgHttp2_SessionBase::OnConnect(int status)
     if (status < 0) {
         Reset(SUvNgHttp2_Error::FromLibuv(status, "on connecting"));
     } else {
-        Write();
+        Send();
     }
 }
 
@@ -901,16 +891,23 @@ void SUvNgHttp2_SessionBase::OnRead(const char* buf, ssize_t nread)
         m_Tcp.Close();
 
     } else if (s_WantReadOrWrite(read_rv)) {
-        Write();
+        Send();
 
     } else if (read_rv < 0) {
         Reset(SUvNgHttp2_Error::FromMbedTls(read_rv, "on read"));
 
-    } else if (auto recv_rv = m_Session.Recv((const uint8_t*)m_Tls->GetReadBuffer(), (size_t)read_rv)) {
-        Reset(SUvNgHttp2_Error::FromNgHttp2(recv_rv, "on receive"));
-
     } else {
-        Send();
+        auto recv_rv = m_Session.Recv((const uint8_t*)m_Tls->GetReadBuffer(), (size_t)read_rv);
+
+        if (recv_rv < 0) {
+            Reset(SUvNgHttp2_Error::FromNgHttp2(recv_rv, "on receive"));
+
+        } else if (recv_rv != read_rv) {
+            Reset("Processed size does not equal to received");
+
+        } else {
+            Send();
+        }
     }
 }
 
