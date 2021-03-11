@@ -723,31 +723,15 @@ int SUvNgHttp2_TlsImpl::Read(const char*& buf, ssize_t& nread)
 
     if (auto rv = Init()) return rv;
 
-    auto output_buf = reinterpret_cast<unsigned char*>(m_ReadBuffer.data());
-    auto output_buf_size = m_ReadBuffer.size();
+    auto rv = mbedtls_ssl_read(&m_Ssl, reinterpret_cast<unsigned char*>(m_ReadBuffer.data()), m_ReadBuffer.size());
 
-    do {
-        auto rv = mbedtls_ssl_read(&m_Ssl, output_buf, output_buf_size);
-
-        if (rv < 0) {
-            NCBI_UVNGHTTP2_TLS_TRACE(this << " read: " << SUvNgHttp2_Error::MbedTlsStr(rv));
-        } else {
-            NCBI_UVNGHTTP2_TLS_TRACE(this << " read: " << rv);
-        }
-
-        if (rv <= 0) return rv;
-
-        output_buf += rv;
-        output_buf_size -= rv;
-
-        if (output_buf_size == 0) {
-            output_buf_size = m_ReadBuffer.size();
-            m_ReadBuffer.resize(2 * m_ReadBuffer.size());
-        }
+    if (rv < 0) {
+        NCBI_UVNGHTTP2_TLS_TRACE(this << " read: " << SUvNgHttp2_Error::MbedTlsStr(rv));
+    } else {
+        NCBI_UVNGHTTP2_TLS_TRACE(this << " read: " << rv);
     }
-    while (*m_IncomingData.second > 0);
 
-    return static_cast<int>(m_ReadBuffer.size() - output_buf_size);
+    return rv;
 }
 
 int SUvNgHttp2_TlsImpl::Write()
@@ -883,32 +867,40 @@ void SUvNgHttp2_SessionBase::OnRead(const char* buf, ssize_t nread)
         return;
     }
 
-    auto read_rv = m_Tls->Read(buf, nread);
+    while (nread > 0) {
+        auto read_rv = m_Tls->Read(buf, nread);
 
-    if (read_rv == 0) {
-        m_Session.Del();
-        m_Tls->Close();
-        m_Tcp.Close();
+        if (read_rv == 0) {
+            m_Session.Del();
+            m_Tls->Close();
+            m_Tcp.Close();
 
-    } else if (s_WantReadOrWrite(read_rv)) {
-        Send();
+        } else if (s_WantReadOrWrite(read_rv)) {
+            if (nread == 0) break;
 
-    } else if (read_rv < 0) {
-        Reset(SUvNgHttp2_Error::FromMbedTls(read_rv, "on read"));
+            Reset("Some encrypted data was ignored");
 
-    } else {
-        auto recv_rv = m_Session.Recv((const uint8_t*)m_Tls->GetReadBuffer(), (size_t)read_rv);
-
-        if (recv_rv < 0) {
-            Reset(SUvNgHttp2_Error::FromNgHttp2(recv_rv, "on receive"));
-
-        } else if (recv_rv != read_rv) {
-            Reset("Processed size does not equal to received");
+        } else if (read_rv < 0) {
+            Reset(SUvNgHttp2_Error::FromMbedTls(read_rv, "on read"));
 
         } else {
-            Send();
+            auto recv_rv = m_Session.Recv((const uint8_t*)m_Tls->GetReadBuffer(), (size_t)read_rv);
+
+            if (recv_rv < 0) {
+                Reset(SUvNgHttp2_Error::FromNgHttp2(recv_rv, "on receive"));
+
+            } else if (recv_rv != read_rv) {
+                Reset("Processed size does not equal to received");
+
+            } else {
+                continue;
+            }
         }
+
+        return;
     }
+
+    Send();
 }
 
 void SUvNgHttp2_SessionBase::Reset(SUvNgHttp2_Error error)
