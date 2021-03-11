@@ -269,7 +269,9 @@ crypto needs $(Z_LIB)
 crypto needs3party $(ORIG_LIBS)
 crypto needs3party $(Z_LIBS)
 ct_ftds100 needs tds_ftds100
-ct_ftds95 needs tds_ftds95
+ct_ftds95 needs3party $(KRB5_LIBS)
+ct_ftds95 needs3party $(NETWORK_LIBS)
+ct_ftds95 needs3party $(ORIG_LIBS)
 ctransition needs xncbi
 ctransition_nlmzip needs $(COMPRESS_LIBS)
 ctransition_nlmzip needs xutil
@@ -939,6 +941,8 @@ ncbi_xdbapi_ftds100 needs dbapi_driver
 ncbi_xdbapi_ftds100 needs3party $(FTDS_LIBS)
 ncbi_xdbapi_ftds95 needs $(FTDS95_LIB)
 ncbi_xdbapi_ftds95 needs dbapi_driver
+ncbi_xdbapi_ftds95 needs3party $(KRB5_LIBS)
+ncbi_xdbapi_ftds95 needs3party $(NETWORK_LIBS)
 ncbi_xdbapi_mysql needs dbapi_driver
 ncbi_xdbapi_mysql needs3party $(MYSQL_LIBS)
 ncbi_xdbapi_mysql needs3party $(NETWORK_LIBS)
@@ -1078,7 +1082,6 @@ objprt needs xser
 objspdi needs xser
 objtax1 needs3party ncbiobj
 odbc_ftds100 needs tds_ftds100
-odbc_ftds95 needs tds_ftds95
 omssa needs $(SEQ_LIBS)
 omssa needs pub
 osutils needs3party ctutils
@@ -1188,7 +1191,6 @@ sdbapi needs dbapi
 sdbapi needs dbapi_util_blobstore
 sdbapi needs ncbi_xdbapi_ftds
 sdbapi needs ncbi_xdbapi_ftds100
-sdbapi needs ncbi_xdbapi_ftds95
 sdbapi needs xconnect
 sdncbiauth needs generic_db_core
 sdncbiauth needs muxex_g
@@ -1298,7 +1300,9 @@ sybdb64 includes3party sybintl64
 sybdb64 needs3party $(ORIG_LIBS)
 sybdb64 needs3party sybunic64
 sybdb_ftds100 needs tds_ftds100
-sybdb_ftds95 needs tds_ftds95
+sybdb_ftds95 needs3party $(KRB5_LIBS)
+sybdb_ftds95 needs3party $(NETWORK_LIBS)
+sybdb_ftds95 needs3party $(ORIG_LIBS)
 sybintl64 needs3party $(ORIG_LIBS)
 sybtcl64 needs3party $(ORIG_LIBS)
 sybtcl64 needs3party sybcomn64
@@ -1322,9 +1326,6 @@ taxutl needs taxon1
 tds_ftds100 needs3party $(KRB5_LIBS)
 tds_ftds100 needs3party $(NETWORK_LIBS)
 tds_ftds100 needs3party $(ORIG_LIBS)
-tds_ftds95 needs3party $(KRB5_LIBS)
-tds_ftds95 needs3party $(NETWORK_LIBS)
-tds_ftds95 needs3party $(ORIG_LIBS)
 tea_crypt needs generic_db_utils
 test_boost includes3party $(BOOST_TEST_LIBS)
 test_boost needs xncbi
