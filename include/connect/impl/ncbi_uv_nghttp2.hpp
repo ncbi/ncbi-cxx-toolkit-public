@@ -410,7 +410,8 @@ struct NCBI_XXCONNECT2_EXPORT SUvNgHttp2_Tls
     virtual const char* GetReadBuffer() = 0;
     virtual vector<char>& GetWriteBuffer() = 0;
 
-    static SUvNgHttp2_Tls* Create(bool https, const SSocketAddress& address, size_t rd_buf_size, size_t wr_buf_size, vector<char>& tcp_write_buf);
+    using TGetWriteBuf = function<vector<char>&()>;
+    static SUvNgHttp2_Tls* Create(bool https, const SSocketAddress& address, size_t rd_buf_size, size_t wr_buf_size, TGetWriteBuf get_write_buf);
 };
 
 struct NCBI_XXCONNECT2_EXPORT SUvNgHttp2_SessionBase
@@ -493,7 +494,7 @@ SUvNgHttp2_SessionBase::SUvNgHttp2_SessionBase(uv_loop_t* loop, const SSocketAdd
             BindThis(&SUvNgHttp2_SessionBase::OnConnect),
             BindThis(&SUvNgHttp2_SessionBase::OnRead),
             BindThis(&SUvNgHttp2_SessionBase::OnWrite)),
-    m_Tls(SUvNgHttp2_Tls::Create(https, address, rd_buf_size, wr_buf_size, m_Tcp.GetWriteBuffer())),
+    m_Tls(SUvNgHttp2_Tls::Create(https, address, rd_buf_size, wr_buf_size, [&]() -> vector<char>& { return m_Tcp.GetWriteBuffer(); })),
     m_Session(this, forward<TArgs>(args)...)
 {
 }

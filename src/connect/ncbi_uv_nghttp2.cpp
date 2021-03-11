@@ -533,23 +533,23 @@ ssize_t SNgHttp2_Session::Recv(const uint8_t* buffer, size_t size)
 
 struct SUvNgHttp2_TlsNoOp : SUvNgHttp2_Tls
 {
-    SUvNgHttp2_TlsNoOp(vector<char>& tcp_write_buf) : m_TcpWriteBuffer(tcp_write_buf) {}
+    SUvNgHttp2_TlsNoOp(TGetWriteBuf get_write_buf) : m_GetWriteBuf(get_write_buf) {}
 
     int Read(const char* buf, ssize_t nread) override { m_IncomingData = buf; return static_cast<int>(nread); }
     int Write() override { return 0; }
     int Close() override { return 0; }
 
     const char* GetReadBuffer() override { return m_IncomingData; }
-    vector<char>& GetWriteBuffer() override { return m_TcpWriteBuffer; }
+    vector<char>& GetWriteBuffer() override { return m_GetWriteBuf(); }
 
 private:
     const char* m_IncomingData = nullptr;
-    vector<char>& m_TcpWriteBuffer;
+    TGetWriteBuf m_GetWriteBuf;
 };
 
 struct SUvNgHttp2_TlsImpl : SUvNgHttp2_Tls
 {
-    SUvNgHttp2_TlsImpl(const SSocketAddress& address, size_t rd_buf_size, size_t wr_buf_size, vector<char>& tcp_write_buf);
+    SUvNgHttp2_TlsImpl(const SSocketAddress& address, size_t rd_buf_size, size_t wr_buf_size, TGetWriteBuf get_write_buf);
     ~SUvNgHttp2_TlsImpl() override;
 
     int Read(const char* buf, ssize_t nread) override;
@@ -593,7 +593,7 @@ private:
     vector<char> m_ReadBuffer;
     vector<char> m_WriteBuffer;
     pair<const char*, ssize_t> m_IncomingData;
-    vector<char>& m_TcpWriteBuffer;
+    TGetWriteBuf m_GetWriteBuf;
 
     mbedtls_ssl_context m_Ssl;
     mbedtls_ssl_config m_Conf;
@@ -607,10 +607,10 @@ bool s_WantReadOrWrite(int rv)
     return (rv == MBEDTLS_ERR_SSL_WANT_READ) || (rv == MBEDTLS_ERR_SSL_WANT_WRITE);
 }
 
-SUvNgHttp2_TlsImpl::SUvNgHttp2_TlsImpl(const SSocketAddress& address, size_t rd_buf_size, size_t wr_buf_size, vector<char>& tcp_write_buf) :
+SUvNgHttp2_TlsImpl::SUvNgHttp2_TlsImpl(const SSocketAddress& address, size_t rd_buf_size, size_t wr_buf_size, TGetWriteBuf get_write_buf) :
     m_ReadBuffer(rd_buf_size),
     m_IncomingData(nullptr, 0),
-    m_TcpWriteBuffer(tcp_write_buf),
+    m_GetWriteBuf(get_write_buf),
     m_Protocols({ "h2", nullptr })
 {
     NCBI_UVNGHTTP2_TLS_TRACE(this << " created");
@@ -813,17 +813,18 @@ int SUvNgHttp2_TlsImpl::OnRecv(unsigned char* buf, size_t len)
 int SUvNgHttp2_TlsImpl::OnSend(const unsigned char* buf, size_t len)
 {
     NCBI_UVNGHTTP2_TLS_TRACE(this << " on sending: " << len);
-    m_TcpWriteBuffer.insert(m_TcpWriteBuffer.end(), buf, buf + len);
+    auto& write_buf = m_GetWriteBuf();
+    write_buf.insert(write_buf.end(), buf, buf + len);
     return static_cast<int>(len);
 }
 
-SUvNgHttp2_Tls* SUvNgHttp2_Tls::Create(bool https, const SSocketAddress& address, size_t rd_buf_size, size_t wr_buf_size, vector<char>& tcp_write_buf)
+SUvNgHttp2_Tls* SUvNgHttp2_Tls::Create(bool https, const SSocketAddress& address, size_t rd_buf_size, size_t wr_buf_size, TGetWriteBuf get_write_buf)
 {
     if (https) {
-        return new SUvNgHttp2_TlsImpl(address, rd_buf_size, wr_buf_size, tcp_write_buf);
+        return new SUvNgHttp2_TlsImpl(address, rd_buf_size, wr_buf_size, get_write_buf);
     }
 
-    return new SUvNgHttp2_TlsNoOp(tcp_write_buf);
+    return new SUvNgHttp2_TlsNoOp(get_write_buf);
 }
 
 bool SUvNgHttp2_SessionBase::Send()
