@@ -1665,6 +1665,13 @@ void CFeatureTableReader::RemoveEmptyFtable(objects::CBioseq& bioseq)
     }
 }
 
+
+static bool s_UnknownEstimatedLength(const CSeq_feat& feat)
+{
+    return  (feat.GetNamedQual("estimated_length") == "unknown");
+}
+
+
 CRef<CDelta_seq> CFeatureTableReader::MakeGap(objects::CBioseq& bioseq, const CSeq_feat& feature_gap)
 {
     const string& sGT = feature_gap.GetNamedQual(kGapType_qual);
@@ -1756,10 +1763,12 @@ CRef<CDelta_seq> CFeatureTableReader::MakeGap(objects::CBioseq& bioseq, const CS
         gap_length++;
     }
 
-    CGapsEditor gap_edit(gap_type, evidences, 0, 100);
-    //return gap_edit.CreateGap((CBioseq&)*bsh.GetEditHandle().GetCompleteBioseq(), gap_start, gap_length);
-    return gap_edit.CreateGap(bioseq, gap_start, gap_length);
+    CGapsEditor gap_edit(gap_type, evidences, 0, 0);
+    return gap_edit.CreateGap(bioseq, 
+            gap_start, gap_length, 
+            s_UnknownEstimatedLength(feature_gap));
 }
+
 
 void CFeatureTableReader::MakeGapsFromFeatures(CSeq_entry_Handle seh)
 {
