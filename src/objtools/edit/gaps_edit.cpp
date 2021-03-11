@@ -241,17 +241,25 @@ CGapsEditor::CGapsEditor(CSeq_gap::EType gap_type,
 CRef<CDelta_seq> 
 CGapsEditor::CreateGap(CBioseq& bioseq, TSeqPos gap_start, TSeqPos gap_length)
 {
+    return CreateGap(bioseq, gap_start, gap_length, gap_length==m_gap_Unknown_length);
+}
+
+
+CRef<CDelta_seq> 
+CGapsEditor::CreateGap(CBioseq& bioseq, TSeqPos gap_start, TSeqPos nominal_length, bool length_unknown)
+{
     if (!bioseq.IsSetInst())
         return CRef<CDelta_seq>();
 
-    CRef<CDelta_seq> seq = MakeGap(bioseq.SetInst(), gap_start, gap_length);
+    CRef<CDelta_seq> seq = MakeGap(bioseq.SetInst(), gap_start, nominal_length);
     if (seq.NotEmpty())
     {
         seq->SetLiteral();
-        x_SetGapParameters(*seq);
+        x_SetGapParameters(*seq, length_unknown);
     }
     return seq;
 }
+
 
 void  CGapsEditor::ConvertNs2Gaps(const CSeq_data& data, TSeqPos len, CDelta_ext& ext)
 {
@@ -352,9 +360,16 @@ void CGapsEditor::ConvertNs2Gaps(CBioseq& bioseq)
 
 void CGapsEditor::x_SetGapParameters(CDelta_seq& lit)
 {
+    bool length_unknown = (lit.GetLiteral().IsSetLength() &&
+                           lit.GetLiteral().GetLength() == m_gap_Unknown_length);
+
+    x_SetGapParameters(lit, length_unknown);
+}
+   
+void CGapsEditor::x_SetGapParameters(CDelta_seq& lit, bool length_unknown) 
+{
     CDelta_seq::TLiteral& gap = lit.SetLiteral();
-    if (gap.IsSetLength() && gap.GetLength() == m_gap_Unknown_length)
-    {
+    if (length_unknown) {    
         gap.SetFuzz().SetLim(CInt_fuzz::eLim_unk);
     }
 
