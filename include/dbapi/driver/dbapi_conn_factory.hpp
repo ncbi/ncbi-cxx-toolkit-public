@@ -202,9 +202,6 @@ private:
                                         const CDBConnParams& params,
                                         CDB_Connection* candidate = NULL);
 
-    unsigned int CalculateConnectionTimeout(const I_DriverContext& ctx) const;
-    unsigned int CalculateLoginTimeout(const I_DriverContext& ctx) const;
-
     void x_LogConnection(const SOpeningContext& ctx,
                          const CDB_Connection* connection,
                          const CDBConnParams& params);

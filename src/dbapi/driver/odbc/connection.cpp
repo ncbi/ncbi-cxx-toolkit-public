@@ -221,19 +221,13 @@ CODBC_Connection::x_SetConnAttributesBefore(
     const CODBCContext& cntx,
     const CDBConnParams& params)
 {
-    if(GetCDriverContext().GetTimeout()) {
-        SQLSetConnectAttr(m_Link,
-                          SQL_ATTR_CONNECTION_TIMEOUT,
-                          (SQLPOINTER)SQLULEN(GetCDriverContext().GetLoginTimeout()),
-                          0);
-    }
-
-    if(GetCDriverContext().GetLoginTimeout()) {
-        SQLSetConnectAttr(m_Link,
-                          SQL_ATTR_LOGIN_TIMEOUT,
-                          (SQLPOINTER)SQLULEN(GetCDriverContext().GetLoginTimeout()),
-                          0);
-    }
+    SQLULEN timeout, login_timeout;
+    NStr::StringToNumeric(params.GetParam("timeout"),       &timeout);
+    NStr::StringToNumeric(params.GetParam("login_timeout"), &login_timeout);    
+    SQLSetConnectAttr(m_Link, SQL_ATTR_CONNECTION_TIMEOUT, (SQLPOINTER)timeout,
+                      0);
+    SQLSetConnectAttr(m_Link, SQL_ATTR_LOGIN_TIMEOUT,
+                      (SQLPOINTER)login_timeout, 0);
 
     if(cntx.GetPacketSize()) {
         SQLSetConnectAttr(m_Link,

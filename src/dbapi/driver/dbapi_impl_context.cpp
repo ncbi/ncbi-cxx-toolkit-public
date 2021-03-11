@@ -33,6 +33,7 @@
 #include <dbapi/driver/impl/dbapi_impl_context.hpp>
 #include <dbapi/driver/impl/dbapi_impl_connection.hpp>
 #include <dbapi/driver/dbapi_driver_conn_params.hpp>
+#include <dbapi/driver/dbapi_conn_factory.hpp>
 #include <dbapi/error_codes.hpp>
 
 #include <corelib/resource_info.hpp>
@@ -993,10 +994,8 @@ CDriverContext::MakeConnection(const CDBConnParams& params)
         ReadDBConfParams(params.GetServerName(), &conf_params);
     }
 
-    int was_timeout = GetTimeout();
-    int was_login_timeout = GetLoginTimeout();
     unique_ptr<CDB_Connection> t_con;
-    try {
+    {
         string server_name = (conf_params.IsServerSet()?   conf_params.server:
                                                            params.GetServerName());
         string user_name   = (conf_params.IsUsernameSet()? conf_params.username:
@@ -1005,39 +1004,60 @@ CDriverContext::MakeConnection(const CDBConnParams& params)
                                                            params.GetDatabaseName());
         string password    = (conf_params.IsPasswordSet()? conf_params.password:
                                                            params.GetPassword());
-        if (conf_params.IsLoginTimeoutSet()) {
+        CRef<IDBConnectionFactory> factory
+            = CDbapiConnMgr::Instance().GetConnectionFactory();
+        auto cfactory
+            = dynamic_cast<const CDBConnectionFactory*>(
+                factory.GetPointerOrNull());
+        unsigned int timeout;
+        if (cfactory != nullptr) {
+            timeout = cfactory->GetLoginTimeout();
+        } else if (conf_params.IsLoginTimeoutSet()) {
             if (conf_params.login_timeout.empty()) {
-                SetLoginTimeout(0);
+                timeout = 0;
+            } else {
+                NStr::StringToNumeric(conf_params.login_timeout, &timeout);
             }
-            else {
-                SetLoginTimeout(NStr::StringToInt(conf_params.login_timeout));
-            }
-        }
-        else {
+        } else {
             string value(params.GetParam("login_timeout"));
             if (value == "default") {
-                SetLoginTimeout(0);
-            }
-            else if (!value.empty()) {
-                SetLoginTimeout(NStr::StringToInt(value));
+                timeout = 0;
+            } else if (!value.empty()) {
+                NStr::StringToNumeric(value, &timeout);
+            } else {
+                timeout = GetLoginTimeout();
             }
         }
+        if (timeout == 0  &&  cfactory != nullptr) {
+            timeout = 30;
+        }
+        act_params.SetParam("login_timeout", NStr::NumericToString(timeout));
+
         if (conf_params.IsIOTimeoutSet()) {
             if (conf_params.io_timeout.empty()) {
-                SetTimeout(0);
+                timeout = 0;
+            } else {
+                NStr::StringToNumeric(conf_params.io_timeout, &timeout);
             }
-            else {
-                SetTimeout(NStr::StringToInt(conf_params.io_timeout));
+        } else {
+            string value(params.GetParam("timeout"));
+            if (value == "default") {
+                timeout = 0;
+            } else if (!value.empty()) {
+                NStr::StringToNumeric(value, &timeout);
+            } else {
+                timeout = GetTimeout();
             }
         }
-        else {
-            string value(params.GetParam("io_timeout"));
-            if (value == "default") {
-                SetTimeout(0);
+        if (cfactory != nullptr) {
+            auto validation_timeout = cfactory->GetConnectionTimeout();
+            if (validation_timeout == 0) {
+                validation_timeout = timeout ? timeout : 30;
             }
-            else if (!value.empty()) {
-                SetTimeout(NStr::StringToInt(value));
-            }
+            act_params.SetParam("timeout",
+                                NStr::NumericToString(validation_timeout));
+        } else {
+            act_params.SetParam("timeout", NStr::NumericToString(timeout));
         }
         if (conf_params.IsCancelTimeoutSet()) {
             if (conf_params.cancel_timeout.empty()) {
@@ -1146,7 +1166,6 @@ CDriverContext::MakeConnection(const CDBConnParams& params)
         act_params.SetDatabaseName(db_name);
         act_params.SetPassword(password);
 
-        CRef<IDBConnectionFactory> factory = CDbapiConnMgr::Instance().GetConnectionFactory();
         CDB_UserHandler::TExceptions* expts;
         t_con.reset(factory->MakeDBConnection(*this, act_params, &expts));
 
@@ -1169,17 +1188,11 @@ CDriverContext::MakeConnection(const CDBConnParams& params)
             throw ex;
         }
 
+        t_con->SetTimeout(timeout);
         // Set database ...
         t_con->SetDatabaseName(act_params.GetDatabaseName());
 
     }
-    catch (exception&) {
-        SetTimeout(was_timeout);
-        SetLoginTimeout(was_login_timeout);
-        throw;
-    }
-    SetTimeout(was_timeout);
-    SetLoginTimeout(was_login_timeout);
 
     return t_con.release();
 }

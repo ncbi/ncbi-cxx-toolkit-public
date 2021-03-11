@@ -162,45 +162,6 @@ CDBConnectionFactory::SetLoginTimeout(unsigned int timeout)
     m_LoginTimeout = timeout;
 }
 
-unsigned int
-CDBConnectionFactory::CalculateConnectionTimeout
-(const I_DriverContext& ctx) const
-{
-    unsigned int timeout = 30;
-
-    unsigned int to = GetConnectionTimeout();
-    if (to != 0) {
-        timeout = to;
-    }
-    else {
-        to = ctx.GetTimeout();
-        if (to != 0) {
-            timeout = to;
-        }
-    }
-
-    return timeout;
-}
-
-unsigned int
-CDBConnectionFactory::CalculateLoginTimeout(const I_DriverContext& ctx) const
-{
-    unsigned int timeout = 30;
-
-    unsigned int to = GetLoginTimeout();
-    if (to != 0) {
-        timeout = to;
-    }
-    else {
-        to = ctx.GetLoginTimeout();
-        if (to != 0) {
-            timeout = to;
-        }
-    }
-
-    return timeout;
-}
-
 CDBConnectionFactory::CRuntimeData&
 CDBConnectionFactory::GetRuntimeData(const CRef<IConnValidator> validator)
 {
@@ -346,13 +307,6 @@ CDBConnectionFactory::MakeDBConnection(
         (new CDB_UserHandler_Deferred(ultimate_handlers));
     opening_ctx.handlers.Push(&*handler, eTakeOwnership);
     
-    // Store original query timeout ...
-    unsigned int query_timeout = ctx.GetTimeout();
-
-    // Set "validation timeouts" ...
-    ctx.SetTimeout(CalculateConnectionTimeout(ctx));
-    ctx.SetLoginTimeout(CalculateLoginTimeout(ctx));
-
     if ( dsp_srv.Empty() ) {
         // We are here either because server name was never dispatched or
         // because a named connection pool has been used before.
@@ -435,14 +389,6 @@ CDBConnectionFactory::MakeDBConnection(
                                             opening_ctx.last_tried);
             }
         }
-    }
-
-    // Restore original connection timeout ...
-    ctx.SetTimeout(query_timeout);
-
-    // Restore original query timeout ...
-    if (t_con.get() != NULL) {
-        t_con->SetTimeout(query_timeout);
     }
 
     x_LogConnection(opening_ctx, t_con.get(), params);

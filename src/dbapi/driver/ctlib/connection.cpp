@@ -254,6 +254,15 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
         hostname[sizeof(hostname) - 1] = '\0';
     }
 
+    CS_INT timeout, login_timeout;
+    NStr::StringToNumeric(params.GetParam("timeout"), &timeout);
+    if (timeout == 0) {
+        timeout = CS_NO_LIMIT;
+    }
+    NStr::StringToNumeric(params.GetParam("login_timeout"), &login_timeout);
+    if (login_timeout == 0) {
+        login_timeout = CS_NO_LIMIT;
+    }
 
     if (CheckWhileOpening(ct_con_props(x_GetSybaseConn(),
                                 CS_SET,
@@ -279,6 +288,18 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
                                    (void*) hostname,
                                    CS_NULLTERM,
                                    NULL)) != CS_SUCCEED
+        || CheckWhileOpening(ct_con_props(x_GetSybaseConn(),
+                                          CS_SET,
+                                          CS_TIMEOUT,
+                                          &timeout,
+                                          CS_UNUSED,
+                                          nullptr)) != CS_SUCCEED
+        || CheckWhileOpening(ct_con_props(x_GetSybaseConn(),
+                                          CS_SET,
+                                          CS_LOGIN_TIMEOUT,
+                                          &login_timeout,
+                                          CS_UNUSED,
+                                          nullptr)) != CS_SUCCEED
 #ifdef FTDS_IN_USE
         || (CheckWhileOpening(ct_con_props(
                                    x_GetSybaseConn(), 
