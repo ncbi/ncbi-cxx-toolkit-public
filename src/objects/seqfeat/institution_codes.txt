@@ -2477,7 +2477,7 @@ GXSP	s	Guangxi School of Pharmacy
 GZAC	s	Guizhou Agricultural College, College of Life Science			
 GZCC	c	Guizhou Culture Collection			
 GZM	s	Giessener Zoologisches Museum			
-GZTM	s	Guizhou Institute of Traditional Chinese Medicine			
+GZTM	s	Guizhou University of Traditional Chinese Medicine	GZUTCM		
 GZU	s	Karl-Franzens-Universitat Graz			
 GZUH	s	Guizhou University Herbarium			
 H	s	University of Helsinki			
