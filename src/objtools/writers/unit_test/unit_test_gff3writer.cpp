@@ -335,6 +335,15 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
             pWriter->WriteFooter();
         }
     }
+    else if (testInfo.mObjType == "align-set") {
+        CRef<CSeq_align_set> pAlignSet(new CSeq_align_set);
+        *pI >> *pAlignSet;
+        pWriter->WriteHeader();
+        for (const auto alignIt: pAlignSet->Get()) {
+            pWriter->WriteAlign(*alignIt);
+        }
+        pWriter->WriteFooter();
+    }
     else if (testInfo.mObjType == "bioseq") {
         CRef<CBioseq> pBioseq(new CBioseq);
         *pI >> *pBioseq;
