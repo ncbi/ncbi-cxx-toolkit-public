@@ -819,23 +819,23 @@ bool SUvNgHttp2_SessionBase::Send()
         Reset(SUvNgHttp2_Error::FromNgHttp2(send_rv, "on send"));
 
     } else if (send_rv == SNgHttp2_Session::eWantsClose) {
-        m_Tls->Close();
-        m_Tcp.Close();
-        return false;
+        Reset("nghttp2 asked to drop connection");
+
+    } else {
+        auto tls_rv = m_Tls->Write();
+
+        if ((tls_rv < 0) && !s_WantReadOrWrite(tls_rv)) {
+            Reset(SUvNgHttp2_Error::FromMbedTls(tls_rv, "on write"));
+
+        } else if (auto tcp_rv = m_Tcp.Write()) {
+            Reset(SUvNgHttp2_Error::FromLibuv(tcp_rv, "on write"));
+
+        } else {
+            return true;
+        }
     }
 
-    auto tls_rv = m_Tls->Write();
-
-    if ((tls_rv < 0) && !s_WantReadOrWrite(tls_rv)) {
-        Reset(SUvNgHttp2_Error::FromMbedTls(tls_rv, "on write"));
-        return false;
-
-    } else if (auto tcp_rv = m_Tcp.Write()) {
-        Reset(SUvNgHttp2_Error::FromLibuv(tcp_rv, "on write"));
-        return false;
-    }
-
-    return true;
+    return false;
 }
 
 void SUvNgHttp2_SessionBase::OnConnect(int status)
