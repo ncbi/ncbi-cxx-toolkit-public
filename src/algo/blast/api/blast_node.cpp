@@ -161,7 +161,7 @@ bool CBlastMasterNode::Processing()
 								CRef<CBlastNodeMsg> empty_msg;
 								pair<int,CRef<CBlastNodeMsg> > m(chunk_num, empty_msg);
 								m_FormatQueue.insert(m);
-								INFO_POST("Starting Chunk # " << chunk_num) ;
+								INFO_POST("Starting Chunk # " << chunk_num << " " << n->GetNodeIdStr());
 							}
 							else {
 		 						NCBI_THROW(CBlastException, eCoreBlastError, "Invalid mailbox node number" );
@@ -220,11 +220,7 @@ void CBlastMasterNode::FormatResults()
 		}
 		int node_num = n->GetNodeNum();
 		if (msg->GetMsgType() == CBlastNodeMsg::ePostResult) {
-			string results;
-			n->GetBlastResults(results);
-			if (results != kEmptyStr) {
-				m_OutputStream << results;
-			}
+			n->GetBlastResults(m_OutputStream);
 		}
 		else if (msg->GetMsgType() == CBlastNodeMsg::eErrorExit) {
 			m_NumErrStatus++;

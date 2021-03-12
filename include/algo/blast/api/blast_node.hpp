@@ -95,7 +95,7 @@ public :
 	CBlastNode (int node_num, const CNcbiArguments & ncbi_args, const CArgs& args,
 			    CBlastAppDiagHandler & bah, int query_index, int num_queries, CBlastNodeMailbox * mailbox);
 
-	 virtual int GetBlastResults(string & results) = 0;
+	 virtual int GetBlastResults(CNcbiOstream & os) = 0;
 	 int GetNodeNum() { return m_NodeNum;}
 	 EState GetState() { return m_State; }
 	 int GetStatus() { return m_Status; }
