@@ -68,6 +68,7 @@ NCBI_PARAM_DEF(unsigned, PSG, request_retries,        2);
 NCBI_PARAM_DEF(string,   PSG, request_user_args,      "");
 NCBI_PARAM_DEF(unsigned, PSG, localhost_preference,   1);
 NCBI_PARAM_DEF(bool,     PSG, fail_on_unknown_items,  false);
+NCBI_PARAM_DEF(bool,     PSG, https,                  false);
 
 NCBI_PARAM_DEF(double,   PSG, throttle_relaxation_period,                  0.0);
 NCBI_PARAM_DEF(unsigned, PSG, throttle_by_consecutive_connection_failures, 0);
@@ -469,7 +470,7 @@ SPSG_IoSession::SPSG_IoSession(SPSG_Server& s, SPSG_AsyncQueue& queue, uv_loop_t
             s.address,
             TPSG_RdBufSize::GetDefault(),
             TPSG_WrBufSize::GetDefault(),
-            false,
+            TPSG_Https::GetDefault(),
             TPSG_MaxConcurrentStreams::GetDefault(),
             forward<TNgHttp2Cbs>(callbacks)...),
     server(s),
