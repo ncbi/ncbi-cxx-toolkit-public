@@ -84,7 +84,7 @@ void CCassBioseqInfoTaskDelete::Wait1(void)
                 m_QueryArr[0].query = m_Conn->NewQuery();
                 m_QueryArr[0].restart_count = 0;
                 auto qry = m_QueryArr[0].query;
-                string sql = "DELETE FROM " + GetKeySpace() + ".bioseq_info WHERE accession = ? AND version = ? AND seq_it_type = ? AND gi = ?";
+                string sql = "DELETE FROM " + GetKeySpace() + ".bioseq_info WHERE accession = ? AND version = ? AND seq_id_type = ? AND gi = ?";
                 qry->NewBatch();
 
                 qry->SetSQL(sql, 4);
