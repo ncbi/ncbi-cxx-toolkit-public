@@ -919,7 +919,7 @@ string FormatPreciseTime(const chrono::system_clock::time_point &  t_point)
 
 static map<EPSGS_StartupDataState, string> s_CassStartupDataStateMsg =
     { {ePSGS_NoCassConnection, "Cassandra DB connection is not established"},
-      {ePSGS_NoValidCassMapping, "Cassanda DB mapping configuration is invalid"},
+      {ePSGS_NoValidCassMapping, "Cassandra DB mapping configuration is invalid"},
       {ePSGS_NoCassCache, "LMDB cache is not initialized"},
       {ePSGS_StartupDataOK, "Cassandra DB mapping data are OK"} };
 string GetCassStartupDataStateMessage(EPSGS_StartupDataState  state)
