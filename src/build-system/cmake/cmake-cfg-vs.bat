@@ -15,7 +15,7 @@ set extension=cmake_configure_ext.bat
 REM #########################################################################
 set VSWHERE="%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere"
 if "%CMAKE_CMD%"=="" (
-  for /f "tokens=* USEBACKQ" %%i IN (`%VSWHERE% -version 15.0 -property installationPath`) do (
+  for /f "tokens=* USEBACKQ" %%i IN (`%VSWHERE% -latest -property installationPath`) do (
     set CMAKE_CMD=%%i\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe
   )
 )
