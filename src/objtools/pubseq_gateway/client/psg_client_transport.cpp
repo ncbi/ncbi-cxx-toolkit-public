@@ -214,6 +214,17 @@ void SPSG_Reply::SetSuccess()
     }
 }
 
+void SPSG_Reply::AddError(string message)
+{
+    reply_item.GetLock()->state.AddError(message);
+
+    auto items_locked = items.GetLock();
+
+    for (auto& item : *items_locked) {
+        item.GetLock()->state.AddError(message);
+    }
+}
+
 SPSG_Request::SPSG_Request(string p, shared_ptr<SPSG_Reply> r, CRef<CRequestContext> c, const SPSG_Params& params) :
     full_path(move(p)),
     reply(r),
@@ -508,7 +519,7 @@ bool SPSG_IoSession::Retry(shared_ptr<SPSG_Request> req, const SUvNgHttp2_Error&
     }
 
     debug_printout << error << endl;
-    req->reply->reply_item.GetLock()->state.AddError(error);
+    req->reply->AddError(error);
     _DEBUG_ARG(const auto& server_name = server.address.AsString());
     PSG_THROTTLING_TRACE("Server '" << server_name << "' failed to process request '" <<
             debug_printout.id << '\'');

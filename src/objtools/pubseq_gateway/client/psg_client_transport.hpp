@@ -300,6 +300,7 @@ struct SPSG_Reply
 
     SPSG_Reply(string id, const SPSG_Params& params) : debug_printout(move(id), params) {}
     void SetSuccess();
+    void AddError(string message);
 };
 
 struct SPSG_Request
