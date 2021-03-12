@@ -59,10 +59,10 @@ CRPSTBlastnNode::CRPSTBlastnNode (int node_num, const CNcbiArguments & ncbi_args
 	SendMsg(CBlastNodeMsg::eRunRequest, (void*) this);
 }
 
-int CRPSTBlastnNode::GetBlastResults(string & results)
+int CRPSTBlastnNode::GetBlastResults(CNcbiOstream & os)
 {
 	if(GetState() == eDone) {
-		results = CNcbiOstrstreamToString(m_CmdLineArgs->GetOutputStrStream());
+		os << m_CmdLineArgs->GetOutputStrStream().rdbuf();
 		return GetStatus();
 	}
 	return -1;

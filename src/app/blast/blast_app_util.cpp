@@ -980,4 +980,19 @@ void LogRPSCmdOptions(blast::CBlastUsageReport & report, const CBlastAppArgs & a
 	}
 }
 
+int GetMTByQueriesBatchSize(EProgram p, int num_threads)
+{
+	    int batch_size = 0;
+	    int kChunkMax = 10;
+
+		char * mt_query_batch_env = getenv("BLAST_MT_QUERY_BATCH_SIZE");
+		if (mt_query_batch_env) {
+			batch_size = NStr::StringToInt(mt_query_batch_env);
+		}
+		else {
+			batch_size = GetQueryBatchSize(p)/MIN(num_threads, kChunkMax);
+		}
+		return batch_size;
+}
+
 END_NCBI_SCOPE

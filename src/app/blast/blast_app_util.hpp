@@ -320,6 +320,8 @@ void LogQueryInfo(blast::CBlastUsageReport & report, const blast::CBlastInput & 
 void LogRPSBlastOptions(blast::CBlastUsageReport & report, const blast::CBlastOptions & opt);
 void LogRPSCmdOptions(blast::CBlastUsageReport & report, const blast::CBlastAppArgs & args);
 
+int GetMTByQueriesBatchSize(blast::EProgram p, int num_threads);
+
 END_NCBI_SCOPE
 
 #endif /* APP__BLAST_APP_UTIL__HPP */
