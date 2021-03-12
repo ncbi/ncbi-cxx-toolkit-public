@@ -91,6 +91,8 @@ align_format needs3party $(GENBANK_THIRD_PARTY_LIBS)
 aligndb_client needs $(SEQ_LIBS)
 aligndb_client needs pub
 aligndb_reader needs $(SDBAPI_LIB)
+aligndb_reader needs ncbi_xdbapi_ftds
+aligndb_reader needs ncbi_xdbapi_ftds100
 aligndb_reader needs taxon1
 aligndb_reader needs xobjutil
 aligndb_reader needs3party $(SDBAPI_LIBS)
@@ -166,6 +168,8 @@ biblio needs general
 binary_quality_profile needs xncbi
 biocollect needs ncbi_xdbapi_ftds
 biosample needs $(SDBAPI_LIB)
+biosample needs ncbi_xdbapi_ftds
+biosample needs ncbi_xdbapi_ftds100
 biosample needs xmlwrapp
 biosample needs xregexp
 biosample needs3party $(SDBAPI_LIBS)
@@ -306,7 +310,6 @@ dbapi_sample_base needs $(DBAPI_ODBC)
 dbapi_sample_base needs $(XCONNEXT)
 dbapi_sample_base needs ncbi_xdbapi_ftds
 dbapi_sample_base needs ncbi_xdbapi_ftds100
-dbapi_sample_base needs ncbi_xdbapi_ftds95
 dbapi_sample_base needs xconnect
 dbapi_sample_base needs xutil
 dbapi_sample_base needs3party $(SYBASE_DLLS)
@@ -484,9 +487,13 @@ gnomon_access needs3party $(SQLITE3_LIBS)
 gnomon_asn_proc needs xobjutil
 gp_assm2xml needs $(SDBAPI_LIB)
 gp_assm2xml needs gencoll_client
+gp_assm2xml needs ncbi_xdbapi_ftds
+gp_assm2xml needs ncbi_xdbapi_ftds100
 gp_assm2xml needs xmlwrapp
 gp_assm2xml needs3party $(SDBAPI_LIBS)
 gpcgi needs $(SDBAPI_LIB)
+gpcgi needs ncbi_xdbapi_ftds
+gpcgi needs ncbi_xdbapi_ftds100
 gpcgi needs xcgi
 gpcgi needs xmlwrapp
 gpcgi needs xregexp
@@ -500,6 +507,8 @@ gpinit needs gpinit_access
 gpinit needs gpinit_obj
 gpinit needs gpipe_objutil
 gpinit_access needs $(SDBAPI_LIB)
+gpinit_access needs ncbi_xdbapi_ftds
+gpinit_access needs ncbi_xdbapi_ftds100
 gpinit_access needs xconnect
 gpinit_access needs3party $(SDBAPI_LIBS)
 gpinit_bag_util needs bag_access
@@ -541,6 +550,8 @@ gpipe_clean_prot_names needs gpipe_attr
 gpipe_clean_prot_names needs macro
 gpipe_common needs $(SDBAPI_LIB)
 gpipe_common needs eutils_client
+gpipe_common needs ncbi_xdbapi_ftds
+gpipe_common needs ncbi_xdbapi_ftds100
 gpipe_common needs vdb_reader
 gpipe_common needs xcgi
 gpipe_common needs xregexp
@@ -609,6 +620,8 @@ gpipe_sadb needs xmlwrapp
 gpipe_sqlite needs $(SDBAPI_LIB)
 gpipe_sqlite needs $(SEQ_LIBS)
 gpipe_sqlite needs $(SQLITE3_WRAPPER)
+gpipe_sqlite needs ncbi_xdbapi_ftds
+gpipe_sqlite needs ncbi_xdbapi_ftds100
 gpipe_sqlite needs pub
 gpipe_sqlite needs xconnect
 gpipe_sqlite needs xregexp
@@ -771,6 +784,8 @@ ideochr needs3party vibrant
 ideocli needs ideo
 ideocoord needs $(SDBAPI_LIB)
 ideocoord needs ideo_gridcli
+ideocoord needs ncbi_xdbapi_ftds
+ideocoord needs ncbi_xdbapi_ftds100
 ideocoord needs3party $(SDBAPI_LIBS)
 idgen needs dbassist
 idload needs3party ctutils
@@ -939,10 +954,8 @@ ncbi_xdbapi_ftds needs3party $(FTDS_LIBS)
 ncbi_xdbapi_ftds100 needs $(FTDS_LIB)
 ncbi_xdbapi_ftds100 needs dbapi_driver
 ncbi_xdbapi_ftds100 needs3party $(FTDS_LIBS)
-ncbi_xdbapi_ftds95 needs $(FTDS95_LIB)
+ncbi_xdbapi_ftds95 needs ct_ftds95
 ncbi_xdbapi_ftds95 needs dbapi_driver
-ncbi_xdbapi_ftds95 needs3party $(KRB5_LIBS)
-ncbi_xdbapi_ftds95 needs3party $(NETWORK_LIBS)
 ncbi_xdbapi_mysql needs dbapi_driver
 ncbi_xdbapi_mysql needs3party $(MYSQL_LIBS)
 ncbi_xdbapi_mysql needs3party $(NETWORK_LIBS)
@@ -1086,6 +1099,8 @@ omssa needs $(SEQ_LIBS)
 omssa needs pub
 osutils needs3party ctutils
 pathogen_cluster_loader needs $(SDBAPI_LIB)
+pathogen_cluster_loader needs ncbi_xdbapi_ftds
+pathogen_cluster_loader needs ncbi_xdbapi_ftds100
 pathogen_cluster_loader needs xasmcompare
 pathogen_cluster_loader needs xconnect
 pathogen_cluster_loader needs3party $(SDBAPI_LIBS)
@@ -1209,6 +1224,8 @@ seqdb needs3party $(LMDB_LIBS)
 seqedit needs seqset
 seqentry_comparator needs xobjwrite
 seqgapscan needs $(SDBAPI_LIB)
+seqgapscan needs ncbi_xdbapi_ftds
+seqgapscan needs ncbi_xdbapi_ftds100
 seqgapscan needs xconnect
 seqgapscan needs xobjutil
 seqgapscan needs3party $(SDBAPI_LIBS)
@@ -1667,6 +1684,8 @@ xgp_manifest needs xser
 xgpgcreport needs gc_asn_access
 xgpgcreport needs gencoll_release_report
 xgpp_console needs $(SDBAPI_LIB)
+xgpp_console needs ncbi_xdbapi_ftds
+xgpp_console needs ncbi_xdbapi_ftds100
 xgpp_console needs xconnect
 xgpp_console needs3party $(SDBAPI_LIBS)
 xgpp_console_access needs xgpp_console_commands
