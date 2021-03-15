@@ -15,20 +15,9 @@
 ##  HAVE_XXX
 
 
-set(NCBI_REQUIRE_MSWin_FOUND YES)
-list(APPEND NCBI_ALL_REQUIRES MSWin)
-if(BUILD_SHARED_LIBS)
-    set(NCBI_REQUIRE_DLL_FOUND YES)
-    list(APPEND NCBI_ALL_REQUIRES DLL)
-endif()
 #to debug
 #set(NCBI_TRACE_COMPONENT_GRPC ON)
 #############################################################################
-# common settings
-set(NCBI_TOOLS_ROOT $ENV{NCBI})
-string(REPLACE "\\" "/" NCBI_TOOLS_ROOT "${NCBI_TOOLS_ROOT}")
-
-set(NCBI_PlatformBits 64)
 if("${CMAKE_GENERATOR}" STREQUAL "Visual Studio 15 2017 Win64")
     set(NCBI_ThirdPartyCompiler vs2017.64)
 elseif("${CMAKE_GENERATOR}" STREQUAL "Visual Studio 15 2017")
@@ -44,6 +33,8 @@ else()
     set(NCBI_ThirdPartyCompiler vs2017.64)
 endif()
 
+#############################################################################
+# prebuilt libraries
 set(NCBI_ThirdPartyBasePath ${NCBI_TOOLS_ROOT}/Lib/ThirdParty)
 set(NCBI_ThirdPartyAppsPath ${NCBI_TOOLS_ROOT}/App/ThirdParty)
 set(NCBI_ThirdParty_NCBI_C  ${NCBI_TOOLS_ROOT}/Lib/Ncbi/C/${NCBI_ThirdPartyCompiler}/c.current)
@@ -87,6 +78,7 @@ set(NCBI_ThirdParty_GL2PS       ${NCBI_ThirdPartyBasePath}/gl2ps/${NCBI_ThirdPar
 
 #############################################################################
 #############################################################################
+
 
 #############################################################################
 # in-house-resources

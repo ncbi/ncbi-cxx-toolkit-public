@@ -15,8 +15,6 @@
 ##  HAVE_XXX
 
 
-set(NCBI_REQUIRE_unix_FOUND YES)
-list(APPEND NCBI_ALL_REQUIRES unix)
 if(XCODE)
     set(NCBI_REQUIRE_XCODE_FOUND YES)
     list(APPEND NCBI_ALL_REQUIRES XCODE)
@@ -27,9 +25,7 @@ endif()
 
 #############################################################################
 # common settings
-set(NCBI_TOOLS_ROOT $ENV{NCBI})
 set(NCBI_OPT_ROOT  /opt/X11)
-set(NCBI_PlatformBits 64)
 
 ############################################################################
 # prebuilt libraries
@@ -60,26 +56,6 @@ set(NCBI_ThirdParty_GNUTLS     ${NCBI_TOOLS_ROOT}/gnutls-3.4.0 CACHE PATH "GNUTL
 
 #############################################################################
 #############################################################################
-
-check_library_exists(dl dlopen "" HAVE_LIBDL)
-if(HAVE_LIBDL)
-    set(DL_LIBS -ldl)
-else(HAVE_LIBDL)
-    message(FATAL_ERROR "dl library not found")
-endif(HAVE_LIBDL)
-
-set(THREAD_LIBS   ${CMAKE_THREAD_LIBS_INIT})
-find_library(CRYPT_LIBS NAMES crypt)
-find_library(MATH_LIBS NAMES m)
-
-if (APPLE)
-    find_library(NETWORK_LIBS resolv)
-    find_library(RT_LIBS c)
-else (APPLE)
-    find_library(NETWORK_LIBS resolv)
-    find_library(RT_LIBS        rt)
-endif (APPLE)
-set(ORIG_LIBS   ${DL_LIBS} ${RT_LIBS} ${MATH_LIBS} ${CMAKE_THREAD_LIBS_INIT})
 
 set(FOUNDATION_LIBS "-framework foundation")
 

@@ -14,50 +14,12 @@
 ##  HAVE_LIBXXX
 ##  HAVE_XXX
 
-set(NCBI_REQUIRE_unix_FOUND YES)
-list(APPEND NCBI_ALL_REQUIRES unix)
-
-#set(NCBI_ALL_COMPONENTS "")
 
 message("USING CONAN")
-
-set(NCBI_PlatformBits 64)
-set(CMAKE_CXX_STANDARD 14)
-
-if(NOT APPLE AND NOT CYGWIN)
-    set(NCBI_REQUIRE_Linux_FOUND YES)
-    list(APPEND NCBI_ALL_REQUIRES Linux)
-endif()
-
-include(CheckLibraryExists)
-include(${NCBI_TREE_CMAKECFG}/FindExternalLibrary.cmake)
-
-check_library_exists(dl dlopen "" HAVE_LIBDL)
-if(HAVE_LIBDL)
-    set(DL_LIBS -ldl)
-else(HAVE_LIBDL)
-    message(FATAL_ERROR "dl library not found")
-endif(HAVE_LIBDL)
-
-set(THREAD_LIBS   ${CMAKE_THREAD_LIBS_INIT})
-find_library(CRYPT_LIBS NAMES crypt)
-find_library(MATH_LIBS NAMES m)
 
 if(NOT APPLE)
     NCBI_define_Xcomponent(NAME GIF PACKAGE GIF LIB gif)
 endif()
-
-if (APPLE)
-    find_library(NETWORK_LIBS resolv)
-    find_library(RT_LIBS c)
-elseif (NCBI_REQUIRE_FreeBSD_FOUND)
-    find_library(NETWORK_LIBS c)
-    find_library(RT_LIBS      rt)
-else ()
-    find_library(NETWORK_LIBS   resolv)
-    find_library(RT_LIBS        rt)
-endif ()
-set(ORIG_LIBS   ${DL_LIBS} ${RT_LIBS} ${MATH_LIBS} ${CMAKE_THREAD_LIBS_INIT})
 
 # Use LocalLMDB as we don't have it in conan yet
 if(NOT NCBI_COMPONENT_LMDB_FOUND)

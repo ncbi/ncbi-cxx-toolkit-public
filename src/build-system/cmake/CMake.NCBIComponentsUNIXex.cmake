@@ -14,17 +14,6 @@
 ##  HAVE_LIBXXX
 ##  HAVE_XXX
 
-set(NCBI_REQUIRE_unix_FOUND YES)
-list(APPEND NCBI_ALL_REQUIRES unix)
-if(NOT APPLE AND NOT CYGWIN)
-    if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-        set(NCBI_REQUIRE_Linux_FOUND YES)
-        list(APPEND NCBI_ALL_REQUIRES Linux)
-    elseif(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
-        set(NCBI_REQUIRE_FreeBSD_FOUND YES)
-        list(APPEND NCBI_ALL_REQUIRES FreeBSD)
-    endif()
-endif()
 option(USE_LOCAL_BZLIB "Use a local copy of libbz2")
 option(USE_LOCAL_PCRE "Use a local copy of libpcre")
 if(USE_LOCAL_BZLIB)
@@ -39,9 +28,7 @@ endif()
 
 #############################################################################
 # common settings
-set(NCBI_TOOLS_ROOT $ENV{NCBI})
 set(NCBI_OPT_ROOT  /opt/ncbi/64)
-set(NCBI_PlatformBits 64)
 
 #############################################################################
 # prebuilt libraries
@@ -100,28 +87,6 @@ set(NCBI_ThirdParty_GNUTLS        ${NCBI_TOOLS_ROOT}/gnutls-3.4.0 CACHE PATH "GN
 #############################################################################
 #############################################################################
 
-check_library_exists(dl dlopen "" HAVE_LIBDL)
-if(HAVE_LIBDL)
-    set(DL_LIBS -ldl)
-else(HAVE_LIBDL)
-    message(FATAL_ERROR "dl library not found")
-endif(HAVE_LIBDL)
-
-set(THREAD_LIBS   ${CMAKE_THREAD_LIBS_INIT})
-find_library(CRYPT_LIBS NAMES crypt)
-find_library(MATH_LIBS NAMES m)
-
-if (APPLE)
-    find_library(NETWORK_LIBS resolv)
-    find_library(RT_LIBS c)
-elseif (NCBI_REQUIRE_FreeBSD_FOUND)
-    find_library(NETWORK_LIBS c)
-    find_library(RT_LIBS      rt)
-else ()
-    find_library(NETWORK_LIBS   resolv)
-    find_library(RT_LIBS        rt)
-endif ()
-set(ORIG_LIBS   ${DL_LIBS} ${RT_LIBS} ${MATH_LIBS} ${CMAKE_THREAD_LIBS_INIT})
 
 #############################################################################
 # in-house-resources
