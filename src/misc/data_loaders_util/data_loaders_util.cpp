@@ -37,7 +37,6 @@
 #include <objmgr/scope.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/data_loaders/genbank/readers.hpp>
-#include <objtools/data_loaders/genbank/psg_loader.hpp>
 #include <objtools/data_loaders/blastdb/bdbloader.hpp>
 
 #include <objtools/data_loaders/lds2/lds2_dataloader.hpp>
@@ -107,16 +106,12 @@ void CDataLoadersUtil::AddArgumentDescriptions(CArgDescriptions& arg_desc,
             if ( !arg_desc.Exist("genbank")) {
                 arg_desc.AddFlag("genbank",
                                  "Enable remote data retrieval using the Genbank data loader");
-                arg_desc.AddFlag("psg",
-                                 "Enable remote data retrieval using the PubSeqGateway data loader");
             }
         }
         else {
             if(!arg_desc.Exist("nogenbank")) {
                 arg_desc.AddFlag("nogenbank",
                                  "Do not use GenBank data loader.");
-                arg_desc.AddFlag("nopsg",
-                                 "Do not use PubSeqGateway data loader.");
             }
         }
     }
@@ -184,15 +179,6 @@ void CDataLoadersUtil::x_SetupGenbankDataLoader(const CArgs& args,
         }
     }
 
-    bool nopsg = args.Exist("nopsg") && args["nopsg"];
-    if (loaders & fGenbankOffByDefault) {
-        if (args.Exist("psg") && args["psg"]) {
-            nopsg = false;
-        } else {
-            nopsg = true;
-        }
-    }
-
     if ( ! nogenbank ) {
         // pubseqos* drivers require this
         DBAPI_RegisterDriver_FTDS();
@@ -208,23 +194,13 @@ void CDataLoadersUtil::x_SetupGenbankDataLoader(const CArgs& args,
         // between the above high-performance loaders and this one,
         // leave a gap in the priority range.
         priority = max(priority, 16000);
+        CGBDataLoader::RegisterInObjectManager(obj_mgr,
+                                               0,
+                                               CObjectManager::eDefault,
+                                               priority);
 
-        if ( ! nopsg ) {
-            CPSGDataLoader::RegisterInObjectManager(obj_mgr,
-                                                    CObjectManager::eDefault,
-                                                    priority);
-            LOG_POST(Info << "added loader: PubSeqGateway: "
-                     << " (" << priority << ")");
-        }
-        else {
-            CGBDataLoader::RegisterInObjectManager(obj_mgr,
-                                                   0,
-                                                   CObjectManager::eDefault,
-                                                   priority);
-
-            LOG_POST(Info << "added loader: GenBank: "
-                     << " (" << priority << ")");
-        }
+        LOG_POST(Info << "added loader: GenBank: "
+                 << " (" << priority << ")");
         ++priority;
     }
 }
@@ -527,4 +503,3 @@ CRef<objects::CScope> CDataLoadersUtil::GetDefaultScope(const CArgs& args)
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
-
