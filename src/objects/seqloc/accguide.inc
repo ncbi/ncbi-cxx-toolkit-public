@@ -300,6 +300,7 @@ static const char* const kBuiltInGuide[] = {
     "3+6  NT_      refseq_contig",
     "3+6  NW_      refseq_wgs_intermed",
     "3+9  NW_      refseq_wgs_intermed",
+    "4+5  NZ_?     refseq_contig",
     "5+6  NZ_??    refseq_contig",
     "7+8  NZ_????  refseq_wgs_nuc",
     "7+9  NZ_????  refseq_wgs_nuc",
