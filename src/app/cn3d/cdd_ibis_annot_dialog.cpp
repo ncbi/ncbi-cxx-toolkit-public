@@ -111,6 +111,7 @@ static const string IBIS_EVIDENCE_COMMENT = "Interaction site inferred from IBIS
 const Sequence* IBISInteraction::m_querySequence = NULL;
 const MoleculeIdentifier* IBISInteraction::m_queryMolecule = NULL;
 const int IBISInteraction::NOT_ASSIGNED = -1;
+const TGi IBISInteraction::GI_NOT_ASSIGNED = -1;
 
 void IBISInteraction::SetQuerySequence(const Sequence* querySequence) {
     m_queryMolecule = NULL;
@@ -527,12 +528,12 @@ bool IBISInteraction::GetFootprint(int& from, int& to) const
     return result;
 }
 
-bool IBISInteraction::GetGi(int& gi) const
+bool IBISInteraction::GetGi(TGi& gi) const
 {
     bool result, idsMatch;
     const CSeq_loc& seqloc = GetLocation(result);
 
-    gi = NOT_ASSIGNED;
+    gi = GI_NOT_ASSIGNED;
     if (result) {
         const CPacked_seqint::Tdata& intervals = seqloc.GetPacked_int().Get();
         CPacked_seqint::Tdata::const_iterator it = intervals.begin(), itEnd = intervals.end();

@@ -339,8 +339,8 @@ static void DumpText(bool doHTML, const BlockMultipleAlignment *alignment,
         // uid for link to entrez
         if (doHTML) {
             // prefer gi's, since accessions can be outdated
-            if (sequence->identifier->gi != MoleculeIdentifier::VALUE_NOT_SET) {
-                uids[row] = NStr::IntToString(sequence->identifier->gi);
+            if (sequence->identifier->gi != MoleculeIdentifier::GI_NOT_SET) {
+                uids[row] = NStr::NumericToString(sequence->identifier->gi);
             } else if (sequence->identifier->pdbID.size() > 0) {
                 if (sequence->identifier->pdbID != "query" &&
                     sequence->identifier->pdbID != "consensus") {

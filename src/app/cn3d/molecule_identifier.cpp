@@ -61,6 +61,7 @@ typedef list < MoleculeIdentifier > MoleculeIdentifierList;
 static MoleculeIdentifierList knownIdentifiers;
 
 const int MoleculeIdentifier::VALUE_NOT_SET = -1;
+const TGi MoleculeIdentifier::GI_NOT_SET = -1;
 
 const MoleculeIdentifier * MoleculeIdentifier::GetIdentifier(const Molecule *molecule, const SeqIdList& ids)
 {
@@ -276,7 +277,7 @@ void MoleculeIdentifier::AddFields(const SeqIdList& ids)
 
         // gi
         else if ((*n)->IsGi()) {
-            if (gi == VALUE_NOT_SET)
+            if (gi == GI_NOT_SET)
                 gi = (*n)->GetGi();
             else if (gi != (*n)->GetGi())
                 ERRORMSG("AddFields(): identifier conflict: already has gi " << gi);
@@ -350,16 +351,16 @@ bool MoleculeIdentifier::CompareIdentifiers(const MoleculeIdentifier *a, const M
             return true;
     }
 
-    else if (a->gi != VALUE_NOT_SET) {
+    else if (a->gi != GI_NOT_SET) {
         if (b->pdbID.size() > 0)
             return false;
-        else if (b->gi != VALUE_NOT_SET)
+        else if (b->gi != GI_NOT_SET)
             return (a->gi < b->gi);
         else
             return true;
     }
 
-    else if (b->pdbID.size() > 0 || b->gi != VALUE_NOT_SET)
+    else if (b->pdbID.size() > 0 || b->gi != GI_NOT_SET)
         return false;
 
     else if (a->seqIDs.size() > 0 && b->seqIDs.size() > 0)
@@ -391,7 +392,7 @@ string MoleculeIdentifier::ToString(void) const
 				oss <<  '_' << (char) pdbChain;
 			}
 		#endif
-    } else if (gi != VALUE_NOT_SET) {
+    } else if (gi != GI_NOT_SET) {
         oss << "gi " << gi;
     } else if (mmdbID != VALUE_NOT_SET && moleculeID != VALUE_NOT_SET) {
         oss << "mmdb " << mmdbID << " molecule " << moleculeID;

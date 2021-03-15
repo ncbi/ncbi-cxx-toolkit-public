@@ -201,14 +201,14 @@ CDDSplashDialog::CDDSplashDialog(StructureWindow *cn3dFrame,
                         s, se = structureSet->sequenceSet->sequences.end();
                     for (s=structureSet->sequenceSet->sequences.begin(); s!=se; ++s) {
                         if ((*s)->identifier == m->second->identifier) {
-                            descr.Printf("%s: gi %i (%s)", m->second->identifier->ToString().c_str(),
-                                (*s)->identifier->gi, (*s)->GetDescription().c_str());
+                            descr.Printf("%s: gi %ll (%s)", m->second->identifier->ToString().c_str(),
+                                (long long)(*s)->identifier->gi, (*s)->GetDescription().c_str());
                             break;
                         }
                     }
                     if (s == se)
-                        descr.Printf("%s: gi %i", m->second->identifier->ToString().c_str(),
-                            m->second->identifier->gi);
+                        descr.Printf("%s: gi %ll", m->second->identifier->ToString().c_str(),
+                            (long long) m->second->identifier->gi);
                     chainList.push_back(WX_TO_STD(descr));
                 } else if (m->second->IsHeterogen()) {
                     // get name from local graph name of first (should be only) residue

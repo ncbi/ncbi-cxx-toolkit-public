@@ -410,7 +410,7 @@ void Sequence::FillOutSeqId(ncbi::objects::CSeq_id *sid) const
 //    if (identifier->pdbID.size() > 0 && identifier->pdbChain != MoleculeIdentifier::VALUE_NOT_SET) {
 //        sid->SetPdb().SetMol().Set(identifier->pdbID);
 //        if (identifier->pdbChain != ' ') sid->SetPdb().SetChain(identifier->pdbChain);
-//    } else if (identifier->gi != MoleculeIdentifier::VALUE_NOT_SET) { // use gi
+//    } else if (identifier->gi != MoleculeIdentifier::GI_NOT_SET) { // use gi
 //        sid->SetGi(identifier->gi);
 //    } else if (identifier->accession.size() > 0) {
 //        CObject_id *oid = new CObject_id();
@@ -438,7 +438,7 @@ void Sequence::LaunchWebBrowserWithInfo(void) const
     CNcbiOstrstream oss;
     oss << "https://www.ncbi.nlm.nih.gov/" << (isProtein ? "protein" : "nuccore") << "/";
     // prefer gi's, since accessions can be outdated
-    if (identifier->gi != MoleculeIdentifier::VALUE_NOT_SET) {
+    if (identifier->gi != MoleculeIdentifier::GI_NOT_SET) {
         oss << identifier->gi;
     } else if (identifier->pdbID.size() > 0) {
         oss << identifier->pdbID.c_str();

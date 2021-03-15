@@ -36,12 +36,15 @@
 #define CN3D_MOLECULE_IDENTIFIER__HPP
 
 #include <corelib/ncbistl.hpp>
+#include <corelib/ncbistd.hpp>
+#include <corelib/ncbimisc.hpp>
 
 #include <objects/seqloc/Seq_id.hpp>
 
 #include <list>
 #include <string>
 
+USING_NCBI_SCOPE;
 
 BEGIN_SCOPE(Cn3D)
 
@@ -56,11 +59,13 @@ class MoleculeIdentifier
 {
 public:
     static const int VALUE_NOT_SET;
+    static const TGi GI_NOT_SET;
 
     // store all Seq-ids, and also mmdb info
     typedef std::list < ncbi::CRef < ncbi::objects::CSeq_id > > SeqIdList;
     SeqIdList seqIDs;
-    int mmdbID, moleculeID, gi;
+    int mmdbID, moleculeID;
+    TGi gi;
 
 	#ifdef _STRUCTURE_USE_LONG_PDB_CHAINS_
 	  std::string pdbChain;
@@ -120,11 +125,11 @@ private:
     // can't create one of these directly - must use GetIdentifier()
 	#ifdef _STRUCTURE_USE_LONG_PDB_CHAINS_
 		MoleculeIdentifier(void) :
-			mmdbID(VALUE_NOT_SET), moleculeID(VALUE_NOT_SET), pdbChain(""), gi(VALUE_NOT_SET), nResidues(0)
+			mmdbID(VALUE_NOT_SET), moleculeID(VALUE_NOT_SET), pdbChain(""), gi(GI_NOT_SET), nResidues(0)
 			{ }
 	#else
 		MoleculeIdentifier(void) :
-			mmdbID(VALUE_NOT_SET), moleculeID(VALUE_NOT_SET), pdbChain(VALUE_NOT_SET), gi(VALUE_NOT_SET), nResidues(0)
+			mmdbID(VALUE_NOT_SET), moleculeID(VALUE_NOT_SET), pdbChain(VALUE_NOT_SET), gi(GI_NOT_SET), nResidues(0)
 			{ }
 	#endif
 

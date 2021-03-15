@@ -1054,7 +1054,7 @@ CNcbi_mime_asn1 * CreateMimeFromBiostruc(CRef < CBiostruc >& biostruc, EModel_ty
     strucseq->SetStructure(*biostruc);
 
     // get list of gi's to import
-    vector < int > gis;
+    vector < TGi > gis;
     CBiostruc_graph::TMolecule_graphs::const_iterator g,
         ge = biostruc->GetChemical_graph().GetMolecule_graphs().end();
     for (g=biostruc->GetChemical_graph().GetMolecule_graphs().begin(); g!=ge; ++g) {
@@ -1069,7 +1069,7 @@ CNcbi_mime_asn1 * CreateMimeFromBiostruc(CRef < CBiostruc >& biostruc, EModel_ty
         CRef < CBioseq_set > seqset(new CBioseq_set());
         seqs->SetSet(*seqset);
         for (unsigned int i=0; i<gis.size(); ++i) {
-            CRef < CBioseq > bioseq = FetchSequenceViaHTTP(NStr::IntToString(gis[i]));
+            CRef < CBioseq > bioseq = FetchSequenceViaHTTP(NStr::NumericToString(gis[i]));
             if (bioseq.NotEmpty()) {
                 CRef < CSeq_entry > seqentry(new CSeq_entry());
                 seqentry->SetSeq(*bioseq);

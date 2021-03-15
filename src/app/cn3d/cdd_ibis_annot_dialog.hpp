@@ -76,6 +76,7 @@ public:
 
     //  Value of properties not in the data returned for the interaction.
     static const int NOT_ASSIGNED;
+    static const TGi GI_NOT_ASSIGNED;
 
     //  Values are synced with the type code used in IBIS.
     enum eIbisInteractionType {
@@ -159,7 +160,7 @@ public:
     //  The method returns false and gi is 'NOT_ASSIGNED' 
     //  if there was a problem (such as the gi is not the
     //  same in all intervals of a packed-int).
-    bool GetGi(int& gi) const;  
+    bool GetGi(TGi& gi) const;  
 
 private:
 
