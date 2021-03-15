@@ -102,6 +102,6 @@ namespace std
         _Ostr.write(v.data(), v.size());
         return _Ostr;
     }
-};
+}
 
 #endif
