@@ -534,6 +534,7 @@ void CDeflineGenerator::x_SetFlagsIdx (
     m_Isolate = bsx->GetIsolate();
     m_Strain = bsx->GetStrain();
     m_Substrain = bsx->GetSubstrain();
+    m_MetaGenomeSource = bsx->GetMetaGenomeSource();
 
     m_IsUnverified = bsx->IsUnverified();
     m_UnverifiedPrefix.clear();
@@ -696,6 +697,7 @@ void CDeflineGenerator::x_SetFlags (
     m_Isolate.clear();
     m_Strain.clear();
     m_Substrain.clear();
+    m_MetaGenomeSource.clear();
 
     m_IsUnverified = false;
     m_UnverifiedPrefix.clear();
@@ -1186,6 +1188,7 @@ void CDeflineGenerator::x_SetBioSrcIdx (
 
     m_Strain = bsx->GetStrain();
     m_Substrain = bsx->GetSubstrain();
+    m_MetaGenomeSource = bsx->GetMetaGenomeSource();
     m_Cultivar = bsx->GetCultivar();
     m_Isolate = bsx->GetIsolate();
     m_Breed = bsx->GetBreed();
@@ -1332,6 +1335,11 @@ void CDeflineGenerator::x_SetBioSrc (
                 case NCBI_ORGMOD(breed):
                     if (m_Breed.empty()) {
                         m_Breed = str;
+                    }
+                    break;
+                case NCBI_ORGMOD(metagenome_source):
+                    if (m_MetaGenomeSource.empty()) {
+                        m_MetaGenomeSource = str;
                     }
                     break;
                 default:
@@ -3933,8 +3941,13 @@ string CDeflineGenerator::GenerateDefline (
     // calculate suffix
     x_SetSuffix (suffix, bsh, appendComplete);
 
+    string mag = "";
+    if (! m_MetaGenomeSource.empty()) {
+        mag = "MAG ";
+    }
+
     // produce final result
-    string penult = prefix + decoded + suffix;
+    string penult = mag + prefix + decoded + suffix;
 
     x_CleanAndCompress (final, penult, m_IsAA);
 

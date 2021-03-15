@@ -556,6 +556,7 @@ public:
     CTempString GetIsolate (void);
     CTempString GetStrain (void);
     CTempString GetSubstrain (void);
+    CTempString GetMetaGenomeSource (void);
 
     bool IsHTGSCancelled (void);
     bool IsHTGSDraft (void);
@@ -740,6 +741,7 @@ private:
     CTempString m_Isolate;
     CTempString m_Strain;
     CTempString m_Substrain;
+    CTempString m_MetaGenomeSource;
 
     // Keyword fields (genbank or embl blocks)
     bool m_HTGSCancelled;

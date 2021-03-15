@@ -903,6 +903,7 @@ CBioseqIndex::CBioseqIndex (CBioseq_Handle bsh,
     m_Isolate.clear();
     m_Strain.clear();
     m_Substrain.clear();
+    m_MetaGenomeSource.clear();
 
     m_IsUnverified = false;
     m_IsUnverifiedFeature = false;
@@ -1484,6 +1485,9 @@ void CBioseqIndex::x_InitSource (void)
                         numgbana++;
                         break;
                     case NCBI_ORGMOD(metagenome_source):
+                        if (m_MetaGenomeSource.empty()) {
+                            m_MetaGenomeSource = str;
+                        }
                         met = &str;
                         nummet++;
                         break;
@@ -2699,6 +2703,16 @@ CTempString CBioseqIndex::GetSubstrain (void)
     }
 
     return m_Substrain;
+}
+
+CTempString CBioseqIndex::GetMetaGenomeSource (void)
+
+{
+    if (! m_SourcesInitialized) {
+        x_InitSource();
+    }
+
+    return m_MetaGenomeSource;
 }
 
 bool CBioseqIndex::IsHTGSCancelled (void)

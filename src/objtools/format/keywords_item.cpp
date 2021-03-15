@@ -39,6 +39,9 @@
 #include <objects/seq/MolInfo.hpp>
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/SubSource.hpp>
+#include <objects/seqfeat/Org_ref.hpp>
+#include <objects/seqfeat/OrgName.hpp>
+#include <objects/seqfeat/OrgMod.hpp>
 #include <objmgr/bioseq_ci.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <util/static_set.hpp>
@@ -159,14 +162,26 @@ void CKeywordsItem::x_GatherInfo(CBioseqContext& ctx)
         break;
     }
 
-    // check if env sample
+    // check if env sample or metagenome_source
     bool is_env_sample = false;
+    bool is_metagenome_source = false;
     CSeqdesc_CI src_desc(ctx.GetHandle(), CSeqdesc::e_Source);
     if (src_desc) {
         ITERATE(CBioSource::TSubtype, it, src_desc->GetSource().GetSubtype()) {
-            if ((*it)->IsSetSubtype()  &&  (*it)->GetSubtype() == CSubSource::eSubtype_environmental_sample) {
+            if (! (*it)->IsSetSubtype()) continue;
+            if ((*it)->GetSubtype() == CSubSource::eSubtype_environmental_sample) {
                 is_env_sample = true;
-                break;
+            }
+        }
+        if (src_desc->GetSource().IsSetOrg()) {
+            const CBioSource::TOrg& org = src_desc->GetSource().GetOrg();
+            if ( org.IsSetOrgname()) {
+                ITERATE (COrgName::TMod, it, org.GetOrgname().GetMod()) {
+                    if (! (*it)->IsSetSubtype()) continue;
+                    if ((*it)->GetSubtype() == COrgMod::eSubtype_metagenome_source) {
+                        is_metagenome_source = true;
+                    }
+                }
             }
         }
     }
@@ -253,6 +268,11 @@ void CKeywordsItem::x_GatherInfo(CBioseqContext& ctx)
         default:
             break;
         }
+    }
+
+    if (is_metagenome_source) {
+        x_AddKeyword("Metagenome Assembled Genome");
+        x_AddKeyword("MAG");
     }
 
     // propagate TSA keyword from nuc to prot in same nuc-prot set
