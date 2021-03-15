@@ -98,7 +98,6 @@ namespace {
     };
 };
 
-
 static void s_FailOnBadInput(const string& specifics, IObjtoolsListener& listener)
 {
     listener.PutMessage(CObjtoolsMessage(specifics, eDiag_Fatal));
@@ -841,7 +840,11 @@ int CTbl2AsnApp::Run(void)
             if (argAsFile.GetLength() > TBL2ASN_MAX_ALLOWED_FASTA_SIZE) {
                 if (CFormatGuess::Format(m_context.m_current_file) == CFormatGuess::eFasta) {
                     s_FailOnBadInput(
-                        "The specified input file \"" + m_context.m_current_file + "\" is too long.", 
+                        "The specified input file \"" +
+                            m_context.m_current_file +
+                            "\" is too long. The maximum permissible file size for a FASTA sequence is " +
+                            NStr::NumericToString(TBL2ASN_MAX_ALLOWED_FASTA_SIZE, NStr::fWithCommas) +
+                            " bytes.",
                         *m_logger);
                 }
             }
@@ -936,7 +939,7 @@ int CTbl2AsnApp::Run(void)
             e.GetMsg())));
     }
 
-    if (m_logger->Count() == 0)
+if (m_logger->Count() == 0)
         return 0;
     else
     {
@@ -1001,7 +1004,7 @@ void CTbl2AsnApp::ProcessOneEntry(
         m_reader->ApplyDescriptors(*entry, *m_context.m_descriptors);
 
    // m_reader->ApplyAdditionalProperties(*entry);
-    
+
     const bool readModsFromTitle = 
         inputFormat == CFormatGuess::eFasta ||
         inputFormat == CFormatGuess::eAlignment;
