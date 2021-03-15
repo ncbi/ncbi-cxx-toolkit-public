@@ -100,17 +100,28 @@ void CCassNAnnotTaskDelete::Wait1()
                 if (CheckReady(m_QueryArr[0])) {
                     auto query = m_QueryArr[0].query;
                     query->Close();
-                    string sql = "DELETE FROM " + GetKeySpace() + ".bioseq_na "
-                        "WHERE accession = ? AND version = ? AND seq_id_type = ? AND annot_name = ? "
-                        "IF sat_key = ? AND last_modified = ?";
-                    query->SetSQL(sql, 6);
+                    if (m_Annot->GetSatKey() == 0) {
+                        string sql = "DELETE FROM " + GetKeySpace() + ".bioseq_na "
+                            "WHERE accession = ? AND version = ? AND seq_id_type = ? AND annot_name = ? "
+                            "IF last_modified = ?";
+                        query->SetSQL(sql, 5);
+                    } else {
+                        string sql = "DELETE FROM " + GetKeySpace() + ".bioseq_na "
+                            "WHERE accession = ? AND version = ? AND seq_id_type = ? AND annot_name = ? "
+                            "IF sat_key = ? AND last_modified = ?";
+                        query->SetSQL(sql, 6);
+                    }
                     query->SetSerialConsistency(CASS_CONSISTENCY_LOCAL_SERIAL);
                     query->BindStr(0, m_Annot->GetAccession());
                     query->BindInt16(1, m_Annot->GetVersion());
                     query->BindInt16(2, m_Annot->GetSeqIdType());
                     query->BindStr(3, m_Annot->GetAnnotName());
-                    query->BindInt32(4, m_Annot->GetSatKey());
-                    query->BindInt64(5, m_Annot->GetModified());
+                    if (m_Annot->GetSatKey() == 0) {
+                        query->BindInt64(4, m_Annot->GetModified());
+                    } else {
+                        query->BindInt32(4, m_Annot->GetSatKey());
+                        query->BindInt64(5, m_Annot->GetModified());
+                    }
 
                     UpdateLastActivity();
                     SetupQueryCB3(query);
