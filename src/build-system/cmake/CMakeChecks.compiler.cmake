@@ -202,7 +202,6 @@ if (WIN32)
     set(NCBI_DEFAULT_DLLENTRY  "${NCBI_TREE_CMAKECFG}/dll_main.cpp")
     set(NCBI_DEFAULT_GUIENTRY  "${NCBI_TREE_CMAKECFG}/winmain.cpp")
 
-    set(ORIG_LIBS ws2_32.lib dbghelp.lib)
     return()
 
 #----------------------------------------------------------------------------
