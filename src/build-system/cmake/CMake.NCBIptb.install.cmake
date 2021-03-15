@@ -14,6 +14,9 @@ function(NCBI_internal_install_target _variable _access)
     if(NOT "${_access}" STREQUAL "MODIFIED_ACCESS")
         return()
     endif()
+    if(NCBI_PTBCFG_PACKAGE)
+        set(NCBI_DIRNAME_PREBUILT ".")
+    endif()
 
     if (${NCBI_${NCBI_PROJECT}_TYPE} STREQUAL "STATIC")
         set(_doexport YES)
@@ -219,35 +222,39 @@ function(NCBI_internal_install_root _variable _access)
     if(NOT "${_access}" STREQUAL "MODIFIED_ACCESS")
         return()
     endif()
-    set(_dest ${NCBI_DIRNAME_PREBUILT})
+    if(NCBI_PTBCFG_PACKAGE)
+        set(_dest ${NCBI_DIRNAME_EXPORT})
+    else()
+        set(_dest ${NCBI_DIRNAME_PREBUILT}/${NCBI_DIRNAME_EXPORT})
+    endif()
 
     set(_imports ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_BUILD}/${CMAKE_PROJECT_NAME}.imports)
     NCBI_internal_export_imports(${_imports})
     if (EXISTS ${_imports})
-        install( FILES ${_imports} DESTINATION ${_dest}/${NCBI_DIRNAME_EXPORT} RENAME ${NCBI_PTBCFG_INSTALL_EXPORT}.imports)
+        install( FILES ${_imports} DESTINATION ${_dest} RENAME ${NCBI_PTBCFG_INSTALL_EXPORT}.imports)
     endif()
     set(_hostinfo ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_BUILD}/${CMAKE_PROJECT_NAME}.hostinfo)
     NCBI_internal_export_hostinfo(${_hostinfo})
     if (EXISTS ${_hostinfo})
-        install( FILES ${_hostinfo} DESTINATION ${_dest}/${NCBI_DIRNAME_EXPORT} RENAME ${NCBI_PTBCFG_INSTALL_EXPORT}.hostinfo)
+        install( FILES ${_hostinfo} DESTINATION ${_dest} RENAME ${NCBI_PTBCFG_INSTALL_EXPORT}.hostinfo)
     endif()
     set(_buildinfo ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_BUILD}/${CMAKE_PROJECT_NAME}.buildinfo)
     NCBI_internal_export_buildinfo(${_buildinfo})
     if (EXISTS ${_buildinfo})
-        install( FILES ${_buildinfo} DESTINATION ${_dest}/${NCBI_DIRNAME_EXPORT} RENAME buildinfo)
+        install( FILES ${_buildinfo} DESTINATION ${_dest} RENAME buildinfo)
     endif()
 
     if (WIN32 OR XCODE)
         foreach(_cfg IN LISTS NCBI_CONFIGURATION_TYPES)
             install(EXPORT ${NCBI_PTBCFG_INSTALL_EXPORT}${_cfg}
                 CONFIGURATIONS ${_cfg}
-                DESTINATION ${_dest}/${NCBI_DIRNAME_EXPORT}
+                DESTINATION ${_dest}
                 FILE ${NCBI_PTBCFG_INSTALL_EXPORT}.cmake
             )
         endforeach()
     else()
         install(EXPORT ${NCBI_PTBCFG_INSTALL_EXPORT}
-            DESTINATION ${_dest}/${NCBI_DIRNAME_EXPORT}
+            DESTINATION ${_dest}
             FILE ${NCBI_PTBCFG_INSTALL_EXPORT}.cmake
         )
     endif()
@@ -257,12 +264,25 @@ function(NCBI_internal_install_root _variable _access)
     list(APPEND _all_subdirs ${NCBI_DIRNAME_COMMON_INCLUDE})
     foreach(_dir IN LISTS _all_subdirs)
         if (EXISTS ${NCBI_INC_ROOT}/${_dir})
-            install( DIRECTORY ${NCBI_INC_ROOT}/${_dir} DESTINATION ${NCBI_DIRNAME_INCLUDE}
-                REGEX "/[.].*$" EXCLUDE)
+            if(NCBI_PTBCFG_PACKAGE)
+                install( DIRECTORY ${NCBI_INC_ROOT}/${_dir} DESTINATION ${NCBI_DIRNAME_INCLUDE})
+            else()
+                install( DIRECTORY ${NCBI_INC_ROOT}/${_dir} DESTINATION ${NCBI_DIRNAME_INCLUDE}
+                    REGEX "/[.].*$" EXCLUDE)
+            endif()
         endif()
     endforeach()
     file(GLOB _files LIST_DIRECTORIES false "${NCBI_INC_ROOT}/*")
     install( FILES ${_files} DESTINATION ${NCBI_DIRNAME_INCLUDE})
+
+    if(NCBI_PTBCFG_PACKAGE)
+        install( DIRECTORY ${NCBI_CFGINC_ROOT}/ DESTINATION ${NCBI_DIRNAME_INCLUDE})
+        return()
+    endif()
+    set(_dest ${NCBI_DIRNAME_PREBUILT})
+
+    install( DIRECTORY ${NCBI_CFGINC_ROOT} DESTINATION "${_dest}"
+            REGEX "/[.].*$" EXCLUDE)
 
 # install sources
     if ($ENV{NCBIPTB_INSTALL_SRC})
@@ -288,9 +308,6 @@ function(NCBI_internal_install_root _variable _access)
 
     install( DIRECTORY ${NCBI_TREE_ROOT}/${NCBI_DIRNAME_SCRIPTS} DESTINATION "."
             USE_SOURCE_PERMISSIONS REGEX "/[.].*$" EXCLUDE)
-
-    install( DIRECTORY ${NCBI_CFGINC_ROOT} DESTINATION "${_dest}"
-            REGEX "/[.].*$" EXCLUDE)
 
 # test results
     if ($ENV{NCBIPTB_INSTALL_CHECK})

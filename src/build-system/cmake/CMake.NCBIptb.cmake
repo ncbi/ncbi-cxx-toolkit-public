@@ -686,7 +686,8 @@ macro(NCBI_internal_analyze_tree)
     if( "${NCBI_PTBCFG_PROJECT_TARGETS}" STREQUAL "" AND
         "${NCBI_PTBCFG_PROJECT_TAGS}" STREQUAL "" AND
         "${NCBI_PTBCFG_PROJECT_LIST}" STREQUAL "" AND
-        NOT DEFINED NCBI_EXTERNAL_TREE_ROOT)
+        NOT DEFINED NCBI_EXTERNAL_TREE_ROOT AND
+        NOT DEFINED NCBI_PTBCFG_PACKAGE)
         set(NCBI_PTB_NOFILTERS TRUE)
     endif()
     if (NCBI_PTBCFG_ENABLE_COLLECTOR AND NCBI_PTB_NOFILTERS AND NOT NCBI_PTBCFG_ALLOW_COMPOSITE)
@@ -1594,6 +1595,16 @@ endfunction()
 
 ##############################################################################
 function(NCBI_internal_process_project_filters _result)
+
+    if(NCBI_PTBCFG_PACKAGE)
+        if(${NCBI_${NCBI_PROJECT}_TYPE} STREQUAL "CONSOLEAPP" OR ${NCBI_${NCBI_PROJECT}_TYPE} STREQUAL "GUIAPP")
+            NCBI_util_get_value(PROPERTY_EXPORT _entry)
+            if ("${_entry}" STREQUAL "" OR NOT _entry)
+                set(${_result} FALSE PARENT_SCOPE)
+                return()
+            endif()
+        endif()
+    endif()
 
     if(NOT "${NCBI_PTBCFG_PROJECT_TARGETS}" STREQUAL "" AND NOT "${NCBI_PROJECT}" STREQUAL "")
         foreach(_prj IN LISTS NCBI_PTBCFG_PROJECT_TARGETS)

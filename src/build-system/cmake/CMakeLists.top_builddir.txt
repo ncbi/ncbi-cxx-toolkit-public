@@ -28,5 +28,10 @@ set(NCBI_PTBCFG_KNOWN_FOLDERS
   ${NCBI_PTBCFG_KNOWN_FOLDERS}
 )
 
+if(EXISTS ${CMAKE_BINARY_DIR}/conanbuildinfo.cmake AND NOT DEFINED CONAN_PACKAGE_NAME)
+  include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
+  conan_basic_setup()
+endif()
+
 include(${CMAKE_CURRENT_LIST_DIR}/CMake.NCBItoolkit.cmake)
 NCBI_add_subdirectory( ${NCBI_PTBCFG_KNOWN_FOLDERS})
