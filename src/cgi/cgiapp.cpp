@@ -105,7 +105,7 @@ NCBI_PARAM_ENUM_ARRAY(EDiagSev, CGI, Client_Connection_Interruption_Severity)
     {"Trace", eDiag_Trace}
 };
 NCBI_PARAM_ENUM_DEF_EX(EDiagSev, CGI, Client_Connection_Interruption_Severity,
-                       eDiag_Critical, eParam_NoThread,
+                       eDiag_Error, eParam_NoThread,
                        CGI_CLIENT_CONNECTION_INTERRUPTION_SEVERITY);
 
 
