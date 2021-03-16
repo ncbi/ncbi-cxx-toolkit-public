@@ -526,11 +526,11 @@ bool CGtfWriter::xAssignFeaturesCds(
         if (lastSize > basesToLose) {
             if (mfLoc.GetStrand() == eNa_strand_minus) {
                 pLastRecord->SetEndpoints(
-                    pLastRecord->SeqStart() + 3, pLastRecord->SeqStop(), mfStrand);
+                    pLastRecord->SeqStart() + basesToLose, pLastRecord->SeqStop(), mfStrand);
             }
             else {
                 pLastRecord->SetEndpoints(
-                    pLastRecord->SeqStart(), pLastRecord->SeqStop() - 3, mfStrand);
+                    pLastRecord->SeqStart(), pLastRecord->SeqStop() - basesToLose, mfStrand);
             }
             basesToLose = 0;
         }

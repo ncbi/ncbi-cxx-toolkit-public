@@ -1,0 +1,5186 @@
+Seq-entry ::= seq {
+  id {
+    general {
+      db "ASM:GCF_000188245.2",
+      tag str "UNK226"
+    },
+    other {
+      accession "NT_167833",
+      version 1
+    },
+    gi 347611044
+  },
+  descr {
+    title "Oreochromis niloticus isolate 000638D3DF unplaced genomic scaffold,
+ Orenil1.1 UNK226",
+    source {
+      genome genomic,
+      org {
+        taxname "Oreochromis niloticus",
+        common "Nile tilapia",
+        db {
+          {
+            db "taxon",
+            tag id 8128
+          }
+        },
+        orgname {
+          name binomial {
+            genus "Oreochromis",
+            species "niloticus"
+          },
+          mod {
+            {
+              subtype isolate,
+              subname "000638D3DF"
+            }
+          },
+          lineage "Eukaryota; Metazoa; Chordata; Craniata; Vertebrata;
+ Euteleostomi; Actinopterygii; Neopterygii; Teleostei; Neoteleostei;
+ Acanthomorphata; Ovalentaria; Cichlomorphae; Cichliformes; Cichlidae; African
+ cichlids; Pseudocrenilabrinae; Oreochromini; Oreochromis",
+          gcode 1,
+          mgcode 2,
+          div "VRT"
+        }
+      },
+      subtype {
+        {
+          subtype chromosome,
+          name "Unknown"
+        },
+        {
+          subtype sex,
+          name "female"
+        }
+      }
+    },
+    molinfo {
+      biomol genomic,
+      tech wgs
+    },
+    comment "Assembly name: Orenil1.1~The genomic sequence for this RefSeq
+ record is from the whole-genome assembly released by the Broad Institute on
+ 2012/02/08 (see http://www.broadinstitute.org/models/tilapia). It does not
+ contain ambiguity bases that were part of the January 2011 submission. The
+ original whole-genome shotgun project has the accession AERX00000000.1.",
+    user {
+      type str "DBLink",
+      data {
+        {
+          label str "BioProject",
+          num 1,
+          data strs {
+            "PRJNA72943"
+          }
+        },
+        {
+          label str "Assembly",
+          num 1,
+          data strs {
+            "GCF_000188235.2"
+          }
+        },
+        {
+          label str "BioSample",
+          num 1,
+          data strs {
+            "SAMN00117560"
+          }
+        }
+      }
+    },
+    user {
+      type str "FeatureFetchPolicy",
+      data {
+        {
+          label str "Policy",
+          data str "OnlyNearFeatures"
+        }
+      }
+    },
+    user {
+      type str "StructuredComment",
+      data {
+        {
+          label str "StructuredCommentPrefix",
+          data str "##Genome-Assembly-Data-START##"
+        },
+        {
+          label str "Assembly Provider",
+          data str "Broad Institute"
+        },
+        {
+          label str "Assembly Method",
+          data str "AllPaths-LG v. R35292"
+        },
+        {
+          label str "Assembly Name",
+          data str "Orenil1.1"
+        },
+        {
+          label str "Genome Coverage",
+          data str "269x"
+        },
+        {
+          label str "Sequencing Technology",
+          data str "Illumina"
+        },
+        {
+          label str "StructuredCommentSuffix",
+          data str "##Genome-Assembly-Data-END##"
+        }
+      }
+    },
+    user {
+      type str "GenomeBuild",
+      data {
+        {
+          label str "Assembly",
+          data str "Orenil1.1"
+        },
+        {
+          label str "NcbiAnnotation",
+          data str "2"
+        },
+        {
+          label str "NcbiVersion",
+          data str "2"
+        }
+      }
+    },
+    user {
+      type str "RefGeneTracking",
+      data {
+        {
+          label str "Status",
+          data str "Pipeline"
+        },
+        {
+          label str "IdenticalTo",
+          data fields {
+            {
+              label id 0,
+              data fields {
+                {
+                  label str "accession",
+                  data str "GL831589.1"
+                },
+                {
+                  label str "gi",
+                  data int 323151612
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    user {
+      type str "StructuredComment",
+      data {
+        {
+          label str "StructuredCommentPrefix",
+          data str "##Genome-Annotation-Data-START##"
+        },
+        {
+          label str "Annotation Provider",
+          data str "NCBI"
+        },
+        {
+          label str "Annotation Status",
+          data str "Full annotation"
+        },
+        {
+          label str "Annotation Version",
+          data str "Oreochromis niloticus Annotation Release 102"
+        },
+        {
+          label str "Annotation Pipeline",
+          data str "NCBI eukaryotic genome annotation pipeline"
+        },
+        {
+          label str "Annotation Software Version",
+          data str "6.4"
+        },
+        {
+          label str "Annotation Method",
+          data str "Best-placed RefSeq; Gnomon"
+        },
+        {
+          label str "Features Annotated",
+          data str "Gene; mRNA; CDS; ncRNA"
+        },
+        {
+          label str "StructuredCommentSuffix",
+          data str "##Genome-Annotation-Data-END##"
+        },
+        {
+          label str "Annotation Release Number",
+          data int 102
+        },
+        {
+          label str "Gpipe BuildRun ID",
+          data int 3501367
+        }
+      }
+    },
+    create-date std {
+      year 2011,
+      month 9,
+      day 30
+    },
+    update-date std {
+      year 2015,
+      month 7,
+      day 30
+    }
+  },
+  inst {
+    repr delta,
+    mol dna,
+    length 298900,
+    strand ds,
+    ext delta {
+      loc int {
+        from 0,
+        to 5102,
+        strand plus,
+        id gi 320364262
+      },
+      literal {
+        length 926,
+        seq-data gap {
+          type fragment,
+          linkage linked,
+          linkage-evidence {
+            {
+              type unspecified
+            }
+          }
+        }
+      },
+      loc int {
+        from 0,
+        to 5634,
+        strand plus,
+        id gi 320364261
+      },
+      literal {
+        length 343,
+        seq-data gap {
+          type fragment,
+          linkage linked,
+          linkage-evidence {
+            {
+              type unspecified
+            }
+          }
+        }
+      },
+      loc int {
+        from 0,
+        to 1818,
+        strand plus,
+        id gi 320364260
+      },
+      literal {
+        length 6341,
+        seq-data gap {
+          type fragment,
+          linkage linked,
+          linkage-evidence {
+            {
+              type unspecified
+            }
+          }
+        }
+      },
+      loc int {
+        from 0,
+        to 5136,
+        strand plus,
+        id gi 322433465
+      },
+      literal {
+        length 4811,
+        seq-data gap {
+          type fragment,
+          linkage linked,
+          linkage-evidence {
+            {
+              type unspecified
+            }
+          }
+        }
+      },
+      loc int {
+        from 0,
+        to 1365,
+        strand plus,
+        id gi 322433464
+      },
+      literal {
+        length 523,
+        seq-data gap {
+          type fragment,
+          linkage linked,
+          linkage-evidence {
+            {
+              type unspecified
+            }
+          }
+        }
+      },
+      loc int {
+        from 0,
+        to 1402,
+        strand plus,
+        id gi 322433463
+      },
+      literal {
+        length 885,
+        seq-data gap {
+          type fragment,
+          linkage linked,
+          linkage-evidence {
+            {
+              type unspecified
+            }
+          }
+        }
+      },
+      loc int {
+        from 0,
+        to 1393,
+        strand plus,
+        id gi 320364256
+      },
+      literal {
+        length 1233,
+        seq-data gap {
+          type fragment,
+          linkage linked,
+          linkage-evidence {
+            {
+              type unspecified
+            }
+          }
+        }
+      },
+      loc int {
+        from 0,
+        to 17952,
+        strand plus,
+        id gi 322433462
+      },
+      literal {
+        length 342,
+        seq-data gap {
+          type fragment,
+          linkage linked,
+          linkage-evidence {
+            {
+              type unspecified
+            }
+          }
+        }
+      },
+      loc int {
+        from 0,
+        to 2363,
+        strand plus,
+        id gi 322433461
+      },
+      literal {
+        length 1313,
+        seq-data gap {
+          type fragment,
+          linkage linked,
+          linkage-evidence {
+            {
+              type unspecified
+            }
+          }
+        }
+      },
+      loc int {
+        from 0,
+        to 7038,
+        strand plus,
+        id gi 320364253
+      },
+      literal {
+        length 2572,
+        seq-data gap {
+          type fragment,
+          linkage linked,
+          linkage-evidence {
+            {
+              type unspecified
+            }
+          }
+        }
+      },
+      loc int {
+        from 0,
+        to 2878,
+        strand plus,
+        id gi 320364252
+      },
+      literal {
+        length 174,
+        seq-data gap {
+          type fragment,
+          linkage linked,
+          linkage-evidence {
+            {
+              type unspecified
+            }
+          }
+        }
+      },
+      loc int {
+        from 0,
+        to 3368,
+        strand plus,
+        id gi 320364251
+      },
+      literal {
+        length 4378,
+        seq-data gap {
+          type fragment,
+          linkage linked,
+          linkage-evidence {
+            {
+              type unspecified
+            }
+          }
+        }
+      },
+      loc int {
+        from 0,
+        to 43368,
+        strand plus,
+        id gi 322433460
+      },
+      literal {
+        length 467,
+        seq-data gap {
+          type fragment,
+          linkage linked,
+          linkage-evidence {
+            {
+              type unspecified
+            }
+          }
+        }
+      },
+      loc int {
+        from 0,
+        to 13595,
+        strand plus,
+        id gi 320364249
+      },
+      literal {
+        length 629,
+        seq-data gap {
+          type fragment,
+          linkage linked,
+          linkage-evidence {
+            {
+              type unspecified
+            }
+          }
+        }
+      },
+      loc int {
+        from 0,
+        to 15485,
+        strand plus,
+        id gi 320364248
+      },
+      literal {
+        length 3465,
+        seq-data gap {
+          type fragment,
+          linkage linked,
+          linkage-evidence {
+            {
+              type unspecified
+            }
+          }
+        }
+      },
+      loc int {
+        from 0,
+        to 56777,
+        strand plus,
+        id gi 320364247
+      },
+      literal {
+        length 20,
+        seq-data gap {
+          type fragment,
+          linkage linked,
+          linkage-evidence {
+            {
+              type unspecified
+            }
+          }
+        }
+      },
+      loc int {
+        from 0,
+        to 12031,
+        strand plus,
+        id gi 320364246
+      },
+      literal {
+        length 54,
+        seq-data gap {
+          type fragment,
+          linkage linked,
+          linkage-evidence {
+            {
+              type unspecified
+            }
+          }
+        }
+      },
+      loc int {
+        from 0,
+        to 1557,
+        strand plus,
+        id gi 320364245
+      },
+      literal {
+        length 122,
+        seq-data gap {
+          type fragment,
+          linkage linked,
+          linkage-evidence {
+            {
+              type unspecified
+            }
+          }
+        }
+      },
+      loc int {
+        from 0,
+        to 9968,
+        strand plus,
+        id gi 320364244
+      },
+      literal {
+        length 20,
+        seq-data gap {
+          type fragment,
+          linkage linked,
+          linkage-evidence {
+            {
+              type unspecified
+            }
+          }
+        }
+      },
+      loc int {
+        from 0,
+        to 2675,
+        strand plus,
+        id gi 320364243
+      },
+      literal {
+        length 209,
+        seq-data gap {
+          type fragment,
+          linkage linked,
+          linkage-evidence {
+            {
+              type unspecified
+            }
+          }
+        }
+      },
+      loc int {
+        from 0,
+        to 18104,
+        strand plus,
+        id gi 320364242
+      },
+      literal {
+        length 744,
+        seq-data gap {
+          type fragment,
+          linkage linked,
+          linkage-evidence {
+            {
+              type unspecified
+            }
+          }
+        }
+      },
+      loc int {
+        from 0,
+        to 14398,
+        strand plus,
+        id gi 320364241
+      },
+      literal {
+        length 692,
+        seq-data gap {
+          type fragment,
+          linkage linked,
+          linkage-evidence {
+            {
+              type unspecified
+            }
+          }
+        }
+      },
+      loc int {
+        from 0,
+        to 2230,
+        strand plus,
+        id gi 320364240
+      },
+      literal {
+        length 54,
+        seq-data gap {
+          type fragment,
+          linkage linked,
+          linkage-evidence {
+            {
+              type unspecified
+            }
+          }
+        }
+      },
+      loc int {
+        from 0,
+        to 438,
+        strand plus,
+        id gi 320364239
+      },
+      literal {
+        length 86,
+        seq-data gap {
+          type fragment,
+          linkage linked,
+          linkage-evidence {
+            {
+              type unspecified
+            }
+          }
+        }
+      },
+      loc int {
+        from 0,
+        to 1686,
+        strand plus,
+        id gi 320364238
+      },
+      literal {
+        length 61,
+        seq-data gap {
+          type fragment,
+          linkage linked,
+          linkage-evidence {
+            {
+              type unspecified
+            }
+          }
+        }
+      },
+      loc int {
+        from 0,
+        to 3570,
+        strand plus,
+        id gi 320364237
+      },
+      literal {
+        length 1719,
+        seq-data gap {
+          type fragment,
+          linkage linked,
+          linkage-evidence {
+            {
+              type unspecified
+            }
+          }
+        }
+      },
+      loc int {
+        from 0,
+        to 2001,
+        strand plus,
+        id gi 320364236
+      },
+      literal {
+        length 253,
+        seq-data gap {
+          type fragment,
+          linkage linked,
+          linkage-evidence {
+            {
+              type unspecified
+            }
+          }
+        }
+      },
+      loc int {
+        from 0,
+        to 6292,
+        strand plus,
+        id gi 320364235
+      },
+      literal {
+        length 1323,
+        seq-data gap {
+          type fragment,
+          linkage linked,
+          linkage-evidence {
+            {
+              type unspecified
+            }
+          }
+        }
+      },
+      loc int {
+        from 0,
+        to 2635,
+        strand plus,
+        id gi 320364234
+      },
+      literal {
+        length 20,
+        seq-data gap {
+          type fragment,
+          linkage linked,
+          linkage-evidence {
+            {
+              type unspecified
+            }
+          }
+        }
+      },
+      loc int {
+        from 0,
+        to 2832,
+        strand plus,
+        id gi 322433459
+      }
+    }
+  },
+  annot {
+    {
+      desc {
+        create-date std {
+          year 2015,
+          month 7,
+          day 29
+        }
+      },
+      data ftable {
+        {
+          id local id 1,
+          data gene {
+            locus "LOC100695893"
+          },
+          location int {
+            from 1924,
+            to 7351,
+            strand minus,
+            id gi 347611044
+          },
+          ext {
+            type str "CombinedFeatureUserObjects",
+            data {
+              {
+                label str "TrackingId",
+                data int 127326
+              },
+              {
+                label str "ModelEvidence",
+                data object {
+                  type str "ModelEvidence",
+                  data {
+                    {
+                      label str "Method",
+                      data str "Gnomon"
+                    },
+                    {
+                      label str "Contig Name",
+                      data str "NT_167833"
+                    },
+                    {
+                      label str "Contig Gi",
+                      data int 347611044
+                    },
+                    {
+                      label str "Contig Span",
+                      num 2,
+                      data ints {
+                        1924,
+                        7351
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          xref {
+            {
+              id local id 2,
+              data rna {
+                type mRNA
+              }
+            },
+            {
+              id local id 3,
+              data cdregion {
+              }
+            }
+          },
+          dbxref {
+            {
+              db "GeneID",
+              tag id 100695893
+            }
+          }
+        },
+        {
+          id local id 2,
+          data rna {
+            type mRNA,
+            ext name "high choriolytic enzyme 1-like"
+          },
+          product whole gi 542260375,
+          location packed-int {
+            {
+              from 7325,
+              to 7351,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 7006,
+              to 7105,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 6709,
+              to 6736,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 6566,
+              to 6616,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 6126,
+              to 6257,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 4258,
+              to 4375,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 3409,
+              to 3587,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 3001,
+              to 3082,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 2639,
+              to 2763,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 1924,
+              to 2551,
+              strand minus,
+              id gi 347611044
+            }
+          },
+          ext {
+            type str "CombinedFeatureUserObjects",
+            data {
+              {
+                label str "TrackingId",
+                data int 127327
+              },
+              {
+                label str "ModelEvidence",
+                data object {
+                  type str "ModelEvidence",
+                  data {
+                    {
+                      label str "Method",
+                      data str "Gnomon"
+                    },
+                    {
+                      label str "CDS support",
+                      data str "full"
+                    },
+                    {
+                      label str "NMD",
+                      data bool FALSE
+                    },
+                    {
+                      label str "avg_base_coverage",
+                      data real { 846936, 10, -3 }
+                    },
+                    {
+                      label str "avg_intron_coverage",
+                      data real { 790444, 10, -3 }
+                    },
+                    {
+                      label str "coding_propensity",
+                      data real { 14381, 10, -2 }
+                    },
+                    {
+                      label str "minimum_alignments_introns_same_species",
+                      data int 5
+                    },
+                    {
+                      label str "pct_ab_initio",
+                      data int 0
+                    },
+                    {
+                      label str "pct_introns_with_transcripts",
+                      data real { 1, 10, 2 }
+                    },
+                    {
+                      label str "protein_len",
+                      data int 256
+                    },
+                    {
+                      label str "rnaseq_base_coverage",
+                      data int 100
+                    },
+                    {
+                      label str "rnaseq_base_coverage_unambiguous",
+                      data int 100
+                    },
+                    {
+                      label str "rnaseq_biosamples_introns_full",
+                      data int 3
+                    },
+                    {
+                      label str "rnaseq_biosamples_introns_partial",
+                      data int 7
+                    },
+                    {
+                      label str "Contig Name",
+                      data str "NT_167833"
+                    },
+                    {
+                      label str "Contig Gi",
+                      data int 347611044
+                    },
+                    {
+                      label str "Contig Span",
+                      num 2,
+                      data ints {
+                        1924,
+                        7351
+                      }
+                    },
+                    {
+                      label str "Counts",
+                      data fields {
+                        {
+                          label str "Protein",
+                          data int 20
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                label str "MrnaProteinLink",
+                data object {
+                  type str "MrnaProteinLink",
+                  data {
+                    {
+                      label str "protein seqID",
+                      data str "ref|XP_005465260|"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          xref {
+            {
+              id local id 1,
+              data gene {
+                locus "LOC100695893"
+              }
+            },
+            {
+              id local id 3,
+              data cdregion {
+              }
+            }
+          },
+          dbxref {
+            {
+              db "GeneID",
+              tag id 100695893
+            }
+          }
+        },
+        {
+          id local id 3,
+          data cdregion {
+            frame one,
+            code {
+              id 1
+            }
+          },
+          product whole gi 542260376,
+          location packed-int {
+            {
+              from 7006,
+              to 7059,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 6709,
+              to 6736,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 6566,
+              to 6616,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 6126,
+              to 6257,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 4258,
+              to 4375,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 3409,
+              to 3587,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 3001,
+              to 3082,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 2639,
+              to 2763,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 2550,
+              to 2551,
+              strand minus,
+              id gi 347611044
+            }
+          },
+          ext {
+            type str "CombinedFeatureUserObjects",
+            data {
+              {
+                label str "TrackingId",
+                data int 127328
+              },
+              {
+                label str "ModelEvidence",
+                data object {
+                  type str "ModelEvidence",
+                  data {
+                    {
+                      label str "Method",
+                      data str "Gnomon"
+                    },
+                    {
+                      label str "Contig Name",
+                      data str "NT_167833"
+                    },
+                    {
+                      label str "Contig Gi",
+                      data int 347611044
+                    },
+                    {
+                      label str "Contig Span",
+                      num 2,
+                      data ints {
+                        2550,
+                        7059
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          xref {
+            {
+              id local id 1,
+              data gene {
+                locus "LOC100695893"
+              }
+            },
+            {
+              data prot {
+                name {
+                  "high choriolytic enzyme 1-like"
+                }
+              }
+            },
+            {
+              id local id 2,
+              data rna {
+                type mRNA
+              }
+            }
+          },
+          dbxref {
+            {
+              db "GeneID",
+              tag id 100695893
+            }
+          }
+        },
+        {
+          id local id 4,
+          data gene {
+            locus "LOC100695450"
+          },
+          location int {
+            from 40001,
+            to 136218,
+            strand plus,
+            id gi 347611044
+          },
+          ext {
+            type str "CombinedFeatureUserObjects",
+            data {
+              {
+                label str "TrackingId",
+                data int 127335
+              },
+              {
+                label str "ModelEvidence",
+                data object {
+                  type str "ModelEvidence",
+                  data {
+                    {
+                      label str "Method",
+                      data str "Gnomon"
+                    },
+                    {
+                      label str "Contig Name",
+                      data str "NT_167833"
+                    },
+                    {
+                      label str "Contig Gi",
+                      data int 347611044
+                    },
+                    {
+                      label str "Contig Span",
+                      num 2,
+                      data ints {
+                        40001,
+                        136218
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          xref {
+            {
+              id local id 5,
+              data rna {
+                type mRNA
+              }
+            },
+            {
+              id local id 6,
+              data rna {
+                type mRNA
+              }
+            },
+            {
+              id local id 7,
+              data rna {
+                type mRNA
+              }
+            },
+            {
+              id local id 8,
+              data rna {
+                type mRNA
+              }
+            },
+            {
+              id local id 9,
+              data rna {
+                type mRNA
+              }
+            },
+            {
+              id local id 10,
+              data rna {
+                type mRNA
+              }
+            },
+            {
+              id local id 11,
+              data cdregion {
+              }
+            },
+            {
+              id local id 12,
+              data cdregion {
+              }
+            },
+            {
+              id local id 13,
+              data cdregion {
+              }
+            },
+            {
+              id local id 14,
+              data cdregion {
+              }
+            },
+            {
+              id local id 15,
+              data cdregion {
+              }
+            },
+            {
+              id local id 16,
+              data cdregion {
+              }
+            }
+          },
+          dbxref {
+            {
+              db "GeneID",
+              tag id 100695450
+            }
+          }
+        },
+        {
+          id local id 5,
+          data rna {
+            type mRNA,
+            ext name "calcium/calmodulin-dependent protein kinase type II
+ delta 1 chain, transcript variant X3"
+          },
+          product whole gi 908554249,
+          location packed-int {
+            {
+              from 40001,
+              to 40397,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 43231,
+              to 43325,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 93068,
+              to 93127,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 99542,
+              to 99596,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 102789,
+              to 102854,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 108175,
+              to 108247,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 113878,
+              to 113980,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 114789,
+              to 114872,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 115483,
+              to 115577,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 116784,
+              to 116906,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 116992,
+              to 117075,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 117190,
+              to 117232,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 119006,
+              to 119046,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 126607,
+              to 126651,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 127823,
+              to 127871,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 133275,
+              to 133350,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 133442,
+              to 133536,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 134218,
+              to 134446,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 134858,
+              to 136218,
+              strand plus,
+              id gi 347611044
+            }
+          },
+          ext {
+            type str "CombinedFeatureUserObjects",
+            data {
+              {
+                label str "TrackingId",
+                data int 127340
+              },
+              {
+                label str "ModelEvidence",
+                data object {
+                  type str "ModelEvidence",
+                  data {
+                    {
+                      label str "Method",
+                      data str "Gnomon"
+                    },
+                    {
+                      label str "CDS support",
+                      data str "full"
+                    },
+                    {
+                      label str "NMD",
+                      data bool FALSE
+                    },
+                    {
+                      label str "avg_base_coverage",
+                      data real { 165237, 10, -2 }
+                    },
+                    {
+                      label str "avg_intron_coverage",
+                      data real { 905278, 10, -3 }
+                    },
+                    {
+                      label str "coding_propensity",
+                      data real { 491143, 10, -3 }
+                    },
+                    {
+                      label str "minimum_alignments_introns_same_species",
+                      data int 13
+                    },
+                    {
+                      label str "pct_ab_initio",
+                      data int 0
+                    },
+                    {
+                      label str "pct_introns_with_transcripts",
+                      data real { 1, 10, 2 }
+                    },
+                    {
+                      label str "protein_len",
+                      data int 493
+                    },
+                    {
+                      label str "rnaseq_base_coverage",
+                      data int 100
+                    },
+                    {
+                      label str "rnaseq_base_coverage_unambiguous",
+                      data int 100
+                    },
+                    {
+                      label str "rnaseq_biosamples_introns_full",
+                      data int 4
+                    },
+                    {
+                      label str "rnaseq_biosamples_introns_partial",
+                      data int 22
+                    },
+                    {
+                      label str "Contig Name",
+                      data str "NT_167833"
+                    },
+                    {
+                      label str "Contig Gi",
+                      data int 347611044
+                    },
+                    {
+                      label str "Contig Span",
+                      num 2,
+                      data ints {
+                        40001,
+                        136218
+                      }
+                    },
+                    {
+                      label str "Counts",
+                      data fields {
+                        {
+                          label str "Protein",
+                          data int 13
+                        },
+                        {
+                          label str "EST",
+                          data int 10
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                label str "MrnaProteinLink",
+                data object {
+                  type str "MrnaProteinLink",
+                  data {
+                    {
+                      label str "protein seqID",
+                      data str "ref|XP_013122684|"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          xref {
+            {
+              id local id 4,
+              data gene {
+                locus "LOC100695450"
+              }
+            },
+            {
+              id local id 12,
+              data cdregion {
+              }
+            }
+          },
+          dbxref {
+            {
+              db "GeneID",
+              tag id 100695450
+            }
+          }
+        },
+        {
+          id local id 6,
+          data rna {
+            type mRNA,
+            ext name "calcium/calmodulin-dependent protein kinase type II
+ delta 1 chain, transcript variant X2"
+          },
+          product whole gi 908554247,
+          location packed-int {
+            {
+              from 40001,
+              to 40397,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 43231,
+              to 43325,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 93068,
+              to 93127,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 99542,
+              to 99596,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 102789,
+              to 102854,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 108175,
+              to 108247,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 113878,
+              to 113980,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 114789,
+              to 114872,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 115483,
+              to 115577,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 116784,
+              to 116906,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 116992,
+              to 117075,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 117190,
+              to 117232,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 119009,
+              to 119046,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 124140,
+              to 124199,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 126607,
+              to 126651,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 127823,
+              to 127871,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 133275,
+              to 133350,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 133442,
+              to 133536,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 134218,
+              to 134446,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 134858,
+              to 136218,
+              strand plus,
+              id gi 347611044
+            }
+          },
+          ext {
+            type str "CombinedFeatureUserObjects",
+            data {
+              {
+                label str "TrackingId",
+                data int 127338
+              },
+              {
+                label str "ModelEvidence",
+                data object {
+                  type str "ModelEvidence",
+                  data {
+                    {
+                      label str "Method",
+                      data str "Gnomon"
+                    },
+                    {
+                      label str "CDS support",
+                      data str "full"
+                    },
+                    {
+                      label str "NMD",
+                      data bool FALSE
+                    },
+                    {
+                      label str "avg_base_coverage",
+                      data real { 162545, 10, -2 }
+                    },
+                    {
+                      label str "avg_intron_coverage",
+                      data real { 893053, 10, -3 }
+                    },
+                    {
+                      label str "coding_propensity",
+                      data real { 513578, 10, -3 }
+                    },
+                    {
+                      label str "minimum_alignments_introns_same_species",
+                      data int 13
+                    },
+                    {
+                      label str "pct_ab_initio",
+                      data int 0
+                    },
+                    {
+                      label str "pct_introns_with_transcripts",
+                      data real { 1, 10, 2 }
+                    },
+                    {
+                      label str "protein_len",
+                      data int 512
+                    },
+                    {
+                      label str "rnaseq_base_coverage",
+                      data int 100
+                    },
+                    {
+                      label str "rnaseq_base_coverage_unambiguous",
+                      data int 100
+                    },
+                    {
+                      label str "rnaseq_biosamples_introns_full",
+                      data int 1
+                    },
+                    {
+                      label str "rnaseq_biosamples_introns_partial",
+                      data int 25
+                    },
+                    {
+                      label str "Contig Name",
+                      data str "NT_167833"
+                    },
+                    {
+                      label str "Contig Gi",
+                      data int 347611044
+                    },
+                    {
+                      label str "Contig Span",
+                      num 2,
+                      data ints {
+                        40001,
+                        136218
+                      }
+                    },
+                    {
+                      label str "Counts",
+                      data fields {
+                        {
+                          label str "Protein",
+                          data int 9
+                        },
+                        {
+                          label str "EST",
+                          data int 10
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                label str "MrnaProteinLink",
+                data object {
+                  type str "MrnaProteinLink",
+                  data {
+                    {
+                      label str "protein seqID",
+                      data str "ref|XP_005465262|"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          xref {
+            {
+              id local id 4,
+              data gene {
+                locus "LOC100695450"
+              }
+            },
+            {
+              id local id 14,
+              data cdregion {
+              }
+            }
+          },
+          dbxref {
+            {
+              db "GeneID",
+              tag id 100695450
+            }
+          }
+        },
+        {
+          id local id 7,
+          data rna {
+            type mRNA,
+            ext name "calcium/calmodulin-dependent protein kinase type II
+ delta 1 chain, transcript variant X1"
+          },
+          product whole gi 908554244,
+          location packed-int {
+            {
+              from 40001,
+              to 40162,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 40239,
+              to 40397,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 43231,
+              to 43325,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 93068,
+              to 93127,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 99542,
+              to 99596,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 102789,
+              to 102854,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 108175,
+              to 108247,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 113878,
+              to 113980,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 114789,
+              to 114872,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 115483,
+              to 115577,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 116784,
+              to 116906,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 116992,
+              to 117075,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 117190,
+              to 117232,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 119006,
+              to 119046,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 124140,
+              to 124199,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 126607,
+              to 126651,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 127823,
+              to 127871,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 133275,
+              to 133350,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 133442,
+              to 133536,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 134218,
+              to 134446,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 134858,
+              to 136218,
+              strand plus,
+              id gi 347611044
+            }
+          },
+          ext {
+            type str "CombinedFeatureUserObjects",
+            data {
+              {
+                label str "TrackingId",
+                data int 127336
+              },
+              {
+                label str "ModelEvidence",
+                data object {
+                  type str "ModelEvidence",
+                  data {
+                    {
+                      label str "Method",
+                      data str "Gnomon"
+                    },
+                    {
+                      label str "CDS support",
+                      data str "full"
+                    },
+                    {
+                      label str "NMD",
+                      data bool FALSE
+                    },
+                    {
+                      label str "avg_base_coverage",
+                      data real { 16417, 10, -1 }
+                    },
+                    {
+                      label str "avg_intron_coverage",
+                      data real { 8424, 10, -1 }
+                    },
+                    {
+                      label str "coding_propensity",
+                      data real { 516122, 10, -3 }
+                    },
+                    {
+                      label str "minimum_alignments_introns_same_species",
+                      data int 14
+                    },
+                    {
+                      label str "pct_ab_initio",
+                      data int 0
+                    },
+                    {
+                      label str "pct_introns_with_transcripts",
+                      data real { 1, 10, 2 }
+                    },
+                    {
+                      label str "protein_len",
+                      data int 513
+                    },
+                    {
+                      label str "rnaseq_base_coverage",
+                      data int 100
+                    },
+                    {
+                      label str "rnaseq_base_coverage_unambiguous",
+                      data int 100
+                    },
+                    {
+                      label str "rnaseq_biosamples_introns_full",
+                      data int 4
+                    },
+                    {
+                      label str "rnaseq_biosamples_introns_partial",
+                      data int 22
+                    },
+                    {
+                      label str "Contig Name",
+                      data str "NT_167833"
+                    },
+                    {
+                      label str "Contig Gi",
+                      data int 347611044
+                    },
+                    {
+                      label str "Contig Span",
+                      num 2,
+                      data ints {
+                        40001,
+                        136218
+                      }
+                    },
+                    {
+                      label str "Counts",
+                      data fields {
+                        {
+                          label str "Protein",
+                          data int 12
+                        },
+                        {
+                          label str "EST",
+                          data int 10
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                label str "MrnaProteinLink",
+                data object {
+                  type str "MrnaProteinLink",
+                  data {
+                    {
+                      label str "protein seqID",
+                      data str "ref|XP_013122683|"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          xref {
+            {
+              id local id 4,
+              data gene {
+                locus "LOC100695450"
+              }
+            },
+            {
+              id local id 11,
+              data cdregion {
+              }
+            }
+          },
+          dbxref {
+            {
+              db "GeneID",
+              tag id 100695450
+            }
+          }
+        },
+        {
+          id local id 8,
+          data rna {
+            type mRNA,
+            ext name "calcium/calmodulin-dependent protein kinase type II
+ delta 1 chain, transcript variant X5"
+          },
+          product whole gi 908554253,
+          location packed-int {
+            {
+              from 40002,
+              to 40397,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 43231,
+              to 43325,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 93068,
+              to 93127,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 99542,
+              to 99596,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 102789,
+              to 102854,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 108175,
+              to 108247,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 113878,
+              to 113980,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 114789,
+              to 114872,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 115483,
+              to 115577,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 116784,
+              to 116906,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 116992,
+              to 117075,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 117190,
+              to 117232,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 119006,
+              to 119046,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 127823,
+              to 127871,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 133275,
+              to 133350,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 133442,
+              to 133536,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 134218,
+              to 134446,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 134858,
+              to 136218,
+              strand plus,
+              id gi 347611044
+            }
+          },
+          ext {
+            type str "CombinedFeatureUserObjects",
+            data {
+              {
+                label str "TrackingId",
+                data int 127344
+              },
+              {
+                label str "ModelEvidence",
+                data object {
+                  type str "ModelEvidence",
+                  data {
+                    {
+                      label str "Method",
+                      data str "Gnomon"
+                    },
+                    {
+                      label str "CDS support",
+                      data str "full"
+                    },
+                    {
+                      label str "NMD",
+                      data bool FALSE
+                    },
+                    {
+                      label str "avg_base_coverage",
+                      data real { 167421, 10, -2 }
+                    },
+                    {
+                      label str "avg_intron_coverage",
+                      data real { 988235, 10, -3 }
+                    },
+                    {
+                      label str "coding_propensity",
+                      data real { 474114, 10, -3 }
+                    },
+                    {
+                      label str "minimum_alignments_introns_same_species",
+                      data int 12
+                    },
+                    {
+                      label str "pct_ab_initio",
+                      data int 0
+                    },
+                    {
+                      label str "pct_introns_with_transcripts",
+                      data real { 1, 10, 2 }
+                    },
+                    {
+                      label str "protein_len",
+                      data int 478
+                    },
+                    {
+                      label str "rnaseq_base_coverage",
+                      data int 100
+                    },
+                    {
+                      label str "rnaseq_base_coverage_unambiguous",
+                      data int 100
+                    },
+                    {
+                      label str "rnaseq_biosamples_introns_full",
+                      data int 20
+                    },
+                    {
+                      label str "rnaseq_biosamples_introns_partial",
+                      data int 6
+                    },
+                    {
+                      label str "Contig Name",
+                      data str "NT_167833"
+                    },
+                    {
+                      label str "Contig Gi",
+                      data int 347611044
+                    },
+                    {
+                      label str "Contig Span",
+                      num 2,
+                      data ints {
+                        40002,
+                        136218
+                      }
+                    },
+                    {
+                      label str "Counts",
+                      data fields {
+                        {
+                          label str "Protein",
+                          data int 11
+                        },
+                        {
+                          label str "EST",
+                          data int 10
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                label str "MrnaProteinLink",
+                data object {
+                  type str "MrnaProteinLink",
+                  data {
+                    {
+                      label str "protein seqID",
+                      data str "ref|XP_005465264|"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          xref {
+            {
+              id local id 4,
+              data gene {
+                locus "LOC100695450"
+              }
+            },
+            {
+              id local id 13,
+              data cdregion {
+              }
+            }
+          },
+          dbxref {
+            {
+              db "GeneID",
+              tag id 100695450
+            }
+          }
+        },
+        {
+          id local id 9,
+          data rna {
+            type mRNA,
+            ext name "calcium/calmodulin-dependent protein kinase type II
+ delta 1 chain, transcript variant X4"
+          },
+          product whole gi 908554252,
+          location packed-int {
+            {
+              from 40002,
+              to 40397,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 43231,
+              to 43325,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 93068,
+              to 93127,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 99542,
+              to 99596,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 102789,
+              to 102854,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 108175,
+              to 108247,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 113878,
+              to 113980,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 114789,
+              to 114872,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 115483,
+              to 115577,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 116784,
+              to 116906,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 116992,
+              to 117075,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 117190,
+              to 117232,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 119009,
+              to 119046,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 126607,
+              to 126651,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 127823,
+              to 127871,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 133275,
+              to 133350,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 133442,
+              to 133536,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 134218,
+              to 134446,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 134858,
+              to 136218,
+              strand plus,
+              id gi 347611044
+            }
+          },
+          ext {
+            type str "CombinedFeatureUserObjects",
+            data {
+              {
+                label str "TrackingId",
+                data int 127342
+              },
+              {
+                label str "ModelEvidence",
+                data object {
+                  type str "ModelEvidence",
+                  data {
+                    {
+                      label str "Method",
+                      data str "Gnomon"
+                    },
+                    {
+                      label str "CDS support",
+                      data str "full"
+                    },
+                    {
+                      label str "NMD",
+                      data bool FALSE
+                    },
+                    {
+                      label str "avg_base_coverage",
+                      data real { 165422, 10, -2 }
+                    },
+                    {
+                      label str "avg_intron_coverage",
+                      data real { 930611, 10, -3 }
+                    },
+                    {
+                      label str "coding_propensity",
+                      data real { 488599, 10, -3 }
+                    },
+                    {
+                      label str "minimum_alignments_introns_same_species",
+                      data int 13
+                    },
+                    {
+                      label str "pct_ab_initio",
+                      data int 0
+                    },
+                    {
+                      label str "pct_introns_with_transcripts",
+                      data real { 1, 10, 2 }
+                    },
+                    {
+                      label str "protein_len",
+                      data int 492
+                    },
+                    {
+                      label str "rnaseq_base_coverage",
+                      data int 100
+                    },
+                    {
+                      label str "rnaseq_base_coverage_unambiguous",
+                      data int 100
+                    },
+                    {
+                      label str "rnaseq_biosamples_introns_full",
+                      data int 2
+                    },
+                    {
+                      label str "rnaseq_biosamples_introns_partial",
+                      data int 24
+                    },
+                    {
+                      label str "Contig Name",
+                      data str "NT_167833"
+                    },
+                    {
+                      label str "Contig Gi",
+                      data int 347611044
+                    },
+                    {
+                      label str "Contig Span",
+                      num 2,
+                      data ints {
+                        40002,
+                        136218
+                      }
+                    },
+                    {
+                      label str "Counts",
+                      data fields {
+                        {
+                          label str "Protein",
+                          data int 10
+                        },
+                        {
+                          label str "EST",
+                          data int 10
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                label str "MrnaProteinLink",
+                data object {
+                  type str "MrnaProteinLink",
+                  data {
+                    {
+                      label str "protein seqID",
+                      data str "ref|XP_005465263|"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          xref {
+            {
+              id local id 4,
+              data gene {
+                locus "LOC100695450"
+              }
+            },
+            {
+              id local id 15,
+              data cdregion {
+              }
+            }
+          },
+          dbxref {
+            {
+              db "GeneID",
+              tag id 100695450
+            }
+          }
+        },
+        {
+          id local id 10,
+          data rna {
+            type mRNA,
+            ext name "calcium/calmodulin-dependent protein kinase type II
+ delta 1 chain, transcript variant X6"
+          },
+          product whole gi 908554254,
+          location packed-int {
+            {
+              from 40003,
+              to 40397,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 43231,
+              to 43325,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 93068,
+              to 93127,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 99542,
+              to 99596,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 102789,
+              to 102854,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 108175,
+              to 108247,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 113878,
+              to 113980,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 114789,
+              to 114872,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 115483,
+              to 115577,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 116784,
+              to 116906,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 116992,
+              to 117075,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 117190,
+              to 117232,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 119009,
+              to 119046,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 127823,
+              to 127871,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 133275,
+              to 133350,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 133442,
+              to 133536,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 134218,
+              to 134446,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 134858,
+              to 136218,
+              strand plus,
+              id gi 347611044
+            }
+          },
+          ext {
+            type str "CombinedFeatureUserObjects",
+            data {
+              {
+                label str "TrackingId",
+                data int 127346
+              },
+              {
+                label str "ModelEvidence",
+                data object {
+                  type str "ModelEvidence",
+                  data {
+                    {
+                      label str "Method",
+                      data str "Gnomon"
+                    },
+                    {
+                      label str "CDS support",
+                      data str "full"
+                    },
+                    {
+                      label str "NMD",
+                      data bool FALSE
+                    },
+                    {
+                      label str "avg_base_coverage",
+                      data real { 167611, 10, -2 }
+                    },
+                    {
+                      label str "avg_intron_coverage",
+                      data real { 101506, 10, -2 }
+                    },
+                    {
+                      label str "coding_propensity",
+                      data real { 471569, 10, -3 }
+                    },
+                    {
+                      label str "minimum_alignments_introns_same_species",
+                      data int 12
+                    },
+                    {
+                      label str "pct_ab_initio",
+                      data int 0
+                    },
+                    {
+                      label str "pct_introns_with_transcripts",
+                      data real { 1, 10, 2 }
+                    },
+                    {
+                      label str "protein_len",
+                      data int 477
+                    },
+                    {
+                      label str "rnaseq_base_coverage",
+                      data int 100
+                    },
+                    {
+                      label str "rnaseq_base_coverage_unambiguous",
+                      data int 100
+                    },
+                    {
+                      label str "rnaseq_biosamples_introns_full",
+                      data int 5
+                    },
+                    {
+                      label str "rnaseq_biosamples_introns_partial",
+                      data int 21
+                    },
+                    {
+                      label str "Contig Name",
+                      data str "NT_167833"
+                    },
+                    {
+                      label str "Contig Gi",
+                      data int 347611044
+                    },
+                    {
+                      label str "Contig Span",
+                      num 2,
+                      data ints {
+                        40003,
+                        136218
+                      }
+                    },
+                    {
+                      label str "Counts",
+                      data fields {
+                        {
+                          label str "Protein",
+                          data int 7
+                        },
+                        {
+                          label str "EST",
+                          data int 10
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                label str "MrnaProteinLink",
+                data object {
+                  type str "MrnaProteinLink",
+                  data {
+                    {
+                      label str "protein seqID",
+                      data str "ref|XP_005465265|"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          xref {
+            {
+              id local id 4,
+              data gene {
+                locus "LOC100695450"
+              }
+            },
+            {
+              id local id 16,
+              data cdregion {
+              }
+            }
+          },
+          dbxref {
+            {
+              db "GeneID",
+              tag id 100695450
+            }
+          }
+        },
+        {
+          id local id 11,
+          data cdregion {
+            frame one,
+            code {
+              id 1
+            }
+          },
+          product whole gi 908554245,
+          location packed-int {
+            {
+              from 40336,
+              to 40397,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 43231,
+              to 43325,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 93068,
+              to 93127,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 99542,
+              to 99596,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 102789,
+              to 102854,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 108175,
+              to 108247,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 113878,
+              to 113980,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 114789,
+              to 114872,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 115483,
+              to 115577,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 116784,
+              to 116906,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 116992,
+              to 117075,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 117190,
+              to 117232,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 119006,
+              to 119046,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 124140,
+              to 124199,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 126607,
+              to 126651,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 127823,
+              to 127871,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 133275,
+              to 133350,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 133442,
+              to 133536,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 134218,
+              to 134446,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 134858,
+              to 134861,
+              strand plus,
+              id gi 347611044
+            }
+          },
+          ext {
+            type str "CombinedFeatureUserObjects",
+            data {
+              {
+                label str "TrackingId",
+                data int 127337
+              },
+              {
+                label str "ModelEvidence",
+                data object {
+                  type str "ModelEvidence",
+                  data {
+                    {
+                      label str "Method",
+                      data str "Gnomon"
+                    },
+                    {
+                      label str "Contig Name",
+                      data str "NT_167833"
+                    },
+                    {
+                      label str "Contig Gi",
+                      data int 347611044
+                    },
+                    {
+                      label str "Contig Span",
+                      num 2,
+                      data ints {
+                        40336,
+                        134861
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          xref {
+            {
+              id local id 4,
+              data gene {
+                locus "LOC100695450"
+              }
+            },
+            {
+              data prot {
+                name {
+                  "calcium/calmodulin-dependent protein kinase type II delta 1
+ chain isoform X1"
+                }
+              }
+            },
+            {
+              id local id 7,
+              data rna {
+                type mRNA
+              }
+            }
+          },
+          dbxref {
+            {
+              db "GeneID",
+              tag id 100695450
+            }
+          }
+        },
+        {
+          id local id 12,
+          data cdregion {
+            frame one,
+            code {
+              id 1
+            }
+          },
+          product whole gi 908554250,
+          location packed-int {
+            {
+              from 40336,
+              to 40397,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 43231,
+              to 43325,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 93068,
+              to 93127,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 99542,
+              to 99596,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 102789,
+              to 102854,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 108175,
+              to 108247,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 113878,
+              to 113980,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 114789,
+              to 114872,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 115483,
+              to 115577,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 116784,
+              to 116906,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 116992,
+              to 117075,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 117190,
+              to 117232,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 119006,
+              to 119046,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 126607,
+              to 126651,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 127823,
+              to 127871,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 133275,
+              to 133350,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 133442,
+              to 133536,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 134218,
+              to 134446,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 134858,
+              to 134861,
+              strand plus,
+              id gi 347611044
+            }
+          },
+          ext {
+            type str "CombinedFeatureUserObjects",
+            data {
+              {
+                label str "TrackingId",
+                data int 127341
+              },
+              {
+                label str "ModelEvidence",
+                data object {
+                  type str "ModelEvidence",
+                  data {
+                    {
+                      label str "Method",
+                      data str "Gnomon"
+                    },
+                    {
+                      label str "Contig Name",
+                      data str "NT_167833"
+                    },
+                    {
+                      label str "Contig Gi",
+                      data int 347611044
+                    },
+                    {
+                      label str "Contig Span",
+                      num 2,
+                      data ints {
+                        40336,
+                        134861
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          xref {
+            {
+              id local id 4,
+              data gene {
+                locus "LOC100695450"
+              }
+            },
+            {
+              data prot {
+                name {
+                  "calcium/calmodulin-dependent protein kinase type II delta 1
+ chain isoform X3"
+                }
+              }
+            },
+            {
+              id local id 5,
+              data rna {
+                type mRNA
+              }
+            }
+          },
+          dbxref {
+            {
+              db "GeneID",
+              tag id 100695450
+            }
+          }
+        },
+        {
+          id local id 13,
+          data cdregion {
+            frame one,
+            code {
+              id 1
+            }
+          },
+          product whole gi 542260385,
+          location packed-int {
+            {
+              from 40336,
+              to 40397,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 43231,
+              to 43325,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 93068,
+              to 93127,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 99542,
+              to 99596,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 102789,
+              to 102854,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 108175,
+              to 108247,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 113878,
+              to 113980,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 114789,
+              to 114872,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 115483,
+              to 115577,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 116784,
+              to 116906,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 116992,
+              to 117075,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 117190,
+              to 117232,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 119006,
+              to 119046,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 127823,
+              to 127871,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 133275,
+              to 133350,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 133442,
+              to 133536,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 134218,
+              to 134446,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 134858,
+              to 134861,
+              strand plus,
+              id gi 347611044
+            }
+          },
+          ext {
+            type str "CombinedFeatureUserObjects",
+            data {
+              {
+                label str "TrackingId",
+                data int 127345
+              },
+              {
+                label str "ModelEvidence",
+                data object {
+                  type str "ModelEvidence",
+                  data {
+                    {
+                      label str "Method",
+                      data str "Gnomon"
+                    },
+                    {
+                      label str "Contig Name",
+                      data str "NT_167833"
+                    },
+                    {
+                      label str "Contig Gi",
+                      data int 347611044
+                    },
+                    {
+                      label str "Contig Span",
+                      num 2,
+                      data ints {
+                        40336,
+                        134861
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          xref {
+            {
+              id local id 4,
+              data gene {
+                locus "LOC100695450"
+              }
+            },
+            {
+              data prot {
+                name {
+                  "calcium/calmodulin-dependent protein kinase type II delta
+ chain isoform X5"
+                }
+              }
+            },
+            {
+              id local id 8,
+              data rna {
+                type mRNA
+              }
+            }
+          },
+          dbxref {
+            {
+              db "GeneID",
+              tag id 100695450
+            }
+          }
+        },
+        {
+          id local id 14,
+          data cdregion {
+            frame one,
+            code {
+              id 1
+            }
+          },
+          product whole gi 542260380,
+          location packed-int {
+            {
+              from 40336,
+              to 40397,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 43231,
+              to 43325,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 93068,
+              to 93127,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 99542,
+              to 99596,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 102789,
+              to 102854,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 108175,
+              to 108247,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 113878,
+              to 113980,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 114789,
+              to 114872,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 115483,
+              to 115577,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 116784,
+              to 116906,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 116992,
+              to 117075,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 117190,
+              to 117232,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 119009,
+              to 119046,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 124140,
+              to 124199,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 126607,
+              to 126651,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 127823,
+              to 127871,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 133275,
+              to 133350,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 133442,
+              to 133536,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 134218,
+              to 134446,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 134858,
+              to 134861,
+              strand plus,
+              id gi 347611044
+            }
+          },
+          ext {
+            type str "CombinedFeatureUserObjects",
+            data {
+              {
+                label str "TrackingId",
+                data int 127339
+              },
+              {
+                label str "ModelEvidence",
+                data object {
+                  type str "ModelEvidence",
+                  data {
+                    {
+                      label str "Method",
+                      data str "Gnomon"
+                    },
+                    {
+                      label str "Contig Name",
+                      data str "NT_167833"
+                    },
+                    {
+                      label str "Contig Gi",
+                      data int 347611044
+                    },
+                    {
+                      label str "Contig Span",
+                      num 2,
+                      data ints {
+                        40336,
+                        134861
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          xref {
+            {
+              id local id 4,
+              data gene {
+                locus "LOC100695450"
+              }
+            },
+            {
+              data prot {
+                name {
+                  "calcium/calmodulin-dependent protein kinase type II delta 1
+ chain isoform X2"
+                }
+              }
+            },
+            {
+              id local id 6,
+              data rna {
+                type mRNA
+              }
+            }
+          },
+          dbxref {
+            {
+              db "GeneID",
+              tag id 100695450
+            }
+          }
+        },
+        {
+          id local id 15,
+          data cdregion {
+            frame one,
+            code {
+              id 1
+            }
+          },
+          product whole gi 542260382,
+          location packed-int {
+            {
+              from 40336,
+              to 40397,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 43231,
+              to 43325,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 93068,
+              to 93127,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 99542,
+              to 99596,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 102789,
+              to 102854,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 108175,
+              to 108247,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 113878,
+              to 113980,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 114789,
+              to 114872,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 115483,
+              to 115577,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 116784,
+              to 116906,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 116992,
+              to 117075,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 117190,
+              to 117232,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 119009,
+              to 119046,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 126607,
+              to 126651,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 127823,
+              to 127871,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 133275,
+              to 133350,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 133442,
+              to 133536,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 134218,
+              to 134446,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 134858,
+              to 134861,
+              strand plus,
+              id gi 347611044
+            }
+          },
+          ext {
+            type str "CombinedFeatureUserObjects",
+            data {
+              {
+                label str "TrackingId",
+                data int 127343
+              },
+              {
+                label str "ModelEvidence",
+                data object {
+                  type str "ModelEvidence",
+                  data {
+                    {
+                      label str "Method",
+                      data str "Gnomon"
+                    },
+                    {
+                      label str "Contig Name",
+                      data str "NT_167833"
+                    },
+                    {
+                      label str "Contig Gi",
+                      data int 347611044
+                    },
+                    {
+                      label str "Contig Span",
+                      num 2,
+                      data ints {
+                        40336,
+                        134861
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          xref {
+            {
+              id local id 4,
+              data gene {
+                locus "LOC100695450"
+              }
+            },
+            {
+              data prot {
+                name {
+                  "calcium/calmodulin-dependent protein kinase type II delta 1
+ chain isoform X4"
+                }
+              }
+            },
+            {
+              id local id 9,
+              data rna {
+                type mRNA
+              }
+            }
+          },
+          dbxref {
+            {
+              db "GeneID",
+              tag id 100695450
+            }
+          }
+        },
+        {
+          id local id 16,
+          data cdregion {
+            frame one,
+            code {
+              id 1
+            }
+          },
+          product whole gi 542260387,
+          location packed-int {
+            {
+              from 40336,
+              to 40397,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 43231,
+              to 43325,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 93068,
+              to 93127,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 99542,
+              to 99596,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 102789,
+              to 102854,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 108175,
+              to 108247,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 113878,
+              to 113980,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 114789,
+              to 114872,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 115483,
+              to 115577,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 116784,
+              to 116906,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 116992,
+              to 117075,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 117190,
+              to 117232,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 119009,
+              to 119046,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 127823,
+              to 127871,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 133275,
+              to 133350,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 133442,
+              to 133536,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 134218,
+              to 134446,
+              strand plus,
+              id gi 347611044
+            },
+            {
+              from 134858,
+              to 134861,
+              strand plus,
+              id gi 347611044
+            }
+          },
+          ext {
+            type str "CombinedFeatureUserObjects",
+            data {
+              {
+                label str "TrackingId",
+                data int 127347
+              },
+              {
+                label str "ModelEvidence",
+                data object {
+                  type str "ModelEvidence",
+                  data {
+                    {
+                      label str "Method",
+                      data str "Gnomon"
+                    },
+                    {
+                      label str "Contig Name",
+                      data str "NT_167833"
+                    },
+                    {
+                      label str "Contig Gi",
+                      data int 347611044
+                    },
+                    {
+                      label str "Contig Span",
+                      num 2,
+                      data ints {
+                        40336,
+                        134861
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          xref {
+            {
+              id local id 4,
+              data gene {
+                locus "LOC100695450"
+              }
+            },
+            {
+              data prot {
+                name {
+                  "calcium/calmodulin-dependent protein kinase type II delta
+ chain isoform X6"
+                }
+              }
+            },
+            {
+              id local id 10,
+              data rna {
+                type mRNA
+              }
+            }
+          },
+          dbxref {
+            {
+              db "GeneID",
+              tag id 100695450
+            }
+          }
+        },
+        {
+          id local id 17,
+          data gene {
+            locus "LOC106097285"
+          },
+          location int {
+            from 139037,
+            to 150316,
+            strand minus,
+            id gi 347611044
+          },
+          ext {
+            type str "CombinedFeatureUserObjects",
+            data {
+              {
+                label str "TrackingId",
+                data int 127332
+              },
+              {
+                label str "ModelEvidence",
+                data object {
+                  type str "ModelEvidence",
+                  data {
+                    {
+                      label str "Method",
+                      data str "Gnomon"
+                    },
+                    {
+                      label str "Contig Name",
+                      data str "NT_167833"
+                    },
+                    {
+                      label str "Contig Gi",
+                      data int 347611044
+                    },
+                    {
+                      label str "Contig Span",
+                      num 2,
+                      data ints {
+                        139037,
+                        150316
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          xref {
+            {
+              id local id 18,
+              data rna {
+                type mRNA
+              }
+            },
+            {
+              id local id 19,
+              data cdregion {
+              }
+            }
+          },
+          dbxref {
+            {
+              db "GeneID",
+              tag id 106097285
+            }
+          }
+        },
+        {
+          id local id 18,
+          data rna {
+            type mRNA,
+            ext name "ankyrin-2-like"
+          },
+          product whole gi 908554242,
+          location packed-int {
+            {
+              from 147129,
+              to 150316,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 145807,
+              to 146739,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 144605,
+              to 144697,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 143943,
+              to 144026,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 143688,
+              to 143852,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 142636,
+              to 142824,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 142367,
+              to 142458,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 139037,
+              to 141341,
+              strand minus,
+              id gi 347611044
+            }
+          },
+          ext {
+            type str "CombinedFeatureUserObjects",
+            data {
+              {
+                label str "TrackingId",
+                data int 127333
+              },
+              {
+                label str "ModelEvidence",
+                data object {
+                  type str "ModelEvidence",
+                  data {
+                    {
+                      label str "Method",
+                      data str "Gnomon"
+                    },
+                    {
+                      label str "CDS support",
+                      data str "full"
+                    },
+                    {
+                      label str "NMD",
+                      data bool FALSE
+                    },
+                    {
+                      label str "avg_base_coverage",
+                      data real { 696898, 10, -3 }
+                    },
+                    {
+                      label str "avg_intron_coverage",
+                      data real { 410143, 10, -3 }
+                    },
+                    {
+                      label str "coding_propensity",
+                      data real { 113259, 10, -3 }
+                    },
+                    {
+                      label str "minimum_alignments_introns_same_species",
+                      data int 7
+                    },
+                    {
+                      label str "pct_ab_initio",
+                      data int 0
+                    },
+                    {
+                      label str "pct_introns_with_transcripts",
+                      data real { 1, 10, 2 }
+                    },
+                    {
+                      label str "protein_len",
+                      data int 1612
+                    },
+                    {
+                      label str "rnaseq_base_coverage",
+                      data int 100
+                    },
+                    {
+                      label str "rnaseq_base_coverage_unambiguous",
+                      data int 100
+                    },
+                    {
+                      label str "rnaseq_biosamples_introns_full",
+                      data int 4
+                    },
+                    {
+                      label str "rnaseq_biosamples_introns_partial",
+                      data int 19
+                    },
+                    {
+                      label str "Contig Name",
+                      data str "NT_167833"
+                    },
+                    {
+                      label str "Contig Gi",
+                      data int 347611044
+                    },
+                    {
+                      label str "Contig Span",
+                      num 2,
+                      data ints {
+                        139037,
+                        150316
+                      }
+                    },
+                    {
+                      label str "Counts",
+                      data fields {
+                        {
+                          label str "Protein",
+                          data int 1
+                        },
+                        {
+                          label str "EST",
+                          data int 4
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                label str "MrnaProteinLink",
+                data object {
+                  type str "MrnaProteinLink",
+                  data {
+                    {
+                      label str "protein seqID",
+                      data str "ref|XP_013122682|"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          xref {
+            {
+              id local id 17,
+              data gene {
+                locus "LOC106097285"
+              }
+            },
+            {
+              id local id 19,
+              data cdregion {
+              }
+            }
+          },
+          dbxref {
+            {
+              db "GeneID",
+              tag id 106097285
+            }
+          }
+        },
+        {
+          id local id 19,
+          data cdregion {
+            frame one,
+            code {
+              id 1
+            }
+          },
+          product whole gi 908554243,
+          location packed-int {
+            {
+              from 147129,
+              to 150182,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 145807,
+              to 146739,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 144605,
+              to 144697,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 143943,
+              to 144026,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 143688,
+              to 143852,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 142636,
+              to 142824,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 142367,
+              to 142458,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 141113,
+              to 141341,
+              strand minus,
+              id gi 347611044
+            }
+          },
+          ext {
+            type str "CombinedFeatureUserObjects",
+            data {
+              {
+                label str "TrackingId",
+                data int 127334
+              },
+              {
+                label str "ModelEvidence",
+                data object {
+                  type str "ModelEvidence",
+                  data {
+                    {
+                      label str "Method",
+                      data str "Gnomon"
+                    },
+                    {
+                      label str "Contig Name",
+                      data str "NT_167833"
+                    },
+                    {
+                      label str "Contig Gi",
+                      data int 347611044
+                    },
+                    {
+                      label str "Contig Span",
+                      num 2,
+                      data ints {
+                        141113,
+                        150182
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          xref {
+            {
+              id local id 17,
+              data gene {
+                locus "LOC106097285"
+              }
+            },
+            {
+              data prot {
+                name {
+                  "ankyrin-2-like"
+                }
+              }
+            },
+            {
+              id local id 18,
+              data rna {
+                type mRNA
+              }
+            }
+          },
+          dbxref {
+            {
+              db "GeneID",
+              tag id 106097285
+            }
+          }
+        },
+        {
+          id local id 20,
+          data gene {
+            locus "LOC100696152"
+          },
+          partial TRUE,
+          location int {
+            from 161512,
+            to 206009,
+            strand minus,
+            id gi 347611044,
+            fuzz-from lim lt
+          },
+          ext {
+            type str "CombinedFeatureUserObjects",
+            data {
+              {
+                label str "TrackingId",
+                data int 127329
+              },
+              {
+                label str "ModelEvidence",
+                data object {
+                  type str "ModelEvidence",
+                  data {
+                    {
+                      label str "Method",
+                      data str "Gnomon"
+                    },
+                    {
+                      label str "Contig Name",
+                      data str "NT_167833"
+                    },
+                    {
+                      label str "Contig Gi",
+                      data int 347611044
+                    },
+                    {
+                      label str "Contig Span",
+                      num 2,
+                      data ints {
+                        161512,
+                        206009
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                label str "GeneWeight",
+                data int 333
+              }
+            }
+          },
+          xref {
+            {
+              id local id 21,
+              data rna {
+                type mRNA
+              }
+            },
+            {
+              id local id 22,
+              data cdregion {
+              }
+            }
+          },
+          dbxref {
+            {
+              db "GeneID",
+              tag id 100696152
+            }
+          }
+        },
+        {
+          id local id 21,
+          data rna {
+            type mRNA,
+            ext name "ankyrin-3"
+          },
+          partial TRUE,
+          except TRUE,
+          comment "The sequence of the model RefSeq transcript was modified
+ relative to this genomic sequence to represent the inferred CDS: added 4280
+ bases not found in genome assembly",
+          product whole gi 908554239,
+          location packed-int {
+            {
+              from 205385,
+              to 206009,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 201077,
+              to 201178,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 195694,
+              to 195792,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 194622,
+              to 194720,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 194373,
+              to 194471,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 193184,
+              to 193369,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 188964,
+              to 189062,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 188343,
+              to 188441,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 187025,
+              to 187123,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 186263,
+              to 186460,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 186032,
+              to 186130,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 185003,
+              to 185101,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 184751,
+              to 184849,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 184459,
+              to 184656,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 182533,
+              to 182631,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 182083,
+              to 182181,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 181331,
+              to 181528,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 180920,
+              to 181018,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 180716,
+              to 180814,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 180543,
+              to 180641,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 180257,
+              to 180355,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 179638,
+              to 179710,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 179309,
+              to 179362,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 176879,
+              to 177020,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 175462,
+              to 175549,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 174577,
+              to 174680,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 172698,
+              to 172922,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 171521,
+              to 171619,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 170325,
+              to 170479,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 170030,
+              to 170241,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 169545,
+              to 169749,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 169364,
+              to 169460,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 169033,
+              to 169261,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 168714,
+              to 168839,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 168441,
+              to 168563,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 166987,
+              to 167019,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 166731,
+              to 166752,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 161512,
+              to 164778,
+              strand minus,
+              id gi 347611044,
+              fuzz-from lim lt
+            }
+          },
+          qual {
+            {
+              qual "inference",
+              val "similar to RNA sequence (same species):INSD:GBCP01012143.1"
+            }
+          },
+          ext {
+            type str "CombinedFeatureUserObjects",
+            data {
+              {
+                label str "TrackingId",
+                data int 127330
+              },
+              {
+                label str "ModelEvidence",
+                data object {
+                  type str "ModelEvidence",
+                  data {
+                    {
+                      label str "Method",
+                      data str "Gnomon"
+                    },
+                    {
+                      label str "CDS support",
+                      data str "full"
+                    },
+                    {
+                      label str "NMD",
+                      data bool FALSE
+                    },
+                    {
+                      label str "avg_base_coverage",
+                      data real { 411465, 10, -4 }
+                    },
+                    {
+                      label str "avg_intron_coverage",
+                      data real { 226486, 10, -4 }
+                    },
+                    {
+                      label str "coding_propensity",
+                      data real { 88018, 10, -2 }
+                    },
+                    {
+                      label str "gap_bases",
+                      data int 4280
+                    },
+                    {
+                      label str "minimum_alignments_introns_same_species",
+                      data int 29
+                    },
+                    {
+                      label str "pct_ab_initio",
+                      data int 0
+                    },
+                    {
+                      label str "pct_introns_with_transcripts",
+                      data real { 1, 10, 2 }
+                    },
+                    {
+                      label str "protein_len",
+                      data int 3310
+                    },
+                    {
+                      label str "rnaseq_base_coverage",
+                      data int 99
+                    },
+                    {
+                      label str "rnaseq_base_coverage_unambiguous",
+                      data int 99
+                    },
+                    {
+                      label str "rnaseq_biosamples_introns_full",
+                      data int 0
+                    },
+                    {
+                      label str "rnaseq_biosamples_introns_partial",
+                      data int 22
+                    },
+                    {
+                      label str "Contig Name",
+                      data str "NT_167833"
+                    },
+                    {
+                      label str "Contig Gi",
+                      data int 347611044
+                    },
+                    {
+                      label str "Contig Span",
+                      num 2,
+                      data ints {
+                        161512,
+                        206009
+                      }
+                    },
+                    {
+                      label str "Counts",
+                      data fields {
+                        {
+                          label str "Protein",
+                          data int 2
+                        },
+                        {
+                          label str "EST",
+                          data int 3
+                        }
+                      }
+                    },
+                    {
+                      label str "Assembly",
+                      num 1,
+                      data fields {
+                        {
+                          label id 0,
+                          data fields {
+                            {
+                              label str "accession",
+                              data str "GBCP01012143.1"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                label str "MrnaProteinLink",
+                data object {
+                  type str "MrnaProteinLink",
+                  data {
+                    {
+                      label str "protein seqID",
+                      data str "ref|XP_013122681|"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          xref {
+            {
+              id local id 20,
+              data gene {
+                locus "LOC100696152"
+              }
+            },
+            {
+              id local id 22,
+              data cdregion {
+              }
+            }
+          },
+          dbxref {
+            {
+              db "GeneID",
+              tag id 100696152
+            }
+          },
+          except-text "annotated by transcript or proteomic data"
+        },
+        {
+          id local id 22,
+          data cdregion {
+            frame one,
+            code {
+              id 1
+            }
+          },
+          partial TRUE,
+          except TRUE,
+          comment "The sequence of the model RefSeq protein was modified
+ relative to this genomic sequence to represent the inferred CDS: added 2171
+ bases not found in genome assembly",
+          product whole gi 908554240,
+          location packed-int {
+            {
+              from 205385,
+              to 205525,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 201077,
+              to 201178,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 195694,
+              to 195792,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 194622,
+              to 194720,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 194373,
+              to 194471,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 193184,
+              to 193369,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 188964,
+              to 189062,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 188343,
+              to 188441,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 187025,
+              to 187123,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 186263,
+              to 186460,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 186032,
+              to 186130,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 185003,
+              to 185101,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 184751,
+              to 184849,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 184459,
+              to 184656,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 182533,
+              to 182631,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 182083,
+              to 182181,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 181331,
+              to 181528,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 180920,
+              to 181018,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 180716,
+              to 180814,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 180543,
+              to 180641,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 180257,
+              to 180355,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 179638,
+              to 179710,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 179309,
+              to 179362,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 176879,
+              to 177020,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 175462,
+              to 175549,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 174577,
+              to 174680,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 172698,
+              to 172922,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 171521,
+              to 171619,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 170325,
+              to 170479,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 170030,
+              to 170241,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 169545,
+              to 169749,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 169364,
+              to 169460,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 169033,
+              to 169261,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 168714,
+              to 168839,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 168441,
+              to 168563,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 166987,
+              to 167019,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 166731,
+              to 166752,
+              strand minus,
+              id gi 347611044
+            },
+            {
+              from 161512,
+              to 164778,
+              strand minus,
+              id gi 347611044,
+              fuzz-from lim lt
+            }
+          },
+          qual {
+            {
+              qual "inference",
+              val "similar to RNA sequence (same species):INSD:GBCP01012143.1"
+            }
+          },
+          ext {
+            type str "CombinedFeatureUserObjects",
+            data {
+              {
+                label str "TrackingId",
+                data int 127331
+              },
+              {
+                label str "ModelEvidence",
+                data object {
+                  type str "ModelEvidence",
+                  data {
+                    {
+                      label str "Method",
+                      data str "Gnomon"
+                    },
+                    {
+                      label str "Contig Name",
+                      data str "NT_167833"
+                    },
+                    {
+                      label str "Contig Gi",
+                      data int 347611044
+                    },
+                    {
+                      label str "Contig Span",
+                      num 2,
+                      data ints {
+                        161512,
+                        205525
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          xref {
+            {
+              id local id 20,
+              data gene {
+                locus "LOC100696152"
+              }
+            },
+            {
+              data prot {
+                name {
+                  "ankyrin-3"
+                }
+              }
+            },
+            {
+              id local id 21,
+              data rna {
+                type mRNA
+              }
+            }
+          },
+          dbxref {
+            {
+              db "GeneID",
+              tag id 100696152
+            }
+          },
+          except-text "annotated by transcript or proteomic data"
+        }
+      }
+    }
+  }
+}
+
