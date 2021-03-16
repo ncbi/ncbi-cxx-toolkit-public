@@ -28,7 +28,7 @@
  */
 
 /** @file blastp_node.cpp
- * blastn node api
+ * blastp node api
  */
 
 #include <ncbi_pch.hpp>

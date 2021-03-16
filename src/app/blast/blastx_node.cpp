@@ -1,4 +1,4 @@
-/*  $Id$
+/*  $Id:
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -23,12 +23,12 @@
  *
  * ===========================================================================
  *
- * Authors:  Christiam Camacho
+ * Authors: Amelia Fong
  *
  */
 
-/** @file blastx_app.cpp
- * BLASTX command line application
+/** @file blastx_node.cpp
+ * blastx node api
  */
 
 #include <ncbi_pch.hpp>
@@ -36,7 +36,6 @@
 #include <algo/blast/api/local_blast.hpp>
 #include <algo/blast/api/remote_blast.hpp>
 #include <algo/blast/blastinput/blast_fasta_input.hpp>
-#include <algo/blast/blastinput/blastx_args.hpp>
 #include <algo/blast/api/objmgr_query_data.hpp>
 #include <algo/blast/format/blast_format.hpp>
 #include "blast_app_util.hpp"
@@ -48,84 +47,49 @@ USING_SCOPE(blast);
 USING_SCOPE(objects);
 #endif
 
-class CBlastxApp : public CNcbiApplication
+CBlastxNode::CBlastxNode (int node_num, const CNcbiArguments & ncbi_args, const CArgs& args,
+		                      CBlastAppDiagHandler & bah, const string & input,
+                              int query_index, int num_queries,  CBlastNodeMailbox * mailbox):
+                              CBlastNode(node_num, ncbi_args, args, bah, query_index, num_queries, mailbox), m_Input(input)
 {
-public:
-    /** @inheritDoc */
-    CBlastxApp() {
-        CRef<CVersion> version(new CVersion());
-        version->SetVersionInfo(new CBlastVersion());
-        SetFullVersion(version);
-        m_StopWatch.Start();
-        if (m_UsageReport.IsEnabled()) {
-        	m_UsageReport.AddParam(CBlastUsageReport::eVersion, GetVersion().Print());
-        }
-    }
-
-    ~CBlastxApp() {
-     	m_UsageReport.AddParam(CBlastUsageReport::eRunTime, m_StopWatch.Elapsed());
-     }
-private:
-    /** @inheritDoc */
-    virtual void Init();
-    /** @inheritDoc */
-    virtual int Run();
-
-    int x_RunMTBySplitDB();
-    int x_RunMTBySplitQuery();
-
-    /// This application's command line args
-    CRef<CBlastxAppArgs> m_CmdLineArgs;
-    CBlastUsageReport m_UsageReport;
-    CStopWatch m_StopWatch;
-};
-
-void CBlastxApp::Init()
-{
-    // formulate command line arguments
-
-    m_CmdLineArgs.Reset(new CBlastxAppArgs());
-
-    // read the command line
-
-    HideStdArgs(fHideLogfile | fHideConffile | fHideFullVersion | fHideXmlHelp | fHideDryRun);
-    SetupArgDescriptions(m_CmdLineArgs->SetCommandLine());
+	m_CmdLineArgs.Reset(new CBlastxNodeArgs(m_Input));
+	SetState(eInitialized);
+	SendMsg(CBlastNodeMsg::eRunRequest, (void*) this);
 }
 
-int CBlastxApp::Run(void)
+int CBlastxNode::GetBlastResults(CNcbiOstream & os)
 {
-	const CArgs& args = GetArgs();
-	if (args.Exist(kArgMTMode) &&
-		(args[kArgMTMode].AsInteger() == CMTArgs::eSplitByQueries) &&
-		(args[kArgNumThreads].AsInteger() > 1)){
-		return x_RunMTBySplitQuery();
+	if(GetState() == eDone) {
+		os << m_CmdLineArgs->GetOutputStrStream().rdbuf();
+		return GetStatus();
 	}
-	else {
-		return x_RunMTBySplitDB();
-	}
+	return -1;
 }
 
-int CBlastxApp::x_RunMTBySplitDB()
+CBlastxNode::~CBlastxNode()
 {
+	m_CmdLineArgs.Reset();
+}
 
+void *
+CBlastxNode::Main()
+{
     int status = BLAST_EXIT_SUCCESS;
-    CBlastAppDiagHandler bah;
+    CBlastAppDiagHandler & bah = GetDiagHandler();
+	SetDiagPostPrefix(GetNodeIdStr().c_str());
 
-    try {
-
-        // Allow the fasta reader to complain on invalid sequence input
-        SetDiagPostLevel(eDiag_Warning);
-        SetDiagPostPrefix("blastx");
-        SetDiagHandler(&bah, false);
+    SetState(eRunning);
+	try {
 
         /*** Get the BLAST options ***/
         const CArgs& args = GetArgs();
+
         CRef<CBlastOptionsHandle> opts_hndl;
-        if(RecoverSearchStrategy(args, m_CmdLineArgs)) {
-           	opts_hndl.Reset(&*m_CmdLineArgs->SetOptionsForSavedStrategy(args));
+        if(RecoverSearchStrategy(args, m_CmdLineArgs)){
+        	opts_hndl.Reset(&*m_CmdLineArgs->SetOptionsForSavedStrategy(args));
         }
         else {
-           	opts_hndl.Reset(&*m_CmdLineArgs->SetOptions(args));
+        	opts_hndl.Reset(&*m_CmdLineArgs->SetOptions(args));
         }
         const CBlastOptions& opt = opts_hndl->GetOptions();
 
@@ -133,12 +97,13 @@ int CBlastxApp::x_RunMTBySplitDB()
         CRef<CBlastDatabaseArgs> db_args(m_CmdLineArgs->GetBlastDatabaseArgs());
         CRef<CLocalDbAdapter> db_adapter;
         CRef<CScope> scope;
-        InitializeSubject(db_args, opts_hndl, m_CmdLineArgs->ExecuteRemotely(),
-                         db_adapter, scope);
+        string dl_name = InitializeSubject(db_args, opts_hndl, m_CmdLineArgs->ExecuteRemotely(),
+                         	 	 	 	   db_adapter, scope);
+        SetDataLoaderName(dl_name);
         _ASSERT(db_adapter && scope);
 
         /*** Get the query sequence(s) ***/
-        CRef<CQueryOptionsArgs> query_opts = 
+        CRef<CQueryOptionsArgs> query_opts =
             m_CmdLineArgs->GetQueryOptionsArgs();
         SDataLoaderConfig dlconfig =
             InitializeQueryDataLoaderConfiguration(query_opts->QueryIsProtein(),
@@ -147,18 +112,18 @@ int CBlastxApp::x_RunMTBySplitDB()
                                      query_opts->UseLowercaseMasks(),
                                      query_opts->GetParseDeflines(),
                                      query_opts->GetRange());
-        if(IsIStreamEmpty(m_CmdLineArgs->GetInputStream())){
+        if(IsIStreamEmpty(m_CmdLineArgs->GetInputStream())) {
            	ERR_POST(Warning << "Query is Empty!");
            	return BLAST_EXIT_SUCCESS;
         }
         CBlastFastaInputSource fasta(m_CmdLineArgs->GetInputStream(), iconfig);
-        CBlastInput input(&fasta, m_CmdLineArgs->GetQueryBatchSize());
+        CBlastInput input(&fasta);
 
         /*** Get the formatting options ***/
         CRef<CFormattingArgs> fmt_args(m_CmdLineArgs->GetFormattingArgs());
         bool isArchiveFormat = fmt_args->ArchiveFormatRequested(args);
         if(!isArchiveFormat) {
-           	bah.DoNotSaveMessages();
+        	bah.DoNotSaveMessages();
         }
         CBlastFormat formatter(opt, *db_adapter,
                                fmt_args->GetFormattedOutputChoice(),
@@ -178,20 +143,20 @@ int CBlastxApp::x_RunMTBySplitDB()
                                fmt_args->GetCustomOutputFormatSpec(),
                                false, false, NULL, NULL,
                                GetCmdlineArgs(GetArguments()),
-				GetSubjectFile(args));
-        
+			       GetSubjectFile(args));
+
         formatter.SetQueryRange(query_opts->GetRange());
         formatter.SetLineLength(fmt_args->GetLineLength());
         formatter.SetHitsSortOption(fmt_args->GetHitsSortOption());
         formatter.SetHspsSortOption(fmt_args->GetHspsSortOption());
         formatter.SetCustomDelimiter(fmt_args->GetCustomDelimiter());
-	if(UseXInclude(*fmt_args, args[kArgOutput].AsString())) {
+        if(UseXInclude(*fmt_args, args[kArgOutput].AsString())) {
         	formatter.SetBaseFile(args[kArgOutput].AsString());
         }
         formatter.PrintProlog();
 
         /*** Process the input ***/
-        for (; !input.End(); formatter.ResetScopeHistory(), QueryBatchCleanup()) {
+               for (; !input.End(); formatter.ResetScopeHistory(), QueryBatchCleanup()) {
 
             CRef<CBlastQueryVector> query_batch(input.GetNextSeqBatch(*scope));
             CRef<IQueryFactory> queries(new CObjMgr_QueryFactory(*query_batch));
@@ -201,26 +166,26 @@ int CBlastxApp::x_RunMTBySplitDB()
             CRef<CSearchResultSet> results;
 
             if (m_CmdLineArgs->ExecuteRemotely()) {
-                CRef<CRemoteBlast> rmt_blast = 
+                CRef<CRemoteBlast> rmt_blast =
                     InitializeRemoteBlast(queries, db_args, opts_hndl,
                           m_CmdLineArgs->ProduceDebugRemoteOutput(),
                           m_CmdLineArgs->GetClientId());
                 results = rmt_blast->GetResultSet();
             } else {
                 CLocalBlast lcl_blast(queries, opts_hndl, db_adapter);
-                lcl_blast.SetNumberOfThreads(m_CmdLineArgs->GetNumThreads());
+                lcl_blast.SetNumberOfThreads(1);
                 results = lcl_blast.Run();
             }
 
-            if (fmt_args->ArchiveFormatRequested(args)) {
+            if (isArchiveFormat) {
                 formatter.WriteArchive(*queries, *opts_hndl, *results, 0, bah.GetMessages());
                 bah.ResetMessages();
             } else {
                 BlastFormatter_PreFetchSequenceData(*results, scope,
-                		                            fmt_args->GetFormattedOutputChoice());
-            	ITERATE(CSearchResultSet, result, *results) {
-               	    formatter.PrintOneResultSet(**result, query_batch);
-            	}
+                			                        fmt_args->GetFormattedOutputChoice());
+                ITERATE(CSearchResultSet, result, *results) {
+                    formatter.PrintOneResultSet(**result, query_batch);
+                }
             }
         }
 
@@ -230,80 +195,19 @@ int CBlastxApp::x_RunMTBySplitDB()
             opts_hndl->GetOptions().DebugDumpText(NcbiCerr, "BLAST options", 1);
         }
 
-        LogQueryInfo(m_UsageReport, input);
-        formatter.LogBlastSearchInfo(m_UsageReport);
     } CATCH_ALL(status)
-    if(!bah.GetMessages().empty()) {
-       	const CArgs & a = GetArgs();
-       	PrintErrorArchive(a, bah.GetMessages());
-    }
-	m_UsageReport.AddParam(CBlastUsageReport::eNumThreads, (int) m_CmdLineArgs->GetNumThreads());
-    m_UsageReport.AddParam(CBlastUsageReport::eExitStatus, status);
-    return status;
+
+	SetStatus(status);
+	if (status == BLAST_EXIT_SUCCESS) {
+		SetState(eDone);
+		SendMsg(CBlastNodeMsg::ePostResult, (void *) this);
+
+	}
+	else {
+		SetState(eError);
+		SendMsg(CBlastNodeMsg::eErrorExit, (void *) this);
+	}
+
+    return NULL;
 }
 
-int CBlastxApp::x_RunMTBySplitQuery()
-{
-    int status = BLAST_EXIT_SUCCESS;
-    CBlastAppDiagHandler bah;
-
-    // Allow the fasta reader to complain on invalid sequence input
-    SetDiagPostLevel(eDiag_Warning);
-    SetDiagPostPrefix("blastx");
-    SetDiagHandler(&bah, false);
-
-	try {
-    	const CArgs& args = GetArgs();
-    	const int kMaxNumOfThreads = args[kArgNumThreads].AsInteger();
-    	CRef<CBlastOptionsHandle> opts_hndl;
-        if(RecoverSearchStrategy(args, m_CmdLineArgs)) {
-        	opts_hndl.Reset(&*m_CmdLineArgs->SetOptionsForSavedStrategy(args));
-        }
-        else {
-        	opts_hndl.Reset(&*m_CmdLineArgs->SetOptions(args));
-        }
-    	if(IsIStreamEmpty(m_CmdLineArgs->GetInputStream())){
-       		ERR_POST(Warning << "Query is Empty!");
-       		return BLAST_EXIT_SUCCESS;
-    	}
-    	CNcbiOstream & out_stream = m_CmdLineArgs->GetOutputStream();
-		CBlastMasterNode master_node(out_stream, kMaxNumOfThreads);
-   		int chunk_num = 0;
-   	    int batch_size = GetMTByQueriesBatchSize(opts_hndl->GetOptions().GetProgram(), kMaxNumOfThreads);
-   		INFO_POST("Batch Size: " << batch_size);
-   		CBlastNodeInputReader input(m_CmdLineArgs->GetInputStream(), batch_size, 2000);
-		while (master_node.Processing()) {
-			if (!input.AtEOF()) {
-			 	if (!master_node.IsFull()) {
-					string qb;
-					int q_index = 0;
-					int num_q = input.GetQueryBatch(qb, q_index);
-					if (num_q > 0) {
-						CBlastNodeMailbox * mb(new CBlastNodeMailbox(chunk_num, master_node.GetBuzzer()));
-						CBlastxNode * t(new CBlastxNode(chunk_num, GetArguments(), args, bah, qb, q_index, num_q, mb));
-						master_node.RegisterNode(t, mb);
-						chunk_num ++;
-					}
-				}
-			}
-			else {
-				master_node.Shutdown();
-			}
-    	}
-
-	} CATCH_ALL (status)
-
-    if(!bah.GetMessages().empty()) {
-    	const CArgs & a = GetArgs();
-    	PrintErrorArchive(a, bah.GetMessages());
-    }
-
-    return status;
-}
-
-#ifndef SKIP_DOXYGEN_PROCESSING
-int NcbiSys_main(int argc, ncbi::TXChar* argv[])
-{
-    return CBlastxApp().AppMain(argc, argv);
-}
-#endif /* SKIP_DOXYGEN_PROCESSING */
