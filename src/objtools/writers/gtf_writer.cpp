@@ -307,7 +307,15 @@ bool CGtfWriter::xWriteRecordsCds(
             return false;
         }
     }
-
+    if (!tf) {
+        tf = context.FeatTree().GetParent(mf);
+    }
+    if (tf) {
+        auto featIt = this->mFeatMap.find(tf);
+        if (featIt != mFeatMap.end()) {
+            transcriptId = featIt->second;
+        }
+    }
     list<CRef<CGtfRecord>> records;
     if (!xAssignFeaturesCds(records, context, mf, transcriptId)) {
         return false;
@@ -472,9 +480,11 @@ bool CGtfWriter::xAssignFeaturesCds(
     list<CRef<CGtfRecord>>& recordList,
     CGffFeatureContext& context,
     const CMappedFeat& mf,
-    const string& transcriptId)
+    const string& parentTranscriptId)
 //  ----------------------------------------------------------------------------
 {
+    string transcriptId(parentTranscriptId);
+
     const auto& mfLoc = mf.GetLocation();
     auto mfStrand = (mfLoc.IsSetStrand() && mfLoc.GetStrand() == eNa_strand_minus) ?
         eNa_strand_minus :
@@ -500,6 +510,9 @@ bool CGtfWriter::xAssignFeaturesCds(
         }
         if (!transcriptId.empty()) {
             pRecord->SetTranscriptId(transcriptId);
+        }
+        else {
+            transcriptId = pRecord->TranscriptId();
         }
         pRecord->SetCdsPhase(sublocs, mfStrand);
         recordList.push_back(pRecord);
