@@ -114,11 +114,7 @@ CSubSource::TSubtype CSubSource::GetSubtypeValue(const string& str,
             return eSubtype_subclone;
         }
     }
-    try {
-        return ENUM_METHOD_NAME(ESubtype)()->FindValue(name);
-    } catch ( ... ) {
-    }
-    return eSubtype_other;
+    return ENUM_METHOD_NAME(ESubtype)()->FindValue(name);
 }
 
 
@@ -146,11 +142,7 @@ bool CSubSource::IsValidSubtypeName(const string& str,
             return true;
         } 
     }
-    try {
-        return ENUM_METHOD_NAME(ESubtype)()->IsValidName(name);
-    } catch ( ... ) {
-    }
-    return false;
+    return ENUM_METHOD_NAME(ESubtype)()->IsValidName(name);
 }
 
 
@@ -166,20 +158,13 @@ string CSubSource::GetSubtypeName(CSubSource::TSubtype stype,
         case eSubtype_transposon_name:    return "transposon";
         case eSubtype_insertion_seq_name: return "insertion_seq";
         default:
-            try {
-                return NStr::Replace
-                  (ENUM_METHOD_NAME(ESubtype)()->FindName(stype, true),
-                   "-", "_");
-            } catch ( ... ) {
-            }
+            return NStr::Replace
+                (ENUM_METHOD_NAME(ESubtype)()->FindName(stype, true),
+                 "-", "_");
         }
     } else {
-        try {
-            return ENUM_METHOD_NAME(ESubtype)()->FindName(stype, true);
-        } catch ( ... ) {
-        }
+        return ENUM_METHOD_NAME(ESubtype)()->FindName(stype, true);
     }
-    return "note";
 }
 
 
