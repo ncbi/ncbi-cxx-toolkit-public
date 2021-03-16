@@ -193,23 +193,18 @@ static void adjust_mock_times(const char* mock_body, char** mock_body_adj_p)
         ss += 60 * mm + 3600 * hh;
         cp = exp;
 
-        /* Get the current UTC epoch time. */
-        time_t      tt_now = time(0);
-        struct tm   tm_now;
+        /* Calculate new expiration time. */
+        time_t      tt_exp = time(0) + ss;
+        struct tm   tm_exp;
         CORE_LOCK_WRITE;
-        tm_now = *gmtime(&tt_now);
+        tm_exp = *gmtime(&tt_exp);
         CORE_UNLOCK;
 
-        /* Make the adjustment. */
-        struct tm   tm_adj = tm_now;
-        tm_adj.tm_sec += ss;
-        mktime(&tm_adj); /* normalize */
-
-        /* Put the adjusted time. */
+        /* Output the expiration time. */
         if ( ! *mock_body_adj_p)
             *mock_body_adj_p = strdup(mock_body);
         char* cp2 = *mock_body_adj_p + (exp - mock_body) + prfx_len;
-        if (strftime(cp2, notz_len + 1, "%Y-%m-%dT%H:%M:%S", &tm_adj)
+        if (strftime(cp2, notz_len + 1, "%Y-%m-%dT%H:%M:%S", &tm_exp)
             != notz_len)
         {
             CORE_LOG(eLOG_Fatal, "Unexpected result from strftime(mock_body)");
