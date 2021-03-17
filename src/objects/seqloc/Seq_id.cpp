@@ -43,6 +43,7 @@
 #include <util/line_reader.hpp>
 #include <util/static_map.hpp>
 #include <util/util_misc.hpp>
+#include <util/bitset/ncbi_bitset.hpp>
 #include <serial/serialimpl.hpp>
 
 #include <objects/seq/Bioseq.hpp>
@@ -859,6 +860,24 @@ typedef CStaticPairArrayMap<CTempString, CSeq_id::EAccessionInfo,
 DEFINE_STATIC_ARRAY_MAP_WITH_COPY(TAccInfoMap, sc_AccInfoMap, sc_AccInfoArray);
 
 static const char kDigits[] = "0123456789";
+// Maximum number of varying final digits for which it's practical to
+// use a bit vector; this BV-based representation additionally
+// requires a constant alphabetical prefix.  (In other situations,
+// this code sticks to a traditional representation that has no such
+// limits but doesn't scale as well to large numbers of special cases.)
+static const unsigned int kMaxSmallSpecialDigits = 9;
+static const size_t kBVSizes[kMaxSmallSpecialDigits + 1] = {
+    1,
+    10,
+    100,
+    1000,
+    10000,
+    100000,
+    1000000,
+    10000000,
+    100000000,
+    1000000000
+};
 
 struct SAccGuide : public CObject
 {
@@ -866,15 +885,18 @@ struct SAccGuide : public CObject
     typedef map<string, TAccInfo>   TPrefixes;
     typedef pair<string, TAccInfo>  TPair;
     typedef list<TPair>             TPairs; // not vector -- need stable ptrs
-    typedef map<string, TPair>      TSpecialMap; // last -> first -> value
+    typedef map<string, TPair>      TBigSpecialMap; // last -> first -> value
+    typedef pair<bm::bvector<>, TAccInfo> TSmallSpecialOption;
+    typedef multimap<string, TSmallSpecialOption> TSmallSpecialMap;
     typedef unsigned int            TFormatCode;
     typedef pair<string, string>    TFallback; // fallback, refinement
     typedef map<const TAccInfo*, TFallback> TFallbackMap;
 
     struct SSubMap {
-        TPrefixes    prefixes;
-        TPairs       wildcards;
-        TSpecialMap  specials;
+        TPrefixes         prefixes;
+        TPairs            wildcards;
+        TBigSpecialMap    big_specials;
+        TSmallSpecialMap  small_specials;
     };
     typedef map<TFormatCode, SSubMap> TMainMap;
 
@@ -893,7 +915,8 @@ struct SAccGuide : public CObject
         TAccInfo              prev_type;
         CTempString           prev_type_name;
         TMainMap::value_type* prev_submap;
-        TSpecialMap::iterator prev_special;
+        TBigSpecialMap::iterator   prev_big_special;
+        TSmallSpecialMap::iterator prev_small_special;
         TFormatCode           prev_special_format;
         string                prev_special_key;
         string                prev_special_base_key;
@@ -923,6 +946,8 @@ private:
     void x_Load(const string& filename);
     void x_Load(ILineReader& lr);
     void x_InitGeneral(void);
+    static bm::bvector_size_type x_SplitSpecial(CTempString& acc,
+                                                TFormatCode fmt);
 };
 
 static const SAccGuide::TAccInfo kUnrecognized
@@ -975,7 +1000,8 @@ SAccGuide::SSubMap& SAccGuide::SHints::FindSubMap(SAccGuide::TMainMap& rules,
             it = rules.insert(it, make_pair(fmt, SAccGuide::SSubMap()));
         }
         prev_submap = &*it;
-        prev_special = it->second.specials.end();
+        prev_big_special   = it->second.big_specials.end();
+        prev_small_special = it->second.small_specials.end();
         return it->second;
     }
 }
@@ -1092,7 +1118,7 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
         unique_ptr<string> old_name;
         if (value == kUnrecognized) {
             string   key_used;
-            Find(fmt, tokens[1], &key_used);
+            Find(fmt, tokens[1].substr(0, pos2), &key_used);
             old_name.reset(new string);
             if (old) {
                 value = TAccInfo(old | CSeq_id::fAcc_fallback);
@@ -1123,23 +1149,78 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
                 tmp1.assign(tokens[1], 0, pos2);
                 tmp2.assign(tokens[1], pos2 + 1, NPOS);
             }
-            hints.prev_special
-                = submap.specials.insert(hints.prev_special,
-                                         make_pair(tmp2, TPair(tmp1, value)));
-            // Account for possible refinement.
-            hints.prev_special->second.second = value;
-            /*
-            if (pos2 == NPOS) {
-                submap.specials[tokens[1]] = TPair(tokens[1], value);
+            auto left  = x_SplitSpecial(tmp1, fmt),
+                 right = x_SplitSpecial(tmp2, fmt);
+            const TAccInfo* value_ptr = nullptr;
+            if (tmp1 != tmp2) {
+                hints.prev_big_special
+                    = submap.big_specials.insert(
+                        hints.prev_big_special,
+                        make_pair(tmp2, TPair(tmp1, value)));
+                // Account for possible refinement.
+                hints.prev_big_special->second.second = value;
+                /*
+                if (pos2 == NPOS) {
+                    submap.big_specials[tokens[1]] = TPair(tokens[1], value);
+                } else {
+                    // _VERIFY(NStr::SplitInTwo(tokens[1], "-", tmp1, tmp2));
+                    tmp1.assign(tokens[1], 0, pos2);
+                    tmp2.assign(tokens[1], pos2 + 1, NPOS);
+                    submap.big_specials[tmp2] = TPair(tmp1, value);
+                }
+                */
+                if ((value & CSeq_id::fAcc_fallback) != 0) {
+                    value_ptr = &hints.prev_big_special->second.second;
+                }
             } else {
-                // _VERIFY(NStr::SplitInTwo(tokens[1], "-", tmp1, tmp2));
-                tmp1.assign(tokens[1], 0, pos2);
-                tmp2.assign(tokens[1], pos2 + 1, NPOS);
-                submap.specials[tmp2] = TPair(tmp1, value);
+                TSmallSpecialMap::iterator it = submap.small_specials.end();
+                if (hints.prev_small_special != submap.small_specials.end()
+                    &&  hints.prev_small_special->first == tmp1) {
+                    it = hints.prev_small_special;
+                    it->second.first.clear_range(left, right);
+                    while ((it->second.second & ~CSeq_id::fAcc_fallback)
+                           != (value & ~CSeq_id::fAcc_fallback)) {
+                        if (it == submap.small_specials.begin()
+                            ||  (--it)->first != tmp1) {
+                            it = hints.prev_small_special;
+                            ++it;
+                            break;
+                        }
+                    }
+                } else {
+                    it = submap.small_specials.lower_bound(tmp1);
+                }
+                while (it != submap.small_specials.end()) {
+                    if (it->first != tmp1) {
+                        it = submap.small_specials.end();
+                        break;
+                    } else if ((it->second.second & ~CSeq_id::fAcc_fallback)
+                               == (value & ~CSeq_id::fAcc_fallback)) {
+                        break;
+                    } else {
+                        ++it;
+                    }
+                }
+                if (it != submap.small_specials.end()) {
+                    _ASSERT(it->first == tmp1);
+                    _ASSERT((it->second.second & ~CSeq_id::fAcc_fallback)
+                            == (value & ~CSeq_id::fAcc_fallback));
+                    hints.prev_small_special = it;
+                } else {
+                    auto size
+                        = kBVSizes[min(fmt & 0xffff, kMaxSmallSpecialDigits)];
+                    hints.prev_small_special = 
+                        submap.small_specials.emplace(
+                            tmp1, make_pair(bm::bvector<>(size), value));
+                }
+                hints.prev_small_special->second.first.set_range(left, right);
+                // Account for possible refinement.
+                hints.prev_small_special->second.second = value;
+                if ((value & CSeq_id::fAcc_fallback) != 0) {
+                    value_ptr = &hints.prev_small_special->second.second;
+                }
             }
-            */
-            if ((value & CSeq_id::fAcc_fallback) != 0) {
-                const TAccInfo* value_ptr = &hints.prev_special->second.second;
+            if (value_ptr != nullptr) {
                 _ASSERT(old_name.get() != NULL  &&  !old_name->empty());
                 fallbacks[value_ptr] = make_pair(*old_name, tokens[2]);
             } else {
@@ -1220,17 +1301,29 @@ const SAccGuide::TAccInfo& SAccGuide::Find(TFormatCode fmt,
         }
     }
     if (acc_or_pfx != pfx  &&  (*result & CSeq_id::fAcc_specials) != 0) {
-        TSpecialMap::const_iterator sit
-            = submap.specials.lower_bound(acc_or_pfx);
-        if (sit != submap.specials.end()
-            &&  !(acc_or_pfx < sit->second.first) ) {
+        pfx = acc_or_pfx;
+        auto n = x_SplitSpecial(pfx, fmt);
+        for (auto ssit = submap.small_specials.lower_bound(pfx);
+             ssit != submap.small_specials.end()  &&  ssit->first == pfx;
+             ++ssit) {
+            if (ssit->second.first[n]) {
+                if (key_used) {
+                    key_used->erase();
+                }
+                return ssit->second.second;
+            }
+        }
+        TBigSpecialMap::const_iterator bsit
+            = submap.big_specials.lower_bound(acc_or_pfx);
+        if (bsit != submap.big_specials.end()
+            &&  !(acc_or_pfx < bsit->second.first) ) {
             if (key_used) {
                 key_used->erase();
             }
-            return sit->second.second;
+            return bsit->second.second;
         } else {
             if (key_used  &&  key_used->empty()) {
-                *key_used = pfx;
+                *key_used = pfx.substr(0, fmt >> 16);
             }
             return *result;
         }
@@ -1268,6 +1361,15 @@ SAccGuide::SAccGuide(void)
             AddRule(kBuiltInGuide[i], hints);
         }
     }
+    for (auto &rit : rules) {
+        ERASE_ITERATE(TSmallSpecialMap, sit, rit.second.small_specials) {
+            if (sit->second.first.any()) {
+                sit->second.first.optimize();
+            } else {
+                rit.second.small_specials.erase(sit);
+            }
+        }
+    }
     x_InitGeneral();
 }
 
@@ -1298,6 +1400,37 @@ void SAccGuide::x_Load(ILineReader& in)
     do {
         AddRule(*++in, hints);
     } while ( !in.AtEOF() );
+}
+
+bm::bvector_size_type SAccGuide::x_SplitSpecial(CTempString& acc,
+                                                TFormatCode fmt)
+{
+    auto raw_digits = fmt & 0xffff, digits = raw_digits;
+    auto normal_size = (fmt >> 16) + digits;
+    if (digits == kMaxSmallSpecialDigits + 1) {
+        digits -= 2;
+    } else if (digits > kMaxSmallSpecialDigits) {
+        digits = kMaxSmallSpecialDigits;
+    }
+    SIZE_TYPE pos;
+    bm::bvector_size_type result;
+    if (acc.size() == normal_size) {
+        pos = acc.size() - digits;
+        NStr::StringToNumeric(acc.substr(pos), &result);
+    } else {
+        _ASSERT(acc.size() == normal_size + 1);
+        _ASSERT(digits >= 3);
+        pos = (fmt >> 16) + 2;
+        _ASSERT(isalpha(static_cast<unsigned char>(acc[pos])));
+        NStr::StringToNumeric(acc.substr(pos + 1), &result);
+        if (digits == raw_digits) {
+            pos -= 2;
+            result += (NStr::StringToNumeric<Uint1>(acc.substr(pos, 2))
+                       * kBVSizes[digits - 2]);
+        }
+    }
+    acc.erase(pos);
+    return result;
 }
 
 static CRef<SAccGuide>* s_CreateGuide(void)
