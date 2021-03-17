@@ -77,8 +77,6 @@ s_FetchRawData(CSeqDBExpert & seqdb,
 
     sequence.assign(buffer, slength);
     ambig.assign(buffer + slength, alength);
-
-    seqdb.RetAmbigSeq(& buffer);
 }
 
 // Return a Seq-id built from the given int (gi).

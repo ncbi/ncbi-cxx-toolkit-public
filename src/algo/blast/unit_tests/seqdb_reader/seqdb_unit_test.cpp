@@ -251,31 +251,6 @@ string s_Stringify(CRef<ASNOBJ> a)
     return CNcbiOstrstreamToString(oss);
 }
 
-/// RIAA class for GetSequence/RetSequence.
-class CReturnSeqBuffer {
-public:
-    /// Constructor, remembers a sequence buffer.
-    CReturnSeqBuffer(CSeqDB     * seqdb,
-                     const char * buffer)
-        : m_SeqDB  (seqdb),
-          m_Buffer (buffer)
-    {
-    }
-
-    /// Destructor, frees the sequence buffer.
-    ~CReturnSeqBuffer()
-    {
-        if (m_Buffer) {
-            m_SeqDB->RetAmbigSeq(& m_Buffer);
-        }
-    }
-
-private:
-    CSeqDB     * m_SeqDB;
-    const char * m_Buffer;
-};
-
-
 // Test Cases
 BOOST_AUTO_TEST_SUITE(seqdb)
 
@@ -2232,8 +2207,6 @@ BOOST_AUTO_TEST_CASE(ExpertRawData)
     unsigned h = s_BufHash(buffer + slen, alen);
     unsigned exp_hash = 705445389u;
 
-    db.RetAmbigSeq(& buffer);
-
     BOOST_REQUIRE_EQUAL((290/4) + 1, slen);
     BOOST_REQUIRE_EQUAL(20,          alen);
     BOOST_REQUIRE_EQUAL(exp_hash,    h);
@@ -2258,8 +2231,6 @@ BOOST_AUTO_TEST_CASE(ExpertRawDataProteinNulls)
         const char * buffer(0);
 
         db.GetRawSeqAndAmbig(*oid, & buffer, & slen, & alen);
-
-        CReturnSeqBuffer riia(& db, buffer);
 
         string S(buffer, slen);
         string A(buffer + slen, alen);
