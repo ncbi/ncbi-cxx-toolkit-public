@@ -4306,33 +4306,35 @@ CCountries::EStateCleanup s_DoUSAStateCleanup ( string& country ) {
         }
     }
 
-    // move first state matched to first position
+    // generate result
+    string res;
+    res.append ("USA: ");
+    string pfx = "";
+
     if ( match >= 0 ) {
-
-        string res;
-        string pfx = ", ";
-        res.append ("USA: ");
+        // move first state matched to first position
         res.append ( components[match] );
-
-        for ( int j = 0; j < components.size(); j++ ) {
-            if ( j == match) continue;
-            res.append ( ", " );
-            res.append ( components[j] );
-        }
-
-        country = res;
-
-        if ( num_states > 1 ) {
-            return CCountries::e_Ambiguous;
-        } else if ( ! NStr::Equal ( original, res )) {
-            return CCountries::e_Corrected;
-        } else {
-            return CCountries::e_Valid;
-        }
+        pfx = ", ";
     }
 
-    // state information is missing
-  return CCountries::e_Missing;
+    for ( int j = 0; j < components.size(); j++ ) {
+        if ( j == match) continue;
+        res.append ( pfx );
+        res.append ( components[j] );
+        pfx = ", ";
+    }
+
+    country = res;
+
+    if ( match < 0 ) {
+        return CCountries::e_Missing;
+    } else if ( num_states > 1 ) {
+        return CCountries::e_Ambiguous;
+    } else if ( ! NStr::Equal ( original, res )) {
+        return CCountries::e_Corrected;
+    }
+
+    return CCountries::e_Valid;
 }
 
 typedef CRowReader<CRowReaderStream_NCBI_TSV> TNCBITSVStream;
@@ -4364,6 +4366,16 @@ void CCountries::LoadUSAExceptionMap (const TUsaExceptionMap& exceptions) {
     for ( const auto & itm : exceptions ) {
         string fr = itm.first;
         string to = itm.second;
+
+        // ensure colon is followed by space to match initial correction
+        string f1, f2;
+        NStr::SplitInTwo ( fr, ":", f1, f2 );
+        NStr::TruncateSpacesInPlace ( f1 );
+        NStr::TruncateSpacesInPlace ( f2 );
+        if ( ! f1.empty() && ! f2.empty()) {
+            fr = f1 + ": " + f2;
+        }
+
         exception_map [fr] = to;
     }
 

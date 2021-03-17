@@ -20857,12 +20857,17 @@ BOOST_AUTO_TEST_CASE(Test_USAStateCleanup)
     s_USAStateTest("USA: Puerto Rico, Florida", "USA: Florida, Puerto Rico", CCountries::e_Corrected );
     s_USAStateTest("USA: Florida, Puerto Rico", "USA: Florida, Puerto Rico", CCountries::e_Valid );
 
+    s_USAStateTest("USA:Los Angeles", "USA: Los Angeles", CCountries::e_Missing );
+    s_USAStateTest("USA:Hayward", "USA: Hayward", CCountries::e_Missing );
+
     CCountries::TUsaExceptionMap exm;
     exm["USA: Washington, Arkansas"] = "USA: Arkansas, Washington";
     // self-entry is needed for converting e_Ambiguous to e_Valid (from full name) or e_Corrected (from abbreviation)
     exm["USA: Arkansas, Washington"] = "USA: Arkansas, Washington";
     exm["USA: Puerto Rico, Florida"] = "Puerto Rico: Florida";
     exm["USA: Florida, Puerto Rico"] = "Puerto Rico: Florida";
+    exm["USA: Los Angeles"] = "USA: California, Los Angeles";
+    exm["USA:Hayward"] = "USA: California, Hayward";
     CCountries::LoadUSAExceptionMap (exm);
 
     s_USAStateTest("USA: Arkansas, Washington", "USA: Arkansas, Washington", CCountries::e_Valid );
@@ -20875,7 +20880,9 @@ BOOST_AUTO_TEST_CASE(Test_USAStateCleanup)
     s_USAStateTest("USA: Puerto Rico", "USA: Puerto Rico", CCountries::e_Missing );
     s_USAStateTest("USA: Puerto Rico, Florida", "Puerto Rico: Florida", CCountries::e_NotUSA );
     s_USAStateTest("USA: Florida, Puerto Rico", "Puerto Rico: Florida", CCountries::e_NotUSA );
-}
+
+    s_USAStateTest("USA:Los Angeles", "USA: California, Los Angeles", CCountries::e_Corrected );
+    s_USAStateTest("USA:Hayward", "USA: California, Hayward", CCountries::e_Corrected );}
 
 
 BOOST_AUTO_TEST_CASE(Test_NewFixCountry)
