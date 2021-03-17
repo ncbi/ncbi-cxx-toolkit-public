@@ -244,6 +244,9 @@ void CGffBaseRecord::SetStrand(
     case objects::eNa_strand_minus:
         mStrand = "-";
         break;
+    case objects::eNa_strand_other:
+        mStrand = "?";
+        break;
     case objects::eNa_strand_both:
     case objects::eNa_strand_both_rev:
         mStrand = ".";
