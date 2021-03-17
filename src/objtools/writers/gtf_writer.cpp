@@ -400,8 +400,8 @@ bool CGtfWriter::xAssignFeaturesTranscript(
     //  covering interval wraps around the origin.
 
     const auto& mfLoc = mf.GetLocation();
-    auto mfStrand = (mfLoc.IsSetStrand() && mfLoc.GetStrand() == eNa_strand_minus) ?
-        eNa_strand_minus :
+    auto mfStrand = mfLoc.IsSetStrand() ?
+        mfLoc.GetStrand() :
         eNa_strand_plus;
 
     CSeq_loc mfLocAsPackedInt;
@@ -420,44 +420,57 @@ bool CGtfWriter::xAssignFeaturesTranscript(
     TSeqPos lastFrom = sublocs.front()->GetFrom();
     TSeqPos lastTo = sublocs.front()->GetTo();
     auto it = sublocs.begin();
-    for ( it++; it != sublocs.end(); it++ ) {
+    bool iterationDone(false);
+    for ( it++; it != sublocs.end()  &&  !iterationDone; it++ ) {
         const CSeq_interval& intv = **it;
 
-        if (mfStrand == eNa_strand_minus) {
-            if (intv.GetTo() <= lastFrom) {
-                lastFrom = intv.GetFrom();
-            }
-            else {
-                pRecord->SetEndpoints(lastFrom, lastTo, mfLoc.GetStrand());
-                recordList.push_back(pRecord);
-                pRecord.Reset(new CGtfRecord(context, (m_uFlags & fNoExonNumbers)));
-                if (!transcriptId.empty()) {
-                    pRecord->SetTranscriptId(transcriptId);
+        switch (mfStrand) {
+            case eNa_strand_minus: {
+                if (intv.GetTo() <= lastFrom) {
+                    lastFrom = intv.GetFrom();
                 }
-                if (!xAssignFeature(*pRecord, context, mf)) {
-                    return false;
+                else {
+                    pRecord->SetEndpoints(lastFrom, lastTo, mfLoc.GetStrand());
+                    recordList.push_back(pRecord);
+                    pRecord.Reset(new CGtfRecord(context, (m_uFlags & fNoExonNumbers)));
+                    if (!transcriptId.empty()) {
+                        pRecord->SetTranscriptId(transcriptId);
+                    }
+                    if (!xAssignFeature(*pRecord, context, mf)) {
+                        return false;
+                    }
+                    lastFrom = intv.GetFrom();
+                    lastTo = intv.GetTo();
                 }
-                lastFrom = intv.GetFrom();
-                lastTo = intv.GetTo();
             }
-        }
-        else {
-            if (intv.GetFrom() >= lastTo) {
-                lastTo = intv.GetTo();
+            break;
+
+            case eNa_strand_other: { 
+                //feature contains parts from both strands
+                // for now, don't even attempt to origin wrap these things (rw-1299). 
+                iterationDone = true;
             }
-            else { //wrapping back to 0
-                pRecord->SetEndpoints(lastFrom, lastTo, mfLoc.GetStrand());
-                recordList.push_back(pRecord);
-                pRecord.Reset(new CGtfRecord(context, (m_uFlags & fNoExonNumbers)));
-                if (!transcriptId.empty()) {
-                    pRecord->SetTranscriptId(transcriptId);
+            break;
+
+            default: {
+                if (intv.GetFrom() >= lastTo) {
+                    lastTo = intv.GetTo();
                 }
-                if (!xAssignFeature(*pRecord, context, mf)) {
-                    return false;
+                else { //wrapping back to 0
+                    pRecord->SetEndpoints(lastFrom, lastTo, mfLoc.GetStrand());
+                    recordList.push_back(pRecord);
+                    pRecord.Reset(new CGtfRecord(context, (m_uFlags & fNoExonNumbers)));
+                    if (!transcriptId.empty()) {
+                        pRecord->SetTranscriptId(transcriptId);
+                    }
+                    if (!xAssignFeature(*pRecord, context, mf)) {
+                        return false;
+                    }
+                    lastFrom = 0;
+                    lastTo = intv.GetTo();
                 }
-                lastFrom = 0;
-                lastTo = intv.GetTo();
             }
+            break;
         }
     }
     pRecord->SetEndpoints(lastFrom, lastTo, mfLoc.GetStrand());
