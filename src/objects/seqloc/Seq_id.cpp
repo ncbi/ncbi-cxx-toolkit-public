@@ -946,6 +946,9 @@ private:
     void x_Load(const string& filename);
     void x_Load(ILineReader& lr);
     void x_InitGeneral(void);
+    void x_AddSpecial(SSubMap& submap, SHints& hints, TFormatCode fmt,
+                      CTempString from, CTempString to, TAccInfo value,
+                      const string* old_name, const CTempString& new_name);
     static bm::bvector_size_type x_SplitSpecial(CTempString& acc,
                                                 TFormatCode fmt);
 };
@@ -1149,83 +1152,8 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
                 tmp1.assign(tokens[1], 0, pos2);
                 tmp2.assign(tokens[1], pos2 + 1, NPOS);
             }
-            auto left  = x_SplitSpecial(tmp1, fmt),
-                 right = x_SplitSpecial(tmp2, fmt);
-            const TAccInfo* value_ptr = nullptr;
-            if (tmp1 != tmp2) {
-                hints.prev_big_special
-                    = submap.big_specials.insert(
-                        hints.prev_big_special,
-                        make_pair(tmp2, TPair(tmp1, value)));
-                // Account for possible refinement.
-                hints.prev_big_special->second.second = value;
-                /*
-                if (pos2 == NPOS) {
-                    submap.big_specials[tokens[1]] = TPair(tokens[1], value);
-                } else {
-                    // _VERIFY(NStr::SplitInTwo(tokens[1], "-", tmp1, tmp2));
-                    tmp1.assign(tokens[1], 0, pos2);
-                    tmp2.assign(tokens[1], pos2 + 1, NPOS);
-                    submap.big_specials[tmp2] = TPair(tmp1, value);
-                }
-                */
-                if ((value & CSeq_id::fAcc_fallback) != 0) {
-                    value_ptr = &hints.prev_big_special->second.second;
-                }
-            } else {
-                TSmallSpecialMap::iterator it = submap.small_specials.end();
-                if (hints.prev_small_special != submap.small_specials.end()
-                    &&  hints.prev_small_special->first == tmp1) {
-                    it = hints.prev_small_special;
-                    it->second.first.clear_range(left, right);
-                    while ((it->second.second & ~CSeq_id::fAcc_fallback)
-                           != (value & ~CSeq_id::fAcc_fallback)) {
-                        if (it == submap.small_specials.begin()
-                            ||  (--it)->first != tmp1) {
-                            it = hints.prev_small_special;
-                            ++it;
-                            break;
-                        }
-                    }
-                } else {
-                    it = submap.small_specials.lower_bound(tmp1);
-                }
-                while (it != submap.small_specials.end()) {
-                    if (it->first != tmp1) {
-                        it = submap.small_specials.end();
-                        break;
-                    } else if ((it->second.second & ~CSeq_id::fAcc_fallback)
-                               == (value & ~CSeq_id::fAcc_fallback)) {
-                        break;
-                    } else {
-                        ++it;
-                    }
-                }
-                if (it != submap.small_specials.end()) {
-                    _ASSERT(it->first == tmp1);
-                    _ASSERT((it->second.second & ~CSeq_id::fAcc_fallback)
-                            == (value & ~CSeq_id::fAcc_fallback));
-                    hints.prev_small_special = it;
-                } else {
-                    auto size
-                        = kBVSizes[min(fmt & 0xffff, kMaxSmallSpecialDigits)];
-                    hints.prev_small_special = 
-                        submap.small_specials.emplace(
-                            tmp1, make_pair(bm::bvector<>(size), value));
-                }
-                hints.prev_small_special->second.first.set_range(left, right);
-                // Account for possible refinement.
-                hints.prev_small_special->second.second = value;
-                if ((value & CSeq_id::fAcc_fallback) != 0) {
-                    value_ptr = &hints.prev_small_special->second.second;
-                }
-            }
-            if (value_ptr != nullptr) {
-                _ASSERT(old_name.get() != NULL  &&  !old_name->empty());
-                fallbacks[value_ptr] = make_pair(*old_name, tokens[2]);
-            } else {
-                _ASSERT(old_name.get() == NULL);
-            }
+            x_AddSpecial(submap, hints, fmt, tmp1, tmp2, value, old_name.get(),
+                         tokens[2]);
         }
     } else if (tokens.size() == 3 && NStr::EqualNocase(tokens[0], "gnl")) {
         string key(tokens[1]);
@@ -1400,6 +1328,88 @@ void SAccGuide::x_Load(ILineReader& in)
     do {
         AddRule(*++in, hints);
     } while ( !in.AtEOF() );
+}
+
+void SAccGuide::x_AddSpecial(SSubMap& submap, SHints& hints, TFormatCode fmt,
+                             CTempString from, CTempString to, TAccInfo value,
+                             const string* old_name,
+                             const CTempString& new_name)
+{
+    auto left  = x_SplitSpecial(from, fmt),
+         right = x_SplitSpecial(to, fmt);
+    const TAccInfo* value_ptr = nullptr;
+    if (from != to) {
+        hints.prev_big_special
+            = submap.big_specials.insert(hints.prev_big_special,
+                                         make_pair(to, TPair(from, value)));
+        // Account for possible refinement.
+        hints.prev_big_special->second.second = value;
+        /*
+        if (pos2 == NPOS) {
+            submap.big_specials[tokens[1]] = TPair(tokens[1], value);
+        } else {
+            // _VERIFY(NStr::SplitInTwo(tokens[1], "-", from, to));
+            from.assign(tokens[1], 0, pos2);
+            to.assign(tokens[1], pos2 + 1, NPOS);
+            submap.big_specials[to] = TPair(from, value);
+        }
+        */
+        if ((value & CSeq_id::fAcc_fallback) != 0) {
+            value_ptr = &hints.prev_big_special->second.second;
+        }
+    } else {
+        TSmallSpecialMap::iterator it = submap.small_specials.end();
+        if (hints.prev_small_special != submap.small_specials.end()
+            &&  hints.prev_small_special->first == from) {
+            it = hints.prev_small_special;
+            it->second.first.clear_range(left, right);
+            while ((it->second.second & ~CSeq_id::fAcc_fallback)
+                   != (value & ~CSeq_id::fAcc_fallback)) {
+                if (it == submap.small_specials.begin()
+                    ||  (--it)->first != from) {
+                    it = hints.prev_small_special;
+                    ++it;
+                    break;
+                }
+            }
+        } else {
+            it = submap.small_specials.lower_bound(from);
+        }
+        while (it != submap.small_specials.end()) {
+            if (it->first != from) {
+                it = submap.small_specials.end();
+                break;
+            } else if ((it->second.second & ~CSeq_id::fAcc_fallback)
+                       == (value & ~CSeq_id::fAcc_fallback)) {
+                break;
+            } else {
+                ++it;
+            }
+        }
+        if (it != submap.small_specials.end()) {
+            _ASSERT(it->first == from);
+            _ASSERT((it->second.second & ~CSeq_id::fAcc_fallback)
+                    == (value & ~CSeq_id::fAcc_fallback));
+            hints.prev_small_special = it;
+        } else {
+            auto size = kBVSizes[min(fmt & 0xffff, kMaxSmallSpecialDigits)];
+            hints.prev_small_special = 
+                submap.small_specials.emplace(
+                    from, make_pair(bm::bvector<>(size), value));
+        }
+        hints.prev_small_special->second.first.set_range(left, right);
+        // Account for possible refinement.
+        hints.prev_small_special->second.second = value;
+        if ((value & CSeq_id::fAcc_fallback) != 0) {
+            value_ptr = &hints.prev_small_special->second.second;
+        }
+    }
+    if (value_ptr != nullptr) {
+        _ASSERT(old_name != nullptr  &&  !old_name->empty());
+        fallbacks[value_ptr] = make_pair(*old_name, new_name);
+    } else {
+        _ASSERT(old_name == nullptr);
+    }
 }
 
 bm::bvector_size_type SAccGuide::x_SplitSpecial(CTempString& acc,
