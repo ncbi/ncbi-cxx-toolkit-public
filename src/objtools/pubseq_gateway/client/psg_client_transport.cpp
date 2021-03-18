@@ -476,7 +476,7 @@ SPSG_IoSession::SPSG_IoSession(SPSG_Server& s, SPSG_AsyncQueue& queue, uv_loop_t
     server(s),
     m_Headers{{
         { ":method", "GET" },
-        { ":scheme", "http" },
+        { ":scheme", TPSG_Https::GetDefault() ? "https" : "http" },
         { ":authority", m_Authority },
         { ":path", NGHTTP2_NV_FLAG_NO_COPY_VALUE },
         { "user-agent", SUvNgHttp2_UserAgent::Get() },
