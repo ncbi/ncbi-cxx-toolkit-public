@@ -709,7 +709,12 @@ public:
                 reply->GetHttpReply()->AssignPendingReq(move(pending_req));
             }
         } else {
-            reply->Send503("Too many pending requests");
+            reply->SetContentType(ePSGS_PSGMime);
+            reply->PrepareReplyMessage("Too many pending requests",
+                                       CRequestStatus::e503_ServiceUnavailable,
+                                       ePSGS_TooManyRequests, eDiag_Error);
+            reply->PrepareReplyCompletion();
+            reply->Flush();
         }
     }
 
@@ -1131,16 +1136,24 @@ public:
                     return -1;
             }
         } catch (const std::exception &  e) {
-            auto    http_reply = reply->GetHttpReply();
-            if (http_reply->GetState() == CHttpReply<P>::eReplyInitialized) {
-                reply->Send503(e.what());
+            if (!reply->IsFinished()) {
+                reply->SetContentType(ePSGS_PSGMime);
+                reply->PrepareReplyMessage(e.what(),
+                                           CRequestStatus::e503_ServiceUnavailable,
+                                           ePSGS_UnknownError, eDiag_Error);
+                reply->PrepareReplyCompletion();
+                reply->Flush();
                 return 0;
             }
             return -1;
         } catch (...) {
-            auto    http_reply = reply->GetHttpReply();
-            if (http_reply->GetState() == CHttpReply<P>::eReplyInitialized) {
-                reply->Send503("Unexpected failure");
+            if (!reply->IsFinished()) {
+                reply->SetContentType(ePSGS_PSGMime);
+                reply->PrepareReplyMessage("Unexpected failure",
+                                           CRequestStatus::e503_ServiceUnavailable,
+                                           ePSGS_UnknownError, eDiag_Error);
+                reply->PrepareReplyCompletion();
+                reply->Flush();
                 return 0;
             }
             return -1;

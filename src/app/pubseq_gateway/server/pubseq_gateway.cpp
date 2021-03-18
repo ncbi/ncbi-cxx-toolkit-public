@@ -549,7 +549,7 @@ int CPubseqGatewayApp::Run(void)
             [this](CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply)->int
             {
                 // It's a browser, most probably admin request
-                reply->Send404("Not found");
+                reply->GetHttpReply()->Send404("Not found");
                 return 0;
             }, &get_parser, nullptr);
 
@@ -1159,7 +1159,7 @@ CPubseqGatewayApp::x_GetHops(CHttpRequest &  req,
                                              CRequestStatus::e400_BadRequest,
                                              ePSGS_MalformedParameter,
                                              eDiag_Error);
-            PSG_WARNING(err_msg);
+            PSG_ERROR(err_msg);
             return false;
         }
 
@@ -1171,7 +1171,7 @@ CPubseqGatewayApp::x_GetHops(CHttpRequest &  req,
                                              CRequestStatus::e400_BadRequest,
                                              ePSGS_MalformedParameter,
                                              eDiag_Error);
-            PSG_WARNING(err_msg);
+            PSG_ERROR(err_msg);
             return false;
         }
 
@@ -1184,9 +1184,25 @@ CPubseqGatewayApp::x_GetHops(CHttpRequest &  req,
                                              CRequestStatus::e400_BadRequest,
                                              ePSGS_MalformedParameter,
                                              eDiag_Error);
-            PSG_WARNING(err_msg);
+            PSG_ERROR(err_msg);
             return false;
         }
+    }
+    return true;
+}
+
+
+bool
+CPubseqGatewayApp::x_IsDBOK(shared_ptr<CPSGS_Reply>  reply)
+{
+    auto    startup_data_state = GetStartupDataState();
+    if (startup_data_state != ePSGS_StartupDataOK) {
+        string  err_msg = GetCassStartupDataStateMessage(startup_data_state);
+        x_SendMessageAndCompletionChunks(
+            reply, err_msg, CRequestStatus::e502_BadGateway,
+            ePSGS_NoUsefulCassandra, eDiag_Error);
+        PSG_ERROR(err_msg);
+        return false;
     }
     return true;
 }

@@ -42,6 +42,7 @@ const int       kUnknownPriority = -1;
 enum EPSGS_PubseqGatewayErrorCode {
     ePSGS_UnknownSatellite = 300,
     ePSGS_BadURL,
+    ePSGS_NoUsefulCassandra,
     ePSGS_MissingParameter,
     ePSGS_MalformedParameter,
     ePSGS_UnknownResolvedSatellite,
@@ -61,7 +62,21 @@ enum EPSGS_PubseqGatewayErrorCode {
     ePSGS_BioseqInfoMultipleRecords,
     ePSGS_ServerLogicError,
     ePSGS_BioseqInfoAccessionAdjustmentError,
-    ePSGS_NoProcessor
+    ePSGS_NoProcessor,
+    ePSGS_ShuttingDown,
+    ePSGS_Unauthorised,
+
+    ePSGS_TestIOError,          // Exceptions when handling certain requests
+    ePSGS_StatisticsError,      //
+    ePSGS_AckAlertError,        //
+    ePSGS_GetAlertsError,       //
+    ePSGS_ShutdownError,        //
+    ePSGS_StatusError,          //
+    ePSGS_InfoError,            //
+    ePSGS_ConfigError,          //
+    ePSGS_HealthError,          //
+
+    ePSGS_TooManyRequests
 };
 
 

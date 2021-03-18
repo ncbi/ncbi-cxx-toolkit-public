@@ -770,38 +770,3 @@ void CPSGS_Reply::SendData(const string &  data_to_send,
     m_Reply->SendOk(data_to_send.data(), data_to_send.length(), false);
 }
 
-
-void CPSGS_Reply::Send400(const char *  msg)
-{
-    m_Reply->SetContentType(ePSGS_PlainTextMime);
-    m_Reply->Send400(msg);
-}
-
-
-void CPSGS_Reply::Send404(const char *  msg)
-{
-    m_Reply->SetContentType(ePSGS_PlainTextMime);
-    m_Reply->Send404(msg);
-}
-
-
-void CPSGS_Reply::Send500(const char *  msg)
-{
-    m_Reply->SetContentType(ePSGS_PlainTextMime);
-    m_Reply->Send500(msg);
-}
-
-
-void CPSGS_Reply::Send502(const char *  msg)
-{
-    m_Reply->SetContentType(ePSGS_PlainTextMime);
-    m_Reply->Send502(msg);
-}
-
-
-void CPSGS_Reply::Send503(const char *  msg)
-{
-    m_Reply->SetContentType(ePSGS_PlainTextMime);
-    m_Reply->Send503(msg);
-}
-

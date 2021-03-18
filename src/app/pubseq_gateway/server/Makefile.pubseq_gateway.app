@@ -16,8 +16,8 @@ SRC = pubseq_gateway  \
       osg_connection osg_mapper osg_caller osg_fetch osg_processor osg_processor_base \
       osg_resolve_base osg_resolve osg_getblob_base osg_getblob osg_annot
 
-LIBS = $(PCRE_LIBS) $(H2O_STATIC_LIBS) $(CASSANDRA_STATIC_LIBS) $(LIBUV_STATIC_LIBS) $(LMDB_STATIC_LIBS) $(PROTOBUF_LIBS) $(KRB5_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
-CPPFLAGS = $(CASSANDRA_INCLUDE) $(H2O_INCLUDE) $(LMDB_INCLUDE) $(PROTOBUF_INCLUDE) $(ORIG_CPPFLAGS)
+LIBS = $(PCRE_LIBS) $(OPENSSL_LIBS) $(H2O_STATIC_LIBS) $(CASSANDRA_STATIC_LIBS) $(LIBUV_STATIC_LIBS) $(LMDB_STATIC_LIBS) $(PROTOBUF_LIBS) $(KRB5_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
+CPPFLAGS = $(OPENSSL_INCLUDE) $(CASSANDRA_INCLUDE) $(H2O_INCLUDE) $(LMDB_INCLUDE) $(PROTOBUF_INCLUDE) $(ORIG_CPPFLAGS)
 LIB = id2 seqsplit seqset $(SEQ_LIBS) xregexp $(PCRE_LIB) pub medline biblio general xser psg_cassandra psg_protobuf psg_cache xconnext connext xconnserv xconnect xutil xncbi
 
 REQUIRES = CASSANDRA MT Linux H2O LMDB LIBUV PROTOBUF -ICC

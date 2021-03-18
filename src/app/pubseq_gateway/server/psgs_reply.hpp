@@ -54,7 +54,9 @@ public:
         m_NextItemId(0),
         m_TotalSentReplyChunks(0),
         m_ChunksLock(false)
-    {}
+    {
+        SetContentType(ePSGS_PSGMime);
+    }
 
     ~CPSGS_Reply();
 
@@ -235,11 +237,6 @@ public:
 public:
     // HTTP facilities
     void SendData(const string &  data_ptr, EPSGS_ReplyMimeType  mime_type);
-    void Send400(const char *  msg);
-    void Send404(const char *  msg);
-    void Send500(const char *  msg);
-    void Send502(const char *  msg);
-    void Send503(const char *  msg);
 
 private:
     void x_PrepareTSEBlobPropCompletion(size_t          item_id,
