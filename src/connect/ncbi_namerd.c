@@ -1279,7 +1279,7 @@ static int/*bool*/ x_SetupConnectionParams(const SERV_ITER iter)
                                            sizeof(net_info->http_proxy_host),
                                            DEF_NAMERD_PROXY_HOST)) {
             CORE_LOGF_X(eNSub_TooLong, eLOG_Error,
-                        ("[%s]  Unable to get NAMERD http proxy host",
+                        ("[%s]  Unable to get NAMERD HTTP proxy host",
                          iter->name));
             return 0/*failed*/;
         }
@@ -1287,7 +1287,7 @@ static int/*bool*/ x_SetupConnectionParams(const SERV_ITER iter)
             ||  NCBI_HasSpaces(net_info->http_proxy_host,
                                strlen(net_info->http_proxy_host))) {
             CORE_LOGF_X(eNSub_BadData, eLOG_Error,
-                        ("[%s]  %s NAMERD http proxy host \"%s\"", iter->name,
+                        ("[%s]  %s NAMERD HTTP proxy host \"%s\"", iter->name,
                          net_info->http_proxy_host[0] ? "Bad" : "Empty",
                          net_info->http_proxy_host));
             return 0/*failed*/;
@@ -1297,14 +1297,14 @@ static int/*bool*/ x_SetupConnectionParams(const SERV_ITER iter)
                                            buf, sizeof(buf),
                                            DEF_NAMERD_PROXY_PORT)) {
             CORE_LOGF_X(eNSub_TooLong, eLOG_Error,
-                        ("[%s]  Unable to get NAMERD http proxy port",
+                        ("[%s]  Unable to get NAMERD HTTP proxy port",
                          iter->name));
             return 0/*failed*/;
         }
         if (!*buf  ||  sscanf(buf, "%hu%n", &net_info->http_proxy_port, &n) < 1
             ||  buf[n]  ||  !net_info->http_proxy_port) {
             CORE_LOGF_X(eNSub_BadData, eLOG_Error,
-                        ("[%s]  %s NAMERD http proxy port \"%s\"", iter->name,
+                        ("[%s]  %s NAMERD HTTP proxy port \"%s\"", iter->name,
                          *buf ? "Bad" : "Empty", buf));
             return 0/*failed*/;
         }
@@ -1326,7 +1326,7 @@ static int/*bool*/ x_SetupConnectionParams(const SERV_ITER iter)
                                );
     if (!dtab) {
         CORE_LOGF_X(eNSub_Alloc, eLOG_Critical,
-                    ("[%s]  Unable to get service dtab from http header",
+                    ("[%s]  Unable to get service dtab from HTTP header",
                      iter->name));
         return 0/*failed*/;
     }
@@ -1350,7 +1350,7 @@ static int/*bool*/ x_SetupConnectionParams(const SERV_ITER iter)
     /* note that it also clears remnants of a service DTAB if "buf" is empty */
     if (!ConnNetInfo_OverrideUserHeader(net_info, buf)) {
         CORE_LOGF_X(eNSub_Alloc, eLOG_Critical,
-                    ("[%s]  Failed to set NAMERD dtab in http header",
+                    ("[%s]  Failed to set NAMERD dtab in HTTP header",
                      iter->name));
         return 0/*failed*/;
     }
