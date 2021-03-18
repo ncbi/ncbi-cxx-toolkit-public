@@ -8,6 +8,19 @@
 
 cmake_policy(SET CMP0057 NEW)
 
+# ---------------------------------------------------------------------------
+# Prepearation
+
+set(IS_AUTOMATED NO)
+set(IS_DB_LOAD   NO)
+
+if($ENV{NCBI_AUTOMATED_BUILD})
+    set(IS_AUTOMATED YES)
+    if($ENV{NCBI_CHECK_DB_LOAD})
+        set(IS_DB_LOAD YES)
+     endif()
+endif()
+
 string(REPLACE " " ";" NCBITEST_ARGS    "${NCBITEST_ARGS}")
 string(REPLACE " " ";" NCBITEST_ASSETS  "${NCBITEST_ASSETS}")
 
@@ -21,7 +34,7 @@ include(${NCBITEST_PARAMS})
 string(REPLACE "\$<CONFIG>" "${NCBITEST_CONFIG}" _x "${NCBITEST_SIGNATURE}")
 set(NCBITEST_SIGNATURE ${_x})
 
-# Extend $FEATURES if set already (NTest sets it, CTest doesn't)
+# Extend $FEATURES
 list(APPEND NCBITEST_FEATURES $ENV{FEATURES})
 list(APPEND NCBITEST_FEATURES ${NCBITEST_CONFIG})
 list(REMOVE_DUPLICATES NCBITEST_FEATURES)
@@ -29,33 +42,44 @@ list(SORT NCBITEST_FEATURES)
 string(REPLACE ";" " " _x "${NCBITEST_FEATURES}")
 set(ENV{FEATURES} ${_x})
 
-
 # ---------------------------------------------------------------------------
 # Set directories
 
-if(NOT IS_ABSOLUTE ${NCBITEST_BINDIR})
-    set(NCBITEST_BINDIR ${CMAKE_CURRENT_BINARY_DIR}/${NCBITEST_BINDIR})
-endif()
-if(NOT IS_ABSOLUTE ${NCBITEST_LIBDIR})
-    set(NCBITEST_LIBDIR ${CMAKE_CURRENT_BINARY_DIR}/${NCBITEST_LIBDIR})
-endif()
-if(NOT IS_ABSOLUTE ${NCBITEST_OUTDIR})
-    set(NCBITEST_OUTDIR ${CMAKE_CURRENT_BINARY_DIR}/${NCBITEST_OUTDIR})
-endif()
-if(NOT IS_ABSOLUTE ${NCBITEST_SOURCEDIR})
-    set(NCBITEST_SOURCEDIR ${CMAKE_CURRENT_BINARY_DIR}/${NCBITEST_SOURCEDIR})
-endif()
-if(NOT IS_ABSOLUTE ${NCBITEST_SCRIPTDIR})
-    set(NCBITEST_SCRIPTDIR ${CMAKE_CURRENT_BINARY_DIR}/${NCBITEST_SCRIPTDIR})
-endif()
+#All directories below should be absolute by default now.
+
+#if(NOT IS_ABSOLUTE ${NCBITEST_TREE_ROOT})
+#    set(NCBITEST_BINDIR ${CMAKE_CURRENT_BINARY_DIR}/${NCBITEST_TREE_ROOT})
+#endif()
+#if(NOT IS_ABSOLUTE ${NCBITEST_BUILD_ROOT})
+#    set(NCBITEST_BINDIR ${CMAKE_CURRENT_BINARY_DIR}/${NCBITEST_BUILD_ROOT})
+#endif()
+#if(NOT IS_ABSOLUTE ${NCBITEST_BINDIR})
+#    set(NCBITEST_BINDIR ${CMAKE_CURRENT_BINARY_DIR}/${NCBITEST_BINDIR})
+#endif()
+#if(NOT IS_ABSOLUTE ${NCBITEST_LIBDIR})
+#    set(NCBITEST_LIBDIR ${CMAKE_CURRENT_BINARY_DIR}/${NCBITEST_LIBDIR})
+#endif()
+#if(NOT IS_ABSOLUTE ${NCBITEST_OUTDIR})
+#    set(NCBITEST_OUTDIR ${CMAKE_CURRENT_BINARY_DIR}/${NCBITEST_OUTDIR})
+#endif()
+#if(NOT IS_ABSOLUTE ${NCBITEST_SOURCEDIR})
+#    set(NCBITEST_SOURCEDIR ${CMAKE_CURRENT_BINARY_DIR}/${NCBITEST_SOURCEDIR})
+#endif()
+#if(NOT IS_ABSOLUTE ${NCBITEST_SCRIPTDIR})
+#    set(NCBITEST_SCRIPTDIR ${CMAKE_CURRENT_BINARY_DIR}/${NCBITEST_SCRIPTDIR})
+#endif()
+
 set(NCBITEST_CHECK_SCRIPTDIR ${NCBITEST_SCRIPTDIR}/common/check)
 if(WIN32 OR XCODE)
     set(NCBITEST_BINDIR ${NCBITEST_BINDIR}/${NCBITEST_CONFIG})
     set(NCBITEST_LIBDIR ${NCBITEST_LIBDIR}/${NCBITEST_CONFIG})
     set(NCBITEST_OUTDIR ${NCBITEST_OUTDIR}/${NCBITEST_CONFIG})
 endif()
-set(NCBITEST_OUTDIR ${NCBITEST_OUTDIR}/${NCBITEST_XOUTDIR})
-set(NCBITEST_SOURCEDIR ${NCBITEST_SOURCEDIR}/${NCBITEST_XOUTDIR})
+
+# Working source and output directories for this particular test.
+# ${NCBITEST_XOUTDIR} -- is a relative path like "corelib/test"
+set(_outdir ${NCBITEST_OUTDIR}/${NCBITEST_XOUTDIR})
+set(_srcdir ${NCBITEST_SOURCEDIR}/${NCBITEST_XOUTDIR})
 
 
 # ---------------------------------------------------------------------------
@@ -64,18 +88,18 @@ set(NCBITEST_SOURCEDIR ${NCBITEST_SOURCEDIR}/${NCBITEST_XOUTDIR})
 if (NOT "${NCBITEST_ASSETS}" STREQUAL "")
     list(REMOVE_DUPLICATES NCBITEST_ASSETS)
     foreach(_res IN LISTS NCBITEST_ASSETS)
-        if (NOT EXISTS ${NCBITEST_SOURCEDIR}/${_res})
-            message(WARNING "Test ${NCBITEST_NAME} WARNING: test asset ${NCBITEST_SOURCEDIR}/${_res} not found")
+        if (NOT EXISTS ${_srcdir}/${_res})
+            message(WARNING "Test ${NCBITEST_NAME} WARNING: test asset ${_srcdir}/${_res} not found")
         endif()
     endforeach()
 endif()
 string(RANDOM _subdir)
 set(_subdir ${NCBITEST_NAME}_${_subdir})
-file(MAKE_DIRECTORY ${NCBITEST_OUTDIR}/${_subdir})
-set(_workdir ${NCBITEST_OUTDIR}/${_subdir})
+file(MAKE_DIRECTORY ${_outdir}/${_subdir})
+set(_workdir ${_outdir}/${_subdir})
 foreach(_res IN LISTS NCBITEST_ASSETS)
-    if (EXISTS ${NCBITEST_SOURCEDIR}/${_res})
-        file(COPY ${NCBITEST_SOURCEDIR}/${_res} DESTINATION ${_workdir})
+    if (EXISTS ${_srcdir}/${_res})
+        file(COPY ${_srcdir}/${_res} DESTINATION ${_workdir})
     endif()
 endforeach()
 
@@ -83,10 +107,10 @@ endforeach()
 # ---------------------------------------------------------------------------
 # Report files
 
-set(_tmp_out   ${NCBITEST_OUTDIR}/${NCBITEST_NAME}.tmp_out.txt)
-set(_test_out  ${NCBITEST_OUTDIR}/${NCBITEST_NAME}.test_out.txt)
-file(TO_NATIVE_PATH "${NCBITEST_OUTDIR}/${NCBITEST_NAME}.boost_rep.txt" _boost_rep)
-set(_test_rep  ${NCBITEST_OUTDIR}/${NCBITEST_NAME}.test_rep.txt)
+set(_tmp_out   ${_outdir}/${NCBITEST_NAME}.tmp_out.txt)
+set(_test_out  ${_outdir}/${NCBITEST_NAME}.test_out.txt)
+file(TO_NATIVE_PATH "${_outdir}/${NCBITEST_NAME}.boost_rep.txt" _boost_rep)
+set(_test_rep  ${_outdir}/${NCBITEST_NAME}.test_rep.txt)
 if(EXISTS ${_tmp_out})
     file(REMOVE ${_tmp_out})
 endif()
@@ -118,14 +142,14 @@ set(ENV{CFG_LIB} "${_cfg_lib}")
 
 if(WIN32)
     set(ENV{PATH} "${NCBITEST_SCRIPTDIR}/common/impl;${NCBITEST_CHECK_SCRIPTDIR};${_cfg_bin};${_cfg_lib};$ENV{PATH}")
-    if($ENV{NCBI_AUTOMATED_BUILD})
+    if(IS_AUTOMATED)
         set(ENV{PATH} "//snowman/win-coremake/Scripts/bin;$ENV{PATH}")
     endif()
 else()
     set(ENV{PATH} "${NCBITEST_SCRIPTDIR}/common/impl:${NCBITEST_CHECK_SCRIPTDIR}:.:${_cfg_bin}:${_cfg_lib}:$ENV{PATH}")
-    if($ENV{NCBI_AUTOMATED_BUILD})
-        # Utility and $HOME/bin (for Ubuntu).
-        set(ENV{PATH} "$ENV{NCBI}/bin/_production/CPPCORE:$ENV{HOME}/bin:$ENV{PATH}")
+    if(IS_AUTOMATED})
+        # Utility and $HOME/bin (for Ubuntu), /opt/ncbi/bin/ for all Unix hosts
+        set(ENV{PATH} "$ENV{NCBI}/bin/_production/CPPCORE:/opt/ncbi/bin/:$ENV{HOME}/bin:$ENV{PATH}")
     endif()
 endif()
 
@@ -207,10 +231,10 @@ endif()
 
 # -- Generate PHID/SID for a test
 
-if($ENV{NCBI_AUTOMATED_BUILD})
+if(IS_AUTOMATED)
     set(ENV{NCBI_LOG_HIT_ID} "")
     set(ENV{NCBI_LOG_SESSION_ID} "")
-    find_program(NCBI_APPLOG NAMES ncbi_applog ncbi_applog.bat PATHS ENV PATH)
+    find_program(NCBI_APPLOG NAMES ncbi_applog ncbi_applog-1 ncbi_applog.bat PATHS ENV PATH)
     if(NCBI_APPLOG)
         execute_process(
             COMMAND          ${NCBI_APPLOG} generate -phid -sid 
@@ -219,13 +243,23 @@ if($ENV{NCBI_AUTOMATED_BUILD})
         )
         if(${_retcode} EQUAL 0)
             string(REPLACE "\n" ";" NCBI_APPLOG_output "${NCBI_APPLOG_output}")
+            # Set env variables with PHID and session ID
+            # Use generated PHID for test statistics, and sub-PHID.1 for test itself
             list(GET NCBI_APPLOG_output 0 NCBI_LOG_HIT_ID)
             set(ENV{NCBI_LOG_HIT_ID} "${NCBI_LOG_HIT_ID}.1")
-            file(WRITE ${_workdir}/${NCBI_LOG_HIT_ID} "0")
             list(GET NCBI_APPLOG_output 1 NCBI_LOG_SESSION_ID)
             set(ENV{NCBI_LOG_SESSION_ID} "${NCBI_LOG_SESSION_ID}")
+            # Create a file in the current directory with initial sub-PHID
+            # (will be incremented by $CHECK_EXEC, if any)
+            file(WRITE ${_workdir}/${NCBI_LOG_HIT_ID} "0")
         endif()
     endif()
+endif()
+
+
+# Set stuff for an automated builds
+
+if(IS_AUTOMATED)
     set(ENV{CHECK_EXEC} "${NCBITEST_CHECK_SCRIPTDIR}/check_exec_test.sh")
     set(ENV{CHECK_EXEC_STDIN} "${NCBITEST_CHECK_SCRIPTDIR}/check_exec_test.sh -stdin")
     math(EXPR NCBITEST_TIMEOUT "${NCBITEST_TIMEOUT} + 60")
@@ -247,7 +281,7 @@ if(WIN32)
         file(TO_NATIVE_PATH "${NCBITEST_CYGWIN}" NCBITEST_CYGWIN)
         set(ENV{PATH}    "${NCBITEST_CYGWIN};.;$ENV{PATH}")
         string(REPLACE  ";" " " NCBITEST_ARGS  "${NCBITEST_ARGS}")
-        if($ENV{NCBI_AUTOMATED_BUILD})
+        if(IS_AUTOMATED)
             set(NCBITEST_COMMAND "@echo off\r\nsh -c 'set -o igncr\;export SHELLOPTS\;time -p ${NCBITEST_CHECK_SCRIPTDIR}/check_exec.sh ${NCBITEST_COMMAND} ${NCBITEST_ARGS}'")
         else()
             set(NCBITEST_COMMAND "@echo off\r\nsh -c 'set -o igncr\;export SHELLOPTS\;${NCBITEST_COMMAND} ${NCBITEST_ARGS}'")
@@ -258,7 +292,7 @@ if(WIN32)
         set(NCBITEST_ARGS "")
     endif()
 else()
-    if($ENV{NCBI_AUTOMATED_BUILD})
+    if(IS_AUTOMATED)
         if(OFF)
             list(INSERT NCBITEST_ARGS 0 -p ${NCBITEST_CHECK_SCRIPTDIR}/check_exec.sh ${NCBITEST_COMMAND})
             set(NCBITEST_COMMAND "time")
@@ -296,7 +330,7 @@ math(EXPR _test_times "${_time_stop} - ${_time_start}")
 set(_test_times "real ${_test_times}")
 
 # ---------------------------------------------------------------------------
-# Post-run updates
+# Post-run uptime collection
 
 set(_uptime "")
 if(NCBITEST_HAVE_UPTIME)
@@ -339,9 +373,9 @@ file(WRITE ${_test_out} ${_info})
 # ---------------------------------------------------------------------------
 # Generate test report
 
-if($ENV{NCBI_AUTOMATED_BUILD})
-    set(_info)
+if(IS_AUTOMATED)
 
+    set(_info)
     string(APPEND _info "${NCBITEST_SIGNATURE} ${NCBITEST_OS_DISTR}\n")
     string(APPEND _info "${NCBITEST_XOUTDIR}\n")
     string(APPEND _info "${_test_cmd} ${_test_args}\n")
@@ -404,6 +438,26 @@ if($ENV{NCBI_AUTOMATED_BUILD})
     endif()
     string(APPEND _info "${_test_stop}-${_id}-${NCBITEST_HOST}\n")
     file(WRITE ${_test_rep} ${_info})
+endif()
+
+# ---------------------------------------------------------------------------
+# Load test results into Database and Applog immediately after a test.
+# test_stat_load automatically invoke "ncbi_applog" and load test results into Applog as well.
+
+if (IS_AUTOMATED AND IS_DB_LOAD)
+    set(ENV{NCBI_LOG_HIT_ID} "${NCBI_LOG_HIT_ID}")
+    set(_test_stat_load_log  "${NCBITEST_OUTDIR}/test_stat_load.log")
+    execute_process(
+        COMMAND sh -c "test_stat_load ${_test_rep} ${_test_out} ${_boost_rep} ${NCBITEST_TREE_ROOT}/build_info >> ${_test_stat_load_log} 2>&1"
+        RESULT_VARIABLE _retcode
+        OUTPUT_QUIET
+        ERROR_QUIET
+    )
+    if (_retcode EQUAL 0)
+        file(APPEND ${_test_stat_load_log} "\n")
+    else()
+        file(APPEND ${_test_stat_load_log} "Error loading results for ${NCBITEST_NAME}\n\n")
+    endif()
 endif()
 
 

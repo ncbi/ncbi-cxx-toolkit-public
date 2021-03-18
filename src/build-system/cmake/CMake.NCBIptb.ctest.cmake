@@ -217,11 +217,13 @@ function(NCBI_internal_FinalizeCMakeTest)
 
     # Directories
     
-    string(APPEND _info "set(NCBITEST_BINDIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})\n")
-    string(APPEND _info "set(NCBITEST_LIBDIR ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY})\n")
-    string(APPEND _info "set(NCBITEST_OUTDIR ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_TESTING})\n")
-    string(APPEND _info "set(NCBITEST_SOURCEDIR ${NCBI_SRC_ROOT})\n")
-    string(APPEND _info "set(NCBITEST_SCRIPTDIR ${_root}/${NCBI_DIRNAME_SCRIPTS})\n")
+    string(APPEND _info "set(NCBITEST_TREE_ROOT  ${NCBI_TREE_ROOT})\n")
+    string(APPEND _info "set(NCBITEST_BUILD_ROOT ${NCBI_BUILD_ROOT})\n")
+    string(APPEND _info "set(NCBITEST_BINDIR     ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})\n")
+    string(APPEND _info "set(NCBITEST_LIBDIR     ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY})\n")
+    string(APPEND _info "set(NCBITEST_OUTDIR     ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_TESTING})\n")
+    string(APPEND _info "set(NCBITEST_SOURCEDIR  ${NCBI_SRC_ROOT})\n")
+    string(APPEND _info "set(NCBITEST_SCRIPTDIR  ${_root}/${NCBI_DIRNAME_SCRIPTS})\n")
     string(APPEND _info "\n")
     
     # Project features: Int8GI, Symbols, CfgProps and etc
