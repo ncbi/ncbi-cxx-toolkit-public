@@ -176,6 +176,9 @@ typedef unsigned EBDebugPrintout;
  *             For encoding / decoding, one can use command-line OpenSSL:
  *             echo [-n] "password|base64value" | openssl enc {-e|-d} -base64
  *             or an online tool (search the Web for "base64 online").
+ * NOTE3:      The NCBI_CRED credentials are stored by value and are not
+ *             otherwise managed (reallocated / duplicated) by the API: they
+ *             are passed "as-is" to the lower levels of the SSL.
  */
 typedef struct {  /* NCBI_FAKE_WARNING: ICC */
     char            client_host[CONN_HOST_LEN+1]; /*client hostname('\0'=def)*/
@@ -556,6 +559,12 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_PostOverrideArg
 /* Set up standard arguments:  service(as passed), address, and platform.
  * Also, set up the "User-Agent:" HTTP header (using CORE_GetAppName()) in
  * SConnNetInfo::http_user_header.  Return non-zero on success; zero on error.
+ * @note
+ *  "service" passed as NULL does not add any service argument, yet "service"
+ *  passed as empty string ("") removes the service argument.
+ * @note
+ *  The call can sacrifice the platform and address (in this order) in order to
+ *  fit the service argument (when provided non-empty).
  * @sa
  *  CORE_GetAppName, CORE_GetPlatform
  */

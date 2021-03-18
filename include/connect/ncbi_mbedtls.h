@@ -59,8 +59,12 @@ extern NCBI_XCONNECT_EXPORT
 SOCKSSL NcbiSetupMbedTls(void);
 
 
-/** Convert native mbedTLS certificate credentials handle into an abstract
+/** Convert a native mbedTLS certificate credentials handle into an abstract
  *  toolkit handle.
+ *
+ * @note The returned handle should be free()'d when no longer needed.  The
+ * underlying mbedTLS certificate (xcred) must be released using the native
+ * API.
  *
  * @note Does not create a copy of xcred, so xcred must remain valid for the
  * entire duration of a session (or sessions) that it is being used in.

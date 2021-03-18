@@ -59,8 +59,11 @@ extern NCBI_XCONNECT_EXPORT
 SOCKSSL NcbiSetupGnuTls(void);
 
 
-/** Convert native GNUTLS certificate credentials' handle into an abstract
+/** Convert a native GNUTLS certificate credentials' handle into an abstract
  *  toolkit handle.
+ *
+ * @note The returned handle should be free()'d when no longer needed.  The
+ * underlying GNUTLS certificate (xcred) must be released using the native API.
  *
  * @note Does not create a copy of xcred, so xcred must remain valid for the
  * entire duration of a session (or sessions) that it is being used in.
