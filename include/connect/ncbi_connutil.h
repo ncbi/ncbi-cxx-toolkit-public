@@ -176,7 +176,7 @@ typedef unsigned EBDebugPrintout;
  *             For encoding / decoding, one can use command-line OpenSSL:
  *             echo [-n] "password|base64value" | openssl enc {-e|-d} -base64
  *             or an online tool (search the Web for "base64 online").
- * NOTE3:      The NCBI_CRED credentials are stored by value and are not
+ * NOTE3:      The NCBI_CRED credentials are stored by handle value and are not
  *             otherwise managed (reallocated / duplicated) by the API: they
  *             are passed "as-is" to the lower levels of the SSL.
  */
