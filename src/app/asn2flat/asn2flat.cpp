@@ -502,6 +502,20 @@ CNcbiOstream* CAsn2FlatApp::OpenFlatfileOstream(const string& name)
     return flatfile_os;
 }
 
+static void s_INSDSetOpen(bool is_insdseq, CNcbiOstream* os) {
+
+    if (is_insdseq) {
+        *os << "<INSDSet>" << endl;
+    }
+}
+
+static void s_INSDSetClose(bool is_insdseq, CNcbiOstream* os) {
+
+    if (is_insdseq) {
+        *os << "</INSDSet>" << endl;
+    }
+}
+
 
 int CAsn2FlatApp::Run(void)
 {
@@ -585,6 +599,14 @@ int CAsn2FlatApp::Run(void)
         m_Os = &cout;
     }
 
+    bool is_insdseq = false;
+    if (args["format"].AsString() == "insdseq") {
+        // only print <INSDSet> ... </INSDSet> wrappers if single output stream
+        if (m_Os != NULL) {
+            is_insdseq = true;
+        }
+    }
+
     // create the flat-file generator
     m_FFGenerator.Reset(x_CreateFlatFileGenerator(args));
     if ( args["no-external"] || args["policy"].AsString() == "internal" ) {
@@ -615,21 +637,26 @@ int CAsn2FlatApp::Run(void)
     }
 
     if ( args[ "sub" ] ) {
+        s_INSDSetOpen ( is_insdseq, m_Os );
         HandleSeqSubmit( *is );
+        s_INSDSetClose ( is_insdseq, m_Os );
         if (m_Exception) return -1;
         return 0;
     }
 
     if ( args[ "batch" ] ) {
+        s_INSDSetOpen ( is_insdseq, m_Os );
         bool propagate = args[ "p" ];
         CGBReleaseFile in( *is.release(), propagate );
         in.RegisterHandler( this );
         in.Read();  // HandleSeqEntry will be called from this function
+        s_INSDSetClose ( is_insdseq, m_Os );
         if (m_Exception) return -1;
         return 0;
     }
 
     if ( args[ "ids" ] ) {
+        s_INSDSetOpen ( is_insdseq, m_Os );
         CNcbiIstream& istr = args["ids"].AsInputFile();
         string id_str;
         while (NcbiGetlineEOL(istr, id_str)) {
@@ -646,18 +673,22 @@ int CAsn2FlatApp::Run(void)
                 ERR_POST(Error << e);
             }
         }
+        s_INSDSetClose ( is_insdseq, m_Os );
         if (m_Exception) return -1;
         return 0;
     }
 
     if ( args[ "id" ] ) {
+        s_INSDSetOpen ( is_insdseq, m_Os );
         HandleSeqId( args[ "id" ].AsString() );
+        s_INSDSetClose ( is_insdseq, m_Os );
         if (m_Exception) return -1;
         return 0;
     }
 
     string asn_type = args["type"].AsString();
 
+    s_INSDSetOpen ( is_insdseq, m_Os );
     if ( asn_type == "seq-entry" ) {
         //
         //  Straight through processing: Read a seq_entry, then process
@@ -746,6 +777,7 @@ int CAsn2FlatApp::Run(void)
             m_Scope->RemoveTopLevelSeqEntry(seh);
         }
     }
+    s_INSDSetClose ( is_insdseq, m_Os );
 
     if (m_Exception) return -1;
     return 0;
