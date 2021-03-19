@@ -633,15 +633,18 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Create
 
 /** [SERVER-side]  Create a SOCKet on top of either an OS-dependent "handle"
  * (file descriptor on Unix, SOCKET on MS-Windows) or an existing SOCK object.
- * In the later case, the returned socket is not reopenable to its default peer
- * (SOCK_Reconnect() may not specify zeros for the connection point).
+ * In the former case, the returned socket is not reopenable to its default
+ * peer (SOCK_Reconnect() may not specify zeros for the connection point).
+ * In the latter case, the returned socket is reopenable to its default peer
+ * only if the original existing socket is a client-side one (connected to a
+ * remote server end), not a server-side socket (accepted at the server end).
  * All timeouts are set to default [infinite] values.
  * The call does *not* destroy either the OS handle or the SOCK passed in the
  * arguments, regardless of the return status code.
  * When a socket is being created on top of a SOCK handle, the original SOCK
  * gets emptied (and the underlying OS handle removed from it) upon the call
- * returns (whether successfully or not), yet will still need SOCK_Destroy() in
- * the caller's code to free up the memory it occupies.
+ * return (whether successfully or not), yet it will still need SOCK_Destroy()
+ * in the caller's code to free up the memory it occupies.
  * Any secure session that may have existed in the original SOCK will have
  * been migrated to the new socket iff "flags" indicate fSOCK_Secure (if no
  * session existed, a new session may have been initiated in the new SOCK).
@@ -671,7 +674,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Create
  * @param handle
  *  [in]  OS-dependent "handle" or SOCK to be converted
  * @param handle_size
- *  [in]  "handle" size (0 if a SOCK passed in "handle")
+ *  [in]  "handle" size (or 0 if a SOCK passed in "handle")
  * @param sock
  *  [out] SOCK built on top of the "handle"
  * @param data
