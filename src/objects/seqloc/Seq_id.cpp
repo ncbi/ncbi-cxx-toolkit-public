@@ -68,7 +68,7 @@
 #include <objects/seqloc/PDB_seq_id.hpp>
 #include <corelib/ncbistre.hpp>
 
-#include "accguide.inc"
+#include "accguide2.inc"
 
 
 #define NCBI_USE_ERRCODE_X   Objects_SeqId
@@ -1441,7 +1441,7 @@ SAccGuide::SAccGuide(void)
 {
     bool file_is_old = false;
     {{
-        string file = g_FindDataFile("accguide.txt");
+        string file = g_FindDataFile("accguide2.txt");
         if ( !file.empty()  &&
              !(file_is_old = g_IsDataFileOld(file, kBuiltInGuide[0])) ) {
             try {
