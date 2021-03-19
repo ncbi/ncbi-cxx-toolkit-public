@@ -6,8 +6,8 @@
 ifeq "$(COMPILER)-$(DEBUG_SFX)$(DLL)" "icc-Release"
   ncbi_ansi_ext.o:       CFLAGS += -fno-builtin-strncat
   ncbi_connutil.o:       CFLAGS += -fno-builtin-strcat -fno-builtin-strcpy \
-                                   -fno-builtin-strcspn -fno-builtin-strpbrk \
-                                   -fno-builtin-strspn
+                                   -fno-builtin-strcspn -fno-builtin-strnlen \
+                                   -fno-builtin-strpbrk -fno-builtin-strspn
   ncbi_ftp_connector.o:  CFLAGS += -fno-builtin-strcpy -fno-builtin-strcspn \
                                    -fno-builtin-strncmp -fno-builtin-strspn
   ncbi_http_connector.o: CFLAGS += -fno-builtin-strcpy -fno-builtin-strcspn \
