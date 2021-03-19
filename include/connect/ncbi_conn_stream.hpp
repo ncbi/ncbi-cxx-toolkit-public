@@ -431,6 +431,9 @@ public:
     ///   Default I/O timeout
     /// @param buf_size
     ///   Default buffer size
+    /// @param flags
+    ///   Specifies whether to tie input and output (a tied stream flushes all
+    ///   pending output prior to doing any input) and what to buffer
     /// @sa
     ///   CConn_IOStream
     CConn_SocketStream
@@ -438,7 +441,8 @@ public:
      unsigned short  port,                        ///< ... and port number
      unsigned short  max_try,                     ///< number of attempts
      const STimeout* timeout  = kDefaultTimeout,
-     size_t          buf_size = kConn_DefaultBufSize);
+     size_t          buf_size = kConn_DefaultBufSize,
+     TConn_Flags     flags    = 0);
 
     /// Create a direct connection with "host:port" and send an initial "data"
     /// block of the specified "size" first;  the remaining communication can
@@ -452,14 +456,17 @@ public:
     ///   Pointer to block of data to send once connection is ready
     /// @param size
     ///   Size of the data block to send (or 0 if to send nothing)
-    /// @param flags
-    ///   Socket flags
+    /// @param flgs
+    ///   Socket flgs (see <connect/ncbi_socket.h>)
     /// @param max_try
     ///   Number of attempts
     /// @param timeout
     ///   Default I/O timeout
     /// @param buf_size
     ///   Default buffer size
+    /// @param flags
+    ///   Specifies whether to tie input and output (a tied stream flushes all
+    ///   pending output prior to doing any input) and what to buffer
     /// @note As a special case, if "port" is specified as 0, then the "host"
     ///   parameter is expected to have a "host:port" string as its value.
     /// @sa
@@ -469,10 +476,11 @@ public:
      unsigned short  port     = 0,                ///< ... and port number
      const void*     data     = 0,                ///< initial data block
      size_t          size     = 0,                ///< size of the data block
-     TSOCK_Flags     flags    = fSOCK_LogDefault, ///< see ncbi_socket.h
+     TSOCK_Flags     flgs     = fSOCK_LogDefault, ///< see ncbi_socket.h
      unsigned short  max_try  = DEF_CONN_MAX_TRY, ///< number of attempts
      const STimeout* timeout  = kDefaultTimeout,
-     size_t          buf_size = kConn_DefaultBufSize);
+     size_t          buf_size = kConn_DefaultBufSize,
+     TConn_Flags     flags    = 0);
 
     /// This variant uses an existing socket "sock" to build a stream upon it.
     /// The caller may retain the ownership of "sock" by passing "if_to_own" as
@@ -486,13 +494,23 @@ public:
     ///
     /// @param sock
     ///   Socket to build the stream on
+    /// @param if_to_own
+    ///   Whether the sock object is owned (managed) by the stream at dtor
+    /// @param timeout
+    ///   Default I/O timeout
+    /// @param buf_size
+    ///   Default buffer size
+    /// @param flags
+    ///   Specifies whether to tie input and output (a tied stream flushes all
+    ///   pending output prior to doing any input) and what to buffer
     /// @sa
     ///   CConn_IOStream, ncbi_socket.h, SOCK_CreateConnectorOnTop
     CConn_SocketStream
     (SOCK            sock,         ///< socket
      EOwnership      if_to_own,    ///< whether stream to own "sock" param
      const STimeout* timeout  = kDefaultTimeout,
-     size_t          buf_size = kConn_DefaultBufSize);
+     size_t          buf_size = kConn_DefaultBufSize,
+     TConn_Flags     flags    = 0);
 
     /// This variant uses an existing CSocket to build a stream up on it.
     /// NOTE:  this always revokes all ownership of the "socket"'s internals
@@ -502,12 +520,20 @@ public:
     ///
     /// @param socket
     ///   Socket to build the stream up on
+    /// @param timeout
+    ///   Default I/O timeout
+    /// @param buf_size
+    ///   Default buffer size
+    /// @param flags
+    ///   Specifies whether to tie input and output (a tied stream flushes all
+    ///   pending output prior to doing any input) and what to buffer
     /// @sa
     ///   CConn_IOStream, ncbi_socket.hpp, SOCK_CreateConnectorOnTop
     CConn_SocketStream
     (CSocket&        socket,       ///< socket, underlying SOCK always grabbed
      const STimeout* timeout  = kDefaultTimeout,
-     size_t          buf_size = kConn_DefaultBufSize);
+     size_t          buf_size = kConn_DefaultBufSize,
+     TConn_Flags     flags    = 0);
 
     /// Create a tunneled socket stream connection.
     ///
@@ -530,21 +556,25 @@ public:
     ///   Pointer to block of data to send once connection is ready
     /// @param size
     ///   Size of the data block to send (or 0 if to send nothing)
-    /// @param flags
-    ///   Socket flags
+    /// @param flgs
+    ///   Socket flags (see <connect/ncbi_socket.h>)
     /// @param timeout
     ///   Default I/O timeout
     /// @param buf_size
     ///   Default buffer size
+    /// @param flags
+    ///   Specifies whether to tie input and output (a tied stream flushes all
+    ///   pending output prior to doing any input) and what to buffer
     /// @sa
     ///   CConn_IOStream, SConnNetInfo
     CConn_SocketStream
     (const SConnNetInfo& net_info,
      const void*         data     = 0,
      size_t              size     = 0,
-     TSOCK_Flags         flags    = fSOCK_LogDefault,
+     TSOCK_Flags         flgs     = fSOCK_LogDefault,
      const STimeout*     timeout  = kDefaultTimeout,
-     size_t              buf_size = kConn_DefaultBufSize);
+     size_t              buf_size = kConn_DefaultBufSize,
+     TConn_Flags         flags    = 0);
 };
 
 

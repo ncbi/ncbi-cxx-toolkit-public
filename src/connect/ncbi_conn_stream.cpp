@@ -237,11 +237,12 @@ CConn_SocketStream::CConn_SocketStream(const string&   host,
                                        unsigned short  port,
                                        unsigned short  max_try,
                                        const STimeout* timeout,
-                                       size_t          buf_size)
+                                       size_t          buf_size,
+                                       TConn_Flags     flags)
     : CConn_IOStream(TConnector(SOCK_CreateConnector(host.c_str(),
                                                      port,
                                                      max_try)),
-                     timeout, buf_size)
+                     timeout, buf_size, flags)
 {
     return;
 }
@@ -291,10 +292,11 @@ CConn_SocketStream::CConn_SocketStream(const string&   host,
                                        TSOCK_Flags     flgs,
                                        unsigned short  max_try,
                                        const STimeout* timeout,
-                                       size_t          buf_size)
+                                       size_t          buf_size,
+                                       TConn_Flags     flags)
     : CConn_IOStream(s_SocketConnectorBuilder(host, port, max_try,
                                               data, size, flgs),
-                     timeout, buf_size)
+                     timeout, buf_size, flags)
 {
     return;
 }
@@ -303,11 +305,12 @@ CConn_SocketStream::CConn_SocketStream(const string&   host,
 CConn_SocketStream::CConn_SocketStream(SOCK            sock,
                                        EOwnership      if_to_own,
                                        const STimeout* timeout,
-                                       size_t          buf_size)
+                                       size_t          buf_size,
+                                       TConn_Flags     flags)
     : CConn_IOStream(TConnector(SOCK_CreateConnectorOnTop(sock,
                                                           if_to_own
                                                           != eNoOwnership)),
-                     timeout, buf_size)
+                     timeout, buf_size, flags)
 {
     return;
 }
@@ -335,10 +338,11 @@ static SOCK s_GrabSOCK(CSocket& socket)
 
 CConn_SocketStream::CConn_SocketStream(CSocket&        socket,
                                        const STimeout* timeout,
-                                       size_t          buf_size)
+                                       size_t          buf_size,
+                                       TConn_Flags     flags)
     : CConn_IOStream(TConnector(SOCK_CreateConnectorOnTop(s_GrabSOCK(socket),
                                                           1/*own*/)),
-                     timeout, buf_size)
+                     timeout, buf_size, flags)
 {
     return;
 }
@@ -451,10 +455,11 @@ CConn_SocketStream::CConn_SocketStream(const SConnNetInfo& net_info,
                                        size_t              size,
                                        TSOCK_Flags         flgs,
                                        const STimeout*     timeout,
-                                       size_t              buf_size)
+                                       size_t              buf_size,
+                                       TConn_Flags         flags)
     : CConn_IOStream(s_SocketConnectorBuilder(&net_info, timeout,
                                               data, size, flgs),
-                     timeout, buf_size)
+                     timeout, buf_size, flags)
 {
     return;
 }
