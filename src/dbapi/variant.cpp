@@ -140,7 +140,7 @@ CVariant CVariant::LongChar(const char *p, size_t len)
 CVariant CVariant::LongChar(const CNullable<const TStringUCS2&>& s, size_t len)
 {
     return CVariant(s.IsNull() ? new CDB_LongChar(len)
-                    : new CDB_LongChar(len, s));
+                    : new CDB_LongChar(len ? len : TStringUCS2::npos, s));
 }
 
 CVariant CVariant::VarChar(const char *p, size_t len)
