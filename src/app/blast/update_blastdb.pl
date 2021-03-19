@@ -215,8 +215,9 @@ if ($location ne "NCBI") {
             if ($location eq "GCP" and defined($gsutil)) {
                 $cmd = "$gsutil ";
                 if ($opt_nt > 1) {
-                    $cmd .= "-m -q cp ";
+                    $cmd .= "-m -q ";
                     $cmd .= "-o 'GSUtil:parallel_thread_count=1' -o 'GSUtil:parallel_process_count=$opt_nt' ";
+                    $cmd .= "cp ";
                 } else {
                     $cmd .= "-q cp ";
                 }
