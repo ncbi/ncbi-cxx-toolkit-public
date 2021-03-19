@@ -904,6 +904,7 @@ struct SAccGuide : public CObject
         SHints()
             : prev_type(CSeq_id::eAcc_unknown), prev_submap(NULL),
               prev_special_format(0),
+              prev_special_type(CSeq_id::eAcc_unknown),
               prev_special_base_type(CSeq_id::eAcc_unknown)
             {}
 
@@ -919,7 +920,9 @@ struct SAccGuide : public CObject
         TSmallSpecialMap::iterator prev_small_special;
         TFormatCode           prev_special_format;
         string                prev_special_key;
+        CTempString           prev_special_type_name;
         string                prev_special_base_key;
+        TAccInfo              prev_special_type;
         TAccInfo              prev_special_base_type;
     };
     
@@ -966,6 +969,7 @@ SAccGuide::TAccInfo SAccGuide::SHints::FindAccInfo(CTempString name)
         if (it == sc_AccInfoMap.end()) {
             return kUnrecognized;
         } else {
+            prev_special_key.clear();
             prev_type_name = it->first;
             return prev_type = it->second;
         }
@@ -980,6 +984,8 @@ SAccGuide::TAccInfo SAccGuide::SHints::FindSpecial(const SAccGuide& guide,
     CTempString pfx(acc_or_range, 0, fmt >> 16);
     if (fmt == prev_special_format) {
         if (acc_or_range == prev_special_key) {
+            prev_special_type = prev_type;
+            prev_special_type_name = prev_type_name;
             return prev_type;
         } else if (pfx == prev_special_base_key) {
             return prev_special_base_type;
@@ -1104,8 +1110,8 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
         pos2 = tokens[1].find('-', pos);
         TFormatCode fmt
             = s_Key(pos, ((pos2 == NPOS) ? tokens[1].size() : pos2) - pos);
-        TAccInfo value = hints.FindAccInfo(tokens[2]);
         TAccInfo old   = hints.FindSpecial(*this, fmt, tokens[1]);
+        TAccInfo value = hints.FindAccInfo(tokens[2]);
         if ((old & CSeq_id::fAcc_specials) != 0) {
             old = TAccInfo(old & ~CSeq_id::fAcc_specials);
         } else {
@@ -1127,6 +1133,8 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
                 value = TAccInfo(old | CSeq_id::fAcc_fallback);
                 if (old == hints.prev_type) {
                     *old_name = hints.prev_type_name;
+                } else if (old == hints.prev_special_type) {
+                    *old_name = hints.prev_special_type_name;
                 } else {
                     *old_name = "0x" + NStr::UIntToString(old, 0, 16);
                 }
@@ -1143,6 +1151,9 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
                            << ": unrecognized accession type " << tokens[2]
                            << " for stray(!) special case " << tokens[1]);
             }
+        } else {
+            _ASSERT(hints.prev_type == value);
+            hints.prev_special_key = tokens[1];
         }
         if (value != kUnrecognized) {
             SSubMap& submap = hints.FindSubMap(rules, fmt);
@@ -1155,6 +1166,8 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
             x_AddSpecial(submap, hints, fmt, tmp1, tmp2, value, old_name.get(),
                          tokens[2]);
         }
+        hints.prev_special_type_name.clear();
+        hints.prev_special_type = CSeq_id::eAcc_unknown;
     } else if (tokens.size() == 3 && NStr::EqualNocase(tokens[0], "gnl")) {
         string key(tokens[1]);
         NStr::ToUpper(key);
