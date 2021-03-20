@@ -133,17 +133,17 @@ s_FwdCompareHSPs(const void* v1, const void* v2)
     if (h1->context > h2->context)
         return 1;
 
-	if (h1->query.offset < h2->query.offset) 
-		return -1;
-	if (h1->query.offset > h2->query.offset) 
-		return 1;
-	/* Necessary in case both HSP's have the same query offset. */
-	if (h1->subject.offset < h2->subject.offset) 
-		return -1;
-	if (h1->subject.offset > h2->subject.offset) 
-		return 1;
+    if (h1->query.offset < h2->query.offset) 
+        return -1;
+    if (h1->query.offset > h2->query.offset) 
+        return 1;
+    /* Necessary in case both HSP's have the same query offset. */
+    if (h1->subject.offset < h2->subject.offset) 
+        return -1;
+    if (h1->subject.offset > h2->subject.offset) 
+        return 1;
 
-	return 0;
+    return 0;
 }
 
 /** Like s_FwdCompareHSPs, except with additional logic to
