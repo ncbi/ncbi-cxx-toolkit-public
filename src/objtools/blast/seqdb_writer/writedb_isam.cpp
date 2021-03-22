@@ -620,25 +620,20 @@ void CWriteDB_IsamIndex::x_AddPdb(int             oid,
 {
     const CPDB_seq_id & pdb = seqid.GetPdb();
 
+    // ID-6635 : Numeric chains have been deprecated in PDB ids. All live PDB
+    // records now have only string chains. Save them as-is.
     // Sparse mode:
     //
     // "102l"
-    // "102l  "
-    // "102l| "
+    // "102l abc"
+    // "102l|abc"
     //
     // Non-sparse mode:
     // "102l"
-    // "102l  "
-    // "102l| "
-    // "pdb|102l| "
+    // "102l abc"
+    // "102l|abc"
+    // "pdb|102l|abc"
 
-    if(pdb.CanGetChain_id() && pdb.IsSetChain_id()){
-    	string chain_id= pdb.GetChain_id();
-    	if(chain_id.size() > 1){
-    		NCBI_THROW(CWriteDBException, eArgErr,
-    				   "Multi-letters chain PDB id is not supported in v4 BLAST DB");
-    	}
-    }
     CTempString mol;
     if (pdb.CanGetMol()) {
         mol = pdb.GetMol().Get();
@@ -659,15 +654,11 @@ void CWriteDB_IsamIndex::x_AddPdb(int             oid,
     string short_id(full_id, 4);
     x_AddStdString(oid, short_id);
 
+    // mol is always 4 characters long. If chain exists, add a sting in which the
+    // '|' delimiter is changed to a space.
     int len = short_id.size();
-    if (short_id[len-2] == '|') {
-        short_id[len-2] = ' ';
-    } else {
-        // This is lower case chain encoding, i.e., xxxx|a -> xxxx|AA
-        _ASSERT(short_id[len-1] == short_id[len-2]);
-        _ASSERT(short_id[len-3] == '|');
-        short_id[len-3] = ' ';
-    }
+    if (short_id[4] == '|')
+        short_id[4] = ' ';
     x_AddStdString(oid, short_id);
 }
 
