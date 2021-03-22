@@ -1,8 +1,8 @@
 /*
  for x in connect/mbedtls/?*.o; do echo ${x##*mbedtls?} $x; done | sort | \
- while read _ x; do nm -g -defined-only $x | sed -e 's,_ncbicxx_.*,,' | \
+ while read _ x; do nm -g --defined-only $x | sed -e 's,_ncbicxx_.*,,' | \
  sort -k3; done | \
- awk '/ / { s=substr($3, 2); print "#define", s " \\\n        " s "_ncbicxx_2_7_18" }'
+ awk '/ / { s=substr($3, 1); print "#define", s " \\\n        " s "_ncbicxx_2_7_18" }'
  */
 #define mbedtls_aes_crypt_cbc \
         mbedtls_aes_crypt_cbc_ncbicxx_2_7_18
