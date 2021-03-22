@@ -35,7 +35,7 @@
 #include <objtools/readers/reader_error_codes.hpp>
 
 BEGIN_NCBI_SCOPE
-BEGIN_SCOPE(objects);
+BEGIN_SCOPE(objects)
 
 class ILineErrorListener;
 
@@ -133,7 +133,7 @@ protected:
     ILineErrorListener* mpEl;
 };
 
-END_SCOPE(objects);
-END_NCBI_SCOPE;
+END_SCOPE(objects)
+END_NCBI_SCOPE
 
 #endif // _ALN_ERROR_REPORTER_HPP_

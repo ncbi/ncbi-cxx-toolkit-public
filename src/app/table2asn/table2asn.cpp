@@ -92,11 +92,12 @@ using namespace objects;
 
 #define USE_SCOPE
 
-namespace {
+namespace 
+{
     class CMissingInputException : exception 
     {
     };
-};
+}
 
 static void s_FailOnBadInput(const string& specifics, IObjtoolsListener& listener)
 {
@@ -264,6 +265,8 @@ void CTbl2AsnApp::Init(void)
 
     arg_desc->AddDefaultKey
         ("out-suffix", "String", "ASN.1 files suffix", CArgDescriptions::eString, ".sqn");
+
+    arg_desc->AddFlag("binary", "Output binary ASN.1");
 
     arg_desc->AddOptionalKey("t", "InFile", "Template File",
         CArgDescriptions::eInputFile);
@@ -447,6 +450,7 @@ int CTbl2AsnApp::Run(void)
     m_context.m_allow_accession = args["allow-acc"].AsBoolean();
     m_context.m_delay_genprodset = args["J"].AsBoolean();
     m_context.m_accumulate_mods = args["accum-mods"].AsBoolean();
+    m_context.m_binary_asn1_output = args["binary"].AsBoolean();
 
     if (args["c"])
     {

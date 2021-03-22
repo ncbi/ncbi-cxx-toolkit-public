@@ -36,7 +36,7 @@
 #include <objtools/logging/message.hpp>
 
 BEGIN_NCBI_SCOPE
-BEGIN_SCOPE(objects);
+BEGIN_SCOPE(objects)
 
 
 class CFlatFileMessage : public CObjtoolsMessage 
@@ -76,7 +76,7 @@ private:
     int m_LineNum;
 };
 
-END_SCOPE(objects);
+END_SCOPE(objects)
 END_NCBI_SCOPE
 
 

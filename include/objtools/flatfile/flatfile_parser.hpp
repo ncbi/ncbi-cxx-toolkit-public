@@ -52,7 +52,7 @@ class CSerialObject;
 namespace objects 
 {
     class IObjtoolsListener;
-};
+}
 
 struct Parser;
 

@@ -16,7 +16,7 @@ namespace objects
     namespace feature
     {
         class CFeatTree;
-    };
+    }
 
     class CFixSuspectProductName
     {
@@ -44,7 +44,7 @@ namespace objects
         CRef<feature::CFeatTree> m_feattree;
         CRef<CScope> m_scope;
     };
-};
+}
 
 END_NCBI_SCOPE
 

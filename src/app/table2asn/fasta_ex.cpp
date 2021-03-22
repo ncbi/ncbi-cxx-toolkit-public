@@ -74,7 +74,7 @@ CFastaReaderEx::CFastaReaderEx(CTable2AsnContext& context, ILineReader& reader, 
             m_context.m_gapNmin, 
             m_context.m_gap_Unknown_length)
 {
-};
+}
 
 void CFastaReaderEx::AssignMolType(objects::ILineErrorListener * pMessageListener)
 {

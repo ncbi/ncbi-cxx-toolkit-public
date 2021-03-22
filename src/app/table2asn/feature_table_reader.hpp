@@ -20,8 +20,8 @@ namespace objects
     namespace feature
     {
         class CFeatTree;
-    };
-};
+    }
+}
 
 class CSerialObject;
 class ILineReader;

@@ -14,7 +14,7 @@ namespace objects
     class CSeq_id;
     class CUser_object;
     class ILineErrorListener;
-};
+}
 
 class CSerialObject;
 class ILineReader;

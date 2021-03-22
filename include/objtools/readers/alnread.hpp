@@ -42,7 +42,7 @@
 #include <objtools/readers/aln_formats.hpp>
 
 BEGIN_NCBI_SCOPE
-BEGIN_SCOPE(objects);
+BEGIN_SCOPE(objects)
 
 class ILineErrorListener;
 

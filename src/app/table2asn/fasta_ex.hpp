@@ -17,7 +17,7 @@ class CIdMapper;
 class CBioseq;
 class CSeq_annot;
 class CSourceModParser;
-};
+}
 
 class CTable2AsnContext;
 class CSerialObject;

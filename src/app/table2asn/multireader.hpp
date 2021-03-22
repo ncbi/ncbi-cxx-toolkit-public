@@ -17,7 +17,7 @@ class ILineErrorListener;
 class CIdMapper;
 class CBioseq;
 class CSeq_annot;
-};
+}
 
 class CTable2AsnContext;
 class CSerialObject;

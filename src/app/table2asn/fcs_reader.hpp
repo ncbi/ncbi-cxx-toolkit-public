@@ -14,7 +14,7 @@ class CIdMapper;
 class CBioseq;
 class CSeq_inst;
 class CSeq_literal;
-};
+}
 
 class ILineReader;
 class CTable2AsnContext;

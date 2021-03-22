@@ -402,7 +402,7 @@ void CMultiReader::WriteObject(
     ostream& ostr)
     //  ----------------------------------------------------------------------------
 {
-    ostr << MSerial_AsnText
+    ostr << MSerial_Format{m_context.m_binary_asn1_output?eSerial_AsnBinary:eSerial_AsnText}
          //<< MSerial_VerifyNo
          << object;
     ostr.flush();
@@ -762,7 +762,7 @@ namespace
                 src.GetAnnot().end());
         }
     }
-};
+}
 
 CFormatGuess::EFormat CMultiReader::OpenFile(const string& filename, CRef<CSerialObject>& input_sequence)
 {

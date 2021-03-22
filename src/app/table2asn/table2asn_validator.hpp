@@ -11,11 +11,11 @@ namespace objects
     class CValidError;
     class CSeq_submit;
     class CScope;
-};
+}
 namespace NDiscrepancy
 {
     class CDiscrepancySet;
-};
+}
 
 class CTable2AsnContext;
 class CTable2AsnValidator: public CObject

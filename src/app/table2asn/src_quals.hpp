@@ -8,11 +8,12 @@
 
 BEGIN_NCBI_SCOPE
 
-namespace objects {
+namespace objects 
+{
 class CSeq_entry;
 class ILineErrorListener;
 class CBioseq;
-};
+}
 class CMemoryFileMap;
 
 

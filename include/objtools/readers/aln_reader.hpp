@@ -433,7 +433,7 @@ inline
 void CAlnReader::SetAllGap(const string& value)
 {
     mSequenceInfo.SetBeginningGap(value).SetMiddleGap(value).SetEndGap(value);
-};
+}
 
 inline
 EAlignFormat CAlnReader::GetLastAlignmentFileFormat() const

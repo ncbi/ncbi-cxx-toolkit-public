@@ -173,7 +173,7 @@ void x_CorrectCollectionDates(CTable2AsnContext& context, _T& seq_or_set)
     }
 }
 
-};
+}
 
 
 CTable2AsnContext::CTable2AsnContext()

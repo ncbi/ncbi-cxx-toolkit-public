@@ -25,7 +25,7 @@ namespace objects
                     VisitAllBioseqs(*se, m);
                 }
             }
-    };
+    }
 
     template<typename _M>
     void VisitAllBioseqs(const objects::CSeq_entry& entry, _M m)
@@ -42,7 +42,7 @@ namespace objects
                 VisitAllBioseqs(*se, m);
             }
         }
-    };
+    }
 
     template<typename _M>
     void VisitAllSeqDesc(objects::CSeq_entry& entry, bool skip_nucprot, _M m)
@@ -70,7 +70,7 @@ namespace objects
                     VisitAllSeqDesc(*se, skip_nucprot, m);
                 }
             }
-    };
+    }
 
     template<typename _M>
     void VisitAllSeqDesc(objects::CSeq_entry& entry, _M m)
@@ -94,7 +94,7 @@ namespace objects
                     VisitAllSeqDesc(*se, m);
                 }
             }
-    };
+    }
 
     template<typename _Mset, typename _Mseq>
     void VisitAllSetandSeq(objects::CSeq_entry& entry, _Mset mset, _Mseq mseq)
@@ -114,7 +114,7 @@ namespace objects
                     VisitAllSetandSeq(*se, mset, mseq);
                 }
             }
-    };
+    }
 
     template<typename _M>
     void VisitAllFeatures(objects::CSeq_entry_EditHandle& entry_h, _M m)
@@ -201,7 +201,7 @@ namespace objects
             }
         }
     }
-};
+}
 
 
 
