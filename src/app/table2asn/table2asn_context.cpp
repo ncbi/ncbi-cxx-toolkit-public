@@ -597,7 +597,7 @@ void CTable2AsnContext::MakeGenomeCenterId(CSeq_entry& entry)
             seq_id->SetGeneral().SetDb(db);
         }
     });
-};
+}
 
 
 void CTable2AsnContext::RenameProteinIdsQuals(CSeq_feat& feature)

@@ -28,26 +28,24 @@ class CMultiReader
 //  ============================================================================
 {
 public:
-   CMultiReader(CTable2AsnContext& context);
-   ~CMultiReader();
- 
-   CFormatGuess::EFormat OpenFile(
-        const string& filename, CRef<CSerialObject>& input_sequence);
-   CRef<CSerialObject> ReadNextEntry();
-   void Cleanup(CRef<objects::CSeq_entry>);
-   void WriteObject(const CSerialObject&, ostream&);
-   //void ApplyAdditionalProperties(objects::CSeq_entry& entry);
-   void LoadTemplate(CTable2AsnContext& context, const string& ifname);
-   void LoadDescriptors(const string& ifname, CRef<objects::CSeq_descr> & out_desc);
-   CRef<objects::CSeq_descr> GetSeqDescr(CSerialObject* obj);
-   void MergeDescriptors(objects::CSeq_descr & dest, const objects::CSeq_descr & source);
-   void MergeDescriptors(objects::CSeq_descr & dest, const objects::CSeqdesc & source);
-   void ApplyDescriptors(objects::CSeq_entry & obj, const objects::CSeq_descr & source);
-   bool LoadAnnot(objects::CScope& scope, const string& filename);
-   bool ApplyAnnotFromSequences(objects::CScope& scope);
+    CMultiReader(CTable2AsnContext& context);
+    ~CMultiReader();
 
-   static
-   void GetSeqEntry(CRef<objects::CSeq_entry>& entry, CRef<objects::CSeq_submit>& submit, CRef<CSerialObject> obj);
+    CFormatGuess::EFormat OpenFile(const string& filename, CRef<CSerialObject>& input_sequence);
+    CRef<CSerialObject> ReadNextEntry();
+    void Cleanup(CRef<objects::CSeq_entry>);
+    void WriteObject(const CSerialObject&, ostream&);
+    void LoadTemplate(CTable2AsnContext& context, const string& ifname);
+    void LoadDescriptors(const string& ifname, CRef<objects::CSeq_descr> & out_desc);
+    CRef<objects::CSeq_descr> GetSeqDescr(CSerialObject* obj);
+    void MergeDescriptors(objects::CSeq_descr & dest, const objects::CSeq_descr & source);
+    void MergeDescriptors(objects::CSeq_descr & dest, const objects::CSeqdesc & source);
+    void ApplyDescriptors(objects::CSeq_entry & obj, const objects::CSeq_descr & source);
+    bool LoadAnnot(objects::CScope& scope, const string& filename);
+    bool ApplyAnnotFromSequences(objects::CScope& scope);
+
+    static
+    void GetSeqEntry(CRef<objects::CSeq_entry>& entry, CRef<objects::CSeq_submit>& submit, CRef<CSerialObject> obj);
 
     CRef<objects::CSeq_entry> ReadAlignment(CNcbiIstream& instream, const CArgs& args);
     bool AtSeqenceData() const { return mAtSequenceData; };
@@ -57,7 +55,8 @@ private:
     CFormatGuess::EFormat xReadFile(CNcbiIstream& in, CRef<objects::CSeq_entry>& entry, CRef<objects::CSeq_submit>& submit);
     CRef<objects::CSeq_entry> xReadFasta(CNcbiIstream& instream);
     CRef<CSerialObject> xApplyTemplate(CRef<CSerialObject> obj, bool merge_template_descriptors);
-    CRef<CSerialObject> xReadASN1(CObjectIStream& pObjIstrm);
+    CRef<CSerialObject> xReadASN1Text(CObjectIStream& pObjIstrm);
+    CRef<CSerialObject> xReadASN1Binary(CObjectIStream& pObjIstrm, TTypeInfo info);
     CRef<objects::CSeq_entry> xReadGFF3(CNcbiIstream& instream);
     CRef<objects::CSeq_entry> xReadGFF3_NoPostProcessing(CNcbiIstream& instream);
     CRef<objects::CSeq_entry> xReadGTF(CNcbiIstream& instream);
