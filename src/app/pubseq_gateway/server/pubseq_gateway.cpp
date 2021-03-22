@@ -58,6 +58,7 @@
 #include "getblob_processor.hpp"
 #include "tse_chunk_processor.hpp"
 #include "osg_processor.hpp"
+#include "favicon.hpp"
 
 
 USING_NCBI_SCOPE;
@@ -549,7 +550,9 @@ int CPubseqGatewayApp::Run(void)
             [this](CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply)->int
             {
                 // It's a browser, most probably admin request
-                reply->GetHttpReply()->Send404("Not found");
+                reply->GetHttpReply()->SetContentType(ePSGS_ImageMime);
+                reply->GetHttpReply()->SetContentLength(sizeof(favicon));
+                reply->GetHttpReply()->SendOk((const char *)(favicon), sizeof(favicon), true);
                 return 0;
             }, &get_parser, nullptr);
 
@@ -1187,22 +1190,6 @@ CPubseqGatewayApp::x_GetHops(CHttpRequest &  req,
             PSG_ERROR(err_msg);
             return false;
         }
-    }
-    return true;
-}
-
-
-bool
-CPubseqGatewayApp::x_IsDBOK(shared_ptr<CPSGS_Reply>  reply)
-{
-    auto    startup_data_state = GetStartupDataState();
-    if (startup_data_state != ePSGS_StartupDataOK) {
-        string  err_msg = GetCassStartupDataStateMessage(startup_data_state);
-        x_SendMessageAndCompletionChunks(
-            reply, err_msg, CRequestStatus::e502_BadGateway,
-            ePSGS_NoUsefulCassandra, eDiag_Error);
-        PSG_ERROR(err_msg);
-        return false;
     }
     return true;
 }

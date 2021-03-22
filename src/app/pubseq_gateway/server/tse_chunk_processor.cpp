@@ -94,6 +94,20 @@ CPSGS_TSEChunkProcessor::CreateProcessor(shared_ptr<CPSGS_Request> request,
                               sat_info_chunk_ver_id2info,
                               id_mod_ver_id2info) !=
                                             ePSGS_UnknownId2InfoFlavor) {
+        // Check the DB availability
+        auto *      app = CPubseqGatewayApp::GetInstance();
+        auto        startup_data_state = app->GetStartupDataState();
+        if (startup_data_state != ePSGS_StartupDataOK) {
+            if (request->NeedTrace()) {
+                reply->SendTrace("Cannot create " + GetName() +
+                                 " processor because Cassandra DB "
+                                 "is not available.\n" +
+                                 GetCassStartupDataStateMessage(startup_data_state),
+                                 request->GetStartTimestamp());
+            }
+            return nullptr;
+        }
+
         return new CPSGS_TSEChunkProcessor(request, reply, priority,
                                            sat_info_chunk_ver_id2info,
                                            id_mod_ver_id2info);

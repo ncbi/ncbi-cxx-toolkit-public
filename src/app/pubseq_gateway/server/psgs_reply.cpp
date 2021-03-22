@@ -41,7 +41,9 @@
 
 CPSGS_Reply::~CPSGS_Reply()
 {
-    delete m_Reply;
+    if (m_ReplyOwned) {
+        delete m_Reply;
+    }
 }
 
 

@@ -50,6 +50,20 @@ class CPSGS_Reply
 public:
     CPSGS_Reply(unique_ptr<CHttpReply<CPendingOperation>>  low_level_reply) :
         m_Reply(low_level_reply.release()),
+        m_ReplyOwned(true),
+        m_NextItemIdLock(false),
+        m_NextItemId(0),
+        m_TotalSentReplyChunks(0),
+        m_ChunksLock(false)
+    {
+        SetContentType(ePSGS_PSGMime);
+    }
+
+    // This constructor is to reuse the infrastructure (PSG chunks, counting
+    // them etc) in the low level error reports
+    CPSGS_Reply(CHttpReply<CPendingOperation> *  low_level_reply) :
+        m_Reply(low_level_reply),
+        m_ReplyOwned(false),
         m_NextItemIdLock(false),
         m_NextItemId(0),
         m_TotalSentReplyChunks(0),
@@ -261,6 +275,7 @@ private:
 
 private:
     CHttpReply<CPendingOperation> *     m_Reply;
+    bool                                m_ReplyOwned;
     atomic<bool>                        m_NextItemIdLock;
     size_t                              m_NextItemId;
     int32_t                             m_TotalSentReplyChunks;

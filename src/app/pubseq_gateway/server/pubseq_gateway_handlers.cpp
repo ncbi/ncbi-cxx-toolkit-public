@@ -185,11 +185,6 @@ int CPubseqGatewayApp::OnGet(CHttpRequest &  req,
         return 0;
     }
 
-    if (!x_IsDBOK(reply)) {
-        x_PrintRequestStop(context, CRequestStatus::e502_BadGateway);
-        return 0;
-    }
-
     int     hops;
     if (!x_GetHops(req, reply, hops)) {
         x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
@@ -318,11 +313,6 @@ int CPubseqGatewayApp::OnGetBlob(CHttpRequest &  req,
         return 0;
     }
 
-    if (!x_IsDBOK(reply)) {
-        x_PrintRequestStop(context, CRequestStatus::e502_BadGateway);
-        return 0;
-    }
-
     int     hops;
     if (!x_GetHops(req, reply, hops)) {
         x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
@@ -436,11 +426,6 @@ int CPubseqGatewayApp::OnResolve(CHttpRequest &  req,
 
     if (x_IsShuttingDown(reply)) {
         x_PrintRequestStop(context, CRequestStatus::e503_ServiceUnavailable);
-        return 0;
-    }
-
-    if (!x_IsDBOK(reply)) {
-        x_PrintRequestStop(context, CRequestStatus::e502_BadGateway);
         return 0;
     }
 
@@ -581,11 +566,6 @@ int CPubseqGatewayApp::OnGetTSEChunk(CHttpRequest &  req,
         return 0;
     }
 
-    if (!x_IsDBOK(reply)) {
-        x_PrintRequestStop(context, CRequestStatus::e502_BadGateway);
-        return 0;
-    }
-
     int     hops;
     if (!x_GetHops(req, reply, hops)) {
         x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
@@ -685,11 +665,6 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
 
     if (x_IsShuttingDown(reply)) {
         x_PrintRequestStop(context, CRequestStatus::e503_ServiceUnavailable);
-        return 0;
-    }
-
-    if (!x_IsDBOK(reply)) {
-        x_PrintRequestStop(context, CRequestStatus::e502_BadGateway);
         return 0;
     }
 
@@ -821,9 +796,8 @@ int CPubseqGatewayApp::OnHealth(CHttpRequest &  req,
                    active_alerts.Repr(CJsonNode::fStandardJson);
         }
 
-        x_SendMessageAndCompletionChunks(reply, msg,
-                                         CRequestStatus::e500_InternalServerError,
-                                         ePSGS_HealthError, eDiag_Error);
+        reply->GetHttpReply()->SetContentType(ePSGS_PlainTextMime);
+        reply->GetHttpReply()->Send500(msg.c_str());
         PSG_WARNING("Cassandra is not available or is in non-working state");
         x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError);
         return 0;
@@ -882,9 +856,8 @@ int CPubseqGatewayApp::OnHealth(CHttpRequest &  req,
                 } else {
                     msg += "Cannot resolve '" + m_TestSeqId + "' seq_id";
                 }
-                x_SendMessageAndCompletionChunks(
-                        reply, msg, CRequestStatus::e500_InternalServerError,
-                        ePSGS_HealthError, eDiag_Error);
+                reply->GetHttpReply()->SetContentType(ePSGS_PlainTextMime);
+                reply->GetHttpReply()->Send500(msg.c_str());
                 PSG_WARNING("Cannot resolve test seq_id '" + m_TestSeqId + "'");
                 x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError);
                 return 0;
@@ -897,9 +870,8 @@ int CPubseqGatewayApp::OnHealth(CHttpRequest &  req,
             string  msg = separator + "\n" +
                           prefix + "RESOLUTION" "\n" +
                           exc.what();
-            x_SendMessageAndCompletionChunks(
-                        reply, msg, CRequestStatus::e500_InternalServerError,
-                        ePSGS_HealthError, eDiag_Error);
+            reply->GetHttpReply()->SetContentType(ePSGS_PlainTextMime);
+            reply->GetHttpReply()->Send500(msg.c_str());
             PSG_WARNING("Cannot resolve test seq_id '" + m_TestSeqId + "'");
             x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError);
             return 0;
@@ -911,9 +883,8 @@ int CPubseqGatewayApp::OnHealth(CHttpRequest &  req,
             string  msg = separator + "\n" +
                           prefix + "RESOLUTION" "\n"
                           "Unknown '" + m_TestSeqId + "' resolution error";
-            x_SendMessageAndCompletionChunks(
-                        reply, msg, CRequestStatus::e500_InternalServerError,
-                        ePSGS_HealthError, eDiag_Error);
+            reply->GetHttpReply()->SetContentType(ePSGS_PlainTextMime);
+            reply->GetHttpReply()->Send500(msg.c_str());
             PSG_WARNING("Cannot resolve test seq_id '" + m_TestSeqId + "'");
             x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError);
             return 0;

@@ -76,7 +76,8 @@ enum EPSGS_PubseqGatewayErrorCode {
     ePSGS_ConfigError,          //
     ePSGS_HealthError,          //
 
-    ePSGS_TooManyRequests
+    ePSGS_TooManyRequests,
+    ePSGS_RequestCancelled
 };
 
 
@@ -129,6 +130,7 @@ enum EPSGS_ReplyMimeType {
     ePSGS_JsonMime,
     ePSGS_BinaryMime,
     ePSGS_PlainTextMime,
+    ePSGS_ImageMime,
     ePSGS_PSGMime,
 
     ePSGS_NotSet

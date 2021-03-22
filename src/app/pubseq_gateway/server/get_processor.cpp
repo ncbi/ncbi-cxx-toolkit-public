@@ -84,8 +84,23 @@ CPSGS_GetProcessor::CreateProcessor(shared_ptr<CPSGS_Request> request,
     if (!IsCassandraProcessorEnabled(request))
         return nullptr;
 
-    if (request->GetRequestType() == CPSGS_Request::ePSGS_BlobBySeqIdRequest)
+    if (request->GetRequestType() == CPSGS_Request::ePSGS_BlobBySeqIdRequest) {
+        auto *      app = CPubseqGatewayApp::GetInstance();
+        auto        startup_data_state = app->GetStartupDataState();
+        if (startup_data_state != ePSGS_StartupDataOK) {
+            if (request->NeedTrace()) {
+                reply->SendTrace("Cannot create " + GetName() +
+                                 " processor because Cassandra DB "
+                                 "is not available.\n" +
+                                 GetCassStartupDataStateMessage(startup_data_state),
+                                 request->GetStartTimestamp());
+            }
+            return nullptr;
+        }
+
         return new CPSGS_GetProcessor(request, reply, priority);
+    }
+
     return nullptr;
 }
 

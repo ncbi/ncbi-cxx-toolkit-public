@@ -264,7 +264,7 @@ public:
         if (!m_Postponed)
             NCBI_THROW(CPubseqGatewayException, eRequestNotPostponed,
                        "Request has not been postponed");
-        DoCancel();
+        x_DoCancel();
     }
 
     EReplyState GetState(void) const
@@ -307,7 +307,7 @@ public:
     {
         switch (m_State) {
             case eReplyInitialized:
-                Send503(what);
+                x_SendPsg503(what, ePSGS_UnknownError);
                 break;
             case eReplyStarted:
                 Send(nullptr, 0, true, true); // break
@@ -379,7 +379,7 @@ private:
         m_OutputFinished = true;
         if (m_State != eReplyFinished) {
             PSG_TRACE("CHttpReply::Stop: need cancel");
-            DoCancel();
+            x_DoCancel();
             NeedOutput();
         }
 
@@ -435,7 +435,7 @@ private:
             if (is_last) {
                 m_State = eReplyFinished;
             } else {
-                DoCancel();
+                x_DoCancel();
             }
             return;
         }
@@ -470,7 +470,7 @@ private:
 
         if (m_Cancelled) {
             if (!m_OutputFinished && m_OutputIsReady)
-                SendCancelled();
+                x_SendCancelled();
         } else {
             m_OutputIsReady = false;
             h2o_send(m_Req, vec, count,
@@ -483,20 +483,32 @@ private:
         }
     }
 
-    void SendCancelled(void)
+    void x_SendPsg503(const string &  msg,
+                      EPSGS_PubseqGatewayErrorCode  err_code)
     {
-        if (m_Cancelled && m_OutputIsReady && !m_OutputFinished)
-            Send503("Request has been cancelled");
+        CPSGS_Reply     high_level_reply(this);
+        high_level_reply.PrepareReplyMessage(
+            msg, CRequestStatus::e503_ServiceUnavailable,
+            err_code, eDiag_Error);
+        high_level_reply.PrepareReplyCompletion();
+        high_level_reply.Flush();
     }
 
-    void DoCancel(void)
+    void x_SendCancelled(void)
+    {
+        if (m_Cancelled && m_OutputIsReady && !m_OutputFinished) {
+            x_SendPsg503("Request has been cancelled", ePSGS_RequestCancelled);
+        }
+    }
+
+    void x_DoCancel(void)
     {
         m_Cancelled = true;
         if (m_HttpConn->IsClosed())
             m_OutputFinished = true;
 
         if (!m_OutputFinished && m_OutputIsReady)
-            SendCancelled();
+            x_SendCancelled();
         for (auto req: m_PendingReqs)
             req->ConnectionCancel();
     }
@@ -585,6 +597,12 @@ private:
                                &m_Req->res.headers,
                                H2O_TOKEN_CONTENT_TYPE, NULL,
                                H2O_STRLIT("text/plain"));
+                break;
+            case ePSGS_ImageMime:
+                h2o_add_header(&m_Req->pool,
+                               &m_Req->res.headers,
+                               H2O_TOKEN_CONTENT_TYPE, NULL,
+                               H2O_STRLIT("image/x-icon"));
                 break;
             case ePSGS_PSGMime:
                 h2o_add_header(&m_Req->pool,

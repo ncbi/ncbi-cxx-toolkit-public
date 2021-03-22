@@ -330,7 +330,6 @@ private:
                               CRef<CRequestContext> &  context,
                               const string &  err_msg);
     bool x_IsShuttingDown(shared_ptr<CPSGS_Reply>  reply);
-    bool x_IsDBOK(shared_ptr<CPSGS_Reply>  reply);
     void x_ReadIdToNameAndDescriptionConfiguration(const IRegistry &  reg,
                                                    const string &  section);
     void x_RegisterProcessors(void);
