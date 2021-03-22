@@ -16,17 +16,19 @@ endif()
 
 set(SRC_TLS
     ncbi_gnutls ncbi_mbedtls ncbi_tls
-    mbedtls/aes mbedtls/aesni mbedtls/arc4 mbedtls/asn1parse
-    mbedtls/asn1write mbedtls/base64 mbedtls/bignum mbedtls/blowfish
-    mbedtls/camellia mbedtls/ccm mbedtls/cipher mbedtls/cipher_wrap
+    mbedtls/aes mbedtls/aesni mbedtls/arc4 mbedtls/aria
+    mbedtls/asn1parse mbedtls/asn1write mbedtls/base64 mbedtls/bignum
+    mbedtls/blowfish mbedtls/camellia mbedtls/ccm mbedtls/chacha20
+    mbedtls/chachapoly mbedtls/cipher mbedtls/cipher_wrap
     mbedtls/cmac mbedtls/ctr_drbg mbedtls/des mbedtls/dhm mbedtls/ecdh
     mbedtls/ecdsa mbedtls/ecjpake mbedtls/ecp mbedtls/ecp_curves
     mbedtls/entropy mbedtls/entropy_poll mbedtls/error mbedtls/gcm
-    mbedtls/havege mbedtls/hmac_drbg mbedtls/md mbedtls/md2
-    mbedtls/md4 mbedtls/mbedtls_md5 mbedtls/md_wrap
-    mbedtls/memory_buffer_alloc mbedtls/oid mbedtls/padlock
-    mbedtls/pem mbedtls/pk mbedtls/pk_wrap mbedtls/pkcs12
-    mbedtls/pkcs5 mbedtls/pkparse mbedtls/pkwrite mbedtls/platform
+    mbedtls/havege mbedtls/hkdf mbedtls/hmac_drbg mbedtls/md
+    mbedtls/md2 mbedtls/md4 mbedtls/mbedtls_md5 mbedtls/md_wrap
+    mbedtls/memory_buffer_alloc mbedtls/nist_kw mbedtls/oid
+    mbedtls/padlock mbedtls/pem mbedtls/pk mbedtls/pk_wrap
+    mbedtls/pkcs12 mbedtls/pkcs5 mbedtls/pkparse mbedtls/pkwrite
+    mbedtls/platform mbedtls/platform_util mbedtls/poly1305
     mbedtls/ripemd160 mbedtls/rsa mbedtls/rsa_internal mbedtls/sha1
     mbedtls/sha256 mbedtls/sha512 mbedtls/threading mbedtls/timing
     mbedtls/mbedtls_version mbedtls/version_features mbedtls/xtea
