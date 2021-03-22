@@ -7174,10 +7174,10 @@ void CChainerArgUtil::SetupArgDescriptions(CArgDescriptions* arg_desc)
 
     arg_desc->AddDefaultKey("min-polya-weight", "MinPolyaWeight",
                             "Minimal accepted weight for polya alignment",
-                            CArgDescriptions::eInteger, "3");
+                            CArgDescriptions::eInteger, "1");
     arg_desc->AddDefaultKey("min-polya-blob", "MinPolyaBlob",
                             "Minimal polya blob weight for accepted peak",
-                            CArgDescriptions::eInteger, "5");
+                            CArgDescriptions::eInteger, "1");
 
     arg_desc->AddDefaultKey("max-dist", "MaxDist",
                             "Maximal distance between individual cap/polya positions in a blob",
