@@ -26901,7 +26901,7 @@ if test "$with_ngs" != "no" ; then
       *86*:*  ) extra_inc="-I$NGS_PATH/include/ngs/unix/fat86"  ;;
       *       ) extra_inc=''                                    ;;
    esac
-   CPPFLAGS="$VDB_INCLUDE $orig_CPPFLAGS"
+   CPPFLAGS="$NGS_PATH/include $extra_inc $VDB_INCLUDE $orig_CPPFLAGS"
    for x in "$vdb_libpath" "lib${bit64_sfx:-32}" lib; do
       if test -n "$x" -a -d "$NGS_PATH/$x"; then
          : ${NGS_LIBDIR=$NGS_PATH/$x}
@@ -26938,6 +26938,41 @@ if test "$with_ngs" != "no" ; then
     done
     NGS_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
  fi
+   if test -n "$NGS_PATH"; then
+      in_path=" in $NGS_PATH"
+   else
+      in_path=
+   fi
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for libncbi-ngs$in_path" >&5
+$as_echo_n "checking for libncbi-ngs$in_path... " >&6; }
+if ${ncbi_cv_lib_ncbi_ngs+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+         #include <ngs/itf/PileupItf.h>
+int
+main ()
+{
+struct NGS_Pileup_v1_vt * p1vt = &ITF_Pileup_vt;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  ncbi_cv_lib_ncbi_ngs=yes
+else
+  ncbi_cv_lib_ncbi_ngs=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ncbi_cv_lib_ncbi_ngs" >&5
+$as_echo "$ncbi_cv_lib_ncbi_ngs" >&6; }
+   if test $ncbi_cv_lib_ncbi_ngs=yes; then
+      NGS_C_LIBS=-lncbi-ngs
+   fi
    if test "$with_ngs" != "no"; then
     case "$NGS_PATH:$with_ngs" in
        *:yes | *: | $with_ngs* ) ;;
@@ -27013,10 +27048,10 @@ if test "$with_ngs" != "no" ; then
     NGS_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
  fi
        fi
-       NGS_LIBS="$NGS_LIBPATH -lncbi-ngs-c++ -lngs-bam-c++ -lngs-adapt-c++ -lngs-c++"
+       NGS_LIBS="$NGS_LIBPATH -lncbi-ngs-c++ -lngs-bam-c++ -lngs-adapt-c++ -lngs-c++ $NGS_C_LIBS"
     else
        NGS_INCLUDE=""
-       NGS_LIBS="-lncbi-ngs-c++ -lngs-bam-c++ -lngs-adapt-c++ -lngs-c++"
+       NGS_LIBS="-lncbi-ngs-c++ -lngs-bam-c++ -lngs-adapt-c++ -lngs-c++ $NGS_C_LIBS"
        in_path=
     fi
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for libncbi-ngs-c++$in_path" >&5
@@ -27076,6 +27111,9 @@ $as_echo "#define HAVE_LIBNGS 1" >>confdefs.h
          NGS_STATIC_LIBS="$NGS_STATIC_LIBS -lngs-bam-c++-static"
          NGS_STATIC_LIBS="$NGS_STATIC_LIBS -lngs-adapt-c++-static"
          NGS_STATIC_LIBS="$NGS_STATIC_LIBS -lngs-c++-static"
+         if test -n "$NGS_C_LIBS"; then
+            NGS_STATIC_LIBS="$NGS_STATIC_LIBS $NGS_C_LIBS-static"
+         fi
       else
          NGS_STATIC_LIBS=$NGS_LIBS
       fi

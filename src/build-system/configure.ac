@@ -7514,7 +7514,7 @@ if test "$with_ngs" != "no" ; then
       *86*:*  ) extra_inc="-I$NGS_PATH/include/ngs/unix/fat86"  ;;
       *       ) extra_inc=''                                    ;;
    esac
-   CPPFLAGS="$VDB_INCLUDE $orig_CPPFLAGS"
+   CPPFLAGS="$NGS_PATH/include $extra_inc $VDB_INCLUDE $orig_CPPFLAGS"
    for x in "$vdb_libpath" "lib${bit64_sfx:-32}" lib; do
       if test -n "$x" -a -d "$NGS_PATH/$x"; then
          : ${NGS_LIBDIR=$NGS_PATH/$x}
@@ -7522,19 +7522,36 @@ if test "$with_ngs" != "no" ; then
       fi
    done
    NCBI_RPATHIFY(NGS_LIBPATH, [$NGS_LIBDIR])
+   if test -n "$NGS_PATH"; then
+      in_path=" in $NGS_PATH"
+   else
+      in_path=
+   fi
+   AC_CACHE_CHECK([for libncbi-ngs$in_path], ncbi_cv_lib_ncbi_ngs,
+      AC_LINK_IFELSE([
+         AC_LANG_PROGRAM([@%:@include <ngs/itf/PileupItf.h>],
+            [struct NGS_Pileup_v1_vt * p1vt = &ITF_Pileup_vt;])],
+         [ncbi_cv_lib_ncbi_ngs=yes], [ncbi_cv_lib_ncbi_ngs=no]))
+   if test $ncbi_cv_lib_ncbi_ngs=yes; then
+      NGS_C_LIBS=-lncbi-ngs
+   fi
    NCBI_CHECK_THIRD_PARTY_LIB_EX(ngs, NGS, ncbi-ngs-c++,
       [AC_LANG_PROGRAM([[@%:@include <ncbi-vdb/NGS.hpp>
                           @%:@include <ngs-bam/ngs-bam.hpp>]],
            [[ncbi::NGS::setAppVersionString("conftest.0.0.0");
              ngs::ReadCollection coll
              = NGS_BAM::openReadCollection("foo.bam");]])],
-      [-lngs-bam-c++ -lngs-adapt-c++ -lngs-c++], $VDB_LIBS, $extra_inc)
+      [-lngs-bam-c++ -lngs-adapt-c++ -lngs-c++ $NGS_C_LIBS], $VDB_LIBS,
+      $extra_inc)
    if test -n "$NGS_LIBS"; then
       if test -f "$NGS_LIBDIR/libncbi-ngs-c++-static.a"; then
          NGS_STATIC_LIBS="-L$NGS_LIBDIR -lncbi-ngs-c++-static"
          NGS_STATIC_LIBS="$NGS_STATIC_LIBS -lngs-bam-c++-static"
          NGS_STATIC_LIBS="$NGS_STATIC_LIBS -lngs-adapt-c++-static"
          NGS_STATIC_LIBS="$NGS_STATIC_LIBS -lngs-c++-static"
+         if test -n "$NGS_C_LIBS"; then
+            NGS_STATIC_LIBS="$NGS_STATIC_LIBS $NGS_C_LIBS-static"
+         fi
       else
          NGS_STATIC_LIBS=$NGS_LIBS
       fi
