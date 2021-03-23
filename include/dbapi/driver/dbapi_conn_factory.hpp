@@ -92,6 +92,60 @@ public:
                               const string& server);
 
 protected:
+    class CServiceInfo : public CObject
+    {
+    public:
+        typedef IDBServiceMapper::TOptions TOptions;
+
+        CServiceInfo(const CDBConnectionFactory& factory,
+                     IDBServiceMapper& mapper, const string& service_name)
+            : m_Factory(factory), m_Mapper(&mapper),
+              m_ServiceName(service_name)
+            { }
+
+        const string& GetServiceName(void) const
+            { return m_ServiceName; }
+        const TOptions& GetOptions(void);
+
+        void ClearOptions(void)
+            { m_Options.clear(); }
+
+        void SetDispatchedServer(const TSvrRef& server);
+        TSvrRef GetDispatchedServer(void) const
+            { return m_Dispatched; }
+        TSvrRef GetMappedServer(void)
+            { return m_Mapper->GetServer(m_ServiceName); }
+
+        unsigned int GetNumOfDispatches(void) const
+            { return m_NumDispatches; }
+        unsigned int GetNumOfValidationFailures(void) const
+            { return m_NumValidationFailures; }
+        void IncNumOfValidationFailures(const TSvrRef& dsp_srv);
+
+        string GetMapperName(void) const
+            { return m_Mapper->GetName(); }
+        bool HasExclusions(void) const
+            { return m_Mapper->HasExclusions(m_ServiceName); }
+        string GetExcluded(void);
+        void Exclude(const TSvrRef& server)
+            {
+                if (server.NotEmpty()) {
+                    m_Mapper->Exclude(m_ServiceName, server);
+                }
+            }
+        void CleanExcluded(void)
+            { m_Mapper->CleanExcluded(m_ServiceName); }
+
+    private:
+        const CDBConnectionFactory& m_Factory;
+        CRef<IDBServiceMapper>      m_Mapper;
+        string                      m_ServiceName;
+        TOptions                    m_Options;
+        TSvrRef                     m_Dispatched;
+        unsigned int                m_NumDispatches;
+        unsigned int                m_NumValidationFailures;
+    };
+
     // Data
     class CRuntimeData
     {
@@ -99,68 +153,21 @@ protected:
         CRuntimeData(const CDBConnectionFactory& parent,
                      const CRef<IDBServiceMapper>& mapper);
 
-    public:
-        typedef IDBServiceMapper::TOptions TServerOptions;
-        TServerOptions& GetServerOptions(const string& service_name,
-                                         bool force_refresh = false);
-        //
-        TSvrRef GetDispatchedServer(const string& service_name);
-        void SetDispatchedServer(const string&  service_name,
-                                 const TSvrRef& server);
-
-        //
-        void IncNumOfValidationFailures(const string& server_name,
-                                        const TSvrRef& dsp_srv);
-
-        //
-        unsigned int GetNumOfDispatches(const string& service_name);
-        unsigned int GetNumOfValidationFailures(const string& service_name);
-
-        //
-        IDBServiceMapper& GetDBServiceMapper(void)
-        {
-            return *m_DBServiceMapper;
-        }
         const IDBServiceMapper& GetDBServiceMapper(void) const
         {
             return *m_DBServiceMapper;
         }
-
-        //
-        const CDBConnectionFactory& GetParent(void) const
-        {
-            return *m_Parent;
-        }
-
-        void Exclude(const string& service_name, const TSvrRef& server)
-        {
-            if (server.NotEmpty()) {
-                GetDBServiceMapper().Exclude(service_name, server);
-            }
-        }
-        
-        void CleanExcluded(const string& service_name)
-        {
-            GetDBServiceMapper().CleanExcluded(service_name);
-        }
-
-        string GetExcluded(const string& service_name);
+        CServiceInfo& GetServiceInfo(const string& service_name);
 
     private:
-        // Data types
-        typedef map<string, TServerOptions> TServerOptionsMap;
-        typedef map<string, TSvrRef>      TDispatchedSet;
-        typedef map<string, unsigned int> TServer2NumMap;
+        typedef map<string, CRef<CServiceInfo>> TServiceInfoMap;
 
         const CDBConnectionFactory* m_Parent;
         CRef<IDBServiceMapper>      m_DBServiceMapper;
-        TServerOptionsMap           m_ServerOptionsMap;
-        TDispatchedSet              m_DispatchedSet;
-        TServer2NumMap              m_DispatchNumMap;
-        TServer2NumMap              m_ValidationFailureMap;
+        TServiceInfoMap             m_ServiceInfoMap;
     };
 
-    friend class CRuntimeData;
+    friend class CServiceInfo;
 
     CRuntimeData& GetRuntimeData(const CRef<IConnValidator> validator);
     CRuntimeData& GetRuntimeData(const string& validator_name);
@@ -173,9 +180,11 @@ protected:
 
 private:
     struct SOpeningContext {
-        SOpeningContext(I_DriverContext& driver_ctx_in);
+        SOpeningContext(I_DriverContext& driver_ctx_in,
+                        CServiceInfo& service_info_in);
 
         I_DriverContext&            driver_ctx;
+        CServiceInfo&               service_info;
         IConnValidator::EConnStatus conn_status;
         impl::CDBHandlerStack       handlers;
         list<string>                tried;

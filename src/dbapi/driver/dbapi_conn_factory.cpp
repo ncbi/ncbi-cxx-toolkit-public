@@ -265,8 +265,9 @@ impl::CDBHandlerStack& CDB_DBLB_Delegate::SetOpeningMsgHandlers(void)
 
 ///////////////////////////////////////////////////////////////////////////////
 CDBConnectionFactory::SOpeningContext::SOpeningContext
-(I_DriverContext& driver_ctx_in)
-    : driver_ctx(driver_ctx_in), conn_status(IConnValidator::eInvalidConn)
+(I_DriverContext& driver_ctx_in, CServiceInfo& service_info_in)
+    : driver_ctx(driver_ctx_in), service_info(service_info_in),
+      conn_status(IConnValidator::eInvalidConn)
 {
 }
 
@@ -286,7 +287,9 @@ CDBConnectionFactory::MakeDBConnection(
 
     unique_ptr<CDB_Connection> t_con;
     CRuntimeData& rt_data = GetRuntimeData(params.GetConnValidator());
-    TSvrRef dsp_srv = rt_data.GetDispatchedServer(params.GetServerName());
+    CServiceInfo& service_info
+        = rt_data.GetServiceInfo(params.GetServerName());
+    TSvrRef dsp_srv = service_info.GetDispatchedServer();
 
     // Prepare to collect messages, whose proper severity depends on whether
     // ANY attempt succeeds.
@@ -302,7 +305,7 @@ CDBConnectionFactory::MakeDBConnection(
             ultimate_handlers.Push(&CDB_UserHandler::GetDefault());
         }
     }}
-    SOpeningContext opening_ctx(ctx);
+    SOpeningContext opening_ctx(ctx, service_info);
     CRef<CDB_UserHandler_Deferred> handler
         (new CDB_UserHandler_Deferred(ultimate_handlers));
     opening_ctx.handlers.Push(&*handler, eTakeOwnership);
@@ -321,7 +324,7 @@ CDBConnectionFactory::MakeDBConnection(
         // We probably need to re-dispatch it ...
         if (single_server != "true"
             &&  ((GetMaxNumOfDispatches()
-                  &&  (rt_data.GetNumOfDispatches(params.GetServerName())
+                  &&  (service_info.GetNumOfDispatches()
                        >= GetMaxNumOfDispatches()))
                  || (dsp_srv->GetExpireTime() != 0
                      &&  (CurrentTime(CTime::eUTC).GetTimeT()
@@ -329,10 +332,10 @@ CDBConnectionFactory::MakeDBConnection(
             // We definitely need to re-dispatch it ...
 
             // Clean previous info ...
-            rt_data.CleanExcluded(params.GetServerName());
-            rt_data.SetDispatchedServer(params.GetServerName(), TSvrRef());
+            service_info.CleanExcluded();
+            service_info.SetDispatchedServer(TSvrRef());
             if (is_pooled == "true") {
-                rt_data.GetServerOptions(params.GetServerName()).clear();
+                service_info.ClearOptions();
             }
             t_con.reset(DispatchServerName(opening_ctx, params));
         } else if (single_server != "true"  &&  is_pooled == "true") {
@@ -375,8 +378,8 @@ CDBConnectionFactory::MakeDBConnection(
                     // Check conn_status ...
                     if (opening_ctx.conn_status
                         == IConnValidator::eTempInvalidConn) {
-                        rt_data.IncNumOfValidationFailures
-                            (params.GetServerName(), opening_ctx.last_tried);
+                        service_info.IncNumOfValidationFailures(
+                            opening_ctx.last_tried);
                     }
 
                     // Re-dispatch ...
@@ -385,8 +388,7 @@ CDBConnectionFactory::MakeDBConnection(
             } else {
                 // Dispatched server is already set, but calling of this method
                 // will increase number of successful dispatches.
-                rt_data.SetDispatchedServer(params.GetServerName(),
-                                            opening_ctx.last_tried);
+                service_info.SetDispatchedServer(opening_ctx.last_tried);
             }
         }
     }
@@ -411,20 +413,18 @@ CDBConnectionFactory::DispatchServerName(
     Uint4 cur_host = 0;
     Uint2  cur_port = 0;
 
-    CRuntimeData& rt_data = GetRuntimeData(params.GetConnValidator());
-
     // Try to connect up to a given number of alternative servers ...
     unsigned int alternatives = GetMaxNumOfServerAlternatives();
     list<TSvrRef> tried_servers;
     bool full_retry_made = false;
     CRef<CDBPoolBalancer> balancer;
+    CServiceInfo& service_info = ctx.service_info;
 
     if ( !do_not_dispatch  &&  params.GetParam("is_pooled") == "true"
         &&  !service_name.empty()  ) {
         balancer.Reset(new CDBPoolBalancer
                        (service_name, params.GetParam("pool_name"),
-                        rt_data.GetServerOptions(service_name),
-                        &ctx.driver_ctx));
+                        service_info.GetOptions(), &ctx.driver_ctx));
     }
     for ( ; !t_con && alternatives > 0; --alternatives ) {
         TSvrRef dsp_srv;
@@ -442,10 +442,10 @@ CDBConnectionFactory::DispatchServerName(
                 dsp_srv = balancer->GetServer(&t_con, &params);
             }
             if (dsp_srv.Empty()) {
-                dsp_srv = rt_data.GetDispatchedServer(service_name);
+                dsp_srv = service_info.GetDispatchedServer();
             }
             if (dsp_srv.Empty()) {
-                dsp_srv = rt_data.GetDBServiceMapper().GetServer(service_name);
+                dsp_srv = service_info.GetMappedServer();
             }
 
             if (tried_servers.empty()
@@ -453,11 +453,11 @@ CDBConnectionFactory::DispatchServerName(
                      ||  (dsp_srv->GetName() == service_name
                           &&  dsp_srv->GetHost() == 0
                           &&  dsp_srv->GetPort() == 0
-                          &&  !rt_data.GetExcluded(service_name).empty() ))) {
+                          &&  service_info.HasExclusions() ))) {
                 _TRACE("List of servers for service " << service_name
                        << " is exhausted. Giving excluded a try.");
-                rt_data.CleanExcluded(service_name);
-                dsp_srv = rt_data.GetDBServiceMapper().GetServer(service_name);
+                service_info.CleanExcluded();
+                dsp_srv = service_info.GetMappedServer();
             }
 
             if (dsp_srv.Empty()) {
@@ -480,16 +480,16 @@ CDBConnectionFactory::DispatchServerName(
                     _TRACE("List of servers for service " << service_name
                            << " is exhausted. Giving excluded a try.");
 
-                    rt_data.CleanExcluded(service_name);
+                    service_info.CleanExcluded();
                     ITERATE(list<TSvrRef>, it, tried_servers) {
-                        rt_data.Exclude(service_name, *it);
+                        service_info.Exclude(*it);
                     }
                     if (balancer.NotEmpty()) {
+                        service_info.ClearOptions();
                         balancer.Reset
                             (new CDBPoolBalancer
                              (service_name, params.GetParam("pool_name"),
-                              rt_data.GetServerOptions(service_name, true),
-                              &ctx.driver_ctx));
+                              service_info.GetOptions(), &ctx.driver_ctx));
                     }
                     full_retry_made = true;
                     continue;
@@ -502,7 +502,7 @@ CDBConnectionFactory::DispatchServerName(
             bool found = false;
             ITERATE(list<TSvrRef>, it, tried_servers) {
                 if (**it == *dsp_srv) {
-                    rt_data.Exclude(service_name, dsp_srv);
+                    service_info.Exclude(dsp_srv);
                     found = true;
                     break;
                 }
@@ -563,7 +563,7 @@ CDBConnectionFactory::DispatchServerName(
             if (cur_srv_name == service_name  &&  cur_host == 0  &&  cur_port == 0
                 &&  (ctx.conn_status != IConnValidator::eTempInvalidConn
                         ||  (GetMaxNumOfValidationAttempts()
-                             &&  rt_data.GetNumOfValidationFailures(service_name)
+                             &&  service_info.GetNumOfValidationFailures()
                                                >= GetMaxNumOfValidationAttempts())))
             {
                 m_Errors.push_back(new CDB_Exception(DIAG_COMPILE_INFO, NULL, CDB_Exception::EErrCode(0),
@@ -575,16 +575,15 @@ CDBConnectionFactory::DispatchServerName(
                 // Server might be temporarily unavailable ...
                 // Check conn_status ...
                 if (ctx.conn_status == IConnValidator::eTempInvalidConn) {
-                    rt_data.IncNumOfValidationFailures(service_name,
-                                                       ctx.last_tried);
+                    service_info.IncNumOfValidationFailures(ctx.last_tried);
                 } else {
                     // conn_status == IConnValidator::eInvalidConn
-                    rt_data.Exclude(service_name, ctx.last_tried);
+                    service_info.Exclude(ctx.last_tried);
                     tried_servers.push_back(ctx.last_tried);
                 }
             }
         } else {
-            rt_data.SetDispatchedServer(service_name, dsp_srv);
+            service_info.SetDispatchedServer(dsp_srv);
         }
     }
 
@@ -621,13 +620,11 @@ CDBConnectionFactory::MakeValidConnection(
             conn.reset(candidate);
         }
     } catch (...) {
-        CRef<IConnValidator> validator = params.GetConnValidator();
-        CRuntimeData&        rt_data   = GetRuntimeData(validator);
-        const string&        service   = params.GetServerName();
-        ctx.last_tried.Reset(rt_data.GetDispatchedServer(service));
+        ctx.last_tried.Reset(ctx.service_info.GetDispatchedServer());
         if (ctx.last_tried.Empty()) {
             ctx.last_tried.Reset
-                (new CDBServer(service, params.GetHost(), params.GetPort()));
+                (new CDBServer(params.GetServerName(), params.GetHost(),
+                               params.GetPort()));
         }
         throw;
     }
@@ -709,13 +706,11 @@ CDBConnectionFactory::MakeValidConnection(
         conn->FinishOpening();
     }
     else {
-        CRef<IConnValidator> validator = params.GetConnValidator();
-        CRuntimeData&        rt_data   = GetRuntimeData(validator);
-        const string&        service   = params.GetServerName();
-        ctx.last_tried.Reset(rt_data.GetDispatchedServer(service));
+        ctx.last_tried.Reset(ctx.service_info.GetDispatchedServer());
         if (ctx.last_tried.Empty()) {
             ctx.last_tried.Reset
-                (new CDBServer(service, params.GetHost(), params.GetPort()));
+                (new CDBServer(params.GetServerName(), params.GetHost(),
+                               params.GetPort()));
         }
 
         m_Errors.push_back(new CDB_Exception(DIAG_COMPILE_INFO, NULL, CDB_Exception::EErrCode(0),
@@ -745,7 +740,7 @@ CDBConnectionFactory::WorkWithSingleServer(const string& validator_name,
 
     CRuntimeData& rt_data = GetRuntimeData(validator_name);
     TSvrRef svr(new CDBServer(server, 0, 0, numeric_limits<unsigned int>::max()));
-    rt_data.SetDispatchedServer(service_name, svr);
+    rt_data.GetServiceInfo(service_name).SetDispatchedServer(svr);
 }
 
 // Make an effort to give each request its own connection numbering.
@@ -781,8 +776,8 @@ void CDBConnectionFactory::x_LogConnection(const SOpeningContext& ctx,
     CDBServer stub_dsp_srv;
 
     CRef<IConnValidator> validator = params.GetConnValidator();
-    CRuntimeData&        rt_data   = GetRuntimeData(validator);
     const string&        service   = params.GetServerName();
+    CServiceInfo&        svc_info  = ctx.service_info;
     TSvrRef              dsp_srv   = ctx.last_tried;
 
     CDiagContext_Extra   extra     = GetDiagContext().Extra();
@@ -868,8 +863,7 @@ void CDBConnectionFactory::x_LogConnection(const SOpeningContext& ctx,
         }
     }}
 
-    extra.Print(prefix + "name_mapper",
-                rt_data.GetDBServiceMapper().GetName());
+    extra.Print(prefix + "name_mapper", svc_info.GetMapperName());
 
     size_t retries = ctx.tried.size();
     if (ctx.conn_status != IConnValidator::eValidConn) {
@@ -879,7 +873,7 @@ void CDBConnectionFactory::x_LogConnection(const SOpeningContext& ctx,
     if ( !ctx.tried.empty() ) {
         extra.Print(prefix + "tried", NStr::Join(ctx.tried, " "));
     }
-    const string& excluded = rt_data.GetExcluded(service);
+    auto excluded = ctx.service_info.GetExcluded();
     if ( !excluded.empty() ) {
         extra.Print(prefix + "excluded", excluded);
     }
@@ -902,97 +896,52 @@ void CDBConnectionFactory::x_LogConnection(const SOpeningContext& ctx,
 
 
 ///////////////////////////////////////////////////////////////////////////////
-CDBConnectionFactory::CRuntimeData::CRuntimeData(
-    const CDBConnectionFactory& parent,
-    const CRef<IDBServiceMapper>& mapper
-    ) :
-m_Parent(&parent),
-m_DBServiceMapper(mapper)
+const IDBServiceMapper::TOptions&
+CDBConnectionFactory::CServiceInfo::GetOptions(void)
 {
-}
-
-IDBServiceMapper::TOptions&
-CDBConnectionFactory::CRuntimeData::GetServerOptions(const string& svc_name,
-                                                     bool force_refresh)
-{
-    auto& options = m_ServerOptionsMap[svc_name];
-    if (force_refresh  ||  options.empty()) {
-        m_DBServiceMapper->GetServerOptions(svc_name, &options);
+    if (m_Options.empty()) {
+        m_Mapper->GetServerOptions(m_ServiceName, &m_Options);
         // OK to leave empty if nothing turns up; service mappers can and
         // do take responsibility for temporarily remembering negative
         // results if checking from scratch is slow, and higher-level logic
         // on this end falls back on GetServer as needed.
     }
-    return options;
+    return m_Options;
 }
 
-TSvrRef
-CDBConnectionFactory::CRuntimeData::GetDispatchedServer(
-    const string& service_name
-    )
-{
-    return m_DispatchedSet[service_name];
-}
-
-void
-CDBConnectionFactory::CRuntimeData::SetDispatchedServer(
-    const string& service_name,
-    const TSvrRef& server
-    )
+void CDBConnectionFactory::CServiceInfo::SetDispatchedServer(
+    const TSvrRef& server)
 {
     if (server.Empty()) {
-        m_DispatchNumMap[service_name] = 0;
+        m_NumDispatches = 0;
     } else {
-        ++m_DispatchNumMap[service_name];
+        ++m_NumDispatches;
     }
 
-    m_DispatchedSet[service_name] = server;
+    m_Dispatched = server;
 }
 
-unsigned int
-CDBConnectionFactory::CRuntimeData::GetNumOfDispatches(
-    const string& service_name
-    )
+void CDBConnectionFactory::CServiceInfo::IncNumOfValidationFailures(
+    const TSvrRef& dsp_srv)
 {
-    return m_DispatchNumMap[service_name];
-}
+    ++m_NumValidationFailures;
+    auto limit = m_Factory.GetMaxNumOfValidationAttempts();
 
-unsigned int
-CDBConnectionFactory::CRuntimeData::GetNumOfValidationFailures(
-    const string& service_name
-    )
-{
-    return m_ValidationFailureMap[service_name];
-}
-
-void
-CDBConnectionFactory::CRuntimeData::IncNumOfValidationFailures(
-    const string& server_name,
-    const TSvrRef& dsp_srv
-    )
-{
-    ++m_ValidationFailureMap[server_name];
-
-    if (GetParent().GetMaxNumOfValidationAttempts() &&
-        GetNumOfValidationFailures(server_name) >=
-            GetParent().GetMaxNumOfValidationAttempts()) {
+    if (limit != 0  &&  m_NumValidationFailures >= limit) {
         // It is time to finish with this server ...
-        Exclude(server_name, dsp_srv);
+        Exclude(dsp_srv);
     }
 }
 
-string CDBConnectionFactory::CRuntimeData::GetExcluded
-(const string& service_name)
+string CDBConnectionFactory::CServiceInfo::GetExcluded(void)
 {
-    IDBServiceMapper& mapper = GetDBServiceMapper();
-    if ( !mapper.HasExclusions(service_name) ) {
+    if ( !m_Mapper->HasExclusions(m_ServiceName) ) {
         return kEmptyStr;
     }
 
-    IDBServiceMapper::TOptions options;
-    mapper.GetServerOptions(service_name, &options);
+    m_Mapper->GetServerOptions(m_ServiceName, &m_Options);
     string result, delim;
-    for (const auto& it : options) {
+    for (const auto &it : m_Options) {
         if (it->IsExcluded()) {
             string exclusion;
             if (it->GetHost() != 0) {
@@ -1010,6 +959,27 @@ string CDBConnectionFactory::CRuntimeData::GetExcluded
         }
     }
     return result;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+CDBConnectionFactory::CRuntimeData::CRuntimeData(
+    const CDBConnectionFactory& parent,
+    const CRef<IDBServiceMapper>& mapper
+    ) :
+m_Parent(&parent),
+m_DBServiceMapper(mapper)
+{
+}
+
+CDBConnectionFactory::CServiceInfo&
+CDBConnectionFactory::CRuntimeData::GetServiceInfo(const string& service_name)
+{
+    auto& entry = m_ServiceInfoMap[service_name];
+    if (entry.Empty()) {
+        entry.Reset(
+            new CServiceInfo(*m_Parent, *m_DBServiceMapper, service_name));
+    }
+    return *entry;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
