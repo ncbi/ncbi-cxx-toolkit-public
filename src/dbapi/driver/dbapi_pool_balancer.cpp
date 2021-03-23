@@ -63,28 +63,34 @@ public:
 };
     
 
-CDBPoolBalancer::CDBPoolBalancer(const string& service_name,
+CDBPoolBalancer::CDBPoolBalancer(IDBServiceInfo& service_info,
                                  const string& pool_name,
-                                 const IDBServiceMapper::TOptions& options,
                                  I_DriverContext* driver_ctx)
-    : CPoolBalancer(service_name, options,
+    : CPoolBalancer(service_info.GetServiceName(), service_info.GetOptions(),
                     driver_ctx != nullptr
                     &&  !NStr::StartsWith(driver_ctx->GetDriverName(),
                                           "ftds")),
-      m_DriverCtx(driver_ctx)
+      m_ServiceInfo(&service_info), m_DriverCtx(driver_ctx)
+{
+    x_ReinitFromCounts();
+}
+
+
+void CDBPoolBalancer::x_ReinitFromCounts(void)
 {
     const impl::CDriverContext* ctx_impl
-        = dynamic_cast<const impl::CDriverContext*>(driver_ctx);
+        = dynamic_cast<const impl::CDriverContext*>(m_DriverCtx);
     impl::CDriverContext::TCounts counts;
     if (ctx_impl == NULL) {
-        if (driver_ctx != nullptr) {
+        if (m_DriverCtx != nullptr) {
             ERR_POST_X(1, Warning <<
                        "Called with non-standard IDriverContext");
         }
-    } else if (pool_name.empty()) {
-        ctx_impl->GetCountsForService(service_name, &counts);
+    } else if (m_PoolName.empty()) {
+        ctx_impl->GetCountsForService(m_ServiceInfo->GetServiceName(),
+                                      &counts);
     } else {
-        ctx_impl->GetCountsForPool(pool_name, &counts);
+        ctx_impl->GetCountsForPool(m_PoolName, &counts);
     }
     x_InitFromCounts(counts);
 }
@@ -98,8 +104,16 @@ IBalanceable* CDBPoolBalancer::x_TryPool(const void* params_in)
         return nullptr;
     } else {
         CDBConnParams_DNC dnc_params(*params);
-        return IDBConnectionFactory::CtxMakeConnection(*m_DriverCtx,
-                                                       dnc_params);
+        IBalanceable * conn = nullptr;
+        {{
+            IDBServiceInfo::TAntiGuard anti_guard(*m_ServiceInfo);
+            conn = IDBConnectionFactory::CtxMakeConnection(*m_DriverCtx,
+                                                           dnc_params);
+        }}
+        if (conn == nullptr) {
+            x_ReinitFromCounts();
+        }
+        return conn;
     }
 }
 

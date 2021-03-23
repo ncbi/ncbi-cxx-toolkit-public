@@ -289,6 +289,7 @@ CDBConnectionFactory::MakeDBConnection(
     CRuntimeData& rt_data = GetRuntimeData(params.GetConnValidator());
     CServiceInfo& service_info
         = rt_data.GetServiceInfo(params.GetServerName());
+    CServiceInfo::TGuard service_guard(service_info);
     TSvrRef dsp_srv = service_info.GetDispatchedServer();
 
     // Prepare to collect messages, whose proper severity depends on whether
@@ -423,8 +424,8 @@ CDBConnectionFactory::DispatchServerName(
     if ( !do_not_dispatch  &&  params.GetParam("is_pooled") == "true"
         &&  !service_name.empty()  ) {
         balancer.Reset(new CDBPoolBalancer
-                       (service_name, params.GetParam("pool_name"),
-                        service_info.GetOptions(), &ctx.driver_ctx));
+                       (service_info, params.GetParam("pool_name"),
+                        &ctx.driver_ctx));
     }
     for ( ; !t_con && alternatives > 0; --alternatives ) {
         TSvrRef dsp_srv;
@@ -439,6 +440,7 @@ CDBConnectionFactory::DispatchServerName(
         // In this case we even won't try to map it.
         else if (!service_name.empty()) {
             if (balancer.NotEmpty()) {
+                ctx.excluded = ctx.service_info.GetExcluded();
                 dsp_srv = balancer->GetServer(&t_con, &params);
             }
             if (dsp_srv.Empty()) {
@@ -488,8 +490,8 @@ CDBConnectionFactory::DispatchServerName(
                         service_info.ClearOptions();
                         balancer.Reset
                             (new CDBPoolBalancer
-                             (service_name, params.GetParam("pool_name"),
-                              service_info.GetOptions(), &ctx.driver_ctx));
+                             (service_info, params.GetParam("pool_name"),
+                              &ctx.driver_ctx));
                     }
                     full_retry_made = true;
                     continue;
@@ -615,6 +617,8 @@ CDBConnectionFactory::MakeValidConnection(
     unique_ptr<CDB_Connection> conn;
     try {
         if (candidate == NULL) {
+            ctx.excluded = ctx.service_info.GetExcluded();
+            CServiceInfo::TAntiGuard anti_guard(ctx.service_info);
             conn.reset(CtxMakeConnection(ctx.driver_ctx, params));
         } else {
             conn.reset(candidate);
@@ -661,6 +665,7 @@ CDBConnectionFactory::MakeValidConnection(
 
         ctx.conn_status = IConnValidator::eInvalidConn;
         try {
+            CServiceInfo::TAntiGuard anti_guard(ctx.service_info);
             ctx.conn_status = validator.Validate(*conn);
             if (ctx.conn_status != IConnValidator::eValidConn) {
                 if (conn->IsReusable()) {
@@ -873,9 +878,8 @@ void CDBConnectionFactory::x_LogConnection(const SOpeningContext& ctx,
     if ( !ctx.tried.empty() ) {
         extra.Print(prefix + "tried", NStr::Join(ctx.tried, " "));
     }
-    auto excluded = ctx.service_info.GetExcluded();
-    if ( !excluded.empty() ) {
-        extra.Print(prefix + "excluded", excluded);
+    if ( !ctx.excluded.empty() ) {
+        extra.Print(prefix + "excluded", ctx.excluded);
     }
     if (connection != NULL) {
         extra.Print(prefix + "conn_reuse_count", connection->GetReuseCount());
@@ -966,6 +970,7 @@ CDBConnectionFactory::CRuntimeData::CRuntimeData(
     const CDBConnectionFactory& parent,
     const CRef<IDBServiceMapper>& mapper
     ) :
+m_Mutex(new CFastMutex),
 m_Parent(&parent),
 m_DBServiceMapper(mapper)
 {
@@ -974,6 +979,7 @@ m_DBServiceMapper(mapper)
 CDBConnectionFactory::CServiceInfo&
 CDBConnectionFactory::CRuntimeData::GetServiceInfo(const string& service_name)
 {
+    CFastMutexGuard guard(*m_Mutex);
     auto& entry = m_ServiceInfoMap[service_name];
     if (entry.Empty()) {
         entry.Reset(

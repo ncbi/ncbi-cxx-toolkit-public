@@ -111,6 +111,12 @@ CPoolBalancer::CPoolBalancer(const string& service_name,
 
 void CPoolBalancer::x_InitFromCounts(const TCounts& counts)
 {
+    if (m_TotalCount != 0) {
+        for (auto& it : m_Endpoints) {
+            it.second.actual_count = 0;
+        }
+        m_TotalCount = 0;
+    }
     for (const auto& cit : counts) {
         if (cit.second == 0) {
             continue;

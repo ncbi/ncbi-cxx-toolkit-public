@@ -37,6 +37,7 @@
 #include <corelib/impl/ncbi_dbsvcmapper.hpp>
 #include <dbapi/driver/dbapi_driver_conn_mgr.hpp>
 #include <dbapi/driver/impl/handle_stack.hpp>
+#include <dbapi/driver/impl/dbapi_pool_balancer.hpp>
 #include <map>
 #include <vector>
 #include <memory>
@@ -92,20 +93,22 @@ public:
                               const string& server);
 
 protected:
-    class CServiceInfo : public CObject
+    class CServiceInfo : public IDBServiceInfo
     {
     public:
-        typedef IDBServiceMapper::TOptions TOptions;
-
         CServiceInfo(const CDBConnectionFactory& factory,
                      IDBServiceMapper& mapper, const string& service_name)
             : m_Factory(factory), m_Mapper(&mapper),
               m_ServiceName(service_name)
             { }
 
-        const string& GetServiceName(void) const
+        const string& GetServiceName(void) const override
             { return m_ServiceName; }
-        const TOptions& GetOptions(void);
+        const TOptions& GetOptions(void) override;
+        void Lock(void) override
+            { m_Mutex.Lock(); }
+        void Unlock(void) override
+            { m_Mutex.Unlock(); }
 
         void ClearOptions(void)
             { m_Options.clear(); }
@@ -137,6 +140,7 @@ protected:
             { m_Mapper->CleanExcluded(m_ServiceName); }
 
     private:
+        CFastMutex                  m_Mutex;
         const CDBConnectionFactory& m_Factory;
         CRef<IDBServiceMapper>      m_Mapper;
         string                      m_ServiceName;
@@ -162,6 +166,7 @@ protected:
     private:
         typedef map<string, CRef<CServiceInfo>> TServiceInfoMap;
 
+        unique_ptr<CFastMutex>      m_Mutex;
         const CDBConnectionFactory* m_Parent;
         CRef<IDBServiceMapper>      m_DBServiceMapper;
         TServiceInfoMap             m_ServiceInfoMap;
@@ -188,6 +193,7 @@ private:
         IConnValidator::EConnStatus conn_status;
         impl::CDBHandlerStack       handlers;
         list<string>                tried;
+        string                      excluded;
         TSvrRef                     last_tried;
         CStopWatch                  make_valid_connection_sw;
         CStopWatch                  dispatch_server_name_sw;

@@ -42,12 +42,27 @@
 
 BEGIN_NCBI_SCOPE
 
+class IDBServiceInfo : public CObject
+{
+public:
+    typedef IDBServiceMapper::TOptions             TOptions;
+    typedef SSimpleLock<IDBServiceInfo>            TLock;
+    typedef SSimpleUnlock<IDBServiceInfo>          TUnlock;
+    typedef CGuard<IDBServiceInfo>                 TGuard;
+    typedef CGuard<IDBServiceInfo, TUnlock, TLock> TAntiGuard;
+    
+    virtual const string& GetServiceName(void) const = 0;
+    virtual const TOptions& GetOptions(void) = 0;
+    virtual void Lock(void) = 0;
+    virtual void Unlock(void) = 0;
+};
+
+
 class CDBPoolBalancer : public CPoolBalancer
 {
 public:
-    CDBPoolBalancer(const string& service_name,
+    CDBPoolBalancer(IDBServiceInfo& service_info,
                     const string& pool_name,
-                    const IDBServiceMapper::TOptions& options,
                     I_DriverContext* driver_ctx = nullptr);
 
     TSvrRef GetServer(CDB_Connection** conn, const CDBConnParams* params)
@@ -60,7 +75,11 @@ protected:
     void          x_Discard(const void* params, IBalanceable* conn) override;
 
 private:
-    I_DriverContext* m_DriverCtx;
+    void x_ReinitFromCounts(void);
+    
+    CRef<IDBServiceInfo> m_ServiceInfo;
+    string               m_PoolName;
+    I_DriverContext*     m_DriverCtx;
 };
 
 END_NCBI_SCOPE
