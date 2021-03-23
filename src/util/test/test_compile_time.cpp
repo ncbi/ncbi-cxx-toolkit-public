@@ -652,6 +652,9 @@ BOOST_AUTO_TEST_CASE(TestMapOfPair)
             { "many", {3, 3}},
         }
         )
+
+#ifndef NCBI_COMPILER_ICC
+// constexpr tuples are not working in ICC
     MAKE_CONST_MAP(m2, ct::tagStrNocase, Tuple1,
         {
             {"one", { 1, "word", 1}},
@@ -665,9 +668,10 @@ BOOST_AUTO_TEST_CASE(TestMapOfPair)
             {"two", {2, "abc", {2,4,6}}},
         })
 
-    BOOST_CHECK(m1.size() == 3);
     BOOST_CHECK(m2.size() == 2);
     BOOST_CHECK(m3.size() == 2);
+#endif
+    BOOST_CHECK(m1.size() == 3);
 }
 
 BOOST_AUTO_TEST_CASE(TestOrderedSet)
