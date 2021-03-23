@@ -5430,13 +5430,26 @@ CLatLonCountryMap::CLatLonCountryMap (bool is_water)
     // initialize list of country lines
     m_CountryLineList.clear();
 
+    const char* env_val = getenv("NCBI_LAT_LON_DATA_PATH");
+    string data_path;
+    if (env_val) {
+        data_path = (string) env_val;
+        if (! NStr::EndsWith(data_path, "/")) {
+            data_path = data_path + "/";
+        }
+    }
+
     if (is_water) {
         if (!x_InitFromFile("lat_lon_water.txt")) {
-            x_InitFromDefaultList(s_DefaultLatLonWaterText, k_NumLatLonWaterText);
+            if (data_path.empty() || !x_InitFromFile(data_path + "lat_lon_water.txt")) {
+                x_InitFromDefaultList(s_DefaultLatLonWaterText, k_NumLatLonWaterText);
+            }
         }
     } else {
         if (!x_InitFromFile("lat_lon_country.txt")) {
-            x_InitFromDefaultList(s_DefaultLatLonCountryText, k_NumLatLonCountryText);
+            if (data_path.empty() || !x_InitFromFile(data_path + "lat_lon_country.txt")) {
+                x_InitFromDefaultList(s_DefaultLatLonCountryText, k_NumLatLonCountryText);
+            }
         }
     }
 

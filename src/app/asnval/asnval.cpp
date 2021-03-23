@@ -338,6 +338,10 @@ void CAsnvalApp::Init(void)
 
     arg_desc->AddFlag("cleanup", "Perform BasicCleanup before validating (to match C Toolkit)");
 
+    arg_desc->AddOptionalKey(
+        "D", "String", "Path to lat_lon country data files",
+        CArgDescriptions::eString);
+
     CDataLoadersUtil::AddArgumentDescriptions(*arg_desc,
                                               CDataLoadersUtil::fDefault |
                                               CDataLoadersUtil::fGenbankOffByDefault);
@@ -564,6 +568,13 @@ int CAsnvalApp::Run(void)
 
     if (args["o"]) {
         m_ValidErrorStream = &(args["o"].AsOutputFile());
+    }
+
+    if (args["D"]) {
+        string lat_lon_path = args["D"].AsString();
+        if (! lat_lon_path.empty()) {
+            SetEnvironment ( "NCBI_LAT_LON_DATA_PATH", lat_lon_path );
+        }
     }
 
     // note - the C Toolkit uses 0 for SEV_NONE, but the C++ Toolkit uses 0 for SEV_INFO
