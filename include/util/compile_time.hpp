@@ -39,69 +39,135 @@
 
 namespace ct
 {
+    using namespace compile_time_bits;
+
     // partially backported std::bitset until it's constexpr version becomes available
-    template<size_t _Bits, class _T>
+    template<size_t _Bits, class T>
     class const_bitset
     {
     public:
+        using u_type = typename real_underlying_type<T>::type;
+
         using _Ty = uint64_t;
-        using T = _T;
+
         static constexpr size_t _Bitsperword = 8 * sizeof(_Ty);
         static constexpr size_t _Words = (_Bits + _Bitsperword - 1) / _Bitsperword;
         using _Array_t = const_array<_Ty, _Words>;
-        using traits = bitset_traits<_Ty, _Words>;
+        using traits = bitset_traits<_Ty, _Words, int>;
 
         constexpr const_bitset() = default;
 
         constexpr const_bitset(std::initializer_list<T> _init)
-            :m_size{_init.size()},
-            _Array(traits::set_bits(_init))
+            :const_bitset(traits::set_bits(_init))
+        {}
+
+        constexpr const_bitset(T _init)
+            :const_bitset(traits::set_bits({_init}))
         {}
 
         template<size_t N>
-        constexpr const_bitset(const char(&init)[N])
-            : m_size{ traits::count_bits(init) },
-              _Array(traits::set_bits(init))
+        constexpr const_bitset(const char(&_init)[N])
+            :const_bitset(_init, _init+N)
+        {}
+
+        template<typename _CharIt,
+            typename _unused = typename std::enable_if<
+                std::is_same<char, typename std::iterator_traits<_CharIt>::value_type>::value
+                >::type>
+        constexpr const_bitset(_CharIt _begin, _CharIt _end)
+            :const_bitset(traits::set_bits(_begin, _end))
+        {}
+
+        struct range: std::pair<T, T>
+        {
+            using std::pair<T, T>::pair;
+        };
+
+        constexpr explicit const_bitset(const range& _range)
+            :const_bitset(traits::set_range(_range.first, _range.second))
         {}
 
         static constexpr const_bitset set_range(T _from, T _to)
-        {//this uses private constructor
-            return const_bitset(traits::set_range(_from, _to), _to - _from + 1);
+        {
+            return const_bitset(range{ _from, _to });
         }
 
-        constexpr size_t size() const { return m_size; }
         static constexpr size_t capacity() { return _Bits; }
-        constexpr bool empty() const { return m_size == 0; }
-
-        constexpr bool test(size_t _Pos) const
-        {
-            //if (_Bits <= _Pos)
-            //    _Xran();    // _Pos off end
-            return _Subscript(_Pos);
+        constexpr size_t size() const 
+        { // See Hamming Weight: https://en.wikipedia.org/wiki/Hamming_weight
+            size_t retval{0};
+            for (auto value: _Array)
+            {
+                while (value) {
+                    value &= value - 1;
+                    ++retval;
+                }
+            }
+            return retval;
+        }
+        constexpr bool empty() const 
+        { 
+            for (auto value: _Array)
+            {
+                if (value != 0)
+                    return false;
+            }
+            return true;
         }
 
-        bool reset(size_t _Pos)
+        constexpr bool test(T _Pos) const
         {
+            return _Subscript(static_cast<size_t>(_Pos));
+        }
+
+        const_bitset& operator +=(T value)
+        {
+            set(value);
+            return *this;
+        }
+
+        const_bitset& operator -=(T value)
+        {
+            reset(value);
+            return *this;
+        }
+
+        const_bitset& operator +=(const const_bitset& _Other)
+        {
+            for (size_t i=0; i<_Array.size(); i++)
+                _Array[i] |= _Other._Array[i];
+            return *this;
+        }
+
+        const_bitset& operator -=(const const_bitset& _Other)
+        {
+            for (size_t i=0; i<_Array.size(); i++)
+                _Array[i] &= (~_Other._Array[i]);
+            return *this;
+        }
+
+        bool reset(T _v)
+        {
+            size_t _Pos = static_cast<size_t>(_v);
             if (_Bits <= _Pos)
                 _Xran();    // _Pos off end
             auto& val = _Array[_Pos / _Bitsperword];
             _Ty mask = (_Ty)1 << _Pos % _Bitsperword;
             bool previous = (val & mask) != 0;
             if (previous) {
-                m_size--;
                 val ^= mask;
             }
             return previous;
         }
-        bool set(size_t _Pos)
+        bool set(T _v)
         {
+            size_t _Pos = static_cast<size_t>(_v);
             if (_Bits <= _Pos)
                 _Xran();    // _Pos off end
             auto& val = _Array[_Pos / _Bitsperword];
             _Ty mask = (_Ty)1 << _Pos % _Bitsperword;
             bool previous = (val & mask) != 0;
             if (!previous) {
-                m_size++;
                 val |= mask;
             }
             return previous;
@@ -132,7 +198,7 @@ namespace ct
                 while (m_index < m_bitset->capacity())
                 {
                     ++m_index;
-                    if (m_bitset->test(m_index))
+                    if (m_bitset->x_test(m_index))
                         break;
                 }
                 return *this;
@@ -155,19 +221,21 @@ namespace ct
         private:
             const_iterator(const const_bitset* _this, size_t index) : m_index{ index }, m_bitset{ _this }
             {
-                while (m_index < m_bitset->capacity() && !m_bitset->test(m_index))
+                while (m_index < m_bitset->capacity() && !m_bitset->x_test(m_index))
                 {
                     ++m_index;
                 }
             }
-            size_t m_index;
-            const const_bitset* m_bitset;
+            size_t m_index{0};
+            const const_bitset* m_bitset{nullptr};
         };
 
-        const_iterator begin() const {  return const_iterator(this, 0);  }
-        const_iterator end() const {  return const_iterator(this, capacity()); }
+        using iterator = const_iterator;
+
+        const_iterator begin() const  { return const_iterator(this, 0); }
+        const_iterator end() const    { return const_iterator(this, capacity()); }
         const_iterator cbegin() const { return const_iterator(this, 0); }
-        const_iterator cend() const { return const_iterator(this, capacity()); }
+        const_iterator cend() const   { return const_iterator(this, capacity()); }
 
         template<class _Ty, class _Alloc>
         operator std::vector<_Ty, _Alloc>() const
@@ -179,12 +247,14 @@ namespace ct
         }
 
     private:
-        explicit constexpr const_bitset(const _Array_t& args, size_t _size) : m_size(_size), _Array(args)
-        {
-        }
+        explicit constexpr const_bitset(const _Array_t& args) : _Array(args) {}
 
-        size_t m_size{ 0 };
         _Array_t _Array{};    // the set of bits
+
+        constexpr bool x_test(size_t _Pos) const
+        {
+            return _Subscript(_Pos);
+        }
 
         constexpr bool _Subscript(size_t _Pos) const
         {    // subscript nonmutable sequence
@@ -198,13 +268,13 @@ namespace ct
 
     };
 
-    template<typename _Key, typename _T, typename _Pair = std::pair<_Key, _T>>
-    class const_unordered_map: public const_set_map_base<_Key, _Pair>
-    {
+    template<typename _Key, typename _Ty, typename _Traits = straight_map_traits<_Key, _Ty>, typename _Backend=void>
+    class const_map: public const_set_map_base<_Traits, _Backend>
+    { // ordered or unordered compile time map
     public:
-        using _MyBase = const_set_map_base<_Key, _Pair>;
-
-        using hashed_key      = typename _MyBase::hashed_key;
+        using _MyBase = const_set_map_base<_Traits, _Backend>;
+        using _MyType = const_map<_Key, _Ty, _Traits, _Backend>;
+        using init_type       = typename _Traits::init_type;
         using intermediate    = typename _MyBase::intermediate;
 
         using value_type      = typename _MyBase::value_type;
@@ -212,6 +282,8 @@ namespace ct
         using mapped_type     = typename value_type::second_type;
         using size_type       = typename _MyBase::size_type;
         using difference_type = typename _MyBase::difference_type;
+        using key_compare     = typename _MyBase::key_compare;
+        using value_compare   = typename _MyBase::value_compare;
         using reference       = typename _MyBase::reference;
         using const_reference = typename _MyBase::const_reference;
         using pointer         = typename _MyBase::pointer;
@@ -223,20 +295,11 @@ namespace ct
 
         using _MyBase::_MyBase;
 
-        const_iterator find(intermediate _key) const
-        {
-            auto it = _MyBase::lower_bound(_key);
-            if (it == _MyBase::end() || (it->first != _key))
-                return _MyBase::end();
-            else
-                return it;
-        }
-
         const mapped_type& at(intermediate _key) const
         {
-            auto it = find(_key);
+            auto it = _MyBase::find(_key);
             if (it == _MyBase::end())
-                throw std::out_of_range("invalid const_unordered_map<K, T> key");
+                throw std::out_of_range("invalid const_map<K, T> key");
 
             return it->second;
         }
@@ -246,88 +309,111 @@ namespace ct
             return at(_key);
         }
 
+        template<size_t N>
+        static constexpr auto construct(const init_type (&init)[N])
+        {
+            return construct(make_array(init));
+        }
+        template<size_t N>       
+        static constexpr auto construct(const const_array<init_type, N>& init)
+        {
+            auto backend=_MyBase::make_backend(init);
+            return const_map<_Key, _Ty, _Traits, decltype(backend)>{backend};
+        }
+
+
     protected:
     };
 
-    template<typename _Key, typename _T>
-    struct MakeConstMap
+    template<typename _Ty, typename _Backend=void>
+    class const_set: public const_set_map_base<simple_sort_traits<_Ty>, _Backend>
     {
-        using type = const_unordered_map<_Key, _T>;
+    public:
+        using _MyBase = const_set_map_base<simple_sort_traits<_Ty>, _Backend>;
+        using _MyType = const_set<_Ty, _Backend>;
 
-        using key_type = typename type::hashed_key;
-        using mapped_type = typename type::hashed_value::second_type;
+        using init_type      = typename _MyBase::init_type;
 
-        using sorter_t = TInsertSorter<straight_sort_traits<key_type, mapped_type>, true>;
-        using init_type = typename sorter_t::init_type;
+        using value_type      = typename _MyBase::value_type;
+        using key_type        = value_type;
+        using size_type       = typename _MyBase::size_type;
+        using difference_type = typename _MyBase::difference_type;
+        using key_compare     = typename _MyBase::key_compare;
+        using value_compare   = typename _MyBase::value_compare;
+        using reference       = typename _MyBase::reference;
+        using const_reference = typename _MyBase::const_reference;
+        using pointer         = typename _MyBase::pointer;
+        using const_pointer   = typename _MyBase::const_pointer;
+        using iterator        = typename _MyBase::iterator;
+        using const_iterator  = typename _MyBase::const_iterator;
+        using reverse_iterator = typename _MyBase::reverse_iterator;
+        using const_reverse_iterator = typename _MyBase::const_reverse_iterator;
+
+        using _MyBase::_MyBase;
 
         template<size_t N>
-        constexpr auto operator()(const init_type (&input)[N]) const
+        static constexpr auto construct(const init_type (&init)[N])
         {
-            return sorter_t{}(input);
+            return construct(make_array(init));
+        }
+        template<size_t N>
+        static constexpr auto construct(const const_array<init_type, N>& init)
+        {
+            auto backend=_MyBase::make_backend(init);
+            return const_set<_Ty, decltype(backend)>{backend};
         }
     };
 
     template<typename T1, typename T2>
-    struct MakeConstMapTwoWay
+    struct const_map_twoway
     {
-        using type = std::pair<
-            const_unordered_map<T1, T2>,
-            const_unordered_map<T2, T1>>;
+        using type1 = DeduceType<T1>;
+        using type2 = DeduceType<T2>;
 
-        using first_type  = typename type::first_type::hashed_key;
-        using second_type = typename type::second_type::hashed_key;
+        using straight_traits = straight_map_traits<type1, type2>;
+        using reverse_traits  = reverse_map_traits<type1, type2>;
+        using init_type = typename straight_traits::init_type;
 
-        using straight_sorter_t = TInsertSorter<straight_sort_traits<first_type, second_type>, true>;
-        using flipped_sorter_t = TInsertSorter<flipped_sort_traits<first_type, second_type>, true>;
-        using init_type = typename straight_sorter_t::init_type;
+        using map_type1 = const_map<T1, T2, straight_traits>;
+        using map_type2 = const_map<T2, T1, reverse_traits>;
 
         template<size_t N>
-        constexpr auto operator()(const init_type(&input)[N]) const
+        static constexpr auto construct(const init_type (&init)[N])
+        {
+            return construct(make_array(init));
+        }
+        template<size_t N>
+        static constexpr auto construct(const const_array<init_type, N>& init)
         {
             return std::make_pair(
-                straight_sorter_t{}(input),
-                flipped_sorter_t{}(input));
+                map_type1::construct(init),
+                map_type2::construct(init)
+            );
         }
     };
 
-    template<typename _T>
-    class const_unordered_set: public const_set_map_base<_T, _T>
+    template<typename _Ty>
+    class const_unordered_set: public const_set<DeduceHashedType<_Ty>>
     {
-    public:
-        using _MyBase = const_set_map_base<_T, _T>;
-
-        using hashed_key     = typename _MyBase::hashed_key;
-        using value_type     = typename _MyBase::value_type;
-        using const_iterator = typename _MyBase::const_iterator;
-        using iterator       = typename _MyBase::iterator;
-        using key_type       = value_type;
-
-        using _MyBase::_MyBase;
-
-        const_iterator find(const key_type& _key) const
-        {
-            auto it = _MyBase::lower_bound(_key);
-            if (it == _MyBase::end() || (*it != _key))
-                return _MyBase::end();
-            else
-                return it;
-        }
     };
 
-    template<typename _T>
-    struct MakeConstSet
+    template<typename _Key, typename _Ty>
+    class const_unordered_map: public const_map<DeduceHashedType<_Key>, _Ty>
     {
-        using type = const_unordered_set<_T>;
-
-        using sorter_t = TInsertSorter<simple_sort_traits<typename type::hashed_key>, true>;
-        using init_type = typename sorter_t::init_type;
-
-        template<size_t N>
-        constexpr auto operator()(const init_type(&input)[N]) const 
-        {
-            return sorter_t{}(input);
-        }
     };
+
+    template<typename T1, typename T2>
+    struct const_unordered_map_twoway: public const_map_twoway<DeduceHashedType<T1>, DeduceHashedType<T2>>
+    {
+    };
+
+    template<typename _Init, typename _Elem=typename array_elem<_Init>::type>
+    constexpr auto sort(_Init&& init)
+    {
+        using sorter=TInsertSorter<simple_sort_traits<_Elem>, false>;
+        return std::get<1>(sorter::sort(tag_SortByValues{}, std::forward<_Init>(init)));
+    }
+
 }
 
 // user can define some specific debug instructions
@@ -341,28 +427,25 @@ namespace ct
     #define DEBUG_MAKE_CONST_SET(name)
 #endif
 
-// Some compilers (Clang < 3.9) still cannot deduce template parameter N for aggregate initialiazed arrays
+// Some compilers (Clang < 3.9, GCC-7) still cannot deduce template parameter N for aggregate initialiazed arrays
 // so we have to use two step initialization. This doesn't impact neither of compile time, run time or memory footprint
 //
 
-#define MAKE_CONST_CONTAINER(debug, name, maker, ...) \
-    static debug maker ::init_type name ## _init[] = __VA_ARGS__;                                                        \
-    static debug auto name ## _proxy = maker {}(name ## _init);                                                          \
-    static debug maker ::type name = name ## _proxy;
-
-#define MAKE_CONST_MAP(name, type1, type2, ...)                                                                              \
-    using name ## _maker_type = ct::MakeConstMap<type1, type2>;                                                              \
-    MAKE_CONST_CONTAINER(constexpr, name, name ## _maker_type, __VA_ARGS__)                                                  \
+#define MAKE_CONST_MAP(name, type1, type2, ...)                                                                             \
+    static constexpr auto name = ct::const_map<type1, type2>::construct(__VA_ARGS__);                                       \
     DEBUG_MAKE_CONST_MAP(name)
 
-#define MAKE_TWOWAY_CONST_MAP(name, type1, type2, ...)                                                                       \
-    using name ## _maker_type = ct::MakeConstMapTwoWay<type1, type2>;                                                        \
-    MAKE_CONST_CONTAINER(constexpr, name, name ## _maker_type, __VA_ARGS__)                                                  \
+#define MAKE_TWOWAY_CONST_MAP(name, type1, type2, ...)                                                                      \
+    static constexpr auto name = ct::const_map_twoway<type1, type2>::construct(__VA_ARGS__);                                \
     DEBUG_MAKE_TWOWAY_CONST_MAP(name)
 
-#define MAKE_CONST_SET(name, type, ...)                                                                                      \
-    MAKE_CONST_CONTAINER(constexpr, name, ct::MakeConstSet<type>, __VA_ARGS__)                                               \
+#define MAKE_CONST_SET(name, type, ...)                                                                                     \
+    static constexpr ct::const_set<type>::init_type name ## _init [] = __VA_ARGS__;                                         \
+    static constexpr auto name = ct::const_set<type>::construct(name ## _init);                                             \
+    DEBUG_MAKE_CONST_SET(name)
+
+#define MAKE_CONST_SET1(name, type, ...)                                                                                    \
+    static constexpr auto name = ct::const_set<type>::construct(__VA_ARGS__);                                               \
     DEBUG_MAKE_CONST_SET(name)
 
 #endif
-

@@ -35,13 +35,16 @@
  *
  */
 
+#include <type_traits>
+#include <utility>
+#include <tuple>
+#include <limits>
+
 namespace compile_time_bits
 {
-    template<typename _HashType, size_t N>
-    class aligned_index;
 
-    template<class T, size_t N>
-    struct const_array;
+    using tag_SortByHashes = std::integral_constant<bool, true>;
+    using tag_SortByValues = std::integral_constant<bool, false>;
 
     // compile time sort algorithm
     // uses insertion sort https://en.wikipedia.org/wiki/Insertion_sort
@@ -49,44 +52,83 @@ namespace compile_time_bits
     class TInsertSorter
     {
     public:
+        using size_type   = std::size_t;
         using sort_traits = _Traits;
-        using init_type  = typename _Traits::init_type;
-        using value_type = typename _Traits::value_type;
-        using hash_type  = typename _Traits::hash_type;
+        using value_type  = typename sort_traits::value_type;
+        using hash_type   = typename sort_traits::hash_type;
+        static constexpr bool can_index = std::numeric_limits<hash_type>::is_integer;
 
-        template<size_t N>
-        constexpr auto operator()(const init_type(&init)[N]) const noexcept
+        template<typename _Init>
+        static constexpr auto sort(_Init&& init) noexcept
         {
-            auto indices = make_indices(init);
-            auto hashes = construct_hashes(init, indices, std::make_index_sequence<aligned_index<hash_type, N>::aligned_size > {});
-            auto values = construct_values(init, indices, std::make_index_sequence<N>{});
-            return std::make_pair(hashes, values);
+            return x_sort(std::integral_constant<bool, can_index>{}, init);
+        }
+
+        template<bool _SortByValues, typename _Init>
+        static constexpr auto sort(std::integral_constant<bool, _SortByValues> _Tag, _Init&& init) noexcept
+        {
+            return x_sort(_Tag, init);
+        }
+
+        template<typename _Init>
+        static constexpr auto make_indices(_Init&& input) noexcept
+        { // this will produce the index of elements sorted by rules provided in sort_traits
+            const_array<size_type, array_size<_Init>::value> indices{};
+            auto real_size = insert_sort_indices(indices, input);
+            return std::make_pair(real_size, indices);
         }
 
     protected:
 
-        template<typename _Indices, typename _Value>
-        static constexpr void insert_down(_Indices& indices, size_t head, size_t tail, _Value current)
+        struct Less
         {
-            auto saved = current;
+            template<typename _Input>
+            constexpr bool operator()(const _Input& input, size_t l, size_t r) const
+            {
+                return typename sort_traits::hashed_key_type::compare_hashes{}(
+                    sort_traits::get_init_hash(input[l]),
+                    sort_traits::get_init_hash(input[r])
+                );
+            }
+        };
+
+        template<typename _Init, size_type N = array_size<_Init>::value>
+        static constexpr auto x_sort(tag_SortByHashes, const _Init& init) noexcept
+        { // sort by hashes, return tuple( real_size, sorted_values, sorted_indices)
+            auto indices = make_indices(init);
+            auto hashes = construct_hashes(init, indices, std::make_index_sequence<N>{});
+            auto values = construct_values(init, indices, std::make_index_sequence<N>{});
+            return std::make_tuple(indices.first, values, hashes);
+        }
+
+        template<typename _Init, size_type N = array_size<_Init>::value>
+        static constexpr auto x_sort(tag_SortByValues, const _Init& init) noexcept
+        { // sort by values, return pair( real_size, sorted_values)
+            auto indices = make_indices(init);
+            auto values = construct_values(init, indices, std::make_index_sequence<N>{});
+            return std::make_pair(indices.first, values);
+        }
+
+        template<typename _Indices>
+        static constexpr void insert_down(_Indices& indices, size_type head, size_type tail, size_type current)
+        {
             while (head != tail)
             {
                 auto prev = tail--;
                 indices[prev] = indices[tail];
             }
-            indices[head] = saved;
+            indices[head] = current;
         }
-        template<typename _Indices, typename _Input>
-        static constexpr size_t const_lower_bound(const _Indices& indices, const _Input& input, size_t last, size_t value)
+        template<typename _Indices, typename _Input, typename _Pred>
+        static constexpr size_type const_lower_bound(_Pred pred, const _Indices& indices, const _Input& input, size_type size, size_type value)
         {
-            typename _Traits::Pred pred{};
-            size_t _UFirst = 0;
-            size_t _Count = last;
+            size_type _UFirst = 0;
+            size_type _Count = size;
 
             while (0 < _Count)
             {	// divide and conquer, find half that contains answer
-                const size_t _Count2 = _Count >> 1; // TRANSITION, VSO#433486
-                const size_t _UMid = _UFirst + _Count2;
+                const size_type _Count2 = _Count >> 1; // TRANSITION, VSO#433486
+                const size_type _UMid = _UFirst + _Count2;
                 if (pred(input, indices[_UMid], value))
                 {	// try top half
                     _UFirst = (_UMid + 1); // _Next_iter(_UMid);
@@ -100,17 +142,16 @@ namespace compile_time_bits
 
             return _UFirst;
         }
-        template<typename _Indices, typename _Input>
-        static constexpr size_t const_upper_bound(const _Indices& indices, const _Input& input, size_t last, size_t value)
+        template<typename _Indices, typename _Input, typename _Pred>
+        static constexpr size_type const_upper_bound(_Pred pred, const _Indices& indices, const _Input& input, size_type size, size_type value)
         {
-            typename _Traits::Pred pred{};
-            size_t _UFirst = 0;
-            size_t _Count = last;
+            size_type _UFirst = 0;
+            size_type _Count = size;
 
             while (0 < _Count)
             {	// divide and conquer, find half that contains answer
-                const size_t _Count2 = _Count >> 1; // TRANSITION, VSO#433486
-                const size_t _UMid = _UFirst + _Count2;
+                const size_type _Count2 = _Count >> 1; // TRANSITION, VSO#433486
+                const size_type _UMid = _UFirst + _Count2;
                 if (pred(input, value, indices[_UMid]))
                 {
                     _Count = _Count2;
@@ -126,21 +167,21 @@ namespace compile_time_bits
         }
 
         template<typename _Indices, typename _Input>
-        static constexpr size_t insert_sort_indices(_Indices& result, const _Input& input)
+        static constexpr size_type insert_sort_indices(_Indices& result, const _Input& input)
         {
-            typename _Traits::Pred pred{};
-            auto size = result.size();
+            Less pred{};
+            const auto size = result.size();
             if (size < 2)
                 return size;
 
             // current is the first element of the unsorted part of the array
-            size_t current = 0;
+            size_type current = 0;
             // the last inserted element into sorted part of the array
-            size_t last = current;
+            size_type last = current;
             result[0] = 0;
             current++;
 
-            while (current != result.size())
+            while (current != size)
             {
                 if (pred(input, result[last], current))
                 {// optimization for presorted arrays
@@ -148,15 +189,15 @@ namespace compile_time_bits
                 }
                 else {
                     // we may exclude last element since it's already known as smaller then current
-                    // using const_upper_bound helps to preserve the order of rows with identical hash values
-                    // using const_upper_bound will reverse that order
-                    auto fit = const_upper_bound(result, input, last, current);
-                    bool move_it = !remove_duplicates;
+                    // using const_upper_bound helps to preserve the order of rows with identical values (or their hashes)
+                    // using const_lower_bound will reverse that order
+                    auto fit = const_upper_bound(pred, result, input, last, current);
+                    bool need_to_move = !remove_duplicates;
                     if (remove_duplicates)
                     {
-                        move_it = (fit == 0) || pred(input, result[fit-1], current);
+                        need_to_move = (fit == 0) || pred(input, result[fit-1], current);
                     }
-                    if (move_it)
+                    if (need_to_move)
                     {
                         ++last;
                         insert_down(result, fit, last, current);
@@ -167,7 +208,7 @@ namespace compile_time_bits
             if (remove_duplicates)
             {// fill the rest of the indices with maximum value
                 current = last;
-                while (++current != result.size())
+                while (++current != size)
                 {
                     result[current] = result[last];
                 }
@@ -175,37 +216,20 @@ namespace compile_time_bits
             return 1 + last;
         }
 
-        template<typename T, size_t N>
-        static constexpr auto make_indices(const T(&input)[N]) noexcept
+        template<typename _Input, typename _Indices, size_type... I>
+        static constexpr auto construct_hashes(const _Input& input, const _Indices& indices, std::index_sequence<I...>) noexcept
+            -> const_array<hash_type, sizeof...(I)>
         {
-            const_array<size_t, N> indices{};
-            auto real_size = insert_sort_indices(indices, input);
-            return std::make_pair(real_size, indices);
+            size_type real_size = indices.first;
+            return { { sort_traits::get_init_hash(input[indices.second[I < real_size ? I : real_size - 1]]) ...} };
         }
 
-        template<size_t I, typename _Input, typename _Indices>
-        static constexpr hash_type select_hash(const _Input& init, const _Indices& indices) noexcept
-        {
-            size_t real_size = indices.first;
-            if (I < real_size)
-                return sort_traits::get_hash(init[indices.second[I]]);
-            else
-                return std::numeric_limits<hash_type>::max();
-        }
-
-        template<size_t N, typename _Indices, std::size_t... I>
-        static constexpr auto construct_hashes(const init_type(&init)[N], const _Indices& indices, std::index_sequence<I...> /*is_unused*/) noexcept
-            -> aligned_index<hash_type, N>
-        {
-            return { { select_hash<I>(init, indices) ...} };
-        }
-
-        template<typename _Input, typename _Indices, std::size_t... I>
+        template<typename _Input, typename _Indices, size_type... I>
         static constexpr auto construct_values(const _Input& input, const _Indices& indices, std::index_sequence<I...>) noexcept
-            -> const_array<value_type, sizeof...(I)> 
+            -> const_array<value_type, sizeof...(I)>
         {
             auto real_size = indices.first;
-            return { { sort_traits::construct(input, indices.second[I < real_size ? I : real_size - 1]) ...} };
+            return { { sort_traits::construct(input[indices.second[I < real_size ? I : real_size - 1]]) ...} };
         }
     };
 }
