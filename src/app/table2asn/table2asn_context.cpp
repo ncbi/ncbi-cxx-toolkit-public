@@ -105,14 +105,14 @@ bool x_ApplyCreateDate(CSeq_entry& entry)
     {   
         CRef<CDate> date(new CDate(CTime(CTime::eCurrent), CDate::ePrecision_day));
         create_date_desc.Set().SetCreate_date(*date);
-        return false; // no need update_date    
+        return false; // no need update_date
     }
     else
         return true; // need update_date
 }
 
 
-void x_CorrectCollectionDates(CTable2AsnContext& context, objects::CBioSource& source)
+void x_CorrectCollectionDates(CTable2AsnContext& context, CBioSource& source)
 {
     static CTimeFormat in_formats[2] = { "M-D-Y", "D-M-Y" };
     static CTimeFormat out_format("D-b-Y");
@@ -136,7 +136,7 @@ void x_CorrectCollectionDates(CTable2AsnContext& context, objects::CBioSource& s
 
 }
 
-void x_CorrectCollectionDates(CTable2AsnContext& context, objects::CSeq_annot& annot)
+void x_CorrectCollectionDates(CTable2AsnContext& context, CSeq_annot& annot)
 {
     size_t p = context.m_cleanup.find_first_of("Dd");
     if (p == string::npos)
@@ -209,21 +209,21 @@ CSeq_descr& CTable2AsnContext::SetBioseqOrParentDescr(CBioseq& bioseq)
     return bioseq.SetDescr();
 }
 
-CNcbiOstream & CTable2AsnContext::GetOstream(CTempString suffix, CTempString basename)
+CNcbiOstream& CTable2AsnContext::GetOstream(CTempString suffix, CTempString basename)
 {
     auto& rec = m_outputs[suffix];
-    if (rec.second.get() == 0)
+    if (!rec.second)
     {
         if (rec.first.empty())
           rec.first = GenerateOutputFilename(suffix, basename);
-        CFile(rec.first.c_str()).Remove(CFile::fIgnoreMissing);
-        rec.second.reset(new CNcbiOfstream(rec.first.c_str()));
+        CFile(rec.first).Remove(CFile::fIgnoreMissing);
+        rec.second.reset(new CNcbiOfstream(rec.first));
     }
-    return *rec.second.get();
+    return *rec.second;
 }
 
 
-void CTable2AsnContext::ClearOstream(const CTempString& suffix) 
+void CTable2AsnContext::ClearOstream(const CTempString& suffix)
 {
     auto it = m_outputs.find(suffix);
     if (it == m_outputs.end()) {
@@ -248,9 +248,9 @@ string CTable2AsnContext::GenerateOutputFilename(const CTempString& ext, CTempSt
     if (basename.empty())
         basename = m_current_file;
 
-    CDirEntry::SplitPath(basename, &dir, &base, 0);
+    CDirEntry::SplitPath(basename, &dir, &base);
     if (basename == "-" || dir == "/dev") {
-        CDirEntry::SplitPath(m_current_file, &dir, &base, 0);
+        CDirEntry::SplitPath(m_current_file, &dir, &base);
         outputfile = m_ResultsDirectory.empty() ? dir : m_ResultsDirectory;
     }
     else {
@@ -271,7 +271,7 @@ void CTable2AsnContext::ReleaseOutputs()
 CUser_object& CTable2AsnContext::SetUserObject(CSeq_descr& descr, const CTempString& type)
 {
     CRef<CUser_object> user_obj;
-    for (auto desc: descr.Set())
+    for (auto& desc: descr.Set())
     {
         if (desc->IsUser() && desc->GetUser().IsSetType() &&
             desc->GetUser().GetType().IsStr() &&
@@ -294,14 +294,14 @@ CUser_object& CTable2AsnContext::SetUserObject(CSeq_descr& descr, const CTempStr
     return *uo;
 }
 
-void CTable2AsnContext::ApplyUpdateDate(objects::CSeq_entry& entry) const
+void CTable2AsnContext::ApplyUpdateDate(CSeq_entry& entry) const
 {
     CRef<CDate> date(new CDate(CTime(CTime::eCurrent), CDate::ePrecision_day));
     CAutoAddDesc date_desc(entry.SetDescr(), CSeqdesc::e_Update_date);
     date_desc.Set().SetUpdate_date(*date);
 }
 
-void CTable2AsnContext::ApplyAccession(objects::CSeq_entry& entry)
+void CTable2AsnContext::ApplyAccession(CSeq_entry& entry)
 {
     if (m_accession.Empty())
         return;
@@ -314,7 +314,7 @@ void CTable2AsnContext::ApplyAccession(objects::CSeq_entry& entry)
     });
 }
 
-void CTable2AsnContext::UpdateSubmitObject(CRef<objects::CSeq_submit>& submit) const
+void CTable2AsnContext::UpdateSubmitObject(CRef<CSeq_submit>& submit) const
 {
     if (!m_HoldUntilPublish.IsEmpty())
     {
@@ -381,7 +381,7 @@ bool CTable2AsnContext::IsDBLink(const CSeqdesc& desc)
         return false;
 }
 
-void CTable2AsnContext::x_MergeSeqDescr(objects::CSeq_descr& dest, const objects::CSeq_descr& src, bool only_set) const
+void CTable2AsnContext::x_MergeSeqDescr(CSeq_descr& dest, const CSeq_descr& src, bool only_set) const
 {
     for (auto src_desc: src.Get())
     {
@@ -461,7 +461,7 @@ void CTable2AsnContext::MergeWithTemplate(CSeq_entry& entry) const
     else
     if (entry.IsSeq())
     {
-        if (entry.GetParentEntry() == 0)
+        if (!entry.GetParentEntry())
            x_MergeSeqDescr(entry.SetDescr(), m_entry_template->GetDescr(), true);
         x_MergeSeqDescr(entry.SetDescr(), m_entry_template->GetDescr(), false);
     }
@@ -470,10 +470,10 @@ void CTable2AsnContext::MergeWithTemplate(CSeq_entry& entry) const
 void CTable2AsnContext::SetSeqId(CSeq_entry& entry) const
 {
     string base;
-    CDirEntry::SplitPath(m_current_file, 0, &base, 0);
+    CDirEntry::SplitPath(m_current_file, nullptr, &base);
     CRef<CSeq_id> id(new CSeq_id(string("lcl|") + base));
 
-    CBioseq* bioseq = 0;
+    CBioseq* bioseq = nullptr;
     if (entry.IsSeq())
     {
         bioseq = &entry.SetSeq();
@@ -608,10 +608,10 @@ void CTable2AsnContext::RenameProteinIdsQuals(CSeq_feat& feature)
     CSeq_feat::TQual& quals = feature.SetQual();
     for (CSeq_feat::TQual::iterator it = quals.begin(); it != quals.end(); it++)
     {
-        auto& qual = (**it);
+        CGb_qual& qual = (**it);
         if (qual.CanGetVal())
         {
-            const auto& qual_name = qual.GetQual();
+            const string& qual_name = qual.GetQual();
             //discussion of rw-451: always rename, never delete, regardless of 
             // whether in original data or not
             //
@@ -651,7 +651,7 @@ void CTable2AsnContext::RemoveProteinIdsQuals(CSeq_feat& feature)
         feature.ResetQual();
 }
 
-bool CTable2AsnContext::ApplyCreateUpdateDates(objects::CSeq_entry& entry) const
+bool CTable2AsnContext::ApplyCreateUpdateDates(CSeq_entry& entry) const
 {
     bool need_update = false;
     switch(entry.Which())
@@ -660,7 +660,7 @@ bool CTable2AsnContext::ApplyCreateUpdateDates(objects::CSeq_entry& entry) const
         need_update |= x_ApplyCreateDate(entry);
         if (need_update)
         {
-            if (entry.GetParentEntry() == 0)
+            if (!entry.GetParentEntry())
                 ApplyUpdateDate(entry);
             else
                 CAutoAddDesc::EraseDesc(entry.SetDescr(), CSeqdesc::e_Update_date);
@@ -690,7 +690,7 @@ bool CTable2AsnContext::ApplyCreateUpdateDates(objects::CSeq_entry& entry) const
     return need_update;
 }
 
-void CTable2AsnContext::ApplyFileTracks(objects::CSeq_entry& entry) const
+void CTable2AsnContext::ApplyFileTracks(CSeq_entry& entry) const
 {
   if (!m_ft_url.empty()) 
     AddUserTrack(entry.SetDescr(), "FileTrack", "Map-FileTrackURL", m_ft_url);
@@ -762,8 +762,8 @@ bool CTable2AsnContext::GetOrgName(string& name, const CSeq_entry& entry)
 }
 
 
-void CTable2AsnContext::UpdateTaxonFromTable(objects::CBioseq& bioseq)
-{  
+void CTable2AsnContext::UpdateTaxonFromTable(CBioseq& bioseq)
+{
     if (bioseq.IsSetDescr() && bioseq.GetDescr().IsSet())
     {
         CRef<COrg_ref> org_ref = GetOrgRef(bioseq.SetDescr());
@@ -772,7 +772,7 @@ void CTable2AsnContext::UpdateTaxonFromTable(objects::CBioseq& bioseq)
     }
 }
 
-bool AssignLocalIdIfEmpty(ncbi::objects::CSeq_feat& feature, int& id)
+bool AssignLocalIdIfEmpty(CSeq_feat& feature, int& id)
 {
     if (feature.IsSetId())
         return true;
@@ -783,14 +783,14 @@ bool AssignLocalIdIfEmpty(ncbi::objects::CSeq_feat& feature, int& id)
     }
 }
 
-void CTable2AsnContext::CorrectCollectionDates(objects::CSeq_entry& entry)
+void CTable2AsnContext::CorrectCollectionDates(CSeq_entry& entry)
 {
     size_t p = m_cleanup.find_first_of("Dd");
     if (p == string::npos)
         return;
 
 
-    VisitAllSetandSeq(entry, 
+    VisitAllSetandSeq(entry,
         [this](CBioseq_set& bioseq_set)->bool
         {
             x_CorrectCollectionDates(*this, bioseq_set);
@@ -804,7 +804,7 @@ void CTable2AsnContext::CorrectCollectionDates(objects::CSeq_entry& entry)
 }
 
 
-void CTable2AsnContext::ApplyComments(objects::CSeq_entry& entry)
+void CTable2AsnContext::ApplyComments(CSeq_entry& entry)
 {
     if (m_Comment.empty())
         return;
@@ -814,7 +814,7 @@ void CTable2AsnContext::ApplyComments(objects::CSeq_entry& entry)
         {
             if (bioseq_set.IsSetClass() && bioseq_set.GetClass() == CBioseq_set::eClass_genbank)
             {
-                return true; // let's go deeper               
+                return true; // let's go deeper
             }
 
             CRef<CSeqdesc> comment_desc(new CSeqdesc());
@@ -836,11 +836,11 @@ void CTable2AsnContext::ApplyComments(objects::CSeq_entry& entry)
 static void s_NormalizeLinkageEvidenceString(string& linkage_evidence)
 {
     NStr::TruncateSpacesInPlace(linkage_evidence);
-    replace_if(begin(linkage_evidence), end(linkage_evidence), 
+    replace_if(begin(linkage_evidence), end(linkage_evidence),
             [](char c) { return (isspace(c) || c == '_'); }, '-');
 
-    const auto it = 
-        unique(begin(linkage_evidence), end(linkage_evidence), 
+    const auto it =
+        unique(begin(linkage_evidence), end(linkage_evidence),
             [](char a, char b) {return (a == b && b == '-');});
     
     linkage_evidence.erase(it, linkage_evidence.end());
@@ -850,7 +850,7 @@ static void s_NormalizeLinkageEvidenceString(string& linkage_evidence)
 static void s_PostError(
         ILineErrorListener* pEC,
         const string& message,
-        size_t lineNum=0) 
+        size_t lineNum=0)
 {
     _ASSERT(pEC);
 
@@ -869,7 +869,7 @@ static void s_PostError(
 
 
 static CGapsEditor::TEvidenceSet s_ProcessEvidenceString(
-    const string& evidenceString, 
+    const string& evidenceString,
     const string& filename,
     const size_t& lineNum,
     ILineErrorListener* pEC)
@@ -878,7 +878,7 @@ static CGapsEditor::TEvidenceSet s_ProcessEvidenceString(
     list<string> evidenceList;
     NStr::Split(evidenceString, ",;", evidenceList, NStr::fSplit_Tokenize);
 
-    for (auto evidence : evidenceList) {
+    for (string evidence : evidenceList) {
         string unnormalized_evidence = evidence;
         s_NormalizeLinkageEvidenceString(evidence);
         try {
@@ -888,7 +888,7 @@ static CGapsEditor::TEvidenceSet s_ProcessEvidenceString(
         catch (...) {
             stringstream msgStream;
             msgStream << "On line " << lineNum << " of " << filename << ". ";
-            msgStream << "Unrecognized linkage-evidence value: " << unnormalized_evidence << ".";           
+            msgStream << "Unrecognized linkage-evidence value: " << unnormalized_evidence << ".";
             s_PostError(pEC, msgStream.str(), lineNum);
             continue;
         }
@@ -898,17 +898,16 @@ static CGapsEditor::TEvidenceSet s_ProcessEvidenceString(
 
 
 
-void g_LoadLinkageEvidence(const string& linkageEvidenceFilename, 
+void g_LoadLinkageEvidence(const string& linkageEvidenceFilename,
         CGapsEditor::TCountToEvidenceMap& gapsizeToEvidence,
         ILineErrorListener* pEC) {
 
-    auto pLEStream = make_unique<CNcbiIfstream>(linkageEvidenceFilename.c_str(), ios::binary);
+    auto pLEStream = make_unique<CNcbiIfstream>(linkageEvidenceFilename, ios::binary);
 
     if (!pLEStream || !pLEStream->is_open()) {
         s_PostError(pEC, "Failed to open " + linkageEvidenceFilename);
         return;
     }
-    
 
     size_t lineNumber = 0;
     while (pLEStream->good() && !pLEStream->eof()) {
@@ -919,10 +918,10 @@ void g_LoadLinkageEvidence(const string& linkageEvidenceFilename,
         if (line.empty()) {
             continue;
         }
-        
+
         string countStr, evidenceStr;
         NStr::SplitInTwo(line, " \t", countStr, evidenceStr);
-        
+
         TSeqPos count;
         if (!NStr::StringToNumeric(countStr, &count, NStr::fConvErr_NoThrow)) {
             stringstream msgStream;
@@ -932,7 +931,7 @@ void g_LoadLinkageEvidence(const string& linkageEvidenceFilename,
             continue;
         }
 
-        auto evidenceSet = 
+        auto evidenceSet =
             s_ProcessEvidenceString(evidenceStr, linkageEvidenceFilename, lineNumber, pEC);
         if (!evidenceSet.empty()) {
             gapsizeToEvidence.emplace(count, move(evidenceSet));

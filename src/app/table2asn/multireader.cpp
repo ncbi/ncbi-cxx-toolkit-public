@@ -103,7 +103,7 @@ namespace
             return new_id;
         }
 
-        return CRef<CSeq_id>(0);
+        return CRef<CSeq_id>();
     }
 
     struct SCSeqidCompare
@@ -125,20 +125,20 @@ namespace
         return CRef<CSeq_id>();
     }
 
-	void x_ModifySeqIds(CSerialObject& obj, CConstRef<CSeq_id> match, CRef<CSeq_id> new_id)
-	{
+    void x_ModifySeqIds(CSerialObject& obj, CConstRef<CSeq_id> match, CRef<CSeq_id> new_id)
+    {
 #if 0
-		CTypeIterator<CSeq_id> visitor(obj);
+        CTypeIterator<CSeq_id> visitor(obj);
 
-		while (visitor)
-		{
-			CSeq_id& id = *visitor;
-			if (match.Empty() || id.Compare(*match) == CSeq_id::e_YES)
-			{
-				id.Assign(*new_id);
-			}
-			++visitor;
-		}
+        while (visitor)
+        {
+            CSeq_id& id = *visitor;
+            if (match.Empty() || id.Compare(*match) == CSeq_id::e_YES)
+            {
+                id.Assign(*new_id);
+            }
+            ++visitor;
+        }
 #else
         CTypeIterator<CSeq_loc> visitor(obj);
 
@@ -154,7 +154,7 @@ namespace
             ++visitor;
         }
 #endif
-	}
+    }
 
     static const vector<TTypeInfo> supported_types =
     {
@@ -175,8 +175,8 @@ namespace
         return nullptr;
     }
 
-    TTypeInfo x_TryBinaryFormat(CNcbiIstream& In) 
-    {        
+    TTypeInfo x_TryBinaryFormat(CNcbiIstream& In)
+    {
         char buff[4096];
         In.read(buff, sizeof(buff));
         streamsize count = In.gcount();
@@ -190,7 +190,7 @@ namespace
 }
 
 CRef<CSerialObject> CMultiReader::xReadASN1Binary(CObjectIStream& pObjIstrm, TTypeInfo info)
-{    
+{
     if (info == CBioseq_set::GetTypeInfo())
     {
         auto obj = Ref(new CSeq_entry);
@@ -211,7 +211,7 @@ CRef<CSerialObject> CMultiReader::xReadASN1Binary(CObjectIStream& pObjIstrm, TTy
         auto obj = Ref(new CSeq_entry);
         pObjIstrm.Read(ObjectInfo(*obj));
         return obj;
-    }    
+    }
     else
     if (info == CBioseq::GetTypeInfo())
     {
@@ -321,13 +321,13 @@ CMultiReader::ReadAlignment(CNcbiIstream& instream, const CArgs& args)
     }
 
     reader.Read(0, m_context.m_logger);
-    auto pSeqEntry = 
+    auto pSeqEntry =
         reader.GetSeqEntry(
             CAlnReader::fGenerateLocalIDs,
             m_context.m_logger);
 
     if (pSeqEntry && args["a"]) {
-        static const map<string, CBioseq_set::EClass> 
+        static const map<string, CBioseq_set::EClass>
             s_StringToClass = 
             {{"s",  CBioseq_set::eClass_genbank},
              {"s1", CBioseq_set::eClass_pop_set},
@@ -369,7 +369,7 @@ CMultiReader::xReadFasta(CNcbiIstream& instream)
 
     m_iFlags |= CFastaReader::fIgnoreMods
              |  CFastaReader::fValidate
-             |  CFastaReader::fHyphensIgnoreAndWarn 
+             |  CFastaReader::fHyphensIgnoreAndWarn
              |  CFastaReader::fDisableParseRange;
 
     if (m_context.m_allow_accession)
@@ -391,11 +391,11 @@ CMultiReader::xReadFasta(CNcbiIstream& instream)
     }
 
     //if (m_context.m_gap_evidences.size() > 0 || m_context.m_gap_type >= 0)
-    if (!m_context.m_GapsizeToEvidence.empty() || 
-        !m_context.m_DefaultEvidence.empty() ||    
+    if (!m_context.m_GapsizeToEvidence.empty() ||
+        !m_context.m_DefaultEvidence.empty() ||
         m_context.m_gap_type >= 0) {
         pReader->SetGapLinkageEvidence(
-                (CSeq_gap::EType)m_context.m_gap_type, 
+                (CSeq_gap::EType)m_context.m_gap_type,
                 m_context.m_DefaultEvidence,
                 m_context.m_GapsizeToEvidence);
     }
@@ -832,29 +832,29 @@ namespace
 
 CFormatGuess::EFormat CMultiReader::OpenFile(const string& filename, CRef<CSerialObject>& input_sequence)
 {
-	CFormatGuess::EFormat format;
+    CFormatGuess::EFormat format;
     TTypeInfo info{nullptr};
-	{
-		unique_ptr<istream> istream(new CNcbiIfstream(filename.c_str()));
-		format = xInputGetFormat(*istream);
+    {
+        unique_ptr<istream> istream(new CNcbiIfstream(filename));
+        format = xInputGetFormat(*istream);
         if (format == CFormatGuess::eBinaryASN)
             info = x_TryBinaryFormat(*istream);
-	}
+    }
 
     switch (format)
     {
         case CFormatGuess::eBinaryASN:
-		    m_obj_stream.reset(CObjectIStream::Open(eSerial_AsnBinary, filename));
+            m_obj_stream.reset(CObjectIStream::Open(eSerial_AsnBinary, filename));
             input_sequence = xReadASN1Binary(*m_obj_stream, info);
             break;
         case CFormatGuess::eTextASN:
-		    m_obj_stream.reset(CObjectIStream::Open(eSerial_AsnText, filename));
+            m_obj_stream.reset(CObjectIStream::Open(eSerial_AsnText, filename));
             input_sequence = xReadASN1Text(*m_obj_stream);
             break;
-        case CFormatGuess::eGff3: 
+        case CFormatGuess::eGff3:
             {
             LOG_POST("Recognized input file as format: " << CFormatGuess::GetFormatName(format));
-            unique_ptr<istream> in(new CNcbiIfstream(filename.c_str()));        
+            unique_ptr<istream> in(new CNcbiIfstream(filename));
             m_featuresFromSequenceFile = xReadGFF3_NoPostProcessing(*in);
             if (!AtSeqenceData()) {
                 NCBI_THROW2(CObjReaderParseException, eFormat, 
@@ -862,7 +862,7 @@ CFormatGuess::EFormat CMultiReader::OpenFile(const string& filename, CRef<CSeria
             }
             m_iFlags = 0;
             m_iFlags |= CFastaReader::fNoUserObjs;
-		    input_sequence = xReadFasta(*in);
+            input_sequence = xReadFasta(*in);
             //std::cerr << MSerial_AsnText << MSerial_VerifyNo << *obj;
             }
             break;
@@ -871,9 +871,9 @@ CFormatGuess::EFormat CMultiReader::OpenFile(const string& filename, CRef<CSeria
             m_iFlags = 0;
             m_iFlags |= CFastaReader::fNoUserObjs;
 
-		    CBufferedInput istream;
-		    istream.get().open(filename.c_str());
-		    input_sequence = xReadFasta(istream);
+            CBufferedInput istream;
+            istream.get().open(filename.c_str());
+            input_sequence = xReadFasta(istream);
             }
             break;
     }
@@ -888,7 +888,7 @@ CFormatGuess::EFormat CMultiReader::OpenFile(const string& filename, CRef<CSeria
     return format;
 }
 
-void CMultiReader::GetSeqEntry(CRef<objects::CSeq_entry>& entry, CRef<objects::CSeq_submit>& submit, CRef<CSerialObject> obj)
+void CMultiReader::GetSeqEntry(CRef<CSeq_entry>& entry, CRef<CSeq_submit>& submit, CRef<CSerialObject> obj)
 {
     if (obj->GetThisTypeInfo() == CSeq_submit::GetTypeInfo())
     {
@@ -931,7 +931,7 @@ CRef<CSerialObject> CMultiReader::xApplyTemplate(CRef<CSerialObject> obj, bool m
                     "Template file descriptors are ignored if input is ASN.1");
                 m_context.m_logger->PutError(
                     *unique_ptr<CLineError>(
-                        CLineError::Create(ILineError::eProblem_Unset, 
+                        CLineError::Create(ILineError::eProblem_Unset,
                             eDiag_Warning, "", 0, msg)));
             }
         }
@@ -945,7 +945,7 @@ CRef<CSerialObject> CMultiReader::xApplyTemplate(CRef<CSerialObject> obj, bool m
 
 CRef<CSerialObject> CMultiReader::ReadNextEntry()
 {
-    if (m_obj_stream) 
+    if (m_obj_stream)
         return xReadASN1Text(*m_obj_stream);
     else
         return CRef<CSerialObject>();
@@ -987,7 +987,7 @@ CRef<CSeq_entry> CMultiReader::xReadGFF3_NoPostProcessing(CNcbiIstream& instream
     return entry;
 }
 
-void CMultiReader::x_PostProcessAnnot(objects::CSeq_entry& entry, unsigned int sequenceSize)
+void CMultiReader::x_PostProcessAnnot(CSeq_entry& entry, unsigned int sequenceSize)
 {
     unsigned int startingLocusTagNumber = 1;
     unsigned int startingFeatureId = 1;
@@ -999,7 +999,7 @@ void CMultiReader::x_PostProcessAnnot(objects::CSeq_entry& entry, unsigned int s
         edit::CFeatTableEdit fte(
             **it, sequenceSize, m_context.m_locus_tag_prefix, startingLocusTagNumber, startingFeatureId, m_context.m_logger);
         //fte.InferPartials();
-        fte.GenerateMissingParentFeatures(m_context.m_eukariote);
+        fte.GenerateMissingParentFeatures(m_context.m_eukaryote);
         if (m_context.m_locus_tags_needed) {
             if (m_context.m_locus_tag_prefix.empty()  &&  !fte.AnnotHasAllLocusTags()) {
                 NCBI_THROW(CArgException, eNoArg, 
@@ -1020,7 +1020,7 @@ void CMultiReader::x_PostProcessAnnot(objects::CSeq_entry& entry, unsigned int s
 
 unique_ptr<CObjectIStream> CMultiReader::xCreateASNStream(const string& filename)
 {
-    unique_ptr<istream> instream(new CNcbiIfstream(filename.c_str()));
+    unique_ptr<istream> instream(new CNcbiIfstream(filename));
     return xCreateASNStream(CFormatGuess::eUnknown, instream);
 }
 
@@ -1054,9 +1054,7 @@ unique_ptr<CObjectIStream> CMultiReader::xCreateASNStream(CFormatGuess::EFormat 
     }}
 
     unique_ptr<CObjectIStream> pObjIstrm(
-        CObjectIStream::Open(eSerialDataFormat, *instream, eTakeOwnership) );
-
-    instream.release();
+        CObjectIStream::Open(eSerialDataFormat, *instream.release(), eTakeOwnership));
 
     return pObjIstrm;
 }
@@ -1128,7 +1126,7 @@ private:
 
 bool CMultiReader::xGetAnnotLoader(CAnnotationLoader& loader, const string& filename)
 {
-    unique_ptr<istream> in(new CNcbiIfstream(filename.c_str()));
+    unique_ptr<istream> in(new CNcbiIfstream(filename));
 
     CFormatGuess::EFormat uFormat = xAnnotGetFormat(*in);
 
@@ -1308,7 +1306,7 @@ bool CMultiReader::xFixupAnnot(CScope& scope, CRef<CSeq_annot>& annot_it)
 
         if (matching_id && !annot_id->Equals(*matching_id))
         {
-            x_ModifySeqIds(*annot_it, annot_id, matching_id);                    
+            x_ModifySeqIds(*annot_it, annot_id, matching_id);
         }
 
         CRef<CSeq_annot> existing;
@@ -1320,7 +1318,6 @@ bool CMultiReader::xFixupAnnot(CScope& scope, CRef<CSeq_annot>& annot_it)
                 break;
             }
         }
-               
 
         if (existing.Empty())
             bioseq.SetAnnot().push_back(annot_it);
@@ -1363,26 +1360,26 @@ CRef<CSeq_entry> CMultiReader::xReadGTF(CNcbiIstream& instream)
     return entry;
 }
 
-CRef<objects::CSeq_entry> CMultiReader::xReadFlatfile(CFormatGuess::EFormat format, const string& filename)
+CRef<CSeq_entry> CMultiReader::xReadFlatfile(CFormatGuess::EFormat format, const string& filename)
 {
-    std::unique_ptr<Parser> pp(new Parser);
+    unique_ptr<Parser> pp(new Parser);
     switch (format)
     {
         case CFormatGuess::eFlatFileGenbank:
             pp->format = Parser::EFormat::GenBank;
             pp->source = Parser::ESource::GenBank;
-            pp->seqtype = ncbi::objects::CSeq_id::e_Genbank;
+            pp->seqtype = CSeq_id::e_Genbank;
             break;
         case CFormatGuess::eFlatFileEna:
             pp->format = Parser::EFormat::EMBL;
             pp->source = Parser::ESource::EMBL;
             pp->acprefix = ParFlat_EMBL_AC;
-            pp->seqtype = ncbi::objects::CSeq_id::e_Embl;
+            pp->seqtype = CSeq_id::e_Embl;
             break;
         case CFormatGuess::eFlatFileUniProt:
             pp->format = Parser::EFormat::SPROT;
             pp->source = Parser::ESource::SPROT;
-            pp->seqtype = ncbi::objects::CSeq_id::e_Swissprot;
+            pp->seqtype = CSeq_id::e_Swissprot;
             break;
         default:
             NCBI_THROW2(CObjReaderParseException, eFormat,
@@ -1402,8 +1399,8 @@ CRef<objects::CSeq_entry> CMultiReader::xReadFlatfile(CFormatGuess::EFormat form
     {
         if (obj->GetThisTypeInfo() == CBioseq_set::GetTypeInfo())
         {
-            auto bioseq_set = Ref(CTypeConverter<CBioseq_set>::SafeCast(obj.GetPointerOrNull()));            
-            auto entry = Ref(new objects::CSeq_entry);
+            auto bioseq_set = Ref(CTypeConverter<CBioseq_set>::SafeCast(obj.GetPointerOrNull()));
+            auto entry = Ref(new CSeq_entry);
             entry->SetSeq();
             auto& annot = entry->SetAnnot();
             for (auto& bioseq: bioseq_set->SetSeq_set())

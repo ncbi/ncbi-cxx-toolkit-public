@@ -92,9 +92,9 @@ using namespace objects;
 
 #define USE_SCOPE
 
-namespace 
+namespace
 {
-    class CMissingInputException : exception 
+    class CMissingInputException : exception
     {
     };
 }
@@ -112,7 +112,7 @@ public:
     CTable2AsnLogger(): m_enable_log(false) {}
     bool m_enable_log;
 
-    virtual void PutProgress(
+    void PutProgress(
         const string & sMessage,
         const Uint8 iNumDone = 0,
         const Uint8 iNumTotal = 0) override
@@ -121,7 +121,7 @@ public:
             CMessageListenerLenient::PutProgress(sMessage, iNumDone, iNumTotal);
     }
 
-    virtual bool PutError(const ILineError& err) override
+    bool PutError(const ILineError& err) override
     {
         if (err.Problem() == ILineError::eProblem_Missing && NStr::EndsWith(err.ErrorMessage(), "feature is missing locus tag."))
         {
@@ -132,7 +132,7 @@ public:
         return retval;
     }
 
-    virtual bool PutMessage(const IObjtoolsMessage& message) override
+    bool PutMessage(const IObjtoolsMessage& message) override
     {
         auto edit = dynamic_cast<const edit::CRemoteUpdaterMessage*>(&message);
         if (edit)
@@ -148,11 +148,11 @@ public:
 class CTbl2AsnApp : public CNcbiApplication
 {
 public:
-    CTbl2AsnApp(void);
+    CTbl2AsnApp();
 
-    virtual void Init(void);
-    virtual int Run (void);
-    virtual int DryRun(void)
+    void Init() override;
+    int Run() override;
+    int DryRun() override
     {
         return Run();
     }
@@ -180,7 +180,7 @@ private:
     void x_SetAlnArgs(CArgDescriptions& arg_desc);
 
 
-    CRef<CScope> GetScope(void);
+    CRef<CScope> GetScope();
 
     unique_ptr<CMultiReader> m_reader;
     CRef<CSeq_entry> m_replacement_proteins;
@@ -194,13 +194,13 @@ private:
 };
 
 
-CTbl2AsnApp::CTbl2AsnApp(void)
+CTbl2AsnApp::CTbl2AsnApp()
 {
     SetVersion(CVersionInfo(1, NCBI_SC_VERSION_PROXY, NCBI_TEAMCITY_BUILD_NUMBER_PROXY));
 }
 
 
-void CTbl2AsnApp::x_SetAlnArgs(CArgDescriptions& arg_desc) 
+void CTbl2AsnApp::x_SetAlnArgs(CArgDescriptions& arg_desc)
 {
     arg_desc.AddOptionalKey(
         "aln-file", "InFile", "Alignment input file",
@@ -233,9 +233,8 @@ void CTbl2AsnApp::x_SetAlnArgs(CArgDescriptions& arg_desc)
 }
 
 
-void CTbl2AsnApp::Init(void)
+void CTbl2AsnApp::Init()
 {
-
     unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // Prepare command line descriptions, inherit them from tbl2asn legacy application
@@ -424,7 +423,7 @@ may be implemented in the future; RW-1253
     SetupArgDescriptions(arg_desc.release());
 }
 
-int CTbl2AsnApp::Run(void)
+int CTbl2AsnApp::Run()
 {
     const CArgs& args = GetArgs();
 
@@ -481,7 +480,7 @@ int CTbl2AsnApp::Run(void)
     }
 
     m_reader.reset(new CMultiReader(m_context));
-    m_context.m_remote_updater.reset(new edit::CRemoteUpdater(m_logger));   
+    m_context.m_remote_updater.reset(new edit::CRemoteUpdater(m_logger));
 
     // excluded per RW-589
 #if 0
@@ -526,7 +525,7 @@ int CTbl2AsnApp::Run(void)
         {
             // need to show warning here
         }
-        m_context.m_disc_eucariote = extra.find('E') != string::npos;
+        m_context.m_disc_eukaryote = extra.find('E') != string::npos;
     }
 
     if (args["m"]) {
@@ -728,10 +727,10 @@ int CTbl2AsnApp::Run(void)
         m_context.m_run_discrepancy = true;
     }
 
-    if (args["locus-tag-prefix"]  ||  args["no-locus-tags-needed"]) {
-        if (args["locus-tag-prefix"]  &&  args["no-locus-tags-needed"]) {
+    if (args["locus-tag-prefix"] || args["no-locus-tags-needed"]) {
+        if (args["locus-tag-prefix"] && args["no-locus-tags-needed"]) {
             // mutually exclusive
-            NCBI_THROW(CArgException, eConstraint, 
+            NCBI_THROW(CArgException, eConstraint,
                 "-no-locus-tags-needed and -locus-tag-prefix are mutually exclusive");
         }
         if (args["no-locus-tags-needed"]) {
@@ -743,7 +742,7 @@ int CTbl2AsnApp::Run(void)
             m_context.m_locus_tags_needed = true;
         }
     }
-    
+
     if (m_context.m_HandleAsSet)
     {
         if (false)
@@ -770,7 +769,7 @@ int CTbl2AsnApp::Run(void)
         }
     }
 
-    m_context.m_eukariote = args["euk"].AsBoolean();
+    m_context.m_eukaryote = args["euk"].AsBoolean();
 
     if (m_context.m_cleanup.find('f') != string::npos)
         m_context.m_use_hypothetic_protein = true;
@@ -816,7 +815,7 @@ int CTbl2AsnApp::Run(void)
             string annot_file = args["f"].AsString();
             if (!CFile(annot_file).Exists()) {
                 s_FailOnBadInput(
-                    "The specified annotation file \"" + annot_file + "\" does not exist.", 
+                    "The specified annotation file \"" + annot_file + "\" does not exist.",
                     *m_logger);
             }
             m_context.m_single_annot_file = args["f"].AsString();
@@ -825,7 +824,7 @@ int CTbl2AsnApp::Run(void)
             string src_file = args["src-file"].AsString();
             if (!CFile(src_file).Exists()) {
                 s_FailOnBadInput(
-                    "The specified source qualifier file \"" + src_file + "\" does not exist.", 
+                    "The specified source qualifier file \"" + src_file + "\" does not exist.",
                     *m_logger);
             }
             m_context.m_single_source_qual_file = args["src-file"].AsString();
@@ -838,7 +837,7 @@ int CTbl2AsnApp::Run(void)
             CFile argAsFile(m_context.m_current_file);
             if (!argAsFile.Exists()) {
                 s_FailOnBadInput(
-                    "The specified input file \"" + m_context.m_current_file + "\" does not exist.", 
+                    "The specified input file \"" + m_context.m_current_file + "\" does not exist.",
                     *m_logger);
             }
             if (argAsFile.GetLength() > TBL2ASN_MAX_ALLOWED_FASTA_SIZE) {
@@ -852,22 +851,22 @@ int CTbl2AsnApp::Run(void)
                         *m_logger);
                 }
             }
-                
+
             ProcessOneFile();
         }
         else
-        if (args["indir"]) 
+        if (args["indir"])
         {
             // initiate validator output
             string indir = args["indir"].AsString();
             CDir directory(indir);
             if (!directory.Exists()) {
                 s_FailOnBadInput(
-                    "The specified input directory \"" + indir + "\" does not exist.", 
+                    "The specified input directory \"" + indir + "\" does not exist.",
                     *m_logger);
             }
             string basename = m_context.m_output_filename.empty() ? 
-                CDir(CDir::CreateAbsolutePath(indir, CDir::eRelativeToCwd)).GetBase() : 
+                CDir(CDir::CreateAbsolutePath(indir, CDir::eRelativeToCwd)).GetBase() :
                 m_context.m_output_filename;
 
             m_context.m_base_name = basename;
@@ -882,7 +881,7 @@ int CTbl2AsnApp::Run(void)
             m_context.m_current_file = args["aln-file"].AsString();
             if (!CFile(m_context.m_current_file).Exists()) {
                 s_FailOnBadInput(
-                    "The specified alignment file \"" + m_context.m_current_file + "\" does not exist.", 
+                    "The specified alignment file \"" + m_context.m_current_file + "\" does not exist.",
                     *m_logger);
             }
             const bool isAlignment = true;
@@ -902,7 +901,7 @@ int CTbl2AsnApp::Run(void)
         }
         m_validator->ReportDiscrepancies();
     }
-    catch (const CMissingInputException&) 
+    catch (const CMissingInputException&)
     {
         // Error message has already been logged
     }
@@ -943,7 +942,7 @@ int CTbl2AsnApp::Run(void)
             e.GetMsg())));
     }
 
-if (m_logger->Count() == 0)
+    if (m_logger->Count() == 0)
         return 0;
     else
     {
@@ -967,24 +966,24 @@ if (m_logger->Count() == 0)
 }
 
 
-CRef<CScope> CTbl2AsnApp::GetScope(void)
+CRef<CScope> CTbl2AsnApp::GetScope()
 {
     return m_context.m_scope;
 }
 
 void CTbl2AsnApp::ProcessOneEntry(
-        CFormatGuess::EFormat inputFormat, 
-        CRef<CSerialObject> obj, 
+        CFormatGuess::EFormat inputFormat,
+        CRef<CSerialObject> obj,
         CRef<CSerialObject>& result)
 {
     CRef<CSeq_entry> entry;
     CRef<CSeq_submit> submit;
 
     m_reader->GetSeqEntry(entry, submit, obj);
-   
+
     bool avoid_submit_block = false;
 
-    if (m_fcs_reader.get())
+    if (m_fcs_reader)
     {
         m_fcs_reader->PostProcess(*entry);
     }
@@ -999,7 +998,7 @@ void CTbl2AsnApp::ProcessOneEntry(
 
     if (!IsDryRun())
     {
-        std::function<CNcbiOstream&(void)> f = [this]()->CNcbiOstream& { return m_context.GetOstream(".fixedproducts"); };
+        std::function<CNcbiOstream&()> f = [this]()->CNcbiOstream& { return m_context.GetOstream(".fixedproducts"); };
         m_context.m_suspect_rules.SetupOutput(f);
     }
     m_context.ApplyFileTracks(*entry);
@@ -1007,9 +1006,9 @@ void CTbl2AsnApp::ProcessOneEntry(
     if (m_context.m_descriptors.NotNull())
         m_reader->ApplyDescriptors(*entry, *m_context.m_descriptors);
 
-   // m_reader->ApplyAdditionalProperties(*entry);
+    // m_reader->ApplyAdditionalProperties(*entry);
 
-    const bool readModsFromTitle = 
+    const bool readModsFromTitle =
         inputFormat == CFormatGuess::eFasta ||
         inputFormat == CFormatGuess::eAlignment;
     ProcessSecretFiles1Phase(
@@ -1108,13 +1107,13 @@ void CTbl2AsnApp::ProcessOneEntry(
 
         if (m_context.m_run_discrepancy)
         {
-            m_validator->CollectDiscrepancies(*obj, m_context.m_disc_eucariote, m_context.m_disc_lineage);
+            m_validator->CollectDiscrepancies(*obj, m_context.m_disc_eukaryote, m_context.m_disc_lineage);
         }
 
         if (m_context.m_make_flatfile)
         {
             CFlatFileGenerator ffgenerator(
-                    CFlatFileConfig::eFormat_GenBank, 
+                    CFlatFileConfig::eFormat_GenBank,
                     CFlatFileConfig::eMode_Entrez);
 
             auto& ostream = m_context.GetOstream(".gbf");
@@ -1124,7 +1123,7 @@ void CTbl2AsnApp::ProcessOneEntry(
             else
                 ffgenerator.Generate(*submit, *m_context.m_scope, ostream);
         }
-	}
+    }
 }
 
 
@@ -1137,12 +1136,12 @@ void CTbl2AsnApp::ProcessOneFile(bool isAlignment)
     if (!IsDryRun() && m_context.m_split_log_files)
     {
         log_name = m_context.GenerateOutputFilename(".log");
-        CNcbiOstream* error_log = new CNcbiOfstream(log_name.GetPath().c_str());
+        CNcbiOstream* error_log = new CNcbiOfstream(log_name.GetPath());
         m_logger->SetProgressOstream(error_log);
         SetDiagStream(error_log);
     }
 
-    CNcbiOstream* output(0);
+    CNcbiOstream* output(nullptr);
     CFile local_file;
 
     try
@@ -1167,7 +1166,7 @@ void CTbl2AsnApp::ProcessOneFile(bool isAlignment)
                     {
                         if (result->GetThisTypeInfo()->IsType(CSeq_entry::GetTypeInfo()))
                         {
-                            const CSeq_entry* se = (const CSeq_entry*)result.GetPointer();
+                            const CSeq_entry* se = static_cast<const CSeq_entry*>(result.GetPointer());
                             if (se->IsSet())
                                 to_write = &se->GetSet();
                         }
@@ -1180,7 +1179,7 @@ void CTbl2AsnApp::ProcessOneFile(bool isAlignment)
                         }
                         else  {
                             local_file = m_context.GenerateOutputFilename(m_context.m_asn1_suffix);
-                            output = new CNcbiOfstream(local_file.GetPath().c_str());
+                            output = new CNcbiOfstream(local_file.GetPath());
                         }
                     }
                     m_reader->WriteObject(*to_write, *output);
@@ -1201,14 +1200,14 @@ void CTbl2AsnApp::ProcessOneFile(bool isAlignment)
             m_logger->SetProgressOstream(&NcbiCout);
         }
 
-        if (m_context.m_output == 0) 
+        if (!m_context.m_output)
         {
             if (output) {
                 delete output;
             }
             local_file.Remove();
         }
-        output = 0;
+        output = nullptr;
 
         throw;
     }
@@ -1218,8 +1217,7 @@ void CTbl2AsnApp::ProcessOneFile(bool isAlignment)
 void CTbl2AsnApp::ProcessAlignmentFile()
 {
     const string& filename = m_context.m_current_file;
-    unique_ptr<CNcbiIstream> pIstream(
-            new CNcbiIfstream(filename.c_str()));
+    unique_ptr<CNcbiIstream> pIstream(new CNcbiIfstream(filename));
 
     CRef<CSeq_entry> pEntry = 
         m_reader->ReadAlignment(*pIstream, GetArgs());
@@ -1245,7 +1243,7 @@ void CTbl2AsnApp::ProcessAlignmentFile()
         }
         else {
             localFile = m_context.GenerateOutputFilename(m_context.m_asn1_suffix);
-            pLocalOstream.reset(new CNcbiOfstream(localFile.GetPath().c_str()));
+            pLocalOstream.reset(new CNcbiOfstream(localFile.GetPath()));
             pOstream = pLocalOstream.get();
         }
 
@@ -1273,7 +1271,7 @@ bool CTbl2AsnApp::ProcessOneDirectory(const CDir& directory, const CMask& mask, 
     unique_ptr<CDir::TEntries> entries(directory.GetEntriesPtr("*", CDir::fCreateObjects | CDir::fIgnoreRecursive));
     vector<unique_ptr<CDir::CDirEntry>> vec(entries->size());
     auto vec_it = vec.begin();
-    for (auto it : *entries)
+    for (CDir::TEntry& it : *entries)
     {
         vec_it->reset(it.release());
         ++vec_it;
@@ -1283,7 +1281,7 @@ bool CTbl2AsnApp::ProcessOneDirectory(const CDir& directory, const CMask& mask, 
     {
         return l->GetPath() < r->GetPath();
     });
-    for (const auto& it: vec)
+    for (const auto& it : vec)
     {
         // first process files and then recursivelly access other folders
         if (!it->IsDir())
@@ -1361,7 +1359,7 @@ void CTbl2AsnApp::ProcessSecretFiles1Phase(bool readModsFromTitle, CSeq_entry& r
         pDefaultSrcFileMap->MapFile(defaultSrcFile, m_context.m_allow_accession);
     }
 
-    auto modMergePolicy = 
+    auto modMergePolicy =
         m_context.m_accumulate_mods ?
         CModHandler::eAppendPreserve :
         CModHandler::ePreserve;
@@ -1505,7 +1503,7 @@ void CTbl2AsnApp::ProcessAnnotFile(const string& pathname, CScope& scope)
         return;
     }
 
-	m_reader->LoadAnnot(scope, pathname);
+    m_reader->LoadAnnot(scope, pathname);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1515,8 +1513,8 @@ int main(int argc, const char* argv[])
 {
     #ifdef _DEBUG
     // this code converts single argument into multiple, just to simplify testing
-    std::list<std::string> split_args;
-    std::vector<const char*> new_argv;    
+    list<string> split_args;
+    vector<const char*> new_argv;
 
     if (argc==2 && argv && argv[1] && strchr(argv[1], ' '))
     {
@@ -1524,7 +1522,7 @@ int main(int argc, const char* argv[])
         argc = 1 + split_args.size();
         new_argv.reserve(argc);
         new_argv.push_back(argv[0]);
-        for (auto& s: split_args)
+        for (const string& s : split_args)
             new_argv.push_back(s.c_str());
 
         argv = new_argv.data();

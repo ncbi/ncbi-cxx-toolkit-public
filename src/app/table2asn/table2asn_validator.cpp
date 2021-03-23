@@ -48,7 +48,7 @@ CTable2AsnValidator::CTable2AsnValidator(CTable2AsnContext& ctx) : m_stats(CVali
 {
 }
 
-void CTable2AsnValidator::Cleanup(CRef<objects::CSeq_submit> submit, CSeq_entry_Handle& h_entry, const string& flags)
+void CTable2AsnValidator::Cleanup(CRef<CSeq_submit> submit, CSeq_entry_Handle& h_entry, const string& flags)
 {
     if (flags.find('w') != string::npos)
     {
@@ -80,7 +80,7 @@ void CTable2AsnValidator::Cleanup(CRef<objects::CSeq_submit> submit, CSeq_entry_
     }
 
     if (flags.find('f') != string::npos)
-    {        
+    {
         m_context->m_suspect_rules.FixSuspectProductNames(*const_cast<CSeq_entry*>(h_entry.GetCompleteSeq_entry().GetPointer()), h_entry.GetScope());
     }
 
@@ -162,13 +162,13 @@ size_t CTable2AsnValidator::TotalErrors() const
 void CTable2AsnValidator::ReportErrorStats(CNcbiOstream& out)
 {
     out << "Total messages:\t\t" << NStr::NumericToString(TotalErrors()) << endl << endl << big_separator << endl;
-    
+
     for (size_t sev = 0; sev < m_stats.size(); sev++)
     {
         if (m_stats[sev].m_individual.empty())
             continue;
 
-        string severity = CValidErrItem::ConvertSeverity(EDiagSev(sev));       
+        string severity = CValidErrItem::ConvertSeverity(EDiagSev(sev));
         NStr::ToUpper(severity);
         out << NStr::NumericToString(m_stats[sev].m_total) << " " << severity << "-level messages exist" << endl << endl;
 
@@ -182,7 +182,7 @@ void CTable2AsnValidator::ReportErrorStats(CNcbiOstream& out)
     }
 }
 
-void CTable2AsnValidator::CollectDiscrepancies(CSerialObject& obj, bool eucariote, const string& lineage)
+void CTable2AsnValidator::CollectDiscrepancies(CSerialObject& obj, bool eukaryote, const string& lineage)
 {
     if (!m_discrepancy)
         m_discrepancy = NDiscrepancy::CDiscrepancySet::New(*m_context->m_scope);
@@ -191,7 +191,7 @@ void CTable2AsnValidator::CollectDiscrepancies(CSerialObject& obj, bool eucariot
 
     CFile nm(m_context->GenerateOutputFilename(m_context->m_asn1_suffix));
     m_discrepancy->SetLineage(lineage);
-    //m_discrepancy->SetEucariote(eucariote);
+    //m_discrepancy->SetEukaryote(eukaryote);
     m_discrepancy->Parse(obj, nm.GetName());
 }
 
@@ -209,10 +209,10 @@ void CTable2AsnValidator::ReportDiscrepancies()
 }
 
 
-class CUpdateECNumbers 
+class CUpdateECNumbers
 {
 public:
-    CUpdateECNumbers(CTable2AsnContext& context) 
+    CUpdateECNumbers(CTable2AsnContext& context)
         : m_Context(context) {}
 
     void operator()(CSeq_feat& feat);
@@ -221,7 +221,7 @@ private:
 };
 
 
-void CUpdateECNumbers::operator()(CSeq_feat& feat) 
+void CUpdateECNumbers::operator()(CSeq_feat& feat)
 {
     if (!feat.IsSetData() ||
         !feat.GetData().IsProt() ||
@@ -273,7 +273,7 @@ void CUpdateECNumbers::operator()(CSeq_feat& feat)
 }
 
 
-void CTable2AsnValidator::UpdateECNumbers(objects::CSeq_entry& entry) 
+void CTable2AsnValidator::UpdateECNumbers(CSeq_entry& entry)
 {
     VisitAllFeatures(entry, CUpdateECNumbers(*m_context));
 }

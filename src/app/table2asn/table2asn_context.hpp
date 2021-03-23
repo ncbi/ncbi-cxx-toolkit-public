@@ -42,33 +42,33 @@ template<typename _Stream, size_t _bufsize=8192*2>
 class CBufferedStream
 {
 public:
-	CBufferedStream()
-	{
-	}
-	operator bool() const
-	{
-		return m_buffer.get() != nullptr;
-	}
-	operator _Stream&()
-	{
-		return get();
-	}
-	_Stream& get()
-	{
-		if (m_buffer.get() == nullptr)
-		{
-			m_buffer.reset(new char[bufsize]);
-			m_stream.rdbuf()->pubsetbuf(m_buffer.get(), bufsize);
-		}
-		return m_stream;
-	}
-	~CBufferedStream()
-	{
-	}
+    CBufferedStream()
+    {
+    }
+    operator bool() const
+    {
+        return m_buffer.get() != nullptr;
+    }
+    operator _Stream&()
+    {
+        return get();
+    }
+    _Stream& get()
+    {
+        if (!m_buffer)
+        {
+            m_buffer.reset(new char[bufsize]);
+            m_stream.rdbuf()->pubsetbuf(m_buffer.get(), bufsize);
+        }
+        return m_stream;
+    }
+    ~CBufferedStream()
+    {
+    }
 private:
-	static constexpr size_t bufsize = _bufsize;
-	unique_ptr<char> m_buffer;
-	_Stream m_stream;
+    static constexpr size_t bufsize = _bufsize;
+    unique_ptr<char> m_buffer;
+    _Stream m_stream;
 };
 
 using CBufferedOutput = CBufferedStream<CNcbiOfstream>;
@@ -111,10 +111,10 @@ public:
     string m_master_genome_flag;
     string m;
     string m_cleanup;
-    string m_single_structure_cmt;   
+    string m_single_structure_cmt;
     string m_ProjectVersionNumber;
     string m_disc_lineage;
-    bool   m_disc_eucariote{ false };
+    bool   m_disc_eukaryote{ false };
     bool   m_RemoteTaxonomyLookup{ false };
     bool   m_RemotePubLookup{ false };
     bool   m_HandleAsSet{ false };
@@ -135,7 +135,7 @@ public:
     string m_locus_tag_prefix;
     bool   m_locus_tags_needed;
     bool   m_use_hypothetic_protein{ false };
-    bool   m_eukariote{ false };
+    bool   m_eukaryote{ false };
     bool   m_di_fasta{ false };
     bool   m_d_fasta{ false };
     bool   m_allow_accession{ false };
@@ -150,7 +150,7 @@ public:
     CRef<objects::CSeq_descr> m_descriptors;
     unique_ptr<objects::edit::CRemoteUpdater> m_remote_updater;
     unique_ptr<CMemorySrcFileMap> mp_named_src_map;
-    
+
     objects::CFixSuspectProductName m_suspect_rules;
 
     //string conffile;
