@@ -114,7 +114,6 @@ public:
     string m_single_structure_cmt;
     string m_ProjectVersionNumber;
     string m_disc_lineage;
-    bool   m_disc_eukaryote{ false };
     bool   m_RemoteTaxonomyLookup{ false };
     bool   m_RemotePubLookup{ false };
     bool   m_HandleAsSet{ false };

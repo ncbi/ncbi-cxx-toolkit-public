@@ -344,12 +344,9 @@ may be implemented in the future; RW-1253
 
     arg_desc->AddOptionalKey("z", "OutFile", "Cleanup Log File", CArgDescriptions::eOutputFile);
 
-    arg_desc->AddOptionalKey("X", "String", "Extra Flags (combine any of the following letters)\n\
-      E Treat like eukaryota in the Discrepancy Report", CArgDescriptions::eString);
-
     arg_desc->AddOptionalKey("N", "String", "Project Version Number", CArgDescriptions::eString); //done
 
-    arg_desc->AddOptionalKey("w", "InFile", "Single Structured Comment File (overrides the use of -X C)", CArgDescriptions::eInputFile); //done
+    arg_desc->AddOptionalKey("w", "InFile", "Single Structured Comment File", CArgDescriptions::eInputFile); //done
     arg_desc->AddOptionalKey("M", "String", "Master Genome Flags\n\
       n Normal\n\
       t TSA", CArgDescriptions::eString);
@@ -517,16 +514,6 @@ int CTbl2AsnApp::Run()
 
     if (args["U"] && args["U"].AsBoolean())
         m_context.m_cleanup += 'U';
-
-    if (args["X"])
-    {
-        const string& extra = args["X"].AsString();
-        if (extra.find('C'))
-        {
-            // need to show warning here
-        }
-        m_context.m_disc_eukaryote = extra.find('E') != string::npos;
-    }
 
     if (args["m"]) {
         m_context.m_disc_lineage = args["m"].AsString();
@@ -1107,7 +1094,7 @@ void CTbl2AsnApp::ProcessOneEntry(
 
         if (m_context.m_run_discrepancy)
         {
-            m_validator->CollectDiscrepancies(*obj, m_context.m_disc_eukaryote, m_context.m_disc_lineage);
+            m_validator->CollectDiscrepancies(*obj, m_context.m_eukaryote, m_context.m_disc_lineage);
         }
 
         if (m_context.m_make_flatfile)
