@@ -204,7 +204,7 @@ set(NCBI_COMPONENT_FreeTDS_NCBILIB ct_ftds100 ncbi_xdbapi_ftds)
 set(NCBI_COMPONENT_connext_NCBILIB xconnext)
 
 #############################################################################
-if(NCBI_PTBCFG_PACKAGE AND "${NCBI_TOOLS_ROOT}" STREQUAL "")
+if(NCBI_PTBCFG_PACKAGE)
     include(${NCBI_TREE_CMAKECFG}/CMake.NCBIComponentsPackage.cmake)
 elseif (CONANCOMPONENTS)
     include(${NCBI_TREE_CMAKECFG}/CMake.NCBIComponentsConan.cmake)

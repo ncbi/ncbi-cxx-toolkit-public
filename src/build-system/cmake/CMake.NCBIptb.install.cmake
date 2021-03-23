@@ -265,7 +265,8 @@ function(NCBI_internal_install_root _variable _access)
     foreach(_dir IN LISTS _all_subdirs)
         if (EXISTS ${NCBI_INC_ROOT}/${_dir})
             if(NCBI_PTBCFG_PACKAGE)
-                install( DIRECTORY ${NCBI_INC_ROOT}/${_dir} DESTINATION ${NCBI_DIRNAME_INCLUDE})
+                install( DIRECTORY ${NCBI_INC_ROOT}/${_dir} DESTINATION ${NCBI_DIRNAME_INCLUDE}
+                    REGEX "/[.]svn$" EXCLUDE)
             else()
                 install( DIRECTORY ${NCBI_INC_ROOT}/${_dir} DESTINATION ${NCBI_DIRNAME_INCLUDE}
                     REGEX "/[.].*$" EXCLUDE)

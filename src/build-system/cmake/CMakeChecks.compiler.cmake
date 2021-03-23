@@ -342,6 +342,7 @@ endif (CMAKE_USE_PTHREADS_INIT)
 #
 # OpenMP
 if (NOT XCODE AND NOT CYGWIN AND NOT NCBI_COMPILER_LLVM_CLANG
+    AND NOT NCBI_PTBCFG_PACKAGE
     AND NOT noOpenMP IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
 find_package(OpenMP)
 ## message("OPENMP_FOUND: ${OPENMP_FOUND}")
@@ -489,7 +490,9 @@ macro(set_c_compiler_flag_optional)
     endif()
 endmacro()
 
-if("${HOST_CPU}" MATCHES "x86" AND NOT noSSE IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
+if(NOT NCBI_PTBCFG_PACKAGE
+    AND "${HOST_CPU}" MATCHES "x86"
+    AND NOT noSSE IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
 	set_cxx_compiler_flag_optional("-msse4.2")
 	set_c_compiler_flag_optional  ("-msse4.2")
 endif()
