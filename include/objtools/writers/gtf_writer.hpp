@@ -125,7 +125,7 @@ protected:
 
     virtual bool xWriteFeature(
         CGffFeatureContext&,
-        const CMappedFeat& );
+        const CMappedFeat& ) override;
     virtual bool xWriteRecordsGene(
         CGffFeatureContext&,
         const CMappedFeat& );

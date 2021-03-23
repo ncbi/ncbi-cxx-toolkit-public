@@ -178,35 +178,35 @@ public:
         fGenerateChildXrefs = 1<<8,
     };
 
-    CGtfReader( 
-        unsigned int =0, 
-        const string& = "", 
+    CGtfReader(
+        unsigned int =0,
+        const string& = "",
         const string& = "",
         SeqIdResolver = CReadUtil::AsSeqId,
         CReaderListener* = nullptr);
 
-    CGtfReader( 
-        unsigned int, 
+    CGtfReader(
+        unsigned int,
         CReaderListener*);
 
     virtual ~CGtfReader();
-    
-    virtual CRef< CSeq_annot >
+
+    CRef< CSeq_annot >
     ReadSeqAnnot(
         ILineReader& lr,
-        ILineErrorListener* pErrors=0 ) override;
+        ILineErrorListener* pErrors=nullptr) override;
 
 protected:
-    virtual void xProcessData(
+    void xProcessData(
         const TReaderData&,
-        CSeq_annot&);
+        CSeq_annot&) override;
 
-    virtual CGff2Record* x_CreateRecord() { return new CGtfReadRecord(); };    
+    CGff2Record* x_CreateRecord() override { return new CGtfReadRecord(); }
 
-    virtual bool xUpdateAnnotFeature(
+    bool xUpdateAnnotFeature(
         const CGff2Record&,
         CSeq_annot&,
-        ILineErrorListener* =0);
+        ILineErrorListener* =nullptr) override;
 
     virtual bool xUpdateAnnotCds(
         const CGtfReadRecord&,
@@ -216,8 +216,8 @@ protected:
         const CGtfReadRecord&,
         CSeq_annot&);
 
-    virtual void xPostProcessAnnot(
-        CSeq_annot&);
+    void xPostProcessAnnot(
+        CSeq_annot&) override;
 
     bool xCreateFeatureId(
         const CGtfReadRecord&,
