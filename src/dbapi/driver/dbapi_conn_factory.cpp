@@ -65,11 +65,6 @@ m_TryServerToo(false)
     ConfigureFromRegistry(registry);
 }
 
-CDBConnectionFactory::~CDBConnectionFactory(void)
-{
-    CDB_UserHandler::ClearExceptions(m_Errors);
-}
-
 void
 CDBConnectionFactory::ConfigureFromRegistry(const IRegistry* registry)
 {
@@ -265,9 +260,10 @@ impl::CDBHandlerStack& CDB_DBLB_Delegate::SetOpeningMsgHandlers(void)
 
 ///////////////////////////////////////////////////////////////////////////////
 CDBConnectionFactory::SOpeningContext::SOpeningContext
-(I_DriverContext& driver_ctx_in, CServiceInfo& service_info_in)
+(I_DriverContext& driver_ctx_in, CServiceInfo& service_info_in,
+ CDB_UserHandler::TExceptions& exceptions)
     : driver_ctx(driver_ctx_in), service_info(service_info_in),
-      conn_status(IConnValidator::eInvalidConn)
+      conn_status(IConnValidator::eInvalidConn), errors(exceptions)
 {
 }
 
@@ -275,15 +271,9 @@ CDB_Connection*
 CDBConnectionFactory::MakeDBConnection(
     I_DriverContext& ctx,
     const CDBConnParams& params,
-    CDB_UserHandler::TExceptions** pexceptions)
+    CDB_UserHandler::TExceptions& exceptions)
 {
-    if (pexceptions != nullptr) {
-        *pexceptions = &m_Errors;
-    }
-
     CFastMutexGuard mg(m_Mtx);
-
-    CDB_UserHandler::ClearExceptions(m_Errors);
 
     unique_ptr<CDB_Connection> t_con;
     CRuntimeData& rt_data = GetRuntimeData(params.GetConnValidator());
@@ -306,7 +296,7 @@ CDBConnectionFactory::MakeDBConnection(
             ultimate_handlers.Push(&CDB_UserHandler::GetDefault());
         }
     }}
-    SOpeningContext opening_ctx(ctx, service_info);
+    SOpeningContext opening_ctx(ctx, service_info, exceptions);
     CRef<CDB_UserHandler_Deferred> handler
         (new CDB_UserHandler_Deferred(ultimate_handlers));
     opening_ctx.handlers.Push(&*handler, eTakeOwnership);
@@ -364,7 +354,7 @@ CDBConnectionFactory::MakeDBConnection(
                                                 cur_params));
 
             } catch (CDB_Exception& ex) {
-                // m_Errors.push_back(ex.Clone());
+                // opening_ctx.errors.push_back(ex.Clone());
                 opening_ctx.handlers.PostMsg(&ex);
                 if (params.GetConnValidator()) {
                     opening_ctx.conn_status
@@ -463,8 +453,12 @@ CDBConnectionFactory::DispatchServerName(
             }
 
             if (dsp_srv.Empty()) {
-                m_Errors.push_back(new CDB_Exception(DIAG_COMPILE_INFO, NULL, CDB_Exception::EErrCode(0),
-                                   "Service mapper didn't return any server for " + service_name, eDiag_Error, 0));
+                ctx.errors.push_back(
+                    new CDB_Exception(
+                        DIAG_COMPILE_INFO, NULL, CDB_Exception::EErrCode(0),
+                        "Service mapper didn't return any server for "
+                        + service_name,
+                        eDiag_Error, 0));
                 return NULL;
             }
             if (dsp_srv->GetName() == service_name
@@ -473,8 +467,13 @@ CDBConnectionFactory::DispatchServerName(
             {
                 if (full_retry_made) {
                     if (!m_TryServerToo) {
-                        m_Errors.push_back(new CDB_Exception(DIAG_COMPILE_INFO, NULL, CDB_Exception::EErrCode(0),
-                                           "No more servers to try (didn't try " + service_name + " as server name)", eDiag_Error, 0));
+                        ctx.errors.push_back(
+                            new CDB_Exception(
+                                DIAG_COMPILE_INFO, NULL,
+                                CDB_Exception::EErrCode(0),
+                                "No more servers to try (didn't try "
+                                + service_name + " as server name)",
+                                eDiag_Error, 0));
                         return NULL;
                     }
                 }
@@ -548,7 +547,7 @@ CDBConnectionFactory::DispatchServerName(
                     break;
                 }
             } catch (CDB_Exception& ex) {
-                // m_Errors.push_back(ex.Clone());
+                // ctx.errors.push_back(ex.Clone());
                 ctx.handlers.PostMsg(&ex);
                 if (params.GetConnValidator()) {
                     ctx.conn_status
@@ -568,8 +567,11 @@ CDBConnectionFactory::DispatchServerName(
                              &&  service_info.GetNumOfValidationFailures()
                                                >= GetMaxNumOfValidationAttempts())))
             {
-                m_Errors.push_back(new CDB_Exception(DIAG_COMPILE_INFO, NULL, CDB_Exception::EErrCode(0),
-                                   "No more services/servers to try", eDiag_Error, 0));
+                ctx.errors.push_back(
+                    new CDB_Exception(DIAG_COMPILE_INFO, NULL,
+                                      CDB_Exception::EErrCode(0),
+                                      "No more services/servers to try",
+                                      eDiag_Error, 0));
                 return NULL;
             }
 
@@ -590,9 +592,12 @@ CDBConnectionFactory::DispatchServerName(
     }
 
     if (!t_con) {
-        m_Errors.push_back(new CDB_Exception(DIAG_COMPILE_INFO, NULL, CDB_Exception::EErrCode(0),
-                           "Can't try any more alternatives (max number is "
-                           + NStr::UIntToString(GetMaxNumOfServerAlternatives()) + ")", eDiag_Error, 0));
+        ctx.errors.push_back(
+            new CDB_Exception(
+                DIAG_COMPILE_INFO, NULL, CDB_Exception::EErrCode(0),
+                "Can't try any more alternatives (max number is "
+                + NStr::UIntToString(GetMaxNumOfServerAlternatives()) + ")",
+                eDiag_Error, 0));
     }
     return t_con;
 }
@@ -678,7 +683,7 @@ CDBConnectionFactory::MakeValidConnection(
                                  + params.GetServerName(),
                                  eDiag_Error, 0);
                 ex.SetRetriable(eRetriable_No);
-                // m_Errors.push_back(ex.Clone());
+                // ctx.errors.push_back(ex.Clone());
                 ctx.handlers.PostMsg(&ex);
                 return NULL;
             }
@@ -692,7 +697,7 @@ CDBConnectionFactory::MakeValidConnection(
                     static_cast<impl::CConnection&>(conn->GetExtraFeatures())
                         .m_Reusable = false;
                 }
-                // m_Errors.push_back(ex.Clone());
+                // ctx.errors.push_back(ex.Clone());
                 ctx.handlers.PostMsg(&ex);
                 return NULL;
             }
@@ -718,8 +723,11 @@ CDBConnectionFactory::MakeValidConnection(
                                params.GetPort()));
         }
 
-        m_Errors.push_back(new CDB_Exception(DIAG_COMPILE_INFO, NULL, CDB_Exception::EErrCode(0),
-                           "Parameters prohibited creating connection", eDiag_Error, 0));
+        ctx.errors.push_back(
+            new CDB_Exception(DIAG_COMPILE_INFO, NULL,
+                              CDB_Exception::EErrCode(0),
+                              "Parameters prohibited creating connection",
+                              eDiag_Error, 0));
     }
     return conn.release();
 }

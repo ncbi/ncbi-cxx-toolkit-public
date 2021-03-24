@@ -54,7 +54,7 @@ public:
     virtual CDB_Connection* MakeDBConnection(
         I_DriverContext& ctx,
         const CDBConnParams& params,
-        CDB_UserHandler::TExceptions** pexceptions);
+        CDB_UserHandler::TExceptions& exceptions);
 };
 
 CDefaultConnectPolicy::~CDefaultConnectPolicy(void)
@@ -71,11 +71,8 @@ CDB_Connection*
 CDefaultConnectPolicy::MakeDBConnection(
     I_DriverContext& ctx,
     const CDBConnParams& params,
-    CDB_UserHandler::TExceptions** pexceptions)
+    CDB_UserHandler::TExceptions& /* exceptions */)
 {
-    if (pexceptions != nullptr) {
-        *pexceptions = nullptr;
-    }
     unique_ptr<CDB_Connection> conn(CtxMakeConnection(ctx, params));
 
     if (conn.get()) {

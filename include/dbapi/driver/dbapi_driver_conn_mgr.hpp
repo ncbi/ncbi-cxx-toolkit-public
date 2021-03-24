@@ -101,7 +101,7 @@ protected:
     virtual CDB_Connection* MakeDBConnection(
             I_DriverContext& ctx,
             const CDBConnParams& params,
-            CDB_UserHandler::TExceptions** pexceptions = nullptr) = 0;
+            CDB_UserHandler::TExceptions& exceptions) = 0;
 
     /// Helper method to provide access to a protected method in I_DriverContext
     /// for child classses.

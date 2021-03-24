@@ -61,7 +61,6 @@ public:
     CDBConnectionFactory(IDBServiceMapper::TFactory svc_mapper_factory,
                          const IRegistry* registry = NULL,
                          EDefaultMapping def_mapping = eUseDefaultMapper);
-    virtual ~CDBConnectionFactory(void);
 
     //
     virtual void Configure(const IRegistry* registry = NULL);
@@ -181,17 +180,19 @@ protected:
     virtual CDB_Connection* MakeDBConnection(
         I_DriverContext& ctx,
         const CDBConnParams& params,
-        CDB_UserHandler::TExceptions** pexceptions);
+        CDB_UserHandler::TExceptions& exceptions);
 
 private:
     struct SOpeningContext {
         SOpeningContext(I_DriverContext& driver_ctx_in,
-                        CServiceInfo& service_info_in);
+                        CServiceInfo& service_info_in,
+                        CDB_UserHandler::TExceptions& exceptions);
 
         I_DriverContext&            driver_ctx;
         CServiceInfo&               service_info;
         IConnValidator::EConnStatus conn_status;
         impl::CDBHandlerStack       handlers;
+        CDB_UserHandler::TExceptions& errors;
         list<string>                tried;
         string                      excluded;
         TSvrRef                     last_tried;
@@ -244,7 +245,6 @@ private:
 
     const CMapperFactory        m_MapperFactory;
     TValidatorSet               m_ValidatorSet;
-    CDB_UserHandler::TExceptions m_Errors;
     // 0 means *none* (even do not try to connect)
     unsigned int                m_MaxNumOfConnAttempts;
     // 0 means *unlimited*
