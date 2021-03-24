@@ -466,7 +466,7 @@ public:
     using TLegalQualifiers = ct::const_bitset<eQual_whole_replicon + 1, EQualifier>;
     using TSubtypes = ct::const_bitset<eSubtype_max, ESubtype>;
     using TQualifiers = TLegalQualifiers;
-    using TSubTypeQualifiersMap = ct::const_map<ESubtype, TQualifiers>;
+    using TSubTypeQualifiersMap = ct::const_unordered_map<ESubtype, TQualifiers>;
 
     /// Test wheather a certain qualifier is legal for the feature
     bool IsLegalQualifier(EQualifier qual) const;

@@ -777,7 +777,7 @@ void CSeqFeatData::s_InitSubtypesTable(void)
 
 const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noexcept
 {
-    MAKE_CONST_MAP(legal_quals_proxy, ESubtype, TLegalQualifiers,
+    MAKE_CONST_MAP(g_legal_quals, ESubtype, TLegalQualifiers,
         {
 { eSubtype_gene, {
            eQual_allele,
@@ -2983,9 +2983,7 @@ const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noe
            eQual_usedin,
 } },
 { eSubtype_any, TLegalQualifiers::set_range(eQual_allele, eQual_whole_replicon)}
-});
-
-    static constexpr TSubTypeQualifiersMap g_legal_quals{legal_quals_proxy};
+})
 
     return g_legal_quals;
 }
@@ -3193,7 +3191,7 @@ namespace
     public:
         static constexpr size_t width = _Width;
         using TBitset = ct::const_bitset<width, _T>;
-        using table_t = ct_const_array<TBitset, width>;
+        using table_t = ct::const_array<TBitset, width>;
 
         using init_t = std::pair<_T, _T>;
         using non_empty_pair = std::pair<_T, TBitset>;
@@ -3201,8 +3199,8 @@ namespace
         template<size_t N>
         constexpr TPairsMatrix(const init_t(&init)[N])
         {
-            using row_t = ct_const_array<char, width>;
-            using init_matrix_t = ct_const_array<row_t, width>;
+            using row_t = ct::const_array<char, width>;
+            using init_matrix_t = ct::const_array<row_t, width>;
 
             init_matrix_t matrix{};
             for (const auto& rec : init)
@@ -3214,7 +3212,7 @@ namespace
             size_t last = 0;
             for (size_t i = 0; i < width; ++i)
             {
-                if (!m_table[i].empty())
+                if (m_table[i].size())
                     m_non_empty_indices[last++] = i;
             }
             m_non_empty_count = last;
@@ -3226,7 +3224,7 @@ namespace
         }
 
         template<size_t N>
-        static bool Check(const ct_const_array<non_empty_pair, N>& in, _T v1, _T v2)
+        static bool Check(const ct::const_array<non_empty_pair, N>& in, _T v1, _T v2)
         {
             auto it = std::lower_bound(in.begin(), in.end(), v1, [](auto left, auto right)
             {
@@ -3258,7 +3256,7 @@ namespace
         constexpr auto assemble_table(const _Matrix& init, std::index_sequence<Ints...>) const
             -> table_t
         {
-            return { { TBitset(init[Ints].begin(), init[Ints].end()) ... } };
+            return { { TBitset(init[Ints].m_data) ... } };
         }
         template<size_t I>
         constexpr non_empty_pair make_row() const
@@ -3267,20 +3265,18 @@ namespace
         }
         template<size_t...Ints>
         constexpr auto select_bitsets(std::index_sequence<Ints...>) const
-            -> ct_const_array<non_empty_pair, sizeof...(Ints) >
+            -> ct::const_array<non_empty_pair, sizeof...(Ints) >
         {
             return { { make_row<Ints>() ... } };
         }
 
         table_t m_table{};
-        ct_const_array<size_t, width> m_non_empty_indices{};
+        ct::const_array<size_t, width> m_non_empty_indices{};
         size_t  m_non_empty_count{ 0 };
     };
     using CAssembleSubTypePairs = TPairsMatrix<CSeqFeatData::ESubtype, CSeqFeatData::eSubtype_max>;
 
-    static constexpr auto get_allowed_pairs()
-    {
-        return CAssembleSubTypePairs{{    
+    static constexpr CAssembleSubTypePairs::init_t g_allowed_pairs[] = {
      ADD_XREF_PAIR(ncRNA, preRNA)
      ADD_XREF_PAIR(S_region, mRNA)
      ADD_XREF_PAIR(gene, preRNA)
@@ -3391,12 +3387,9 @@ namespace
      ADD_XREF_PAIR(mRNA, polyA_signal)
      ADD_XREF_PAIR(polyA_site, preRNA)
      ADD_XREF_PAIR(S_region, intron)
-        }};
-    }
+    };
 
-    static constexpr auto get_prohibited_pairs()
-    {
-        return CAssembleSubTypePairs{{
+    static constexpr CAssembleSubTypePairs::init_t g_prohibited_pairs[] = {
          ADD_XREF_PAIR(3UTR, promoter)
          ADD_XREF_PAIR(enhancer, rRNA)
          ADD_XREF_PAIR(3UTR, 5UTR)
@@ -3722,29 +3715,32 @@ namespace
          ADD_XREF_PAIR(exon, regulatory)
          ADD_XREF_PAIR(mRNA, misc_RNA)
          ADD_XREF_PAIR(promoter, rRNA)
-        }};
-    }
+    };
 
-// constant time access tables use 1696 bytes each, regardless of the number of pairs used
-// binary search table requires 696 bytes each, and depends on number of pairs used
-// use tables with constant time access
-    //static constexpr auto g_allowed_xrefs    = get_allowed_pairs.get_bitsets();
-    //static constexpr auto g_prohibited_xrefs = get_prohibited_pairs.get_bitsets();
-// or use binary search tables
-    //static constexpr auto g_allowed_xrefs    = get_allowed_pairs.select_bitsets<g_allowed_init.NonEmptyCount()>();
-    ///static constexpr auto g_prohibited_xrefs = get_prohibited_pairs.select_bitsets<g_prohibited_init.NonEmptyCount()>();
+    // Three steps initialization is still required until C++17 is engaged
+    // this doesn't impact performance or memory footprints
+    static constexpr CAssembleSubTypePairs g_allowed_init(g_allowed_pairs);
+    static constexpr CAssembleSubTypePairs g_prohibited_init(g_prohibited_pairs);
+
+// constant time access tables use 2544 bytes each, regardless of the number of pairs used
+// binary search table requires 928 bytes each, and depends on number of pairs used
+#if 1 // use tables with constant time access
+    static constexpr auto g_allowed_xrefs    = g_allowed_init.get_bitsets();
+    static constexpr auto g_prohibited_xrefs = g_prohibited_init.get_bitsets();
+#else // or use binary search tables
+    static constexpr auto g_allowed_xrefs    = g_allowed_init.select_bitsets<g_allowed_init.NonEmptyCount()>();
+    static constexpr auto g_prohibited_xrefs = g_prohibited_init.select_bitsets<g_prohibited_init.NonEmptyCount()>();
+#endif
 
 #undef ADD_XREF_PAIR
 }
 
 bool CSeqFeatData::AllowXref(CSeqFeatData::ESubtype subtype1, CSeqFeatData::ESubtype subtype2)
 {
-    static constexpr auto g_allowed_xrefs = get_allowed_pairs().get_bitsets();
     return CAssembleSubTypePairs::Check(g_allowed_xrefs, subtype1, subtype2);
 }
 bool CSeqFeatData::ProhibitXref(CSeqFeatData::ESubtype subtype1, CSeqFeatData::ESubtype subtype2)
 {
-    static constexpr auto g_prohibited_xrefs = get_prohibited_pairs().get_bitsets();
     return CAssembleSubTypePairs::Check(g_prohibited_xrefs, subtype1, subtype2);
 }
 
