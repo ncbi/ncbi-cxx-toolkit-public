@@ -1249,7 +1249,7 @@ private:
     /// @param oid The ordinal id of the sequence. [in]
     /// @param locked The lock holder object for this thread. [in]
     /// @return The length of the sequence in bases.
-    int x_GetSeqLength(int oid, CSeqDBLockHold & locked) const;
+    int x_GetSeqLength(int oid) const;
 
     /// Get local cache ID for current thread.
     ///

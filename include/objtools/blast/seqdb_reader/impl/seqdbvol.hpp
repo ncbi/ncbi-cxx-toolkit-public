@@ -101,7 +101,7 @@ class CSeqDBRangeList : public CObject {
 public:
     /// Constructor.
     /// @param atlas The SeqDB memory management layer. [in]
-    CSeqDBRangeList(CSeqDBAtlas & atlas)
+    CSeqDBRangeList()
       : m_CacheData (false)
     {
         // Sequence caching is not implemented yet.  It would increase
@@ -222,7 +222,7 @@ public:
     ///     The lock holder object for this thread. [in]
     /// @return
     ///   The length in bases of the sequence.
-    int GetSeqLengthProt(int oid, CSeqDBLockHold & locked) const;
+    int GetSeqLengthProt(int oid) const;
 
     /// Approximate sequence length for nucleotide databases.
     ///
@@ -239,7 +239,7 @@ public:
     ///     The lock holder object for this thread. [in]
     /// @return
     ///   The approximate length in bases of the sequence.
-    int GetSeqLengthApprox(int oid, CSeqDBLockHold & locked) const;
+    int GetSeqLengthApprox(int oid) const;
 
     /// Exact sequence length for nucleotide databases.
     ///
@@ -254,7 +254,7 @@ public:
     ///     The lock holder object for this thread. [in]
     /// @return
     ///   The length in bases of the sequence.
-    int GetSeqLengthExact(int oid, CSeqDBLockHold & locked) const;
+    int GetSeqLengthExact(int oid) const;
 
     /// Get filtered sequence header information.
     ///
@@ -386,16 +386,14 @@ public:
                     int               nucl_code,
                     ESeqDBAllocType   alloc_type,
                     SSeqDBSlice     * region,
-                    CSeqDB::TSequenceRanges * masks,
-                    CSeqDBLockHold  & locked) const;
+                    CSeqDB::TSequenceRanges * masks) const;
 
     int GetAmbigPartialSeq(int                oid,
                            char            ** buffer,
                            int                nucl_code,
                            ESeqDBAllocType    alloc_type,
                            CSeqDB::TSequenceRanges  * partial_ranges,
-                           CSeqDB::TSequenceRanges  * masks,
-                           CSeqDBLockHold  & locked) const;
+                           CSeqDB::TSequenceRanges  * masks) const;
 
     /// Get the Seq-ids associated with a sequence.
     ///
@@ -690,8 +688,7 @@ public:
     void GetRawSeqAndAmbig(int              oid,
                            const char    ** buffer,
                            int            * seq_length,
-                           int            * ambig_length,
-                           CSeqDBLockHold & locked) const;
+                           int            * ambig_length) const;
 
     /// Get GI Bounds.
     ///
@@ -772,12 +769,11 @@ public:
     void SetOffsetRanges(int                oid,
                          const TRangeList & offset_ranges,
                          bool               append_ranges,
-                         bool               cache_data,
-                         CSeqDBLockHold   & locked) const;
+                         bool               cache_data) const;
 
     /// Flush all offset ranges cached
     /// @param locked        Lock holder object for this thread. [in]
-    void FlushOffsetRangeCache(CSeqDBLockHold& locked);
+    void FlushOffsetRangeCache();
 
     /// Get the sequence hash for a given OID.
     ///
@@ -1158,8 +1154,7 @@ private:
                       int                nucl_code,
                       ESeqDBAllocType    alloc_type,
                       SSeqDBSlice      * region,
-                      CSeqDB::TSequenceRanges *masks,
-                      CSeqDBLockHold   & locked) const;
+                      CSeqDB::TSequenceRanges *masks) const;
 
     /// Allocate memory in one of several ways.
     ///
@@ -1177,8 +1172,7 @@ private:
     /// @return
     ///     A pointer to the allocated memory.
     char * x_AllocType(size_t            length,
-                       ESeqDBAllocType   alloc_type,
-                       CSeqDBLockHold  & locked) const;
+                       ESeqDBAllocType   alloc_type) const;
 
     /// Get sequence data.
     ///
@@ -1438,6 +1432,7 @@ private:
     mutable CFastMutex m_MtxTi;
     mutable CFastMutex m_MtxSeq;
     mutable CFastMutex m_MtxHdr;
+    mutable CFastMutex m_MtxCachedRange;
 
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )

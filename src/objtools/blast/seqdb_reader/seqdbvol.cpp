@@ -275,7 +275,7 @@ string CSeqDBVol::GetLMDBFileName() const
 	return m_Idx->GetLMDBFileName();
 }
 
-int CSeqDBVol::GetSeqLengthProt(int oid, CSeqDBLockHold & locked) const
+int CSeqDBVol::GetSeqLengthProt(int oid) const
 {
     TIndx start_offset = 0;
     TIndx end_offset   = 0;
@@ -291,12 +291,11 @@ int CSeqDBVol::GetSeqLengthProt(int oid, CSeqDBLockHold & locked) const
 
 // Assumes locked.
 
-int CSeqDBVol::GetSeqLengthExact(int oid, CSeqDBLockHold & locked) const
+int CSeqDBVol::GetSeqLengthExact(int oid) const
 {
     TIndx start_offset = 0;
     TIndx end_offset   = 0;
 
-    //m_Atlas.Lock(locked);
     if (!m_SeqFileOpened) x_OpenSeqFile();
     m_Idx->GetSeqStartEnd(oid, start_offset, end_offset);
 
@@ -315,7 +314,7 @@ int CSeqDBVol::GetSeqLengthExact(int oid, CSeqDBLockHold & locked) const
     return (whole_bytes * 4) + remainder;
 }
 
-int CSeqDBVol::GetSeqLengthApprox(int oid, CSeqDBLockHold & locked) const
+int CSeqDBVol::GetSeqLengthApprox(int oid) const
 {
     TIndx start_offset = 0;
     TIndx end_offset   = 0;
@@ -1453,8 +1452,7 @@ CSeqDBVol::GetBioseq(int                    oid,
 }
 
 char * CSeqDBVol::x_AllocType(size_t           length,
-                              ESeqDBAllocType  alloc_type,
-                              CSeqDBLockHold & locked) const
+                              ESeqDBAllocType  alloc_type) const
 {
     // Allocation using the atlas is not intended for the end user.
     // 16 bytes are added as insurance against potential off-by-one or
@@ -1475,7 +1473,7 @@ char * CSeqDBVol::x_AllocType(size_t           length,
 
     case eAtlas:
     default:
-        retval = m_Atlas.Alloc(length + 16, locked, false);
+        retval = CSeqDBAtlas::Alloc(length + 16, false);
     }
 
     return retval;
@@ -1486,12 +1484,11 @@ int CSeqDBVol::GetAmbigSeq(int                oid,
                            int                nucl_code,
                            ESeqDBAllocType    alloc_type,
                            SSeqDBSlice      * region,
-                           CSeqDB::TSequenceRanges  * masks,
-                           CSeqDBLockHold   & locked) const
+                           CSeqDB::TSequenceRanges  * masks) const
 {
     char * buf1 = 0;
     int baselen =
-        x_GetAmbigSeq(oid, & buf1, nucl_code, alloc_type, region, masks, locked);
+        x_GetAmbigSeq(oid, & buf1, nucl_code, alloc_type, region, masks);
 
     *buffer = buf1;
     return baselen;
@@ -1525,8 +1522,7 @@ int CSeqDBVol::GetAmbigPartialSeq(int                oid,
                                   int                nucl_code,
                                   ESeqDBAllocType    alloc_type,
                                   CSeqDB::TSequenceRanges  * partial_ranges,
-                                  CSeqDB::TSequenceRanges  * masks,
-                                  CSeqDBLockHold  & locked) const
+                                  CSeqDB::TSequenceRanges  * masks) const
 {
 
 	if ((partial_ranges == NULL) || (partial_ranges->size() == 0)) {
@@ -1546,7 +1542,7 @@ int CSeqDBVol::GetAmbigPartialSeq(int                oid,
     }
 
     bool sentinel = (nucl_code == kSeqDBNuclBlastNA8);
-    *buffer = x_AllocType(base_length + (sentinel ? 2 : 0), alloc_type, locked);
+    *buffer = x_AllocType(base_length + (sentinel ? 2 : 0), alloc_type);
     char *seq = *buffer + (sentinel ? 1 : 0);
 
     vector<Int4> ambchars;
@@ -1593,8 +1589,7 @@ int CSeqDBVol::x_GetAmbigSeq(int                oid,
                              int                nucl_code,
                              ESeqDBAllocType    alloc_type,
                              SSeqDBSlice      * region,
-                             CSeqDB::TSequenceRanges *masks,
-                             CSeqDBLockHold   & locked) const
+                             CSeqDB::TSequenceRanges *masks) const
 {
     // Note the use of the third argument of x_GetSequence() to manage
     // the lifetime of the acquired region.  Specifying false for that
@@ -1615,14 +1610,14 @@ int CSeqDBVol::x_GetAmbigSeq(int                oid,
     if (m_Idx->GetSeqType() == 'p') {
 
         tmp += range.begin;
-        *buffer = x_AllocType(base_length, alloc_type, locked);
+        *buffer = x_AllocType(base_length, alloc_type);
         memcpy(*buffer, tmp, base_length);
         s_SeqDBMaskSequence(*buffer - range.begin, masks, (char)21, range);
 
     } else {
 
         bool sentinel = (nucl_code == kSeqDBNuclBlastNA8);
-        *buffer = x_AllocType(base_length + (sentinel ? 2 : 0), alloc_type, locked);
+        *buffer = x_AllocType(base_length + (sentinel ? 2 : 0), alloc_type);
         char *seq = *buffer - range.begin + (sentinel ? 1 : 0);
 
         // Get ambiguity characters.
@@ -2923,8 +2918,7 @@ CSeqDBVol::GetSeqData(int              oid,
                                nucl_code,
                                eNew,
                                & slice,
-                               NULL,
-                               locked);
+                               NULL);
 
         // validity of begin, end, and length has already been checked by
         // overloaded x_GetSequence()
@@ -2956,8 +2950,7 @@ void
 CSeqDBVol::GetRawSeqAndAmbig(int              oid,
                              const char    ** buffer,
                              int            * seq_length,
-                             int            * amb_length,
-                             CSeqDBLockHold & locked) const
+                             int            * amb_length ) const
 {
     if (seq_length)
         *seq_length = 0;
@@ -3109,11 +3102,10 @@ void CSeqDBVol::GetStringBounds(string         & low_id,
 void CSeqDBVol::SetOffsetRanges(int                oid,
                                 const TRangeList & offset_ranges,
                                 bool               append_ranges,
-                                bool               cache_data,
-                                CSeqDBLockHold   & locked) const
+                                bool               cache_data) const
 {
-    //m_Atlas.Lock(locked);
 
+	 CFastMutexGuard mtx_gurad(m_MtxCachedRange);
     if (offset_ranges.empty() && (! cache_data) && (! append_ranges)) {
         // Specifying no-cache plus an empty offset range list, means
         // that we are clearing out this sequence.  In this case, just
@@ -3138,7 +3130,7 @@ void CSeqDBVol::SetOffsetRanges(int                oid,
         }
 
         if (R.Empty()) {
-            R.Reset(new CSeqDBRangeList(m_Atlas));
+            R.Reset(new CSeqDBRangeList());
         }
     }
 
@@ -3159,9 +3151,9 @@ void CSeqDBVol::SetOffsetRanges(int                oid,
     R->SetRanges(offset_ranges, append_ranges, cache_data);
 }
 
-void CSeqDBVol::FlushOffsetRangeCache(CSeqDBLockHold& locked)
+void CSeqDBVol::FlushOffsetRangeCache()
 {
-    //m_Atlas.Lock(locked);
+	CFastMutexGuard mtx_gurad(m_MtxCachedRange);
     m_RangeCache.clear();
 }
 

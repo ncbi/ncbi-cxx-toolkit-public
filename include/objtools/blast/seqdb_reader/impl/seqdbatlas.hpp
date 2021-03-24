@@ -389,12 +389,7 @@ public:
     ///
     /// @param datap
     ///   Pointer to the data to release or deallocate.
-    void RetRegion(const char * datap)
-    {
-        x_RetRegion(datap);
-    }
-
-    
+    static void RetRegion(const char * datap);
 
     /// Allocate memory that atlas will keep track of.
     ///
@@ -422,20 +417,8 @@ public:
     ///   Specify true to zero out memory contents.
     /// @return
     ///   A pointer to the allocation region of memory.
-    char * Alloc(size_t length, CSeqDBLockHold & locked, bool clear = true);
+    static char * Alloc(size_t length, bool clear = true);
 
-    /// Return allocated memory.
-    ///
-    /// This method returns memory acquired from the Alloc() method.
-    /// Dynamically allocated memory from other sources should not be
-    /// freed with this method, and memory allocated via Alloc()
-    /// should not be freed by any means other than this method    
-    ///
-    /// @param freeme
-    ///   A pointer to memory allocated via Alloc().
-    /// @param locked
-    ///   The lock hold object for this thread.
-    void Free(const char * freeme, CSeqDBLockHold & locked);
 
     /// Register externally allocated memory.
     ///
@@ -516,19 +499,6 @@ public:
         Uint8 max_slice = e_MaxSlice64;
         Uint8 sliceSize = min(max_slice,m_MaxFileSize);
         return sliceSize;
-    }
-    
-    /// Return the current number of bytes allocated.
-    ///
-    /// This returns the number of bytes currently allocated by the
-    /// atlas code.  It does not include overhead or meta-data such as
-    /// the CRegionMap objects or the atlas object itself.
-    ///
-    /// @return
-    ///   The amount of memory allocated in bytes.
-    TIndx GetCurrentAllocationTotal()
-    {
-        return m_CurAlloc;
     }
     
     /// Get BlastDB search path.
@@ -617,27 +587,6 @@ private:
     };
     /// Private method to prevent copy construction.
     CSeqDBAtlas(const CSeqDBAtlas &);
-
-    /// Try to find the region and free it.
-    ///
-    /// This method looks for the region in the memory pool (m_Pool),
-    /// which means it must have been allocated with Alloc().
-    ///
-    /// @param freeme
-    ///   The pointer to free.
-    /// @return
-    ///   true, if the memory block was found and freed.
-    bool x_Free(const char * freeme);
-
-    
-    /// Releases or deletes a memory region.
-    ///
-    /// It searches forallocated block that owns the specified address,
-    /// and releases it, if found. 
-    ///
-    /// @param datap
-    ///   Pointer to the area to delete or release a hold on.
-    void x_RetRegion(const char * datap);
    
     /// Protects most of the critical regions of the SeqDB library.
     CMutex m_Lock;
@@ -646,15 +595,6 @@ private:
     /// not needed if each thread access different database volume.
     bool m_UseLock;
     
-    /// Maps from pointers to dynamically allocated blocks to the byte
-    /// size of the allocation.
-    map<const char *, size_t> m_Pool;
-    /// Bytes of "data" currently known to SeqDBAtlas.  This does not
-    /// include metadata
-    TIndx m_CurAlloc;
-    //m_pool was used for mrmory allocation
-    bool m_Alloc;
-
     enum {e_MaxSlice64 = 1 << 30};
     
     /// Cache of file existence and length.

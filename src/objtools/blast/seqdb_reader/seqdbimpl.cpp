@@ -402,25 +402,21 @@ void CSeqDBImpl::ResetInternalChunkBookmark()
 int CSeqDBImpl::GetSeqLength(int oid) const
 {
     CHECK_MARKER();
-    CSeqDBLockHold locked(m_Atlas);
-    //m_Atlas.MentionOid(oid, m_NumOIDs, locked);
 
-    return x_GetSeqLength(oid, locked);
+    return x_GetSeqLength(oid);
 }
 
-int CSeqDBImpl::x_GetSeqLength(int oid, CSeqDBLockHold & locked) const
+int CSeqDBImpl::x_GetSeqLength(int oid) const
 {
-    m_Atlas.Lock(locked);
-
     int vol_oid = 0;
 
     if ('p' == m_SeqType) {
         if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
-            return vol->GetSeqLengthProt(vol_oid, locked);
+            return vol->GetSeqLengthProt(vol_oid);
         }
     } else {
         if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
-            return vol->GetSeqLengthExact(vol_oid, locked);
+            return vol->GetSeqLengthExact(vol_oid);
         }
     }
 
@@ -430,18 +426,16 @@ int CSeqDBImpl::x_GetSeqLength(int oid, CSeqDBLockHold & locked) const
 int CSeqDBImpl::GetSeqLengthApprox(int oid) const
 {
     CHECK_MARKER();
-    CSeqDBLockHold locked(m_Atlas);
-    //m_Atlas.MentionOid(oid, m_NumOIDs, locked);
 
     int vol_oid = 0;
 
     if ('p' == m_SeqType) {
         if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
-            return vol->GetSeqLengthProt(vol_oid, locked);
+            return vol->GetSeqLengthProt(vol_oid);
         }
     } else {
         if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
-            return vol->GetSeqLengthApprox(vol_oid, locked);
+            return vol->GetSeqLengthApprox(vol_oid);
         }
     }
 
@@ -655,12 +649,7 @@ void CSeqDBImpl::RetSequence(const char ** buffer) const
 
 void CSeqDBImpl::RetAmbigSeq(const char ** buffer) const
 {
-    // This returns an allocated object.
-
-    CSeqDBLockHold locked(m_Atlas);
-    m_Atlas.Lock(locked);
-
-    m_Atlas.RetRegion(*buffer);//Keep this
+    CSeqDBAtlas::RetRegion(*buffer);//Keep this
     *buffer = 0;
 }
 
@@ -767,10 +756,6 @@ int CSeqDBImpl::GetAmbigSeq(int               oid,
                             CSeqDB::TSequenceRanges * masks) const
 {
     CHECK_MARKER();
-    CSeqDBLockHold locked(m_Atlas);
-
-    m_Atlas.Lock(locked);
-    //m_Atlas.MentionOid(oid, m_NumOIDs, locked);
 
     int vol_oid = 0;
     if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
@@ -779,8 +764,7 @@ int CSeqDBImpl::GetAmbigSeq(int               oid,
                                 nucl_code,
                                 alloc_type,
                                 region,
-                                masks,
-                                locked);
+                                masks);
     }
 
     NCBI_THROW(CSeqDBException, eArgErr, CSeqDB::kOidNotFound);
@@ -794,11 +778,6 @@ int CSeqDBImpl::GetAmbigPartialSeq(int                oid,
                                    CSeqDB::TSequenceRanges  * masks) const
 {
 	   CHECK_MARKER();
-	    CSeqDBLockHold locked(m_Atlas);
-
-	    m_Atlas.Lock(locked);
-	    //m_Atlas.MentionOid(oid, m_NumOIDs, locked);
-
 	    int vol_oid = 0;
 	    if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
 	        return vol->GetAmbigPartialSeq(vol_oid,
@@ -806,8 +785,7 @@ int CSeqDBImpl::GetAmbigPartialSeq(int                oid,
 	                                       nucl_code,
 	                                       alloc_type,
 	                                       partial_ranges,
-	                                       masks,
-	                                       locked);
+	                                       masks);
 	    }
 
 	    NCBI_THROW(CSeqDBException, eArgErr, CSeqDB::kOidNotFound);
@@ -1576,8 +1554,6 @@ void CSeqDBImpl::x_ScanTotals(bool             approx,
 
     const CSeqDBVol * volp = 0;
 
-    m_Atlas.Lock(locked);
-
     for(int oid = 0; x_CheckOrFindOID(oid, locked); oid++) {
         ++ oid_count;
 
@@ -1590,12 +1566,12 @@ void CSeqDBImpl::x_ScanTotals(bool             approx,
         if (totlen || maxlen || minlen) {
             int len;
             if ('p' == m_SeqType) {
-                len = volp->GetSeqLengthProt(vol_oid, locked);
+                len = volp->GetSeqLengthProt(vol_oid);
             } else {
                 if (approx) {
-                    len = volp->GetSeqLengthApprox(vol_oid, locked);
+                    len = volp->GetSeqLengthApprox(vol_oid);
                 } else {
-                    len = volp->GetSeqLengthExact(vol_oid, locked);
+                    len = volp->GetSeqLengthExact(vol_oid);
                 }
             }
             max_count = max(len, max_count);
@@ -1678,18 +1654,13 @@ void CSeqDBImpl::GetRawSeqAndAmbig(int           oid,
 {
     CHECK_MARKER();
 
-    CSeqDBLockHold locked(m_Atlas);
-    m_Atlas.Lock(locked);
-    //m_Atlas.MentionOid(oid, m_NumOIDs, locked);
-
     int vol_oid = 0;
 
     if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
         vol->GetRawSeqAndAmbig(vol_oid,
                                buffer,
                                seq_length,
-                               ambig_length,
-                               locked);
+                               ambig_length);
 
         return;
     }
@@ -1846,17 +1817,13 @@ void CSeqDBImpl::SetOffsetRanges(int                oid,
                                  bool               cache_data)
 {
     CHECK_MARKER();
-    CSeqDBLockHold locked(m_Atlas);
     int vol_oid = 0;
-
-    m_Atlas.Lock(locked);
 
     if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
         vol->SetOffsetRanges(vol_oid,
                              offset_ranges,
                              append_ranges,
-                             cache_data,
-                             locked);
+                             cache_data);
     } else {
         NCBI_THROW(CSeqDBException, eArgErr, CSeqDB::kOidNotFound);
     }
@@ -1865,12 +1832,10 @@ void CSeqDBImpl::SetOffsetRanges(int                oid,
 void CSeqDBImpl::FlushOffsetRangeCache()
 {
     CHECK_MARKER();
-    CSeqDBLockHold locked(m_Atlas);
-    m_Atlas.Lock(locked);
 
     for(int vol_idx = 0; vol_idx < m_VolSet.GetNumVols(); vol_idx++) {
         CSeqDBVol* volp = m_VolSet.GetVolNonConst(vol_idx);
-        volp->FlushOffsetRangeCache(locked);
+        volp->FlushOffsetRangeCache();
     }
 }
 

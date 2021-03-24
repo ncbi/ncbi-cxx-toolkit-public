@@ -113,8 +113,6 @@ TOut SeqDB_CheckLength(TIn value)
 
 CSeqDBAtlas::CSeqDBAtlas(bool use_atlas_lock)
      :m_UseLock           (use_atlas_lock),
-      m_CurAlloc          (0),
-      m_Alloc             (false),
       m_MaxFileSize       (0),      
       m_SearchPath        (GenerateSearchPath())
 {
@@ -124,18 +122,6 @@ CSeqDBAtlas::CSeqDBAtlas(bool use_atlas_lock)
 
 CSeqDBAtlas::~CSeqDBAtlas()
 {
-    // For now, and maybe permanently, enforce balance.
-
-    _ASSERT(m_Pool.size() == 0);
-
-    // Erase 'manually allocated' elements - In debug mode, this will
-    // not execute, because of the above test.
-
-    for(auto i = m_Pool.begin(); i != m_Pool.end(); i++) {
-        delete[] (char*)((*i).first);
-    }
-
-    m_Pool.clear();
 }
 
 CMemoryFile* CSeqDBAtlas::GetMemoryFile(const string& fileName)
@@ -250,25 +236,14 @@ private:
 
 
 /// Releases allocated memory
-void CSeqDBAtlas::x_RetRegion(const char * datap)
+void CSeqDBAtlas::RetRegion(const char * datap)
 {
-    
-    bool worked = x_Free(datap);
-    _ASSERT(worked);
-
-    if (! worked) {
-        cerr << "Address leak in CSeqDBAtlas::RetRegion" << endl;
-    }
-
+	delete [] datap;
 }
 
 
-char * CSeqDBAtlas::Alloc(size_t length, CSeqDBLockHold & locked, bool clear)
+char * CSeqDBAtlas::Alloc(size_t length, bool clear)
 {
-    // What should/will happen on allocation failure?
-
-    Lock(locked);
-
     if (! length) {
         length = 1;
     }
@@ -296,56 +271,8 @@ char * CSeqDBAtlas::Alloc(size_t length, CSeqDBLockHold & locked, bool clear)
                    "CSeqDBAtlas::Alloc: allocation failed.");
     }
 
-    // Add to pool.
-
-    _ASSERT(m_Pool.find(newcp) == m_Pool.end());
-
-    m_Pool[newcp] = length;
-    m_CurAlloc += length;
-    m_Alloc = true;
-    //cerr << "allocated " << m_CurAlloc << " memory" << endl;
     return newcp;
 }
-
-
-void CSeqDBAtlas::Free(const char * freeme, CSeqDBLockHold & locked)
-{
-    Lock(locked);
-
-#ifdef _DEBUG
-    bool found =
-        x_Free(freeme);
-
-    _ASSERT(found);
-#else
-    x_Free(freeme);
-#endif
-}
-
-
-bool CSeqDBAtlas::x_Free(const char * freeme)
-{
-    if(!m_Alloc) return true;
-    auto i = m_Pool.find((const char*) freeme);
-
-    if (i == m_Pool.end()) {
-        return false;
-    }
-
-    size_t sz = (*i).second;
-
-    _ASSERT(m_CurAlloc >= (TIndx)sz);
-    m_CurAlloc -= sz;    
-    //cerr << "deallocated " << sz << " memory m_CurAlloc=" << m_CurAlloc << endl;
-    if(m_CurAlloc == 0) m_Alloc = false;
-    char * cp = (char*) freeme;
-    delete[] cp;
-    m_Pool.erase(i);
-
-    return true;
-}
-
-
 
 void CSeqDBAtlas::RegisterExternal(CSeqDBMemReg   & memreg,
                                    size_t           bytes,
