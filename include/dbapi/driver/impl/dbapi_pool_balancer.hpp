@@ -65,8 +65,7 @@ public:
                     const string& pool_name,
                     I_DriverContext* driver_ctx = nullptr);
 
-    TSvrRef GetServer(CDB_Connection** conn, const CDBConnParams* params)
-        { return x_GetServer(params, reinterpret_cast<IBalanceable**>(conn)); }
+    TSvrRef GetServer(CDB_Connection** conn, const CDBConnParams* params);
 
 protected:
     IBalanceable* x_TryPool(const void* params) override;
@@ -81,6 +80,20 @@ private:
     string               m_PoolName;
     I_DriverContext*     m_DriverCtx;
 };
+
+
+inline
+TSvrRef CDBPoolBalancer::GetServer(CDB_Connection** conn,
+                                   const CDBConnParams* params)
+{
+    IBalanceable* balanceable = nullptr;
+    auto svr_ref = x_GetServer(params, &balanceable);
+    if (conn != nullptr) {
+        *conn = static_cast<CDB_Connection*>(balanceable);
+    }
+    return svr_ref;
+}
+
 
 END_NCBI_SCOPE
 
