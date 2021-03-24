@@ -344,6 +344,8 @@ may be implemented in the future; RW-1253
 
     arg_desc->AddOptionalKey("z", "OutFile", "Cleanup Log File", CArgDescriptions::eOutputFile);
 
+    arg_desc->AddOptionalKey("X", "String", "Obsolete", CArgDescriptions::eString);
+
     arg_desc->AddOptionalKey("N", "String", "Project Version Number", CArgDescriptions::eString); //done
 
     arg_desc->AddOptionalKey("w", "InFile", "Single Structured Comment File", CArgDescriptions::eInputFile); //done
