@@ -145,6 +145,7 @@ asngendefs needs xser
 asnmuxdblb needs dbloadb_asn
 asnmuxdblb needs generic_db_asn
 asnmuxdblb needs mux
+assemblystats_lib needs gc_asn_access
 attr_cd needs3party $(ORIG_LIBS)
 auxcomm_g needs muxex-C_g
 auxcomm_g needs splitdbasncpp_g
