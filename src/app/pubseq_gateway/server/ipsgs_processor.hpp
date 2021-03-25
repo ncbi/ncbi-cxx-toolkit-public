@@ -46,16 +46,15 @@ USING_NCBI_SCOPE;
 /// Then at the time when a request comes, all the registred processors will
 /// receive the CreateProcessor(...) call. All not NULL processors will be
 /// considered as those which are able to process the request.
-/// Later the infrastructure will call the first processor Process() method and
-/// periodically will call IsFinished() method. Depending on the IsFinished()
-/// return value a request can be finished, or a next processor in the list
-/// will receive the Process() method.
+/// Later the infrastructure will call the created processors Process() method
+/// in parallel and periodically will call GetStatus() method. When all
+/// processors finished it is considered as the end of the request processing.
 ///
 /// There are a few agreements for the processors.
 /// - The server replies use PSG protocol. When something is needed to be sent
 ///   to the client then m_Reply method should be used.
-/// - When a processor is finished it should call
-///   m_Reply->SignalProcessorFinished().
+/// - When a processor is finished it should call the
+///   SignalProcessorFinished() method.
 /// - If a processor needs to do any logging then two thing need to be done:
 ///   - Set request context fot the current thread.
 ///   - Use one of the macro PSG_TRACE, PSG_INFO, PSG_WARNING, PSG_ERROR,
@@ -112,7 +111,7 @@ public:
     ///  On error
     virtual void Process(void) = 0;
 
-    /// Cancel processing due to the user request
+    /// The infrastructure request to cancel processing
     virtual void Cancel(void) = 0;
 
     /// Tells the processor status (if it has finished or in progress)
@@ -165,7 +164,7 @@ public:
 
     /// A processor should call the method when it decides that it
     /// successfully started processing the request. The other processors
-    /// which are handling this request will be cancelled.
+    /// which are handling this request in parallel will be cancelled.
     /// @return
     ///  The flag to continue or to stop further activity
     EPSGS_StartProcessing SignalStartProcessing(void);
