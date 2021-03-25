@@ -1,7 +1,7 @@
 #!/bin/bash
 
-if [ $# -ne 8 ]; then
-    echo "Usage: $0 COMMAND SERVICE REQUESTS ITERATIONS INPUT_FILE IO_THREADS REQUESTS_PER_IO BINARIES";
+if [ $# -lt 8 ] || [ $# -gt 9 ]; then
+    echo "Usage: $0 COMMAND SERVICE REQUESTS ITERATIONS INPUT_FILE IO_THREADS REQUESTS_PER_IO BINARIES [RATE]";
     exit 1;
 fi
 
@@ -13,6 +13,7 @@ INPUT_FILE="$5"
 IO_THREADS=($6)
 REQUESTS_PER_IO=($7)
 BINARIES=($8)
+RATE="$9"
 
 case "$COMMAND" in
 "resolve")
@@ -38,6 +39,12 @@ fi
 if [ ! -f $INPUT_FILE ]; then
     echo "$INPUT_FILE does not exist or is not a file"
     exit 4;
+elif [ "$RATE" != "" ]; then
+    read -r FILE_LINES FILE_SIZE REQUEST_LEN UNUSED <<<$(wc -clL $INPUT_FILE);
+    if [ $(($FILE_SIZE / $FILE_LINES - $REQUEST_LEN)) -lt 1 ]; then
+        echo "Cannot use RATE, $INPUT_FILE has variable length requests"
+        exit 6;
+    fi
 fi
 
 for binary in ${BINARIES[@]}; do
@@ -52,7 +59,19 @@ function create_path
     local IFS="-"
     local FILE=$(basename $INPUT_FILE)
     OUTPUT_PATH="$*/$SERVICE/$COMMAND/$FILE/$REQUESTS-$ITERATIONS"
+    if [ "$RATE" != "" ]; then
+        OUTPUT_PATH="$OUTPUT_PATH-$RATE"
+    fi
     mkdir -p "$OUTPUT_PATH"
+}
+
+function requests
+{
+    if [ "$RATE" == "" ]; then
+        head -$REQUESTS $INPUT_FILE
+    else
+        head -$REQUESTS $INPUT_FILE |pv -L $(($RATE * (1 + $REQUEST_LEN))) 2>/dev/null
+    fi
 }
 
 function run
@@ -61,13 +80,13 @@ function run
     echo -e "[PSG]\nuse_cache=yes\nnum_io=$1\nrequests_per_io=$2" > psg_client.ini
 
     if [ $CMD -eq 1 ]; then
-        head -$REQUESTS $INPUT_FILE |/usr/bin/time -ao $OUTPUT_FILE -f "%e" $3/psg_client resolve -service $SERVICE -id-file - >/dev/null;
+        requests |/usr/bin/time -ao $OUTPUT_FILE -f "%e" $3/psg_client resolve -service $SERVICE -id-file - >/dev/null;
         echo -n "."
     elif [ $CMD -eq 2 ]; then
-        head -$REQUESTS $INPUT_FILE |/usr/bin/time -ao $OUTPUT_FILE -f "%e" $3/psg_client interactive -service $SERVICE -worker-threads "$1:$1:$1" >/dev/null;
+        requests |/usr/bin/time -ao $OUTPUT_FILE -f "%e" $3/psg_client interactive -service $SERVICE -worker-threads "$1:$1:$1" >/dev/null;
         echo -n "."
     else
-        head -$REQUESTS $INPUT_FILE |$3/psg_client performance -service $SERVICE -user-threads $1 -local-queue -raw-metrics >/dev/null;
+        requests |$3/psg_client performance -service $SERVICE -user-threads $1 -local-queue -raw-metrics >/dev/null;
 
         # Old binaries print named events, so need to replace names
         sed -i '{ s/Start/0/; s/Submit/1/; s/Reply/2/; s/Send/1000/; s/Receive/1001/; s/Close/1002/; s/Retry/1003/; s/Fail/1004/; s/Done/3/; }' psg_client.raw.txt
