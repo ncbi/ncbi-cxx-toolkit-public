@@ -52,7 +52,7 @@ CBlastxNode::CBlastxNode (int node_num, const CNcbiArguments & ncbi_args, const 
                               int query_index, int num_queries,  CBlastNodeMailbox * mailbox):
                               CBlastNode(node_num, ncbi_args, args, bah, query_index, num_queries, mailbox), m_Input(input)
 {
-	m_CmdLineArgs.Reset(new CBlastxNodeArgs(m_Input));
+	m_CmdLineArgs.Reset(new CBlastxNodeArgs());
 	SetState(eInitialized);
 	SendMsg(CBlastNodeMsg::eRunRequest, (void*) this);
 }
@@ -116,7 +116,7 @@ CBlastxNode::Main()
            	ERR_POST(Warning << "Query is Empty!");
            	return BLAST_EXIT_SUCCESS;
         }
-        CBlastFastaInputSource fasta(m_CmdLineArgs->GetInputStream(), iconfig);
+        CBlastFastaInputSource fasta(m_Input, iconfig);
         CBlastInput input(&fasta);
 
         /*** Get the formatting options ***/

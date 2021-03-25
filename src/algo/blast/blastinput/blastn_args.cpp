@@ -135,33 +135,11 @@ CBlastnAppArgs::GetQueryBatchSize() const
     return blast::GetQueryBatchSize(ProgramNameToEnum(GetTask()), m_IsUngapped, is_remote, false);
 }
 
-/// Get the input stream
-CNcbiIstream&
-CBlastnNodeArgs::GetInputStream()
-{
-	if ( !m_InputStream ) {
-		abort();
-	}
-	return *m_InputStream;
-}
 /// Get the output stream
 CNcbiOstream&
 CBlastnNodeArgs::GetOutputStream()
 {
 	return m_OutputStream;
-}
-
-CBlastnNodeArgs::CBlastnNodeArgs(const string & input)
-{
-	m_InputStream = new CNcbiIstrstream(input.c_str(), input.length());
-}
-
-CBlastnNodeArgs::~CBlastnNodeArgs()
-{
-	if (m_InputStream) {
-		free(m_InputStream);
-		m_InputStream = NULL;
-	}
 }
 
 int

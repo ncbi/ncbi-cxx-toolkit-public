@@ -60,20 +60,16 @@ class NCBI_BLASTINPUT_EXPORT CBlastxNodeArgs : public CBlastxAppArgs
 {
 public:
     /// Constructor
-    CBlastxNodeArgs(const string & input);
+    CBlastxNodeArgs() {}
+    virtual ~CBlastxNodeArgs() {}
 
     /// @inheritDoc
     virtual int GetQueryBatchSize() const;
-
-    /// Get the input stream
-    virtual CNcbiIstream& GetInputStream();
 
     /// Get the output stream
     virtual CNcbiOstream& GetOutputStream();
 
     CNcbiOstrstream & GetOutputStrStream() { return m_OutputStream; }
-
-    virtual ~CBlastxNodeArgs();
 
 protected:
     /// @inheritDoc
@@ -82,7 +78,6 @@ protected:
 
 private :
     CNcbiOstrstream m_OutputStream;
-    CNcbiIstrstream * m_InputStream;
 };
 
 
