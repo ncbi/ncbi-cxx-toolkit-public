@@ -47,6 +47,10 @@
 
 #define SERV_VHOSTABLE   (/*fSERV_Ncbid |*/ fSERV_Http | fSERV_Standalone)
 
+#if CONN_HOST_LEN > 255
+#  error "CONN_HOST_LEN may not be greater than 255"
+#endif
+
 
 /*
  * Server-info storage model:
@@ -173,7 +177,7 @@ extern char* SERV_WriteInfo(const SSERV_Info* info)
         memcpy(s, attr->tag, attr->len);
         s += attr->len;
         *s++ = ' ';
-        if (info->host == SOCK_HostToNetLong((unsigned int)(-1L))) {
+        if (info->host == SOCK_HostToNetLong((unsigned int)(-1))) {
             int/*bool*/ ipv6 = !NcbiIsIPv4(&info->addr)  &&  info->port;
             if (ipv6)
                 *s++ = '[';
@@ -290,14 +294,14 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
                 return 0;
             else if (str != end)
                 return 0;
-            else if (host == SOCK_HostToNetLong((unsigned int)(-1L)))
+            else if (!lazy  &&  host == SOCK_HostToNetLong((unsigned int)(-1)))
                 vhost = 0;
             if (!ipv6)
                 NcbiIPv4ToIPv6(&addr, host, 0);
             else if (NcbiIsIPv4(&addr))
                 host = NcbiIPv6ToIPv4(&addr, 0);
             else
-                host = SOCK_HostToNetLong((unsigned int)(-1L));
+                host = SOCK_HostToNetLong((unsigned int)(-1));
             while (*str  &&  isspace((unsigned char)(*str)))
                 ++str;
             if (vhost) {
@@ -309,7 +313,7 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
                     if (vhost[len] == '.')
                         dot = 1/*true*/;
                 }
-                if (len > 1  &&  dot) {
+                if (1 < len  &&  len <= CONN_HOST_LEN  &&  dot) {
                     tmp = strndup(vhost, len);
                     assert(!tmp  ||  !SOCK_isipEx(tmp, 1/*full-quad*/));
                     if (tmp) {
@@ -340,8 +344,8 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
 
     /* read server-specific info according to the detected type... */
     info = attr->ops.Read(&str,
-                          (name ? strlen(name) + 1 : 0) +
-                          (attr->type & SERV_VHOSTABLE ? 256 : 0));
+                          (attr->type & SERV_VHOSTABLE ? CONN_HOST_LEN+1 : 0) +
+                          (name ? strlen(name) + 1 : 0));
     if (!info)
         return 0;
     assert(info->type == attr->type);
@@ -416,13 +420,17 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
                 if (vh  ||  !(info->type & SERV_VHOSTABLE))
                     break;
                 vh = 1/*true*/;
-                for (len = 0;  *++str;  ++len) {
-                    if (isspace((unsigned char)(*str)))
+                for (len = 0, vhost = ++str;  vhost[len];  ++len) {
+                    if (isspace((unsigned char) vhost[len]))
+                        break;
+                    if (len > CONN_HOST_LEN)
                         break;
                 }
                 assert(len);
-                vhost = str - len;
-                if (len == 2  &&  strncmp(vhost, "''", 2) == 0)
+                if (len > CONN_HOST_LEN)
+                    break;
+                str = vhost + len;
+                if (len == 2  &&  memcmp(vhost, "''", 2) == 0)
                     vhost = 0;
                 break;
             case 'L':
@@ -545,16 +553,18 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
             ++str;
     }
 
-    if (!*str  &&  (!vh  ||  secu  ||  (info->type & fSERV_Http))) {
-        if (!vh  &&  !(secu  ||  (info->type & fSERV_Http)))
+    if (!*str  &&
+        (!vh  ||  (info->mode & fSERV_Secure)  ||  (info->type & fSERV_Http))){
+        if (!vh
+            &&  !((info->mode & fSERV_Secure)  ||  (info->type & fSERV_Http))){
             vhost = 0;
+        }
         if (vhost) {
-            assert(len);
-            if (len > 255)
-                len = 255;
+            assert(len  &&  len <= CONN_HOST_LEN);
             strncpy0((char*) &info->u + attr->ops.SizeOf(&info->u),
                      vhost, len);
             info->vhost = (unsigned char) len;
+            assert((size_t) info->vhost == len);
         }
         if (name) {
             strcpy((char*) info + SERV_SizeOfInfo(info), name);
