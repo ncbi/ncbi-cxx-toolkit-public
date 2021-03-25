@@ -98,7 +98,8 @@ protected:
         CServiceInfo(const CDBConnectionFactory& factory,
                      IDBServiceMapper& mapper, const string& service_name)
             : m_Factory(factory), m_Mapper(&mapper),
-              m_ServiceName(service_name)
+              m_ServiceName(service_name), m_NumDispatches(0),
+              m_NumValidationFailures(0)
             { }
 
         const string& GetServiceName(void) const override
