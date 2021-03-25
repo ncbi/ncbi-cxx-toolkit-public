@@ -1620,7 +1620,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "DAO\ts\tAgriculture and Agri-Food Canada\t\t\t",
 "DAOM\tsc\tNational Mycological Herbarium, Agriculture and Agri-Food Canada\tCCFC,DAOMC\t\t",
 "DAR\tc\tPlant Pathology Herbarium\t\t\t",
-"DARCC\ts\tNSW Plant Pathology & Mycology Culture Collection\t\t\t",
+"DARCC\tsc\tNSW Plant Pathology & Mycology Culture Collection\t\t\t",
 "DARI\ts\tInsect Collection, New South Wales Department of Agriculture\t\t\t",
 "DAS\ts\tAgriculture and Agri-Food Canada (Saskatoon Research Centre)\t\t\t",
 "DASF\ts\tDepartment of Agriculture, Stock and Fisheries\t\t\t",
