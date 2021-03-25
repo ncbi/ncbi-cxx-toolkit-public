@@ -114,26 +114,26 @@ struct SLINKERD_Data {
 
 static int/*bool*/ s_Resolve(SERV_ITER iter)
 {
-    char                  vhost[CONN_HOST_LEN + 1], hostport[80/*IP:port*/];
     struct SLINKERD_Data* data     = (struct SLINKERD_Data*) iter->data;
     SConnNetInfo*         net_info = data->net_info;
+    char                  hostport[80/*IP:port*/];
     char*                 infostr;
     ESERV_Type            atype;
     const char*           type;
     unsigned int          host;
     size_t                size;
     /*  SSERV_Info must match the "iter" contents:
-        secure --------------------------------------------+
-        time --------------------------------------------+ |
-        rate ------------------------------------+       | |
-        local ------------------------------+    |       | |
-        vhost -------------------------+    |    |       | |
-        path ---------------------+    |    |    |       | |
-        host:port -------------+  |    |    |    |       | |
-        type ---------------+  |  |    |    |    |       | |  */
-    /*                      |  |  |    |    |    |       | |  */
-    static const        /*  [] [] []   []   []   [___]   [][] */
-        char kDescrFmt[] = "%s %s %s H=%s L=%s R=%.2lf T=%u%s";
+        secure ----------------------------------------------+
+        time ----------------------------------------------+ |
+        rate --------------------------------------+       | |
+        local --------------------------------+    |       | |
+        vhost -------------------------+      |    |       | |
+        path ---------------------+    |      |    |       | |
+        host:port -------------+  |    |      |    |       | |
+        type ---------------+  |  |    |      |    |       | |  */
+    /*                      |  |  |    |      |    |       | |  */
+    static const        /*  [] [] []   [__]   []   [___]   [][] */
+        char kDescrFmt[] = "%s %s %s H=%s%s L=%s R=%.2lf T=%u%s";
 
     assert(!data->info);
 
@@ -166,14 +166,12 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
 
     /* VHost */
     size = strlen(iter->name);
-    if (size + sizeof(LINKERD_VHOST_DOMAIN) >= sizeof(vhost)) {
+    if (size + sizeof(LINKERD_VHOST_DOMAIN) > CONN_HOST_LEN + 1) {
         CORE_LOGF_X(eLSub_TooLong, eLOG_Critical,
                     ("[%s]  VHost \"%s%s\" is too long", iter->name,
                      iter->name, LINKERD_VHOST_DOMAIN));
         return 0/*failure*/;
     }
-    memcpy((char*) memcpy(vhost, iter->name, size) + size,
-           LINKERD_VHOST_DOMAIN, sizeof(LINKERD_VHOST_DOMAIN));
 
     /* Host:port */
     if (!(host = SOCK_gethostbyname(net_info->host))
@@ -198,9 +196,11 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
     verify((size_t)
            sprintf(infostr, kDescrFmt, type, hostport,
                    net_info->path[0] ? net_info->path : "/",
-                   vhost, iter->external ? "No" : "Yes",
+                   iter->name, LINKERD_VHOST_DOMAIN,
+                   iter->external ? "No" : "Yes",
                    LBSM_DEFAULT_RATE, iter->time + LBSM_DEFAULT_TIME,
                    net_info->scheme == eURL_Https ? " $=Yes" : "") < size);
+
     /* Parse descriptor into SSERV_Info */
     CORE_TRACEF(("[%s]  LINKERD parsing server descriptor \"%s\"",
                  iter->name, infostr));
@@ -253,9 +253,9 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
 static void s_Reset(SERV_ITER iter)
 {
     struct SLINKERD_Data* data = (struct SLINKERD_Data*) iter->data;
+    assert(data);
     CORE_TRACEF(("Enter LINKERD::s_Reset(\"%s\"): %u", iter->name,
                  data->info ? 1 : 0));
-    assert(data);
     if (data->info) {
         free(data->info);
         data->info = 0;
@@ -268,9 +268,9 @@ static void s_Reset(SERV_ITER iter)
 static void s_Close(SERV_ITER iter)
 {
     struct SLINKERD_Data* data = (struct SLINKERD_Data*) iter->data;
+    assert(data  &&  !data->info);
     CORE_TRACEF(("Enter LINKERD::s_Close(\"%s\")", iter->name));
     iter->data = 0;
-    assert(data  &&  !data->info);
     ConnNetInfo_Destroy(data->net_info);
     free(data);
     CORE_TRACEF(("Leave LINKERD::s_Close(\"%s\")", iter->name));
