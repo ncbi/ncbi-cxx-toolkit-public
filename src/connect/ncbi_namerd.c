@@ -138,7 +138,7 @@ static void        s_Reset      (SERV_ITER);
 static void        s_Close      (SERV_ITER);
 
 static const SSERV_VTable kNamerdOp = {
-    s_GetNextInfo, 0/*Feedback*/, 0/*s_Update*/, s_Reset, s_Close, "NAMERD"
+    s_GetNextInfo, 0/*Feedback*/, 0/*Update*/, s_Reset, s_Close, "NAMERD"
 };
 
 #ifdef __cplusplus
@@ -934,6 +934,7 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
 static void s_Reset(SERV_ITER iter)
 {
     struct SNAMERD_Data* data = (struct SNAMERD_Data*) iter->data;
+    assert(data);
 
     CORE_TRACEF(("Enter NAMERD::s_Reset(\"%s\"): " FMT_SIZE_T,
                  iter->name, data->n_cand));
@@ -958,12 +959,11 @@ static void s_Reset(SERV_ITER iter)
 static void s_Close(SERV_ITER iter)
 {
     struct SNAMERD_Data* data = (struct SNAMERD_Data*) iter->data;
-
-    CORE_TRACEF(("Enter NAMERD::s_Close(\"%s\")", iter->name));
-    iter->data = 0;
-
     assert(data  &&  !data->n_cand); /*s_Reset() had to be called before*/
 
+    CORE_TRACEF(("Enter NAMERD::s_Close(\"%s\")", iter->name));
+
+    iter->data = 0;
     if (data->cand)
         free(data->cand);
     ConnNetInfo_Destroy(data->net_info);
