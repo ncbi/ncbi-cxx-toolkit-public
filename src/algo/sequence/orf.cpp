@@ -103,6 +103,7 @@ void AddInterval(TRangeVec& intervals,
                     TSeqPos from, TSeqPos to,
                     bool from_fuzz=false, bool to_fuzz=false)
 {
+    if (!to_fuzz) to += 3; // add the stop codon
     intervals.emplace_back(new CSeq_interval);
     auto& interval = *intervals.back();
     interval.SetFrom(from);
@@ -127,22 +128,24 @@ inline void FindForwardOrfs(const TSeq& seq, TRangeVec& ranges,
                             size_t max_seq_gap,
                             bool stop_to_stop)
 {
-    vector<vector<TSeqPos> > stops;
-    stops.resize(3);
+    vector<TSeqPos> stops[3]; // stops in three frames
     const objects::CTrans_table& tbl =
         objects::CGen_code_table::GetTransTable(genetic_code);
     int state = 0;
     for (unsigned int i = 0;  i < seq.size();  ++i) {
         state = tbl.NextCodonState(state, seq[i]);
         if (tbl.IsOrfStop(state)) {
-            stops[(i - 2) % 3].push_back(i - 2);
+            auto codon_start = i -2;
+            auto frame = codon_start % 3;
+            stops[frame].push_back(codon_start);
         }
         if (IsGapOrN(seq[i])) {
             unsigned int j = i;
             while (++j < seq.size() && IsGapOrN(seq[j]))
                 state = tbl.NextCodonState(state, seq[j]);
             if (j - i > max_seq_gap) {
-                for (int f=0; f < 3; ++f) {
+                // record gap begin/end in all three frames
+                for (int f = 0; f < 3; ++f) {
                     stops[f].push_back(i);
                     stops[f].push_back(j -1);
                 }
@@ -158,7 +161,6 @@ inline void FindForwardOrfs(const TSeq& seq, TRangeVec& ranges,
         stops[frame].push_back(seq.size());
         stops[frame].push_back(seq.size());
 
-        bool gap_before = true;
         from = frame;
         for (unsigned int i = 0; i < stops[frame].size() -1;  i++) {
             TSeqPos from0 = from;
@@ -168,7 +170,7 @@ inline void FindForwardOrfs(const TSeq& seq, TRangeVec& ranges,
 
             if (stop >= min_length_bp + from) {
 
-            to = ((stop - from) / 3) * 3 + from - 1; // cerr << from << " " << to << " " << stop << endl;
+            to = ((stop - from) / 3) * 3 + from - 1; // end of full codon before stop
             _ASSERT( gap_after || to+1==stop );
             if (to +1 >= min_length_bp + from) {
                 set<TSeqPos> starts;
@@ -214,7 +216,6 @@ inline void FindForwardOrfs(const TSeq& seq, TRangeVec& ranges,
             } else {
                 from = stop +3;
             }
-            gap_before = gap_after;
         }
     }
 }
@@ -260,8 +261,6 @@ static void s_FindOrfs(const TSeq& seq, COrf::TLocVec& results,
                     genetic_code, allowable_starts, longest_orfs, max_seq_gap, stop_to_stop);
     for (auto& interval: ranges) {
         CRef<objects::CSeq_loc> orf(new objects::CSeq_loc());
-        if (!interval->IsPartialStop(eExtreme_Positional))
-            interval->SetTo() += 3;
         orf->SetInt().Assign(*interval);
         orf->SetInt().SetStrand(objects::eNa_strand_plus);
         results.push_back(orf);
@@ -283,15 +282,16 @@ static void s_FindOrfs(const TSeq& seq, COrf::TLocVec& results,
                     genetic_code, allowable_starts, longest_orfs, max_seq_gap, stop_to_stop);
     for (auto& interval: ranges) {
         CRef<objects::CSeq_loc> orf(new objects::CSeq_loc);
-        if (!interval->IsPartialStop(eExtreme_Positional))
-            interval->SetTo() += 3;
+
+        // convert from the complement to the original sequence
         unsigned int from = comp.size() - interval->GetTo() - 1;
-        orf->SetInt().SetFrom(from);
         unsigned int to = comp.size() - interval->GetFrom() - 1;
+        orf->SetInt().SetFrom(from);
         orf->SetInt().SetTo(to);
         orf->SetInt().SetStrand(objects::eNa_strand_minus);
         orf->SetPartialStart(interval->IsPartialStop(eExtreme_Positional), eExtreme_Positional);
         orf->SetPartialStop(interval->IsPartialStart(eExtreme_Positional), eExtreme_Positional);
+
         results.push_back(orf);
     }
 }
