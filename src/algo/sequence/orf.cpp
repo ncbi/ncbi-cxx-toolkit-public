@@ -68,12 +68,12 @@ bool IsGapOrN(const char c)
 
 // Find the lowest position, in-frame relative to \p from in [from, to_open)
 // such that codon begining at that position is on a list of \p allowable_starts
-// and there's no more than max_seq_gap consecutive gap-or-N bases between the 
+// and there's no more than max_seq_gap consecutive gap-or-N bases between the
 // putative start and to_open. (gap is any char other than extended IUPAC residues)
 //
 // return to_open iff not found.
 template<class TSeq>
-set<TSeqPos> FindStarts(const TSeq& seq, 
+set<TSeqPos> FindStarts(const TSeq& seq,
                               TSeqPos from, TSeqPos to,
                               const vector<string>& allowable_starts)
 {
@@ -84,12 +84,12 @@ set<TSeqPos> FindStarts(const TSeq& seq,
 
     for (TSeqPos pos = inframe_to_open - 3;
          pos >= from && pos < inframe_to_open;
-         pos -= 3) 
+         pos -= 3)
     {
         ITERATE(vector<string>, it, allowable_starts) {
-            if (   seq[pos + 0] == (*it)[0] 
-                && seq[pos + 1] == (*it)[1] 
-                && seq[pos + 2] == (*it)[2]) 
+            if (   seq[pos + 0] == (*it)[0]
+                && seq[pos + 1] == (*it)[1]
+                && seq[pos + 2] == (*it)[2])
             {
                 starts.insert(pos);
                 break;
@@ -129,7 +129,7 @@ inline void FindForwardOrfs(const TSeq& seq, TRangeVec& ranges,
 {
     vector<vector<TSeqPos> > stops;
     stops.resize(3);
-    const objects::CTrans_table& tbl = 
+    const objects::CTrans_table& tbl =
         objects::CGen_code_table::GetTransTable(genetic_code);
     int state = 0;
     for (unsigned int i = 0;  i < seq.size();  ++i) {
@@ -149,7 +149,7 @@ inline void FindForwardOrfs(const TSeq& seq, TRangeVec& ranges,
             }
             i = j - 1;
         }
-        }
+    }
 
     TSeqPos from, to;
     // for each reading frame, calculate the orfs
@@ -163,7 +163,7 @@ inline void FindForwardOrfs(const TSeq& seq, TRangeVec& ranges,
         for (unsigned int i = 0; i < stops[frame].size() -1;  i++) {
             TSeqPos from0 = from;
             TSeqPos stop = stops[frame][i];
-            
+
             bool gap_after = (stop >= seq.size() || IsGapOrN(seq[stop]));
 
             if (stop >= min_length_bp + from) {
@@ -171,10 +171,10 @@ inline void FindForwardOrfs(const TSeq& seq, TRangeVec& ranges,
             to = ((stop - from) / 3) * 3 + from - 1; // cerr << from << " " << to << " " << stop << endl;
             _ASSERT( gap_after || to+1==stop );
             if (to +1 >= min_length_bp + from) {
-                set<TSeqPos> starts; 
+                set<TSeqPos> starts;
                 if (!allowable_starts.empty()) {
-                    starts = FindStarts(seq, 
-                                        from, to, 
+                    starts = FindStarts(seq,
+                                        from, to,
                                         allowable_starts);
                     from = *starts.begin();
                 }
@@ -236,7 +236,7 @@ static void s_FindOrfs(const TSeq& seq, COrf::TLocVec& results,
     }
 
     if (min_length_bp < 3) min_length_bp = 3;
-    
+
     TRangeVec ranges;
 
     bool stop_to_stop = false;
@@ -299,8 +299,8 @@ static void s_FindOrfs(const TSeq& seq, COrf::TLocVec& results,
 
 vector<string> COrf::GetStartCodons(int genetic_code, bool include_atg, bool include_alt)
 {
-    const objects::CTrans_table& tbl = 
-            objects::CGen_code_table::GetTransTable(genetic_code); 
+    const objects::CTrans_table& tbl =
+            objects::CGen_code_table::GetTransTable(genetic_code);
 
     static const char* iupacs = "ACGTRYSWKMBDHVN";
     static const Uint1 k_num_iupacs = 15;
@@ -315,7 +315,7 @@ vector<string> COrf::GetStartCodons(int genetic_code, bool include_atg, bool inc
                 int state = tbl.SetCodonState(c1, c2, c3);
 
                 if(   (include_atg && tbl.IsATGStart(state))
-                   || (include_alt && tbl.IsAltStart(state)) ) 
+                   || (include_alt && tbl.IsAltStart(state)) )
                 {
                     codons.resize(codons.size() + 1);
                     codons.back().resize(3);
