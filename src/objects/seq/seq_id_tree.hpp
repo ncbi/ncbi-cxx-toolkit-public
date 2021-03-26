@@ -1032,7 +1032,7 @@ private:
 
     // Index by mol+chain, no date - too complicated
     typedef vector<CSeq_id_Info*>  TSubMolList;
-    typedef map<string, TSubMolList, PNocase> TMolMap;
+    typedef map<string, TSubMolList, PCase> TMolMap;
 
     TMolMap m_MolMap;
 };
