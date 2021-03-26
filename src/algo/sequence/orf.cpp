@@ -133,6 +133,10 @@ inline void FindForwardOrfs(const TSeq& seq, TRangeVec& ranges,
         objects::CGen_code_table::GetTransTable(genetic_code);
     int state = 0;
     for (unsigned int i = 0;  i < seq.size();  ++i) {
+        state = tbl.NextCodonState(state, seq[i]);
+        if (tbl.IsOrfStop(state)) {
+            stops[(i - 2) % 3].push_back(i - 2);
+        }
         if (IsGapOrN(seq[i])) {
             unsigned int j = i;
             while (++j < seq.size() && IsGapOrN(seq[j]))
@@ -143,14 +147,9 @@ inline void FindForwardOrfs(const TSeq& seq, TRangeVec& ranges,
                     stops[f].push_back(j -1);
                 }
             }
-            i = j;
-        } else {
-            state = tbl.NextCodonState(state, seq[i]);
+            i = j - 1;
         }
-        if (tbl.IsOrfStop(state)) {
-            stops[(i - 2) % 3].push_back(i - 2);
         }
-    }
 
     TSeqPos from, to;
     // for each reading frame, calculate the orfs

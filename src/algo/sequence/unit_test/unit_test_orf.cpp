@@ -111,7 +111,7 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
             longest_orfs = true;
             allowable_starts.erase(longest);
         }
-        
+
         const CSeq_id& seq_id = *ref_annot->GetData().GetFtable().front()->GetLocation().GetId();
         CBioseq_Handle bsh = scope.GetBioseqHandle(seq_id);
 
@@ -151,4 +151,46 @@ BOOST_AUTO_TEST_CASE(tiny_islands)
         COrf::FindOrfs(seq, loc_vec, 0, 1, allowable_starts, false, 10)
         );
     BOOST_CHECK_EQUAL(loc_vec.size(), 2);
+}
+
+BOOST_AUTO_TEST_CASE(first_n)
+{
+    // the very last N caused lookup beyond sequence
+    // the very first N would become the last on minus strand,
+    // can be extended beyond sequence and
+    // become negative when converted back
+    string seq =
+        "NTCACCTTTTCGCCCCTCGGCGACTTACTTTGAGAGGCCAAAGTAAGCAAAGCCTTTTGCTCCGGTTCC";
+    vector<string> allowable_starts;
+    COrf::TLocVec loc_vec;
+    BOOST_CHECK_NO_THROW(COrf::FindOrfs(seq, loc_vec, 60, 11, allowable_starts,
+                                        true,  // longest_orfs
+                                        10000));
+    for (auto& loc: loc_vec) {
+        BOOST_CHECK(loc->GetStart(eExtreme_Positional) <
+                    loc->GetStop(eExtreme_Positional));
+    }
+    BOOST_CHECK(loc_vec.size() > 0);
+}
+BOOST_AUTO_TEST_CASE(short_n)
+{
+    // the first N used to be ignored in codon state calculation
+    string seq =
+        "ATGCTGANAA"
+        "ATGTTGNAAA"
+        "ATGCCCTGA";
+    vector<string> allowable_starts = {"ATG"};
+    COrf::TLocVec loc_vec;
+    BOOST_CHECK_NO_THROW(COrf::FindOrfs(seq, loc_vec, 3, 11, allowable_starts,
+                                        true,  // longest_orfs
+                                        10000));
+    for (auto& loc: loc_vec) {
+        cerr << loc->GetStart(eExtreme_Biological) << ".." <<
+            loc->GetStop(eExtreme_Biological) << endl;
+    }
+    BOOST_CHECK_EQUAL(count_if(loc_vec.begin(),loc_vec.end(),
+                            [](const CRef<CSeq_loc>& a){
+                                return !a->IsPartialStop(eExtreme_Biological);
+                            }),
+                      1);
 }
