@@ -99,7 +99,7 @@ const bool              kDefaultTestSeqIdIgnoreError = true;
 const bool              kDefaultSSLEnable = false;
 const string            kDefaultSSLCertFile = "";
 const string            kDefaultSSLKeyFile = "";
-const string            kDefaultSSLCiphers = "TLSv1.2";
+const string            kDefaultSSLCiphers = "TLSv1.2:!NULL-SHA256";
 
 static const string     kDaemonizeArgName = "daemonize";
 
