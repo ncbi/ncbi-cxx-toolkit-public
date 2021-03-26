@@ -161,6 +161,10 @@ protected:
         {
             return *m_DBServiceMapper;
         }
+        IDBServiceMapper& GetDBServiceMapper(void)
+        {
+            return *m_DBServiceMapper;
+        }
         CServiceInfo& GetServiceInfo(const string& service_name);
 
     private:
