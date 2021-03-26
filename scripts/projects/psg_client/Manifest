@@ -28,3 +28,5 @@ Linux64-Centos         : Release : GCC.sh --without-debug --with-optimization --
 Linux64-Centos         : Debug : GCC.sh --with-debug --with-mt --without-bdb  --without-runpath
 Linux64-Ubuntu         : Release : GCC.sh --without-debug --with-optimization --with-symbols --with-mt --without-bdb --without-runpath
 Linux64-Ubuntu         : Debug : GCC.sh --with-debug --with-mt --without-bdb  --without-runpath
+
+USE_COMPONENTS
