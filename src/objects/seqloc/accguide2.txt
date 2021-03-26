@@ -2812,15 +2812,15 @@ special  CAJJIQ000000000-CAJJJK999999999  embl_tpa_wgs_nuc # 6+9
 special  CAJJJM000000000-CAJMTE999999999  embl_tpa_wgs_nuc # 6+9
 
 # Some "EMBL" TPA nucleotide accessions are really third-party annotations.
-special  HBHG00000000-HBHG99999999  embl_tpa_tsa_nuc
-special  HBHS00000000-HBHS99999999  embl_tpa_tsa_nuc
-special  HBRC00000000-HBRC99999999  embl_tpa_tsa_nuc
-special  HBRG00000000-HBRG99999999  embl_tpa_tsa_nuc
-special  HBRM00000000-HBRN99999999  embl_tpa_tsa_nuc
-special  HBRR00000000-HBRS99999999  embl_tpa_tsa_nuc
-special  HBRU00000000-HBRV99999999  embl_tpa_tsa_nuc
-special  HBRZ00000000-HBRZ99999999  embl_tpa_tsa_nuc
-special  HBSB00000000-HBSP99999999  embl_tpa_tsa_nuc
+special  HBHG00000000-HBHG99999999  embl_tpa_tsa_nuc # 4+8
+special  HBHS00000000-HBHS99999999  embl_tpa_tsa_nuc # 4+8
+special  HBRC00000000-HBRC99999999  embl_tpa_tsa_nuc # 4+8
+special  HBRG00000000-HBRG99999999  embl_tpa_tsa_nuc # 4+8
+special  HBRM00000000-HBRN99999999  embl_tpa_tsa_nuc # 4+8
+special  HBRR00000000-HBRS99999999  embl_tpa_tsa_nuc # 4+8
+special  HBRU00000000-HBRV99999999  embl_tpa_tsa_nuc # 4+8
+special  HBRZ00000000-HBRZ99999999  embl_tpa_tsa_nuc # 4+8
+special  HBSB00000000-HBSP99999999  embl_tpa_tsa_nuc # 4+8
 
 # Some "EMBL" 8- and 10-character protein accessions are really third-party
 # annotations.
