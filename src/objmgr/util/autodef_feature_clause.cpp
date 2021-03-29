@@ -1496,18 +1496,21 @@ bool CAutoDefFeatureClause::IsExonWithNumber() const
 {
     bool rval = false;
 
-    if (m_MainFeat.IsSetData() &&
-        m_MainFeat.GetData().GetSubtype() == CSeqFeatData::eSubtype_exon &&
-        m_MainFeat.IsSetQual()) {
-        ITERATE(CSeq_feat::TQual, it, m_MainFeat.GetQual()) {
-            if ((*it)->IsSetQual() &&
-                NStr::Equal((*it)->GetQual(), "number") &&
-                (*it)->IsSetVal() &&
-                !NStr::IsBlank((*it)->GetVal())) {
-                rval = true;
-                break;
+    try {
+        if (m_MainFeat.IsSetData() &&
+            m_MainFeat.GetData().GetSubtype() == CSeqFeatData::eSubtype_exon &&
+            m_MainFeat.IsSetQual()) {
+            ITERATE(CSeq_feat::TQual, it, m_MainFeat.GetQual()) {
+                if ((*it)->IsSetQual() &&
+                    NStr::Equal((*it)->GetQual(), "number") &&
+                    (*it)->IsSetVal() &&
+                    !NStr::IsBlank((*it)->GetVal())) {
+                    rval = true;
+                    break;
+                }
             }
         }
+    } catch ( exception& ) {
     }
     return rval;
 }
