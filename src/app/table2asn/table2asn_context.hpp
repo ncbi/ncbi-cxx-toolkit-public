@@ -142,6 +142,7 @@ public:
     bool   m_augustus_fix{ false };
     bool   m_make_flatfile{ false };
     bool   m_run_discrepancy{ false };
+    bool   m_split_discrepancy{ false };
     bool   m_accumulate_mods{ false };
     bool   m_binary_asn1_output { false };
     NDiscrepancy::EGroup m_discrepancy_group{ NDiscrepancy::eOncaller };

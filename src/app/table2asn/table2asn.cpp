@@ -330,6 +330,7 @@ may be implemented in the future; RW-1253
       mm/dd/yyyy", CArgDescriptions::eString); // done
 
     arg_desc->AddFlag("Z", "Output discrepancy report");
+    arg_desc->AddFlag("split-dr", "Create unique discrepancy report for each output file");
 
     arg_desc->AddOptionalKey("c", "String", "Cleanup (combine any of the following letters)\n\
       b Basic cleanup (default)\n\
@@ -714,6 +715,8 @@ int CTbl2AsnApp::Run()
     if (args["Z"])
     {
         m_context.m_run_discrepancy = true;
+        if (args["split-dr"])
+            m_context.m_split_discrepancy = true;
     }
 
     if (args["locus-tag-prefix"] || args["no-locus-tags-needed"]) {
@@ -1096,7 +1099,10 @@ void CTbl2AsnApp::ProcessOneEntry(
 
         if (m_context.m_run_discrepancy)
         {
-            m_validator->CollectDiscrepancies(*obj, m_context.m_eukaryote, m_context.m_disc_lineage);
+            if(m_context.m_split_discrepancy)
+                m_validator->ReportDiscrepancy(*obj, m_context.m_eukaryote, m_context.m_disc_lineage);
+            else
+                m_validator->CollectDiscrepancies(*obj, m_context.m_eukaryote, m_context.m_disc_lineage);
         }
 
         if (m_context.m_make_flatfile)
@@ -1239,7 +1245,7 @@ void CTbl2AsnApp::ProcessAlignmentFile()
         if (m_context.m_save_bioseq_set && 
             pResult->GetThisTypeInfo()->IsType(CSeq_entry::GetTypeInfo())) {
 
-            const CSeq_entry* pTempEntry 
+            const CSeq_entry* pTempEntry
                 = static_cast<const CSeq_entry*>(pResult.GetPointer());
             if (pTempEntry->IsSet()) {
                 m_reader->WriteObject(pTempEntry->GetSet(), *pOstream);

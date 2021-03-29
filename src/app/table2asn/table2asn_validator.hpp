@@ -27,9 +27,10 @@ public:
     void UpdateECNumbers(objects::CSeq_entry& entry);
     void ReportErrors(CConstRef<objects::CValidError> errors, CNcbiOstream& out);
     void ReportErrorStats(CNcbiOstream& out);
-    size_t TotalErrors() const; 
+    size_t TotalErrors() const;
 
-    void CollectDiscrepancies(CSerialObject& obj, bool eucariote, const string& lineage);
+    void CollectDiscrepancies(const CSerialObject& obj, bool eukaryote, const string& lineage);
+    void ReportDiscrepancy(const CSerialObject& obj, bool eukaryote, const string& lineage);
     void ReportDiscrepancies();
 
 protected:
