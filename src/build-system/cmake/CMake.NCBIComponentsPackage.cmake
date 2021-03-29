@@ -36,7 +36,7 @@ function(NCBI_define_Pkgcomponent)
         endif()
     endif()
 
-    set(NCBI_COMPONENT_${_name}_FOUND NO PARENT_SCOPE)
+    set(NCBI_COMPONENT_${DC_NAME}_FOUND NO PARENT_SCOPE)
     if(NCBI_COMPONENT_${DC_NAME}_DISABLED)
         message("DISABLED ${DC_NAME}")
     elseif(DEFINED CONAN_${DC_PACKAGE}_ROOT)
@@ -74,6 +74,9 @@ function(NCBI_define_Pkgcomponent)
         set(HAVE_LIB${_upname} 1 PARENT_SCOPE)
         string(REPLACE "." "_" _altname ${_upname})
         set(HAVE_${_altname} 1 PARENT_SCOPE)
+
+        list(APPEND NCBI_ALL_COMPONENTS ${DC_NAME})
+        set(NCBI_ALL_COMPONENTS ${NCBI_ALL_COMPONENTS} PARENT_SCOPE)
         if(NCBI_TRACE_COMPONENT_${DC_NAME} OR NCBI_TRACE_ALLCOMPONENTS)
             message("----------------------")
             message("NCBI_define_Pkgcomponent: ${DC_NAME}")
@@ -209,3 +212,15 @@ NCBI_define_Pkgcomponent(NAME XML PACKAGE LIBXML2)
 #############################################################################
 # XSLT
 NCBI_define_Pkgcomponent(NAME XSLT PACKAGE LIBXSLT)
+
+#############################################################################
+# UV
+NCBI_define_Pkgcomponent(NAME UV PACKAGE LIBUV)
+
+#############################################################################
+# NGHTTP2
+NCBI_define_Pkgcomponent(NAME NGHTTP2 PACKAGE LIBNGHTTP2)
+
+#############################################################################
+# NETTLE
+NCBI_define_Pkgcomponent(NAME NETTLE PACKAGE NETTLE)
