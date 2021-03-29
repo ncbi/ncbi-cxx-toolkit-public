@@ -20868,6 +20868,10 @@ BOOST_AUTO_TEST_CASE(Test_USAStateCleanup)
     exm["USA: Florida, Puerto Rico"] = "Puerto Rico: Florida";
     exm["USA: Los Angeles"] = "USA: California, Los Angeles";
     exm["USA:Hayward"] = "USA: California, Hayward";
+    exm["USA:PR"] = "USA: Puerto Rico";
+    exm["USA:GU"] = "USA: Guam";
+    exm["USA:VI"] = "USA: US Virgin Islands";
+    exm["USA:AS"] = "USA: American Samoa";
     CCountries::LoadUSAExceptionMap (exm);
 
     s_USAStateTest("USA: Arkansas, Washington", "USA: Arkansas, Washington", CCountries::e_Valid );
@@ -20882,7 +20886,10 @@ BOOST_AUTO_TEST_CASE(Test_USAStateCleanup)
     s_USAStateTest("USA: Florida, Puerto Rico", "Puerto Rico: Florida", CCountries::e_NotUSA );
 
     s_USAStateTest("USA:Los Angeles", "USA: California, Los Angeles", CCountries::e_Corrected );
-    s_USAStateTest("USA:Hayward", "USA: California, Hayward", CCountries::e_Corrected );}
+    s_USAStateTest("USA:Hayward", "USA: California, Hayward", CCountries::e_Corrected );
+
+    s_USAStateTest("USA:GU", "USA: Guam", CCountries::e_Corrected );
+}
 
 
 BOOST_AUTO_TEST_CASE(Test_NewFixCountry)
@@ -20955,6 +20962,11 @@ BOOST_AUTO_TEST_CASE(Test_NewFixCountry)
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("UK: Whiteford Burrows: Gower: Wales"), "United Kingdom: Whiteford Burrows, Gower, Wales");
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("USA:DE:Dover"), "USA:DE,Dover");
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Burma:A:B"), "Burma:A,B");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Puerto Rico"), "Puerto Rico");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Puerto Rico, San Juan", true), "USA: Puerto Rico, San Juan");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Guam", true), "USA: Guam");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("American Samoa", true), "USA: American Samoa");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Virgin Islands", true), "USA: US Virgin Islands");
 }
 
 

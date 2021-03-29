@@ -298,7 +298,7 @@ public:
     static bool IsSubstringOfStringInList(const string& phrase, const string& country1, size_t pos1);
     static bool ContainsMultipleCountryNames (const string &phrase);
     static string GetCorrectedCountryCapitalization(const string& country);
-    static string NewFixCountry (const string& input);
+    static string NewFixCountry (const string& input, bool us_territories = false);
     static bool ChangeExtraColonsToCommas(string& country);
     static string CountryFixupItem(const string &input, bool capitalize_after_colon);
     typedef CStaticPairArrayMap<const char*, const char*, PCase_CStr> TCStringPairsMap;

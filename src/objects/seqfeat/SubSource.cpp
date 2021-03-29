@@ -4429,7 +4429,7 @@ string CCountries::USAStateCleanup ( const string& country ) {
 
 // end of RW-1278
 
-string CCountries::NewFixCountry (const string& test)
+string CCountries::NewFixCountry (const string& test, bool us_territories)
 {
     // change requested for JIRA:SQD-1410
     if (s_SuppressCountryFix(test)) {
@@ -4456,6 +4456,17 @@ string CCountries::NewFixCountry (const string& test)
         input = old_name_fix->second;
         return input;
     }
+
+    if (us_territories) {
+        if ( NStr::StartsWith( input, "Puerto Rico") || NStr::StartsWith( input, "Guam") || NStr::StartsWith( input, "American Samoa") ) {
+            input = "USA: " + input;
+            return input;
+        } else if ( NStr::StartsWith( input, "Virgin Islands") ) {
+            input = "USA: US " + input;
+            return input;
+        }
+    }
+
     if (IsValid(input)) {
         CCountries::ChangeExtraColonsToCommas(input);
         return input;
