@@ -1307,7 +1307,8 @@ macro(NCBI_internal_process_project_requires)
         endif()     
     endforeach()
 
-    if (NOT NCBI_PTBMODE_COLLECT_DEPS AND NOT ${NCBI_${NCBI_PROJECT}_TYPE} STREQUAL "STATIC")
+    if (NOT NCBI_PTBMODE_COLLECT_DEPS AND (NOT ${NCBI_${NCBI_PROJECT}_TYPE} STREQUAL "STATIC"
+        OR DEFINED NCBI_PTBCFG_PACKAGE))
         get_property(_all GLOBAL PROPERTY NCBI_PTBPROP_IMPLREQ_${NCBI_PROJECT})
         foreach(_req IN LISTS _all)
             NCBI_util_parse_sign(${_req} _value _negate)
