@@ -344,7 +344,7 @@ void CValidError_bioseqset::ValidateNucProtSet
                             && !NStr::EndsWith(instantiated, "..")) {
                             generated += ".";
                         }
-                        if (!NStr::EqualNocase(instantiated, generated)) {
+                        if (!NStr::EqualNocase(instantiated, generated) && !NStr::EqualNocase("MAG " + instantiated, generated)) {
                             PostErr(eDiag_Warning, eErr_SEQ_DESCR_InconsistentProteinTitle,
                                     "Instantiated protein title does not match automatically "
                                     "generated title", seq);
