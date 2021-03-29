@@ -633,6 +633,10 @@ void CIgBlastnApp::Run_Formatter_Threads(void){
 // ================================================================================================
 void CIgBlastnApp::Init()
 {
+    if (m_UsageReport.IsEnabled()) {
+        m_UsageReport.AddParam(CBlastUsageReport::eVersion, GetVersion().Print());
+        m_UsageReport.AddParam(CBlastUsageReport::eProgram, (string) "igblastn");
+    }
     // formulate command line arguments
     
     m_CmdLineArgs.Reset(new CIgBlastnAppArgs());
@@ -665,6 +669,9 @@ unsigned int  CIgBlastnApp::x_CountUserBatches(CBlastInputSourceConfig &iconfig,
 
 int CIgBlastnApp::Run(void)
 {
+    
+    string seq_type = NcbiEmptyString;
+    string organism = NcbiEmptyString;
     int status = BLAST_EXIT_SUCCESS;
     m_any_started = false; // no threads are running
     try {
@@ -740,6 +747,11 @@ int CIgBlastnApp::Run(void)
         m_ig_args.Reset(m_CmdLineArgs->GetIgBlastArgs());
         m_ig_opts =  m_ig_args->GetIgBlastOptions();
         
+        if (m_UsageReport.IsEnabled()) {
+            //for logging
+            seq_type = m_ig_opts->m_SequenceType;
+            organism = m_ig_opts->m_Origin;
+        }
         //this is just for formatter to print out correct penalty info since
         //igblast does not have standard penalty parameter
         m_opts_hndl->SetOptions().SetMismatchPenalty(m_ig_opts->m_V_penalty);
@@ -797,6 +809,7 @@ int CIgBlastnApp::Run(void)
 	}
 	//################ Main thread:  run worker & format threads - end  #####################################
 
+  
         CNcbiOstream* outfile = NULL;
             
         if (args.Exist("clonotype_out") && args["clonotype_out"] && 
@@ -953,6 +966,12 @@ int CIgBlastnApp::Run(void)
         }
 
     } CATCH_ALL(status)
+       
+    if (m_UsageReport.IsEnabled()) {
+        m_UsageReport.AddParam(CBlastUsageReport::eExitStatus, status);
+        m_UsageReport.AddParam(CBlastUsageReport::eInputType, seq_type);
+        m_UsageReport.AddParam(CBlastUsageReport::eDBTaxInfo, organism);
+    }
     return status;
 }
 

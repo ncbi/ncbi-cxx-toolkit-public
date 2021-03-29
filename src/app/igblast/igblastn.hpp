@@ -233,7 +233,7 @@ private:
     CRef < CIgFormatter  >                  m_formatter;
     size_t				    m_worker_thread_num;
     CRef <CSraInputSource>                  m_sra_src;
-
+    CBlastUsageReport m_UsageReport;
 };
 
 #endif

@@ -64,10 +64,16 @@ private:
 
     /// This application's command line args
     CRef<CIgBlastpAppArgs> m_CmdLineArgs; 
+    CBlastUsageReport m_UsageReport;
 };
 
 void CIgBlastpApp::Init()
 {
+
+    if (m_UsageReport.IsEnabled()) {
+        m_UsageReport.AddParam(CBlastUsageReport::eVersion, GetVersion().Print());
+        m_UsageReport.AddParam(CBlastUsageReport::eProgram, (string) "igblastp");
+    }
     // formulate command line arguments
 
     m_CmdLineArgs.Reset(new CIgBlastpAppArgs());
@@ -81,7 +87,7 @@ void CIgBlastpApp::Init()
 int CIgBlastpApp::Run(void)
 {
     int status = BLAST_EXIT_SUCCESS;
-
+    string organism = NcbiEmptyString;
     try {
 
         // Allow the fasta reader to complain on invalid sequence input
@@ -111,7 +117,11 @@ int CIgBlastpApp::Run(void)
         /*** Initialize igblast database/subject and options ***/
         CRef<CIgBlastArgs> ig_args(m_CmdLineArgs->GetIgBlastArgs());
         CRef<CIgBlastOptions> ig_opts(ig_args->GetIgBlastOptions());
-
+       
+        if (m_UsageReport.IsEnabled()) {
+            //logging
+            organism = ig_opts->m_Origin;
+        }
         /*** Initialize the database/subject ***/
         bool db_is_remote = true;
         CRef<CScope> scope;
@@ -224,6 +234,10 @@ int CIgBlastpApp::Run(void)
         }
 
     } CATCH_ALL(status)
+    if (m_UsageReport.IsEnabled()) {
+        m_UsageReport.AddParam(CBlastUsageReport::eExitStatus, status);
+        m_UsageReport.AddParam(CBlastUsageReport::eDBTaxInfo, organism);
+    }
     return status;
 }
 
