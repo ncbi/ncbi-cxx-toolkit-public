@@ -214,6 +214,10 @@ NCBI_define_Pkgcomponent(NAME XML PACKAGE LIBXML2)
 NCBI_define_Pkgcomponent(NAME XSLT PACKAGE LIBXSLT)
 
 #############################################################################
+# EXSLT
+NCBI_define_Pkgcomponent(NAME EXSLT PACKAGE LIBXSLT)
+
+#############################################################################
 # UV
 NCBI_define_Pkgcomponent(NAME UV PACKAGE LIBUV)
 
