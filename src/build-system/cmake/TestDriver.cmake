@@ -147,7 +147,7 @@ if(WIN32)
     endif()
 else()
     set(ENV{PATH} "${NCBITEST_SCRIPTDIR}/common/impl:${NCBITEST_CHECK_SCRIPTDIR}:.:${_cfg_bin}:${_cfg_lib}:$ENV{PATH}")
-    if(IS_AUTOMATED})
+    if(IS_AUTOMATED)
         # Utility and $HOME/bin (for Ubuntu), /opt/ncbi/bin/ for all Unix hosts
         set(ENV{PATH} "$ENV{NCBI}/bin/_production/CPPCORE:/opt/ncbi/bin/:$ENV{HOME}/bin:$ENV{PATH}")
     endif()
