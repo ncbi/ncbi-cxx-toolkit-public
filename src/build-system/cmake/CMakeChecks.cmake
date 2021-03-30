@@ -188,7 +188,7 @@ endif()
 #set(CMAKE_MODULE_PATH "${NCBI_SRC_ROOT}/build-system/cmake/" ${CMAKE_MODULE_PATH})
 list(APPEND CMAKE_MODULE_PATH "${NCBI_TREE_CMAKECFG}")
 
-
+if(NOT NCBI_PTBCFG_COLLECT_REQUIRES)
 #############################################################################
 # Basic checks
 include(${NCBI_TREE_CMAKECFG}/CMakeChecks.basic-checks.cmake)
@@ -370,3 +370,5 @@ else()
         configure_file(${_tk_common_include}/ncbi_revision.h.in ${NCBITK_INC_ROOT}/common/ncbi_revision.h)
     endif()
 endif()
+
+endif(NOT NCBI_PTBCFG_COLLECT_REQUIRES)
