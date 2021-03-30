@@ -551,28 +551,10 @@ static void s_GetPercentCoverage(CScope& scope, const CSeq_align& align,
         seq_len = ranges.GetCoveredLength();
     } else {
         if (align.GetSegs().IsSpliced()  &&
-            align.GetSegs().GetSpliced().IsSetPoly_a()) {
-            seq_len = align.GetSegs().GetSpliced().GetPoly_a();
-    
-            if (align.GetSegs().GetSpliced().IsSetProduct_strand()  &&
-                align.GetSegs().GetSpliced().GetProduct_strand() == eNa_strand_minus) {
-                if (align.GetSegs().GetSpliced().IsSetProduct_length()) {
-                    seq_len = align.GetSegs().GetSpliced().GetProduct_length() - seq_len;
-                } else {
-                    CBioseq_Handle bsh = scope.GetBioseqHandle(align.GetSeq_id(0));
-                    seq_len = bsh.GetBioseqLength() - seq_len;
-                }
-            }
-    
-            if (align.GetSegs().GetSpliced().GetProduct_type() ==
-                CSpliced_seg::eProduct_type_protein) {
-                /// NOTE: alignment length is always reported in nucleotide
-                /// coordinates
-                seq_len *= 3;
-            }
-        }
-
-        if ( !seq_len ) { 
+            align.GetSegs().GetSpliced().IsSetProduct_length())
+        {
+            seq_len = align.GetSegs().GetSpliced().GetProduct_length();
+        } else {
             const auto &query_id = align.GetSeq_id(query);
             const objects::CBioseq_Handle& bsh_seq = scope.GetBioseqHandle(query_id);
             if (!bsh_seq) {
@@ -582,25 +564,34 @@ static void s_GetPercentCoverage(CScope& scope, const CSeq_align& align,
                     " in order to calculate coverage");
             }
             seq_len = bsh_seq.GetBioseqLength();
-            
-            //seq_len = align.GetSeqRange(query).GetLength();
-
-            //
-            // determine if the alignment is protein-to-genomic
-            //
-            bool is_protein_to_genomic = s_IsProteinToGenomic(scope, align);
-            if (is_protein_to_genomic) {
-                /// alignment is protein-to-genomic alignment
-                /// NOTE: alignment length is always reported in nucleotide
-                /// coordinates
-                seq_len *= 3;
-                if (align.GetSegs().IsStd()) {
-                    /// odd corner case:
-                    /// std-seg alignments of protein to nucleotide
-                    covered_bases *= 3;
-                }   
-            }
         }  
+        if (align.GetSegs().IsSpliced()  &&
+            align.GetSegs().GetSpliced().IsSetPoly_a()) {
+    
+            if (align.GetSegs().GetSpliced().IsSetProduct_strand()  &&
+                align.GetSegs().GetSpliced().GetProduct_strand() == eNa_strand_minus) {
+                seq_len -= align.GetSegs().GetSpliced().GetPoly_a();
+            } else {
+                seq_len = align.GetSegs().GetSpliced().GetPoly_a();
+            }
+        }
+
+            
+        //
+        // determine if the alignment is protein-to-genomic
+        //
+        bool is_protein_to_genomic = s_IsProteinToGenomic(scope, align);
+        if (is_protein_to_genomic) {
+            /// alignment is protein-to-genomic alignment
+            /// NOTE: alignment length is always reported in nucleotide
+            /// coordinates
+            seq_len *= 3;
+            if (align.GetSegs().IsStd()) {
+                /// odd corner case:
+                /// std-seg alignments of protein to nucleotide
+                covered_bases *= 3;
+            }   
+        }
     }
 
     if (covered_bases) {
