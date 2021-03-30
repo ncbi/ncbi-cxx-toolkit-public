@@ -47,22 +47,26 @@ USING_SCOPE(blast);
 USING_SCOPE(objects);
 #endif
 static void
-s_UnregisterDataLoader(const string & dbloader_name)
+s_UnregisterDataLoader(const string & dbloader_prefix)
 {
-	try {
-		if (dbloader_name != kEmptyStr ) {
- 	   	CRef<CObjectManager> om = CObjectManager::GetInstance();
-  	 		if(om->RevokeDataLoader(dbloader_name)){
-   			 	_TRACE("Unregistered Data Loader:  " + dbloader_name);
-   			}
-   			else {
-   				_TRACE("Failed to Unregistered Data Loader:  " + dbloader_name);
-   			}
-   		}
-	}
-	catch(CException &) {
-		_TRACE("Failed to unregister data loader: " + dbloader_name);
-	}
+    CObjectManager::TRegisteredNames loader_names;
+    CRef<CObjectManager> om = CObjectManager::GetInstance();
+    om->GetRegisteredNames(loader_names);
+    ITERATE(CObjectManager::TRegisteredNames, loader_name, loader_names) {
+        if (NStr::Find(*loader_name, dbloader_prefix) != NPOS) {
+        	try {
+        		if(om->RevokeDataLoader(*loader_name)){
+        			_TRACE("Unregistered Data Loader:  " + *loader_name);
+        		}
+        		else {
+        			_TRACE("Failed to Unregistered Data Loader:  " + *loader_name);
+        		}
+        	}
+        	catch(CException &) {
+        		_TRACE("Failed to unregister data loader: " + *loader_name);
+        	}
+        }
+    }
 }
 
 void CBlastNodeMailbox::SendMsg(CRef<CBlastNodeMsg> msg)
@@ -76,7 +80,7 @@ CBlastNode::CBlastNode (int node_num, const CNcbiArguments & ncbi_args, const CA
 		                CBlastAppDiagHandler & bah, int query_index, int num_queries, CBlastNodeMailbox * mailbox):
                         m_NodeNum(node_num), m_NcbiArgs(ncbi_args), m_Args(args),
                         m_Bah(bah), m_QueryIndex(query_index), m_NumOfQueries(num_queries),
-                        m_QueriesLength(0), m_DataLoaderName(kEmptyStr)
+                        m_QueriesLength(0), m_DataLoaderPrefix(kEmptyStr)
 {
 	if(mailbox != NULL) {
 		m_Mailbox.Reset(mailbox);
@@ -88,8 +92,9 @@ CBlastNode::CBlastNode (int node_num, const CNcbiArguments & ncbi_args, const CA
 
 CBlastNode::~CBlastNode () {
 
-
-	s_UnregisterDataLoader(m_DataLoaderName);
+	if(m_DataLoaderPrefix != kEmptyStr) {
+		s_UnregisterDataLoader(m_DataLoaderPrefix);
+	}
 	if(m_Mailbox.NotEmpty()) {
 		m_Mailbox.Reset();
 	}
@@ -100,6 +105,16 @@ void CBlastNode::SendMsg(CBlastNodeMsg::EMsgType msg_type, void* ptr)
 	if (m_Mailbox.NotEmpty()) {
 		CRef<CBlastNodeMsg>  m( new CBlastNodeMsg(msg_type, ptr));
 		m_Mailbox->SendMsg(m);
+	}
+}
+
+void
+CBlastNode::SetDataLoaderPrefix()
+{
+	static const string kPrefixThread = "BLASTDB_THREAD";
+	int t_id = CThread::GetSelf();
+	if (t_id !=0) {
+		m_DataLoaderPrefix = kPrefixThread + NStr::IntToString(t_id) + "_";
 	}
 }
 

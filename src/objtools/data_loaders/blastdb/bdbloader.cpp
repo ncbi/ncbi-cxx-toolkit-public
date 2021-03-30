@@ -148,12 +148,13 @@ CBlastDbDataLoader::SBlastDbParam::SBlastDbParam(CRef<CSeqDB> db_handle,
 }
 
 static const string kPrefix = "BLASTDB_";
+static const string kPrefixThread = kPrefix + "THREAD";
 string CBlastDbDataLoader::GetLoaderNameFromArgs(const SBlastDbParam& param)
 {
 	int t_id = CThread::GetSelf();
 	if (t_id != 0) {
-		string thread_id = NStr::IntToString(t_id);
-		return kPrefix + param.m_DbName + DbTypeToStr(param.m_DbType) + "_" + thread_id;
+		string thread_id = kPrefixThread + NStr::IntToString(t_id) + "_";
+		return thread_id + param.m_DbName + DbTypeToStr(param.m_DbType);
 	}
 	else {
 		return kPrefix + param.m_DbName + DbTypeToStr(param.m_DbType);
@@ -165,9 +166,9 @@ string CBlastDbDataLoader::GetLoaderNameFromArgs(CConstRef<CSeqDB> db_handle)
     _ASSERT(db_handle.NotEmpty());
 	int t_id = CThread::GetSelf();
 	if (t_id != 0) {
-		string thread_id = NStr::IntToString(t_id);
-		return kPrefix + db_handle->GetDBNameList() +
-				DbTypeToStr(SeqTypeToDbType(db_handle->GetSequenceType())) + "_" + thread_id;
+		string thread_id = kPrefixThread + NStr::IntToString(t_id) + "_";
+		return thread_id + db_handle->GetDBNameList() +
+				DbTypeToStr(SeqTypeToDbType(db_handle->GetSequenceType()));
 	}
 	else {
 		return kPrefix + db_handle->GetDBNameList() +

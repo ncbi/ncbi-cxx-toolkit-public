@@ -272,13 +272,21 @@ CBlastScopeSource::x_InitGenbankDataLoader()
 /// manager. This is needed so that the priorities of the BLAST databases can
 /// be adjusted accordingly when multiple BLAST database data loaders are added
 /// to CScope objects (@sa AddDataLoaders)
+
 static int s_CountBlastDbDataLoaders()
 {
     int retval = 0;
     CObjectManager::TRegisteredNames loader_names;
     CObjectManager::GetInstance()->GetRegisteredNames(loader_names);
+    static const string kPrefix = "BLASTDB_";
+    static const string kPrefixThread = kPrefix + "THREAD";
+    int t_id = CThread::GetSelf();
+    string prefix = kPrefix;
+    if (t_id != 0) {
+    		prefix = kPrefixThread + NStr::IntToString(t_id) + "_";
+    }
     ITERATE(CObjectManager::TRegisteredNames, loader_name, loader_names) {
-        if (NStr::Find(*loader_name, "BLASTDB") != NPOS) {
+        if (NStr::Find(*loader_name, prefix) != NPOS) {
             retval++;
         }
     }

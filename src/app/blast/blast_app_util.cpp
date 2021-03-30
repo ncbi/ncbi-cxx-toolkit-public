@@ -175,14 +175,14 @@ InitializeQueryDataLoaderConfiguration(bool query_is_protein,
     return retval;
 }
 
-string
+void
 InitializeSubject(CRef<blast::CBlastDatabaseArgs> db_args, 
                   CRef<blast::CBlastOptionsHandle> opts_hndl,
                   bool is_remote_search,
                   CRef<blast::CLocalDbAdapter>& db_adapter, 
                   CRef<objects::CScope>& scope)
 {
-	string rv = kEmptyStr;
+	string dl = kEmptyStr;
     db_adapter.Reset();
 
     _ASSERT(db_args.NotEmpty());
@@ -225,12 +225,12 @@ InitializeSubject(CRef<blast::CBlastDatabaseArgs> db_args,
             // sequence data for formatting from this (local) source
             CRef<CSeqDB> seqdb = search_db->GetSeqDb();
             db_adapter.Reset(new CLocalDbAdapter(*search_db));
-            rv = RegisterOMDataLoader(seqdb);
-            scope->AddDataLoader(rv);
+            dl = RegisterOMDataLoader(seqdb);
+            scope->AddDataLoader(dl);
         } catch (const CSeqDBException&) {
             // The BLAST database couldn't be found, report this for local
             // searches, but for remote searches go on.
-        	rv = kEmptyStr;
+        	dl = kEmptyStr;
             if (is_remote_search ) {
                 db_adapter.Reset(new CLocalDbAdapter(*search_db));
             } else {
@@ -241,15 +241,15 @@ InitializeSubject(CRef<blast::CBlastDatabaseArgs> db_args,
 
     /// Set the BLASTDB data loader as the default data loader (if applicable)
     if (search_db.NotEmpty()) {
-        if ( rv != kEmptyStr) {
+        if ( dl != kEmptyStr) {
             // FIXME: will this work with multiple BLAST DBs?
-            scope->AddDataLoader(rv,  CBlastDatabaseArgs::kSubjectsDataLoaderPriority);
-            _TRACE("Setting " << rv << " priority to "
+            scope->AddDataLoader(dl,  CBlastDatabaseArgs::kSubjectsDataLoaderPriority);
+            _TRACE("Setting " << dl << " priority to "
                    << (int)CBlastDatabaseArgs::kSubjectsDataLoaderPriority
                    << " for subjects");
         }
     }
-    return rv;
+    return;
 }
 
 string RegisterOMDataLoader(CRef<CSeqDB> db_handle)

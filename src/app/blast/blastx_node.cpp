@@ -79,6 +79,7 @@ CBlastxNode::Main()
 	SetDiagPostPrefix(GetNodeIdStr().c_str());
 
     SetState(eRunning);
+    SetDataLoaderPrefix();
 	try {
 
         /*** Get the BLAST options ***/
@@ -97,9 +98,7 @@ CBlastxNode::Main()
         CRef<CBlastDatabaseArgs> db_args(m_CmdLineArgs->GetBlastDatabaseArgs());
         CRef<CLocalDbAdapter> db_adapter;
         CRef<CScope> scope;
-        string dl_name = InitializeSubject(db_args, opts_hndl, m_CmdLineArgs->ExecuteRemotely(),
-                         	 	 	 	   db_adapter, scope);
-        SetDataLoaderName(dl_name);
+        InitializeSubject(db_args, opts_hndl, m_CmdLineArgs->ExecuteRemotely(), db_adapter, scope);
         _ASSERT(db_adapter && scope);
 
         /*** Get the query sequence(s) ***/
