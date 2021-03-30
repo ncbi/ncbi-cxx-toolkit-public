@@ -1,3 +1,6 @@
+#ifndef OBJTOOLS_DATA_LOADERS_CDD_CDD_ACCESS__CDD_CLIENT__HPP
+#define OBJTOOLS_DATA_LOADERS_CDD_CDD_ACCESS__CDD_CLIENT__HPP
+
 /* $Id$
  * ===========================================================================
  *
@@ -30,21 +33,20 @@
  *
  */
 
-
-#ifndef OBJTOOLS_DATA_LOADERS_CDD_CDD_ACCESS__CDD_CLIENT__HPP
-#define OBJTOOLS_DATA_LOADERS_CDD_CDD_ACCESS__CDD_CLIENT__HPP
-
-
 #include <objtools/data_loaders/cdd/cdd_access/CDD_Request_Packet.hpp>
 #include <objtools/data_loaders/cdd/cdd_access/CDD_Reply.hpp>
 #include <serial/rpcbase.hpp>
-
+#include <objects/seq/seq_id_handle.hpp>
 
 BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 #define DEFAULT_CDD_SERVICE_NAME "getCddSeqAnnot"
+#define DEFAULT_CDD_POOL_SOFT_LIMIT 10
+#define DEFAULT_CDD_POOL_AGE_LIMIT 900
+#define DEFAULT_CDD_EXCLUDE_NUCLEOTIDES true
+
 
 class CSeq_id;
 class CID2_Blob_Id;
@@ -99,6 +101,61 @@ private:
     EDataFormat m_DataFormat;
 };
 
+
+class CCDDBlobCache;
+
+class NCBI_CDD_ACCESS_EXPORT CCDDClientPool : public CObject
+{
+public:
+    CCDDClientPool(const string& service_name = DEFAULT_CDD_SERVICE_NAME,
+        size_t pool_soft_limit = DEFAULT_CDD_POOL_SOFT_LIMIT,
+        time_t pool_age_limit = DEFAULT_CDD_POOL_AGE_LIMIT,
+        bool exclude_nucleotides = DEFAULT_CDD_EXCLUDE_NUCLEOTIDES);
+    ~CCDDClientPool(void);
+
+    typedef set<CSeq_id_Handle> TSeq_idSet;
+    typedef CID2_Blob_Id TBlobId;
+    typedef CRef<CCDD_Reply_Get_Blob_Id> TBlobInfo;
+    typedef CRef<CSeq_annot> TBlobData;
+
+    struct SCDDBlob {
+        TBlobInfo info;
+        TBlobData data;
+    };
+    typedef SCDDBlob TBlob;
+
+    SCDDBlob GetBlobBySeq_ids(const TSeq_idSet& ids);
+    TBlobInfo GetBlobIdBySeq_id(CSeq_id_Handle idh);
+    TBlobData GetBlobByBlobId(const TBlobId& blob_id);
+
+    bool IsValidId(const CSeq_id& id);
+
+    static string BlobIdToString(const TBlobId& blob_id);
+    static CRef<TBlobId> StringToBlobId(const string& s);
+
+private:
+    typedef multimap<time_t, CRef<CCDDClient> > TClientPool;
+    typedef TClientPool::iterator TClient;
+    friend class CCDDClientGuard;
+
+    TClient x_GetClient();
+    void x_ReleaseClient(TClient& client);
+    void x_DiscardClient(TClient& client);
+    bool x_CheckReply(CRef<CCDD_Reply>& reply, int serial, CCDD_Reply::TReply::E_Choice choice);
+    TBlobData x_RequestBlobData(const TBlobId& blob_id);
+
+    static int x_NextSerialNumber(void);
+
+    string              m_ServiceName;
+    size_t              m_PoolSoftLimit;
+    time_t              m_PoolAgeLimit;
+    bool                m_ExcludeNucleotides;
+    // bool                m_Compress;
+    mutable CFastMutex  m_PoolLock;
+    TClientPool         m_InUse;
+    TClientPool         m_NotInUse;
+    unique_ptr<CCDDBlobCache> m_Cache;
+};
 
 END_objects_SCOPE // namespace ncbi::objects::
 

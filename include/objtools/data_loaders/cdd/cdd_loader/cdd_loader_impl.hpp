@@ -82,40 +82,20 @@ private:
 };
 
 
-class CCDDBlobCache;
-
 class CCDDDataLoader_Impl : public CObject
 {
 public:
     CCDDDataLoader_Impl(const CCDDDataLoader::SLoaderParams& params);
     ~CCDDDataLoader_Impl(void);
 
-    typedef CDataLoader::TBlobId TBlobId;
     typedef CDataLoader::TSeq_idSet TSeq_idSet;
+    typedef CDataLoader::TBlobId TBlobId;
+    typedef CCDDClientPool::SCDDBlob TBlob;
 
     CDataLoader::TTSE_LockSet GetBlobBySeq_ids(const TSeq_idSet& ids, CDataSource& ds);
 
 private:
-    typedef multimap<time_t, CRef<CCDDClient> > TClientPool;
-    typedef TClientPool::iterator TClient;
-    friend class CCDDClientGuard;
-
-    bool x_IsValidId(const CSeq_id& id);
-    TClient x_GetClient();
-    void x_ReleaseClient(TClient& client);
-    void x_DiscardClient(TClient& client);
-    bool x_CheckReply(CRef<CCDD_Reply>& reply, int serial, CCDD_Reply::TReply::E_Choice choice);
-
-    static int x_NextSerialNumber(void);
-
-    string              m_ServiceName;
-    size_t              m_PoolSoftLimit;
-    time_t              m_PoolAgeLimit;
-    bool                m_ExcludeNucleotides;
-    mutable CFastMutex  m_PoolLock;
-    TClientPool         m_InUse;
-    TClientPool         m_NotInUse;
-    unique_ptr<CCDDBlobCache> m_Cache;
+    CCDDClientPool m_ClientPool;
 };
 
 END_SCOPE(objects)
