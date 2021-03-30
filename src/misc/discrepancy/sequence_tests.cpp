@@ -2133,12 +2133,12 @@ DISCREPANCY_CASE(CHROMOSOME_PRESENT, SEQ_SET, eSubmitter | eSmart, "Chromosome p
                             Qualifier = static_cast<CSubSource::ESubtype>(subtype->GetSubtype());
                         }
                         if (!s_areCompatible(Location, Qualifier)) {
-                            m_Objs["[n] chromosome[s] [is] present"].Add(*context.BioseqSetObjRef());
+                            m_Objs["one or more chromosomes are present"];
                         }
                     }
                 } else {
                     if (!s_areCompatible(Location, eSubtype_unknown)) {
-                        m_Objs["[n] chromosome[s] [is] present"].Add(*context.BioseqSetObjRef());
+                        m_Objs["one or more chromosomes are present"];
                     }
                 }
             }
