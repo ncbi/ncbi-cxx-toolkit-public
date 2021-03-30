@@ -185,24 +185,6 @@ void AppendSplitVersionParameter(CJsonNode &  node)
     node.SetByKey("split_version", split_version);
 }
 
-void AppendPsgProtocolParameter(CJsonNode &  node, bool  mandatory)
-{
-    CJsonNode   psg_protocol(CJsonNode::NewObjectNode());
-    psg_protocol.SetBoolean("mandatory", mandatory);
-
-    if (mandatory) {
-        psg_protocol.SetString("description",
-            "Indication whether to use the PSG protocol or not (Boolean). "
-            " Accepted values are: yes and no.");
-    } else {
-        psg_protocol.SetString("description",
-            "Indication whether to use the PSG protocol or not (Boolean). "
-            " Accepted values are: yes and no. Default: false");
-    }
-    node.SetByKey("psg_protocol", psg_protocol);
-
-}
-
 void AppendFmtParameter(CJsonNode &  node)
 {
     CJsonNode   fmt(CJsonNode::NewObjectNode());
@@ -438,7 +420,6 @@ CJsonNode  GetIdResolveRequestNode(void)
 
     AppendSeqIdParameter(id_resolve_params);
     AppendSeqIdTypeParameter(id_resolve_params);
-    AppendPsgProtocolParameter(id_resolve_params, false);
     AppendUseCacheParameter(id_resolve_params);
     AppendFmtParameter(id_resolve_params);
     AppendBioseqFlagParameter(id_resolve_params, "all_info");
@@ -475,7 +456,6 @@ CJsonNode  GetIdGetNaRequestNode(void)
         "Retrieves named annotations");
     CJsonNode   id_get_na_params(CJsonNode::NewObjectNode());
 
-    AppendPsgProtocolParameter(id_get_na_params, true);
     AppendSeqIdParameter(id_get_na_params);
     AppendSeqIdTypeParameter(id_get_na_params);
     AppendNamesParameter(id_get_na_params);
