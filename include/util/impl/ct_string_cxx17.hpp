@@ -30,7 +30,7 @@
  *
  * File Description:
  *
- *  compile time string that can calculate it's hash at compile time
+ *  compile time string that can be compared at compile time with or without case sensivity
  *  uses std::string_view as backend
  *  requires C++17
  *
@@ -38,138 +38,122 @@
 
 namespace compile_time_bits
 {
+    using tagStrCase = std::integral_constant<ncbi::NStr::ECase, ncbi::NStr::eCase>;
+    using tagStrNocase = std::integral_constant<ncbi::NStr::ECase, ncbi::NStr::eNocase>;
 
-    template<ncbi::NStr::ECase case_sensitive>
-    struct StrCompare
-    {        
-    };
+    /*
+        See: http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/n4640.pdf
+        Standard made implicit conversion of std::basic_string_view into std::string too strong,
+        it prevents implicit conversion and temporal object instantiation in some cases. 
+        For example some of these operations don't work:
 
-    template<>
-    struct StrCompare<ncbi::NStr::ECase::eCase>
-    {        
-        constexpr bool Equal(const std::string_view& l, const std::string_view& r) const
+        std::string_view view_a = "aaa";
+        const std::string_view& view_ref_a = view_a;
+        std::string str_a {view_a};
+        // std::string str_b = view_a; // this doens't work
+        // const std::string& str_ref_a = view_a; // this doens't work, cannot instantiate temporal object
+        const std::string& str_ref_b = "aaa";  // this works by instantiating temporal std::string object
+        const std::string_view& view_ref_b = "aaa";  // this works by instantiating temporal std::string_view object
+        std::string ReturnString()
         {
-            return l == r;
+            static constexpr std::string_view str {"a"};
+            //return str;  // this fails
+            return std::string{str}; // this works
         }
-        constexpr bool NotEqual(const std::string_view& l, const std::string_view& r) const
-        {
-            return l != r;
-        }
-        constexpr bool Less(const std::string_view& l, const std::string_view& r) const
-        {
-            return l < r;
-        }
-
-    };
-    template<>
-    struct StrCompare<ncbi::NStr::ECase::eNocase>
-    {        
-        constexpr int Compare(const std::string_view& l, const std::string_view& r) const
-        {
-            size_t _min = std::min(l.size(), r.size());
-            int result = 0;
-            size_t i=0;
-            while (i<_min && result==0)
-            {
-                int lc = l[i];
-                int rc = r[i];
-                lc = ('A' <= lc && lc <= 'Z') ? lc + 'a' - 'A' : lc;
-                rc = ('A' <= rc && rc <= 'Z') ? rc + 'a' - 'A' : rc;
-                result = (lc-rc);
-                i++;
-            }
-            if (result == 0)
-            {
-                if (l.size()<r.size())
-                    result = -1;
-                else 
-                if (l.size()>r.size())
-                    result = +1;
-            }
-            return result;
-        }
-        constexpr bool Equal(const std::string_view& l, const std::string_view& r) const
-        {
-            return (l.size() == r.size())? Compare(l, r)==0 : false;
-        }
-        constexpr bool NotEqual(const std::string_view& l, const std::string_view& r) const
-        {
-            return (l.size() == r.size())? Compare(l, r)!=0 : true;
-        }
-        constexpr bool Less(const std::string_view& l, const std::string_view& r) const
-        {
-            return Compare(l, r) < 0;
-        }
-    };
-
-    template<ncbi::NStr::ECase case_sensitive>
-    class ct_string
+    */
+  
+#if 0
+    template<class _Char>
+    using ct_basic_string = std::basic_string_view<_Char>;
+#else    
+    template<class _Char=char>
+    class ct_basic_string: public std::basic_string_view<_Char>
     {
     public:
-        template<typename _T, typename _Ty=typename std::remove_reference<_T>::type, typename _Arg=_Ty>
-        using if_available_to = typename std::enable_if<
-            std::is_constructible<_Ty, std::string_view>::value, _Arg>::type;
+        using char_type = _Char;
+        using sv = std::basic_string_view<char_type>;
 
-        template<typename _T, typename _Ty=typename std::remove_reference<_T>::type, typename _Arg=_Ty>
-        using if_available_from = typename std::enable_if<
-            std::is_constructible<std::string_view, const _Ty& >::value, _Arg>::type;
-
-        constexpr ct_string() noexcept = default;
-
+        constexpr ct_basic_string() noexcept = default;
+        
         template<size_t N>
-        constexpr ct_string(const char(&s)[N]) noexcept
-            : m_view{ s, N-1 } 
+        constexpr ct_basic_string(const char_type(&s)[N]) noexcept
+            : sv { s, N-1 }
         {}
 
-        constexpr ct_string(const char* s, size_t len) noexcept
-            : m_view{ s, len } 
+        template<typename T, typename _Ty=std::remove_cvref_t<T>, typename _Arg=_Ty>
+        using if_available_to = std::enable_if_t<std::is_constructible<const _Ty&, sv>::value, _Arg>;
+
+        template<typename T, typename _Ty=std::remove_cvref_t<T>, typename _Arg=_Ty>
+        using if_available_from = std::enable_if_t<std::is_constructible<sv, const _Ty& >::value, _Arg>;
+
+
+        template<class T, class _NonRef=if_available_from<T>>
+        constexpr ct_basic_string(T&& o)
+            : sv{ std::forward< T>(o) }
         {}
 
-        template<class _T, class _Ty=if_available_from<_T>>
-        ct_string(const _T& o)
-            : m_view{ o }
-        {}
+        template<class _Traits, class _Alloc>
+        operator std::basic_string<_Char, _Traits, _Alloc>() const 
+        { 
+            const sv& _this = *this;
+            return std::basic_string<_Char, _Traits, _Alloc>{_this};
+        }
 
-        constexpr operator const std::string_view&() const noexcept { return m_view; }
-
-        template<class _Ty, class _Ty1=if_available_to<_Ty>>
-        constexpr operator _Ty() const noexcept { return _Ty{m_view}; }
-
-        constexpr const char* c_str() const noexcept { return m_view.data(); }
-        constexpr const char* data() const noexcept { return m_view.data(); }
-        constexpr size_t size() const noexcept { return m_view.size(); }
-        constexpr char operator[](size_t pos) const { return m_view.operator[](pos); }
-
-    private:
-        std::string_view m_view;
     };
+#endif    
+    using ct_string = ct_basic_string<char>;
 
-    template<ncbi::NStr::ECase case_sensitive>
-    constexpr bool operator<(const ct_string<case_sensitive>& l, const std::string_view& r) noexcept
+    constexpr int CompareNocase(const std::string_view& l, const std::string_view& r)
     {
-        return StrCompare<case_sensitive>{}.Less(l, r);
-    }
-    template<ncbi::NStr::ECase case_sensitive>
-    constexpr bool operator!=(const ct_string<case_sensitive>& l, const std::string_view& r) noexcept
-    {
-        return StrCompare<case_sensitive>{}.NotEqual(l, r);
-    }
-    template<ncbi::NStr::ECase case_sensitive>
-    constexpr bool operator==(const ct_string<case_sensitive>& l, const std::string_view& r) noexcept
-    {
-        return StrCompare<case_sensitive>{}.Equal(l, r);
+        size_t _min = std::min(l.size(), r.size());
+        int result = 0;
+        size_t i=0;
+        while (i<_min && result==0)
+        {
+            int lc = l[i];
+            int rc = r[i];
+            lc = ('A' <= lc && lc <= 'Z') ? lc + 'a' - 'A' : lc;
+            rc = ('A' <= rc && rc <= 'Z') ? rc + 'a' - 'A' : rc;
+            result = (lc-rc);
+            i++;
+        }
+        if (result == 0)
+        {
+            if (l.size()<r.size())
+                result = -1;
+            else
+            if (l.size()>r.size())
+                result = +1;
+        }
+        return result;
     }
 
 }
+
 namespace std
 {
-    template<class _Traits, ncbi::NStr::ECase cs> inline
-        basic_ostream<char, _Traits>& operator<<(basic_ostream<char, _Traits>& _Ostr, const compile_time_bits::ct_string<cs>& v)
-    {
-        const std::string_view& sv = v;
-        return operator<<(_Ostr, sv);
-    }
+    template<>
+    struct less<compile_time_bits::tagStrCase>: less<void> {};
+    template<>
+    struct equal_to<compile_time_bits::tagStrCase>: equal_to<void> {};
 
-};
+    template<>
+    struct less<compile_time_bits::tagStrNocase>
+    {        
+        constexpr bool operator()(const compile_time_bits::ct_string& l, const compile_time_bits::ct_string& r) const
+        {
+            return compile_time_bits::CompareNocase(l, r) < 0;
+        }
+    };   
+    template<>
+    struct equal_to<compile_time_bits::tagStrNocase>
+    {        
+        constexpr bool operator()(const compile_time_bits::ct_string& l, const compile_time_bits::ct_string& r) const
+        {
+            return (l.size() == r.size())? compile_time_bits::CompareNocase(l, r)==0 : false;
+        }
+    };   
+}
+
 
 #endif
