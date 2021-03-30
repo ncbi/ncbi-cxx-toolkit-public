@@ -737,12 +737,24 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
                                                disabled_processors))
             return 0;
 
+        SPSGS_BlobRequestBase::EPSGS_TSEOption
+                            tse_option = SPSGS_BlobRequestBase::ePSGS_NoneTSE;
+        SRequestParameter   tse_param = x_GetParam(req, kTSEParam);
+        if (tse_param.m_Found) {
+            tse_option = x_GetTSEOption(kTSEParam, tse_param.m_Value, err_msg);
+            if (tse_option == SPSGS_BlobRequestBase::ePSGS_UnknownTSE) {
+                x_MalformedArguments(reply, context, err_msg);
+                return 0;
+            }
+        }
+
         // Parameters processing has finished
         m_RequestCounters.IncGetNA();
         unique_ptr<SPSGS_RequestBase>
             req(new SPSGS_AnnotRequest(
                         string(seq_id.data(), seq_id.size()),
-                        seq_id_type, names, use_cache, hops, trace,
+                        seq_id_type, names, use_cache, tse_option,
+                        hops, trace,
                         enabled_processors, disabled_processors,
                         now));
         shared_ptr<CPSGS_Request>

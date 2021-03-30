@@ -574,6 +574,7 @@ struct SPSGS_AnnotRequest : public SPSGS_RequestBase
                        int  seq_id_type,
                        vector<string> &  names,
                        EPSGS_CacheAndDbUse  use_cache,
+                       SPSGS_BlobRequestBase::EPSGS_TSEOption  tse_option,
                        int  hops,
                        EPSGS_Trace  trace,
                        const vector<string> &  enabled_processors,
@@ -586,6 +587,7 @@ struct SPSGS_AnnotRequest : public SPSGS_RequestBase
         m_SeqIdType(seq_id_type),
         m_Names(move(names)),
         m_UseCache(use_cache),
+        m_TSEOption(tse_option),
         m_Lock(false),
         m_ProcessedBioseqInfo(kUnknownPriority)
     {}
@@ -593,6 +595,7 @@ struct SPSGS_AnnotRequest : public SPSGS_RequestBase
     SPSGS_AnnotRequest() :
         m_SeqIdType(-1),
         m_UseCache(ePSGS_UnknownUseCache),
+        m_TSEOption(SPSGS_BlobRequestBase::EPSGS_TSEOption::ePSGS_UnknownTSE),
         m_Lock(false),
         m_ProcessedBioseqInfo(kUnknownPriority)
     {}
@@ -637,10 +640,11 @@ struct SPSGS_AnnotRequest : public SPSGS_RequestBase
     vector<pair<TProcessorPriority, string>>  GetProcessedNames(void) const;
 
 public:
-    string                  m_SeqId;
-    int                     m_SeqIdType;
-    vector<string>          m_Names;
-    EPSGS_CacheAndDbUse     m_UseCache;
+    string                                      m_SeqId;
+    int                                         m_SeqIdType;
+    vector<string>                              m_Names;
+    EPSGS_CacheAndDbUse                         m_UseCache;
+    SPSGS_BlobRequestBase::EPSGS_TSEOption      m_TSEOption;
 
 private:
     // A list of names which have been already processed by some processors

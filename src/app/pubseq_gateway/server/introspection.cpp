@@ -48,7 +48,8 @@ void AppendBlobIdParameter(CJsonNode &  node)
     node.SetByKey("blob_id", blob_id);
 }
 
-void AppendTseOptionParameter(CJsonNode &  node)
+void AppendTseOptionParameter(CJsonNode &  node,
+                              const string &  default_value)
 {
     CJsonNode   tse_option(CJsonNode::NewObjectNode());
     tse_option.SetBoolean("mandatory", false);
@@ -60,7 +61,7 @@ void AppendTseOptionParameter(CJsonNode &  node)
         "orig  | Split INFO blob only                         | All Cassandra data chunks of the blob itself\n"
         "smart | All split blobs                              | All Cassandra data chunks of the blob itself\n"
         "slim  | All Cassandra data chunks of the blob itself | All Cassandra data chunks of the blob itself\n"
-        "Default: orig");
+        "Default: " + default_value);
     node.SetByKey("tse", tse_option);
 }
 
@@ -345,7 +346,7 @@ CJsonNode  GetIdGetblobRequestNode(void)
 
     CJsonNode   id_getblob_params(CJsonNode::NewObjectNode());
     AppendBlobIdParameter(id_getblob_params);
-    AppendTseOptionParameter(id_getblob_params);
+    AppendTseOptionParameter(id_getblob_params, "orig");
     AppendLastModifiedParameter(id_getblob_params);
     AppendUseCacheParameter(id_getblob_params);
     AppendTraceParameter(id_getblob_params);
@@ -370,7 +371,7 @@ CJsonNode  GetIdGetRequestNode(void)
 
     AppendSeqIdParameter(id_get_params);
     AppendSeqIdTypeParameter(id_get_params);
-    AppendTseOptionParameter(id_get_params);
+    AppendTseOptionParameter(id_get_params, "orig");
     AppendUseCacheParameter(id_get_params);
     AppendExcludeBlobsParameter(id_get_params);
     AppendClientIdParameter(id_get_params);
@@ -460,6 +461,7 @@ CJsonNode  GetIdGetNaRequestNode(void)
     AppendSeqIdTypeParameter(id_get_na_params);
     AppendNamesParameter(id_get_na_params);
     AppendUseCacheParameter(id_get_na_params);
+    AppendTseOptionParameter(id_get_na_params, "none");
     AppendFmtParameter(id_get_na_params);
     AppendTraceParameter(id_get_na_params);
     id_get_na.SetByKey("parameters", id_get_na_params);

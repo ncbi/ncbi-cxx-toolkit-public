@@ -211,6 +211,7 @@ CJsonNode SPSGS_AnnotRequest::Serialize(void) const
     json.SetInteger("seq id type", m_SeqIdType);
     json.SetBoolean("trace", m_Trace);
     json.SetBoolean("use cache", m_UseCache);
+    json.SetInteger("tse option", m_TSEOption);
 
     CJsonNode   names(CJsonNode::NewArrayNode());
     for (const auto &  name : m_Names) {
