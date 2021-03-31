@@ -223,6 +223,7 @@ void CPsgClientApp::s_InitRequest<CPSG_Request_NamedAnnotInfo>(CArgDescriptions&
     arg_desc.AddOptionalKey("type", "TYPE", "Type part of bio ID", CArgDescriptions::eString);
     arg_desc.AddOptionalKey("acc-substitution", "ACC_SUB", "ACC substitution", CArgDescriptions::eString);
     s_InitDataOnly(arg_desc, false);
+    s_InitDataFlags(arg_desc);
 }
 
 template <>

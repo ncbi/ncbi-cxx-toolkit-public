@@ -391,6 +391,8 @@ SRequestBuilder::SImpl<TInput>::operator shared_ptr<CPSG_Request_NamedAnnotInfo>
     auto bio_id = GetBioId(input);
     auto named_annots = GetNamedAnnots(input);
     auto request =  make_shared<CPSG_Request_NamedAnnotInfo>(move(bio_id), move(named_annots), move(user_context));
+    auto specified = GetSpecified<CPSG_Request_NamedAnnotInfo>(input);
+    IncludeData(request, specified);
     SetAccSubstitution(request, input);
     return request;
 }

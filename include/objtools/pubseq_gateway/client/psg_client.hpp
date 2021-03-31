@@ -414,6 +414,12 @@ public:
     /// Set substitution policy for version-less primary seq-ids
     void SetAccSubstitution(EPSG_AccSubstitution acc_substitution) { m_AccSubstitution = acc_substitution; }
 
+    /// Specify which data is needed (info is always returned)
+    using EIncludeData = CPSG_Request_Biodata::EIncludeData;
+    void IncludeData(EIncludeData include) { m_IncludeData = include; }
+
+    EIncludeData GetIncludeData() const { return m_IncludeData; }
+
 private:
     string x_GetType() const override { return "annot"; }
     string x_GetId() const override { return GetBioId().Repr(); }
@@ -422,6 +428,7 @@ private:
     CPSG_BioId  m_BioId;
     TAnnotNames m_AnnotNames;
     EPSG_AccSubstitution m_AccSubstitution = EPSG_AccSubstitution::Default;
+    EIncludeData m_IncludeData = EIncludeData::eDefault;
 };
 
 

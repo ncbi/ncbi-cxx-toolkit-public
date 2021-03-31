@@ -553,6 +553,9 @@ void CPSG_Request_NamedAnnotInfo::x_GetAbsPathRef(ostream& os) const
 
     // Remove last comma (there must be some output after seekp to succeed)
     os.seekp(-1, ios_base::cur);
+
+    if (const auto tse = s_GetTSE(m_IncludeData)) os << "&tse=" << tse;
+
     os << "&fmt=json&psg_protocol=yes";
     os << s_GetAccSubstitution(m_AccSubstitution);
 }
