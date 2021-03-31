@@ -96,7 +96,8 @@ public:
 		eGCP,
 		eAWS,
 		eELBJobId,
-		eELBBatchNum
+		eELBBatchNum,
+        eSRA
 	};
 
 	CBlastUsageReport();

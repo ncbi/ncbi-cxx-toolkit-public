@@ -455,6 +455,9 @@ public:
 
     bool End(void) {return m_Source->End();}
 
+    Int8 GetNumSeqsProcessed() const { return m_NumSeqs; }
+    Int8 GetTotalLengthProcessed() const { return m_TotalLength; }
+
 private:
     CBlastInputOMF(const CBlastInputOMF& rhs);
     CBlastInputOMF& operator=(const CBlastInputOMF& rhs);
@@ -463,6 +466,12 @@ private:
     TSeqPos m_BatchSize;
     TSeqPos m_MaxNumSequences;
     CRef<CBioseq_set> m_BioseqSet;
+
+    // # of seqs processed
+    Int8 m_NumSeqs;
+
+    // Total length processed
+    Int8 m_TotalLength;
 };
 
 END_SCOPE(blast)

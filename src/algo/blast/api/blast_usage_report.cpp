@@ -148,6 +148,7 @@ string CBlastUsageReport::x_EUsageParmsToString(EUsageParams p)
 		case eAWS:				retval.assign("aws"); break;
 		case eELBJobId:			retval.assign("elb_job_id"); break;
 		case eELBBatchNum:		retval.assign("elb_batch_num"); break;
+        case eSRA:              retval.assign("sra"); break;
     	default:
         	LOG_POST(Warning <<"Invalid usage params: " << (int)p);
         	abort();

@@ -296,7 +296,9 @@ CBlastInputOMF::CBlastInputOMF(CBlastInputSourceOMF* source,
     : m_Source(source),
       m_BatchSize(batch_size),
       m_MaxNumSequences(5000000),
-      m_BioseqSet(new CBioseq_set)
+      m_BioseqSet(new CBioseq_set),
+      m_NumSeqs(0),
+      m_TotalLength(0)
     
 {}
 
@@ -316,6 +318,8 @@ CBlastInputOMF::GetNextSeqBatch(CBioseq_set& bioseq_set)
             bioseq_set.SetSeq_set().push_back(it);
         }
     }
+    m_NumSeqs += (Int8)num_sequences;
+    m_TotalLength += (Int8)bases_added;
 }
 
 CRef<CBioseq_set>

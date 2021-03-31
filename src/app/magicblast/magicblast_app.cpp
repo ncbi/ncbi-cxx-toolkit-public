@@ -35,6 +35,7 @@
 #include <corelib/ncbiapp.hpp>
 #include <algo/blast/api/magicblast.hpp>
 #include <algo/blast/api/magicblast_options.hpp>
+#include <algo/blast/api/blast_usage_report.hpp>
 #include <algo/blast/blastinput/blast_fasta_input.hpp>
 #include <algo/blast/blastinput/blast_asn1_input.hpp>
 #include <algo/blast/blast_sra_input/blast_sra_input.hpp>
@@ -78,6 +79,16 @@ public:
         CRef<CVersion> version(new CVersion());
         version->SetVersionInfo(new CMagicBlastVersion());
         SetFullVersion(version);
+        m_StopWatch.Start();
+        if (m_UsageReport.IsEnabled()) {
+            m_UsageReport.AddParam(CBlastUsageReport::eVersion,
+                                   GetVersion().Print());
+        }
+    }
+
+    ~CMagicBlastApp()
+    {
+        m_UsageReport.AddParam(CBlastUsageReport::eRunTime, m_StopWatch.Elapsed());
     }
 private:
     /** @inheritDoc */
@@ -85,8 +96,17 @@ private:
     /** @inheritDoc */
     virtual int Run();
 
+    void x_LogBlastSearchInfo(CBlastUsageReport & report,
+                              const CBlastOptions& options,
+                              CRef<CMapperFormattingArgs> fmt_args,
+                              CRef<CLocalDbAdapter> db_adapter,
+                              Int8 db_size,
+                              Int8 num_db_sequences);
+
     /// This application's command line args
     CRef<CMagicBlastAppArgs> m_CmdLineArgs;
+    CBlastUsageReport m_UsageReport;
+    CStopWatch m_StopWatch;
 };
 
 void CMagicBlastApp::Init()
@@ -311,6 +331,10 @@ int CMagicBlastApp::Run(void)
             dynamic_cast<CMapperQueryOptionsArgs*>(
                    m_CmdLineArgs->GetQueryOptionsArgs().GetNonNullPointer()));
 
+        m_UsageReport.AddParam(CBlastUsageReport::eSRA,
+                               query_opts->GetInputFormat() !=
+                                                CMapperQueryOptionsArgs::eSra);
+
         if(query_opts->GetInputFormat() != CMapperQueryOptionsArgs::eSra &&
            s_IsIStreamEmpty(m_CmdLineArgs->GetInputStream())) {
 
@@ -428,9 +452,82 @@ int CMagicBlastApp::Run(void)
             opts_hndl->GetOptions().DebugDumpText(NcbiCerr, "BLAST options", 1);
         }
 
+        m_UsageReport.AddParam(CBlastUsageReport::eTotalQueryLength, input.GetTotalLengthProcessed());
+        m_UsageReport.AddParam(CBlastUsageReport::eNumQueries, input.GetNumSeqsProcessed());
+        x_LogBlastSearchInfo(m_UsageReport, opt, fmt_args, db_adapter,
+                             (Int8)db_size, (Int8)num_db_sequences);
     } CATCH_ALL(status)
+
+    m_UsageReport.AddParam(CBlastUsageReport::eNumThreads, (int) m_CmdLineArgs->GetNumThreads());
+    m_UsageReport.AddParam(CBlastUsageReport::eExitStatus, status);
     return status;
 }
+
+
+void CMagicBlastApp::x_LogBlastSearchInfo(CBlastUsageReport & report,
+                                          const CBlastOptions& options,
+                                          CRef<CMapperFormattingArgs> fmt_args,
+                                          CRef<CLocalDbAdapter> db_adapter,
+                                          Int8 db_size,
+                                          Int8 num_db_sequences)
+{
+	if (report.IsEnabled()) {
+		report.AddParam(CBlastUsageReport::eProgram, (string)"magicblast");
+		EProgram task = options.GetProgram();
+		string task_str =  EProgramToTaskName(task);
+		report.AddParam(CBlastUsageReport::eTask, task_str);
+		report.AddParam(CBlastUsageReport::eOutputFmt,
+                        fmt_args->GetFormattedOutputChoice());
+
+        report.AddParam(CBlastUsageReport::eNumSubjects, num_db_sequences);
+        report.AddParam(CBlastUsageReport::eSubjectsLength, db_size);
+
+        if (db_adapter->IsBlastDb()) {
+            CRef<CSearchDatabase> db = db_adapter->GetSearchDatabase();
+			if(db.NotEmpty()){
+                string dir = kEmptyStr;
+                string db_name = db->GetDatabaseName();
+                CFile::SplitPath(db->GetDatabaseName(), &dir);
+                if (dir != kEmptyStr) {
+                    db_name = db->GetDatabaseName().substr(dir.length());
+                }
+                report.AddParam(CBlastUsageReport::eDBName, db_name);
+				if(db->GetGiList().NotEmpty()) {
+                    CRef<CSeqDBGiList>  l = db->GetGiList();
+                    if (l->GetNumGis()) {
+                        report.AddParam(CBlastUsageReport::eGIList, true);
+                    }
+                    if (l->GetNumSis()){
+                        report.AddParam(CBlastUsageReport::eSeqIdList, true);
+                    }
+                    if (l->GetNumTaxIds()){
+                        report.AddParam(CBlastUsageReport::eTaxIdList, true);
+                    }
+                    if (l->GetNumPigs()) {
+                        report.AddParam(CBlastUsageReport::eIPGList, true);
+                    }
+				}
+				if(db->GetNegativeGiList().NotEmpty()) {
+                    CRef<CSeqDBGiList>  l = db->GetNegativeGiList();
+                    if (l->GetNumGis()) {
+                        report.AddParam(CBlastUsageReport::eNegGIList, true);
+                    }
+                    if (l->GetNumSis()){
+                        report.AddParam(CBlastUsageReport::eNegSeqIdList, true);
+                    }
+                    if (l->GetNumTaxIds()){
+                        report.AddParam(CBlastUsageReport::eNegTaxIdList, true);
+                    }
+                    if (l->GetNumPigs()) {
+                        report.AddParam(CBlastUsageReport::eNegIPGList, true);
+                    }
+				}
+			}
+            
+        }
+    }
+}
+
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 int NcbiSys_main(int argc, ncbi::TXChar* argv[])
