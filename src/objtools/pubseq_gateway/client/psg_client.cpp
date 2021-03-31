@@ -508,7 +508,7 @@ void CPSG_Request_Biodata::x_GetAbsPathRef(ostream& os) const
 
 void CPSG_Request_Resolve::x_GetAbsPathRef(ostream& os) const
 {
-    os << "/ID/resolve?" << m_BioId << "&fmt=json&psg_protocol=yes";
+    os << "/ID/resolve?" << m_BioId << "&fmt=json";
 
     auto value = "yes";
     auto include_info = m_IncludeInfo;
@@ -556,7 +556,6 @@ void CPSG_Request_NamedAnnotInfo::x_GetAbsPathRef(ostream& os) const
 
     if (const auto tse = s_GetTSE(m_IncludeData)) os << "&tse=" << tse;
 
-    os << "&fmt=json&psg_protocol=yes";
     os << s_GetAccSubstitution(m_AccSubstitution);
 }
 
