@@ -60,6 +60,8 @@
 #include <objects/seq/seq_id_handle.hpp>
 #include <objects/seqfeat/Gb_qual.hpp>
 
+#include <random>
+
 
 
 USING_NCBI_SCOPE;
@@ -251,7 +253,7 @@ int CAsnCacheTestApplication::Run(void)
 
     for(int cycle = 0; cycle < num_cycles; cycle++){
         if (args["random-order"]) {
-            random_shuffle(ids.begin(), ids.end());
+            shuffle(ids.begin(), ids.end(), default_random_engine());
         }
     
         size_t count = 0;

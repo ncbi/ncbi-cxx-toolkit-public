@@ -54,6 +54,7 @@
 
 #include <algorithm>
 #include <numeric>
+#include <random>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -464,7 +465,7 @@ CAsnCacheStoreMany::CAsnCacheStoreMany(vector<string> const& db_paths)
 /// Return the raw blob in an unformatted buffer.
 bool CAsnCacheStoreMany::GetRaw(const objects::CSeq_id_Handle& id, vector<unsigned char>& buffer)
 {
-    std::random_shuffle(m_Index.begin(), m_Index.end());
+    std::shuffle(m_Index.begin(), m_Index.end(), default_random_engine());
 
     for ( auto const& i: m_Index ) {
         
@@ -477,7 +478,7 @@ bool CAsnCacheStoreMany::GetRaw(const objects::CSeq_id_Handle& id, vector<unsign
 
 bool CAsnCacheStoreMany::GetMultipleRaw(const objects::CSeq_id_Handle& id, vector<vector<unsigned char>>& buffer)
 {
-    std::random_shuffle(m_Index.begin(), m_Index.end());
+    std::shuffle(m_Index.begin(), m_Index.end(), default_random_engine());
 
     for ( auto const& i: m_Index ) {
         if ( m_Stores[i]->GetMultipleRaw(id, buffer) ) {
@@ -490,7 +491,7 @@ bool CAsnCacheStoreMany::GetMultipleRaw(const objects::CSeq_id_Handle& id, vecto
 /// Return the cache blob, packed and uninterpreted
 bool CAsnCacheStoreMany::GetBlob(const objects::CSeq_id_Handle& id, objects::CCache_blob& blob)
 {
-    std::random_shuffle(m_Index.begin(), m_Index.end());
+    std::shuffle(m_Index.begin(), m_Index.end(), default_random_engine());
 
     for ( auto const& i: m_Index ) {
         if ( m_Stores[i]->GetBlob(id, blob) ) {
@@ -503,7 +504,7 @@ bool CAsnCacheStoreMany::GetBlob(const objects::CSeq_id_Handle& id, objects::CCa
 bool CAsnCacheStoreMany::GetMultipleBlobs(const objects::CSeq_id_Handle& id,
                                           vector< CRef<objects::CCache_blob> >& blob)
 {
-    std::random_shuffle(m_Index.begin(), m_Index.end());
+    std::shuffle(m_Index.begin(), m_Index.end(), default_random_engine());
 
     for ( auto const& i: m_Index ) {
         if ( m_Stores[i]->GetMultipleBlobs(id, blob) ) {
@@ -524,7 +525,7 @@ bool CAsnCacheStoreMany::GetSeqIds(const objects::CSeq_id_Handle& id,
                        vector<objects::CSeq_id_Handle>& all_ids,
                        bool cheap_only)
 {
-    std::random_shuffle(m_Index.begin(), m_Index.end());
+    std::shuffle(m_Index.begin(), m_Index.end(), default_random_engine());
 
     for ( auto const& i: m_Index ) {
         if ( m_Stores[i]->GetSeqIds(id, all_ids, cheap_only) ) {
@@ -547,7 +548,7 @@ bool CAsnCacheStoreMany::EfficientlyGetSeqIds() const
 /// Return a blob as a CSeq_entry object.
 CRef<objects::CSeq_entry> CAsnCacheStoreMany::GetEntry(const objects::CSeq_id_Handle& id)
 {
-    std::random_shuffle(m_Index.begin(), m_Index.end());
+    std::shuffle(m_Index.begin(), m_Index.end(), default_random_engine());
 
     for ( auto const& i: m_Index ) {
         auto entry = m_Stores[i]->GetEntry(id);
@@ -561,7 +562,7 @@ CRef<objects::CSeq_entry> CAsnCacheStoreMany::GetEntry(const objects::CSeq_id_Ha
 
 vector< CRef<objects::CSeq_entry> > CAsnCacheStoreMany::GetMultipleEntries(const objects::CSeq_id_Handle& id)
 {
-    std::random_shuffle(m_Index.begin(), m_Index.end());
+    std::shuffle(m_Index.begin(), m_Index.end(), default_random_engine());
 
     for ( auto const& i: m_Index ) {
         auto entries = m_Stores[i]->GetMultipleEntries(id);
@@ -580,7 +581,7 @@ bool CAsnCacheStoreMany::GetIdInfo(const objects::CSeq_id_Handle& id,
                                    CAsnIndex::TGi& gi,
                                    time_t& timestamp)
 {
-    std::random_shuffle(m_Index.begin(), m_Index.end());
+    std::shuffle(m_Index.begin(), m_Index.end(), default_random_engine());
 
     for ( auto const& i: m_Index ) {
         if ( m_Stores[i]->GetIdInfo(id, gi, timestamp) ) { 
@@ -600,7 +601,7 @@ bool CAsnCacheStoreMany::GetIdInfo(const objects::CSeq_id_Handle& id,
                                    Uint4& sequence_length,
                                    Uint4& tax_id)
 {
-    std::random_shuffle(m_Index.begin(), m_Index.end());
+    std::shuffle(m_Index.begin(), m_Index.end(), default_random_engine());
 
     for ( auto const& i: m_Index ) {
         if ( m_Stores[i]->GetIdInfo(id, accession, gi, timestamp, sequence_length, tax_id) ) {
@@ -613,7 +614,7 @@ bool CAsnCacheStoreMany::GetIdInfo(const objects::CSeq_id_Handle& id,
 bool CAsnCacheStoreMany::GetIndexEntry(const objects::CSeq_id_Handle & id,
                               CAsnIndex::SIndexInfo &info)
 {
-    std::random_shuffle(m_Index.begin(), m_Index.end());
+    std::shuffle(m_Index.begin(), m_Index.end(), default_random_engine());
 
     for ( auto const& i: m_Index ) {
         if ( m_Stores[i]->GetIndexEntry(id, info) ) {
@@ -626,7 +627,7 @@ bool CAsnCacheStoreMany::GetIndexEntry(const objects::CSeq_id_Handle & id,
 bool CAsnCacheStoreMany::GetMultipleIndexEntries(const objects::CSeq_id_Handle & id,
                                         vector<CAsnIndex::SIndexInfo> &info)
 {
-    std::random_shuffle(m_Index.begin(), m_Index.end());
+    std::shuffle(m_Index.begin(), m_Index.end(), default_random_engine());
 
     for ( auto const& i: m_Index ) {
         if ( m_Stores[i]->GetMultipleIndexEntries(id, info) ) {
