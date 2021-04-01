@@ -188,7 +188,8 @@ CSeq_id_Handle CWGSMasterSupport::GetWGSMasterSeq_id(const CSeq_id_Handle& idh)
 
     // First check the prefix and suffix lengths.
     // WGS/TSA/TLS prefixes have 4 or 6 letters; CAGE DDBJ prefixes have 5 letters
-    // WGS/TSA/TLS suffixes have 6-8 or 7-9 digits; CAGE DDBJ suffixes have 7 digits 
+    // WGS/TSA/TLS suffixes have 8-10 or 9-11 digits (including 2-digit version);
+    // CAGE DDBJ suffixes have 7 digits 
     SIZE_TYPE min_digits = 0;
     SIZE_TYPE max_digits = 0;
 
@@ -200,7 +201,7 @@ CSeq_id_Handle CWGSMasterSupport::GetWGSMasterSeq_id(const CSeq_id_Handle& idh)
     } else {
         if (digits_pos != letters_pos+4 && digits_pos != letters_pos+6)
             return master_idh;
-        min_digits = ((digits_pos == letters_pos+4) ? 6 : 7);
+        min_digits = ((digits_pos == letters_pos+4) ? 8 : 9);
         max_digits = min_digits + 2;
     }
 
