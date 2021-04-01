@@ -305,6 +305,13 @@ public:
         {
             return 0;
         }
+        if (align.GetSegs().GetSpliced().IsSetProduct_strand() &&
+            align.GetSegs().GetSpliced().GetProduct_strand() == eNa_strand_minus)
+        {
+            /// Alignment on minus strand, so poly-a score represents the actual
+            /// length of the poly-t tail
+            return align.GetSegs().GetSpliced().GetPoly_a();
+        }
         double product_length = 0;
         if (align.GetSegs().GetSpliced().IsSetProduct_length()) {
             product_length = align.GetSegs().GetSpliced().GetProduct_length();
