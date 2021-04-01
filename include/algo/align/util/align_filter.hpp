@@ -284,6 +284,12 @@ private:
     typedef set<string> TUniqueAligns;
     TUniqueAligns m_UniqueAligns;
 
+    typedef map<objects::CSeq_id_Handle, CRangeCollection<TSeqPos> > TRegionMap;
+    typedef map<string, TRegionMap> TRegionMapCache;
+    TRegionMapCache m_RegionMapCache;
+
+    const TRegionMap &x_GetRegionMap(const string &regions_file);
+
     objects::CScoreLookup m_ScoreLookup;
 };
 

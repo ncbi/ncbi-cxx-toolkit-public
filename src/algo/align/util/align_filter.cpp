@@ -47,12 +47,14 @@
 #include <objects/general/User_field.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/seq/Seq_annot.hpp>
+#include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqblock/GB_block.hpp>
 #include <objects/seqblock/PIR_block.hpp>
 #include <objects/seqblock/SP_block.hpp>
 #include <objects/seqblock/EMBL_block.hpp>
 #include <objects/seqblock/PRF_block.hpp>
 
+#include <util/format_guess.hpp>
 #include <util/checksum.hpp>
 #include <math.h>
 
@@ -165,6 +167,7 @@ void CAlignFilter::SetFilter(const string& filter)
         "IS_SEG_TYPE",
         "COALESCE",
         "HAS_DESC_KEYWORD",
+        "OVERLAPS_ANNOTS",
         NULL
     };
 
@@ -742,6 +745,43 @@ double CAlignFilter::x_FuncCall(const CQueryParseTree::TNode& node, const CSeq_a
     
         return found_keyword ? 1 : 0;
     }
+    else if (NStr::EqualNocase(function, "OVERLAPS_ANNOTS")) {
+        CQueryParseTree::TNode::TNodeList_CI iter =
+            node.SubNodeBegin();
+        CQueryParseTree::TNode::TNodeList_CI end =
+            node.SubNodeEnd();
+        const CQueryParseTree::TNode& node1 = **iter;
+        const string& which = node1.GetValue().GetStrValue();
+        if (which != "query" && which != "subject") {
+            NCBI_THROW(CException, eUnknown,
+                       "Invalid first argument to OVERLAPS_ANNOTS; must be "
+                       "either 'query' or 'subject'");
+        }
+        int row = NStr::EqualNocase(which, "query") ? 0 : 1;
+        CSeq_id_Handle idh = CSeq_id_Handle::GetHandle( align.GetSeq_id(row) );
+
+        ++iter;
+        if (iter == end) {
+            NCBI_THROW(CException, eUnknown,
+                       "invalid number of nodes: expected 2, got 1");
+        }
+        const CQueryParseTree::TNode& node2 = **iter;
+        const string& regions_file = node2.GetValue().GetStrValue();
+        ++iter;
+        if (iter != end) {
+            NCBI_THROW(CException, eUnknown,
+                       "invalid number of nodes: "
+                       "expected 2, got more than 2");
+        }
+        const TRegionMap &regions = x_GetRegionMap(regions_file);
+        if (!regions.count(idh)) {
+            /// No regions for this sequence
+            return 0;
+        }
+        CRangeCollection<TSeqPos> overlap = regions.find(idh)->second;
+        overlap.IntersectWith(align.GetAlignedBases(row));
+        return overlap.Empty() ? 0 : 1;
+    }
     else {
         NCBI_THROW(CException, eUnknown,
                    "function not understood: " + function);
@@ -750,6 +790,40 @@ double CAlignFilter::x_FuncCall(const CQueryParseTree::TNode& node, const CSeq_a
     return this_val;
 }
 
+const CAlignFilter::TRegionMap &CAlignFilter::
+x_GetRegionMap(const string &regions_file)
+{
+    TRegionMap &region_map = m_RegionMapCache[regions_file];
+    if (region_map.empty()) {
+        /// File hasn't been read yet; read it now
+        CNcbiIfstream istr(regions_file);
+        CFormatGuess::EFormat format = CFormatGuess(istr).GuessFormat();
+        if (format != CFormatGuess::eBinaryASN &&
+            format != CFormatGuess::eTextASN)
+        {
+            NCBI_THROW(CException, eUnknown, regions_file + " not an ASN file, format "
+                                  + NStr::NumericToString((int)format));
+        }
+        unique_ptr<CObjectIStream> is(CObjectIStream::Open(
+            format == CFormatGuess::eBinaryASN ? eSerial_AsnBinary
+                                               : eSerial_AsnText,
+            istr));
+        while (!is->EndOfData()) {
+            CSeq_annot annot;
+            *is >> annot;
+            if (!annot.IsFtable()) {
+                NCBI_THROW(CException, eUnknown,
+                     regions_file + " does not contain feature tables");
+            }
+            for (const CRef<CSeq_feat> &feat : annot.GetData().GetFtable()) {
+                CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(
+                                         *feat->GetLocation().GetId());
+                region_map[idh] += feat->GetLocation().GetTotalRange();
+            }
+        }
+    }
+    return region_map;
+}
 
 static bool s_IsDouble(const string& str)
 {
