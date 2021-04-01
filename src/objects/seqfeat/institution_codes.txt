@@ -36,6 +36,7 @@ ABN	s	Radley College
 ABO	s	Aboyne Castle			
 ABRB	s	Korea Animal Bioresource Bank			
 ABRC	b	Arabidopsis Biological Resource Center			
+ABRI	s	African Butterfly Research Institute			
 ABRIICC	c	ABRIICC Agricultural Biotechnology Research Institute of Iran Culture collection			
 ABRN	s	Centre for Ecology and Hydrology			
 ABS<UK>	sc	Aberystwyth University, Institute of Biological, Environmental and Rural Sciences			
@@ -1007,6 +1008,7 @@ CCNL	s	Connecticut College, Botany Department
 CCNP	s	Carlsbad, Carlsbad Caverns National Park			
 CCNP<POL>	c	Culture Collection of Northern Poland			
 CCNU	s	Central China Normal University, Biology Department			
+CCNY	s	City College of New York, Biology Department, New York, NY			
 CCO	s	Carleton University, Biology Department			
 CCOS<CHE>	c	Culture Collection of Switzerland			
 CCPF	c	Collection of Phytopathogenic Fungi			
