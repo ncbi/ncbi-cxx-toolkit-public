@@ -111,12 +111,12 @@ CBlastxNode::Main()
                                      query_opts->UseLowercaseMasks(),
                                      query_opts->GetParseDeflines(),
                                      query_opts->GetRange());
-        if(IsIStreamEmpty(m_CmdLineArgs->GetInputStream())) {
+        if(m_Input.empty()) {
            	ERR_POST(Warning << "Query is Empty!");
            	return BLAST_EXIT_SUCCESS;
         }
         CBlastFastaInputSource fasta(m_Input, iconfig);
-        CBlastInput input(&fasta);
+        CBlastInput input(&fasta, m_CmdLineArgs->GetQueryBatchSize());
 
         /*** Get the formatting options ***/
         CRef<CFormattingArgs> fmt_args(m_CmdLineArgs->GetFormattingArgs());

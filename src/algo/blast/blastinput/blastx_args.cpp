@@ -157,7 +157,7 @@ int
 CBlastxNodeArgs::GetQueryBatchSize() const
 {
     bool is_remote = (m_RemoteArgs.NotEmpty() && m_RemoteArgs->ExecuteRemotely());
-    return blast::GetQueryBatchSize(ProgramNameToEnum(GetTask()), m_IsUngapped, is_remote, false);
+    return blast::GetQueryBatchSize(eBlastx, m_IsUngapped, is_remote);
 }
 
 CRef<CBlastOptionsHandle>

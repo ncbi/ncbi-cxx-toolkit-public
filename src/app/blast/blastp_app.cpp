@@ -247,13 +247,7 @@ int CBlastpApp::x_RunMTBySplitQuery()
 {
     int status = BLAST_EXIT_SUCCESS;
     CBlastAppDiagHandler bah;
-    int batch_size = 10000;
 
-	char * mt_query_batch_env = getenv("BLAST_MT_QUERY_BATCH_SIZE");
-	if (mt_query_batch_env) {
-		batch_size = NStr::StringToInt(mt_query_batch_env);
-	}
-	cerr << "Batch Size: " << batch_size << endl;
     // Allow the fasta reader to complain on invalid sequence input
     SetDiagPostLevel(eDiag_Warning);
     SetDiagPostPrefix("blastp");
@@ -276,7 +270,8 @@ int CBlastpApp::x_RunMTBySplitQuery()
     	CNcbiOstream & out_stream = m_CmdLineArgs->GetOutputStream();
 		CBlastMasterNode master_node(out_stream, kMaxNumOfThreads);
    		int chunk_num = 0;
-
+   	    int batch_size = GetMTByQueriesBatchSize(opts_hndl->GetOptions().GetProgram(), kMaxNumOfThreads);
+   		INFO_POST("Batch Size: " << batch_size);
    		CBlastNodeInputReader input(m_CmdLineArgs->GetInputStream(), batch_size, 2000);
 		while (master_node.Processing()) {
 			if (!input.AtEOF()) {
