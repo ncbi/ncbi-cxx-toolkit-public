@@ -11,16 +11,16 @@ Zv8_NA7	.	exon	76806	76878	.	-	.	gene_id "ENSDART00000076400"; transcript_id "xx
 Zv8_NA7	.	exon	74583	74678	.	-	.	gene_id "ENSDART00000076400"; transcript_id "xxENSDART00000076400"; transcript_biotype "mRNA"; exon_number "8"; 
 Zv8_NA7	.	exon	72549	72610	.	-	.	gene_id "ENSDART00000076400"; transcript_id "xxENSDART00000076400"; transcript_biotype "mRNA"; exon_number "9"; 
 Zv8_NA7	.	exon	67958	68380	.	-	.	gene_id "ENSDART00000076400"; transcript_id "xxENSDART00000076400"; transcript_biotype "mRNA"; exon_number "10"; 
-Zv8_NA7	.	CDS	88161	88253	.	-	0	gene_id "ENSDART00000076400"; transcript_id "xxENSDART00000076400"; gbkey "CDS"; part "1"; exon_number "1"; 
-Zv8_NA7	.	CDS	86374	86421	.	-	0	gene_id "ENSDART00000076400"; transcript_id "xxENSDART00000076400"; gbkey "CDS"; part "2"; exon_number "2"; 
-Zv8_NA7	.	CDS	85732	85937	.	-	0	gene_id "ENSDART00000076400"; transcript_id "xxENSDART00000076400"; gbkey "CDS"; part "3"; exon_number "3"; 
-Zv8_NA7	.	CDS	83834	83954	.	-	1	gene_id "ENSDART00000076400"; transcript_id "xxENSDART00000076400"; gbkey "CDS"; part "4"; exon_number "4"; 
-Zv8_NA7	.	CDS	83077	83158	.	-	0	gene_id "ENSDART00000076400"; transcript_id "xxENSDART00000076400"; gbkey "CDS"; part "5"; exon_number "5"; 
-Zv8_NA7	.	CDS	79151	79257	.	-	2	gene_id "ENSDART00000076400"; transcript_id "xxENSDART00000076400"; gbkey "CDS"; part "6"; exon_number "6"; 
-Zv8_NA7	.	CDS	76806	76878	.	-	0	gene_id "ENSDART00000076400"; transcript_id "xxENSDART00000076400"; gbkey "CDS"; part "7"; exon_number "7"; 
-Zv8_NA7	.	CDS	74583	74678	.	-	2	gene_id "ENSDART00000076400"; transcript_id "xxENSDART00000076400"; gbkey "CDS"; part "8"; exon_number "8"; 
-Zv8_NA7	.	CDS	72549	72610	.	-	2	gene_id "ENSDART00000076400"; transcript_id "xxENSDART00000076400"; gbkey "CDS"; part "9"; exon_number "9"; 
-Zv8_NA7	.	CDS	67961	68380	.	-	0	gene_id "ENSDART00000076400"; transcript_id "xxENSDART00000076400"; gbkey "CDS"; part "10"; exon_number "10"; 
+Zv8_NA7	.	CDS	88161	88253	.	-	0	gene_id "ENSDART00000076400"; transcript_id "xxENSDART00000076400"; gbkey "CDS"; exon_number "1"; 
+Zv8_NA7	.	CDS	86374	86421	.	-	0	gene_id "ENSDART00000076400"; transcript_id "xxENSDART00000076400"; gbkey "CDS"; exon_number "2"; 
+Zv8_NA7	.	CDS	85732	85937	.	-	0	gene_id "ENSDART00000076400"; transcript_id "xxENSDART00000076400"; gbkey "CDS"; exon_number "3"; 
+Zv8_NA7	.	CDS	83834	83954	.	-	1	gene_id "ENSDART00000076400"; transcript_id "xxENSDART00000076400"; gbkey "CDS"; exon_number "4"; 
+Zv8_NA7	.	CDS	83077	83158	.	-	0	gene_id "ENSDART00000076400"; transcript_id "xxENSDART00000076400"; gbkey "CDS"; exon_number "5"; 
+Zv8_NA7	.	CDS	79151	79257	.	-	2	gene_id "ENSDART00000076400"; transcript_id "xxENSDART00000076400"; gbkey "CDS"; exon_number "6"; 
+Zv8_NA7	.	CDS	76806	76878	.	-	0	gene_id "ENSDART00000076400"; transcript_id "xxENSDART00000076400"; gbkey "CDS"; exon_number "7"; 
+Zv8_NA7	.	CDS	74583	74678	.	-	2	gene_id "ENSDART00000076400"; transcript_id "xxENSDART00000076400"; gbkey "CDS"; exon_number "8"; 
+Zv8_NA7	.	CDS	72549	72610	.	-	2	gene_id "ENSDART00000076400"; transcript_id "xxENSDART00000076400"; gbkey "CDS"; exon_number "9"; 
+Zv8_NA7	.	CDS	67961	68380	.	-	0	gene_id "ENSDART00000076400"; transcript_id "xxENSDART00000076400"; gbkey "CDS"; exon_number "10"; 
 Zv8_NA7	.	start_codon	88251	88253	.	-	0	gene_id "ENSDART00000076400"; transcript_id "xxENSDART00000076400"; gbkey "CDS"; exon_number "1"; 
 Zv8_NA7	.	stop_codon	67958	67960	.	-	0	gene_id "ENSDART00000076400"; transcript_id "xxENSDART00000076400"; gbkey "CDS"; exon_number "10"; 
 ###

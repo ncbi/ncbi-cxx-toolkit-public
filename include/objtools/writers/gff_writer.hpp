@@ -391,6 +391,9 @@ protected:
     static bool HasAccaptableTranscriptParent(
         CGffFeatureContext&,
         const CMappedFeat&);
+    static bool xIntervalsNeedPartNumbers(
+        const list<CRef<CSeq_interval>>&);
+
     CMappedFeat xGenerateMissingTranscript(
         CGffFeatureContext&,
         const CMappedFeat&);

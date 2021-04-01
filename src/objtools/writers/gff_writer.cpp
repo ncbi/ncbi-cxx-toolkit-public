@@ -1362,5 +1362,35 @@ CMappedFeat CGff2Writer::xGenerateMissingTranscript(
     return tf;
 }
     
+//  ----------------------------------------------------------------------------
+bool CGff2Writer::xIntervalsNeedPartNumbers(
+    const list<CRef<CSeq_interval>>& sublocs)
+//  ----------------------------------------------------------------------------
+{
+    _ASSERT(sublocs.size());
+    if (sublocs.size() == 1) { // most common
+        return false;
+    }
+
+    const auto& front = *sublocs.front();
+    auto frontStrand = CWriteUtil::GetEffectiveStrand(front);
+    auto lastStart = front.GetFrom();
+    for (auto itComp = sublocs.begin()++; itComp != sublocs.end(); itComp++) {
+        const auto& comp = **itComp; 
+        if (frontStrand != CWriteUtil::GetEffectiveStrand(comp)) {
+            return true;
+        }
+        auto compStart = comp.GetFrom();
+        if (frontStrand == eNa_strand_plus  &&  lastStart > compStart) {
+            return true;
+        }
+        if (frontStrand == eNa_strand_minus  &&  lastStart < compStart) {
+            return true;
+        }
+        lastStart = compStart;
+    }
+    return false;
+}
+
 
 END_NCBI_SCOPE

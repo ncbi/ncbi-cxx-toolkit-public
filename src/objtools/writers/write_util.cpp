@@ -1380,6 +1380,19 @@ bool CWriteUtil::GetTranssplicedEndpoints(
     return true;
 }
 
+//  ----------------------------------------------------------------------------
+ENa_strand CWriteUtil::GetEffectiveStrand(
+    const CSeq_interval& interval)
+//  ----------------------------------------------------------------------------
+{
+    // if it's not explicitely minus, then it's plus 
+    //  (not true for other location types)
+    return (interval.IsSetStrand() && interval.GetStrand() == eNa_strand_minus) 
+        ?
+        eNa_strand_minus :
+        eNa_strand_plus;
+}
+
 
 
 END_NCBI_SCOPE

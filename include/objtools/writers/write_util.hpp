@@ -207,6 +207,9 @@ public:
         const CSeq_loc& loc, 
         unsigned int& inPoint,
         unsigned int& outPoint);
+
+    static ENa_strand GetEffectiveStrand(
+        const CSeq_interval&);
 };
 
 END_objects_SCOPE

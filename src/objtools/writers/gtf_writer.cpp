@@ -508,7 +508,7 @@ bool CGtfWriter::xAssignFeaturesCds(
     mfLocAsPackedInt.ChangeToPackedInt();
     const auto& sublocs = mfLocAsPackedInt.GetPacked_int().Get();
 
-    bool needsPartNumbers = (sublocs.size() > 1);
+    bool needsPartNumbers = xIntervalsNeedPartNumbers(sublocs);
     unsigned int partNum = 1;
     for ( auto it = sublocs.begin(); it != sublocs.end(); it++ ) {
         const CSeq_interval& intv = **it;
