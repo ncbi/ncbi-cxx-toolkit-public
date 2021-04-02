@@ -35,6 +35,7 @@
 #include "osg_getblob_base.hpp"
 #include "osg_fetch.hpp"
 #include "osg_connection.hpp"
+#include "pubseq_gateway.hpp"
 
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seq/Seq_annot.hpp>
@@ -89,7 +90,7 @@ bool CPSGS_OSGAnnot::CanProcess(SPSGS_AnnotRequest& request,
 
 
 set<string> CPSGS_OSGAnnot::GetNamesToProcess(SPSGS_AnnotRequest& request,
-                                                 TProcessorPriority priority)
+                                              TProcessorPriority priority)
 {
     set<string> ret;
     for ( auto& name : request.GetNotProcessedName(priority) ) {
@@ -129,7 +130,11 @@ static bool IsSNPName(const string& name)
 
 bool CPSGS_OSGAnnot::CanProcessAnnotName(const string& name)
 {
-    return IsCDDName(name) || IsSNPName(name);
+    auto app = CPubseqGatewayApp::GetInstance();
+    auto& config = *app->GetOSGConnectionPool();
+    return
+        (config.GetEnabledCDD() && IsCDDName(name)) ||
+        (config.GetEnabledSNP() && IsSNPName(name));
 }
 
 

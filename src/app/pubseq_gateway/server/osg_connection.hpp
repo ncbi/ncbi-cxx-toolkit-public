@@ -129,6 +129,16 @@ public:
         return size_t(m_RetryCount);
     }
 
+    bool GetEnabledCDD() const {
+        return m_EnabledCDD;
+    }
+    bool GetEnabledSNP() const {
+        return m_EnabledSNP;
+    }
+    bool GetEnabledWGS() const {
+        return m_EnabledWGS;
+    }
+
     double GetCDDRetryTimeout() const {
         return m_CDDRetryTimeout;
     }
@@ -151,6 +161,9 @@ private:
     double m_ReadTimeout;
     double m_CDDRetryTimeout;
     int m_RetryCount;
+    bool m_EnabledCDD;
+    bool m_EnabledSNP;
+    bool m_EnabledWGS;
     CMutex m_Mutex;
     CSemaphore m_WaitConnectionSlot;
     size_t m_NextConnectionID;
