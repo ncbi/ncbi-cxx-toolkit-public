@@ -199,7 +199,9 @@ if "%CMAKE_GENERATOR%"=="Visual Studio 14 2015 Win64" (
 
 if not "%PROJECT_LIST%"=="" (
   if exist "%tree_root%\%PROJECT_LIST%" (
-    type "%tree_root%\%PROJECT_LIST%" >NUL 2>&1
+    set ttt=%tree_root%\%PROJECT_LIST%
+    set ttt=%ttt:/=\%
+    type "%ttt%" >NUL 2>&1
     if not errorlevel 1 (
       set PROJECT_LIST=%tree_root%\%PROJECT_LIST%
     )
@@ -207,7 +209,9 @@ if not "%PROJECT_LIST%"=="" (
 )
 if not "%PROJECT_TAGS%"=="" (
   if exist "%tree_root%\%PROJECT_TAGS%" (
-    type "%tree_root%\%PROJECT_TAGS%" >NUL 2>&1
+    set ttt=%tree_root%\%PROJECT_TAGS%
+    set ttt=%ttt:/=\%
+    type "%ttt%" >NUL 2>&1
     if not errorlevel 1 (
       set PROJECT_TAGS=%tree_root%\%PROJECT_TAGS%
     )
@@ -215,7 +219,9 @@ if not "%PROJECT_TAGS%"=="" (
 )
 if not "%PROJECT_TARGETS%"=="" (
   if exist "%tree_root%\%PROJECT_TARGETS%" (
-    type "%tree_root%\%PROJECT_TARGETS%" >NUL 2>&1
+    set ttt=%tree_root%\%PROJECT_TARGETS%
+    set ttt=%ttt:/=\%
+    type "%ttt%" >NUL 2>&1
     if not errorlevel 1 (
       set PROJECT_TARGETS=%tree_root%\%PROJECT_TARGETS%
     )
