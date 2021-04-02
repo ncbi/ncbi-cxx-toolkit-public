@@ -669,9 +669,10 @@ unsigned int  CIgBlastnApp::x_CountUserBatches(CBlastInputSourceConfig &iconfig,
 
 int CIgBlastnApp::Run(void)
 {
-    
+    string db_v = NcbiEmptyString;
     string seq_type = NcbiEmptyString;
     string organism = NcbiEmptyString;
+    int threads_log = 0;
     int status = BLAST_EXIT_SUCCESS;
     m_any_started = false; // no threads are running
     try {
@@ -686,7 +687,8 @@ int CIgBlastnApp::Run(void)
 
         //const CBlastOptions& opt = m_opts_hndl->GetOptions();
 	m_worker_thread_num = m_CmdLineArgs->GetNumThreads();
-
+        //logging
+        threads_log = m_CmdLineArgs->GetNumThreads();
         //do not allow multi-threading for remote blast
         if (m_CmdLineArgs->ExecuteRemotely()){
             m_worker_thread_num = 1;
@@ -768,6 +770,8 @@ int CIgBlastnApp::Run(void)
                                 CSearchDatabase::eBlastDbIsNucleotide);
             m_blastdb_full.Reset(new CLocalDbAdapter(sdb));
             m_blastdb.Reset(&(*(m_ig_opts->m_Db[0])));
+            //logging
+            db_v = m_ig_opts->m_Db[0]->GetDatabaseName();
         } else {
             CRef<CScope> temp_scope(new CScope(*CObjectManager::GetInstance()));
             InitializeSubject(db_args, m_opts_hndl, m_CmdLineArgs->ExecuteRemotely(),
@@ -971,6 +975,8 @@ int CIgBlastnApp::Run(void)
         m_UsageReport.AddParam(CBlastUsageReport::eExitStatus, status);
         m_UsageReport.AddParam(CBlastUsageReport::eInputType, seq_type);
         m_UsageReport.AddParam(CBlastUsageReport::eDBTaxInfo, organism);
+        m_UsageReport.AddParam(CBlastUsageReport::eDBName, db_v);
+        m_UsageReport.AddParam(CBlastUsageReport::eNumThreads, threads_log);
     }
     return status;
 }
