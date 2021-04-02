@@ -3,6 +3,7 @@ connect$
 connect/mbedtls
 ./include/util/bitset$
 util$
+util/checksum
 util/cache$
 util/regexp$
 util/xregexp$
