@@ -199,7 +199,7 @@ namespace std
 
 namespace compile_time_bits
 {
-    template<typename T, typename _B=T>
+    template<typename T, typename _Unused=T>
     struct real_underlying_type
     {
         using type = T;
@@ -691,13 +691,13 @@ namespace compile_time_bits
             }
             return ret;
         }
-        template <size_t I, typename _O>
-        static constexpr _Ty assemble_mask(const std::initializer_list<_O>& _init)
+        template <size_t I, typename _Other>
+        static constexpr _Ty assemble_mask(const std::initializer_list<_Other>& _init)
         {
             _Ty ret = 0;
             constexpr auto _min = I * width;
             constexpr auto _max = I * width + width - 1;
-            for (_O _rec : _init)
+            for (_Other _rec : _init)
             {
                 size_t rec = static_cast<size_t>(static_cast<u_type>(_rec));
                 if (_min <= rec && rec <= _max)
@@ -727,8 +727,8 @@ namespace compile_time_bits
             return {assemble_mask<I>(_init)...};
         }
 
-        template<typename _O>
-        static constexpr array_t set_bits(std::initializer_list<_O> args)
+        template<typename _Other>
+        static constexpr array_t set_bits(std::initializer_list<_Other> args)
         {
             return assemble_bitset(args, std::make_index_sequence<_Size>{});
         }

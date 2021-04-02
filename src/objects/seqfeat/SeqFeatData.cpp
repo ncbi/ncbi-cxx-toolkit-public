@@ -3187,16 +3187,16 @@ namespace
 {
 #define ADD_XREF_PAIR(x, y) {CSeqFeatData::eSubtype_ ## x, CSeqFeatData::eSubtype_ ## y },
 
-    template<typename _T, size_t _Width>
+    template<typename _Ty, size_t _Width>
     class  TPairsMatrix
     {    
     public:
         static constexpr size_t width = _Width;
-        using TBitset = ct::const_bitset<width, _T>;
+        using TBitset = ct::const_bitset<width, _Ty>;
         using table_t = ct_const_array<TBitset, width>;
 
-        using init_t = std::pair<_T, _T>;
-        using non_empty_pair = std::pair<_T, TBitset>;
+        using init_t = std::pair<_Ty, _Ty>;
+        using non_empty_pair = std::pair<_Ty, TBitset>;
 
         template<size_t N>
         constexpr TPairsMatrix(const init_t(&init)[N])
@@ -3226,7 +3226,7 @@ namespace
         }
 
         template<size_t N>
-        static bool Check(const ct_const_array<non_empty_pair, N>& in, _T v1, _T v2)
+        static bool Check(const ct_const_array<non_empty_pair, N>& in, _Ty v1, _Ty v2)
         {
             auto it = std::lower_bound(in.begin(), in.end(), v1, [](auto left, auto right)
             {
@@ -3238,7 +3238,7 @@ namespace
             }
             return false;
         }
-        static bool Check(const table_t& table, _T v1, _T v2)
+        static bool Check(const table_t& table, _Ty v1, _Ty v2)
         {
             return table[v1].test(v2);
         }
@@ -3263,7 +3263,7 @@ namespace
         template<size_t I>
         constexpr non_empty_pair make_row() const
         {
-            return { _T(m_non_empty_indices[I]), m_table[m_non_empty_indices[I]] };
+            return { _Ty(m_non_empty_indices[I]), m_table[m_non_empty_indices[I]] };
         }
         template<size_t...Ints>
         constexpr auto select_bitsets(std::index_sequence<Ints...>) const

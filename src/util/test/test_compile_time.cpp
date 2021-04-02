@@ -200,18 +200,18 @@ NCBITEST_AUTO_INIT()
 // local file printout functions
 namespace std
 {
-    template<typename _Traits, size_t _Bits, class _T>
-    basic_ostream<char, _Traits>& operator<<(basic_ostream<char, _Traits>& _Ostr, const ct::const_bitset<_Bits, _T>& v)
+    template<typename _Traits, size_t _Bits, class _Ty>
+    basic_ostream<char, _Traits>& operator<<(basic_ostream<char, _Traits>& _Ostr, const ct::const_bitset<_Bits, _Ty>& v)
     {
-        using enum_type = typename ct::const_bitset<_Bits, _T>::u_type;
+        using enum_type = typename ct::const_bitset<_Bits, _Ty>::u_type;
         for (auto rec: v)
            _Ostr << static_cast<enum_type>(rec) << " ";
 
         return _Ostr;
     }
 
-    template<typename _Traits, typename _F, typename _S> inline
-        basic_ostream<char, _Traits>& operator<<(basic_ostream<char, _Traits>& _Ostr, const pair<_F, _S>& v)
+    template<typename _Traits, typename _First, typename _Second> inline
+        basic_ostream<char, _Traits>& operator<<(basic_ostream<char, _Traits>& _Ostr, const pair<_First, _Second>& v)
     {
         return _Ostr << v.first;
     }
@@ -620,9 +620,9 @@ BOOST_AUTO_TEST_CASE(TestConstMap3)
 }
 
 
-template<typename _T>
+template<typename _Ty>
 static
-void ReportSortedList(const char* prefix, const _T& input)
+void ReportSortedList(const char* prefix, const _Ty& input)
 {
     std::cout << prefix << ": " << std::get<0>(input) << ": ";
     for (auto rec: std::get<1>(input))
@@ -862,8 +862,8 @@ BOOST_AUTO_TEST_CASE(TestConstructors)
 #ifdef CT_MSVC_TUPLE_BUG
 namespace experimental
 {
-    template<typename _T>
-    constexpr _T copy_tuple(const _T& i)
+    template<typename T>
+    constexpr T copy_tuple(const T& i)
     {
         std::tuple<int64_t, int64_t, int64_t> _temp{ i };
         return _temp;
