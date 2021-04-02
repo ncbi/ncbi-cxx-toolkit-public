@@ -1645,12 +1645,57 @@ static void x_CreateEmptyLocalCDDEntry(CDataSource* data_source,
 }
 
 
+static bool s_SameId(const CPSG_BlobId* id1, const CPSG_BlobId& id2)
+{
+    return id1 && id1->GetId() == id2.GetId();
+}
+
+
+bool CPSGDataLoader_Impl::x_ReadCDDChunk(CDataSource* data_source,
+                                         CDataLoader::TChunk chunk,
+                                         const CPSG_BlobInfo& blob_info,
+                                         const CPSG_BlobData& blob_data)
+{
+    _ASSERT(chunk->GetChunkId() == kDelayedMain_ChunkId);
+    const CPsgBlobId& blob_id = dynamic_cast<const CPsgBlobId&>(*chunk->GetBlobId());
+    _ASSERT(x_IsLocalCDDEntryId(blob_id));
+    _ASSERT(!chunk->IsLoaded());
+    
+    CTSE_LoadLock load_lock = data_source->GetTSE_LoadLock(chunk->GetBlobId());
+    if ( !load_lock ||
+         !load_lock.IsLoaded() ||
+         !load_lock->x_NeedsDelayedMainChunk() ) {
+        _TRACE("Cannot make CDD entry because of wrong TSE state id="<<blob_id.ToString());
+        return false;
+    }
+    
+    unique_ptr<CObjectIStream> in(GetBlobDataStream(blob_info, blob_data));
+    if (!in.get()) {
+        _TRACE("Failed to open blob data stream for blob-id " << blob_id.ToString());
+        return false;
+    }
+
+    CRef<CSeq_entry> entry(new CSeq_entry);
+    *in >> *entry;
+    if ( s_GetDebugLevel() >= 8 ) {
+        LOG_POST(Info<<"PSG loader: TSE "<<load_lock->GetBlobId().ToString()<<" "<<
+                 MSerial_AsnText<<*entry);
+    }
+    load_lock->SetSeq_entry(*entry);
+    chunk->SetLoaded();
+    return true;
+}
+
+
 shared_ptr<CPSG_Request_Blob>
 CPSGDataLoader_Impl::x_MakeLoadLocalCDDEntryRequest(CDataSource* data_source,
                                                     CDataLoader::TChunk chunk,
                                                     shared_ptr<CPsgClientContext_Bulk> context)
 {
+    _ASSERT(chunk->GetChunkId() == kDelayedMain_ChunkId);
     const CPsgBlobId& blob_id = dynamic_cast<const CPsgBlobId&>(*chunk->GetBlobId());
+    _ASSERT(x_IsLocalCDDEntryId(blob_id));
+    _ASSERT(!chunk->IsLoaded());
     
     bool failed = false;
     shared_ptr<CPSG_NamedAnnotInfo> cdd_info;
@@ -1661,8 +1706,11 @@ CPSGDataLoader_Impl::x_MakeLoadLocalCDDEntryRequest(CDataSource* data_source,
         CPSG_Request_NamedAnnotInfo::TAnnotNames names = { kCDDAnnotName };
         _ASSERT(bio_id.GetId().find('|') == NPOS);
         auto request = make_shared<CPSG_Request_NamedAnnotInfo>(bio_id, names, context);
+        request->IncludeData(CPSG_Request_Biodata::eSmartTSE);
         auto reply = x_ProcessRequest(request);
         shared_ptr<CPSG_BioseqInfo> bioseq_info;
+        shared_ptr<CPSG_BlobInfo> blob_info;
+        shared_ptr<CPSG_BlobData> blob_data;
         for (;;) {
             auto reply_item = reply->GetNextItem(DEFAULT_DEADLINE);
             if (!reply_item) continue;
@@ -1693,6 +1741,12 @@ CPSGDataLoader_Impl::x_MakeLoadLocalCDDEntryRequest(CDataSource* data_source,
                     cdd_info = na_info;
                 }
             }
+            if (reply_item->GetType() == CPSG_ReplyItem::eBlobInfo) {
+                blob_info = static_pointer_cast<CPSG_BlobInfo>(reply_item);
+            }
+            if (reply_item->GetType() == CPSG_ReplyItem::eBlobData) {
+                blob_data = static_pointer_cast<CPSG_BlobData>(reply_item);
+            }
         }
         if ( failed ) {
             // TODO
@@ -1702,6 +1756,14 @@ CPSGDataLoader_Impl::x_MakeLoadLocalCDDEntryRequest(CDataSource* data_source,
         if ( !cdd_info ) {
             x_CreateEmptyLocalCDDEntry(data_source, chunk);
             return nullptr;
+        }
+        // see if we got blob already
+        if ( blob_info && s_SameId(blob_info->GetId<CPSG_BlobId>(), cdd_info->GetBlobId()) &&
+             blob_data && s_SameId(blob_data->GetId<CPSG_BlobId>(), cdd_info->GetBlobId()) ) {
+            _TRACE("Got CDD entry: "<<cdd_info->GetBlobId().Repr());
+            if ( x_ReadCDDChunk(data_source, chunk, *blob_info, *blob_data) ) {
+                return nullptr;
+            }
         }
     }}
     

@@ -35,6 +35,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <objtools/data_loaders/genbank/psg_loader.hpp>
+#include <objtools/pubseq_gateway/client/psg_client.hpp>
 #include <objtools/data_loaders/genbank/blob_id.hpp>
 #include <memory>
 #include <vector>
@@ -212,6 +213,10 @@ private:
     x_MakeLoadLocalCDDEntryRequest(CDataSource* data_source,
                                    CDataLoader::TChunk chunk,
                                    shared_ptr<CPsgClientContext_Bulk> context);
+    bool x_ReadCDDChunk(CDataSource* data_source,
+                        CDataLoader::TChunk chunk,
+                        const CPSG_BlobInfo& blob_info,
+                        const CPSG_BlobData& blob_data);
     
     // Map seq-id to bioseq info.
     typedef map<CSeq_id_Handle, shared_ptr<SPsgBioseqInfo> > TBioseqCache;
