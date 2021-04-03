@@ -7880,7 +7880,6 @@ VER	s	Herbario, Museo Civico di Storia Naturale, Verona
 VETMED	s	University of Veterinary Medicine			
 VF	s	Universidad de Valencia, Departamento de Biologia Vegetal, Botanica			
 VFM	s	Forest Inventory and Planning Institute			
-VFU	s	Vietnam Forestry University			
 VFWD	s	Vermont Fish and Wildlife Department			
 VFWO	s	U.S. Fish and Wildlife Service, Ventura Fish and Wildlife Office			
 VGBI	s	Botanical Garden-Institute Vladivostok			
@@ -7921,6 +7920,7 @@ VNGA	s	Vorarlberger Naturschau
 VNIRO	s	Institute of Oceanography			
 VNM	s	Institute of Tropical Biology			
 VNMN	s	Vietnam National Museum of Nature			
+VNUF	s	Vietnam Forestry University	VFU		
 VO	s	Vologda State University			
 VOA	s	Ostrobothnian Museum			
 VOR	s	Voronezh State University, Biology and Plant Ecology Department			
