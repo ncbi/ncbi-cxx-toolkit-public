@@ -1178,7 +1178,7 @@ psloader-internal needs3party ncbiobj
 pstub needs3party $(ORIG_LIBS)
 pub needs medline
 pubmed needs medline
-python3.7m needs3party $(ORIG_LIBS)
+python3.8 needs3party $(ORIG_LIBS)
 python_ncbi_dbapi needs connect
 python_ncbi_dbapi needs dbapi
 python_ncbi_dbapi needs3party $(PYTHON_LIBS)
