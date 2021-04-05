@@ -63,6 +63,7 @@
 
 #if MAKE_TEST_BUILD
 #include <util/random_gen.hpp>
+#include <random>
 void s_InitTests(void);
 #endif
 
@@ -1266,7 +1267,7 @@ void CTest_BlobStorage::Reset(void)
 #if 1
     if (m_Keys.size() > 10) {
         if (ms_Rnd.GetRand(1, 2) == 2) {
-            random_shuffle(m_Keys.begin(), m_Keys.end());
+            shuffle(m_Keys.begin(), m_Keys.end(), default_random_engine());
             m_BlobKey.Assign( *m_Keys.begin());
             m_Keys.erase(m_Keys.begin());
         }
