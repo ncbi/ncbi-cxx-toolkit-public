@@ -32,6 +32,7 @@
 
 #include <ncbi_pch.hpp>
 #include <stdlib.h>
+#include <random>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
@@ -273,7 +274,7 @@ int CTestHash::Run(void)
         hashes.insert((int)hash<string>()(keys.back()));
         b_hs.insert(keys.back());
     }
-    random_shuffle(keys.begin(), keys.end());
+    shuffle(keys.begin(), keys.end(), default_random_engine());
 
     set<int> bhashes;
     for (int i = 0; i < MaxHashSize + 1; i++) {
