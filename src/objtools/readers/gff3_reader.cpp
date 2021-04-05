@@ -482,10 +482,48 @@ bool CGff3Reader::xUpdateAnnotExon(
             IdToFeatureMap::iterator fit = m_MapIdToFeature.find(parentId);
             if (fit != m_MapIdToFeature.end()) {
                 CRef<CSeq_feat> pParent = fit->second;
-                if (!pParent->GetData().IsGene()  &&  !record.UpdateFeature(m_iFlags, pParent)) {
+                if (!record.UpdateFeature(m_iFlags, pParent)) {
                     return false;
                 }
             }
+        }
+    }
+    return true;
+}
+
+
+//  ----------------------------------------------------------------------------
+bool CGff3Reader::xJoinLocationIntoRna(
+    const CGff2Record& record,
+    //CRef<CSeq_feat> pFeature,
+    //CSeq_annot& annot,
+    ILineErrorListener* pEC)
+//  ----------------------------------------------------------------------------
+{
+    list<string> parents;
+    if (!record.GetAttribute("Parent", parents)) {
+        return true;
+    }
+    for (list<string>::const_iterator it = parents.begin(); it != parents.end(); 
+            ++it) {
+        const string& parentId = *it; 
+        CRef<CSeq_feat> pParent;
+        if (!x_GetFeatureById(parentId, pParent)) {
+            // Danger:
+            // We don't know whether the CDS parent is indeed an RNA and it could
+            //  possible be a gene.
+            // If the parent is indeed a gene then gene construction will have to
+            //  purge this pending exon (or it will cause a sanity check to fail
+            //  during post processing).
+            xAddPendingExon(parentId, record);
+            continue;
+        }
+        if (!pParent->GetData().IsRna()) {
+            continue;
+        }
+        xVerifyExonLocation(parentId, record);
+        if (!record.UpdateFeature(m_iFlags, pParent)) {
+            return false;
         }
     }
     return true;
@@ -500,6 +538,9 @@ bool CGff3Reader::xUpdateAnnotCds(
     ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
+    if (!xJoinLocationIntoRna(record, pEC)) {
+        return false;
+    }
     xVerifyCdsParents(record);
 
     string cdsId = xMakeRecordId(record);
@@ -775,6 +816,13 @@ bool CGff3Reader::xUpdateAnnotGene(
     if ( record.GetAttribute("ID", strId)) {
         m_MapIdToFeature[strId] = pFeature;
     }
+    // address corner case:
+    // parent of CDS is a gene but the DCS is listed before the gene so at the
+    //  time we did not know the parent would be a gene.
+    // remedy: throw out any collected cds locations that were meant for RNA
+    //  construction.
+    list<CGff2Record> pendingExons;
+    xGetPendingExons(strId, pendingExons);
     return true;
 }
 

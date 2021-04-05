@@ -133,6 +133,10 @@ protected:
         CSeq_annot&,
         ILineErrorListener*);
 
+    virtual bool xJoinLocationIntoRna(
+        const CGff2Record&,
+        ILineErrorListener*);
+
     virtual bool xUpdateAnnotCds(
         const CGff2Record&,
         CRef<CSeq_feat>,
