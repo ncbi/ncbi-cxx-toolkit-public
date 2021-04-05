@@ -531,21 +531,32 @@ void CPSGS_AsyncResolveBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records
     if (m_Request->NeedTrace()) {
         string  msg = to_string(records.size()) + " hit(s)";
         for (const auto &  item : records) {
-            msg += "\n" + ToJson(item, SPSGS_ResolveRequest::fPSGS_BioseqKeyFields).
+            msg += "\n" + ToJson(item, SPSGS_ResolveRequest::fPSGS_AllBioseqFields).
                             Repr(CJsonNode::fStandardJson);
         }
         m_Reply->SendTrace(msg, m_Request->GetStartTimestamp());
     }
 
     size_t  index_to_pick = 0;
-    if (record_count > 1 && m_BioseqInfoRequestedVersion == -1) {
-        // Multiple records when the version is not provided:
-        // => choose the highest version
-        CBioseqInfoRecord::TVersion     version = records[0].GetVersion();
+    if (record_count > 1) {
+        // Multiple records:
+        // => choose the highest version;
+        //    if more than one with the highest version then choose the highest
+        //    date changed
+        auto        version = records[0].GetVersion();
+        auto        date_changed = records[0].GetDateChanged();
         for (size_t  k = 0; k < records.size(); ++k) {
             if (records[k].GetVersion() > version) {
                 index_to_pick = k;
                 version = records[k].GetVersion();
+                date_changed = records[k].GetDateChanged();
+            } else {
+                if (records[k].GetVersion() == version) {
+                    if (records[k].GetDateChanged() > date_changed) {
+                        index_to_pick = k;
+                        date_changed = records[k].GetDateChanged();
+                    }
+                }
             }
         }
         // Pretend there was exactly one record
@@ -553,7 +564,7 @@ void CPSGS_AsyncResolveBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records
     }
 
     if (record_count != 1) {
-        // Multiple records or did not find anything. Need more tries
+        // Did not find anything. Need more tries
         if (record_count > 1) {
             app->GetTiming().Register(eLookupCassBioseqInfo, eOpStatusFound,
                                       m_BioseqInfoStart);
@@ -598,8 +609,14 @@ void CPSGS_AsyncResolveBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records
     x_SignalStartProcessing();
 
     if (m_Request->NeedTrace()) {
+        string      prefix;
+        if (records.size() == 1)
+            prefix = "Selected record:\n";
+        else
+            prefix = "Selected (out of multiple records) the record with the highest version "
+                     "(and with highest date changed if more than one with highest version):\n";
         m_Reply->SendTrace(
-            "Selected record: " +
+            prefix +
             ToJson(records[index_to_pick], SPSGS_ResolveRequest::fPSGS_AllBioseqFields).
                 Repr(CJsonNode::fStandardJson),
             m_Request->GetStartTimestamp());
