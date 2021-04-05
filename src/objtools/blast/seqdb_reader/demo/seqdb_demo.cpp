@@ -36,6 +36,7 @@
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <sstream>
+#include <random>
 
 BEGIN_NCBI_SCOPE
 
@@ -481,7 +482,7 @@ void* CSeqDBDemo_Thread::Main(void)
         }
 
         if (sm_oid_shuffle) {
-            random_shuffle(oids.begin(), oids.end());
+            shuffle(oids.begin(), oids.end(), default_random_engine());
         }
         ITERATE(vector<int>, oid, oids) {
             count += x_UseOID(letter, *oid);
