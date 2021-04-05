@@ -3355,7 +3355,7 @@ string CDisplaySeqalign::x_DisplayGeneInfo(const CBioseq_Handle& bsp_handle,SAln
             TGi giForGeneLookup = FindGi(bsp_handle.GetBioseqCore()->GetId());
 
             CGeneInfoFileReader::TGeneInfoList infoList;
-            m_GeneInfoReader->GetGeneInfoForGi(GI_TO(int, giForGeneLookup),infoList);
+            m_GeneInfoReader->GetGeneInfoForGi(giForGeneLookup,infoList);
 
             CGeneInfoFileReader::TGeneInfoList::const_iterator
                         itInfo = infoList.begin();

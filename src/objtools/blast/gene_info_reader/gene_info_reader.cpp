@@ -145,6 +145,20 @@ template <typename TRecordType>
     }
 }
 
+/* static */ void s_SortAndFilterGis(list<TGi>& listVals, bool bRemoveZeros)
+{
+    listVals.sort();
+    listVals.unique();
+    if (bRemoveZeros)
+    {
+        while (!listVals.empty() &&
+            listVals.front() == ZERO_GI)
+        {
+            listVals.pop_front();
+        }
+    }
+}
+
 /// Searches an array of records sorted by the first field.
 ///
 /// The function returns the list of values of a given field
@@ -183,6 +197,28 @@ static bool s_SearchSortedArray(TRecordType* pRecs, int nRecs,
             iFirstIndex++;
         }
         s_SortAndFilter(listFieldVals, bRemoveZeros);
+        return true;
+    }
+    return false;
+}
+
+template <typename TRecordType>
+static bool s_SearchSortedArrayGis(TRecordType* pRecs, int nRecs,
+    int n1, int iField,
+    list<TGi>& listFieldVals,
+    bool bRemoveZeros)
+{
+    int iFirstIndex = -1;
+    if (s_SearchSortedArray(pRecs, nRecs, n1, iFirstIndex))
+    {
+        while (iFirstIndex < nRecs &&
+            s_GetField(pRecs[iFirstIndex], 0) == n1)
+        {
+            listFieldVals.push_back(
+                GI_FROM(int, s_GetField(pRecs[iFirstIndex], iField)));
+            iFirstIndex++;
+        }
+        s_SortAndFilterGis(listFieldVals, bRemoveZeros);
         return true;
     }
     return false;
@@ -257,7 +293,7 @@ void CGeneInfoFileReader::x_UnmapMemFiles()
         m_memGene2GiFile->Unmap();
 }
 
-bool CGeneInfoFileReader::x_GiToGeneId(int gi, list<int>& listGeneIds)
+bool CGeneInfoFileReader::x_GiToGeneId(TGi gi, list<int>& listGeneIds)
 {
     STwoIntRecord* pRecs;
     int nRecs;
@@ -266,7 +302,7 @@ bool CGeneInfoFileReader::x_GiToGeneId(int gi, list<int>& listGeneIds)
                                  pRecs, nRecs))
     {
         retval = s_SearchSortedArray(pRecs, nRecs,
-                                   gi, 1, listGeneIds, false);
+                                   GI_TO(int, gi), 1, listGeneIds, false);
     }
     else
     {
@@ -303,7 +339,7 @@ bool CGeneInfoFileReader::x_GeneIdToOffset(int geneId, int& nOffset)
     return false;
 }
 
-bool CGeneInfoFileReader::x_GiToOffset(int gi, list<int>& listOffsets)
+bool CGeneInfoFileReader::x_GiToOffset(TGi gi, list<int>& listOffsets)
 {
     if (!m_bGiToOffsetLookup)
     {
@@ -318,7 +354,7 @@ bool CGeneInfoFileReader::x_GiToOffset(int gi, list<int>& listOffsets)
                                  pRecs, nRecs))
     {
         retval = s_SearchSortedArray(pRecs, nRecs,
-                                   gi, 1, listOffsets, false);
+                                   GI_TO(int, gi), 1, listOffsets, false);
     }
     else
     {
@@ -331,7 +367,7 @@ bool CGeneInfoFileReader::x_GiToOffset(int gi, list<int>& listOffsets)
 }
 
 bool CGeneInfoFileReader::x_GeneIdToGi(int geneId, int iGiField,
-                                       list<int>& listGis)
+                                       list<TGi>& listGis)
 {
     SMultiIntRecord<4>* pRecs;
     int nRecs;
@@ -339,7 +375,7 @@ bool CGeneInfoFileReader::x_GeneIdToGi(int geneId, int iGiField,
     if (s_GetMemFilePtrAndLength(m_memGene2GiFile.get(),
                                  pRecs, nRecs))
     {
-        retval = s_SearchSortedArray(pRecs, nRecs,
+        retval = s_SearchSortedArrayGis(pRecs, nRecs,
                                    geneId, iGiField, listGis, true);
     }
     else
@@ -464,7 +500,7 @@ CGeneInfoFileReader::~CGeneInfoFileReader()
 }
 
 bool CGeneInfoFileReader::
-        GetGeneIdsForGi(int gi, TGeneIdList& geneIdList)
+        GetGeneIdsForGi(TGi gi, TGeneIdList& geneIdList)
 {
     return x_GiToGeneId(gi, geneIdList);
 }
@@ -487,7 +523,7 @@ bool CGeneInfoFileReader::
     return x_GeneIdToGi(geneId, k_iGenomicGiField, giList);
 }
 
-bool CGeneInfoFileReader::GetGeneInfoForGi(int gi, TGeneInfoList& infoList)
+bool CGeneInfoFileReader::GetGeneInfoForGi(TGi gi, TGeneInfoList& infoList)
 {
     bool bSuccess = false;
     if (m_bGiToOffsetLookup)
@@ -525,7 +561,7 @@ bool CGeneInfoFileReader::GetGeneInfoForGi(int gi, TGeneInfoList& infoList)
                                 "Gene info not found for Gene ID:" +
                                 NStr::IntToString(*itId) +
                                 " linked from valid Gi:" +
-                                NStr::IntToString(gi));
+                                NStr::NumericToString(gi));
                 }
             }
         }

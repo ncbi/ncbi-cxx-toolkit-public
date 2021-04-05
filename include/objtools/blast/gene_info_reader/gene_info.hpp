@@ -240,7 +240,7 @@ class NCBI_XOBJREAD_EXPORT IGeneInfoInput
 {
 public:
     /// List of Gis.
-    typedef list<int>   TGiList;
+    typedef list<TGi>   TGiList;
 
     /// List of Gene IDs.
     typedef list<int>   TGeneIdList;
@@ -268,7 +268,7 @@ public:
     /// @return
     ///     True if one or more Gene IDs were found for the Gi.
     virtual bool
-        GetGeneIdsForGi(int gi, TGeneIdList& geneIdList) = 0;
+        GetGeneIdsForGi(TGi gi, TGeneIdList& geneIdList) = 0;
 
     /// Get all RNA Gis for a given Gene ID.
     ///
@@ -325,7 +325,7 @@ public:
     /// @return
     ///     True if any Gene information was found for the Gi.
     virtual bool
-        GetGeneInfoForGi(int gi, TGeneInfoList& infoList) = 0;
+        GetGeneInfoForGi(TGi gi, TGeneInfoList& infoList) = 0;
 
     /// Get all Gene Information objects for a given Gene ID.
     ///

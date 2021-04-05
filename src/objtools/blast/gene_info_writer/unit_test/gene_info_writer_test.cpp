@@ -49,13 +49,13 @@ USING_NCBI_SCOPE;
 //==========================================================================//
 
 typedef map<int, int> TIntToIntMap;
-typedef multimap<int, int> TIntToIntMultimap;
+typedef multimap<TGi, int> TGiToIntMultimap;
 typedef map<int, string> TIntToStringMap;
 
 static void
     s_InitTestData(IGeneInfoInput::TGeneIdList& listIds,
                    IGeneInfoInput::TGiList& listGis,
-                   TIntToIntMultimap& mapGiToIds,
+                   TGiToIntMultimap& mapGiToIds,
                    IGeneInfoInput::TGeneIdToGeneInfoMap& mapIdToInfo)
 {
     int geneId;
@@ -95,49 +95,49 @@ static void
 
     // Link Gis to Gene IDs
 
-    mapGiToIds.insert(TIntToIntMultimap::value_type(1, 7));
-    mapGiToIds.insert(TIntToIntMultimap::value_type(2, 2));
-    mapGiToIds.insert(TIntToIntMultimap::value_type(2, 3));
-    mapGiToIds.insert(TIntToIntMultimap::value_type(2, 5));
-    mapGiToIds.insert(TIntToIntMultimap::value_type(3, 4));
-    mapGiToIds.insert(TIntToIntMultimap::value_type(4, 4));
-    mapGiToIds.insert(TIntToIntMultimap::value_type(4, 6));
-    mapGiToIds.insert(TIntToIntMultimap::value_type(10, 1));
-    mapGiToIds.insert(TIntToIntMultimap::value_type(11, 1));
-    mapGiToIds.insert(TIntToIntMultimap::value_type(11, 7));
-    mapGiToIds.insert(TIntToIntMultimap::value_type(20, 1));
+    mapGiToIds.insert(TGiToIntMultimap::value_type(GI_CONST(1), 7));
+    mapGiToIds.insert(TGiToIntMultimap::value_type(GI_CONST(2), 2));
+    mapGiToIds.insert(TGiToIntMultimap::value_type(GI_CONST(2), 3));
+    mapGiToIds.insert(TGiToIntMultimap::value_type(GI_CONST(2), 5));
+    mapGiToIds.insert(TGiToIntMultimap::value_type(GI_CONST(3), 4));
+    mapGiToIds.insert(TGiToIntMultimap::value_type(GI_CONST(4), 4));
+    mapGiToIds.insert(TGiToIntMultimap::value_type(GI_CONST(4), 6));
+    mapGiToIds.insert(TGiToIntMultimap::value_type(GI_CONST(10), 1));
+    mapGiToIds.insert(TGiToIntMultimap::value_type(GI_CONST(11), 1));
+    mapGiToIds.insert(TGiToIntMultimap::value_type(GI_CONST(11), 7));
+    mapGiToIds.insert(TGiToIntMultimap::value_type(GI_CONST(20), 1));
 //  (21, 1), (21, 7) excluded: "Genomic" Gi, multiple IDs
-    mapGiToIds.insert(TIntToIntMultimap::value_type(30, 2));
-    mapGiToIds.insert(TIntToIntMultimap::value_type(31, 5));
-    mapGiToIds.insert(TIntToIntMultimap::value_type(31, 4));
-    mapGiToIds.insert(TIntToIntMultimap::value_type(32, 3));
-    mapGiToIds.insert(TIntToIntMultimap::value_type(32, 6));
-    mapGiToIds.insert(TIntToIntMultimap::value_type(40, 2));
-    mapGiToIds.insert(TIntToIntMultimap::value_type(41, 2));
-    mapGiToIds.insert(TIntToIntMultimap::value_type(42, 2));
-    mapGiToIds.insert(TIntToIntMultimap::value_type(50, 5));
+    mapGiToIds.insert(TGiToIntMultimap::value_type(GI_CONST(30), 2));
+    mapGiToIds.insert(TGiToIntMultimap::value_type(GI_CONST(31), 5));
+    mapGiToIds.insert(TGiToIntMultimap::value_type(GI_CONST(31), 4));
+    mapGiToIds.insert(TGiToIntMultimap::value_type(GI_CONST(32), 3));
+    mapGiToIds.insert(TGiToIntMultimap::value_type(GI_CONST(32), 6));
+    mapGiToIds.insert(TGiToIntMultimap::value_type(GI_CONST(40), 2));
+    mapGiToIds.insert(TGiToIntMultimap::value_type(GI_CONST(41), 2));
+    mapGiToIds.insert(TGiToIntMultimap::value_type(GI_CONST(42), 2));
+    mapGiToIds.insert(TGiToIntMultimap::value_type(GI_CONST(50), 5));
 //  (60, 3), (60, 4) excluded: "Genomic" Gi, multiple IDs
-    mapGiToIds.insert(TIntToIntMultimap::value_type(61, 4));
-    mapGiToIds.insert(TIntToIntMultimap::value_type(62, 6));
+    mapGiToIds.insert(TGiToIntMultimap::value_type(GI_CONST(61), 4));
+    mapGiToIds.insert(TGiToIntMultimap::value_type(GI_CONST(62), 6));
 
-    listGis.push_back(1);
-    listGis.push_back(2);
-    listGis.push_back(3);
-    listGis.push_back(4);
-    listGis.push_back(10);
-    listGis.push_back(11);
-    listGis.push_back(20);
-    listGis.push_back(21);
-    listGis.push_back(30);
-    listGis.push_back(31);
-    listGis.push_back(32);
-    listGis.push_back(40);
-    listGis.push_back(41);
-    listGis.push_back(42);
-    listGis.push_back(50);
-    listGis.push_back(60);
-    listGis.push_back(61);
-    listGis.push_back(62);
+    listGis.push_back(GI_CONST(1));
+    listGis.push_back(GI_CONST(2));
+    listGis.push_back(GI_CONST(3));
+    listGis.push_back(GI_CONST(4));
+    listGis.push_back(GI_CONST(10));
+    listGis.push_back(GI_CONST(11));
+    listGis.push_back(GI_CONST(20));
+    listGis.push_back(GI_CONST(21));
+    listGis.push_back(GI_CONST(30));
+    listGis.push_back(GI_CONST(31));
+    listGis.push_back(GI_CONST(32));
+    listGis.push_back(GI_CONST(40));
+    listGis.push_back(GI_CONST(41));
+    listGis.push_back(GI_CONST(42));
+    listGis.push_back(GI_CONST(50));
+    listGis.push_back(GI_CONST(60));
+    listGis.push_back(GI_CONST(61));
+    listGis.push_back(GI_CONST(62));
 }
 
 static bool
@@ -168,12 +168,12 @@ static void
 }
 
 static void
-    s_FillExpectedIdListForGi(int gi,
-                              TIntToIntMultimap& mapGiToIds,
+    s_FillExpectedIdListForGi(TGi gi,
+                              TGiToIntMultimap& mapGiToIds,
                               IGeneInfoInput::TGeneIdList& listIds)
 {
     // cout << endl << "Gene IDs for Gi=" << gi << ": ";
-    TIntToIntMultimap::iterator itGiToGeneId = mapGiToIds.find(gi);
+    TGiToIntMultimap::iterator itGiToGeneId = mapGiToIds.find(gi);
     while (itGiToGeneId != mapGiToIds.end() &&
            itGiToGeneId->first == gi)
     {
@@ -186,22 +186,22 @@ static void
     // cout << endl;
 }
 
-static void
-    s_CheckIntInList(int val, list<int>& listVals)
+template<class T> void
+    s_CheckIntInList(T val, list<T>& listVals)
 {
     BOOST_REQUIRE(find(listVals.begin(), listVals.end(), val) != listVals.end());
 }
 
-static void
-    s_CheckIntListEquality(list<int>& list1, list<int>& list2)
+template<class T> void
+    s_CheckIntListEquality(list<T>& list1, list<T>& list2)
 {
-    for (list<int>::iterator it1 = list1.begin();
+    for (typename list<T>::iterator it1 = list1.begin();
          it1 != list1.end(); it1++)
     {
         s_CheckIntInList(*it1, list2);
     }
 
-    for (list<int>::iterator it2 = list2.begin();
+    for (typename list<T>::iterator it2 = list2.begin();
          it2 != list2.end(); it2++)
     {
         s_CheckIntInList(*it2, list1);
@@ -218,7 +218,7 @@ BOOST_AUTO_TEST_CASE(s_MainWritingTest)
     {
         IGeneInfoInput::TGeneIdList listGeneIds;
         IGeneInfoInput::TGiList listGis;
-        TIntToIntMultimap mapGiToIds;
+        TGiToIntMultimap mapGiToIds;
         IGeneInfoInput::TGeneIdToGeneInfoMap mapIdToInfo;
 
         s_InitTestData(listGeneIds, listGis,
@@ -286,7 +286,7 @@ BOOST_AUTO_TEST_CASE(s_MainWritingTest)
         BOOST_REQUIRE(CGeneFileUtils::
                 OpenBinaryInputFile(strGi2Gene, inGi2Gene));
 
-        TIntToIntMultimap mapGiToIdsFromFile;
+        TGiToIntMultimap mapGiToIdsFromFile;
         CGeneFileUtils::STwoIntRecord recordGi2Gene;
         while (inGi2Gene)
         {
@@ -294,18 +294,18 @@ BOOST_AUTO_TEST_CASE(s_MainWritingTest)
             if (!inGi2Gene)
                 break;
 
-            s_CheckIntInList(recordGi2Gene.n1, listGis);
+            s_CheckIntInList(GI_FROM(int, recordGi2Gene.n1), listGis);
             s_CheckIntInList(recordGi2Gene.n2, listGeneIds);
 
-            mapGiToIdsFromFile.insert(TIntToIntMultimap::value_type
-                                      (recordGi2Gene.n1,
+            mapGiToIdsFromFile.insert(TGiToIntMultimap::value_type
+                                      (GI_FROM(int, recordGi2Gene.n1),
                                        recordGi2Gene.n2));
         }
 
         IGeneInfoInput::TGiList::iterator itGi = listGis.begin();
         for (; itGi != listGis.end(); itGi++)
         {
-            int gi = *itGi;
+            TGi gi = *itGi;
 
             IGeneInfoInput::TGeneIdList listIdsForGi;
             s_FillExpectedIdListForGi(gi, mapGiToIds,
@@ -339,8 +339,8 @@ BOOST_AUTO_TEST_CASE(s_MainWritingTest)
 
             for (int iGi = 1; iGi <= 3; iGi++)
             {
-                int gi = recordGene2Gi.n[iGi];
-                if (gi == 0)
+                TGi gi = GI_FROM(int, recordGene2Gi.n[iGi]);
+                if (gi == ZERO_GI)
                     continue;
 
                 s_CheckIntInList(gi, listGis);
@@ -366,7 +366,7 @@ BOOST_AUTO_TEST_CASE(s_MainWritingTest)
         BOOST_REQUIRE(CGeneFileUtils::
                 OpenBinaryInputFile(strGi2Offset, inGi2Offset));
 
-        int curGiFromFile = 0;
+        TGi curGiFromFile = ZERO_GI;
         list<int> listOffsetsFromFile;
         CGeneFileUtils::STwoIntRecord recordGi2Offset;
         while (inGi2Offset)
@@ -375,14 +375,14 @@ BOOST_AUTO_TEST_CASE(s_MainWritingTest)
             if (!inGi2Offset)
                 break;
 
-            int gi = recordGi2Offset.n1;
+            TGi gi = GI_FROM(int, recordGi2Offset.n1);
             int offset = recordGi2Offset.n2;
 
             s_CheckIntInList(gi, listGis);
 
             if (gi != curGiFromFile)
             {
-                if (curGiFromFile > 0)
+                if (curGiFromFile > ZERO_GI)
                 {
                     IGeneInfoInput::TGeneIdList listIdsForGi;
                     s_FillExpectedIdListForGi(curGiFromFile, mapGiToIds,

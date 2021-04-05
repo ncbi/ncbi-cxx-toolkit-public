@@ -130,17 +130,17 @@ private:
     void x_UnmapMemFiles();
 
     /// Fill the Gene ID list given a Gi.
-    bool x_GiToGeneId(int gi, list<int>& listGeneIds);
+    bool x_GiToGeneId(TGi gi, list<int>& listGeneIds);
 
     /// Set the offset value given a Gene ID.
     bool x_GeneIdToOffset(int geneId, int& nOffset);
 
     /// Set the offset value given a Gi.
-    bool x_GiToOffset(int gi, list<int>& listOffsets);
+    bool x_GiToOffset(TGi gi, list<int>& listOffsets);
 
     /// Fill the Gi list given a Gene ID, and the Gi field index,
     /// which represents the Gi type to be read from the file.
-    bool x_GeneIdToGi(int geneId, int iGiField, list<int>& listGis);
+    bool x_GeneIdToGi(int geneId, int iGiField, list<TGi>& listGis);
 
     /// Read Gene data at the given offset and create the info object.
     bool x_OffsetToInfo(int nOffset, CRef<CGeneInfo>& info);
@@ -186,7 +186,7 @@ public:
 
     /// GetGeneIdsForGi implementation, see IGeneInfoInput.
     virtual bool
-        GetGeneIdsForGi(int gi, TGeneIdList& geneIdList);
+        GetGeneIdsForGi(TGi gi, TGeneIdList& geneIdList);
 
     /// GetRNAGisForGeneId implementation, see IGeneInfoInput.
     virtual bool
@@ -202,7 +202,7 @@ public:
 
     /// GetGeneInfoForGi implementation, see IGeneInfoInput.
     virtual bool
-        GetGeneInfoForGi(int gi, TGeneInfoList& infoList);
+        GetGeneInfoForGi(TGi gi, TGeneInfoList& infoList);
 
     /// GetGeneInfoForId implementation, see IGeneInfoInput.
     virtual bool

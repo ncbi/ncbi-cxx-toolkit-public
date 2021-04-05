@@ -4009,7 +4009,7 @@ string  CAlignFormatUtil::GetGeneInfo(TGi giForGeneLookup)
 
             
             CGeneInfoFileReader::TGeneInfoList infoList;
-            m_GeneInfoReader->GetGeneInfoForGi(GI_TO(int, giForGeneLookup),infoList);
+            m_GeneInfoReader->GetGeneInfoForGi(giForGeneLookup,infoList);
 
             CGeneInfoFileReader::TGeneInfoList::const_iterator itInfo = infoList.begin();            
             for (; itInfo != infoList.end(); itInfo++)

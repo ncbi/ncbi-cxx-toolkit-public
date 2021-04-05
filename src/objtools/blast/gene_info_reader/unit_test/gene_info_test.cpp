@@ -47,7 +47,7 @@ USING_NCBI_SCOPE;
 //==========================================================================//
 
 typedef map<int, int> TIntToIntMap;
-typedef multimap<int, int> TIntToIntMultimap;
+typedef multimap<TGi, int> TGiToIntMultimap;
 typedef map<int, string> TIntToStringMap;
 
 static void
@@ -61,7 +61,7 @@ static void
 static void
     s_InitTestData(IGeneInfoInput::TGeneIdList& listIds,
                    IGeneInfoInput::TGiList& listGis,
-                   TIntToIntMultimap& mapGiToIds,
+                   TGiToIntMultimap& mapGiToIds,
                    IGeneInfoInput::TGeneIdToGeneInfoMap& mapIdToInfo)
 {
     int geneId;
@@ -101,56 +101,56 @@ static void
 
     // Link Gis to Gene IDs
 
-    mapGiToIds.insert(TIntToIntMultimap::value_type(1, 7)); 
-    mapGiToIds.insert(TIntToIntMultimap::value_type(2, 2)); 
-    mapGiToIds.insert(TIntToIntMultimap::value_type(2, 3)); 
-    mapGiToIds.insert(TIntToIntMultimap::value_type(2, 5)); 
-    mapGiToIds.insert(TIntToIntMultimap::value_type(3, 4)); 
-    mapGiToIds.insert(TIntToIntMultimap::value_type(4, 4)); 
-    mapGiToIds.insert(TIntToIntMultimap::value_type(4, 6)); 
-    mapGiToIds.insert(TIntToIntMultimap::value_type(10, 1)); 
-    mapGiToIds.insert(TIntToIntMultimap::value_type(11, 1)); 
-    mapGiToIds.insert(TIntToIntMultimap::value_type(11, 7)); 
-    mapGiToIds.insert(TIntToIntMultimap::value_type(20, 1)); 
+    mapGiToIds.insert(TGiToIntMultimap::value_type(GI_CONST(1), 7)); 
+    mapGiToIds.insert(TGiToIntMultimap::value_type(GI_CONST(2), 2));
+    mapGiToIds.insert(TGiToIntMultimap::value_type(GI_CONST(2), 3));
+    mapGiToIds.insert(TGiToIntMultimap::value_type(GI_CONST(2), 5));
+    mapGiToIds.insert(TGiToIntMultimap::value_type(GI_CONST(3), 4));
+    mapGiToIds.insert(TGiToIntMultimap::value_type(GI_CONST(4), 4));
+    mapGiToIds.insert(TGiToIntMultimap::value_type(GI_CONST(4), 6));
+    mapGiToIds.insert(TGiToIntMultimap::value_type(GI_CONST(10), 1));
+    mapGiToIds.insert(TGiToIntMultimap::value_type(GI_CONST(11), 1));
+    mapGiToIds.insert(TGiToIntMultimap::value_type(GI_CONST(11), 7));
+    mapGiToIds.insert(TGiToIntMultimap::value_type(GI_CONST(20), 1));
 //  (21, 1), (21, 7) excluded: "Genomic" Gi, multiple IDs
-    mapGiToIds.insert(TIntToIntMultimap::value_type(30, 2)); 
-    mapGiToIds.insert(TIntToIntMultimap::value_type(31, 5)); 
-    mapGiToIds.insert(TIntToIntMultimap::value_type(31, 4)); 
-    mapGiToIds.insert(TIntToIntMultimap::value_type(32, 3)); 
-    mapGiToIds.insert(TIntToIntMultimap::value_type(32, 6)); 
-    mapGiToIds.insert(TIntToIntMultimap::value_type(40, 2)); 
-    mapGiToIds.insert(TIntToIntMultimap::value_type(41, 2)); 
-    mapGiToIds.insert(TIntToIntMultimap::value_type(42, 2)); 
-    mapGiToIds.insert(TIntToIntMultimap::value_type(50, 5)); 
+    mapGiToIds.insert(TGiToIntMultimap::value_type(GI_CONST(30), 2));
+    mapGiToIds.insert(TGiToIntMultimap::value_type(GI_CONST(31), 5));
+    mapGiToIds.insert(TGiToIntMultimap::value_type(GI_CONST(31), 4));
+    mapGiToIds.insert(TGiToIntMultimap::value_type(GI_CONST(32), 3));
+    mapGiToIds.insert(TGiToIntMultimap::value_type(GI_CONST(32), 6));
+    mapGiToIds.insert(TGiToIntMultimap::value_type(GI_CONST(40), 2));
+    mapGiToIds.insert(TGiToIntMultimap::value_type(GI_CONST(41), 2));
+    mapGiToIds.insert(TGiToIntMultimap::value_type(GI_CONST(42), 2));
+    mapGiToIds.insert(TGiToIntMultimap::value_type(GI_CONST(50), 5));
 //  (60, 3), (60, 4) excluded: "Genomic" Gi, multiple IDs
-    mapGiToIds.insert(TIntToIntMultimap::value_type(61, 4)); 
-    mapGiToIds.insert(TIntToIntMultimap::value_type(62, 6)); 
+    mapGiToIds.insert(TGiToIntMultimap::value_type(GI_CONST(61), 4));
+    mapGiToIds.insert(TGiToIntMultimap::value_type(GI_CONST(62), 6));
 
-    listGis.push_back(1);
-    listGis.push_back(2);
-    listGis.push_back(3);
-    listGis.push_back(4);
-    listGis.push_back(10);
-    listGis.push_back(11);
-    listGis.push_back(20);
-//    listGis.push_back(21);
-    listGis.push_back(30);
-    listGis.push_back(31);
-    listGis.push_back(32);
-    listGis.push_back(40);
-    listGis.push_back(41);
-    listGis.push_back(42);
-    listGis.push_back(50);
-//    listGis.push_back(60);
-    listGis.push_back(61);
-    listGis.push_back(62);
+    listGis.push_back(GI_CONST(1));
+    listGis.push_back(GI_CONST(2));
+    listGis.push_back(GI_CONST(3));
+    listGis.push_back(GI_CONST(4));
+    listGis.push_back(GI_CONST(10));
+    listGis.push_back(GI_CONST(11));
+    listGis.push_back(GI_CONST(20));
+//    listGis.push_back(GI_CONST(21);;
+    listGis.push_back(GI_CONST(30));
+    listGis.push_back(GI_CONST(31));
+    listGis.push_back(GI_CONST(32));
+    listGis.push_back(GI_CONST(40));
+    listGis.push_back(GI_CONST(41));
+    listGis.push_back(GI_CONST(42));
+    listGis.push_back(GI_CONST(50));
+//    listGis.push_back(GI_CONST(60));
+    listGis.push_back(GI_CONST(61));
+    listGis.push_back(GI_CONST(62));
 }
 
 static void
     s_InitGisWithNoGeneIds(IGeneInfoInput::TGiList& listGis)
 {
-    listGis.push_back(100);         // no gene links
-    listGis.push_back(60);          // "Genomic" Gi, multiple gene links
+    listGis.push_back(GI_CONST(100));         // no gene links
+    listGis.push_back(GI_CONST(60));          // "Genomic" Gi, multiple gene links
 }
 
 static bool
@@ -216,13 +216,13 @@ static void
 }
 
 static void
-    s_FillExpectedInfoListForGi(int gi,
-                                TIntToIntMultimap& mapGiToIds,
+    s_FillExpectedInfoListForGi(TGi gi,
+                                TGiToIntMultimap& mapGiToIds,
                                 IGeneInfoInput::TGeneIdToGeneInfoMap& mapIdToInfo,
                                 IGeneInfoInput::TGeneInfoList& infoList)
 {
     // cout << endl << "Gene IDs for Gi=" << gi << ": ";
-    TIntToIntMultimap::iterator itGiToGeneId = mapGiToIds.find(gi);
+    TGiToIntMultimap::iterator itGiToGeneId = mapGiToIds.find(gi);
     while (itGiToGeneId != mapGiToIds.end() &&
            itGiToGeneId->first == gi)
     {
@@ -239,20 +239,20 @@ static void
     // cout << endl;
 }
 
-static void
-    s_CheckIntInList(int val, list<int>& listVals)
+template<class T> void
+    s_CheckIntInList(T val, list<T>& listVals)
 {
     BOOST_REQUIRE(find(listVals.begin(), listVals.end(), val) != listVals.end());
 }
 
 static void
-    s_CheckGiToGeneConsistency(int gi,
-                               TIntToIntMultimap& mapGiToIds,
+    s_CheckGiToGeneConsistency(TGi gi,
+                               TGiToIntMultimap& mapGiToIds,
                                CGeneInfoFileReader *pReader)
 {
     // see if this gi appears in the gi lists for each of its Gene IDs
 
-    TIntToIntMultimap::iterator itGiToGeneId = mapGiToIds.find(gi);
+    TGiToIntMultimap::iterator itGiToGeneId = mapGiToIds.find(gi);
     while (itGiToGeneId != mapGiToIds.end() &&
            itGiToGeneId->first == gi)
     {
@@ -317,7 +317,7 @@ BOOST_AUTO_TEST_CASE(s_MainInfoReaderTest)
     {
         IGeneInfoInput::TGeneIdList listGeneIds;
         IGeneInfoInput::TGiList listGis;
-        TIntToIntMultimap mapGiToIds;
+        TGiToIntMultimap mapGiToIds;
         IGeneInfoInput::TGeneIdToGeneInfoMap mapIdToInfo;
 
         s_InitTestData(listGeneIds, listGis,
@@ -331,7 +331,7 @@ BOOST_AUTO_TEST_CASE(s_MainInfoReaderTest)
         IGeneInfoInput::TGiList::iterator itGi = listGis.begin();
         for (; itGi != listGis.end(); itGi++)
         {
-            int gi = *itGi;
+            TGi gi = *itGi;
 
             // cout << endl << "Processing new Gi: " << gi << endl;
 
@@ -379,7 +379,7 @@ BOOST_AUTO_TEST_CASE(s_GiWithNoGeneIdTest)
         IGeneInfoInput::TGiList::iterator itGi = listGis.begin();
         for (; itGi != listGis.end(); itGi++)
         {
-            int gi = *itGi;
+            TGi gi = *itGi;
 
             IGeneInfoInput::TGeneInfoList infoList1, infoList2,
                                           infoListExpected;

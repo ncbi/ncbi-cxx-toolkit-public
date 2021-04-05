@@ -67,6 +67,10 @@ private:
     /// @param listVals
     ///     List of integer values to output.
     void OutputIntList(const list<int>& listVals);
+    /// Output a list of TGi values to stdout.
+    /// @param listVals
+    ///     List of TGi values to output.
+    void OutputGiList(const list<TGi>& listVals);
     /// Output a list of Gene Information objects to stdout.
     /// @param listInfos
     ///     List of Gene Information objects to output.
@@ -79,6 +83,17 @@ void CReadFilesApp::
         OutputIntList(const list<int>& listVals)
 {
     list<int>::const_iterator it = listVals.begin();
+    for (; it != listVals.end(); it++)
+    {
+        cout << *it << " ";
+    }
+    cout << endl;
+}
+
+void CReadFilesApp::
+OutputGiList(const list<TGi>& listVals)
+{
+    list<TGi>::const_iterator it = listVals.begin();
     for (; it != listVals.end(); it++)
     {
         cout << *it << " ";
@@ -148,12 +163,12 @@ int CReadFilesApp::Run(void)
         // environment variable.
         CGeneInfoFileReader fileReader;
 
-        int gi2id = GetArgs()["gi2id"].AsInteger();
+        TGi gi2id = GI_FROM(TIntId, GetArgs()["gi2id"].AsIntId());
         int id2gi = GetArgs()["id2gi"].AsInteger();
-        int gi2info = GetArgs()["gi2info"].AsInteger();
+        TGi gi2info = GI_FROM(TIntId, GetArgs()["gi2info"].AsIntId());
         int id2info = GetArgs()["id2info"].AsInteger();
 
-        if (gi2id > 0)
+        if (gi2id > ZERO_GI)
         {
             IGeneInfoInput::TGeneIdList idList;
             if (fileReader.GetGeneIdsForGi(gi2id, idList))
@@ -178,7 +193,7 @@ int CReadFilesApp::Run(void)
             if (bRNA)
             {
                 cout << "RNA Gis for Gene ID=" << id2gi << ":" << endl;
-                OutputIntList(giListRNA);
+                OutputGiList(giListRNA);
             }
             else
             {
@@ -188,7 +203,7 @@ int CReadFilesApp::Run(void)
             if (bProtein)
             {
                 cout << "Protein Gis for Gene ID=" << id2gi << ":" << endl;
-                OutputIntList(giListProtein);
+                OutputGiList(giListProtein);
             }
             else
             {
@@ -198,7 +213,7 @@ int CReadFilesApp::Run(void)
             if (bGenomic)
             {
                 cout << "Genomic Gis for Gene ID=" << id2gi << ":" << endl;
-                OutputIntList(giListGenomic);
+                OutputGiList(giListGenomic);
             }
             else
             {
@@ -206,7 +221,7 @@ int CReadFilesApp::Run(void)
             }
         }
 
-        if (gi2info > 0)
+        if (gi2info > ZERO_GI)
         {
             IGeneInfoInput::TGeneInfoList listInfos;
             if (fileReader.GetGeneInfoForGi(gi2info, listInfos))

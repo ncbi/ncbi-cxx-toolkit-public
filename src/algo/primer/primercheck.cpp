@@ -1064,8 +1064,8 @@ void COligoSpecificityCheck::x_SavePrimerInfo(CSeq_align& left_align,
         if (m_Hits->m_AllowTranscriptVariants && !hit_assigned && master_gi != ZERO_GI && subj_gi != ZERO_GI) {
             IGeneInfoInput::TGeneIdList master_gene_id_list;
             IGeneInfoInput::TGeneIdList subj_gene_id_list;
-            if (m_FileReader.GetGeneIdsForGi(GI_TO(int, master_gi), master_gene_id_list) 
-                && m_FileReader.GetGeneIdsForGi(GI_TO(int, subj_gi), subj_gene_id_list)){
+            if (m_FileReader.GetGeneIdsForGi(master_gi, master_gene_id_list) 
+                && m_FileReader.GetGeneIdsForGi(subj_gi, subj_gene_id_list)){
                 
                 ITERATE(IGeneInfoInput::TGeneIdList, iter1, master_gene_id_list) {
                     ITERATE(IGeneInfoInput::TGeneIdList, iter2, subj_gene_id_list) {
