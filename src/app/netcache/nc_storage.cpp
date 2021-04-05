@@ -56,6 +56,10 @@
 // uses Boost intrusive rbtree to hold SNCCacheData (versus std::set)
 #define __NC_CACHEDATA_INTR_SET 1
 
+#if __NC_CACHEDATA_ALL_MONITOR
+#include <random>
+#endif
+
 BEGIN_NCBI_SCOPE
 
 
@@ -4331,7 +4335,7 @@ CSpaceShrinker::x_MoveNextRecord(void)
         ITERATE(TAllCacheBuckets, tt, s_AllCache) {
             v_all.push_back(tt->second);
         }
-        random_shuffle(v_all.begin(), v_all.end());
+        shuffle(v_all.begin(), v_all.end(), default_random_engine());
         ITERATE(vector<SAllCacheTable*>, tt, v_all) {
             table = *tt;
             table->lock.Lock();
