@@ -351,7 +351,7 @@ CSeq_id_Handle sx_MakeUniqueId(const CSeq_id_Handle& idh, TIdMap& id_map)
         obj_id->SetStr(base+NStr::NumericToString(k));
         CSeq_id_Handle new_idh = CSeq_id_Handle::GetHandle(*new_id);
         if ( sx_AddId(id_map, new_idh).second ) {
-            suffix_id = CSeq_id_Handle::GetGiHandle(k+GI_FROM(TIntId, 1));
+            suffix_id = CSeq_id_Handle::GetGiHandle(k+GI_CONST(1));
             return new_idh;
         }
     }
