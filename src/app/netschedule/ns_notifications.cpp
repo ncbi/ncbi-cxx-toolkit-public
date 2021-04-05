@@ -43,7 +43,7 @@
 #include "ns_affinity.hpp"
 #include "ns_handler.hpp"
 #include "ns_group.hpp"
-
+#include <random>
 
 BEGIN_NCBI_SCOPE
 
@@ -630,7 +630,7 @@ CNSNotificationList::Notify(const TNSBitVector &   jobs,
     }
 
     if (be_random && !targets.empty()) {
-        random_shuffle(targets.begin(), targets.end());
+        shuffle(targets.begin(), targets.end(), default_random_engine());
 
         x_SendNotificationPacket(targets[0]->m_Address,
                                  targets[0]->m_Port,
