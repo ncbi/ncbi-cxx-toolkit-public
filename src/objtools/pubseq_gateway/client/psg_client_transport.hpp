@@ -587,7 +587,9 @@ struct SPSG_Servers : protected deque<SPSG_Server>
     using TBase::end;
     using TBase::operator[];
 
-    SPSG_Servers() : m_Size(0) {}
+    atomic_bool fail_requests;
+
+    SPSG_Servers() : fail_requests(false), m_Size(0) {}
 
     template <class... TArgs>
     void emplace_back(TArgs&&... args)
@@ -650,6 +652,7 @@ private:
 struct SPSG_DiscoveryImpl
 {
     SPSG_DiscoveryImpl(CServiceDiscovery service, SPSG_Servers::TTS& servers) :
+        m_NoServers(servers),
         m_Service(move(service)),
         m_Servers(servers)
     {}
@@ -661,6 +664,20 @@ protected:
     void AfterExecute() {}
 
 private:
+    struct SNoServers
+    {
+        SNoServers(SPSG_Servers::TTS& servers);
+
+        bool operator()(bool discovered, SUv_Timer* timer);
+
+    private:
+        const uint64_t m_RetryDelay;
+        const uint64_t m_Timeout;
+        atomic_bool& m_FailRequests;
+        uint64_t m_Passed = 0;
+    };
+
+    SNoServers m_NoServers;
     CServiceDiscovery m_Service;
     SPSG_Servers::TTS& m_Servers;
     SPSG_ThrottleParams m_ThrottleParams;

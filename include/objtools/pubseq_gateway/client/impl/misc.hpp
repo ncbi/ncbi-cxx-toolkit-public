@@ -325,6 +325,8 @@ struct SPSG_ParamValue
 
     operator TValue() const { return m_Value; }
 
+    static TValue GetDefault() { return TParam::GetDefault(); }
+
     template <typename T>
     static void SetDefault(const T& value)
     {
@@ -408,6 +410,9 @@ typedef NCBI_PARAM_TYPE(PSG, fail_on_unknown_items) TPSG_FailOnUnknownItems;
 
 NCBI_PARAM_DECL(bool, PSG, https);
 typedef NCBI_PARAM_TYPE(PSG, https) TPSG_Https;
+
+NCBI_PARAM_DECL(double, PSG, no_servers_retry_delay);
+typedef NCBI_PARAM_TYPE(PSG, no_servers_retry_delay) TPSG_NoServersRetryDelay;
 
 NCBI_PARAM_DECL(double, PSG, throttle_relaxation_period);
 using TPSG_ThrottlePeriod = NCBI_PARAM_TYPE(PSG, throttle_relaxation_period);

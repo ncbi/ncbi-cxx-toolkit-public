@@ -105,6 +105,12 @@ struct SUv_Handle : protected THandle
         uv_close(reinterpret_cast<uv_handle_t*>(this), m_Cb);
     }
 
+    template <typename TDerived>
+    static auto GetThat(THandle* handle)
+    {
+        return static_cast<TDerived*>(handle);
+    }
+
 private:
     SUv_Handle(const SUv_Handle&) = delete;
     SUv_Handle(SUv_Handle&&) = delete;
@@ -238,12 +244,11 @@ struct NCBI_XXCONNECT2_EXPORT SUv_Timer : SUv_Handle<uv_timer_t>
         }
     }
 
-    void Start()
-    {
-        if (auto rc = uv_timer_start(this, m_Cb, m_Timeout, m_Repeat)) {
-            ERR_POST(Fatal << "uv_timer_start failed " << SUvNgHttp2_Error::LibuvStr(rc));
-        }
-    }
+    void Start()               { Start(m_Timeout, m_Repeat); }
+    void SetRepeat(uint64_t r) { Start(r, r);                }
+    void ResetRepeat()         { Start(m_Repeat, m_Repeat);  }
+
+    uint64_t GetDefaultRepeat() const { return m_Repeat; }
 
     void Close()
     {
@@ -255,6 +260,13 @@ struct NCBI_XXCONNECT2_EXPORT SUv_Timer : SUv_Handle<uv_timer_t>
     }
 
 private:
+    void Start(uint64_t t, uint64_t r)
+    {
+        if (auto rc = uv_timer_start(this, m_Cb, t, r)) {
+            ERR_POST(Fatal << "uv_timer_start failed " << SUvNgHttp2_Error::LibuvStr(rc));
+        }
+    }
+
     uv_timer_cb m_Cb;
     const uint64_t m_Timeout;
     const uint64_t m_Repeat;

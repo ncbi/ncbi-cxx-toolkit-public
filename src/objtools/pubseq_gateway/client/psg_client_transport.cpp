@@ -69,6 +69,7 @@ NCBI_PARAM_DEF(string,   PSG, request_user_args,      "");
 NCBI_PARAM_DEF(unsigned, PSG, localhost_preference,   1);
 NCBI_PARAM_DEF(bool,     PSG, fail_on_unknown_items,  false);
 NCBI_PARAM_DEF(bool,     PSG, https,                  false);
+NCBI_PARAM_DEF(double,   PSG, no_servers_retry_delay, 1.0);
 
 NCBI_PARAM_DEF(double,   PSG, throttle_relaxation_period,                  0.0);
 NCBI_PARAM_DEF(unsigned, PSG, throttle_by_consecutive_connection_failures, 0);
@@ -951,7 +952,7 @@ void SPSG_DiscoveryImpl::OnTimer(uv_timer_t* handle)
         }
     }
 
-    if ((total_regular_rate == 0.0) && (total_standby_rate == 0.0)) {
+    if (m_NoServers(total_regular_rate || total_standby_rate, SUv_Timer::GetThat<SUv_Timer>(handle))) {
         ERR_POST("No servers in service '" << service_name << '\'');
         return;
     }
@@ -1072,6 +1073,19 @@ void SPSG_IoImpl::OnTimer(uv_timer_t*)
     for (auto& session : m_Sessions) {
         session.first.CheckRequestExpiration();
     }
+
+    if (m_Servers.GetMTSafe().fail_requests) {
+        const SUvNgHttp2_Error error("No servers to process request");
+        shared_ptr<SPSG_Request> req;
+
+        while (queue.Pop(req)) {
+            SContextSetter setter(req->context);
+            auto& debug_printout = req->reply->debug_printout;
+            debug_printout << error << endl;
+            req->reply->AddError(error);
+            PSG_IO_TRACE("No servers to process request '" << debug_printout.id << '\'');
+        }
+    }
 }
 
 void SPSG_IoImpl::OnExecute(uv_loop_t& loop)
@@ -1082,6 +1096,40 @@ void SPSG_IoImpl::OnExecute(uv_loop_t& loop)
 void SPSG_IoImpl::AfterExecute()
 {
     m_Sessions.clear();
+}
+
+SPSG_DiscoveryImpl::SNoServers::SNoServers(SPSG_Servers::TTS& servers) :
+    m_RetryDelay(s_SecondsToMs(TPSG_NoServersRetryDelay::GetDefault())),
+    m_Timeout(s_SecondsToMs(TPSG_RequestTimeout::GetDefault() * (1 + TPSG_RequestRetries::GetDefault()))),
+    m_FailRequests(const_cast<atomic_bool&>(servers.GetMTSafe().fail_requests))
+{
+}
+
+bool SPSG_DiscoveryImpl::SNoServers::operator()(bool discovered, SUv_Timer* timer)
+{
+    // If there is a separate timer set for the case of no servers discovered
+    if (m_RetryDelay) {
+        if (discovered) {
+            timer->ResetRepeat();
+        } else {
+            timer->SetRepeat(m_RetryDelay);
+        }
+    }
+
+    // If there is a request timeout set
+    if (m_Timeout) {
+        const auto timeout_expired = m_Passed >= m_Timeout;
+        m_FailRequests = timeout_expired;
+
+        if (discovered) {
+            m_Passed = 0;
+        } else if (!timeout_expired) {
+            // Passed is increased after fail flag is set, the flag would be set too early otherwise
+            m_Passed += m_RetryDelay ? m_RetryDelay : timer->GetDefaultRepeat();
+        }
+    }
+
+    return !discovered;
 }
 
 
