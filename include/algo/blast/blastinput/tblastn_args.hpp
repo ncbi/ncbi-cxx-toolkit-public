@@ -39,7 +39,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
-/// Handles command line arguments for blastx binary
+/// Handles command line arguments for Tblastn binary
 class NCBI_BLASTINPUT_EXPORT CTblastnAppArgs : public CBlastAppArgs
 {
 public:
@@ -67,6 +67,29 @@ protected:
     CRef<CPsiBlastArgs> m_PsiBlastArgs;
 };
 
+class NCBI_BLASTINPUT_EXPORT CTblastnNodeArgs : public CTblastnAppArgs
+{
+public:
+    /// Constructor
+    CTblastnNodeArgs() {}
+    virtual ~CTblastnNodeArgs() {}
+
+    /// @inheritDoc
+    virtual int GetQueryBatchSize() const;
+
+    /// Get the output stream
+    virtual CNcbiOstream& GetOutputStream();
+
+    CNcbiOstrstream & GetOutputStrStream() { return m_OutputStream; }
+
+protected:
+    /// @inheritDoc
+    virtual CRef<CBlastOptionsHandle>
+    x_CreateOptionsHandle(CBlastOptions::EAPILocality locality, const CArgs& args);
+
+private :
+    CNcbiOstrstream m_OutputStream;
+};
 
 END_SCOPE(blast)
 END_NCBI_SCOPE

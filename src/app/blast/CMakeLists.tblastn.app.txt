@@ -1,7 +1,7 @@
 # $Id$
 
 NCBI_begin_app(tblastn)
-  NCBI_sources(tblastn_app)
+  NCBI_sources(tblastn_node tblastn_app)
   NCBI_add_definitions(NCBI_MODULE=BLAST)
   NCBI_uses_toolkit_libraries(blast_app_util)
   NCBI_requires(-Cygwin)

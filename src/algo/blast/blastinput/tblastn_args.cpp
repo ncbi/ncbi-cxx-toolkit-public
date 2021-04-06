@@ -111,7 +111,7 @@ CTblastnAppArgs::CTblastnAppArgs()
     arg.Reset(m_FormattingArgs);
     m_Args.push_back(arg);
 
-    m_MTArgs.Reset(new CMTArgs);
+    m_MTArgs.Reset(new CMTArgs(CThreadable::kMinNumThreads, CMTArgs::eSplitByDB));
     arg.Reset(m_MTArgs);
     m_Args.push_back(arg);
 
@@ -170,6 +170,27 @@ CTblastnAppArgs::GetQueryBatchSize() const
     bool is_remote = (m_RemoteArgs.NotEmpty() && m_RemoteArgs->ExecuteRemotely());
     return blast::GetQueryBatchSize(eTblastn, m_IsUngapped, is_remote);
 }
+
+/// Get the output stream
+CNcbiOstream&
+CTblastnNodeArgs::GetOutputStream()
+{
+	return m_OutputStream;
+}
+
+int
+CTblastnNodeArgs::GetQueryBatchSize() const
+{
+    bool is_remote = (m_RemoteArgs.NotEmpty() && m_RemoteArgs->ExecuteRemotely());
+    return blast::GetQueryBatchSize(eTblastn, m_IsUngapped, is_remote);
+}
+
+CRef<CBlastOptionsHandle>
+CTblastnNodeArgs::x_CreateOptionsHandle(CBlastOptions::EAPILocality locality, const CArgs& args)
+{
+    return CTblastnAppArgs::x_CreateOptionsHandle(locality, args);
+}
+
 
 END_SCOPE(blast)
 END_NCBI_SCOPE
