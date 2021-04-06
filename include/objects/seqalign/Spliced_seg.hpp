@@ -42,6 +42,7 @@
 
 // generated includes
 #include <objects/seqalign/Spliced_seg_.hpp>
+#include <util/range.hpp>
 
 // generated classes
 
