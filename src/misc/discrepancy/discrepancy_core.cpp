@@ -43,20 +43,17 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(NDiscrepancy)
 USING_SCOPE(objects);
 
-CSafeStatic<map<string, CDiscrepancyConstructor*> > CDiscrepancyConstructor::sm_Table;
-CSafeStatic<map<string, string> > CDiscrepancyConstructor::sm_DescrTable;
-CSafeStatic<map<string, TGroup> > CDiscrepancyConstructor::sm_GroupTable;
-CSafeStatic<map<string, string> > CDiscrepancyConstructor::sm_AliasTable;
-CSafeStatic<map<string, vector<string> > > CDiscrepancyConstructor::sm_AliasListTable;
+CSafeStatic<map<string, CDiscrepancyCaseProps>> CDiscrepancyConstructor::sm_Table;
+CSafeStatic<map<string, string>> CDiscrepancyConstructor::sm_AliasTable;
 
 
 string CDiscrepancyConstructor::GetDiscrepancyCaseName(const string& name)
 {
-    map<string, CDiscrepancyConstructor*>& Table = GetTable();
-    map<string, string>& AliasTable = GetAliasTable();
+    map<string, CDiscrepancyCaseProps>& Table = GetTable();
     if (Table.find(name) != Table.end()) {
         return name;
     }
+    map<string, string>& AliasTable = GetAliasTable();
     if (AliasTable.find(name) != AliasTable.end()) {
         return AliasTable[name];
     }
@@ -70,7 +67,7 @@ string CDiscrepancyConstructor::GetDiscrepancyCaseName(const string& name)
 const CDiscrepancyConstructor* CDiscrepancyConstructor::GetDiscrepancyConstructor(const string& name)
 {
     string str = GetDiscrepancyCaseName(name);
-    return str.empty() ? nullptr : GetTable()[str];
+    return str.empty() ? nullptr : GetTable()[str].Constructor;
 }
 
 
@@ -83,24 +80,23 @@ string GetDiscrepancyCaseName(const string& name)
 string GetDiscrepancyDescr(const string& name)
 {
     string str = GetDiscrepancyCaseName(name);
-    return str.empty() ? "" : CDiscrepancyConstructor::GetDescrTable()[str];
+    return str.empty() ? "" : CDiscrepancyConstructor::GetTable()[str].Descr;
 }
 
 
 TGroup GetDiscrepancyGroup(const string& name)
 {
     string str = GetDiscrepancyCaseName(name);
-    return str.empty() ? 0 : CDiscrepancyConstructor::GetGroupTable()[str];
+    return str.empty() ? 0 : CDiscrepancyConstructor::GetTable()[str].Group;
 }
 
 
 vector<string> GetDiscrepancyNames(TGroup group)
 {
-    map<string, CDiscrepancyConstructor*>& Table = CDiscrepancyConstructor::GetTable();
-    map<string, TGroup>& Group = CDiscrepancyConstructor::GetGroupTable();
+    map<string, CDiscrepancyCaseProps>& Table = CDiscrepancyConstructor::GetTable();
     vector<string> V;
     for (const auto& J : Table) {
-        if (J.first[0] != '_' && (Group[J.first] & group) == group) {
+        if (J.first[0] != '_' && (J.second.Group & group) == group) {
             V.push_back(J.first);
         }
     }
@@ -110,8 +106,8 @@ vector<string> GetDiscrepancyNames(TGroup group)
 
 vector<string> GetDiscrepancyAliases(const string& name)
 {
-    map<string, vector<string> >& AliasListTable = CDiscrepancyConstructor::GetAliasListTable();
-    return AliasListTable.find(name)!=AliasListTable.end() ? AliasListTable[name] : vector<string>();
+    map<string, CDiscrepancyCaseProps>& Table = CDiscrepancyConstructor::GetTable();
+    return Table.find(name) != Table.end() ? Table[name].AliasList : vector<string>();
 }
 
 
@@ -254,7 +250,7 @@ CRef<CReportItem> CReportNode::Export(CDiscrepancyCase& test, bool unique) const
             unit = str.substr(0, n);
         }
     }
-	CRef<CDiscrepancyItem> item(new CDiscrepancyItem(test, m_Name, msg, xml, unit, count));
+    CRef<CDiscrepancyItem> item(new CDiscrepancyItem(test, m_Name, msg, xml, unit, count));
     item->m_Autofix = autofix;
     item->m_Severity = severity;
     item->m_Ext = m_Ext;

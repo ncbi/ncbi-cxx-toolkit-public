@@ -51,6 +51,13 @@ BEGIN_SCOPE(NDiscrepancy)
 /// Housekeeping classes
 class CDiscrepancyConstructor;
 
+struct CDiscrepancyCaseProps
+{
+    CDiscrepancyConstructor* Constructor;
+    string Descr;
+    TGroup Group;
+    vector<string> AliasList;
+};
 
 class CDiscrepancyConstructor
 {
@@ -58,23 +65,17 @@ protected:
     virtual ~CDiscrepancyConstructor() {}
     virtual CRef<CDiscrepancyCase> Create() const = 0;
     static void Register(const string& name, const string& descr, TGroup group, CDiscrepancyConstructor& obj);
-    static string GetDiscrepancyCaseName(const string& s);
+    static string GetDiscrepancyCaseName(const string&);
     static const CDiscrepancyConstructor* GetDiscrepancyConstructor(const string& name);
-    static map<string, CDiscrepancyConstructor*>& GetTable() { return sm_Table.Get(); }
-    static map<string, string>& GetDescrTable() { return sm_DescrTable.Get(); }
-    static map<string, TGroup>& GetGroupTable() { return sm_GroupTable.Get(); }
+    static map<string, CDiscrepancyCaseProps>& GetTable() { return sm_Table.Get(); }
     static map<string, string>& GetAliasTable() { return sm_AliasTable.Get(); }
-    static map<string, vector<string>>& GetAliasListTable() { return sm_AliasListTable.Get(); }
 private:
-    static CSafeStatic<map<string, CDiscrepancyConstructor*>> sm_Table;
-    static CSafeStatic<map<string, string>> sm_DescrTable;
-    static CSafeStatic<map<string, TGroup>> sm_GroupTable;
+    static CSafeStatic<map<string, CDiscrepancyCaseProps>> sm_Table;
     static CSafeStatic<map<string, string>> sm_AliasTable;
-    static CSafeStatic<map<string, vector<string>>> sm_AliasListTable;
 
-friend NCBI_DISCREPANCY_EXPORT string GetDiscrepancyCaseName(const string& s);
-friend NCBI_DISCREPANCY_EXPORT string GetDiscrepancyDescr(const string& s);
-friend NCBI_DISCREPANCY_EXPORT TGroup GetDiscrepancyGroup(const string& s);
+friend NCBI_DISCREPANCY_EXPORT string GetDiscrepancyCaseName(const string&);
+friend NCBI_DISCREPANCY_EXPORT string GetDiscrepancyDescr(const string&);
+friend NCBI_DISCREPANCY_EXPORT TGroup GetDiscrepancyGroup(const string&);
 friend NCBI_DISCREPANCY_EXPORT vector<string> GetDiscrepancyNames(TGroup group);
 friend NCBI_DISCREPANCY_EXPORT vector<string> GetDiscrepancyAliases(const string& name);
 friend class CDiscrepancyAlias;
@@ -85,10 +86,10 @@ friend class CReportItem;
 
 inline void CDiscrepancyConstructor::Register(const string& name, const string& descr, TGroup group, CDiscrepancyConstructor& obj)
 {
-    GetTable()[name] = &obj;
-    GetDescrTable()[name] = descr;
-    GetGroupTable()[name] = group;
-    GetAliasListTable()[name] = vector<string>();
+    auto& entry = GetTable()[name];
+    entry.Constructor = &obj;
+    entry.Descr = descr;
+    entry.Group = group;
 }
 
 
@@ -103,8 +104,8 @@ protected:
             return;
         }
         AliasTable[alias] = name;
-        map<string, vector<string>>& AliasListTable = GetAliasListTable();
-        AliasListTable[name].push_back(alias);
+        map<string, CDiscrepancyCaseProps>& Table = GetTable();
+        Table[name].AliasList.push_back(alias);
     }
 };
 
