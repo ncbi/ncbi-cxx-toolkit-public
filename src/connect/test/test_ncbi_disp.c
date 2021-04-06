@@ -211,16 +211,20 @@ int main(int argc, const char* argv[])
     } else
         val = 0;
 
-    value = LBSMD_GetHostParameter(SERV_LOCALHOST, kParameter);
-    CORE_LOGF(eLOG_Note, ("Querying host parameter `%s': %s%s%s", kParameter,
-                          &"`"[!value],
-                          value ? value : "Not found",
-                          &"'"[!value]));
-    if (value)
-        free((void*) value);
-
     CORE_LOGF(eLOG_Note, ("Looking for service `%s'", service));
     verify((net_info = ConnNetInfo_Create(service)));
+
+    if (!net_info->lb_disable  &&  argc != 2) {
+        value = LBSMD_GetHostParameter(SERV_LOCALHOST, kParameter);
+        CORE_LOGF(eLOG_Note, ("Querying host parameter `%s': %s%s%s",
+                              kParameter,
+                              &"`"[!value],
+                              value ? value : "Not found",
+                              &"'"[!value]));
+        if (value)
+            free((void*) value);
+    }
+
     CORE_LOG(eLOG_Trace, "Opening service mapper");
     if (x_gettimeofday(&start) != 0)
         memset(&start, 0, sizeof(start));
