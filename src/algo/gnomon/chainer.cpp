@@ -5205,8 +5205,14 @@ tuple<CChain::TIDMap, TSignedSeqRange> CChain::PeaksAndLimits(EStatus determinan
         if(it->first > prev(it)->first+1+max_empty_dist) {           // next blob
             if(ipeak->first > last_allowed)
                 break;
-            if(w >= min_blob_weight)
-                peak_weights.emplace(ipeak->first, w);      // peak position, blob weight    
+            if(w >= min_blob_weight) {
+                auto still_good = ipeak;
+                for(auto i = ipeak; i != it && i->first <= last_allowed; ++i) { // shift position to furthest 50% within blob
+                    if(i->second >= 0.5*ipeak->second)
+                        still_good = i;
+                }
+                peak_weights.emplace(still_good->first, w);      // peak position, blob weight
+            }    
             ipeak = it;
             w = it->second;
         } else {
@@ -5215,8 +5221,14 @@ tuple<CChain::TIDMap, TSignedSeqRange> CChain::PeaksAndLimits(EStatus determinan
                 ipeak = it;
         }
     }
-    if(ipeak->first <= last_allowed && w >= min_blob_weight)  // last peak
-        peak_weights.emplace(ipeak->first, w);      // peak position, blob weight
+    if(ipeak->first <= last_allowed && w >= min_blob_weight) { // last peak
+        auto still_good = ipeak;
+        for(auto i = ipeak; i != raw_weights.end() && i->first <= last_allowed; ++i) { // shift position to furthest 50% within blob
+            if(i->second >= 0.5*ipeak->second)
+                still_good = i;
+        }
+        peak_weights.emplace(still_good->first, w);      // peak position, blob weight
+    }
 
     return make_tuple(peak_weights,real_limits);
 }
