@@ -86,7 +86,7 @@ unsigned int CExonNumberAssigner::xGetIndexInLocation(
     if (recordFrom == 14408) {
         cerr << "";
     }
-    for (const auto pExonLocation: location.GetPacked_int().Get()) {
+    for (const auto& pExonLocation: location.GetPacked_int().Get()) {
         auto exonFrom = pExonLocation->GetFrom();
         auto exonTo = pExonLocation->GetTo();
         if (recordFrom >= exonFrom  &&  recordTo <= exonTo) {

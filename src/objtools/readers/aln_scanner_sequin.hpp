@@ -54,9 +54,9 @@ protected:
         CSequenceInfo&,
         CLineInput&) override;
 
-    virtual void
+    void
     xAdjustSequenceInfo(
-        CSequenceInfo&);
+        CSequenceInfo&) override;
 
     static bool
     xIsSequinOffsetsLine(

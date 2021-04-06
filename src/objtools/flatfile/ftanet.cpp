@@ -734,8 +734,7 @@ void CFindPub::fix_pub_equiv(CPub_equiv& pub_equiv, ParserPtr pp, bool er)
         {
             if (new_cit_art->IsSetIds())
             {
-
-                for (const auto pId : new_cit_art->GetIds().Get()) 
+                for (const auto& pId : new_cit_art->GetIds().Get())
                 {
                     if (pId->IsPubmed()) {
                         pmid = pId->GetPubmed();

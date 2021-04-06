@@ -161,14 +161,14 @@ CReaderBase::CReaderBase(
 //  ----------------------------------------------------------------------------
     m_uLineNumber(0),
     m_uProgressReportInterval(0),
-	m_uNextProgressReport(0),
+    m_uNextProgressReport(0),
     m_iFlags(flags),
     m_AnnotName(annotName),
     m_AnnotTitle(annotTitle),
-    m_pReader(0),
-    m_pCanceler(0),
-    mSeqIdResolve(seqidresolver),
     m_pTrackDefaults(new CTrackData),
+    m_pReader(nullptr),
+    m_pCanceler(nullptr),
+    mSeqIdResolve(seqidresolver),
     m_pMessageHandler(new CReaderMessageHandler(pListener))
 {
 }

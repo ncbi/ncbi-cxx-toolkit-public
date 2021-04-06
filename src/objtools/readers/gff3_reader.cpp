@@ -265,7 +265,7 @@ void CGff3Reader::xProcessAlignmentData(
     CSeq_annot& annot) 
 //  ----------------------------------------------------------------------------
 {
-    for (const auto id : mAlignmentData.mIds) {
+    for (const string& id : mAlignmentData.mIds) {
         CRef<CSeq_align> pAlign = Ref(new CSeq_align());
         if (x_MergeAlignments(mAlignmentData.mAlignments.at(id), pAlign)) {
             // if available, add current browser information

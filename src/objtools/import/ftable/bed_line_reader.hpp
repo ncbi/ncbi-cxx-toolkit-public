@@ -54,7 +54,7 @@ public:
 
     virtual ~CBedLineReader() {};
 
-    virtual bool
+    bool
     GetNextRecord(
         CStreamLineReader&,
         CFeatImportData&) override;
@@ -62,12 +62,12 @@ public:
     void
     SetInputStream(
         CNcbiIstream&,
-        bool = false);
+        bool = false) override;
 
 private:
-    virtual bool
+    bool
     xIgnoreLine(
-        const string&) const;
+        const string&) const override;
 
     bool
     xProcessTrackLine(

@@ -121,9 +121,9 @@ CFeatTableEdit::CFeatTableEdit(
     mAnnot(annot),
     mSequenceSize(0),
     mpMessageListener(pMessageListener),
-    mNextFeatId(startingFeatId),
+    mLocusTagPrefix(locusTagPrefix),
     mLocusTagNumber(locusTagNumber),
-    mLocusTagPrefix(locusTagPrefix)
+    mNextFeatId(startingFeatId)
 {
     mpScope.Reset(new CScope(*CObjectManager::GetInstance()));
     mpScope->AddDefaults();
@@ -145,9 +145,9 @@ CFeatTableEdit::CFeatTableEdit(
     mAnnot(annot),
     mSequenceSize(sequenceSize),
     mpMessageListener(pMessageListener),
-    mNextFeatId(startingFeatId),
+    mLocusTagPrefix(locusTagPrefix),
     mLocusTagNumber(locusTagNumber),
-    mLocusTagPrefix(locusTagPrefix)
+    mNextFeatId(startingFeatId)
 {
     mpScope.Reset(new CScope(*CObjectManager::GetInstance()));
     mpScope->AddDefaults();

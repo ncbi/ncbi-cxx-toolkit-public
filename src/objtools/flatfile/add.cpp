@@ -773,8 +773,9 @@ static bool s_IsAccession(const CSeq_id& id) {
     case CSeq_id::e_Gi:
     case CSeq_id::e_Named_annot_track:
         return false;
+    default:
+        return true;
     }
-    return true;
 }
 
 

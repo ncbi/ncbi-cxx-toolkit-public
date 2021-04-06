@@ -1113,7 +1113,7 @@ static CRef<objects::CCit_art> get_book(char* bptr, CRef<objects::CAuth_list>& a
     Int4       i;
 
     tit = NULL;
-    ref_fmt = 0;
+    ref_fmt = GB_REF;
 
     tbptr = (bptr == NULL) ? NULL : StringSave(bptr);
 
@@ -1130,6 +1130,8 @@ static CRef<objects::CCit_art> get_book(char* bptr, CRef<objects::CAuth_list>& a
             break;
         case Parser::EFormat::SPROT:
             ref_fmt = SP_REF;
+            break;
+        default:
             break;
     }
 
