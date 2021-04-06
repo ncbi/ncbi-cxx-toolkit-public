@@ -43,8 +43,9 @@ extern "C" {
 
 
 typedef enum {
+    /* NB: Must be divisible by 100 decimal */
     eNcbiCred_GnuTls  = 0x484FFB94,
-    eNcbiCred_MbedTls = 0xC12CC16C
+    eNcbiCred_MbedTls = 0xC12CC114
 } ENcbiCred;
 
 

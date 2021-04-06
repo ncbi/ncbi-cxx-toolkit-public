@@ -36,6 +36,7 @@
 #include <connect/ncbi_http_connector.h>
 #include <connect/ncbi_util.h>
 #include <connect/ncbi_tls.h>
+#include <connect/ncbi_mbedtls.h>
 #include <ctype.h>
 #include <errno.h>
 #ifdef NCBI_OS_MSWIN
@@ -51,6 +52,7 @@
 #  include <signal.h>
 #  include <unistd.h>  /* for access() and maybe usleep() */
 #endif /*NCBI_OS_UNIX*/
+
 #ifdef HAVE_LIBGNUTLS
 #  include <connect/ncbi_gnutls.h>
 #  include <gnutls/gnutls.h>
@@ -60,14 +62,22 @@
 #  if LIBGNUTLS_VERSION_NUMBER >= 0x030400
 #    include <gnutls/abstract.h>
 #  endif /*LIBGNUTLS_VERSION_NUMBER>=3.4.0*/
+#  define GNUTLS_PKCS12_TYPE  "TEST_NCBI_HTTP_GET_TYPE"
+#  define GNUTLS_PKCS12_FILE  "TEST_NCBI_HTTP_GET_CERT"
+#  define GNUTLS_PKCS12_PASS  "TEST_NCBI_HTTP_GET_PASS"
 #endif /*HAVE_LIBGNUTLS*/
+
 #ifdef HAVE_LIBMBEDTLS
-#  include <connect/ncbi_mbedtls.h>
-#  include <mbedtls/x509.h>
+#  include <mbedtls/error.h>
+#  include <mbedtls/pk.h>
+#  include <mbedtls/x509_crt.h>
+#else
+#  include "../mbedtls/mbedtls/error.h"
+#  include "../mbedtls/mbedtls/pk.h"
+#  include "../mbedtls/mbedtls/x509_crt.h"
 #endif /*HAVE_LIBMBEDTLS*/
-#define TLS_PKCS12_TYPE  "TEST_NCBI_HTTP_GET_TYPE"
-#define TLS_PKCS12_FILE  "TEST_NCBI_HTTP_GET_CERT"
-#define TLS_PKCS12_PASS  "TEST_NCBI_HTTP_GET_PASS"
+#define MBEDTLS_CERT_FILE   "TEST_NCBI_HTTP_GET_CLIENT_CERT"
+#define MBEDTLS_PKEY_FILE   "TEST_NCBI_HTTP_GET_CLIENT_PKEY"
 
 #include "test_assert.h"  /* This header must go last */
 
@@ -296,8 +306,10 @@ static void s_Interrupt(int signo)
 int main(int argc, char* argv[])
 {
 #ifdef HAVE_LIBGNUTLS
-    gnutls_certificate_credentials_t xcred = 0;
+    gnutls_certificate_credentials_t gtls_xcred = 0;
 #endif /*HAVE_LIBGNUTLS*/
+    mbedtls_x509_crt   mtls_cert;
+    mbedtls_pk_context mtls_pkey;
     CONNECTOR     connector;
     SConnNetInfo* net_info;
     char          blk[250];
@@ -309,6 +321,9 @@ int main(int argc, char* argv[])
     FILE*         fp;
     time_t        t;
     size_t        n;
+
+    mbedtls_x509_crt_init(&mtls_cert);
+    mbedtls_pk_init(&mtls_pkey);
 
     CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
                            fLOG_OmitNoteLevel | fLOG_DateTime);
@@ -369,19 +384,19 @@ int main(int argc, char* argv[])
         int err;
         char type[40];
         const char* file, *pass;
-        if (!ConnNetInfo_GetValue(0, TLS_PKCS12_TYPE, type, sizeof(type), 0)
+        if (!ConnNetInfo_GetValue(0, GNUTLS_PKCS12_TYPE, type, sizeof(type), 0)
             ||  !*type) {
             strncpy0(type, "PEM", sizeof(type));
         }
-        pass = x_GetPkcs12Pass(TLS_PKCS12_PASS, blk, sizeof(blk));
-        file = ConnNetInfo_GetValue(0, TLS_PKCS12_FILE,
+        pass = x_GetPkcs12Pass(GNUTLS_PKCS12_PASS, blk, sizeof(blk));
+        file = ConnNetInfo_GetValue(0, GNUTLS_PKCS12_FILE,
                                     blk, sizeof(blk)/2 - 1, 0);
         if (file  &&  *file  &&  access(file, R_OK) == 0) {
-            if ((err = gnutls_certificate_allocate_credentials(&xcred)) != 0 ||
+            if ((err = gnutls_certificate_allocate_credentials(&gtls_xcred)) ||
                 (err = gnutls_certificate_set_x509_simple_pkcs12_file
-                 (xcred, file, strcasecmp(type, "PEM") == 0
+                 (gtls_xcred, file, strcasecmp(type, "PEM") == 0
                   ? GNUTLS_X509_FMT_PEM
-                  : GNUTLS_X509_FMT_DER, pass)) != 0) {
+                  : GNUTLS_X509_FMT_DER, pass))) {
                 CORE_LOGF(eLOG_Fatal,
                           ("Cannot load PKCS#12 %s credentials from"
                            " \"%s\": %s", type, file, gnutls_strerror(err)));
@@ -391,17 +406,17 @@ int main(int argc, char* argv[])
              * (as the ncbi_gnutls shim does that for us); but if we want
              * callbacks, then they can only be associated with the
              * credentials handle (gnutls design???) so here it goes: */
-            if ((err = gnutls_certificate_allocate_credentials(&xcred)) != 0) {
+            if ((err = gnutls_certificate_allocate_credentials(&gtls_xcred))) {
                 CORE_LOGF(eLOG_Critical,
                           ("Cannot allocate certificate credentials: %s",
                            gnutls_strerror(err)));
-                xcred = 0;
+                gtls_xcred = 0;
             }
             file = 0;
         } else
             file = 0;
-        if (xcred) {
-            if (!(cred = NcbiCredGnuTls(xcred)))
+        if (gtls_xcred) {
+            if (!(cred = NcbiCredGnuTls(gtls_xcred)))
                 CORE_LOG_ERRNO(eLOG_Fatal, errno, "Cannot create NCBI_CRED");
             net_info->credentials = cred;
             if (file) {
@@ -411,11 +426,11 @@ int main(int argc, char* argv[])
                 CORE_LOG(eLOG_Note, "Debug certificate credentials set");
             if (net_info->debug_printout == eDebugPrintout_Data) {
 #  if LIBGNUTLS_VERSION_NUMBER >= 0x021000
-                gnutls_certificate_set_verify_function(xcred,
+                gnutls_certificate_set_verify_function(gtls_xcred,
                                                        x_CertVfyCB);
 #  endif /*LIBGNUTLS_VERSION_NUMBER>=2.10.0*/
 #  if LIBGNUTLS_VERSION_NUMBER >= 0x030400
-                gnutls_certificate_set_retrieve_function2(xcred,
+                gnutls_certificate_set_retrieve_function2(gtls_xcred,
                                                           x_CertRtrCB);
 #  endif /*LIBGNUTLS_VERSION_NUMBER>=3.4.0*/
             }
@@ -423,6 +438,41 @@ int main(int argc, char* argv[])
 #else
         CORE_LOG(eLOG_Critical, "GNUTLS required but not supported");
 #endif /*HAVE_LIBGNUTLS*/
+    }
+    if (net_info->scheme == eURL_Https
+        &&  xstrcasecmp(SOCK_SSLName(), "MBEDTLS") == 0) {
+        char buf[4096];
+        const char* cert_file, *pkey_file;
+        const size_t size = sizeof(blk) / 2;
+        cert_file = ConnNetInfo_GetValue(0, MBEDTLS_CERT_FILE,
+                                         blk,        size - 1, 0);
+        pkey_file = ConnNetInfo_GetValue(0, MBEDTLS_PKEY_FILE,
+                                         blk + size, size - 1, 0);
+        if (cert_file  &&  *cert_file  &&  pkey_file  &&  *pkey_file) {
+            int err;
+            err = mbedtls_x509_crt_parse_file(&mtls_cert, cert_file);
+            if (err < 0) {
+                mbedtls_strerror(err, blk + size, size - 1);
+                CORE_LOGF(eLOG_Fatal, ("Cannot load certificate from \"%s\":"
+                                       " %s (0x%04X)", blk, blk + size, -err));
+            }
+            if (mbedtls_x509_crt_info(buf, sizeof(buf), "", &mtls_cert) > 0)
+                CORE_LOGF(eLOG_Note, ("Certificate loaded:\n%s", buf));
+            else
+                CORE_LOGF(eLOG_Note, ("Certificate loaded (%d)", err));
+            err = mbedtls_pk_parse_keyfile(&mtls_pkey, pkey_file, 0/*pswrd*/);
+            if (err) {
+                assert(err < 0);
+                mbedtls_strerror(err, blk, size - 1);
+                CORE_LOGF(eLOG_Fatal, ("Cannot load private key from \"%s\":"
+                                       " %s (0x%04X)", blk + size, blk, -err));
+            }
+            CORE_LOGF(eLOG_Note, ("Private key loaded: %s",
+                                  mbedtls_pk_get_name(&mtls_pkey)));
+            if (!(cred = NcbiCredMbedTls(&mtls_cert, &mtls_pkey)))
+                CORE_LOG_ERRNO(eLOG_Fatal, errno, "Cannot create NCBI_CRED");
+            net_info->credentials = cred;
+        }
     }
 
     url = ConnNetInfo_URL(net_info);
@@ -494,9 +544,11 @@ int main(int argc, char* argv[])
 
     if (cred)
         free(cred);
+    mbedtls_pk_free(&mtls_pkey);
+    mbedtls_x509_crt_free(&mtls_cert);
 #ifdef HAVE_LIBGNUTLS
-    if (xcred)
-        gnutls_certificate_free_credentials(xcred);
+    if (gtls_xcred)
+        gnutls_certificate_free_credentials(gtls_xcred);
 #endif /*HAVE_LIBGNUTLS*/
 
     CORE_LOG(eLOG_Note, "Completed successfully");

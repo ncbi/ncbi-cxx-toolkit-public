@@ -328,6 +328,7 @@ static void* s_MbedTlsCreate(ESOCK_Side side, SNcbiSSLctx* ctx, int* error)
                ? MBEDTLS_SSL_IS_CLIENT
                : MBEDTLS_SSL_IS_SERVER);
     mbedtls_ssl_context* session;
+    void** xcred;
     int err;
 
     if (end == MBEDTLS_SSL_IS_SERVER) {
@@ -347,8 +348,9 @@ static void* s_MbedTlsCreate(ESOCK_Side side, SNcbiSSLctx* ctx, int* error)
             *error = 0;
             return 0;
         }
-        CORE_LOG(eLOG_Critical, "MBEDTLS credentials not implemented");
-    }
+        xcred = ctx->cred->data;
+    } else
+        xcred = 0;
 
     CORE_DEBUG_ARG(if (s_MbedTlsLogLevel))
         CORE_TRACE("MbedTlsCreate(): Enter");
@@ -359,9 +361,14 @@ static void* s_MbedTlsCreate(ESOCK_Side side, SNcbiSSLctx* ctx, int* error)
     }
     mbedtls_ssl_init(session);
 
-    if ((err = mbedtls_ssl_setup(session, &s_MbedTlsConf))        != 0  ||
+    if ((err = mbedtls_ssl_setup(session, &s_MbedTlsConf))        != 0   ||
         (ctx->host  &&  *ctx->host
-         &&  (err = mbedtls_ssl_set_hostname(session, ctx->host)) != 0)) {
+         &&  (err = mbedtls_ssl_set_hostname(session, ctx->host)) != 0)  ||
+        (xcred
+         &&  (err = mbedtls_ssl_set_hs_own_cert
+              (session,
+               (mbedtls_x509_crt*)   xcred[0],
+               (mbedtls_pk_context*) xcred[1])) != 0)) {
         mbedtls_ssl_free(session);
         free(session);
         *error = err;
@@ -827,12 +834,24 @@ extern SOCKSSL NcbiSetupMbedTls(void)
 }
 
 
-extern NCBI_CRED NcbiCredMbedTls(void* xcred)
+extern NCBI_CRED NcbiCredMbedTls(void* xcert, void* xpkey)
 {
-    struct SNcbiCred* cred = (NCBI_CRED) calloc(xcred ? 2 : 1, sizeof(*cred));
-    if (cred  &&  xcred) {
+    struct SNcbiCred* cred;
+    size_t size = sizeof(*cred);
+    if (xcert  &&  xpkey) {
+        size <<= 1;
+        size  += 2 * sizeof(void*);
+    }
+    cred = (NCBI_CRED) malloc(size);
+    if (cred) {
+        memset(cred, 0, size);
         cred->type = eNcbiCred_MbedTls;
-        cred->data = xcred;
+        if (xcert  &&  xpkey) {
+            void** data = (void**)((char*) cred + 2 * sizeof(*cred));
+            data[0]     = xcert;
+            data[1]     = xpkey;
+            cred->data  = data;
+        }
     }
     return cred;
 }
