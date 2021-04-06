@@ -113,8 +113,8 @@ static bool InitConfig(const CArgs& args, Parser& config)
     config.allow_crossdb_featloc = args["d"].AsBoolean();
     config.genenull = args["U"].AsBoolean();
     config.qsfile = args["q"].AsString().c_str();
-    if (*config.qsfile == 0)
-        config.qsfile = NULL;
+    if (!*config.qsfile)
+        config.qsfile = nullptr;
 
     config.qamode = args["Q"].AsBoolean();
 
@@ -150,7 +150,7 @@ static bool OpenFiles(const CArgs& args, TConfig& config, IObjtoolsListener& lis
         delin = true;
         auto fd = fopen(infile.c_str(), "w");
 
-        while(fgets(str, 999, stdin) != NULL)
+        while(fgets(str, 999, stdin))
             fprintf(fd, "%s", str);
         fclose(fd);
     }
@@ -174,16 +174,16 @@ static bool OpenFiles(const CArgs& args, TConfig& config, IObjtoolsListener& lis
     }
 
 
-    if(config.qsfile != NULL)
+    if(config.qsfile)
     {
         config.qsfd = fopen(config.qsfile, "rb");
-        if(config.qsfd == NULL)
+        if(!config.qsfd)
         {
             listener.PutMessage(
-                   CObjtoolsMessage("Failed to open Quality Scores file " + string(config.qsfile), eDiag_Fatal)); 
+                   CObjtoolsMessage("Failed to open Quality Scores file " + string(config.qsfile), eDiag_Fatal));
 
             fclose(config.ifp);
-            config.ifp = NULL;
+            config.ifp = nullptr;
             return false;
         }
     }
@@ -194,7 +194,6 @@ static bool OpenFiles(const CArgs& args, TConfig& config, IObjtoolsListener& lis
 /**********************************************************/
 static unique_ptr<TConfig> ParseArgs(const CArgs& args, char* pgmname, IObjtoolsListener& listener)
 {
-    
     unique_ptr<Parser> pConfig(new TConfig());
 
     /* As of June, 2004 sequence length limitation removed
@@ -217,11 +216,11 @@ static unique_ptr<TConfig> ParseArgs(const CArgs& args, char* pgmname, IObjtools
 class CFlat2AsnApp : public ncbi::CNcbiApplication
 {
 public:
-    void Init(void);
-    int Run(void);
+    void Init() override;
+    int Run() override;
 
 private:
-    
+
 };
 
 void CFlat2AsnApp::Init()
@@ -280,14 +279,14 @@ void CFlat2AsnApp::Init()
 
     // constraint: 0, 1, 2
     arg_descrs->AddDefaultKey("C", "CleanupMode", "Cleanup function to use:\n       0,1 - Toolkit's SeriousSeqEntryCleanup;\n        2 - none.\n   ", ncbi::CArgDescriptions::eInteger, "1");
-    
+
     arg_descrs->AddDefaultKey("d", "AllowsXDb", "Allow cross-database join locations", ncbi::CArgDescriptions::eBoolean, "F");
     arg_descrs->AddDefaultKey("U", "UseNull", "Use NULLs for Gene Features that are not single-interval", ncbi::CArgDescriptions::eBoolean, "T");
 
     arg_descrs->AddDefaultKey("q", "QualityScoresFilename", "Quality Scores filename", ncbi::CArgDescriptions::eString, "");
     arg_descrs->AddDefaultKey("Q", "QAMode", "QA mode: does not populate top level create-date and\n      NcbiCleanup user-object", ncbi::CArgDescriptions::eBoolean, "F");
     arg_descrs->AddDefaultKey("y", "OutputFormat", "Output format. Possible values: \"Bioseq-set\" and \"Seq-submit\"", ncbi::CArgDescriptions::eString, "Bioseq-set");
-    arg_descrs->SetConstraint("y", 
+    arg_descrs->SetConstraint("y",
             &(*new  CArgAllow_Strings,
                 "Bioseq-set", "Seq-submit"));
 
@@ -299,7 +298,7 @@ class CFlat2AsnListener : public CObjtoolsListener
 {
 public:
     CFlat2AsnListener(const string& prefix="") : m_Prefix(prefix) {}
-    virtual ~CFlat2AsnListener() {}
+    ~CFlat2AsnListener() override {}
 
     bool PutMessage(const IObjtoolsMessage& msg) override {
         if (msg.GetSeverity() >= eDiag_Warning) {
@@ -326,10 +325,10 @@ private:
 
 int CFlat2AsnApp::Run()
 {
-    char*   pgmname = (char *) "flat2asn Revision: 1.3 ";
+    char* pgmname = (char *) "flat2asn Revision: 1.3 ";
     const auto& args = GetArgs();
 
-    CNcbiOstream* pLogStream = args["l"] ? 
+    CNcbiOstream* pLogStream = args["l"] ?
         &args["l"].AsOutputFile() :
         &NcbiCerr;
 
@@ -355,7 +354,7 @@ int CFlat2AsnApp::Run()
             &NcbiCout;
         if (args["b"].AsBoolean()) {
             *pOstream << MSerial_AsnBinary << *pSerialObject;
-        } 
+        }
         else {
             *pOstream << MSerial_AsnText << *pSerialObject;
         }

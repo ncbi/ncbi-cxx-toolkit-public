@@ -26,8 +26,8 @@ class CAnnotationLoader;
 class CFastaReaderEx : public objects::CFastaReader {
 public:
     CFastaReaderEx(CTable2AsnContext& context, ILineReader& reader, TFlags flags);
-    virtual void AssignMolType(objects::ILineErrorListener * pMessageListener) override;
-    virtual void AssembleSeq(objects::ILineErrorListener * pMessageListener) override;
+    void AssignMolType(objects::ILineErrorListener * pMessageListener) override;
+    void AssembleSeq(objects::ILineErrorListener * pMessageListener) override;
     virtual CRef<objects::CSeq_entry> ReadDeltaFasta(objects::ILineErrorListener * pMessageListener);
 protected:
     CTable2AsnContext& m_context;

@@ -53,7 +53,7 @@ public:
    void MakeGapsFromFeatures(objects::CSeq_entry& entry);
    void MakeGapsFromFeatures(objects::CBioseq& bioseq);
    CRef<objects::CDelta_seq> MakeGap(objects::CBioseq& bioseq, const objects::CSeq_feat& feature_gap);
-   static 
+   static
    void RemoveEmptyFtable(objects::CBioseq& bioseq);
    void ChangeDeltaProteinToRawProtein(objects::CSeq_entry& entry);
 
@@ -89,9 +89,6 @@ private:
     void _AddFeatures();
     void _ClearTrees();
     CRef<objects::feature::CFeatTree> _GetFeatTree();
-
-    
-
 
     CTable2AsnContext& m_context;
 };

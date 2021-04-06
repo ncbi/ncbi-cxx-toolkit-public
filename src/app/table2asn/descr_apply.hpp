@@ -10,7 +10,7 @@ BEGIN_NCBI_SCOPE
 using namespace objects;
 
 void g_ApplyDescriptors(const list<CRef<CSeqdesc>>& descriptors,
-        CSeq_entry& seqEntry, 
+        CSeq_entry& seqEntry,
         ILineErrorListener* pErrorListener=nullptr);
 
 END_NCBI_SCOPE

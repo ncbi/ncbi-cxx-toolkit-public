@@ -82,10 +82,10 @@ CConstRef<CSuspect_rule> CFixSuspectProductName::x_FixSuspectProductName(string&
         m_rules = NDiscrepancy::GetProductRules(m_rules_filename);
     }
 
-    if (m_rules.NotEmpty() && !m_rules->Get().empty()) 
+    if (m_rules.NotEmpty() && !m_rules->Get().empty())
     {
         CMatchString match(product_name);
-        for (auto rule : m_rules->Get()) {
+        for (const auto& rule : m_rules->Get()) {
             if (rule->CanGetReplace() && rule->StringMatchesSuspectProductRule(product_name))
                 return rule;
         }
@@ -106,7 +106,7 @@ void CFixSuspectProductName::ReportFixedProduct(const string& oldproduct, const 
     report_ostream << "Changed " << oldproduct << " to " << newproduct << " " << label << " " << locustag << "\n\n";
 }
 
-bool CFixSuspectProductName::FixSuspectProductNames(objects::CSeq_feat& feature)
+bool CFixSuspectProductName::FixSuspectProductNames(CSeq_feat& feature)
 {
     static const char hypotetic_protein_name[] = "hypothetical protein"; // sema: interesting optimization...
 
@@ -120,23 +120,23 @@ bool CFixSuspectProductName::FixSuspectProductNames(objects::CSeq_feat& feature)
         //for (auto& name : feature.SetData().SetProt().SetName())
         auto& prot_name = feature.SetData().SetProt().SetName().front(); // only first name is fixed
         {
-            if (NStr::Compare(prot_name, hypotetic_protein_name)) {
+            if (0 != NStr::Compare(prot_name, hypotetic_protein_name)) {
                 while (auto rule = x_FixSuspectProductName(prot_name)) {
                     auto mapped(m_scope->GetSeq_featHandle(feature));
                     auto old_prot_name = NDiscrepancy::FixProductName(
                         rule, *m_scope, prot_name,
                         [&mapped, this] {
                           auto mrna = feature::GetBestParentForFeat(mapped, CSeqFeatData::eSubtype_mRNA, m_feattree);
-                          CRef<objects::CSeq_feat> orig_mrna;
+                          CRef<CSeq_feat> orig_mrna;
                           if (mrna)
-                              orig_mrna.Reset(&(objects::CSeq_feat&)*mrna.GetOriginalSeq_feat());
+                              orig_mrna.Reset(&(CSeq_feat&)*mrna.GetOriginalSeq_feat());
                           return orig_mrna;
                         },
                         [&mapped, this] {
-                          CRef<objects::CSeq_feat> orig_cds;
+                          CRef<CSeq_feat> orig_cds;
                           auto cds = feature::GetBestParentForFeat(mapped, CSeqFeatData::eSubtype_cdregion, m_feattree);
                           if (cds)
-                            orig_cds.Reset(&(objects::CSeq_feat&)*cds.GetOriginalSeq_feat());
+                            orig_cds.Reset(&(CSeq_feat&)*cds.GetOriginalSeq_feat());
                           return orig_cds;
                         }
                     );
@@ -150,7 +150,7 @@ bool CFixSuspectProductName::FixSuspectProductNames(objects::CSeq_feat& feature)
     return modified;
 }
 
-void CFixSuspectProductName::FixSuspectProductNames(objects::CSeq_entry& entry, CScope& scope)
+void CFixSuspectProductName::FixSuspectProductNames(CSeq_entry& entry, CScope& scope)
 {
     m_scope.Reset(&scope);
     m_feattree.Reset(new feature::CFeatTree(m_scope->GetTSE_Handle(entry)));

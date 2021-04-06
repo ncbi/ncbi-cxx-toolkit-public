@@ -154,12 +154,12 @@ void CForeignContaminationScreenReportReader::xTrimData(CSeq_inst& inst, const T
     inst.SetLength(strdata.length());
 }
 
-void CForeignContaminationScreenReportReader::xTrimLiteral(objects::CSeq_literal& lit, int start, int stop) const
+void CForeignContaminationScreenReportReader::xTrimLiteral(CSeq_literal& lit, int start, int stop) const
 {
     if (lit.IsSetSeq_data() && !lit.GetSeq_data().IsGap())
     {
-        string* encoded_str = 0;
-        vector< char >* encoded_vec = 0;
+        string* encoded_str = nullptr;
+        vector< char >* encoded_vec = nullptr;
         CSeqUtil::TCoding src_coding = xGetCoding(lit.GetSeq_data().Which());
         switch (lit.GetSeq_data().Which())
         {

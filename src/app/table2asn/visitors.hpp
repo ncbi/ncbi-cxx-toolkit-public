@@ -58,7 +58,7 @@ namespace objects
             {
                 if (skip_nucprot && entry.GetSet().IsSetClass() && entry.GetSet().GetClass() == CBioseq_set::eClass_nuc_prot)
                 {
-                    m(0, entry.SetSet().SetDescr());
+                    m(nullptr, entry.SetSet().SetDescr());
                     if (entry.GetSet().GetDescr().Get().empty())
                         entry.SetSet().ResetDescr();
 
@@ -84,7 +84,7 @@ namespace objects
         else
             if (entry.IsSet() && !entry.GetSet().GetSeq_set().empty())
             {
-                bool go_deep = m(0, entry.SetSet().SetDescr());
+                bool go_deep = m(nullptr, entry.SetSet().SetDescr());
                 if (entry.GetSet().GetDescr().Get().empty())
                     entry.SetSet().ResetDescr();
 
@@ -181,14 +181,14 @@ namespace objects
 
 
     template<typename Method>
-    void VisitAllFeatures(objects::CSeq_entry& entry, Method method) 
+    void VisitAllFeatures(objects::CSeq_entry& entry, Method method)
     {
         if (entry.IsSeq()) {
             if (entry.GetSeq().IsSetAnnot()) {
                 VisitAllFeatures(entry.SetSeq().SetAnnot(), method);
             }
             return;
-        } 
+        }
 
         // is set:
         if(entry.GetSet().IsSetAnnot()) {

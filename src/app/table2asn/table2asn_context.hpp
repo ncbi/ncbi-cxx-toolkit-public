@@ -179,7 +179,7 @@ public:
     void ApplyFileTracks(objects::CSeq_entry& entry) const;
     void ApplyComments(objects::CSeq_entry& entry);
     CRef<CSerialObject> CreateSubmitFromTemplate(
-        CRef<objects::CSeq_entry>& object, 
+        CRef<objects::CSeq_entry>& object,
         CRef<objects::CSeq_submit>& submit) const;
     CRef<CSerialObject>
         CreateSeqEntryFromTemplate(CRef<objects::CSeq_entry> object) const;

@@ -45,7 +45,7 @@ public:
         const std::string&);
 
     bool Next(
-        const std::string&, 
+        const std::string&,
         string&);
 
 protected:

@@ -73,7 +73,7 @@ void CTable2AsnStructuredCommentsReader::ProcessCommentsFileByCols(ILineReader& 
     }
 }
 
-void CTable2AsnStructuredCommentsReader::AddStructuredComments(objects::CSeq_descr& descr, const CStructComment& comments)
+void CTable2AsnStructuredCommentsReader::AddStructuredComments(CSeq_descr& descr, const CStructComment& comments)
 {
     for (const auto& new_desc : comments.m_descs)
     {
@@ -112,7 +112,7 @@ void CTable2AsnStructuredCommentsReader::AddStructuredComments(objects::CSeq_des
     }
 }
 
-void CTable2AsnStructuredCommentsReader::_AddStructuredComments(objects::CSeq_entry& entry, const CStructComment& comments)
+void CTable2AsnStructuredCommentsReader::_AddStructuredComments(CSeq_entry& entry, const CStructComment& comments)
 {
     VisitAllBioseqs(entry, [comments](CBioseq& bioseq)
     {
@@ -124,7 +124,7 @@ void CTable2AsnStructuredCommentsReader::_AddStructuredComments(objects::CSeq_en
             bool matched = false;
             for (const auto& id : bioseq.GetId())
             {
-                if (id->Compare(*comments.m_id) == CSeq_id::e_YES) 
+                if (id->Compare(*comments.m_id) == CSeq_id::e_YES)
                 {
                     matched = true;
                     break;
@@ -144,10 +144,10 @@ void CTable2AsnStructuredCommentsReader::_CheckStructuredCommentsSuffix(CStructC
     // assumption: all descriptors are structural comments
     for (auto& desc : comments.m_descs) {
         string prefix, suffix;
-        auto& user = desc->GetUser();
-        for (auto& data : desc->GetUser().GetData()) {
+        const auto& user = desc->GetUser();
+        for (const auto& data : user.GetData()) {
             if (data->IsSetLabel() && data->GetLabel().IsStr()) {
-                auto& label = data->GetLabel().GetStr();
+                const string& label = data->GetLabel().GetStr();
                 if (label == "StructuredCommentPrefix") {
                     prefix = data->GetData().GetStr();
                 }
@@ -156,7 +156,7 @@ void CTable2AsnStructuredCommentsReader::_CheckStructuredCommentsSuffix(CStructC
                 }
             }
         }
-        if (prefix.size() && !suffix.size()) {
+        if (!prefix.empty() && suffix.empty()) {
             desc->SetUser().AddField("StructuredCommentSuffix", prefix);
         }
     }

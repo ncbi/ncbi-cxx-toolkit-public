@@ -21,7 +21,7 @@ namespace objects
     class CFixSuspectProductName
     {
     public:
-        CFixSuspectProductName();        
+        CFixSuspectProductName();
         ~CFixSuspectProductName();
 
         void SetRulesFilename(const string& filename);

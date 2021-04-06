@@ -8,7 +8,7 @@
 
 BEGIN_NCBI_SCOPE
 
-namespace objects 
+namespace objects
 {
 class CSeq_entry;
 class ILineErrorListener;
@@ -50,9 +50,9 @@ public:
 
     bool GetMods(const CBioseq& bioseq, TModList& mods, bool isVerbose);
     void MapFile(const string& fileName, bool allowAcc);
-    bool Empty(void) const;
-    bool Mapped(void) const;
-    void ReportUnusedIds(void);
+    bool Empty() const;
+    bool Mapped() const;
+    void ReportUnusedIds();
 private:
     void x_ProcessLine(const CTempString& line, TModList& mods);
     void x_RegisterLine(size_t lineNum, const CTempString& line, bool allowAcc);

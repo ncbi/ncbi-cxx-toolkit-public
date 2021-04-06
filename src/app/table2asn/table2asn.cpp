@@ -164,7 +164,7 @@ private:
 
     void ProcessOneFile(bool isAlignment=false);
     void ProcessOneFile(CRef<CSerialObject>& result);
-    void ProcessOneEntry(CFormatGuess::EFormat inputFormat, 
+    void ProcessOneEntry(CFormatGuess::EFormat inputFormat,
             CRef<CSerialObject> obj, CRef<CSerialObject>& result);
     bool ProcessOneDirectory(const CDir& directory, const CMask& mask, bool recurse);
     void ProcessAlignmentFile();
@@ -298,7 +298,7 @@ may be implemented in the future; RW-1253
 //    arg_desc->AddOptionalKey
 //        ("n", "String", "Organism Name", CArgDescriptions::eString);       // done
     arg_desc->AddOptionalKey
-        ("j", "String", "Source Qualifiers.\nThese qualifier values override any conflicting values read from a file (See -src-file)", 
+        ("j", "String", "Source Qualifiers.\nThese qualifier values override any conflicting values read from a file (See -src-file)",
          CArgDescriptions::eString);   // done
     arg_desc->AddOptionalKey("src-file", "InFile", "Single source qualifiers file. The qualifiers in this file override any conflicting qualifiers automically read from a .src file, which, in turn, take precedence over source qualifiers specified in a fasta defline", CArgDescriptions::eInputFile); //done
     arg_desc->AddFlag("accum-mods", "Accumulate non-conflicting modifier values from different sources. For example, with this option, a 'note' modifier specified on the command line no longer overwrites a 'note' modifier read from a .src file. Both notes will appear in the output ASN.1. If modifier values conflict, the rules of precedence specified above apply");
@@ -344,8 +344,6 @@ may be implemented in the future; RW-1253
       - avoid cleanup", CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("z", "OutFile", "Cleanup Log File", CArgDescriptions::eOutputFile);
-
-    arg_desc->AddOptionalKey("X", "String", "Obsolete", CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("N", "String", "Project Version Number", CArgDescriptions::eString); //done
 
@@ -611,12 +609,12 @@ int CTbl2AsnApp::Run()
         m_context.m_gapNmin = m_context.m_gap_Unknown_length;
     }
 
-    if (args["linkage-evidence-file"]) 
+    if (args["linkage-evidence-file"])
     {
         //auto lefile_cstr = args["linkage-evidence-file"].AsString().c_str();
         //auto pLEStream = make_unique<CNcbiIfstream>(lefile_cstr,ios::binary);
 
-        g_LoadLinkageEvidence(args["linkage-evidence-file"].AsString(), 
+        g_LoadLinkageEvidence(args["linkage-evidence-file"].AsString(),
                 m_context.m_GapsizeToEvidence,
                 m_context.m_logger);
         m_context.m_gap_type = CSeq_gap::eType_scaffold; // for compatibility with tbl2asn
@@ -857,7 +855,7 @@ int CTbl2AsnApp::Run()
                     "The specified input directory \"" + indir + "\" does not exist.",
                     *m_logger);
             }
-            string basename = m_context.m_output_filename.empty() ? 
+            string basename = m_context.m_output_filename.empty() ?
                 CDir(CDir::CreateAbsolutePath(indir, CDir::eRelativeToCwd)).GetBase() :
                 m_context.m_output_filename;
 
@@ -1063,7 +1061,7 @@ void CTbl2AsnApp::ProcessOneEntry(
     {
         VisitAllFeatures(*entry, [this](CSeq_feat& feature){m_context.RemoveProteinIdsQuals(feature); });
     }
-    
+
     CSeq_entry_Handle seh = m_context.m_scope->AddTopLevelSeqEntry(*entry);
     CCleanup::ConvertPubFeatsToPubDescs(seh);
 
@@ -1214,8 +1212,7 @@ void CTbl2AsnApp::ProcessAlignmentFile()
     const string& filename = m_context.m_current_file;
     unique_ptr<CNcbiIstream> pIstream(new CNcbiIfstream(filename));
 
-    CRef<CSeq_entry> pEntry = 
-        m_reader->ReadAlignment(*pIstream, GetArgs());
+    CRef<CSeq_entry> pEntry = m_reader->ReadAlignment(*pIstream, GetArgs());
     pEntry->Parentize();
     m_context.MergeWithTemplate(*pEntry);
 
@@ -1229,7 +1226,7 @@ void CTbl2AsnApp::ProcessAlignmentFile()
     }
 
     CNcbiOstream* pOstream = nullptr;
-    unique_ptr<CNcbiOstream> pLocalOstream; 
+    unique_ptr<CNcbiOstream> pLocalOstream;
     CFile localFile;
 
     try {
@@ -1242,7 +1239,7 @@ void CTbl2AsnApp::ProcessAlignmentFile()
             pOstream = pLocalOstream.get();
         }
 
-        if (m_context.m_save_bioseq_set && 
+        if (m_context.m_save_bioseq_set &&
             pResult->GetThisTypeInfo()->IsType(CSeq_entry::GetTypeInfo())) {
 
             const CSeq_entry* pTempEntry
@@ -1271,7 +1268,7 @@ bool CTbl2AsnApp::ProcessOneDirectory(const CDir& directory, const CMask& mask, 
         vec_it->reset(it.release());
         ++vec_it;
     }
- 
+
     sort(vec.begin(), vec.end(), [](const auto& l, const auto& r)
     {
         return l->GetPath() < r->GetPath();
@@ -1338,7 +1335,7 @@ void CTbl2AsnApp::ProcessSecretFiles1Phase(bool readModsFromTitle, CSeq_entry& r
     string ext;
     CDirEntry::SplitPath(m_context.m_current_file, &dir, &base, &ext);
     string name = dir + base;
-    
+
     const auto& namedSrcFile = m_context.m_single_source_qual_file;
     if (!NStr::IsBlank(namedSrcFile)) {
         if (!m_context.mp_named_src_map) {
@@ -1347,7 +1344,7 @@ void CTbl2AsnApp::ProcessSecretFiles1Phase(bool readModsFromTitle, CSeq_entry& r
         m_context.mp_named_src_map->MapFile(namedSrcFile, m_context.m_allow_accession);
     }
 
-    unique_ptr<CMemorySrcFileMap> pDefaultSrcFileMap; 
+    unique_ptr<CMemorySrcFileMap> pDefaultSrcFileMap;
     const string defaultSrcFile = name + ".src";
     if (!NStr::IsBlank(defaultSrcFile) && CFile(defaultSrcFile).Exists()) {
         pDefaultSrcFileMap.reset(new CMemorySrcFileMap(m_logger));

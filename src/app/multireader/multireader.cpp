@@ -116,16 +116,16 @@ public:
     bool PutMessage(
         const IObjtoolsMessage& message)
     {
-        const CReaderMessage* pReaderMessage = 
+        const CReaderMessage* pReaderMessage =
             dynamic_cast<const CReaderMessage*>(&message);
-        if (!pReaderMessage  ||  pReaderMessage->Severity() == eDiag_Fatal) {
+        if (!pReaderMessage || pReaderMessage->Severity() == eDiag_Fatal) {
             throw;
         }
         pReaderMessage->Write(cerr);
         return true;
     };
 };
-    
+
 //  ============================================================================
 class CMultiReaderApp
 //  ============================================================================
@@ -146,8 +146,8 @@ public:
 protected:
 
 private:
-    virtual void Init(void);
-    virtual int  Run(void);
+    void Init() override;
+    int Run() override;
 
     bool xProcessSingleFile(const CArgs&, CNcbiIstream&, CNcbiOstream&);
     void xProcessDefault(const CArgs&, CNcbiIstream&, CNcbiOstream&);
@@ -204,7 +204,7 @@ public:
     CMyMessageListenerCustom(
         int iMaxCount,
         int iMaxLevel,
-        CMultiReaderApp & multi_reader_app) 
+        CMultiReaderApp & multi_reader_app)
         : m_iMaxCount(iMaxCount), m_iMaxLevel(iMaxLevel),
           m_multi_reader_app(multi_reader_app)
     {};
@@ -213,13 +213,13 @@ public:
 
     bool
     PutMessage(
-        const IObjtoolsMessage& message) 
+        const IObjtoolsMessage& message)
     {
         StoreMessage(message);
         return (message.GetSeverity() <= m_iMaxLevel) && (Count() < m_iMaxCount);
     };
 
-    bool 
+    bool
     PutError(
         const ILineError& err)
     {
@@ -231,7 +231,6 @@ public:
         return (err.Severity() <= m_iMaxLevel) && (Count() < m_iMaxCount);
     }
 
-    
     void
     PutProgress(
         const string& msg,
@@ -255,8 +254,8 @@ protected:
     size_t m_iMaxCount;
     int m_iMaxLevel;
     CMultiReaderApp & m_multi_reader_app;
-};    
-        
+};
+
 //  ============================================================================
 class CMyMessageListenerCustomLevel:
 //  ============================================================================
@@ -291,14 +290,14 @@ protected:
     size_t m_iMaxCount;
     int m_iMaxLevel;
     CMultiReaderApp & m_multi_reader_app;
-};    
+};
 
 //  ============================================================================
 CMultiReaderMessageListener newStyleMessageListener;
 //  ============================================================================
 
 //  ----------------------------------------------------------------------------
-void CMultiReaderApp::Init(void)
+void CMultiReaderApp::Init()
 //  ----------------------------------------------------------------------------
 {
     unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
@@ -309,12 +308,12 @@ void CMultiReaderApp::Init(void)
 
     //
     //  input / output:
-    //        
+    //
 
     arg_desc->SetCurrentGroup("INPUT / OUTPUT");
 
     arg_desc->AddDefaultKey(
-        "input", 
+        "input",
         "File_In",
         "Input filename",
         CArgDescriptions::eInputFile,
@@ -322,10 +321,10 @@ void CMultiReaderApp::Init(void)
     arg_desc->AddAlias("i", "input");
 
     arg_desc->AddDefaultKey(
-        "output", 
+        "output",
         "File_Out",
         "Output filename",
-        CArgDescriptions::eOutputFile, "-"); 
+        CArgDescriptions::eOutputFile, "-");
     arg_desc->AddAlias("o", "output");
 
     arg_desc->AddDefaultKey(
@@ -345,17 +344,17 @@ void CMultiReaderApp::Init(void)
     arg_desc->AddAlias("r", "outdir");
 
     arg_desc->AddDefaultKey(
-        "format", 
+        "format",
         "STRING",
         "Input file format",
-        CArgDescriptions::eString, 
+        CArgDescriptions::eString,
         "guess");
     arg_desc->SetConstraint(
-        "format", 
-        &(*new CArgAllow_Strings, 
-            "bed", 
-            "microarray", "bed15", 
-            "wig", "wiggle", 
+        "format",
+        &(*new CArgAllow_Strings,
+            "bed",
+            "microarray", "bed15",
+            "wig", "wiggle",
             "gtf", "gff3", "gff2", "augustus",
             "gvf",
             "agp",
@@ -370,13 +369,13 @@ void CMultiReaderApp::Init(void)
             "rmo",
             "guess") );
 
-    arg_desc->AddDefaultKey("out-format", "FORMAT", 
+    arg_desc->AddDefaultKey("out-format", "FORMAT",
         "This sets how the output of this program will be formatted.  "
         "Note that for some formats some or all values might have no effect.",
         CArgDescriptions::eString, "asn_text");
     arg_desc->SetConstraint(
-        "out-format", 
-        &(*new CArgAllow_Strings, 
+        "out-format",
+        &(*new CArgAllow_Strings,
             "asn_text",
             "asn_binary",
             "xml",
@@ -391,16 +390,16 @@ void CMultiReaderApp::Init(void)
         "0" );
 
     arg_desc->AddDefaultKey(
-        "name", 
+        "name",
         "STRING",
         "Name for annotation",
-        CArgDescriptions::eString, 
+        CArgDescriptions::eString,
         "");
     arg_desc->AddDefaultKey(
-        "title", 
+        "title",
         "STRING",
         "Title for annotation",
-        CArgDescriptions::eString, 
+        CArgDescriptions::eString,
         "");
 
     //
@@ -416,15 +415,15 @@ void CMultiReaderApp::Init(void)
         CArgDescriptions::eString, "" );
 
     arg_desc->AddDefaultKey(
-        "genome", 
+        "genome",
         "STRING",
         "UCSC build number",
-        CArgDescriptions::eString, 
+        CArgDescriptions::eString,
         "" );
-        
+
     //
     //  Error policy:
-    //        
+    //
 
     arg_desc->SetCurrentGroup("ERROR POLICY");
 
@@ -437,47 +436,47 @@ void CMultiReaderApp::Init(void)
         "xmlmessages",
         "where possible, print errors, warnings, etc. as XML",
         true );
-        
+
     arg_desc->AddFlag(
         "checkonly",
         "check for errors only",
         true );
-        
+
     arg_desc->AddFlag(
         "noerrors",
         "suppress error display",
         true );
-        
+
     arg_desc->AddFlag(
         "lenient",
         "accept all input format errors",
         true );
-        
+
     arg_desc->AddFlag(
         "strict",
         "accept no input format errors",
         true );
-        
+
     arg_desc->AddDefaultKey(
-        "max-error-count", 
+        "max-error-count",
         "INTEGER",
         "Maximum permissible error count",
         CArgDescriptions::eInteger,
         "-1" );
-        
+
     arg_desc->AddDefaultKey(
-        "max-error-level", 
+        "max-error-level",
         "STRING",
         "Maximum permissible error level",
         CArgDescriptions::eString,
         "warning" );
-        
+
     arg_desc->SetConstraint(
-        "max-error-level", 
-        &(*new CArgAllow_Strings, 
+        "max-error-level",
+        &(*new CArgAllow_Strings,
             "info", "warning", "error" ) );
 
-    arg_desc->AddFlag("show-progress", 
+    arg_desc->AddFlag("show-progress",
         "This will show progress messages on stderr, if the underlying "
         "reader supports that.");
 
@@ -491,12 +490,12 @@ void CMultiReaderApp::Init(void)
         "all-ids-as-local",
         "turn all ids into local ids",
         true );
-        
+
     arg_desc->AddFlag(
         "numeric-ids-as-local",
         "turn integer ids into local ids",
         true );
-        
+
     arg_desc->AddFlag(
         "3ff",
         "use BED three feature format",
@@ -511,17 +510,17 @@ void CMultiReaderApp::Init(void)
         "genbank",
         "clean up output for genbank submission",
         true);
-        
+
     arg_desc->AddFlag(
         "genbank-no-locus-tags",
         "clean up output for genbank submission, no locus-ag needed",
         true);
-        
+
     arg_desc->AddFlag(
         "cleanup",
         "clean up output but without genbank specific extensions",
         true);
-        
+
     arg_desc->AddFlag(
         "euk",
         "in -genbank mode, generate any missing mRNA features",
@@ -533,18 +532,18 @@ void CMultiReaderApp::Init(void)
         true);
 
     arg_desc->AddDefaultKey(
-        "locus-tag", 
+        "locus-tag",
         "STRING",
         "Prefix or starting tag for auto generated locus tags",
         CArgDescriptions::eString,
         "" );
-                
+
     arg_desc->AddOptionalKey(
         "autosql",
         "FILENAME",
         "BED autosql definition file",
         CArgDescriptions::eString);
-        
+
     //
     //  wiggle reader specific arguments:
     //
@@ -555,17 +554,17 @@ void CMultiReaderApp::Init(void)
         "join-same",
         "join abutting intervals",
         true );
-        
+
     arg_desc->AddFlag(
         "as-byte",
         "generate byte compressed data",
         true );
-    
+
     arg_desc->AddFlag(
         "as-real",
         "generate real value data",
         true );
-    
+
     arg_desc->AddFlag(
         "as-graph",
         "generate graph object",
@@ -585,11 +584,11 @@ void CMultiReaderApp::Init(void)
     arg_desc->AddFlag( // no longer used, retained for backward compatibility
         "new-code",
         "use new gff3 reader implementation",
-        true );    
+        true );
     arg_desc->AddFlag(
         "old-code",
         "use old gff3 reader implementation",
-        true );    
+        true );
 
     //
     //  gff reader specific arguments:
@@ -600,7 +599,7 @@ void CMultiReaderApp::Init(void)
     arg_desc->AddFlag( // no longer used, retained for backward compatibility
         "child-links",
         "generate gene->mrna and gene->cds xrefs",
-        true );    
+        true );
 
     //
     //  alignment reader specific arguments:
@@ -609,36 +608,36 @@ void CMultiReaderApp::Init(void)
     arg_desc->SetCurrentGroup("ALIGNMENT READER SPECIFIC");
 
     arg_desc->AddDefaultKey(
-        "aln-gapchar", 
+        "aln-gapchar",
         "STRING",
         "Alignment gap character",
-        CArgDescriptions::eString, 
+        CArgDescriptions::eString,
         "-");
 
     arg_desc->AddDefaultKey(
-        "aln-missing", 
+        "aln-missing",
         "STRING",
         "Alignment missing indicator",
-        CArgDescriptions::eString, 
+        CArgDescriptions::eString,
         "");
 
     arg_desc->AddDefaultKey(
-        "aln-alphabet", 
+        "aln-alphabet",
         "STRING",
         "Alignment alphabet",
-        CArgDescriptions::eString, 
+        CArgDescriptions::eString,
         "prot");
     arg_desc->SetConstraint(
-        "aln-alphabet", 
-        &(*new CArgAllow_Strings, 
-            "nuc", 
-            "prot") );    
+        "aln-alphabet",
+        &(*new CArgAllow_Strings,
+            "nuc",
+            "prot") );
 
     arg_desc->AddDefaultKey(
-        "aln-idval", 
+        "aln-idval",
         "STRING",
         "Alignment sequence ID validation scheme",
-        CArgDescriptions::eString, 
+        CArgDescriptions::eString,
         "");
 
     arg_desc->AddFlag(
@@ -657,11 +656,11 @@ void CMultiReaderApp::Init(void)
     arg_desc->SetCurrentGroup("FASTA READER SPECIFIC");
 
     arg_desc->AddFlag(
-        "parse-mods", 
+        "parse-mods",
         "Parse FASTA modifiers on deflines.");
 
     arg_desc->AddFlag(
-        "parse-gaps", 
+        "parse-gaps",
         "Make a delta sequence if gaps found.");
 
     arg_desc->SetCurrentGroup("");
@@ -670,49 +669,49 @@ void CMultiReaderApp::Init(void)
 }
 
 //  ----------------------------------------------------------------------------
-int 
-CMultiReaderApp::Run(void)
+int
+CMultiReaderApp::Run()
 //  ----------------------------------------------------------------------------
-{   
-    const CArgs& args = GetArgs(); 
+{
+    const CArgs& args = GetArgs();
     string argInFile = args["input"].AsString();
     string argOutFile = args["output"].AsString();
     string argInDir = args["indir"].AsString();
     string argOutDir = args["outdir"].AsString();
 
-    if ((argInFile != "-")  &&  !argInDir.empty()) {
-        cerr << "multireader: command line args -input and -indir are incompatible." 
+    if ((argInFile != "-") && !argInDir.empty()) {
+        cerr << "multireader: command line args -input and -indir are incompatible."
              << endl;
         return 1;
     }
     if ((argOutFile != "-") && !argOutDir.empty()) {
-        cerr << "multireader: command line args -output and -outdir are incompatible." 
+        cerr << "multireader: command line args -output and -outdir are incompatible."
              << endl;
         return 1;
     }
-    if (argInDir.empty()  &&  !argOutDir.empty()) {
+    if (argInDir.empty() && !argOutDir.empty()) {
         cerr << "multireader: command line arg -outdir requires -indir."
              << endl;
         return 1;
     }
-    if (argOutDir.empty()  && !argInDir.empty()) {
+    if (argOutDir.empty() && !argInDir.empty()) {
         cerr << "multireader: command line arg -indir requires -outdir."
             << endl;
         return 1;
     }
-    if (args["genbank"].AsBoolean()  &&  args["genbank-no-locus-tags"].AsBoolean()) {
+    if (args["genbank"].AsBoolean() && args["genbank-no-locus-tags"].AsBoolean()) {
         cerr << "multireader: flags -genbank and -genbank-no-locus-tags are mutually "
             "exclusive"
             << endl;
         return 1;
     }
-    if (!args["locus-tag"].AsString().empty()  &&  args["genbank-no-locus-tags"].AsBoolean()) {
+    if (!args["locus-tag"].AsString().empty() && args["genbank-no-locus-tags"].AsBoolean()) {
         cerr << "multireader: flags -locus-tag and -genbank-no-locus-tags are mutually "
             "exclusive"
             << endl;
         return 1;
     }
-    if (argInFile == "-"  &&  args["format"].AsString() == "guess") {
+    if (argInFile == "-" && args["format"].AsString() == "guess") {
         cerr << "multireader: must specify input format (\"-format ...\") if input comes from "
                 "console or pipe"
             << endl;
@@ -735,8 +734,8 @@ CMultiReaderApp::Run(void)
                         << outFile << "." << endl;
                 return 1;
             }
-            CNcbiIfstream istr(inFile.c_str(), IOS_BASE::binary);
-            CNcbiOfstream ostr(outFile.c_str());
+            CNcbiIfstream istr(inFile, IOS_BASE::binary);
+            CNcbiOfstream ostr(outFile);
             if (!xProcessSingleFile(args, istr, ostr)) {
                 return 1;
             }
@@ -767,8 +766,8 @@ CMultiReaderApp::xProcessSingleFile(
     bool retCode = true;
     try {
         switch( m_uFormat ) {
-            default: 
-                xProcessDefault(args, istr, ostr);   
+            default:
+                xProcessDefault(args, istr, ostr);
                 break;
             case CFormatGuess::eWiggle:
                 if (m_iFlags & CReaderBase::fAsRaw) {
@@ -845,11 +844,11 @@ CMultiReaderApp::xProcessSingleFile(
                     "Reading aborted due to fatal error: " << std_ex.what()));
         m_pErrors->PutError(*line_error_p);
         retCode = false;
-    } 
+    }
     catch(int) {
         // hack on top of hackish reporting system
         retCode = false;
-    } 
+    }
     catch(...) {
         AutoPtr<ILineError> line_error_p =
             sCreateSimpleMessage(
@@ -873,7 +872,7 @@ void CMultiReaderApp::xProcessDefault(
 
     unique_ptr<CReaderBase> pReader(
         CReaderBase::GetReader(m_uFormat, m_iFlags, &newStyleMessageListener));
-    if (!pReader.get()) {
+    if (!pReader) {
         CReaderMessage fatal(
             eDiag_Fatal, 1, "File format not supported");
         throw(fatal);
@@ -884,8 +883,8 @@ void CMultiReaderApp::xProcessDefault(
     //TestCanceler canceler;
     //pReader->SetCanceler(&canceler);
     pReader->ReadSeqAnnots(annots, istr, m_pErrors.get());
-    for (ANNOTS::iterator cit = annots.begin(); cit != annots.end(); ++cit){
-        xWriteObject(args, **cit, ostr);
+    for (CRef<CSeq_annot> cit : annots) {
+        xWriteObject(args, *cit, ostr);
     }
 }
 
@@ -898,7 +897,7 @@ void CMultiReaderApp::xProcessWiggle(
 {
     typedef list<CRef<CSeq_annot> > ANNOTS;
     ANNOTS annots;
-    
+
     CWiggleReader reader(m_iFlags, m_AnnotName, m_AnnotTitle);
     if (ShowingProgress()) {
         reader.SetProgressReportInterval(10);
@@ -906,8 +905,8 @@ void CMultiReaderApp::xProcessWiggle(
     //TestCanceler canceler;
     //reader.SetCanceler(&canceler);
     reader.ReadSeqAnnots(annots, istr, m_pErrors.get());
-    for (ANNOTS::iterator cit = annots.begin(); cit != annots.end(); ++cit){
-        xWriteObject(args, **cit, ostr);
+    for (CRef<CSeq_annot> cit : annots) {
+        xWriteObject(args, *cit, ostr);
     }
 }
 
@@ -992,7 +991,7 @@ void CMultiReaderApp::xProcessGtf(
 {
     typedef CGff2Reader::TAnnotList ANNOTS;
     ANNOTS annots;
-    
+
     if (args["format"].AsString() == "gff2") { // process as plain GFF2
         return xProcessGff2(args, istr, ostr);
     }
@@ -1003,9 +1002,9 @@ void CMultiReaderApp::xProcessGtf(
     //TestCanceler canceler;
     //reader.SetCanceler(&canceler);
     reader.ReadSeqAnnots(annots, istr, m_pErrors.get());
-    for (ANNOTS::iterator it = annots.begin(); it != annots.end(); ++it){
-		xPostProcessAnnot(args, **it);
-        xWriteObject(args, **it, ostr);
+    for (CRef<CSeq_annot> it : annots) {
+        xPostProcessAnnot(args, *it);
+        xWriteObject(args, *it, ostr);
     }
 }
 
@@ -1018,7 +1017,7 @@ void CMultiReaderApp::xProcessGff3(
 {
     typedef CGff2Reader::TAnnotList ANNOTS;
     ANNOTS annots;
-    
+
     if (args["format"].AsString() == "gff2") { // process as plain GFF2
         return xProcessGff2(args, istr, ostr);
     }
@@ -1029,9 +1028,9 @@ void CMultiReaderApp::xProcessGff3(
     //TestCanceler canceler;
     //reader.SetCanceler(&canceler);
     reader.ReadSeqAnnots(annots, istr, m_pErrors.get());
-    for (ANNOTS::iterator it = annots.begin(); it != annots.end(); ++it){
-		xPostProcessAnnot(args, **it, reader.SequenceSize());
-        xWriteObject(args, **it, ostr);
+    for (CRef<CSeq_annot> it : annots) {
+        xPostProcessAnnot(args, *it, reader.SequenceSize());
+        xWriteObject(args, *it, ostr);
     }
 }
 
@@ -1044,11 +1043,11 @@ void CMultiReaderApp::xProcessGff2(
 {
     typedef CGff2Reader::TAnnotList ANNOTS;
     ANNOTS annots;
-    
+
     CGff2Reader reader(m_iFlags, m_AnnotName, m_AnnotTitle);
     reader.ReadSeqAnnots(annots, istr, m_pErrors.get());
-    for (ANNOTS::iterator cit = annots.begin(); cit != annots.end(); ++cit){
-        xWriteObject(args, **cit, ostr);
+    for (CRef<CSeq_annot> cit : annots) {
+        xWriteObject(args, *cit, ostr);
     }
 }
 
@@ -1061,11 +1060,11 @@ void CMultiReaderApp::xProcessHgvs(
 {
     typedef vector<CRef<CSeq_annot> > ANNOTS;
     ANNOTS annots;
-    
+
     CHgvsReader reader;
     reader.ReadSeqAnnots(annots, istr, m_pErrors);
-    for (ANNOTS::iterator cit = annots.begin(); cit != annots.end(); ++cit){
-        xWriteObject(args, **cit, ostr);
+    for (CRef<CSeq_annot> cit : annots) {
+        xWriteObject(args, *cit, ostr);
     }
 }*/
 
@@ -1078,7 +1077,7 @@ void CMultiReaderApp::xProcessGvf(
 {
     typedef CGff2Reader::TAnnotList ANNOTS;
     ANNOTS annots;
-    
+
     if (args["format"].AsString() == "gff2") { // process as plain GFF2
         return xProcessGff2(args, istr, ostr);
     }
@@ -1092,8 +1091,8 @@ void CMultiReaderApp::xProcessGvf(
     //TestCanceler canceler;
     //reader.SetCanceler(&canceler);
     reader.ReadSeqAnnots(annots, istr, m_pErrors.get());
-    for (ANNOTS::iterator cit = annots.begin(); cit != annots.end(); ++cit){
-        xWriteObject(args, **cit, ostr);
+    for (CRef<CSeq_annot> cit : annots) {
+        xWriteObject(args, *cit, ostr);
     }
 }
 
@@ -1121,7 +1120,7 @@ void CMultiReaderApp::xProcessAgp(
 //  ----------------------------------------------------------------------------
 {
     CAgpToSeqEntry reader(m_iFlags);
-    
+
     const int iErrCode = reader.ReadStream(istr);
     if( iErrCode != 0 ) {
         NCBI_THROW2(CObjReaderParseException, eFormat,
@@ -1149,7 +1148,7 @@ void CMultiReaderApp::xProcess5ColFeatTable(
     while(!pLineReader->AtEOF()) {
         CRef<CSeq_annot> pSeqAnnot =
             reader.ReadSeqAnnot(*pLineReader, m_pErrors.get());
-        if( pSeqAnnot && 
+        if( pSeqAnnot &&
             pSeqAnnot->IsFtable() &&
             !pSeqAnnot->GetData().GetFtable().empty()) {
             xWriteObject(args, *pSeqAnnot, ostr);
@@ -1169,8 +1168,8 @@ void CMultiReaderApp::xProcessRmo(
     while(istr) {
         CRef<CSeq_annot> pSeqAnnot =
             reader.ReadSeqAnnot(*pLineReader, m_pErrors.get());
-        if( ! pSeqAnnot || ! pSeqAnnot->IsFtable() || 
-            pSeqAnnot->GetData().GetFtable().empty() ) 
+        if( ! pSeqAnnot || ! pSeqAnnot->IsFtable() ||
+            pSeqAnnot->GetData().GetFtable().empty() )
         {
             // empty annot
             break;
@@ -1187,7 +1186,7 @@ void CMultiReaderApp::xProcessFasta(
 //  ----------------------------------------------------------------------------
 {
     CFastaReader::TFlags fFlags = 0;
-    fFlags |= CFastaReader::fNoSplit 
+    fFlags |= CFastaReader::fNoSplit
            |  CFastaReader::fDisableParseRange;
 
     if( args["parse-mods"] ) {
@@ -1221,13 +1220,13 @@ void CMultiReaderApp::xProcessAlignment(
         reader.SetAlphabet(CAlnReader::eAlpha_Nucleotide);
     }
     try {
-        CAlnReader::EReadFlags flags = 
-            (args["all-ids-as-local"].AsBoolean() ? 
-                CAlnReader::fGenerateLocalIDs : 
+        CAlnReader::EReadFlags flags =
+            (args["all-ids-as-local"].AsBoolean() ?
+                CAlnReader::fGenerateLocalIDs :
                 CAlnReader::fReadDefaults);
         reader.Read(0, m_pErrors.get());
         CRef<CSeq_entry> pEntry = reader.GetSeqEntry(fFlags, m_pErrors.get());
-        if (pEntry) { 
+        if (pEntry) {
             xWriteObject(args, *pEntry, ostr);
         }
     }
@@ -1241,10 +1240,10 @@ void CMultiReaderApp::xSetFormat(
     CNcbiIstream& istr )
 //  ----------------------------------------------------------------------------
 {
-    m_uFormat = CFormatGuess::eUnknown;    
+    m_uFormat = CFormatGuess::eUnknown;
     string format = args["format"].AsString();
     const string& strProgramName = GetProgramDisplayName();
-    
+
     if (NStr::StartsWith(strProgramName, "wig") || format == "wig" ||
         format == "wiggle") {
         m_uFormat = CFormatGuess::eWiggle;
@@ -1262,7 +1261,7 @@ void CMultiReaderApp::xSetFormat(
     if (NStr::StartsWith(strProgramName, "gtf") || format == "augustus") {
         m_uFormat = CFormatGuess::eGffAugustus;
     }
-    if (NStr::StartsWith(strProgramName, "gff") || 
+    if (NStr::StartsWith(strProgramName, "gff") ||
         format == "gff3" || format == "gff2") {
         m_uFormat = CFormatGuess::eGff3;
     }
@@ -1270,7 +1269,7 @@ void CMultiReaderApp::xSetFormat(
         m_uFormat = CFormatGuess::eAgp;
     }
 
-    if (NStr::StartsWith(strProgramName, "newick") || 
+    if (NStr::StartsWith(strProgramName, "newick") ||
         format == "newick" || format == "tree" || format == "tre") {
         m_uFormat = CFormatGuess::eNewick;
     }
@@ -1281,7 +1280,7 @@ void CMultiReaderApp::xSetFormat(
         format == "aln") {
         m_uFormat = CFormatGuess::eAlignment;
     }
-    if (NStr::StartsWith(strProgramName, "hgvs") || 
+    if (NStr::StartsWith(strProgramName, "hgvs") ||
         format == "hgvs") {
         m_uFormat = CFormatGuess::eHgvs;
     }
@@ -1315,11 +1314,11 @@ void CMultiReaderApp::xSetFlags(
     const string& filename )
 //  ----------------------------------------------------------------------------
 {
-    CNcbiIfstream istr(filename.c_str());
+    CNcbiIfstream istr(filename);
     xSetFlags(args, istr);
     istr.close();
 }
- 
+
 //  ----------------------------------------------------------------------------
 void CMultiReaderApp::xSetFlags(
     const CArgs& args,
@@ -1329,11 +1328,11 @@ void CMultiReaderApp::xSetFlags(
     if (m_uFormat == CFormatGuess::eUnknown) {
         xSetFormat(args, istr);
     }
-    m_iFlags = NStr::StringToInt( 
+    m_iFlags = NStr::StringToInt(
         args["flags"].AsString(), NStr::fConvErr_NoThrow, 16 );
-        
+
     switch( m_uFormat ) {
-    
+
     case CFormatGuess::eWiggle:
         if ( args["join-same"] ) {
             m_iFlags |= CWiggleReader::fJoinSame;
@@ -1350,7 +1349,7 @@ void CMultiReaderApp::xSetFlags(
             m_iFlags |= CReaderBase::fAsRaw;
         }
         break;
-    
+
     case CFormatGuess::eBed:
         if ( args["all-ids-as-local"] ) {
             m_iFlags |= CBedReader::fAllIdsAsLocal;
@@ -1368,7 +1367,7 @@ void CMultiReaderApp::xSetFlags(
             m_iFlags |= CBedReader::fDirectedFeatureModel;
         }
         break;
-       
+
     case CFormatGuess::eGtf:
         if ( args["all-ids-as-local"] ) {
             m_iFlags |= CBedReader::fAllIdsAsLocal;
@@ -1389,7 +1388,7 @@ void CMultiReaderApp::xSetFlags(
             }
         }
         break;
-           
+
     case CFormatGuess::eGff3:
         if ( args["gene-xrefs"] ) {
             m_iFlags |= CGff3Reader::fGeneXrefs;
@@ -1426,13 +1425,13 @@ void CMultiReaderApp::xPostProcessAnnot(
     static unsigned int startingLocusTagNumber = 1;
     static unsigned int startingFeatureId = 1;
 
-    if (!args["genbank"].AsBoolean()  &&  !args["genbank-no-locus-tags"].AsBoolean()) {
+    if (!args["genbank"].AsBoolean() && !args["genbank-no-locus-tags"].AsBoolean()) {
         if (args["cleanup"]) {
             CCleanup cleanup;
             CConstRef<CCleanupChange> changed = cleanup.BasicCleanup(annot);
         }
-		return;
-	}
+        return;
+    }
 
     string prefix, offset;
     if (NStr::SplitInTwo(args["locus-tag"].AsString(), "_", prefix, offset)) {
@@ -1456,7 +1455,7 @@ void CMultiReaderApp::xPostProcessAnnot(
         annot, sequenceSize, prefix, startingLocusTagNumber, startingFeatureId, m_pErrors.get());
     fte.InferPartials();
     fte.GenerateMissingParentFeatures(args["euk"].AsBoolean());
-    if (args["genbank"].AsBoolean()  &&  !fte.AnnotHasAllLocusTags()) {
+    if (args["genbank"].AsBoolean() && !fte.AnnotHasAllLocusTags()) {
         if (!prefix.empty()) {
             fte.GenerateLocusTags();
         }
@@ -1546,7 +1545,7 @@ void CMultiReaderApp::xWriteObject(
     ostr << *pOutFormat << object;
     ostr.flush();
 }
-        
+
 //  ----------------------------------------------------------------------------
 void
 CMultiReaderApp::xSetMapper(
@@ -1555,19 +1554,19 @@ CMultiReaderApp::xSetMapper(
 {
     string strBuild = args["genome"].AsString();
     string strMapFile = args["mapfile"].AsString();
-    
+
     if (strBuild.empty() && strMapFile.empty()) {
         return;
     }
     if (!strMapFile.empty()) {
-        CNcbiIfstream* pMapFile = new CNcbiIfstream(strMapFile.c_str());
+        CNcbiIfstream* pMapFile = new CNcbiIfstream(strMapFile);
         m_pMapper.reset(
             new CIdMapperConfig(*pMapFile, strBuild, false, m_pErrors.get()));
     }
     else {
         m_pMapper.reset(new CIdMapperBuiltin(strBuild, false, m_pErrors.get()));
     }
-}        
+}
 
 //  ----------------------------------------------------------------------------
 void
@@ -1591,7 +1590,7 @@ CMultiReaderApp::xSetMessageListener(
         m_pErrors.reset(new CMessageListenerStrict());
     } else if ( args["lenient"] ) {
         m_pErrors.reset(new CMessageListenerLenient());
-    } else {    
+    } else {
         int iMaxErrorCount = args["max-error-count"].AsInteger();
         int iMaxErrorLevel = eDiag_Warning;
         string strMaxErrorLevel = args["max-error-level"].AsString();
@@ -1616,7 +1615,7 @@ CMultiReaderApp::xSetMessageListener(
         m_pErrors->SetProgressOstream( &cerr );
     }
 }
-    
+
 //  ----------------------------------------------------------------------------
 void CMultiReaderApp::xDumpErrors(
     CNcbiOstream& ostr)

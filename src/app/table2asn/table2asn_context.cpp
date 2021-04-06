@@ -102,7 +102,7 @@ bool x_ApplyCreateDate(CSeq_entry& entry)
 {
     CAutoAddDesc create_date_desc(entry.SetDescr(), CSeqdesc::e_Create_date);
     if (create_date_desc.IsNull())
-    {   
+    {
         CRef<CDate> date(new CDate(CTime(CTime::eCurrent), CDate::ePrecision_day));
         create_date_desc.Set().SetCreate_date(*date);
         return false; // no need update_date
@@ -612,7 +612,7 @@ void CTable2AsnContext::RenameProteinIdsQuals(CSeq_feat& feature)
         if (qual.CanGetVal())
         {
             const string& qual_name = qual.GetQual();
-            //discussion of rw-451: always rename, never delete, regardless of 
+            //discussion of rw-451: always rename, never delete, regardless of
             // whether in original data or not
             //
             if (qual_name == "transcript_id") {
@@ -692,9 +692,9 @@ bool CTable2AsnContext::ApplyCreateUpdateDates(CSeq_entry& entry) const
 
 void CTable2AsnContext::ApplyFileTracks(CSeq_entry& entry) const
 {
-  if (!m_ft_url.empty()) 
+  if (!m_ft_url.empty())
     AddUserTrack(entry.SetDescr(), "FileTrack", "Map-FileTrackURL", m_ft_url);
-  if (!m_ft_url_mod.empty()) 
+  if (!m_ft_url_mod.empty())
     AddUserTrack(entry.SetDescr(), "FileTrack", "BaseModification-FileTrackURL", m_ft_url_mod);
 
 }
@@ -842,7 +842,7 @@ static void s_NormalizeLinkageEvidenceString(string& linkage_evidence)
     const auto it =
         unique(begin(linkage_evidence), end(linkage_evidence),
             [](char a, char b) {return (a == b && b == '-');});
-    
+
     linkage_evidence.erase(it, linkage_evidence.end());
 
     NStr::ToLower(linkage_evidence);

@@ -94,7 +94,7 @@ class CHTMLFormatterEx : public IHTMLFormatter
 {
 public:
     CHTMLFormatterEx(CRef<CScope> scope);
-    virtual ~CHTMLFormatterEx();
+    ~CHTMLFormatterEx() override;
 
     void FormatProteinId(string &, const CSeq_id& seq_id, const string& prot_id) const;
     void FormatTranscriptId(string &, const CSeq_id& seq_id, const string& nuc_id) const;
@@ -312,11 +312,11 @@ void CHTMLFormatterEx::FormatUniProtId(string& str, const string& prot_id) const
 class CAsn2FlatApp : public CNcbiApplication, public CGBReleaseFile::ISeqEntryHandler
 {
 public:
-    CAsn2FlatApp (void);
-    ~CAsn2FlatApp (void);
+    CAsn2FlatApp();
+    ~CAsn2FlatApp();
 
-    void Init(void);
-    int  Run (void);
+    void Init() override;
+    int Run() override;
 
     bool HandleSeqEntry(CRef<CSeq_entry>& se);
     bool HandleSeqEntry(const CSeq_entry_Handle& seh);
@@ -346,7 +346,7 @@ private:
     void x_GetLocation(const CSeq_entry_Handle& entry,
         const CArgs& args, CSeq_loc& loc);
     CBioseq_Handle x_DeduceTarget(const CSeq_entry_Handle& entry);
-    void x_CreateCancelBenchmarkCallback(void);
+    void x_CreateCancelBenchmarkCallback();
     int x_AddSNPAnnots(CBioseq_Handle& bsh);
 
     // data
@@ -375,24 +375,23 @@ private:
 #endif
 #ifdef USE_CDDLOADER
     CRef<CCDDDataLoader>        m_CDDDataLoader;
-#endif    
+#endif
 };
 
 
 // constructor
-CAsn2FlatApp::CAsn2FlatApp (void)
+CAsn2FlatApp::CAsn2FlatApp()
 {
     const CVersionInfo vers (5,1,0);
     SetVersion (vers);
 }
 
 // destructor
-CAsn2FlatApp::~CAsn2FlatApp (void)
-
+CAsn2FlatApp::~CAsn2FlatApp()
 {
 }
 
-void CAsn2FlatApp::Init(void)
+void CAsn2FlatApp::Init()
 {
     unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     arg_desc->SetUsageContext(
@@ -492,7 +491,8 @@ CNcbiOstream* CAsn2FlatApp::OpenFlatfileOstream(const string& name)
 {
     const CArgs& args = GetArgs();
 
-    if (! args[name]) return NULL;
+    if (! args[name])
+        return nullptr;
 
     CNcbiOstream* flatfile_os = &(args[name].AsOutputFile());
 
@@ -517,7 +517,7 @@ static void s_INSDSetClose(bool is_insdseq, CNcbiOstream* os) {
 }
 
 
-int CAsn2FlatApp::Run(void)
+int CAsn2FlatApp::Run()
 {
     m_Exception = false;
     m_FetchFail = false;
@@ -525,7 +525,7 @@ int CAsn2FlatApp::Run(void)
     // initialize conn library
     CONNECT_Init(&GetConfig());
 
-    const CArgs&   args = GetArgs();
+    const CArgs& args = GetArgs();
 
     CSignal::TrapSignals(CSignal::eSignal_USR1);
 
@@ -534,7 +534,7 @@ int CAsn2FlatApp::Run(void)
     if ( !m_Objmgr ) {
         NCBI_THROW(CException, eUnknown, "Could not create object manager");
     }
-    if (args["gbload"]  ||  args["id"]  ||  args["ids"]) {
+    if (args["gbload"] || args["id"] || args["ids"]) {
         static const CDataLoadersUtil::TLoaders default_loaders =
             CDataLoadersUtil::fGenbank | CDataLoadersUtil::fVDB | CDataLoadersUtil::fSRA;
         CDataLoadersUtil::SetupObjectManager(args, *m_Objmgr, default_loaders);
@@ -558,8 +558,8 @@ int CAsn2FlatApp::Run(void)
         string host = cfg.GetString("SNPAccess", "host", "");
         string port = cfg.GetString("SNPAccess", "port", "");
         string hostport = host + ":" + port;
-        
-        auto channel = 
+
+        auto channel =
             grpc::CreateChannel(hostport, grpc::InsecureChannelCredentials());
         m_SNPTrackStub =
             ncbi::grpcapi::dbsnp::primary_track::DbSnpPrimaryTrack::NewStub(channel);
@@ -574,7 +574,7 @@ int CAsn2FlatApp::Run(void)
             CRef<CCDDDataLoader> cdd_data_loader(CCDDDataLoader::RegisterInObjectManager(*m_Objmgr).GetLoader());
             m_Scope->AddDataLoader(cdd_data_loader->GetLoaderNameFromArgs());
         }
-#endif        
+#endif
     }
 
     // open the output streams
@@ -587,14 +587,13 @@ int CAsn2FlatApp::Run(void)
 
     m_OnlyNucs = false;
     m_OnlyProts = false;
-    if (m_Os != NULL) {
+    if (m_Os) {
         const string& view = args["view"].AsString();
         m_OnlyNucs = (view == "nuc");
         m_OnlyProts = (view == "prot");
     }
 
-    if (m_Os == NULL  &&  m_On == NULL  &&  m_Og == NULL  &&
-        m_Or == NULL  &&  m_Op == NULL  &&  m_Ou == NULL) {
+    if (!m_Os && !m_On && !m_Og && !m_Or && !m_Op && !m_Ou) {
         // No output (-o*) argument given - default to stdout
         m_Os = &cout;
     }
@@ -602,7 +601,7 @@ int CAsn2FlatApp::Run(void)
     bool is_insdseq = false;
     if (args["format"].AsString() == "insdseq") {
         // only print <INSDSet> ... </INSDSet> wrappers if single output stream
-        if (m_Os != NULL) {
+        if (m_Os) {
             is_insdseq = true;
         }
     }
@@ -630,7 +629,7 @@ int CAsn2FlatApp::Run(void)
 
     unique_ptr<CObjectIStream> is;
     is.reset( x_OpenIStream( args ) );
-    if (is.get() == NULL) {
+    if (!is) {
         string msg = args["i"]? "Unable to open input file" + args["i"].AsString() :
             "Unable to read data from stdin";
         NCBI_THROW(CException, eUnknown, msg);
@@ -661,7 +660,7 @@ int CAsn2FlatApp::Run(void)
         string id_str;
         while (NcbiGetlineEOL(istr, id_str)) {
             id_str = NStr::TruncateSpaces(id_str);
-            if (id_str.empty()  ||  id_str[0] == '#') {
+            if (id_str.empty() || id_str[0] == '#') {
                 continue;
             }
 
@@ -760,7 +759,7 @@ int CAsn2FlatApp::Run(void)
                         is.reset( x_OpenIStream( args ) );
                         CRef<CSeq_submit> sub(new CSeq_submit);
                         *is >> *sub;
-                        if (sub->IsSetSub()  &&  sub->IsSetData()) {
+                        if (sub->IsSetSub() && sub->IsSetData()) {
                             HandleSeqSubmit(*sub);
                             if (m_Exception) return -1;
                             return 0;
@@ -795,7 +794,7 @@ void CAsn2FlatApp::HandleSeqSubmit(CSeq_submit& sub)
         CCleanup cleanup;
         cleanup.BasicCleanup(sub);
     }
-    const CArgs&   args = GetArgs();
+    const CArgs& args = GetArgs();
     if (args["from"] || args["to"] || args["strand"]) {
         CRef<CSeq_entry> e(sub.SetData().SetEntrys().front());
         CSeq_entry_Handle seh;
@@ -909,7 +908,7 @@ bool CAsn2FlatApp::HandleSeqEntry(const CSeq_entry_Handle& seh )
     if ( args["faster"] || args["policy"].AsString() == "ftp" || args["policy"].AsString() == "web" ) {
 
             try {
-                if ( args["from"]  ||  args["to"]  ||  args["strand"] ) {
+                if ( args["from"] || args["to"] || args["strand"] ) {
                     CSeq_loc loc;
                     x_GetLocation( seh, args, loc );
                     CNcbiOstream* flatfile_os = m_Os;
@@ -928,12 +927,12 @@ bool CAsn2FlatApp::HandleSeqEntry(const CSeq_entry_Handle& seh )
     }
 
     m_FFGenerator->SetFeatTree(new feature::CFeatTree(seh));
-    
+
     for (CBioseq_CI bioseq_it(seh);  bioseq_it;  ++bioseq_it) {
         CBioseq_Handle bsh = *bioseq_it;
         CConstRef<CBioseq> bsr = bsh.GetCompleteBioseq();
 
-        CNcbiOstream* flatfile_os = NULL;
+        CNcbiOstream* flatfile_os = nullptr;
 
         bool is_genomic = false;
         bool is_RNA = false;
@@ -985,41 +984,41 @@ bool CAsn2FlatApp::HandleSeqEntry(const CSeq_entry_Handle& seh )
             }
         }
 
-        if ( m_Os != NULL ) {
+        if ( m_Os ) {
             if ( m_OnlyNucs && ! bsh.IsNa() ) continue;
             if ( m_OnlyProts && ! bsh.IsAa() ) continue;
             flatfile_os = m_Os;
         } else if ( bsh.IsNa() ) {
-            if ( m_On != NULL ) {
+            if ( m_On ) {
                 flatfile_os = m_On;
-            } else if ( (is_genomic || ! closest_molinfo) && m_Og != NULL ) {
+            } else if ( (is_genomic || ! closest_molinfo) && m_Og ) {
                 flatfile_os = m_Og;
-            } else if ( is_RNA && m_Or != NULL ) {
+            } else if ( is_RNA && m_Or ) {
                 flatfile_os = m_Or;
             } else {
                 continue;
             }
         } else if ( bsh.IsAa() ) {
-            if ( m_Op != NULL ) {
+            if ( m_Op ) {
                 flatfile_os = m_Op;
             }
         } else {
-            if ( m_Ou != NULL ) {
+            if ( m_Ou ) {
                 flatfile_os = m_Ou;
-            } else if ( m_On != NULL ) {
+            } else if ( m_On ) {
                 flatfile_os = m_On;
             } else {
                 continue;
             }
         }
 
-        if ( flatfile_os == NULL ) continue;
+        if ( !flatfile_os ) continue;
 
         if (m_PSGMode && ( args["enable-external"] || args["policy"].AsString() == "external" ))
             x_AddSNPAnnots(bsh);
 
         // generate flat file
-        if ( args["from"]  ||  args["to"]  ||  args["strand"] ) {
+        if ( args["from"] || args["to"] || args["strand"] ) {
             CSeq_loc loc;
             x_GetLocation( seh, args, loc );
             try {
@@ -1123,10 +1122,9 @@ bool CAsn2FlatApp::HandleSeqEntry(CRef<CSeq_entry>& se)
 
 CObjectIStream* CAsn2FlatApp::x_OpenIStream(const CArgs& args)
 {
-
     // determine the file serialization format.
     // default for batch files is binary, otherwise text.
-    ESerialDataFormat serial = args["batch"] ? eSerial_AsnBinary :eSerial_AsnText;
+    ESerialDataFormat serial = args["batch"] ? eSerial_AsnBinary : eSerial_AsnText;
     if ( args["serial"] ) {
         const string& val = args["serial"].AsString();
         if ( val == "text" ) {
@@ -1143,13 +1141,13 @@ CObjectIStream* CAsn2FlatApp::x_OpenIStream(const CArgs& args)
     CNcbiIstream* pInputStream = &NcbiCin;
     bool bDeleteOnClose = false;
     if ( args["i"] ) {
-        pInputStream = new CNcbiIfstream( args["i"].AsString().c_str(), ios::binary  );
+        pInputStream = new CNcbiIfstream( args["i"].AsString(), ios::binary  );
         bDeleteOnClose = true;
     }
 
     // if -c was specified then wrap the input stream into a gzip decompressor before
     // turning it into an object stream:
-    CObjectIStream* pI = 0;
+    CObjectIStream* pI = nullptr;
     if ( args["c"] ) {
         CZipStreamDecompressor* pDecompressor = new CZipStreamDecompressor(
             512, 512, kZlibDefaultWbits, CZipCompression::fCheckFileHeader );
@@ -1162,7 +1160,7 @@ CObjectIStream* CAsn2FlatApp::x_OpenIStream(const CArgs& args)
             serial, *pInputStream, (bDeleteOnClose ? eTakeOwnership : eNoOwnership));
     }
 
-    if ( 0 != pI ) {
+    if ( pI ) {
         pI->UseMemoryPool();
     }
     return pI;
@@ -1208,26 +1206,26 @@ CAsn2FlatApp::x_GetGenbankCallback(const CArgs& args)
 {
     class CSimpleCallback : public TGenbankBlockCallback {
     public:
-        CSimpleCallback(void) { }
-        virtual ~CSimpleCallback(void)
-            {
-                cerr << endl;
-                cerr << "GENBANK CALLBACK DEMO STATISTICS" << endl;
-                cerr << endl;
-                cerr << "Appearances of each type: " << endl;
-                cerr << endl;
-                x_DumpTypeToCountMap(m_TypeAppearancesMap);
-                cerr << endl;
-                cerr << "Total characters output for each type: " << endl;
-                cerr << endl;
-                x_DumpTypeToCountMap(m_TypeCharsMap);
-                cerr << endl;
-                cerr << "Average characters output for each type: " << endl;
-                cerr << endl;
-                x_PrintAverageStats();
-            }
+        CSimpleCallback() { }
+        ~CSimpleCallback() override
+        {
+            cerr << endl;
+            cerr << "GENBANK CALLBACK DEMO STATISTICS" << endl;
+            cerr << endl;
+            cerr << "Appearances of each type: " << endl;
+            cerr << endl;
+            x_DumpTypeToCountMap(m_TypeAppearancesMap);
+            cerr << endl;
+            cerr << "Total characters output for each type: " << endl;
+            cerr << endl;
+            x_DumpTypeToCountMap(m_TypeCharsMap);
+            cerr << endl;
+            cerr << "Average characters output for each type: " << endl;
+            cerr << endl;
+            x_PrintAverageStats();
+        }
 
-        virtual EBioseqSkip notify_bioseq( CBioseqContext & ctx )
+        EBioseqSkip notify_bioseq( CBioseqContext & ctx ) override
         {
             cerr << "notify_bioseq called." << endl;
             return eBioseqSkip_No;
@@ -1236,9 +1234,9 @@ CAsn2FlatApp::x_GetGenbankCallback(const CArgs& args)
         // this macro is the lesser evil compared to the messiness that
         // you would see here otherwise. (plus it's less error-prone)
 #define SIMPLE_CALLBACK_NOTIFY(TItemClass) \
-        virtual EAction notify( string & block_text, \
-                                const CBioseqContext& ctx, \
-                                const TItemClass & item ) { \
+        EAction notify( string & block_text, \
+                        const CBioseqContext& ctx, \
+                        const TItemClass & item ) override { \
         NStr::ReplaceInPlace(block_text, "MODIFY TEST", "WAS MODIFIED TEST" ); \
         cerr << #TItemClass << " {" << block_text << '}' << endl; \
         ++m_TypeAppearancesMap[#TItemClass]; \
@@ -1298,7 +1296,7 @@ CAsn2FlatApp::x_GetGenbankCallback(const CArgs& args)
             }
         }
 
-        void x_PrintAverageStats(void) {
+        void x_PrintAverageStats() {
             ITERATE( TTypeToCountMap, map_iter, m_TypeAppearancesMap ) {
                 const string sType = map_iter->first;
                 const size_t iAppearances = map_iter->second;
@@ -1312,7 +1310,7 @@ CAsn2FlatApp::x_GetGenbankCallback(const CArgs& args)
     if( args["demo-genbank-callback"] ) {
         return new CSimpleCallback;
     } else {
-        return NULL;
+        return nullptr;
     }
 }
 
@@ -1357,7 +1355,7 @@ void CAsn2FlatApp::x_GetLocation
         strand = x_GetStrand(args);
     }
 
-    if ( from == CRange<TSeqPos>::GetWholeFrom()  &&  to == length ) {
+    if ( from == CRange<TSeqPos>::GetWholeFrom() && to == length ) {
         // whole
         loc.SetWhole().Assign(*h.GetSeqId());
     } else {
@@ -1392,7 +1390,7 @@ CBioseq_Handle CAsn2FlatApp::x_DeduceTarget(const CSeq_entry_Handle& entry)
         for ( CSeq_entry_CI it(entry); it; ++it ) {
             if ( it->IsSeq() ) {
                 CBioseq_Handle h = it->GetSeq();
-                if ( h  &&  CSeq_inst::IsNa(h.GetInst_Mol()) ) {
+                if ( h && CSeq_inst::IsNa(h.GetInst_Mol()) ) {
                     return h;
                 }
             }
@@ -1401,7 +1399,7 @@ CBioseq_Handle CAsn2FlatApp::x_DeduceTarget(const CSeq_entry_Handle& entry)
     case CBioseq_set::eClass_gen_prod_set:
         // return the genomic
         for ( CSeq_entry_CI it(bsst); it; ++it ) {
-            if ( it->IsSeq()  &&
+            if ( it->IsSeq() &&
                  it->GetSeq().GetInst_Mol() == CSeq_inst::eMol_dna ) {
                  return it->GetSeq();
             }
@@ -1431,20 +1429,20 @@ CBioseq_Handle CAsn2FlatApp::x_DeduceTarget(const CSeq_entry_Handle& entry)
 }
 
 void
-CAsn2FlatApp::x_CreateCancelBenchmarkCallback(void)
+CAsn2FlatApp::x_CreateCancelBenchmarkCallback()
 {
     // This ICanceled interface always says "keep going"
     // unless SIGUSR1 is received,
     // and it keeps statistics on how often it is checked
     class CCancelBenchmarking : public ICanceled {
     public:
-        CCancelBenchmarking(void)
+        CCancelBenchmarking()
             : m_TimeOfLastCheck(CTime::eCurrent)
         {
         }
 
 
-        ~CCancelBenchmarking(void)
+        ~CCancelBenchmarking()
         {
             // On destruction, we call "IsCanceled" one more time to make
             // sure there wasn't a point where we stopped
@@ -1529,7 +1527,7 @@ CAsn2FlatApp::x_CreateCancelBenchmarkCallback(void)
         }
 
 
-        virtual bool IsCanceled(void) const
+        bool IsCanceled() const override
         {
             // getting the current time should be the first
             // command in this function.
@@ -1564,7 +1562,7 @@ CAsn2FlatApp::x_CreateCancelBenchmarkCallback(void)
 
     private:
         // local classes do not allow static fields
-        size_t x_kGetNumToSaveAtStartAndEnd(void) const { return 10; }
+        size_t x_kGetNumToSaveAtStartAndEnd() const { return 10; }
 
         mutable CTime m_TimeOfLastCheck;
         // The key is the gap between checks in milliseconds,
@@ -1592,7 +1590,7 @@ int CAsn2FlatApp::x_AddSNPAnnots(CBioseq_Handle& bsh)
     // Also skip large scaffolds and chromosomes
     CConstRef<CSeq_id> accid =
         FindBestChoice(bsh.GetBioseqCore()->GetId(), CSeq_id::Score);
-    
+
     bool skip = (accid->Which() != CSeq_id::e_Other);
     if (!skip) {
         string acc;
@@ -1605,10 +1603,10 @@ int CAsn2FlatApp::x_AddSNPAnnots(CBioseq_Handle& bsh)
     }
     if (skip)
         return 0;
-    
+
     // If GenBank loader is connecting to PubSeqOS, it's sufficient to add the 'SNP'
     // named annot type to the scope.
-    // Otherwise (in PSG mode), use a separate SNP data loader. For that to work, 
+    // Otherwise (in PSG mode), use a separate SNP data loader. For that to work,
     // it is necessary to find the actual NA accession corresponding to this record's
     // SNP annotation and add it to the SAnnotSelector used by the flatfile generator.
 #ifdef USE_SNPLOADER

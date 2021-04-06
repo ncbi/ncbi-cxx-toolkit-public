@@ -78,16 +78,16 @@ class TestCanceler: public ICanceled
 {
 public:
     static const unsigned int CALLS_UNTIL_CANCELLED = 25;
-    bool IsCanceled() const { 
+    bool IsCanceled() const {
         if (0 == ++mNumCalls % 100) {
-            cerr << "Iterations until cancelled: " 
+            cerr << "Iterations until cancelled: "
                  << (CALLS_UNTIL_CANCELLED - mNumCalls) << "\n";
         }
         return (mNumCalls > CALLS_UNTIL_CANCELLED);
     };
     static unsigned int mNumCalls;
 };
-unsigned int TestCanceler::mNumCalls = 0; 
+unsigned int TestCanceler::mNumCalls = 0;
 TestCanceler canceller;
 #endif
 
@@ -98,11 +98,11 @@ class CAsn2FastaApp:
 //  ==========================================================================
 {
 public:
-    CAsn2FastaApp (void);
-    ~CAsn2FastaApp (void);
+    CAsn2FastaApp();
+    ~CAsn2FastaApp();
 
-    void Init(void);
-    int  Run (void);
+    void Init() override;
+    int Run() override;
 
     bool HandleSeqEntry(CRef<CSeq_entry>& se);
     bool HandleSeqEntry(CSeq_entry_Handle& se);
@@ -175,13 +175,13 @@ CAsn2FastaApp::~CAsn2FastaApp()
 
 
 static const CDataLoadersUtil::TLoaders kDefaultLoaders =
-        CDataLoadersUtil::fGenbank | 
+        CDataLoadersUtil::fGenbank |
         CDataLoadersUtil::fVDB |
         CDataLoadersUtil::fSRA |
         CDataLoadersUtil::fVDBOnByDefault;
 
 //  --------------------------------------------------------------------------
-void CAsn2FastaApp::Init(void)
+void CAsn2FastaApp::Init()
 //  --------------------------------------------------------------------------
 {
     unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
@@ -381,7 +381,7 @@ CFastaOstreamEx* CAsn2FastaApp::OpenFastaOstream(const string& argname, const st
     }
 
     unique_ptr<CFastaOstreamEx> fasta_os(new CFastaOstreamEx(*os));
-    fasta_os->SetAllFlags(        
+    fasta_os->SetAllFlags(
         CFastaOstreamEx::fInstantiateGaps |
         CFastaOstreamEx::fAssembleParts |
         CFastaOstreamEx::fNoDupCheck |
@@ -436,7 +436,7 @@ CFastaOstreamEx* CAsn2FastaApp::OpenFastaOstream(const string& argname, const st
 
 
 //  --------------------------------------------------------------------------
-int CAsn2FastaApp::Run(void)
+int CAsn2FastaApp::Run()
 //  --------------------------------------------------------------------------
 {
     // initialize conn library
@@ -460,10 +460,10 @@ int CAsn2FastaApp::Run(void)
 
         m_DeflineOnly = args["defline-only"];
         // Default is not to look at features
-        m_AllFeats = m_CDS 
-                   = m_TranslateCDS 
-                   = m_Gene 
-                   = m_RNA 
+        m_AllFeats = m_CDS
+                   = m_TranslateCDS
+                   = m_Gene
+                   = m_RNA
                    = m_OtherFeats
                    = false;
 
@@ -610,25 +610,25 @@ void CAsn2FastaApp::x_InitFeatDisplay(const string& feats)
         for(const string& feat_name : feat_list) {
             if (feat_name == "fasta_cds_na") {
                 m_CDS = true;
-            } 
+            }
             else
             if (feat_name == "fasta_cds_aa") {
                 m_CDS = true;
                 m_TranslateCDS = true;
-            } 
-            else 
+            }
+            else
             if (feat_name == "gene_fasta") {
                 m_Gene = true;
-            } 
-            else 
+            }
+            else
             if (feat_name == "rna_fasta") {
                 m_RNA = true;
-            } 
-            else 
+            }
+            else
             if (feat_name == "other_fasta") {
                 m_OtherFeats = true;
             }
-            else 
+            else
             if (feat_name == "all") {
                 m_AllFeats = true;
             }
@@ -720,7 +720,7 @@ void CAsn2FastaApp::x_ProcessIStream(const string& asn_type, CObjectIStream& ist
     else if ( asn_type == "seq-submit" ) {
         seh = ObtainSeqEntryFromSeqSubmit(istr);
     }
-    
+
     if ( !seh ) {
         NCBI_THROW(CException, eUnknown,
         "Unable to construct Seq-entry object" );
@@ -826,7 +826,7 @@ bool CAsn2FastaApp::HandleSeqEntry(CRef<CSeq_entry>& se)
 
 //  --------------------------------------------------------------------------
 void CAsn2FastaApp::PrintQualityScores(const CBioseq& bioseq,
-        CNcbiOstream& ostream) 
+        CNcbiOstream& ostream)
 //  --------------------------------------------------------------------------
 {
 
@@ -983,10 +983,10 @@ bool CAsn2FastaApp::HandleSeqEntry(CSeq_entry_Handle& seh)
     }
 
     bool any_feats = m_AllFeats
-                   | m_CDS 
+                   | m_CDS
                    | m_TranslateCDS
-                   | m_Gene 
-                   | m_RNA 
+                   | m_Gene
+                   | m_RNA
                    | m_OtherFeats;
 
 
@@ -1021,19 +1021,19 @@ bool CAsn2FastaApp::HandleSeqEntry(CSeq_entry_Handle& seh)
         sel.SetAdaptiveDepth(true);
     }
     sel.SetSortOrder(SAnnotSelector::eSortOrder_Normal);
-    sel.ExcludeNamedAnnots("SNP");    
+    sel.ExcludeNamedAnnots("SNP");
     sel.SetExcludeExternal();
 
     CScope& scope = seh.GetScope();
 
     for (CBioseq_CI bioseq_it(seh); bioseq_it; ++bioseq_it) {
         CBioseq_Handle bsh = *bioseq_it;
-        if (!bsh) 
+        if (!bsh)
             continue;
 
         CFastaOstreamEx* fasta_os = x_GetFastaOstream(bsh);
 
-        CFeat_CI feat_it(bsh, sel); 
+        CFeat_CI feat_it(bsh, sel);
         for ( ; feat_it; ++feat_it) {
             if (!feat_it->IsSetData() ||
                 (feat_it->GetData().IsCdregion() && !m_CDS) ||

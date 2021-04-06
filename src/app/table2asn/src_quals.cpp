@@ -26,7 +26,7 @@
 *
 * Author:  Sergiy Gotvyanskyy, NCBI
 * File Description:
-*   High level reader for source qualifiers 
+*   High level reader for source qualifiers
 *
 * ===========================================================================
 */
@@ -78,11 +78,11 @@ static void sReportMissingMods(
 {
 
     string seqId = bioseq.GetId().front()->AsFastaString();
-    string message = 
-        fileName + 
+    string message =
+        fileName +
         " doesn't contain qualifiers for sequence id " +
-        seqId + 
-       "."; 
+        seqId +
+       ".";
 
     sPostError(pEC, message, seqId);
 }
@@ -96,13 +96,13 @@ static void sReportMultipleMatches(
 {
     string seqId = bioseq.GetId().front()->AsFastaString();
     ostringstream message;
-    message 
-        << "Multiple potential matches for line " 
-        << lineNum 
-        << " of " 
+    message
+        << "Multiple potential matches for line "
+        << lineNum
+        << " of "
         << fileName
-        << ". Unable to match sequence id " 
-        << seqId 
+        << ". Unable to match sequence id "
+        << seqId
         << " to a previously matched entry.";
 
     sPostError(pEC, message.str(), seqId);
@@ -132,15 +132,15 @@ static void sReportDuplicateIds(
 
     ostringstream message;
     message
-        <<  "Sequence id " 
-        <<  seqId 
-        << " on line "  
+        <<  "Sequence id "
+        <<  seqId
+        << " on line "
         << currentLine
-        << " of " << fileName 
+        << " of " << fileName
         << " duplicates id on line "
-        << previousLine 
+        << previousLine
         << ". Skipping line "
-        << currentLine 
+        << currentLine
         << ".";
 
     sPostError(pEC, message.str(), seqId, currentLine);
@@ -174,19 +174,19 @@ static void sReportUnusedMods(
 }
 
 
-bool CMemorySrcFileMap::Empty(void) const 
+bool CMemorySrcFileMap::Empty() const
 {
     return m_LineMap.empty();
 }
 
 
-bool CMemorySrcFileMap::Mapped(void) const 
+bool CMemorySrcFileMap::Mapped() const
 {
     return m_FileMapped;
 }
 
 
-bool CMemorySrcFileMap::GetMods(const CBioseq& bioseq, TModList& mods, bool isVerbose) 
+bool CMemorySrcFileMap::GetMods(const CBioseq& bioseq, TModList& mods, bool isVerbose)
 {
     mods.clear();
     if (!m_FileMapped) {
@@ -241,7 +241,7 @@ bool CMemorySrcFileMap::GetMods(const CBioseq& bioseq, TModList& mods, bool isVe
         auto it = m_LineMap.find(id);
         if (it != m_LineMap.end()) {
             CTempString* linePtr = it->second.linePtr;
-            CTempString& line  =  linePtr ? *linePtr : it->second.line;
+            CTempString& line = linePtr ? *linePtr : it->second.line;
             if (!line.empty()) {
                 x_ProcessLine(line, mods);
                 auto lineNum = it->second.lineNum;
@@ -273,18 +273,18 @@ void CMemorySrcFileMap::ReportUnusedIds()
 {
     if (!Empty()) {
         map<size_t, CTempString> unusedLines;
-        for (const auto& entry : m_LineMap) { 
+        for (const auto& entry : m_LineMap) {
             if (!entry.second.line.empty()) {
-                unusedLines.emplace(entry.second.lineNum, entry.second.line);    
+                unusedLines.emplace(entry.second.lineNum, entry.second.line);
             }
         }
 
         for (const auto& entry : unusedLines) {
             CTempString seqId, remainder;
             NStr::SplitInTwo(entry.second, "\t", seqId, remainder);
-            sReportUnusedMods(m_pEC, 
-                    m_pFileMap->GetFileName(), 
-                    entry.first, 
+            sReportUnusedMods(m_pEC,
+                    m_pFileMap->GetFileName(),
+                    entry.first,
                     NStr::TruncateSpaces_Unsafe(seqId));
         }
     }
@@ -293,7 +293,7 @@ void CMemorySrcFileMap::ReportUnusedIds()
 void CMemorySrcFileMap::x_ProcessLine(const CTempString& line, TModList& mods)
 {
     vector<CTempString> tokens;
-    NStr::Split(line, "\t", tokens, 0);
+    NStr::Split(line, "\t", tokens);
     for (size_t i=1; i < tokens.size() && i < m_ColumnNames.size(); ++i) {
         auto value=NStr::TruncateSpaces_Unsafe(tokens[i]);
         if (!NStr::IsBlank(value)) {
@@ -302,7 +302,7 @@ void CMemorySrcFileMap::x_ProcessLine(const CTempString& line, TModList& mods)
     }
 }
 
-static pair<size_t,size_t> 
+static pair<size_t,size_t>
 s_IdTypeToNumFields(CSeq_id::E_Choice choice)
 {
     switch(choice) {
@@ -323,9 +323,9 @@ s_IdTypeToNumFields(CSeq_id::E_Choice choice)
 }
 
 
-static bool 
+static bool
 s_ParseFastaIdString(const CTempString& fastaString,
-    set<CTempString, PNocase_Generic<CTempString>>& idStrings) 
+    set<CTempString, PNocase_Generic<CTempString>>& idStrings)
 {
     idStrings.clear();
 
@@ -350,7 +350,7 @@ s_ParseFastaIdString(const CTempString& fastaString,
             if (stubLength<minStubLength || stubLength>maxStubLength) {
                 return false;
             }
-            const auto idType = 
+            const auto idType =
                 CSeq_id::WhichInverseSeqId(fastaString.substr(currentPos, stubLength));
             if (idType == CSeq_id::e_not_set) {
                 return false;
@@ -363,7 +363,7 @@ s_ParseFastaIdString(const CTempString& fastaString,
         }
 
         _ASSERT(currentMinField <= currentMaxField);
-        if (currentField < currentMaxField) { 
+        if (currentField < currentMaxField) {
             auto nextBarPos = fastaString.find('|', currentPos);
             if (nextBarPos == NPOS) {
                 if (currentField < currentMinField-1) {
@@ -375,7 +375,7 @@ s_ParseFastaIdString(const CTempString& fastaString,
             if (currentField >= currentMinField) {
                 auto length = nextBarPos-currentPos;
                 if (length>=minStubLength && length<=maxStubLength) {
-                    const auto idType = 
+                    const auto idType =
                         CSeq_id::WhichInverseSeqId(fastaString.substr(currentPos, length));
                     if (idType != CSeq_id::e_not_set) {
                         auto numFields = s_IdTypeToNumFields(idType);
@@ -390,7 +390,7 @@ s_ParseFastaIdString(const CTempString& fastaString,
             }
             currentPos=nextBarPos+1;
             ++currentField;
-        } 
+        }
         else {
             _ASSERT(currentField == currentMaxField);
             idStrings.emplace(fastaString.substr(idStartPos, (currentPos-idStartPos)-1));
@@ -430,13 +430,13 @@ void CMemorySrcFileMap::x_RegisterLine(size_t lineNum, const CTempString& line, 
         if (!rval.second) {
             CTempString seqId, remainder; // revisit this
             NStr::SplitInTwo(line, "\t", seqId, remainder);
-            sReportDuplicateIds(m_pEC, 
+            sReportDuplicateIds(m_pEC,
                 m_pFileMap->GetFileName(),
                 lineNum,
                 rval.first->second.lineNum,
                 NStr::TruncateSpaces_Unsafe(seqId));
         }
-        return; 
+        return;
     }
 
     set<CTempString, PNocase_Generic<CTempString>> parsedIDs;
@@ -454,7 +454,7 @@ void CMemorySrcFileMap::x_RegisterLine(size_t lineNum, const CTempString& line, 
         pair<TLineMap::iterator,bool> rval;
         if (linePtr) {
             rval = m_LineMap.emplace(id, SLineInfo{lineNum});
-            rval.first->second.linePtr = linePtr;   
+            rval.first->second.linePtr = linePtr;
         }
         else {
             rval = m_LineMap.emplace(id, SLineInfo{lineNum, line});
@@ -464,7 +464,7 @@ void CMemorySrcFileMap::x_RegisterLine(size_t lineNum, const CTempString& line, 
         if (!rval.second) {
             CTempString seqId, remainder; // revisit this
             NStr::SplitInTwo(line, "\t", seqId, remainder);
-            sReportDuplicateIds(m_pEC, 
+            sReportDuplicateIds(m_pEC,
                 m_pFileMap->GetFileName(),
                 lineNum,
                 rval.first->second.lineNum,
@@ -480,7 +480,7 @@ void CMemorySrcFileMap::x_RegisterLine(size_t lineNum, const CTempString& line, 
 
 void CMemorySrcFileMap::MapFile(const string& fileName, bool allowAcc)
 {
-    if (m_FileMapped || 
+    if (m_FileMapped ||
         m_pFileMap ||
         !m_LineMap.empty()) {
         return;
@@ -518,7 +518,7 @@ void CMemorySrcFileMap::MapFile(const string& fileName, bool allowAcc)
             ++lineNum;
             CTempString line(start, endline-start+1);
             if (m_ColumnNames.empty())
-                NStr::Split(line, "\t", m_ColumnNames, 0);
+                NStr::Split(line, "\t", m_ColumnNames);
             else // parse regular line
                 x_RegisterLine(lineNum, line, allowAcc);
         }
@@ -597,7 +597,7 @@ public:
     using TMods = CModHandler::TMods;
     using TMergePolicy = CModHandler::EHandleExisting;
 
-    CApplyMods(const TMods& commandLineMods, 
+    CApplyMods(const TMods& commandLineMods,
                const string& m_CommandLineRemainder,
                CMemorySrcFileMap* pNamedSrcFileMap,
                CMemorySrcFileMap* pDefaultSrcFileMap,
@@ -638,8 +638,8 @@ CApplyMods::CApplyMods(
         ILineErrorListener* pMessageListener,
         bool readModsFromTitle,
         bool isVerbose,
-        TMergePolicy mergePolicy) : 
-    m_CommandLineMods(commandLineMods), 
+        TMergePolicy mergePolicy) :
+    m_CommandLineMods(commandLineMods),
     m_CommandLineRemainder(commandLineRemainder),
     m_pNamedSrcFileMap(pNamedSrcFileMap),
     m_pDefaultSrcFileMap(pDefaultSrcFileMap),
@@ -662,7 +662,7 @@ void CApplyMods::x_GetModsFromFileMap(
     if (!fileMap.GetMods(bioseq, mods, m_IsVerbose)) {
         return;
     }
-        
+
     s_PreprocessNoteMods(mods); // RW-928
     CApplyMods::TModList rejectedMods;
 
@@ -673,7 +673,7 @@ void CApplyMods::x_GetModsFromFileMap(
     s_AppendMods(rejectedMods, remainder);
 }
 
-    
+
 void CApplyMods::operator()(CBioseq& bioseq)
 {
     CModHandler mod_handler;
@@ -684,12 +684,12 @@ void CApplyMods::operator()(CBioseq& bioseq)
     TModList rejectedMods;
 
     string seqId = bioseq.GetId().front()->AsFastaString();
-    auto fReportError = 
+    auto fReportError =
         [&](const CModData& /* mod */, const string& msg, EDiagSev /* sev */,
             EModSubcode subcode) {
             return sReportError(m_pMessageListener, eDiag_Warning, subcode, seqId, msg);
         };
- 
+
     if (m_pNamedSrcFileMap && m_pNamedSrcFileMap->Mapped()) {
         x_GetModsFromFileMap(
                 *m_pNamedSrcFileMap,
@@ -718,20 +718,20 @@ void CApplyMods::operator()(CBioseq& bioseq)
 
     CSeq_descr::Tdata::iterator title_it;
     if (pDescriptors) {
-        title_it = 
+        title_it =
             find_if(pDescriptors->begin(), pDescriptors->end(),
                     [](CRef<CSeqdesc> pDesc) { return pDesc->IsTitle(); });
         if (title_it != pDescriptors->end()) {
             pTitleDesc = *title_it;
-            if (m_ReadModsFromTitle) { 
+            if (m_ReadModsFromTitle) {
                 auto& title = (*title_it)->SetTitle();
                 string titleRemainder;
                 TModList mods;
                 CTitleParser::Apply(title, mods, titleRemainder);
-                title.clear(); 
-                mod_handler.AddMods(mods, 
-                    m_MergePolicy, 
-                    rejectedMods, 
+                title.clear();
+                mod_handler.AddMods(mods,
+                    m_MergePolicy,
+                    rejectedMods,
                     fReportError);
                 s_AppendMods(rejectedMods, titleRemainder);
                 remainder = titleRemainder +  remainder;
@@ -752,22 +752,22 @@ void CApplyMods::operator()(CBioseq& bioseq)
             pTitleDesc->SetTitle() = remainder;
         }
         else {
-            string current_title = 
+            string current_title =
                 NStr::TruncateSpaces(
-                    pTitleDesc->GetTitle(), 
+                    pTitleDesc->GetTitle(),
                     NStr::eTrunc_End);
             pTitleDesc->SetTitle() = current_title.empty() ?
-                remainder : 
+                remainder :
                 current_title + " " + remainder;
         }
     }
-    else // remainder.empty() 
+    else // remainder.empty()
     if (pDescriptors) {
         if (title_it != pDescriptors->end() &&
             (*title_it)->GetTitle().empty()) {
             pDescriptors->erase(title_it);
         }
-        
+
         if (pDescriptors->empty()) {
             bioseq.ResetDescr();
         }
@@ -787,7 +787,7 @@ void g_ApplyMods(
 {
     using TModList = CModHandler::TModList;
     using TMods = CModHandler::TMods;
-    
+
     string commandLineRemainder;
     TMods commandLineMods;
 
@@ -796,7 +796,7 @@ void g_ApplyMods(
         CTitleParser::Apply(commandLineStr, mods, commandLineRemainder);
         s_PreprocessNoteMods(mods); // RW-928
 
-        auto fReportCommandLineError = 
+        auto fReportCommandLineError =
             [&](const CModData& /* mod */, const string& msg, EDiagSev /* sev */,
                 EModSubcode subcode) {
                 return sReportError(pEC, eDiag_Warning, subcode, "", msg);
@@ -806,13 +806,13 @@ void g_ApplyMods(
         CModHandler mod_handler;
         mod_handler.AddMods(mods,
             CModHandler::ePreserve,
-            rejectedMods, 
+            rejectedMods,
             fReportCommandLineError);
         s_AppendMods(rejectedMods, commandLineRemainder);
         commandLineMods = mod_handler.GetMods();
     }
 
-    CApplyMods applyMods(commandLineMods, 
+    CApplyMods applyMods(commandLineMods,
                          commandLineRemainder,
                          pNamedSrcFileMap,
                          pDefaultSrcFileMap,

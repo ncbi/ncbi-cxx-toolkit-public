@@ -67,24 +67,24 @@ USING_SCOPE(objects);
 
 
 CFastaReaderEx::CFastaReaderEx(CTable2AsnContext& context, ILineReader& reader, TFlags flags) :
-    objects::CFastaReader(reader, flags), m_context(context),
-    m_gap_editor((objects::CSeq_gap::EType)m_context.m_gap_type, 
-            m_context.m_DefaultEvidence, 
-            m_context.m_GapsizeToEvidence, 
-            m_context.m_gapNmin, 
+    CFastaReader(reader, flags), m_context(context),
+    m_gap_editor((CSeq_gap::EType)m_context.m_gap_type,
+            m_context.m_DefaultEvidence,
+            m_context.m_GapsizeToEvidence,
+            m_context.m_gapNmin,
             m_context.m_gap_Unknown_length)
 {
 }
 
-void CFastaReaderEx::AssignMolType(objects::ILineErrorListener * pMessageListener)
+void CFastaReaderEx::AssignMolType(ILineErrorListener * pMessageListener)
 {
-    objects::CFastaReader::AssignMolType(pMessageListener);
+    CFastaReader::AssignMolType(pMessageListener);
     CSeq_inst& inst = SetCurrentSeq().SetInst();
     if (!inst.IsSetMol() || inst.GetMol() == CSeq_inst::eMol_na)
         inst.SetMol(CSeq_inst::eMol_dna);
 }
 
-CRef<objects::CSeq_entry> CFastaReaderEx::ReadDeltaFasta(objects::ILineErrorListener * pMessageListener)
+CRef<CSeq_entry> CFastaReaderEx::ReadDeltaFasta(ILineErrorListener * pMessageListener)
 {
     CRef<CSeq_entry> entry;
     while (!GetLineReader().AtEOF())
@@ -122,7 +122,7 @@ CRef<objects::CSeq_entry> CFastaReaderEx::ReadDeltaFasta(objects::ILineErrorList
     return entry;
 }
 
-void CFastaReaderEx::AssembleSeq(objects::ILineErrorListener * pMessageListener)
+void CFastaReaderEx::AssembleSeq(ILineErrorListener * pMessageListener)
 {
     CFastaReader::AssembleSeq(pMessageListener);
 
