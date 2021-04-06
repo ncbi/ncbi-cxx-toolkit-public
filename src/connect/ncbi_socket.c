@@ -1486,6 +1486,7 @@ static char* s_gethostbyaddr_(unsigned int host, char* name,
         name = 0;
     }
 
+    assert(!NCBI_HasSpaces(name, strlen(name)));
     CORE_TRACEF(("[SOCK::gethostbyaddr]  %s @ %s%s%s",
                  SOCK_ntoa(host, addr, sizeof(addr)) == 0
                  ? addr : sprintf(addr, "0x%08X", (unsigned int) ntohl(host))
@@ -1501,7 +1502,7 @@ static const char* s_gethostbyaddr(unsigned int host, char* name,
     static void* /*bool*/ s_Once = 0/*false*/;
     const char* retval = s_gethostbyaddr_(host, name, namesize, log);
     if (!s_Once  &&  retval
-        &&  ((SOCK_IsLoopbackAddress(host)
+        &&  (( host == htonl(INADDR_LOOPBACK)
               &&  strncasecmp(retval, "localhost", 9) != 0)  ||
              (!host
               &&  strncasecmp(retval, "localhost", 9) == 0))
