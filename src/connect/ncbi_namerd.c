@@ -1095,10 +1095,25 @@ static char* x_GetDtabFromHeader(const char* header
 }
 
 
+/* memcpy */
+typedef void* (*FSvcCpy)(void* dst, const void* src, size_t n);
+
+
+static void* x_memlwrcpy(void* dst, const void* src, size_t n)
+{
+    const unsigned char* s = (const unsigned char*) src;
+    unsigned char*       d = (unsigned char*)       dst;
+    while (n--)
+        *d++ = tolower(*s++);
+    return dst;
+}
+
+
 /* Long but very linear */
 static int/*bool*/ x_SetupConnectionParams(const SERV_ITER iter)
 {
     SConnNetInfo* net_info = ((struct SNAMERD_Data*) iter->data)->net_info;
+    FSvcCpy svccpy = iter->exact ? memcpy : x_memlwrcpy;
     char   buf[CONN_PATH_LEN + 1];
     size_t len, argslen, namelen;
     char*  dtab;
@@ -1247,16 +1262,16 @@ static int/*bool*/ x_SetupConnectionParams(const SERV_ITER iter)
             len += 1 + iter->vallen;
     }
     if (len < sizeof(buf)) {
-        len = argslen,
-        memcpy(buf + len, iter->name, namelen);
+        len = argslen;
+        svccpy(buf + len, iter->name, namelen);
         len += namelen;
         if (iter->vallen) {
             buf[len++] = '/';
-            memcpy(buf + len, iter->arg, iter->arglen);
+            svccpy(buf + len, iter->arg, iter->arglen);
             len += iter->arglen;
             if (iter->val) {
                 buf[len++] = '/';
-                memcpy(buf + len, iter->val, iter->vallen);
+                svccpy(buf + len, iter->val, iter->vallen);
                 len += iter->vallen;
             }
         }

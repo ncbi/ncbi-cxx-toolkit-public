@@ -100,7 +100,8 @@ struct SSERV_IterTag {
     unsigned   reverse_dns:1; /*                        ..to..               */
     unsigned    ok_private:1; /*                          ..SERV_*() calls.. */
     unsigned      external:1; /* whether this is an external request         */
-    unsigned             :24; /* reserved                                    */
+    unsigned         exact:1; /* service name is exact, defined by conf      */
+    unsigned             :23; /* reserved                                    */
     unsigned int   localhost; /* local host address if known                 */
     size_t            o_skip; /* original number of servers passed in "skip" */
     size_t            n_skip; /* actual number of servers in the skip array  */

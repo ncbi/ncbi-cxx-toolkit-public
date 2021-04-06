@@ -66,13 +66,17 @@
 static ESwitch s_Fast = eOff;
 
 
-ESwitch SERV_DoFastOpens(ESwitch on)
+#if 0
+static char* x_getenv(const char* name)
 {
-    ESwitch retval = s_Fast;
-    if (on != eDefault)
-        s_Fast = on;
-    return retval;
+    char* env = getenv(name);
+    CORE_TRACEF(("getenv(\"%s\") = %s%s%s", name,
+                 &"\""[!env], env ? env : "NULL", &"\""[!env]));
+    return env;
 }
+#else
+#  define x_getenv  getenv
+#endif
 
 
 static int/*bool*/ x_tr(char* str, char a, char b, size_t len)
@@ -92,11 +96,12 @@ static int/*bool*/ x_tr(char* str, char a, char b, size_t len)
 
 static char* x_ServiceName(unsigned int depth,
                            const char* service, const char* svc,
-                           int/*bool*/ ismask, int/*bool*/ isfast)
+                           int/*bool*/ ismask, int*/*bool*/ isfast)
 {
     char   buf[128];
     size_t len = 0;
 
+    assert(isfast);
     assert(!svc == !service);
     assert(sizeof(buf) > sizeof(REG_CONN_SERVICE_NAME));
     if (!svc  ||  (!ismask  &&  (!*svc  ||  strpbrk(svc, "?*[")))
@@ -115,7 +120,7 @@ static char* x_ServiceName(unsigned int depth,
                      *service ? " for: " : "", service));
         return 0/*failure*/;
     }
-    if (!ismask  &&  !isfast) {
+    if (!ismask  &&  !*isfast) {
         char  tmp[sizeof(buf)];
         int/*bool*/ tr = x_tr((char*) memcpy(tmp, svc, len), '-', '_', len);
         char* s = tmp + len;
@@ -123,8 +128,8 @@ static char* x_ServiceName(unsigned int depth,
         memcpy(s, REG_CONN_SERVICE_NAME, sizeof(REG_CONN_SERVICE_NAME));
         len += 1 + sizeof(REG_CONN_SERVICE_NAME);
         /* Looking for "svc_CONN_SERVICE_NAME" in the environment */
-        if ((!(s = getenv(strupr((char*) memcpy(buf, tmp, len--))))
-             &&  (memcmp(buf, tmp, len) == 0  ||  !(s = getenv(tmp))))
+        if ((!(s = x_getenv(strupr((char*) memcpy(buf, tmp, len--))))
+             &&  (memcmp(buf, tmp, len) == 0  ||  !(s = x_getenv(tmp))))
             ||  !*s) {
             /* Looking for "CONN_SERVICE_NAME" in registry section "[svc]" */
             len -= sizeof(REG_CONN_SERVICE_NAME);
@@ -135,21 +140,26 @@ static char* x_ServiceName(unsigned int depth,
                 *tmp = '\0';
             s = tmp;
         }
-        if (*s  &&  strcasecmp(s, svc) != 0) {
-            if (depth++ < SERV_SERVICE_NAME_RECURSION)
-                return x_ServiceName(depth, service, s, ismask, isfast);
-            CORE_LOGF_X(8, eLOG_Error,
-                        ("[%s]  Maximal service name recursion"
-                         " depth reached: %u", service, depth));
-            return 0/*failure*/;
-        }
-    }
+        if (*s) {
+            if (strcasecmp(s, svc) != 0) {
+                if (depth++ < SERV_SERVICE_NAME_RECURSION)
+                    return x_ServiceName(depth, service, s, ismask, isfast);
+                CORE_LOGF_X(8, eLOG_Error,
+                            ("[%s]  Maximal service name recursion"
+                             " depth reached: %u", service, depth));
+                return 0/*failure*/;
+            } else
+                *isfast = 1/*true*/;
+        } else
+            *isfast = 0/*false*/;
+    } else
+        *isfast = 0/*false*/;
     return strdup(svc);
 }
 
 
 static char* s_ServiceName(const char* service,
-                           int/*bool*/ ismask, int/*bool*/ isfast)
+                           int/*bool*/ ismask, int*/*bool*/ isfast)
 {
     char* retval;
     CORE_LOCK_READ;
@@ -161,7 +171,8 @@ static char* s_ServiceName(const char* service,
 
 char* SERV_ServiceName(const char* service)
 {
-    return s_ServiceName(service, 0/*ismask*/, 0/*isfast*/);
+    int dummy = 0;
+    return s_ServiceName(service, 0/*ismask*/, &dummy/*isfast*/);
 }
 
 
@@ -253,10 +264,11 @@ static SERV_ITER x_Open(const char*         service,
 #endif /*NCBI_CXX_TOOLKIT*/
         do_dispd   = -1/*unassigned*/;
     const SSERV_VTable* op;
+    int exact = s_Fast;
     const char* svc;
     SERV_ITER iter;
 
-    if (!(svc = s_ServiceName(service, ismask, s_Fast)))
+    if (!(svc = s_ServiceName(service, ismask, &exact)))
         return 0;
     assert(ismask  ||  *svc);
     if (!(iter = (SERV_ITER) calloc(1, sizeof(*iter)))) {
@@ -290,6 +302,7 @@ static SERV_ITER x_Open(const char*         service,
     if (types & fSERV_ReverseDns)
         iter->reverse_dns   = 1;
     iter->external          = external ? 1 : 0;
+    iter->exact             = exact;
     if (arg  &&  *arg) {
         iter->arg           = arg;
         iter->arglen        = strlen(arg);
@@ -1286,3 +1299,12 @@ int/*bool*/ SERV_MatchesHost(const SSERV_Info* info, unsigned int host)
     return 0/*false*/;
 }
 #endif
+
+
+ESwitch SERV_DoFastOpens(ESwitch on)
+{
+    ESwitch retval = s_Fast;
+    if (on != eDefault)
+        s_Fast = on;
+    return retval;
+}
