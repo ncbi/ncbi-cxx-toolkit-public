@@ -37,12 +37,12 @@
 #include <corelib/ncbiexpt.hpp>
 #include <util/range.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
+#include <objects/seqloc/Seq_id.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
     class CScope;
-    class CSeq_id;
-    class CSeq_loc;
     class CSeq_feat;
     class CSeq_align;
     class CSeq_annot;
