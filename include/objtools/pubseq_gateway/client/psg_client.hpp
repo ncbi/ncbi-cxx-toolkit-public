@@ -952,6 +952,10 @@ public:
     bool IsInitialized() const { return static_cast<bool>(m_Impl); }
 
 
+    /// Is the queue in a state (possibly temporary) when requests get immediately rejected.
+    bool RejectsRequests() const;
+
+
     /// Get an API lock.
     /// Holding this API lock is essential if numerous short-lived queue instances are used.
     /// It prevents an internal I/O implementation (threads, TCP connections, HTTP sessions, etc)

@@ -1167,6 +1167,13 @@ bool CPSG_Queue::IsEmpty() const
     return m_Impl->Empty();
 }
 
+bool CPSG_Queue::RejectsRequests() const
+{
+    _ASSERT(m_Impl);
+    return m_Impl->RejectsRequests();
+}
+
+
 CPSG_Queue::TApiLock CPSG_Queue::GetApiLock()
 {
     return SImpl::GetApiLock();

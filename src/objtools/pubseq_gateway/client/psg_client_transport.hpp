@@ -691,6 +691,7 @@ struct SPSG_IoCoordinator
     bool AddRequest(shared_ptr<SPSG_Request> req, const atomic_bool& stopped, const CDeadline& deadline);
     string GetNewRequestId() { return to_string(m_RequestId++); }
     const string& GetUrlArgs() const { return m_UrlArgs; }
+    bool RejectsRequests() const { return m_Servers.GetMTSafe().fail_requests; }
 
 private:
     SUv_Barrier m_Barrier;
