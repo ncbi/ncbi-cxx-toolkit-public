@@ -77,6 +77,19 @@
 #define NCBI_USE_PRECOMPILED_CRC32_TABLES 1
 
 
+#if 0
+static char* x_getenv(const char* name)
+{
+    char* env = getenv(name);
+    CORE_TRACEF(("getenv(\"%s\") = %s%s%s", name,
+                 &"\""[!env], env ? env : "NULL", &"\""[!env]));
+    return env;
+}
+#else
+#  define x_getenv  getenv
+#endif
+
+
 /******************************************************************************
  *  MT locking
  */
@@ -709,16 +722,16 @@ extern char* CORE_GetNcbiRequestID(ENcbiRequestID reqid)
     }
     switch (reqid) {
     case eNcbiRequestID_SID:
-        id = getenv("HTTP_NCBI_SID");
+        id = x_getenv("HTTP_NCBI_SID");
         if (id  &&  *id)
             break;
-        id = getenv("NCBI_LOG_SESSION_ID");
+        id = x_getenv("NCBI_LOG_SESSION_ID");
         break;
     case eNcbiRequestID_HitID:
-        id = getenv("HTTP_NCBI_PHID");
+        id = x_getenv("HTTP_NCBI_PHID");
         if (id  &&  *id)
             break;
-        id = getenv("NCBI_LOG_HIT_ID");
+        id = x_getenv("NCBI_LOG_HIT_ID");
         break;
     default:
         id = 0;
@@ -827,7 +840,7 @@ extern const char* CORE_GetUsernameEx(char* buf, size_t bufsize,
         return buf;
     }
     CORE_LOCK_READ;
-    if ((login = getenv("USERNAME")) != 0) {
+    if ((login = x_getenv("USERNAME")) != 0) {
         buf = x_Savestr(login, buf, bufsize);
         CORE_UNLOCK;
         return buf;
@@ -922,7 +935,7 @@ extern const char* CORE_GetUsernameEx(char* buf, size_t bufsize,
 
     /* last resort */
     CORE_LOCK_READ;
-    if (!(login = getenv("USER"))  &&  !(login = getenv("LOGNAME")))
+    if (!(login = x_getenv("USER"))  &&  !(login = x_getenv("LOGNAME")))
         login = "";
     buf = x_Savestr(login, buf, bufsize);
     CORE_UNLOCK;
