@@ -449,17 +449,24 @@ if (IS_AUTOMATED AND IS_DB_LOAD)
     set(_test_stat_load_log  "${NCBITEST_OUTDIR}/test_stat_load.log")
 
     execute_process(
-        COMMAND sh -c "which test_stat_load >> ${_test_stat_load_log} 2>&1"
+        COMMAND sh -c "echo $PATH >> ${_test_stat_load_log} 2>&1"
         RESULT_VARIABLE _retcode
-        OUTPUT_QUIET
+        OUTPUT_VARIABLE _tmp
         ERROR_QUIET
         )
+        file(APPEND ${_test_stat_load_log} "!!! = ${_tmp}")
     execute_process(
-        COMMAND sh -c "ls -la $ENV{NCBI}/bin/_production/CPPCORE >> ${_test_stat_load_log} 2>&1"
+        COMMAND sh -c "echo $PATH >> ${_test_stat_load_log} 2>&1"
         RESULT_VARIABLE _retcode
         OUTPUT_QUIET
         ERROR_QUIET
         )
+#    execute_process(
+#        COMMAND sh -c "ls -la $ENV{NCBI}/bin/_production/CPPCORE >> ${_test_stat_load_log} 2>&1"
+#        RESULT_VARIABLE _retcode
+#        OUTPUT_QUIET
+#        ERROR_QUIET
+#        )
 
 
     execute_process(
