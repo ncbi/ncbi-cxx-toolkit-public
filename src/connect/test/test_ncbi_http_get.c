@@ -67,11 +67,11 @@
 #  define GNUTLS_PKCS12_PASS  "TEST_NCBI_HTTP_GET_PASS"
 #endif /*HAVE_LIBGNUTLS*/
 
-#ifdef HAVE_LIBMBEDTLS
+#if defined(HAVE_LIBMBEDTLS)
 #  include <mbedtls/error.h>
 #  include <mbedtls/pk.h>
 #  include <mbedtls/x509_crt.h>
-#else
+#elif defined(NCBI_CXX_TOOLKIT)
 #  include "../mbedtls/mbedtls/error.h"
 #  include "../mbedtls/mbedtls/pk.h"
 #  include "../mbedtls/mbedtls/x509_crt.h"
@@ -308,8 +308,10 @@ int main(int argc, char* argv[])
 #ifdef HAVE_LIBGNUTLS
     gnutls_certificate_credentials_t gtls_xcred = 0;
 #endif /*HAVE_LIBGNUTLS*/
+#ifdef HAVE_LIBMBEDTLS
     mbedtls_x509_crt   mtls_cert;
     mbedtls_pk_context mtls_pkey;
+#endif /*HAVE_LIBMBEDTLS*/
     CONNECTOR     connector;
     SConnNetInfo* net_info;
     char          blk[250];
@@ -322,8 +324,10 @@ int main(int argc, char* argv[])
     time_t        t;
     size_t        n;
 
+#ifdef HAVE_LIBMBEDTLS
     mbedtls_x509_crt_init(&mtls_cert);
     mbedtls_pk_init(&mtls_pkey);
+#endif /*HAVE_LIBMBEDTLS*/
 
     CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
                            fLOG_OmitNoteLevel | fLOG_DateTime);
@@ -548,8 +552,10 @@ int main(int argc, char* argv[])
 
     if (cred)
         free(cred);
+#ifdef HAVE_LIBMBEDTLS
     mbedtls_pk_free(&mtls_pkey);
     mbedtls_x509_crt_free(&mtls_cert);
+#endif /*HAVE_LIBMBEDTLS*/
 #ifdef HAVE_LIBGNUTLS
     if (gtls_xcred)
         gnutls_certificate_free_credentials(gtls_xcred);
