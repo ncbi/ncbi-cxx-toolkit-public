@@ -447,6 +447,21 @@ endif()
 if (IS_AUTOMATED AND IS_DB_LOAD)
     set(ENV{NCBI_LOG_HIT_ID} "${NCBI_LOG_HIT_ID}")
     set(_test_stat_load_log  "${NCBITEST_OUTDIR}/test_stat_load.log")
+
+    execute_process(
+        COMMAND sh -c "which test_stat_load >> ${_test_stat_load_log} 2>&1"
+        RESULT_VARIABLE _retcode
+        OUTPUT_QUIET
+        ERROR_QUIET
+        )
+    execute_process(
+        COMMAND sh -c "ls -la $ENV{NCBI}/bin/_production/CPPCORE >> ${_test_stat_load_log} 2>&1"
+        RESULT_VARIABLE _retcode
+        OUTPUT_QUIET
+        ERROR_QUIET
+        )
+
+
     execute_process(
         COMMAND sh -c "test_stat_load ${_test_rep} ${_test_out} ${_boost_rep} ${NCBITEST_TREE_ROOT}/build_info >> ${_test_stat_load_log} 2>&1"
         RESULT_VARIABLE _retcode
