@@ -226,10 +226,10 @@ bson-1.0 needs3party $(ORIG_LIBS)
 bsoncxx needs3party $(ORIG_LIBS)
 bsoncxx needs3party bson-1.0
 build_config needs aligndb_reader
-build_config needs bacterial_pipeline_proc
 build_config needs build_config_base
 build_config needs gcaccess_utils
 build_config needs gpipe_xmlutil
+build_config needs refseq_ctl
 build_config needs reftrack_access
 build_config needs simple_asm
 build_config needs xgencoll
