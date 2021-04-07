@@ -3248,6 +3248,7 @@ IPA:germplasm bank	b	Empresa Pernambucana de Pesquisa Agropecuaria, IPA,
 IPAE<RUS>	s	Institute of Plant and Animal Ecology Ural Branch of Russian Academy of Sciences			
 IPB<BRA>	s	Instituto Paranaense de Botanica			
 IPB<DEU>	s	Institut fuer Palaeontologie			
+IPBCC	c	Institut Pertanian Bogor Culture Collection			
 IPBIR	b	Integrated Primate Biomaterials and Information Resource			
 IPCN	s	Instituto Patagonico de Ciencias Naturales			
 IPE	s	Instituto Pirenaico de Ecologia			

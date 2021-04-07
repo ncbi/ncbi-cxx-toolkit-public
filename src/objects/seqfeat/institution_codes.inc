@@ -3281,6 +3281,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "IPAE<RUS>\ts\tInstitute of Plant and Animal Ecology Ural Branch of Russian Academy of Sciences\t\t\t",
 "IPB<BRA>\ts\tInstituto Paranaense de Botanica\t\t\t",
 "IPB<DEU>\ts\tInstitut fuer Palaeontologie\t\t\t",
+"IPBCC\tc\tInstitut Pertanian Bogor Culture Collection\t\t\t",
 "IPBIR\tb\tIntegrated Primate Biomaterials and Information Resource\t\t\t",
 "IPCN\ts\tInstituto Patagonico de Ciencias Naturales\t\t\t",
 "IPE\ts\tInstituto Pirenaico de Ecologia\t\t\t",
