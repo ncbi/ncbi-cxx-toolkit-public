@@ -339,7 +339,7 @@ if(NCBITEST_HAVE_UPTIME)
         RESULT_VARIABLE _retcode
         OUTPUT_VARIABLE _uptime_output
         )
-    if (_retcode EQUAL 0)
+    if (${_retcode} EQUAL 0)
         string(APPEND _info "set(NCBITEST_HAVE_UPTIME 1)\n")
     endif()
     string(REPLACE "\n" " " _uptime ${_uptime_output})
@@ -453,7 +453,7 @@ if (IS_AUTOMATED AND IS_DB_LOAD)
         OUTPUT_QUIET
         ERROR_QUIET
     )
-    if (_retcode NOT EQUAL 0)
+    if (NOT ${_retcode} EQUAL 0)
         file(APPEND ${_test_stat_load_log} "\nError loading results for ${NCBITEST_NAME}\n\n")
     endif()
 endif()
