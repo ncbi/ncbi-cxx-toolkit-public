@@ -326,19 +326,25 @@ tds_iconv_open(TDSCONNECTION * conn, const char *charset, int use_utf16)
 
 	/* initialize */
 	if (!iconv_initialized) {
+#ifdef TDS_HAVE_MUTEX
                 static tds_mutex mtx = TDS_MUTEX_INITIALIZER;
                 tds_mutex_lock(&mtx);
+#endif
 		if ( !iconv_initialized  &&  (ret = tds_iconv_init()) > 0) {
 			static const char names[][12] = { "ISO 8859-1", "UTF-8" };
 			assert(ret < 3);
 			tdsdump_log(TDS_DBG_FUNC, "error: tds_iconv_init() returned %d; "
 						  "could not find a name for %s that your iconv accepts.\n"
 						  "use: \"configure --disable-libiconv\"", ret, names[ret-1]);
+#ifdef TDS_HAVE_MUTEX
                         tds_mutex_unlock(&mtx);
+#endif
 			return TDS_FAIL;
 		}
 		iconv_initialized = 1;
+#ifdef TDS_HAVE_MUTEX
                 tds_mutex_unlock(&mtx);
+#endif
 	}
 
 	/* 
