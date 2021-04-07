@@ -441,6 +441,7 @@ int main(int argc, char* argv[])
     }
     if (net_info->scheme == eURL_Https
         &&  xstrcasecmp(SOCK_SSLName(), "MBEDTLS") == 0) {
+#ifdef HAVE_LIBMBEDTLS
         char buf[4096];
         const char* cert_file, *pkey_file;
         const size_t size = sizeof(blk) / 2;
@@ -473,6 +474,9 @@ int main(int argc, char* argv[])
                 CORE_LOG_ERRNO(eLOG_Fatal, errno, "Cannot create NCBI_CRED");
             net_info->credentials = cred;
         }
+#else
+        CORE_LOG(eLOG_Critical, "MBEDTLS required but not supported");
+#endif /*HAVE_LIBMBEDTLS*/
     }
 
     url = ConnNetInfo_URL(net_info);
