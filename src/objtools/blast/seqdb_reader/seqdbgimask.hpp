@@ -201,10 +201,48 @@ private:
     /// @param key The key to search for [in]
     /// @param idx The index to the key array where key is found. [out]
     /// @return TRUE if the key is found
-    static bool s_BinarySearch(const int *keys,
+    template<class T> static bool s_BinarySearch(const T *keys,
                                const int  n,
-                               const int  key,
-                               int       &idx);
+                               const T    key,
+                               int       &idx)
+    {
+        int lower(0), upper(n - 1);
+
+        if (key > keys[upper] || key < keys[lower]) {
+            // out of range
+            idx = -1;
+            return false;
+        }
+
+        if (key == keys[upper]) {
+            idx = upper;
+            return true;
+        }
+
+        if (key == keys[lower]) {
+            idx = lower;
+            return true;
+        }
+
+        idx = (lower + upper) / 2;
+
+        while (idx != lower) {
+            if (key > keys[idx]) {
+                lower = idx;
+                idx = (lower + upper) / 2;
+            }
+            else if (key < keys[idx]) {
+                upper = idx;
+                idx = (lower + upper) / 2;
+            }
+            else {
+                // value found
+                return true;
+            }
+        }
+        // value not found
+        return false;
+    }
 
     /// Reference to the atlas.
     CSeqDBAtlas & m_Atlas;

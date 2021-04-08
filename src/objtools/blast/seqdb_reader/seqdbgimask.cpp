@@ -250,50 +250,6 @@ void CSeqDBGiMask::x_ReadFields(void)//
               m_IndexFile.GetFileDataPtr(m_IndexLease, begin, end);
 }
 
-// TODO: if gi becomes 8-bytes long, this may better be implemented as
-// a template function
-bool
-CSeqDBGiMask::s_BinarySearch(const int *keys,
-                             const int  n,
-                             const int  key,
-                             int       &idx) {
-    int lower(0), upper(n-1);
-
-    if (key > keys[upper] || key < keys[lower]) {
-        // out of range
-        idx = -1;
-        return false;
-    }
-
-    if (key == keys[upper]) {
-        idx = upper;
-        return true;
-    }
-
-    if (key == keys[lower]) {
-        idx = lower;
-        return true;
-    }
-
-    idx = (lower + upper)/2;
-
-    while (idx != lower) {
-        if (key > keys[idx]) {
-            lower = idx;
-            idx = (lower + upper)/2;
-        } else if (key < keys[idx]) {
-            upper = idx;
-            idx = (lower + upper)/2;
-        } else {
-            // value found
-            return true;
-        }
-    }
-    // value not found
-    return false;
-}
-
-
 #endif
 
 END_NCBI_SCOPE
