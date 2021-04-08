@@ -1024,7 +1024,7 @@ static void DbxrefToSeqID(objects::CSeq_feat& feat, Parser::ESource source, TSeq
             case 'g':
                 if (source != Parser::ESource::DDBJ && source != Parser::ESource::EMBL) {
                     id.Reset(new objects::CSeq_id);
-                    id->SetGi(GI_FROM(long, strtol(tag_str + 1, NULL, 10)));
+                    id->SetGi(GI_FROM(long long, strtoll(tag_str + 1, NULL, 10)));
                 }
                 break;
 
