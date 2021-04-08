@@ -45,6 +45,6 @@ Win64         : plain : static  64  ReleaseDLL <ENV>NCBI_CONFIG____ENABLEDUSERRE
 
 #IntelMAC            : gcc : GCC.sh   --with-bin-release --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-ncbi-public --with-vdb=/net/traces01.be-md.ncbi.nlm.nih.gov/trace_software/vdb --with-static-vdb
 #IntelMAC            : clang     : Clang.sh          --with-bin-release --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-ncbi-public --with-experimental=Int8GI --with-vdb=/net/traces01.be-md.ncbi.nlm.nih.gov/trace_software/vdb --with-static-vdb --without-gnutls --without-gcrypt
-IntelMAC    : clang     : Clang.sh  --without-dll --with-bin-release --without-debug --without-pcre --with-mt --with-flat-makefile --with-ncbi-public --with-experimental=Int8GI --with-vdb=/net/traces01.be-md.ncbi.nlm.nih.gov/trace_software/vdb --with-static-vdb --without-gnutls --without-gcrypt
+IntelMAC    : clang     : Clang.sh  --without-dll --with-bin-release --without-debug --without-pcre --with-mt --without-openmp --with-flat-makefile --with-ncbi-public --with-experimental=Int8GI --with-vdb=/net/traces01.be-md.ncbi.nlm.nih.gov/trace_software/vdb --with-static-vdb --without-gnutls --without-gcrypt
 
 USE_COMPONENTS
