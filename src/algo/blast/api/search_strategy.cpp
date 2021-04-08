@@ -445,9 +445,9 @@ void CExportStrategy::x_Process_SearchDb(CRef<CSearchDatabase> & db)
     if (!gi_list_limit.empty())
     {
 		#ifdef NCBI_STRICT_GI
-       		vector<int> int_gi_list;
+       		vector<Int8> int_gi_list;
        		ITERATE ( vector<TGi>, it, gi_list_limit ) {
-       			int_gi_list.push_back(GI_TO( int, *it));
+       			int_gi_list.push_back(GI_TO(Int8, *it));
        		}
        		x_AddParameterToProgramOptions(CBlast4Field::Get(eBlastOpt_GiList), int_gi_list);
 		#else
@@ -473,9 +473,9 @@ void CExportStrategy::x_Process_SearchDb(CRef<CSearchDatabase> & db)
     if (!neg_gi_list.empty())
     {
 		#ifdef NCBI_STRICT_GI
-       		vector<int> int_gi_list;
+       		vector<Int8> int_gi_list;
        		ITERATE ( vector<TGi>, it, neg_gi_list) {
-       			int_gi_list.push_back(GI_TO( int, *it));
+       			int_gi_list.push_back(GI_TO(Int8, *it));
        		}
        		x_AddParameterToProgramOptions(CBlast4Field::Get(eBlastOpt_NegativeGiList), int_gi_list);
 		#else
