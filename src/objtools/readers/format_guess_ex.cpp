@@ -44,9 +44,16 @@
 
 #include <serial/iterator.hpp>
 #include <serial/objistrasn.hpp>
+#include <serial/objistrasnb.hpp>
+#include <serial/objistrxml.hpp>
+#include <serial/objistrjson.hpp>
 
 #include <objtools/readers/format_guess_ex.hpp>
 
+#include <objects/seqset/Seq_entry.hpp>
+#include <objects/submit/Seq_submit.hpp>
+#include <objects/seqset/Bioseq_set.hpp>
+#include <objects/seq/Bioseq.hpp>
 
 //#include <objtools/hgvs/hgvs_parser.hpp>
 #include <objtools/readers/gff3_reader.hpp>
@@ -68,12 +75,19 @@ using namespace ncbi;
 using namespace objects;
 using namespace std;
 
+set<TTypeInfo> CFormatGuessEx::sRecognizedGenbankObjectTypes = {
+    CType<CBioseq>().GetTypeInfo(),
+    CType<CBioseq_set>().GetTypeInfo(),
+    CType<CSeq_align>().GetTypeInfo(),
+    CType<CSeq_annot>().GetTypeInfo(),
+    CType<CSeq_entry>().GetTypeInfo(),
+    CType<CSeq_submit>().GetTypeInfo(),
+};
 
 
 CFormatGuessEx::CFormatGuessEx() 
     : m_Guesser(new CFormatGuess) 
 {
-
     ;
 }
 
@@ -426,6 +440,68 @@ bool CFormatGuessEx::x_TryGff2()
     }
 
     return (Gff2Count > 0);
+}
+
+
+string CFormatGuessEx::xGuessGenbankObjectType(
+    CFormatGuess::EFormat baseFormat)
+{
+    unique_ptr<CObjectIStream> pObjStream;
+    m_LocalBuffer.clear();
+    m_LocalBuffer.seekg(0);
+
+    switch(baseFormat) {
+    default:
+        return "unknown";
+    case CFormatGuess::eTextASN:
+        pObjStream.reset(new CObjectIStreamAsn(m_LocalBuffer, eNoOwnership));
+        break;
+    case CFormatGuess::eBinaryASN:
+        pObjStream.reset(new CObjectIStreamAsnBinary(m_LocalBuffer, eNoOwnership));
+        break;
+    case CFormatGuess::eXml:
+        pObjStream.reset(new CObjectIStreamXml(m_LocalBuffer, eNoOwnership));
+        break;
+    case CFormatGuess::eJSON:
+        pObjStream.reset(new CObjectIStreamJson(m_LocalBuffer, eNoOwnership));
+        break;
+    }        
+    if( !pObjStream.get() ) {
+        return "unknown";
+    }
+
+    set<TTypeInfo> types = pObjStream->GuessDataType(sRecognizedGenbankObjectTypes);
+    if ( types.size() != 1 ) {
+        return "unknown";
+    }
+    auto& test = **types.begin();
+    return (*types.begin())->GetName();
+}
+
+
+CFormatGuess::EFormat CFormatGuessEx::GuessFormatAndContent(
+    CFileContentInfo& contentInfo)
+{
+    auto baseFormat = GuessFormat();
+    switch (baseFormat) {
+    default:
+        new(&contentInfo.mInfoNone) CFileContentInfoNone();
+        break;
+    case CFormatGuess::eBinaryASN:
+    case CFormatGuess::eTextASN:
+    case CFormatGuess::eXml:
+    case CFormatGuess::eJSON:
+        new(&contentInfo.mInfoGenbank) CFileContentInfoGenbank();
+        contentInfo.mInfoGenbank.mObjectType = xGuessGenbankObjectType(baseFormat);
+        break;
+    case CFormatGuess::eGff3:
+        new(&contentInfo.mInfoGff3) CFileContentInfoGff3();
+        break;
+    case CFormatGuess::eAlignment:
+        new(&contentInfo.mInfoAlign) CFileContentInfoAlign();
+        break;
+    }
+    return baseFormat;
 }
 
 /*

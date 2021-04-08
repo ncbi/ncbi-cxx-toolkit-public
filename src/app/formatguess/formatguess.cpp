@@ -36,8 +36,6 @@
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
 
-#include <util/format_guess.hpp>
-
 #include <serial/objistrasnb.hpp>
 #include <serial/objistrasn.hpp>
 #include <serial/objistrxml.hpp>
@@ -51,6 +49,8 @@
 #include <misc/xmlwrapp/attributes.hpp>
 #include <misc/xmlwrapp/document.hpp>
 #include <misc/xmlwrapp/node.hpp>
+
+#include <objtools/readers/format_guess_ex.hpp>
 
 typedef std::map<ncbi::CFormatGuess::EFormat, std::string> FormatMap;
 typedef FormatMap::iterator FormatIter;
@@ -145,8 +145,9 @@ CFormatGuessApp::Run(void)
         name_of_input_stream = "stdin";
     }
 
-    CFormatGuess guesser( input_stream );
-    CFormatGuess::EFormat uFormat = guesser.GuessFormat();
+    CFormatGuessEx guesser( input_stream );
+    CFileContentInfo contentInfo;
+    CFormatGuess::EFormat uFormat = guesser.GuessFormatAndContent(contentInfo);
     
     string format_name;
     if( args["canonical-name"] ) {
@@ -194,40 +195,18 @@ CFormatGuessApp::Run(void)
         }
     }
     
-    string object_type_to_show;
+    string object_type_to_show("unknown");
     if( args["show-object-type"] ) {
-        AutoPtr<CObjectIStream> obj_istrm;
-        switch( uFormat ) {
-            case CFormatGuess::eBinaryASN:
-                obj_istrm.reset(
-                    new CObjectIStreamAsnBinary(input_stream, eNoOwnership));
-                break;
-            case CFormatGuess::eTextASN:
-                obj_istrm.reset(
-                    new CObjectIStreamAsn(input_stream, eNoOwnership));
-                break;
-            case CFormatGuess::eXml:
-                obj_istrm.reset(
-                    new CObjectIStreamXml(input_stream, eNoOwnership));
-                break;
-            case CFormatGuess::eJSON:
-                obj_istrm.reset(
-                    new CObjectIStreamJson(input_stream, eNoOwnership));
-                break;
-            default:
-                // obj_istrm will be unset
-                break;
+        switch(uFormat) {
+        default:
+            break;
+        case CFormatGuess::eTextASN:
+        case CFormatGuess::eBinaryASN:
+        case CFormatGuess::eJSON:
+        case CFormatGuess::eXml:
+            object_type_to_show = contentInfo.mInfoGenbank.mObjectType;
+            break;
         }
-        
-        if( obj_istrm.get() ) {
-            object_type_to_show = guess_object_type(*obj_istrm);
-        } else {
-            object_type_to_show = "unknown";
-        }
-
-        // If caller requested the object type then it should be set
-        // even if it's unknown
-        _ASSERT( ! object_type_to_show.empty() );
     }
     
     const string output_format = args["output-format"].AsString();

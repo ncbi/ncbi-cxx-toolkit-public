@@ -35,13 +35,71 @@
 
 #include <corelib/ncbistd.hpp>
 #include <bitset>
-
 #include <util/format_guess.hpp>
 #include <sstream>
 
 BEGIN_NCBI_SCOPE
 
+//  ============================================================================
+struct CFileContentInfoNone
+//  ============================================================================
+{
+};
 
+//  ============================================================================
+struct CFileContentInfoGenbank
+//  ============================================================================
+{
+    CFileContentInfoGenbank(): mObjectType("unknown") {};
+
+    string mObjectType;
+};
+
+//  ============================================================================
+struct CFileContentInfoGff3
+//  ============================================================================
+{
+    enum EContentType {
+        eContentUnknown,
+        eContentFeatureTable,
+        eContentAlignment,
+        eContentVariations,
+    };
+        
+    CFileContentInfoGff3(): mContentType(eContentUnknown) {};
+
+    EContentType mContentType;
+};
+
+//  ============================================================================
+struct CFileContentInfoAlign
+//  ============================================================================
+{
+    enum EAlignFormat {
+        eFormatUnknown,
+        eFormatClustal,
+        eFormatPhyllip,
+        eFormatNexus,
+        // ...
+    };
+
+    CFileContentInfoAlign(): mAlignFormat(eFormatUnknown) {};
+
+    EAlignFormat mAlignFormat;
+};
+
+//  ============================================================================
+union CFileContentInfo
+//  ============================================================================
+{
+    CFileContentInfo(): mInfoNone() {};
+    ~CFileContentInfo() {};
+
+    CFileContentInfoNone mInfoNone;
+    CFileContentInfoGenbank mInfoGenbank;
+    CFileContentInfoGff3 mInfoGff3;
+    CFileContentInfoAlign mInfoAlign;
+};
 
 //////////////////////////////////////////////////////////////////
 ///
@@ -65,39 +123,41 @@ public:
 
     //  Interface:
 public:
+    static set<TTypeInfo> sRecognizedGenbankObjectTypes;
 
     CFormatGuess::EFormat GuessFormat();
+    CFormatGuess::EFormat GuessFormatAndContent(
+        CFileContentInfo& contentInfo);
+
     bool TestFormat(CFormatGuess::EFormat );
 
     /// Get format hints
     CFormatGuess::CFormatHints& GetFormatHints(void) 
-		{ return m_Guesser->GetFormatHints(); }
+        { return m_Guesser->GetFormatHints(); }
 
-    // helpers:
-protected:
-   
-private:
 protected:
     unique_ptr<CFormatGuess> m_Guesser;
-	std::stringstream m_LocalBuffer;
-	bool x_FillLocalBuffer(CNcbiIstream& In);
-	
-	bool x_TryFormat(CFormatGuess::EFormat Format);
-	
- 	//	bool x_TryBinaryAsn();
-		bool x_TryRmo();
-		bool x_TryAgp();
-	//	bool x_TryXml();
-		bool x_TryWiggle();
-		bool x_TryBed();
-		bool x_TryBed15();
-		bool x_TryFasta();
-	//	bool x_TryTextAsn();
-		bool x_TryGtf();
-		bool x_TryGff3();
-		bool x_TryGff2();
-	//	bool x_TryHgvs();
+    std::stringstream m_LocalBuffer;
+    bool x_FillLocalBuffer(CNcbiIstream& In);
+    
+    bool x_TryFormat(CFormatGuess::EFormat Format);
 
+    // bool x_TryBinaryAsn();
+    bool x_TryRmo();
+    bool x_TryAgp();
+    // bool x_TryXml();
+    bool x_TryWiggle();
+    bool x_TryBed();
+    bool x_TryBed15();
+    bool x_TryFasta();
+    bool x_TryTextAsn();
+    bool x_TryGtf();
+    bool x_TryGff3();
+    bool x_TryGff2();
+    //  bool x_TryHgvs();
+
+    string xGuessGenbankObjectType(
+        CFormatGuess::EFormat baseFormat);
 };
 
 
