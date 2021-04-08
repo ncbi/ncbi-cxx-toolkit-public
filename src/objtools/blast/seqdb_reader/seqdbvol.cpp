@@ -66,7 +66,7 @@ TGi CSeqDBGiIndex::GetSeqGI(TOid             oid,
 
     TIndx offset = oid * m_Size + 32;    
     data = m_Lease.GetFileDataPtr(offset);
-    return GI_FROM(Int4, SeqDB_GetStdOrd((Int4 *) data));
+    return GI_FROM(Uint4, SeqDB_GetStdOrd((Uint4 *) data));
 }
 
 CSeqDBVol::CSeqDBVol(CSeqDBAtlas        & atlas,
