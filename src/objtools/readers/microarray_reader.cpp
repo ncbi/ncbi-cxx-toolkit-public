@@ -308,12 +308,19 @@ CMicroArrayReader::xCleanColumnValues(
 //  ----------------------------------------------------------------------------
 {
     string fixup;
+    auto columnCount = columns.size();
 
-    if (NStr::EqualNocase(columns[0], "chr")  &&  columns.size() > 1) {
+    if (columnCount <= 1) {
+        return;
+    }
+    if (NStr::EqualNocase(columns[0], "chr")) {
         columns[1] = columns[0] + columns[1];
         columns.erase(columns.begin());
     }
 
+    if (columnCount <= 2) {
+        return;
+    }
     try {
         NStr::Replace(columns[1], ",", "", fixup);
         columns[1] = fixup;
@@ -326,6 +333,9 @@ CMicroArrayReader::xCleanColumnValues(
         throw(error);
     }
 
+    if (columnCount <= 3) {
+        return;
+    }
     try {
         NStr::Replace(columns[2], ",", "", fixup);
         columns[2] = fixup;
