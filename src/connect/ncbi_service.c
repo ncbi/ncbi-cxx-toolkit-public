@@ -96,7 +96,7 @@ static int/*bool*/ x_tr(char* str, char a, char b, size_t len)
 
 static char* x_ServiceName(unsigned int depth,
                            const char* service, const char* svc,
-                           int/*bool*/ ismask, int*/*bool*/ isfast)
+                           int/*bool*/ ismask, int* /*bool*/isfast)
 {
     char   buf[128];
     size_t len = 0;
@@ -159,7 +159,7 @@ static char* x_ServiceName(unsigned int depth,
 
 
 static char* s_ServiceName(const char* service,
-                           int/*bool*/ ismask, int*/*bool*/ isfast)
+                           int/*bool*/ ismask, int* /*bool*/isfast)
 {
     char* retval;
     CORE_LOCK_READ;
