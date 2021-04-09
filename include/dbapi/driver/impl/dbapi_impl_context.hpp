@@ -293,12 +293,22 @@ protected:
 
 
 private:
+    struct SConsumer {
+        SConsumer(CTempString subj, bool is_pool)
+            : conn(nullptr), subject(subj), subject_is_pool(is_pool),
+              selected(false)
+            { }
+        
+        CConnection* conn;
+        CTempString  subject;
+        bool         subject_is_pool;
+        bool         selected;
+    };
+
     mutable CMutex  m_DefaultCtxMtx;
     mutable CMutex  m_PoolMutex; //< for m_PoolSem*, m_(Not)InUse, & m_Counts*
     CSemaphore      m_PoolSem;
-    string          m_PoolSemSubject;
-    bool            m_PoolSemSubjectHasPoolName;
-    CConnection*    m_PoolSemConn;
+    list<SConsumer> m_PoolSemConsumers;
 
     unsigned int    m_LoginTimeout; //< Login timeout.
     unsigned int    m_Timeout;      //< Connection timeout.

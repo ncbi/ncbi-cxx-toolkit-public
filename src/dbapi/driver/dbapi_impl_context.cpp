@@ -294,16 +294,19 @@ void CDriverContext::x_Recycle(CConnection* conn, bool conn_reusable)
     }
 
 #ifdef NCBI_THREADS
-    bool for_sem = false;
-    if ( !m_PoolSemSubject.empty()
-         &&  (m_PoolSemSubjectHasPoolName
-              ? conn->PoolName() == m_PoolSemSubject
-              : s_Matches(conn, kEmptyStr, m_PoolSemSubject))) {
-        for_sem = true;
-        m_PoolSemSubject.erase();
-        m_PoolSemConn = NULL;
-        m_PoolSem.TryWait(); // probably redundant, but ensures Post will work
-        m_PoolSem.Post();
+    CConnection** recipient = nullptr;
+    for (auto &consumer : m_PoolSemConsumers) {
+        if ( !consumer.selected
+            &&  (consumer.subject_is_pool
+                 ? conn->PoolName() == consumer.subject
+                 : s_Matches(conn, kEmptyStr, consumer.subject))) {
+            consumer.selected = true;
+            recipient = &consumer.conn;
+            // probably redundant, but ensures Post will work
+            m_PoolSem.TryWait();
+            m_PoolSem.Post();
+            break;
+        }
     }
 #endif
 
@@ -338,8 +341,8 @@ void CDriverContext::x_Recycle(CConnection* conn, bool conn_reusable)
         }
         m_NotInUse.push_back(conn);
 #ifdef NCBI_THREADS
-        if (for_sem) {
-            m_PoolSemConn = conn;
+        if (recipient != nullptr) {
+            *recipient = conn;
         }
 #endif
     } else {
@@ -524,30 +527,51 @@ CDriverContext::MakePooledConnection(const CDBConnParams& params)
                     if ( !timeout_str.empty()  &&  timeout_str != "default") {
                         timeout_val = NStr::StringToDouble(timeout_str);
                     }
-                    CTimeout timeout(timeout_val);
+                    CDeadline deadline{CTimeout(timeout_val)};
+                    CTempString subject;
                     if (pool_name.empty()) {
-                        m_PoolSemSubject = server_name;
-                        m_PoolSemSubjectHasPoolName = false;
+                        subject = server_name;
                     } else {
-                        m_PoolSemSubject = pool_name;
-                        m_PoolSemSubjectHasPoolName = true;
+                        subject = pool_name;
                     }
+                    auto target = (m_PoolSemConsumers
+                                   .emplace(m_PoolSemConsumers.end(),
+                                            subject, !pool_name.empty()));
                     mg.Release();
-                    if (m_PoolSem.TryWait(timeout)) {
+                    bool timed_out = true;
+                    while (m_PoolSem.TryWait(deadline.GetRemainingTime())) {
                         mg.Guard(m_PoolMutex);
+                        if (target->selected) {
+                            timed_out = false;
+                            for (const auto &it : m_PoolSemConsumers) {
+                                if (&it != &*target  &&  it.selected) {
+                                    m_PoolSem.TryWait();
+                                    m_PoolSem.Post();
+                                    break;
+                                }
+                            }
+                        } else {
+                            m_PoolSem.TryWait();
+                            m_PoolSem.Post();
+                            mg.Release();
+                            continue;
+                        }
                         CConnection* t_con = NULL;
                         NON_CONST_REVERSE_ITERATE(TConnPool, it, m_NotInUse) {
-                            if (*it == m_PoolSemConn) {
-                                t_con = m_PoolSemConn;
-                                m_PoolSemConn = NULL;
+                            if (*it == target->conn) {
+                                t_con = target->conn;
                                 m_NotInUse.erase((++it).base());
                                 break;
                             }
                         }
                         if (t_con != NULL) {
+                            m_PoolSemConsumers.erase(target);
                             return MakeCDBConnection(t_con, 0);
                         }
-                    } else
+                        break;
+                    }
+                    m_PoolSemConsumers.erase(target);
+                    if (timed_out)
 #endif
                     if (params.GetParam("pool_allow_temp_overflow")
                         != "true") {
