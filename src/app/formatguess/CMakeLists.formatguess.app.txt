@@ -2,7 +2,7 @@
 
 NCBI_begin_app(formatguess)
   NCBI_sources(formatguess)
-  NCBI_uses_toolkit_libraries(submit xmlwrapp)
+  NCBI_uses_toolkit_libraries(submit xmlwrapp xobjread)
   NCBI_project_watchers(ludwigf)
 NCBI_end_app()
 
