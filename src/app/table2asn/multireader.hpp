@@ -22,6 +22,8 @@ class CSeq_annot;
 class CTable2AsnContext;
 class CSerialObject;
 class CAnnotationLoader;
+union CFileContentInfo;
+struct CFileContentInfoGenbank;
 
 //  ============================================================================
 class CMultiReader
@@ -33,11 +35,9 @@ public:
 
     CFormatGuess::EFormat OpenFile(const string& filename, CRef<CSerialObject>& input_sequence);
     CRef<CSerialObject> ReadNextEntry();
-    void Cleanup(CRef<objects::CSeq_entry>);
     void WriteObject(const CSerialObject&, ostream&);
     void LoadTemplate(CTable2AsnContext& context, const string& ifname);
     void LoadDescriptors(const string& ifname, CRef<objects::CSeq_descr> & out_desc);
-    CRef<objects::CSeq_descr> GetSeqDescr(CSerialObject* obj);
     void MergeDescriptors(objects::CSeq_descr & dest, const objects::CSeq_descr & source);
     void MergeDescriptors(objects::CSeq_descr & dest, const objects::CSeqdesc & source);
     void ApplyDescriptors(objects::CSeq_entry & obj, const objects::CSeq_descr & source);
@@ -56,7 +56,7 @@ private:
     CRef<objects::CSeq_entry> xReadFasta(CNcbiIstream& instream);
     CRef<CSerialObject> xApplyTemplate(CRef<CSerialObject> obj, bool merge_template_descriptors);
     CRef<CSerialObject> xReadASN1Text(CObjectIStream& pObjIstrm);
-    CRef<CSerialObject> xReadASN1Binary(CObjectIStream& pObjIstrm, TTypeInfo info);
+    CRef<CSerialObject> xReadASN1Binary(CObjectIStream& pObjIstrm, const CFileContentInfoGenbank& content_info);
     CRef<objects::CSeq_entry> xReadGFF3(CNcbiIstream& instream);
     CRef<objects::CSeq_entry> xReadGFF3_NoPostProcessing(CNcbiIstream& instream);
     CRef<objects::CSeq_entry> xReadGTF(CNcbiIstream& instream);
@@ -69,7 +69,7 @@ private:
     unique_ptr<CObjectIStream> xCreateASNStream(CFormatGuess::EFormat format, unique_ptr<istream>& instream);
 
     //CFormatGuess::EFormat xGetFormat(CNcbiIstream&) const;
-    CFormatGuess::EFormat xInputGetFormat(CNcbiIstream&) const;
+    CFormatGuess::EFormat xInputGetFormat(CNcbiIstream&, CFileContentInfo* = nullptr) const;
     CFormatGuess::EFormat xAnnotGetFormat(CNcbiIstream&) const;
 
     int  m_iFlags;

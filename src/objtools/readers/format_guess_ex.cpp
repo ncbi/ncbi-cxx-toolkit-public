@@ -75,7 +75,7 @@ using namespace ncbi;
 using namespace objects;
 using namespace std;
 
-set<TTypeInfo> CFormatGuessEx::sRecognizedGenbankObjectTypes = {
+set<TTypeInfo> CFormatGuessEx::sDefaultRecognizedGenbankObjectTypes = {
     CType<CBioseq>().GetTypeInfo(),
     CType<CBioseq_set>().GetTypeInfo(),
     CType<CSeq_align>().GetTypeInfo(),
@@ -85,23 +85,26 @@ set<TTypeInfo> CFormatGuessEx::sRecognizedGenbankObjectTypes = {
 };
 
 
-CFormatGuessEx::CFormatGuessEx() 
-    : m_Guesser(new CFormatGuess) 
+CFormatGuessEx::CFormatGuessEx() : 
+    m_Guesser(new CFormatGuess), 
+    m_EffectiveRecognizedGenbankObjectTypes(sDefaultRecognizedGenbankObjectTypes)
 {
     ;
 }
 
 
-CFormatGuessEx::CFormatGuessEx(const string& FileName)
-    : m_Guesser(new CFormatGuess(FileName))
+CFormatGuessEx::CFormatGuessEx(const string& FileName) : 
+    m_Guesser(new CFormatGuess(FileName)), 
+    m_EffectiveRecognizedGenbankObjectTypes(sDefaultRecognizedGenbankObjectTypes)
 {
     CNcbiIfstream FileIn(FileName.c_str());
     x_FillLocalBuffer(FileIn);
 }
 
 
-CFormatGuessEx::CFormatGuessEx(CNcbiIstream& In)
-    : m_Guesser(new CFormatGuess(In))
+CFormatGuessEx::CFormatGuessEx(CNcbiIstream& In) : 
+    m_Guesser(new CFormatGuess(In)), 
+    m_EffectiveRecognizedGenbankObjectTypes(sDefaultRecognizedGenbankObjectTypes)
 {
     x_FillLocalBuffer(In);
 }
@@ -140,9 +143,10 @@ CFormatGuess::EFormat CFormatGuessEx::GuessFormat()
         };
 
         for(int Loop = 0; Loop < 8; Loop++ ) {
-            bool Found = x_TryFormat(CheckOrder[Loop]);
-            if(Found)
-                return CheckOrder[Loop];
+            auto CheckFormat = CheckOrder[Loop];
+            if (m_Guesser->IsEnabled(CheckFormat)  &&  x_TryFormat(CheckFormat)) {
+                return CheckFormat;
+            }
         }
         return CFormatGuess::eUnknown;
     }
@@ -156,6 +160,7 @@ bool CFormatGuessEx::TestFormat(CFormatGuess::EFormat Format)
     if(TestResult) {
         return true;
     }
+    
     else {
         return x_TryFormat(Format);
     }
@@ -470,7 +475,7 @@ string CFormatGuessEx::xGuessGenbankObjectType(
         return "unknown";
     }
 
-    set<TTypeInfo> types = pObjStream->GuessDataType(sRecognizedGenbankObjectTypes);
+    set<TTypeInfo> types = pObjStream->GuessDataType(m_EffectiveRecognizedGenbankObjectTypes);
     if ( types.size() != 1 ) {
         return "unknown";
     }
@@ -478,6 +483,11 @@ string CFormatGuessEx::xGuessGenbankObjectType(
     return (*types.begin())->GetName();
 }
 
+void CFormatGuessEx::SetRecognizedGenbankTypes(
+    const set<TTypeInfo>& recognizedGenbankTypes)
+{
+    m_EffectiveRecognizedGenbankObjectTypes = recognizedGenbankTypes;
+}
 
 CFormatGuess::EFormat CFormatGuessEx::GuessFormatAndContent(
     CFileContentInfo& contentInfo)

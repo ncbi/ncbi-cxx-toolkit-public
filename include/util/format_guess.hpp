@@ -262,6 +262,9 @@ public:
     /// Get format hints
     CFormatHints& GetFormatHints(void) { return m_Hints; }
 
+    /// Check whether testing is enabled for given format
+    bool IsEnabled(EFormat format) const { return !m_Hints.IsDisabled(format); };
+
 protected:
     void Initialize();
 

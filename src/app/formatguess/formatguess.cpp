@@ -44,6 +44,9 @@
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/submit/Seq_submit.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
+#include <objects/seqalign/Seq_align.hpp>
+#include <objects/seq/Seq_annot.hpp>
+
 #include <objects/seq/Bioseq.hpp>
 
 #include <misc/xmlwrapp/attributes.hpp>
@@ -58,6 +61,17 @@ typedef FormatMap::iterator FormatIter;
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
+set<TTypeInfo> sDefaultRecognizedGenbankObjectTypes = {
+    CType<CBioseq>().GetTypeInfo(),
+    CType<CBioseq_set>().GetTypeInfo(),
+    CType<CSeq_align>().GetTypeInfo(),
+    CType<CSeq_annot>().GetTypeInfo(),
+    CType<CSeq_entry>().GetTypeInfo(),
+    CType<CSeq_submit>().GetTypeInfo(),
+};
+
+
+
 //  ============================================================================
 class CFormatGuessApp
 //  ============================================================================
@@ -71,6 +85,7 @@ private:
     virtual void Exit(void);
 };
 
+/*
 //  ============================================================================
 string CFormatGuessApp::guess_object_type(CObjectIStream & obj_istrm)
 //  ============================================================================
@@ -88,6 +103,7 @@ string CFormatGuessApp::guess_object_type(CObjectIStream & obj_istrm)
     }
     return (*types.begin())->GetName();
 }
+*/
 
 //  ============================================================================
 void CFormatGuessApp::Init(void)
@@ -139,14 +155,15 @@ CFormatGuessApp::Run(void)
 //  ============================================================================
 {
     const CArgs& args = GetArgs();
-    CNcbiIstream & input_stream = args["i"].AsInputFile(CArgValue::fBinary);
+    //CNcbiIstream & input_stream = args["i"].AsInputFile(CArgValue::fBinary);
     string name_of_input_stream = args["i"].AsString();
     if( name_of_input_stream.empty() || name_of_input_stream == "-" ) {
         name_of_input_stream = "stdin";
     }
 
-    CFormatGuessEx guesser( input_stream );
+    CFormatGuessEx guesser( name_of_input_stream );
     CFileContentInfo contentInfo;
+    guesser.SetRecognizedGenbankTypes(sDefaultRecognizedGenbankObjectTypes);
     CFormatGuess::EFormat uFormat = guesser.GuessFormatAndContent(contentInfo);
     
     string format_name;
