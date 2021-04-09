@@ -68,6 +68,9 @@ static void tds_iconv_info_close(TDSICONV * char_conv);
 static const char *iconv_names[sizeof(canonic_charsets) / sizeof(canonic_charsets[0])];
 static int iconv_initialized = 0;
 static const char *ucs2name;
+#ifdef TDS_HAVE_MUTEX
+static tds_mutex iconv_initialized_mtx = TDS_MUTEX_INITIALIZER;
+#endif
 
 enum
 { POS_ISO1, POS_UTF8, POS_UCS2LE, POS_UCS2BE };
@@ -198,7 +201,15 @@ tds_set_iconv_name(int charset)
 	int i;
 	iconv_t cd;
 
+#ifndef NDEBUG
+#  ifdef TDS_HAVE_MUTEX
+        tds_mutex_lock(&iconv_initialized_mtx);
+#  endif
 	assert(iconv_initialized);
+#  ifdef TDS_HAVE_MUTEX
+        tds_mutex_unlock(&iconv_initialized_mtx);
+#  endif
+#endif
 
 	/* try using canonic name and UTF-8 and UCS2 */
 	cd = tds_sys_iconv_open(iconv_names[POS_UTF8], canonic_charsets[charset].name);
@@ -325,27 +336,26 @@ tds_iconv_open(TDSCONNECTION * conn, const char *charset, int use_utf16)
 	tdsdump_log(TDS_DBG_FUNC, "tds_iconv_open(%p, %s)\n", conn, charset);
 
 	/* initialize */
-	if (!iconv_initialized) {
 #ifdef TDS_HAVE_MUTEX
-                static tds_mutex mtx = TDS_MUTEX_INITIALIZER;
-                tds_mutex_lock(&mtx);
+        tds_mutex_lock(&iconv_initialized_mtx);
 #endif
-		if ( !iconv_initialized  &&  (ret = tds_iconv_init()) > 0) {
+	if (!iconv_initialized) {
+		if ((ret = tds_iconv_init()) > 0) {
 			static const char names[][12] = { "ISO 8859-1", "UTF-8" };
 			assert(ret < 3);
 			tdsdump_log(TDS_DBG_FUNC, "error: tds_iconv_init() returned %d; "
 						  "could not find a name for %s that your iconv accepts.\n"
 						  "use: \"configure --disable-libiconv\"", ret, names[ret-1]);
 #ifdef TDS_HAVE_MUTEX
-                        tds_mutex_unlock(&mtx);
+                        tds_mutex_unlock(&iconv_initialized_mtx);
 #endif
 			return TDS_FAIL;
 		}
 		iconv_initialized = 1;
-#ifdef TDS_HAVE_MUTEX
-                tds_mutex_unlock(&mtx);
-#endif
 	}
+#ifdef TDS_HAVE_MUTEX
+        tds_mutex_unlock(&iconv_initialized_mtx);
+#endif
 
 	/* 
 	 * Client <-> UCS-2 (client2ucs2)
