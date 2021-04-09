@@ -156,24 +156,13 @@ namespace
 #endif
     }
 
-    static const vector<TTypeInfo> supported_types =
+    static const set<TTypeInfo> supported_types =
     {
         CBioseq_set::GetTypeInfo(),
         CBioseq::GetTypeInfo(),
         CSeq_entry::GetTypeInfo(),
         CSeq_submit::GetTypeInfo(),
     };
-
-    TTypeInfo x_DetectObjectType(CObjectIStream& str)
-    {
-        set<TTypeInfo> known_types(supported_types.begin(), supported_types.end());
-        auto result = str.GuessDataType(known_types);
-        if (result.size() == 1)
-        {
-            return *result.begin();
-        }
-        return nullptr;
-    }
 }
 
 CRef<CSerialObject> CMultiReader::xReadASN1Binary(CObjectIStream& pObjIstrm, const CFileContentInfoGenbank& content_info)
@@ -431,6 +420,8 @@ CFormatGuess::EFormat CMultiReader::xInputGetFormat(CNcbiIstream& istr, CFileCon
     if (!content_info) {
         return FG.GuessFormat();
     }
+
+    FG.SetRecognizedGenbankTypes(supported_types);
     return FG.GuessFormatAndContent(*content_info);
 }
 
