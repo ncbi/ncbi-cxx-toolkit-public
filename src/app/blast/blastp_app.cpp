@@ -93,9 +93,10 @@ void CBlastpApp::Init()
 int CBlastpApp::Run(void)
 {
 	const CArgs& args = GetArgs();
-	if (args.Exist(kArgMTMode) &&
-		(args[kArgMTMode].AsInteger() == CMTArgs::eSplitByQueries) &&
-		(args[kArgNumThreads].AsInteger() > 1)){
+	CMTArgs mt_args(args);
+	if ((mt_args.GetMTMode() == CMTArgs::eSplitByQueries) &&
+		(mt_args.GetNumThreads() > 1)){
+		m_UsageReport.AddParam(CBlastUsageReport::eMTMode, CMTArgs::eSplitByQueries);
 		return x_RunMTBySplitQuery();
 	}
 	else {
@@ -255,7 +256,6 @@ int CBlastpApp::x_RunMTBySplitQuery()
 
 	try {
     	const CArgs& args = GetArgs();
-    	const int kMaxNumOfThreads = args[kArgNumThreads].AsInteger();
     	CRef<CBlastOptionsHandle> opts_hndl;
         if(RecoverSearchStrategy(args, m_CmdLineArgs)) {
         	opts_hndl.Reset(&*m_CmdLineArgs->SetOptionsForSavedStrategy(args));
@@ -268,6 +268,7 @@ int CBlastpApp::x_RunMTBySplitQuery()
        		return BLAST_EXIT_SUCCESS;
     	}
     	CNcbiOstream & out_stream = m_CmdLineArgs->GetOutputStream();
+    	const int kMaxNumOfThreads =  m_CmdLineArgs->GetNumThreads();
 		CBlastMasterNode master_node(out_stream, kMaxNumOfThreads);
    		int chunk_num = 0;
    	    int batch_size = GetMTByQueriesBatchSize(opts_hndl->GetOptions().GetProgram(), kMaxNumOfThreads);

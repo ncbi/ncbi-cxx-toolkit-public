@@ -97,7 +97,7 @@ void CRPSTBlastnApp::Init()
 int CRPSTBlastnApp::Run(void)
 {
 	const CArgs& args = GetArgs();
-	if ((args[kArgMTMode].AsInteger() == 0)  || (args[kArgNumThreads].AsInteger() <= 1)){
+	if ((args[kArgMTMode].AsInteger() == 0)  || ( m_CmdLineArgs->GetNumThreads() <= 1)){
 		return x_RunMTBySplitDB();
 	}
 	else {
@@ -254,7 +254,7 @@ int CRPSTBlastnApp::x_RunMTBySplitQuery(void)
 
 	try {
     	const CArgs& args = GetArgs();
-    	const int kMaxNumOfThreads = args[kArgNumThreads].AsInteger();
+    	const int kMaxNumOfThreads =  m_CmdLineArgs->GetNumThreads();
     	CRef<CBlastOptionsHandle> opts_hndl;
         if(RecoverSearchStrategy(args, m_CmdLineArgs)) {
         	opts_hndl.Reset(&*m_CmdLineArgs->SetOptionsForSavedStrategy(args));

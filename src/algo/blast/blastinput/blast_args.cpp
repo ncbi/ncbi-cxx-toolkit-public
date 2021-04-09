@@ -3048,6 +3048,9 @@ CMTArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                                NStr::IntToString(0));
     	arg_desc.SetConstraint(kArgMTMode,
                                new CArgAllowValuesBetween(0, 1, true));
+    	arg_desc.SetDependency(kArgMTMode,
+                               CArgDescriptions::eRequires,
+                               kArgNumThreads);
     }
     /*
     arg_desc.SetDependency(kArgNumThreads,
@@ -3058,8 +3061,19 @@ CMTArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.SetCurrentGroup("");
 }
 
+CMTArgs::CMTArgs(const CArgs& args)
+{
+	x_ExtractAlgorithmOptions(args);
+}
+
+
 void
 CMTArgs::ExtractAlgorithmOptions(const CArgs& args, CBlastOptions& /* opts */)
+{
+	x_ExtractAlgorithmOptions(args);
+}
+void
+CMTArgs::x_ExtractAlgorithmOptions(const CArgs& args)
 {
     const int kMaxValue = static_cast<int>(CSystemInfo::GetCpuCount());
 
@@ -3084,8 +3098,15 @@ CMTArgs::ExtractAlgorithmOptions(const CArgs& args, CBlastOptions& /* opts */)
         if (args.Exist(kArgSubject) && args[kArgSubject].HasValue() &&
             m_NumThreads != CThreadable::kMinNumThreads) {
             m_NumThreads = CThreadable::kMinNumThreads;
-            ERR_POST(Warning << "'" << kArgNumThreads << "' is currently "
+            string opt = kArgNumThreads;
+            if (args.Exist(kArgMTMode) &&
+               (args[kArgMTMode].AsInteger() == CMTArgs::eSplitByQueries)) {
+            	m_MTMode = CMTArgs::eSplitByDB;
+            	opt += " and " + kArgMTMode;
+            }
+            ERR_POST(Warning << "'" << opt << "' is currently "
                      << "ignored when '" << kArgSubject << "' is specified.");
+            return;
         }
     }
     if (args.Exist(kArgMTMode) && args[kArgMTMode].HasValue()) {

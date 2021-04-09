@@ -1290,6 +1290,7 @@ public:
         m_MTMode = eNotSupported;
 #endif
     }
+    CMTArgs(const CArgs& cmd_line_args);
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
@@ -1302,6 +1303,7 @@ public:
     int GetMTMode() const { return m_MTMode; }
 
 protected:
+    void x_ExtractAlgorithmOptions(const CArgs& args);
     size_t m_NumThreads;        ///< Number of threads to spawn
     EMTMode m_MTMode;
 };
