@@ -6636,7 +6636,6 @@ SMNG:Malakologie	s	Senckenberg Museum fuer Naturkunde Goerlitz, Malakologie Coll
 SMNG:Orthoptera	s	Senckenberg Museum fuer Naturkunde Goerlitz, Orthoptera Collection		
 SMNG:Siphonaptera fossil	s	Senckenberg Museum fuer Naturkunde Goerlitz, Siphonaptera fossil Collection		
 SMNH<CAN>	s	Saskatchewan Museum of Natural History			
-SMNH<ISR>	s	Steinhardt Museum of Natural History			
 SMNH<JPN>	s	Saitama Museum of Natural History			
 SMNH<SWE>	s	Swedish Museum of Natural History	NRM		
 SMNH<UKR>	s	State Museum of Natural History			
@@ -8374,7 +8373,7 @@ ZMS	s	Zentralmuseum Senckenberg (SENCKENBERG world of biodiversity)
 ZMSZ	s	Zemaljski Mujski			
 ZMT<CZE>	s	Zapadomoravske muzeum v Trebici			
 ZMT<GEO>	s	Georgian State Museum, Zoological Section			
-ZMTAU	s	The Steinhardt Museum of Natural History			
+ZMTAU	s	The Steinhardt Museum of Natural History	SMNH<ISR> 		
 ZMU	s	Zhejiang Medical University, Pharmacy Department			
 ZMUA<CHN>	s	Zooligal Museum, University of Amoy			
 ZMUA<GRC>	s	Zoological Museum, University of Athens			
