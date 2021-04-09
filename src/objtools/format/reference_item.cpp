@@ -1291,7 +1291,7 @@ void CReferenceItem::FormatAuthors(const CAuth_list& alp, string& auth)
     CNcbiOstrstream auth_line;
     TStrList::const_iterator last = --(authors.end());
 
-    string separator = kEmptyStr;
+    string separator;
     //bool first = true;
     ITERATE (TStrList, it, authors) {
         auth_line << separator << *it;

@@ -1404,7 +1404,7 @@ bool CAgpValidateReader::x_PrintPatterns(
   bool mixedCategories=(nucCount && otherCount);
   if(mixedCategories && wPattern<20) wPattern=20;
   // Print the total
-  //string xml_tag_for_pattern_and_count = "";
+  //string xml_tag_for_pattern_and_count;
   string xml_outer_tag;
   if(strHeader.size()) {
     if(use_xml) {
@@ -1470,7 +1470,7 @@ bool CAgpValidateReader::x_PrintPatterns(
             case fProtein      : acc_warning ="looks like protein accession"; break;
           }
         }
-        string xml_tag = "";
+        string xml_tag;
         if( acc_warning.size() ) {
           xprint.m_eol_text = string(" (") + acc_warning + ")\n";
         }

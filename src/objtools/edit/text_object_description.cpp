@@ -283,7 +283,7 @@ static string GetLocusTagForFeature(const CSeq_feat& seq_feat, CScope& scope)
 
 static string GetProduct(const CProt_ref& prot_ref)
 {
-    string rval = "";
+    string rval;
     if (prot_ref.CanGetName() && !prot_ref.GetName().empty()) {
         rval = prot_ref.GetName().front();
     }
@@ -315,7 +315,7 @@ static string GetProductForCDS(const CSeq_feat& cds, CScope& scope)
 
 static string GetSeqLocDescription(const CSeq_loc& loc, CScope& scope)
 {
-    string location = "";
+    string location;
 
     CRef<CSeq_loc> cpy(new CSeq_loc());
     cpy->Assign(loc);

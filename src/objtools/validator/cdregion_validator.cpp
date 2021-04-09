@@ -620,7 +620,7 @@ void CCdregionValidator::x_ReportTranslationMismatches(const CCDSTranslationProb
                     (mismatches[i].transl_res == 'B' || mismatches[i].transl_res == 'Z' || mismatches[i].transl_res == 'J')) {
                     sev = eDiag_Warning;
                 }
-                string msg = "";
+                string msg;
                 if (m_ProductIsFar) {
                     msg += "(far) ";
                 }
@@ -1012,7 +1012,7 @@ void CCdregionValidator::x_ValidateSeqFeatLoc()
 
     // for coding regions, internal exons should not be 15 or less bp long
     int num_short_exons = 0;
-    string message = kEmptyStr;
+    string message;
     CSeq_loc_CI it(m_Feat.GetLocation());
     if (it) {
         // note - do not want to warn for first or last exon
@@ -1626,7 +1626,7 @@ void CCdregionValidator::ReportShortIntrons()
         return;
     }
 
-    string message = kEmptyStr;
+    string message;
 
     vector<TShortIntron> shortlist = x_GetShortIntrons(m_Feat.GetLocation(), &m_Scope);
     if (shortlist.size() == 0) {

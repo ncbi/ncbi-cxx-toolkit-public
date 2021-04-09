@@ -547,7 +547,7 @@ bool CSrcWriter::xTryDefaultId(
         displayName = "accession";
     }
 
-    const string defaultValue = "";
+    const string defaultValue;
     xPrepareTableColumn(colName, displayName, defaultValue);
     xAppendColumnValue(colName, id);
 
@@ -666,7 +666,7 @@ bool CSrcWriter::xGather(
             if (auths.length() > 0) {
                 static const string colName = "author";
                 static const string displayName = colName;
-                static const string defaultValue = "";
+                static const string defaultValue;
 
                 xPrepareTableColumn(colName, displayName, defaultValue);
                 xAppendColumnValue(colName, auths);
@@ -676,7 +676,7 @@ bool CSrcWriter::xGather(
             if (affls.length() > 0) {
                 static const string colName = "affil";
                 static const string displayName = colName;
-                static const string defaultValue = "";
+                static const string defaultValue;
 
                 xPrepareTableColumn(colName, displayName, defaultValue);
                 xAppendColumnValue(colName, affls);
@@ -721,13 +721,13 @@ bool CSrcWriter::xGatherId(
         return false;
     }
 
-    string label = "";
+    string label;
     CConstRef<CSeq_id> sid = bsh.GetSeqId();
     label = sequence::GetAccessionForId(*sid, bsh.GetScope());
 
     if (!label.empty()) {
         const string colName = "id";
-        const string defaultValue = "";
+        const string defaultValue;
         xPrepareTableColumn(colName, "accession", defaultValue);
         xAppendColumnValue(colName, label);
     }
@@ -747,7 +747,7 @@ bool CSrcWriter::xGatherGi(
     }
 
     const string colName = "gi";
-    string label = "";
+    string label;
 
     ITERATE( CBioseq_Handle::TId, it, bsh.GetId() ) {
         if( it->IsGi() ){
@@ -758,7 +758,7 @@ bool CSrcWriter::xGatherGi(
 
     if (!label.empty()) {
         const string displayName = "gi";
-        const string defaultValue = "";
+        const string defaultValue;
         xPrepareTableColumn(colName, displayName, defaultValue);
         xAppendColumnValue(colName, label);
     }
@@ -808,9 +808,8 @@ bool CSrcWriter::xGatherLocalId(
 
     static const string colName = "localid";
     static const string displayName = colName;
-    static const string defaultValue = "";
-    
-    
+    static const string defaultValue;
+
     string local_id = xGetOriginalId(bsh);
     if ( NStr::IsBlank(local_id) ) {
         CConstRef<CSeq_id> seq_id = bsh.GetLocalIdOrNull();
@@ -841,8 +840,8 @@ bool CSrcWriter::xGatherBankitId(
 
     static const string colName = "bankitid";
     static const string displayName = colName;
-    static const string defaultValue = "";
-    
+    static const string defaultValue;
+
     stringstream bankitIdOstr;
     ITERATE( CBioseq_Handle::TId, it, bsh.GetId() ) {
         const auto& pId = it->GetSeqId();
@@ -880,7 +879,7 @@ bool CSrcWriter::xGatherDefline(
 
     static const string colName = "definition";
     static const string displayName = colName;
-    static const string defaultValue = "";
+    static const string defaultValue;
 
     string label = sequence::CDeflineGenerator().GenerateDefline(bsh);
     if (label.empty()) {
@@ -900,7 +899,7 @@ bool CSrcWriter::xGatherTaxname(
 //  ----------------------------------------------------------------------------
 {
     const string displayName = "organism";
-    const string defaultValue = "";
+    const string defaultValue;
 
     if (!src.IsSetTaxname()) {
         return true;
@@ -920,7 +919,7 @@ bool CSrcWriter::xGatherOrgCommon(
 //  ----------------------------------------------------------------------------
 {
     const string displayName = "common";
-    const string defaultValue = "";
+    const string defaultValue;
 
     if (!src.IsSetOrg()  ||  !src.GetOrg().IsSetCommon()) {
         return true;
@@ -940,7 +939,7 @@ bool CSrcWriter::xGatherOrgnameLineage(
 //  ----------------------------------------------------------------------------
 {
     const string displayName = "lineage";
-    const string defaultValue = "";
+    const string defaultValue;
 
     if (!src.IsSetOrg()  ||  !src.GetOrg().IsSetOrgname()  
             ||  !src.GetOrg().GetOrgname().IsSetLineage()) {
@@ -961,7 +960,7 @@ bool CSrcWriter::xGatherDivision(
 //  ----------------------------------------------------------------------------
 {
     const string displayName = "division";
-    const string defaultValue = "";
+    const string defaultValue;
 
     if (!src.IsSetOrg()  ||  !src.GetOrg().IsSetDivision()) {
         return true;
@@ -981,7 +980,7 @@ bool CSrcWriter::xGatherGenome(
 //  ----------------------------------------------------------------------------
 {
     const string displayName = "genome";
-    const string defaultValue = "";
+    const string defaultValue;
 
     if (!src.IsSetGenome()) {
         return true;
@@ -1001,7 +1000,7 @@ bool CSrcWriter::xGatherOrigin(
 //  ----------------------------------------------------------------------------
 {
     const string displayName = "origin";
-    const string defaultValue = "";
+    const string defaultValue;
 
     if (!src.IsSetOrigin()) {
         return true;
@@ -1051,7 +1050,7 @@ bool CSrcWriter::xGatherSubtypeFeat(
         }
         ++count;
 
-        string value = "";
+        string value;
         if (subsrc.IsSetName()) {
             value = subsrc.GetName();
         }
@@ -1115,9 +1114,8 @@ bool CSrcWriter::xGatherDb(
         ILineErrorListener*)
 //  ----------------------------------------------------------------------------
 {
-
     static const string displayName = "db";
-    static const string defaultValue = "";
+    static const string defaultValue;
 
     if (!src.IsSetOrg()  ||  !src.GetOrg().IsSetDb()) {
         return true;
@@ -1164,7 +1162,7 @@ bool CSrcWriter::xGatherTaxonId(
 //  ----------------------------------------------------------------------------
 {
     static const string displayName = "taxid";
-    static const string defaultValue = "";
+    static const string defaultValue;
 
     if (!src.IsSetOrg()  ||  !src.GetOrg().IsSetDb()) {
         return true;
@@ -1274,7 +1272,7 @@ bool CSrcWriter::xGatherPcrPrimers(
 string CSrcWriter::xPrimerSetNames(const CPCRPrimerSet& pset)
     //  ----------------------------------------------------------------------------
 {
-    string names = "";
+    string names;
     typedef list<CRef<CPCRPrimer> > PRIMERS;
     const PRIMERS& primers = pset.Get();
     for (PRIMERS::const_iterator cit = primers.begin(); 
@@ -1293,7 +1291,7 @@ string CSrcWriter::xPrimerSetNames(const CPCRPrimerSet& pset)
 string CSrcWriter::xPrimerSetSequences(const CPCRPrimerSet& pset)
     //  ----------------------------------------------------------------------------
 {
-    string sequences = "";
+    string sequences;
     typedef list<CRef<CPCRPrimer> > PRIMERS;
     const PRIMERS& primers = pset.Get();
     for (PRIMERS::const_iterator cit = primers.begin(); 

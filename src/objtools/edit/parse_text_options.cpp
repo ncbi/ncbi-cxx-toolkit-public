@@ -166,7 +166,7 @@ void CParseTextMarker::Reset()
 
 string CParseTextOptions::GetSelectedText(const string& input) const
 {
-    string rval = kEmptyStr;
+    string rval;
     size_t start_pos(0), start_len(0), stop_pos(0), stop_len(0);
     if (m_StartMarker.FindInText(input, start_pos, start_len, 0, m_CaseInsensitive, m_WholeWord)
         && m_StopMarker.FindInText(input, stop_pos, stop_len, start_pos + start_len, m_CaseInsensitive, m_WholeWord)) {
@@ -206,7 +206,7 @@ void CParseTextOptions::RemoveSelectedText(string& input, bool remove_first_only
             if (m_IncludeStopMarker || m_RemoveAfterPattern) {
                 sel_stop += stop_len;
             }
-            string new_val = kEmptyStr;
+            string new_val;
             if (sel_start > 0) {
                 new_val = input.substr(0, sel_start);
             }

@@ -623,7 +623,7 @@ void CValidError_imp::PostErr
 
     // Calculate sequence offset
     TSeqPos offset = 0;
-    string location = kEmptyStr;
+    string location;
     if (ft.IsSetLocation()) {
         offset = ft.GetLocation().GetStart(eExtreme_Positional);
         string loc_label = CValidErrorFormat::GetFeatureLocationLabel(ft, m_Scope, m_SuppressContext);
@@ -640,7 +640,7 @@ void CValidError_imp::PostErr
     }
 
     int version = 0;
-    string accession = "";
+    string accession;
     if (m_Scope) {
         accession = GetAccessionFromObjects(&ft, NULL, *m_Scope, &version);
     }
@@ -1701,7 +1701,7 @@ void CValidError_imp::ValidateDbxref
             obj, ctx);
     }    
 
-    string dbv = kEmptyStr;
+    string dbv;
     if (xref.IsSetTag() && xref.GetTag().IsStr()) {
         dbv = xref.GetTag().GetStr();
     } else if (xref.IsSetTag() && xref.GetTag().IsId()) {
@@ -1715,7 +1715,7 @@ void CValidError_imp::ValidateDbxref
     if (flags & CValidator::eBadCapitalization) {
         // capitalization is bad
         bool refseq_db = false, src_db = false;
-        string correct_caps = kEmptyStr;
+        string correct_caps;
         xref.GetDBFlags(refseq_db, src_db, correct_caps);
         string message = "Illegal db_xref type " + db + " (" + dbv + "), legal capitalization is " + correct_caps;
         if (flags & CValidator::eNotForSource) {
@@ -1762,7 +1762,7 @@ void CValidError_imp::ValidateDbxref
  bool biosource,
  const CSeq_entry *ctx)
 {
-    string last_db = "";
+    string last_db;
 
     ITERATE( TDbtags, xref, xref_list) {
         if (biosource
@@ -3241,7 +3241,7 @@ void CValidError_imp::x_DoBarcodeTests(CSeq_entry_Handle seh)
     for (auto r : results) {
         const CBioseq& sq = *(r.bsh.GetCompleteBioseq());
         if (BarcodeTestFails(r)){
-            string msg = kEmptyStr;
+            string msg;
             if (r.length) {
                 ADD_BARCODE_ERR(TooShort)
             }

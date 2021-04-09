@@ -960,7 +960,7 @@ bool CAutoDefFeatureClause_Base::x_MeetAltSpliceRules (size_t clause1, size_t cl
         for (unsigned int k = 0; k < sizeof(unwanted_words) / sizeof(string); k++) {
             string::size_type pos;
             while ((pos = NStr::Find(splice_name, unwanted_words[k])) != NCBI_NS_STD::string::npos ) {
-                string temp_name = "";
+                string temp_name;
                 if (pos > 0) {
                     temp_name += splice_name.substr(0, pos);
                 }
@@ -1090,9 +1090,9 @@ string CAutoDefFeatureClause_Base::FindGeneProductName(CAutoDefFeatureClause_Bas
     if (NStr::IsBlank(look_for_name)) {
         return "";
     }
-    
-    string product_name = "";
-    
+
+    string product_name;
+
     for (unsigned int k = 0; k < m_ClauseList.size() && NStr::IsBlank(product_name); k++) {
         if (gene_clause == m_ClauseList[k]) {
             continue;
@@ -1797,7 +1797,7 @@ CAutoDefFeatureClause_Base::ETRNAIntergenicSpacerType CAutoDefFeatureClause_Base
 
 string CAutoDefFeatureClause_Base::x_tRNAGeneFromProduct(const string& label)
 {
-    string gene = "";
+    string gene;
 
     if (!NStr::StartsWith(label, "tRNA-")) {
         return kEmptyStr;
@@ -1939,12 +1939,12 @@ vector<string> CAutoDefFeatureClause_Base::GetTrnaIntergenicSpacerClausePhrases(
 
 bool CAutoDefFeatureClause_Base::IsValidFeatureClausePhrase(const string& phrase)
 {
-    string product_name = "";
-    string gene_name = "";
+    string product_name;
+    string gene_name;
     if (NStr::Equal(phrase, "control region") ||
         NStr::Equal(phrase, "D-loop")) {
         return true;
-    } else if (CAutoDefParsedtRNAClause::ParseString(phrase, gene_name, product_name))  {
+    } else if (CAutoDefParsedtRNAClause::ParseString(phrase, gene_name, product_name)) {
         return true;
     } else if (x_GetRnaMiscWordType(phrase) != eMiscRnaWordType_Unrecognized) {
         return true;

@@ -288,45 +288,29 @@ void CFastaOstreamEx::x_WriteTranslatedCds(const CSeq_feat& cds, CScope& scope)
 void CFastaOstreamEx::x_WriteFeatureAttributes(const CSeq_feat& feat,
                                                CScope& scope) const
 {
-
-    string defline = "";
     if (!feat.IsSetData()) {
         return;
     }
 
+    string defline;
     x_AddGeneAttributes(feat, scope, defline);
-
     x_AddDbxrefAttribute(feat, scope, defline);
-
     x_AddProteinNameAttribute(feat, scope, defline);
-
     x_AddRNAProductAttribute(feat, defline);
-
     x_AddncRNAClassAttribute(feat, defline);
-
     x_AddPseudoAttribute(feat, scope, defline);
-
     x_AddPseudoGeneAttribute(feat, scope, defline);
-
     x_AddReadingFrameAttribute(feat, defline);
-
     x_AddPartialAttribute(feat, scope, defline);
-
     x_AddTranslationExceptionAttribute(feat, scope, defline);
-
     x_AddExceptionAttribute(feat, defline);
-
     x_AddProteinIdAttribute(feat, scope, defline);
-
     x_AddTranscriptIdAttribute(feat, scope, defline);
-
     x_AddLocationAttribute(feat, scope, defline);
-
     x_AddMiscQualifierAttributes(feat, defline);
-
     x_AddGBkeyAttribute(feat, defline);
 
-    m_Out << defline << "\n"; 
+    m_Out << defline << "\n";
 }
 
 
@@ -692,7 +676,7 @@ void CFastaOstreamEx::x_AddDbxrefAttribute(const CSeq_feat& feat,
                                            CScope& scope,
                                            string& defline) const
 {
-    string db_xref = "";
+    string db_xref;
 
     if (feat.IsSetDbxref()) {
         for (auto&& pDbtag : feat.GetDbxref()) {
@@ -791,7 +775,7 @@ void CFastaOstreamEx::x_AddPartialAttribute(const CSeq_feat& feat,
                                             string& defline) const
 {
     auto partial = sequence::SeqLocPartialCheck(feat.GetLocation(), &scope);
-    string partial_string = "";
+    string partial_string;
     if (partial & sequence::eSeqlocPartial_Nostart) {
         partial_string += "5\'";
     }
@@ -852,7 +836,7 @@ bool CFastaOstreamEx::x_GetCodeBreak(const CSeq_feat& feat, const CCode_break& c
          case CSeq_loc::e_Int: {
              const CSeq_interval& intv = loc.GetInt();
              int width =  1 + intv.GetTo() - intv.GetFrom();
-             string intv_str = "";
+             string intv_str;
              intv_str += NStr::IntToString(offset+1);
              intv_str += "..";
              intv_str += NStr::IntToString(offset+width);
@@ -888,9 +872,9 @@ void CFastaOstreamEx::x_AddTranslationExceptionAttribute(const CSeq_feat& feat,
 
     const auto code_breaks = feat.GetData().GetCdregion().GetCode_break();
 
-    string transl_exception = "";
+    string transl_exception;
     for (auto && code_break : code_breaks) {
-        string cb_string = "";
+        string cb_string;
         if (x_GetCodeBreak(feat, *code_break, scope, cb_string)) {
      //   if (CWriteUtil::GetCodeBreak(*code_break, cb_string)) {
             if (!transl_exception.empty()) {

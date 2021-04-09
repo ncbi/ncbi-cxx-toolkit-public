@@ -425,7 +425,7 @@ CConstRef<CSeq_id> GetReportableSeqIdForAlignment(const CSeq_align& align, CScop
 
 string GetAccessionFromObjects(const CSerialObject* obj, const CSeq_entry* ctx, CScope& scope, int* version)
 {
-    string empty_acc = "";
+    string empty_acc;
 
     if (obj && obj->GetThisTypeInfo() == CSeqdesc::GetTypeInfo() && ctx) {
         CSeq_entry_Handle seh = scope.GetSeq_entryHandle(*ctx);
@@ -837,7 +837,7 @@ bool IsDateInPast(const CDate& date)
 
 string GetDateErrorDescription (int flags)
 {
-    string reasons = "";
+    string reasons;
 
     if (flags & eDateValid_empty_date) {
         reasons += "EMPTY_DATE ";
@@ -940,7 +940,7 @@ static void UpdateToBestId(CSeq_loc& loc, CScope& scope)
 
 string GetValidatorLocationLabel (const CSeq_loc& loc, CScope& scope)
 {
-    string loc_label = "";
+    string loc_label;
     if (loc.IsWhole()) {
         CBioseq_Handle bsh = scope.GetBioseqHandle(loc.GetWhole());
         if (bsh) {
@@ -964,7 +964,7 @@ string GetValidatorLocationLabel (const CSeq_loc& loc, CScope& scope)
 
 string GetBioseqIdLabel(const CBioseq& sq, bool limited)
 {
-    string content = "";
+    string content;
     int num_ids_found = 0;
     bool id_found = false;
 
@@ -1569,8 +1569,8 @@ bool s_AreFeatureLabelsSame(const CSeq_feat_Handle& feat, const CSeq_feat_Handle
         feat.IsSetComment() ? feat.GetComment() : kEmptyStr;
     const string& prev_comment =
         prev.IsSetComment() ? prev.GetComment() : kEmptyStr;
-    string curr_label = "";
-    string prev_label = "";
+    string curr_label;
+    string prev_label;
 
     feature::GetLabel(*(feat.GetSeq_feat()),
         &curr_label, feature::fFGL_Content, &(feat.GetScope()));
@@ -1669,7 +1669,7 @@ bool s_AreFullLengthCodingRegionsWithDifferentFrames (const CSeq_feat_Handle& f1
 // never used, because different variations generate different labels
 string s_ReplaceListFromQuals(const CSeq_feat::TQual& quals)
 {
-    string replace = "";
+    string replace;
     ITERATE(CSeq_feat::TQual, q, quals) {
         if ((*q)->IsSetQual() && NStr::Equal((*q)->GetQual(), "replace") && (*q)->IsSetVal()) {
             if (NStr::IsBlank((*q)->GetVal())) {
@@ -1970,7 +1970,7 @@ bool HasMisSpellFlag (const CT3Data& data)
 
 bool FindMatchInOrgRef (const string& str, const COrg_ref& org)
 {
-    string match = "";
+    string match;
 
     if (NStr::IsBlank(str)) {
         // do nothing;
@@ -2073,7 +2073,7 @@ string SpecificHostValueToCheck(const string& val)
 
 string InterpretSpecificHostResult(const string& host, const CT3Reply& reply, const string& orig_host)
 {
-    string err_str = "";
+    string err_str;
     if (reply.IsError()) {
         err_str = "?";
         if (reply.GetError().IsSetMessage()) {
@@ -2253,7 +2253,7 @@ void FixGeneticCode(CCdregion& cdr)
 
 string TranslateCodingRegionForValidation(const CSeq_feat& feat, CScope &scope, bool& alt_start)
 {
-    string transl_prot = kEmptyStr;
+    string transl_prot;
     CRef<CSeq_feat> tmp_cds(new CSeq_feat());
     tmp_cds->Assign(feat);
     FixGeneticCode(tmp_cds->SetData().SetCdregion());

@@ -47,7 +47,7 @@ CSeqIdGuesser::CSeqIdGuesser(CSeq_entry_Handle entry) : m_SeqEntry(entry)
     // to do: build up table of strings and seq-ids
     CBioseq_CI bi(m_SeqEntry);
     while (bi) {
-        string local = "";
+        string local;
         ITERATE(CBioseq::TId, id, bi->GetCompleteBioseq()->GetId()) {
             if ((*id)->IsLocal()) {
                 if ((*id)->GetLocal().IsId()) {
@@ -79,7 +79,7 @@ CSeqIdGuesser::CSeqIdGuesser(CSeq_entry_Handle entry) : m_SeqEntry(entry)
             } else if ((*id)->IsGeneral()) {
                 const CDbtag& dbtag = (*id)->GetGeneral();
                 if (dbtag.IsSetDb() && dbtag.IsSetTag()) {
-                    string tag_str = "";
+                    string tag_str;
                     if (dbtag.GetTag().IsId()) {
                         tag_str = NStr::NumericToString(dbtag.GetTag().GetId());
                     } else {
@@ -133,7 +133,7 @@ vector<string> CSeqIdGuesser::GetIdStrings(CBioseq_Handle bsh)
 {
     vector<string> id_str;
 
-    string local = "";
+    string local;
     ITERATE(CBioseq::TId, id, bsh.GetCompleteBioseq()->GetId()) {
         if ((*id)->IsLocal()) {
             if ((*id)->GetLocal().IsId()) {
@@ -144,7 +144,7 @@ vector<string> CSeqIdGuesser::GetIdStrings(CBioseq_Handle bsh)
         }
     }
     ITERATE(CBioseq::TId, id, bsh.GetCompleteBioseq()->GetId()) {
-        string label = "";
+        string label;
         (*id)->GetLabel(&label);
         id_str.push_back(label);
         label = "";
@@ -158,7 +158,7 @@ vector<string> CSeqIdGuesser::GetIdStrings(CBioseq_Handle bsh)
         } else if ((*id)->IsGeneral()) {
             const CDbtag& dbtag = (*id)->GetGeneral();
             if (dbtag.IsSetDb() && dbtag.IsSetTag()) {
-                string tag_str = "";
+                string tag_str;
                 if (dbtag.GetTag().IsId()) {
                     tag_str = NStr::NumericToString(dbtag.GetTag().GetId());
                 } else {

@@ -500,7 +500,7 @@ size_t CCDSTranslationProblems::x_CheckCDSFrame(const CSeq_feat& feat, CScope* s
     const CCdregion& cdregion = feat.GetData().GetCdregion();
     const CSeq_loc& location = feat.GetLocation();
     unsigned int part_loc = SeqLocPartialCheck(location, scope);
-    string comment_text = "";
+    string comment_text;
     if (feat.IsSetComment()) {
         comment_text = feat.GetComment();
     }
@@ -717,7 +717,7 @@ CCDSTranslationProblems::x_GetTranslExceptProblems
             tmp_cds->SetLocation().Assign((*cbr)->GetLoc());
             tmp_cds->SetLocation().SetPartialStart(true, eExtreme_Biological);
             tmp_cds->SetLocation().SetPartialStop(true, eExtreme_Biological);
-            string cb_trans = "";
+            string cb_trans;
             try {
                 CSeqTranslator::Translate(*tmp_cds, *scope, cb_trans,
                     true,   // include stop codons
@@ -729,7 +729,7 @@ CCDSTranslationProblems::x_GetTranslExceptProblems
 
             unsigned char ex = 0;
             vector<char> seqData;
-            string str = "";
+            string str;
             bool not_set = false;
 
             switch ((*cbr)->GetAa().Which()) {
@@ -754,7 +754,7 @@ CCDSTranslationProblems::x_GetTranslExceptProblems
             }
 
             if (!not_set) {
-                string except_char = "";
+                string except_char;
                 except_char += ex;
 
                 //At the beginning of the CDS

@@ -3664,7 +3664,7 @@ void CWordPairIndexer::PopulateWordPairIndex (string str)
     // split terms at spaces
     list<string> terms;
     NStr::Split( str, " ", terms, NStr::fSplit_Tokenize );
-    string prev = "";
+    string prev;
     ITERATE( list<string>, it, terms ) {
         string curr = NStr::TruncateSpaces( *it );
         // allow parentheses in chemical formula

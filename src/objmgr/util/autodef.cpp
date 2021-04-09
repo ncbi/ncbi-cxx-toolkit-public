@@ -689,7 +689,7 @@ string CAutoDef::x_GetFeatureClauses(const CBioseq_Handle& bh)
 
 string OrganelleByGenome(unsigned int genome_val)
 {
-    string organelle = "";
+    string organelle;
     switch (genome_val) {
         case CBioSource::eGenome_macronuclear:
             organelle = "macronuclear";
@@ -802,8 +802,8 @@ string CAutoDef::x_GetFeatureClauseProductEnding(const string& feature_clauses,
     }
 
     unsigned int genome_val = CBioSource::eGenome_unknown;
-    string genome_from_mods = "";
- 
+    string genome_from_mods;
+
     for (CSeqdesc_CI dit(bh, CSeqdesc::e_Source); dit;  ++dit) {
         const CBioSource& bsrc = dit->GetSource();
         if (bsrc.CanGetGenome()) {
@@ -861,7 +861,7 @@ string CAutoDef::x_GetFeatureClauseProductEnding(const string& feature_clauses,
 
 string CAutoDef::x_GetNonFeatureListEnding()
 {
-    string end = "";
+    string end;
     switch (m_Options.GetFeatureListType())
     {
         case CAutoDefOptions::eCompleteSequence:
@@ -918,10 +918,9 @@ bool IsInGenProdSet(CBioseq_Handle bh)
 
 string CAutoDef::x_GetOneNonFeatureClause(CBioseq_Handle bh, unsigned int genome_val)
 {
-    string feature_clauses = "";
+    string feature_clauses;
+    string organelle;
 
-    string organelle = "";
-        
     if (m_Options.GetFeatureListType() != CAutoDefOptions::eSequence
         || genome_val == CBioSource::eGenome_apicoplast
         || genome_val == CBioSource::eGenome_chloroplast
@@ -934,7 +933,7 @@ string CAutoDef::x_GetOneNonFeatureClause(CBioseq_Handle bh, unsigned int genome
     if (!NStr::IsBlank(organelle)) {
         feature_clauses = " " + organelle;
     } else if (m_Options.GetFeatureListType() == CAutoDefOptions::eSequence) {
-        string biomol = "";
+        string biomol;
         CSeqdesc_CI mi(bh, CSeqdesc::e_Molinfo);
         if (mi && mi->GetMolinfo().IsSetBiomol()) {
             if (mi->GetMolinfo().GetBiomol() == CMolInfo::eBiomol_mRNA) {
@@ -955,7 +954,7 @@ string CAutoDef::x_GetOneNonFeatureClause(CBioseq_Handle bh, unsigned int genome
 
 string CAutoDef::GetOneFeatureClauseList(CBioseq_Handle bh, unsigned int genome_val)
 {
-    string feature_clauses = "";
+    string feature_clauses;
     if (m_Options.GetFeatureListType() == CAutoDefOptions::eListAllFeatures ||
         (IsBioseqmRNA(bh) && IsInGenProdSet(bh))) {
         feature_clauses = x_GetFeatureClauses(bh);
@@ -987,7 +986,7 @@ string CAutoDef::GetOneFeatureClauseList(CBioseq_Handle bh, unsigned int genome_
 
 string CAutoDef::GetKeywordPrefix(CBioseq_Handle bh)
 {
-    string keyword = kEmptyStr;
+    string keyword;
 
     CSeqdesc_CI gb(bh, CSeqdesc::e_Genbank);
     if (gb) {
@@ -1124,7 +1123,7 @@ CConstRef<CUser_object> s_GetOptionsForSet(CBioseq_set_Handle set)
 
 string CAutoDef::RegenerateDefLine(CBioseq_Handle bh)
 {
-    string defline = kEmptyStr;
+    string defline;
     if (bh.IsAa()) {
         return kEmptyStr;
     }
@@ -1209,10 +1208,10 @@ bool CAutoDef::x_IsHumanSTR(const CUser_object& obj)
 
 string CAutoDef::x_GetHumanSTRFeatureClauses(CBioseq_Handle bh, const CUser_object& comment)
 {
-    string locus_name = kEmptyStr;
-    string allele = kEmptyStr;
-    string repeat = kEmptyStr;
-    string assay = kEmptyStr;
+    string locus_name;
+    string allele;
+    string repeat;
+    string assay;
 
     if (comment.IsSetData()) {
         ITERATE(CUser_object::TData, it, comment.GetData()) {

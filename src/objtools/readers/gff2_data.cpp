@@ -1144,7 +1144,7 @@ bool CGff2Record::xInitFeatureData(
             }
          }
         // regardless of gbkey (rw-1062)
-        string name = "";
+        string name;
         GetAttribute("Name", name);
         pFeature->SetData().SetRegion(name);
         return true;

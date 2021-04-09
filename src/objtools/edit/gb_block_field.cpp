@@ -219,7 +219,7 @@ CGBBlockField::EGBBlockFieldType CGBBlockField::GetTypeForLabel(string label)
 
 string CGBBlockField::GetLabelForType(EGBBlockFieldType field_type)
 {
-    string rval = "";
+    string rval;
     switch (field_type) {
         case eGBBlockFieldType_Keyword:
             rval = kGenbankBlockKeyword;

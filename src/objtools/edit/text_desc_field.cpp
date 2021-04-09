@@ -203,7 +203,7 @@ bool CCommentDescField::SetVal(CObject& object, const string& val, EExistingText
     if (!obj_desc) {
         return false;
     }
-    string curr_val = "";
+    string curr_val;
     if (obj_desc->IsComment()) {
         curr_val = obj_desc->GetComment();
     }
@@ -261,7 +261,7 @@ bool CDefinitionLineField::SetVal(CObject& object, const string& val, EExistingT
     if (!obj_desc) {
         return false;
     }
-    string curr_val = "";
+    string curr_val;
     if (obj_desc->IsTitle()) {
         curr_val = obj_desc->GetTitle();
     }

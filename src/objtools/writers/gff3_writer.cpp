@@ -1163,13 +1163,13 @@ struct SCompareAlignments {
             const CSeq_align& align = *(p.first);
             const string alignId = p.second;
 
-            string subject_accession = "";
+            string subject_accession;
             try {
                 subject_accession = sequence::GetAccessionForId(align.GetSeq_id(1), scope);
             } catch (...) {
             }
 
-            string target_accession = "";
+            string target_accession;
             try {
                 target_accession = sequence::GetAccessionForId(align.GetSeq_id(0), scope);
             } catch (...) {

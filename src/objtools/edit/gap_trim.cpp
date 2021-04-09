@@ -533,9 +533,9 @@ vector<CRef<CSeq_feat> > CFeatGapInfo::AdjustForRelevantGapIntervals(bool make_p
 
             // adjust transcript id if splitting
             size_t transcript_id_offset = 0;
-            string transcript_id_label = kEmptyStr;
+            string transcript_id_label;
             size_t protein_id_offset = 0;
-            string protein_id_label = kEmptyStr;
+            string protein_id_label;
             int protein_seqid_offset = 0;
             string protein_seqid_label;
 

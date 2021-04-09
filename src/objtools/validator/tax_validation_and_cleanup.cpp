@@ -509,7 +509,7 @@ CQualLookupMap::TQualifierRequests::iterator CQualLookupMap::x_FindRequest(const
 
 string CQualLookupMap::IncrementalUpdate(const vector<CRef<COrg_ref> >& input, const CTaxon3_reply& reply)
 {
-    string error_message = kEmptyStr;
+    string error_message;
     CTaxon3_reply::TReply::const_iterator reply_it = reply.GetReply().begin();
     vector<CRef<COrg_ref> >::const_iterator rq_it = input.begin();
 
@@ -1370,7 +1370,7 @@ bool CTaxValidationAndCleanup::IsOneSpecificHostValid(const string& val, string&
     taxon3.Init();
     CRef<CTaxon3_reply> tmp_spec_host_reply = taxon3.SendOrgRefList(spec_host_rq);
 
-    string err_msg = kEmptyStr;
+    string err_msg;
     if (tmp_spec_host_reply) {
         err_msg = IncrementalSpecificHostMapUpdate(spec_host_rq, *tmp_spec_host_reply);
     } else {
@@ -1427,7 +1427,7 @@ void CTaxValidationAndCleanup::CheckOneOrg(const COrg_ref& org, int genome, CVal
 
     if (!org_rq_list.empty()) {
         reply = taxon3.SendOrgRefList(org_rq_list);
-        string err_msg = kEmptyStr;
+        string err_msg;
         if (reply) {
             err_msg = IncrementalSpecificHostMapUpdate(org_rq_list, *reply);
         } else {

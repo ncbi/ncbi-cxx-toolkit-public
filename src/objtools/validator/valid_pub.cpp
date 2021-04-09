@@ -747,14 +747,14 @@ void CValidError_imp::ValidateAuthorList
             }
             if ( (*name)->GetName().IsName() ) {
                 const CName_std& nstd = (*name)->GetName().GetName();
-                string last = "";
+                string last;
                 if (nstd.IsSetLast()) {
                     last = nstd.GetLast();
                     NStr::ReplaceInPlace (last, ".", " ");
                     NStr::ReplaceInPlace (last, "  ", " ");
                     NStr::TruncateSpacesInPlace (last);
                 }
-                string initials = "";
+                string initials;
                 if (nstd.IsSetInitials()) {
                     initials = nstd.GetInitials();
                     NStr::ReplaceInPlace (initials, ".", " ");

@@ -556,15 +556,15 @@ struct SFlybaseCompareAlignments {
             return false;
         }
 
-        string subject_accession1 = "";
+        string subject_accession1;
         try {
-                subject_accession1 = sequence::GetAccessionForId(align1->GetSeq_id(0), m_Scope);
+            subject_accession1 = sequence::GetAccessionForId(align1->GetSeq_id(0), m_Scope);
         } catch (...) {
         }
 
-        string subject_accession2 = "";
+        string subject_accession2;
         try {
-                subject_accession2 = sequence::GetAccessionForId(align2->GetSeq_id(0), m_Scope);
+            subject_accession2 = sequence::GetAccessionForId(align2->GetSeq_id(0), m_Scope);
         } catch (...) {
         }
 
@@ -573,13 +573,13 @@ struct SFlybaseCompareAlignments {
             const CSeq_align& align = *(p.first);
             const string alignId = p.second;
 
-            string subject_accession = "";
+            string subject_accession;
             try {
                 subject_accession = sequence::GetAccessionForId(align.GetSeq_id(0), scope);
             } catch (...) {
             }
 
-            string target_accession = "";
+            string target_accession;
             try {
                 target_accession = sequence::GetAccessionForId(align.GetSeq_id(1), scope);
             } catch (...) {

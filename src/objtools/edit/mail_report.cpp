@@ -67,7 +67,7 @@ CRef<CSeq_table> MakeMailReportPreReport(CSeq_entry_Handle seh)
 
     for (CBioseq_CI bi(seh, CSeq_inst::eMol_na); bi; ++bi) {
         CSeqdesc_CI di(*bi, CSeqdesc::e_Source);
-        string taxname = "";
+        string taxname;
         if (di && di->GetSource().IsSetOrg() && di->GetSource().GetOrg().IsSetTaxname()) {
             taxname = di->GetSource().GetOrg().GetTaxname();
         }
@@ -99,7 +99,7 @@ void MakeMailReportPostReport(CSeq_table& table, CScope& scope)
     vector<CRef<COrg_ref> > org_ref_list;
     ITERATE(CSeqTable_column::TData::TId, id_it, table.GetColumns()[0]->GetData().GetId()) {
         CBioseq_Handle bsh = scope.GetBioseqHandle(**id_it);
-        string taxname = "";
+        string taxname;
         int taxid = 0;
         CRef<COrg_ref> org(new COrg_ref());
         CSeqdesc_CI di(bsh, CSeqdesc::e_Source);        

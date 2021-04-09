@@ -62,7 +62,7 @@ unsigned char GetCodeBreakCharacter(const CCode_break& cbr)
 {
     unsigned char ex = 0;
     vector<char> seqData;
-    string str = "";
+    string str;
 
     if (!cbr.IsSetAa()) {
         return ex;
@@ -792,7 +792,7 @@ bool TruncateCDSAtStop(CSeq_feat& cds, CScope& scope)
     CRef<CBioseq> bioseq = CSeqTranslator::TranslateToProtein (cds, scope);
     if (bioseq) {
         CRef<CSeq_loc> new_loc(NULL);
-        string prot_str = "";
+        string prot_str;
         CSeqTranslator::Translate(cds, scope, prot_str);
         size_t pos = NStr::Find(prot_str, "*");
         if (pos != string::npos) {

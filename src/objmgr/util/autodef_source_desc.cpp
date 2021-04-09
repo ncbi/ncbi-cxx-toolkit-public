@@ -194,7 +194,7 @@ int CAutoDefSourceDescription::Compare(const CAutoDefSourceDescription& s) const
 
 string CAutoDefSourceDescription::GetComboDescription(IAutoDefCombo *mod_combo)
 {
-    string desc = "";
+    string desc;
     if (mod_combo) {
         return mod_combo->GetSourceDescriptionString(m_BS);
     } else {

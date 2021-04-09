@@ -2135,8 +2135,8 @@ void CDeflineGenerator::x_SetTitleFromProteinIdx (
 
             int offset = 0;
             int delta = 0;
-            string comma = "";
-            string isoform = "";
+            string comma;
+            string isoform;
             if (NStr::StartsWith (m_MainTitle, "hypothetical protein")) {
                 offset = 20;
             } else if (NStr::StartsWith (m_MainTitle, "uncharacterized protein")) {
@@ -2339,8 +2339,8 @@ void CDeflineGenerator::x_SetTitleFromProtein (
 
             int offset = 0;
             int delta = 0;
-            string comma = "";
-            string isoform = "";
+            string comma;
+            string isoform;
             if (NStr::StartsWith (m_MainTitle, "hypothetical protein")) {
                 offset = 20;
             } else if (NStr::StartsWith (m_MainTitle, "uncharacterized protein")) {
@@ -3944,7 +3944,7 @@ string CDeflineGenerator::GenerateDefline (
     // calculate suffix
     x_SetSuffix (suffix, bsh, appendComplete);
 
-    string mag = "";
+    string mag;
     if (! m_MetaGenomeSource.empty()) {
         mag = "MAG ";
     }

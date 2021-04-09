@@ -725,8 +725,8 @@ CFlatInferenceQVal::CFlatInferenceQVal( const string& gbValue ) :
     //  legal replacement for "non-experimental ...", and leave it alone 
     //  otherwise.
     //
-    string prefix = "";
-    string remainder = "";
+    string prefix;
+    string remainder;
     CInferencePrefixList::GetPrefixAndRemainder (gbValue, prefix, remainder);
     if (!NStr::IsBlank(prefix)) {
         m_str = gbValue;
@@ -1277,7 +1277,7 @@ void CFlatSubSourcePrimer::Format(
     for ( size_t i=0; i < fwd_seqs.size(); ++i ) {
 
         string value;
-        string sep = "";
+        string sep;
         if ( i < fwd_names.size() ) {
             value += sep + "fwd_name: ";
             value += fwd_names[i];
@@ -1643,7 +1643,7 @@ void CFlatModelEvQVal::Format
     if( num_mrna > 0  ||  num_est > 0  ||  num_prot > 0 || num_long_sra > 0 )
     {
         text << section_prefix;
-        string prefix = "";
+        string prefix;
         if (num_mrna > 0) {
             text << prefix << num_mrna << " mRNA";
             if (num_mrna > 1) {

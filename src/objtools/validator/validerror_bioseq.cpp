@@ -3750,7 +3750,7 @@ void CValidError_bioseq::ValidateRawConst(
                 // if possible, get gene and protein names
                 CBioseq_Handle bsh = m_Scope->GetBioseqHandle (seq);
                 // First get gene label
-                string gene_label = "";
+                string gene_label;
                 try {
                     const CSeq_feat* cds = GetCDSForProduct(bsh);
                     if (cds) {
@@ -3762,7 +3762,7 @@ void CValidError_bioseq::ValidateRawConst(
                 } catch (...) {
                 }
                 // get protein label
-                string protein_label = "";
+                string protein_label;
                 try {
                     CCacheImpl::SFeatKey prot_key(
                         CSeqFeatData::e_Prot, CCacheImpl::kAnyFeatSubtype, bsh);
@@ -4967,7 +4967,7 @@ void CValidError_bioseq::CheckForMolinfoOnBioseq(const CBioseq& seq)
 
 void CValidError_bioseq::CheckForPubOnBioseq(const CBioseq& seq)
 {
-    string label = "";
+    string label;
     seq.GetLabel(&label, CBioseq::eBoth);
 
     if ( !m_CurrentHandle ) {
@@ -5859,7 +5859,7 @@ void CValidError_bioseq::ValidateFeatPartialInContext (
         return;
     }
 
-    string except_text = "";
+    string except_text;
     bool no_nonconsensus_except = true;
     if (feat.IsSetExcept_text()) {
         except_text = feat.GetExcept_text();
@@ -5873,7 +5873,7 @@ void CValidError_bioseq::ValidateFeatPartialInContext (
         }
     }
 
-    string comment_text = "";
+    string comment_text;
     if (feat.IsSetComment()) {
         comment_text = feat.GetComment();
     }
@@ -5987,7 +5987,7 @@ void CValidError_bioseq::ValidateSeqFeatContext(
     const CBioseq& seq, bool is_complete)
 {
     // test
-    string accession = "";
+    string accession;
     FOR_EACH_SEQID_ON_BIOSEQ (it, seq) {
         if ((*it)->IsGenbank()) {
             if ((*it)->GetGenbank().IsSetAccession()) {
@@ -6417,7 +6417,7 @@ TGi GetGIForSeqId(const CSeq_id& id, CScope& scope)
 
 string s_GetMrnaProteinLink(const CUser_field& field)
 {
-    string ml = kEmptyStr;
+    string ml;
     if (field.IsSetLabel() && field.GetLabel().IsStr() &&
         NStr::Equal(field.GetLabel().GetStr(), "protein seqID") &&
         field.IsSetData() && field.GetData().IsStr()) {
@@ -6429,7 +6429,7 @@ string s_GetMrnaProteinLink(const CUser_field& field)
 
 string s_GetMrnaProteinLink(const CUser_object& user)
 {
-    string ml = kEmptyStr;
+    string ml;
     if (user.IsSetType() && user.GetType().IsStr() &&
         NStr::Equal(user.GetType().GetStr(), "MrnaProteinLink") &&
         user.IsSetData()) {
@@ -6446,8 +6446,7 @@ string s_GetMrnaProteinLink(const CUser_object& user)
 
 string s_GetMrnaProteinLink(const CSeq_feat &mrna)
 {
-    string ml = kEmptyStr;
-
+    string ml;
     if (mrna.IsSetExt()) {
         ml = s_GetMrnaProteinLink(mrna.GetExt());
     }
@@ -6767,7 +6766,7 @@ bool CCdsMatchInfo::AssignOverlapMatch(TmRNAList& unmatched_mrnas, CScope& scope
 
 string s_GetMrnaProductString(const CSeq_feat& mrna)
 {
-    string product_string = "";
+    string product_string;
 
     if (!mrna.IsSetProduct()) {
         return product_string;
@@ -6896,7 +6895,7 @@ bool s_GeneralTagsMatch(const string& protein_id, const CDbtag& dbtag)
         return false;
     }
     size_t end_pos = NStr::Find(protein_id, "|", start_pos + 1);
-    string prot_tag = kEmptyStr;
+    string prot_tag;
     if (end_pos == string::npos) {
         prot_tag = protein_id.substr(start_pos + 1);
     } else {
@@ -6977,9 +6976,9 @@ void CValidError_bioseq::x_CheckOrigProteinAndTranscriptIds(const CCdsMatchInfo&
     }
     const auto& mrna_feat = cds_match.GetMatch().GetSeqfeat();
     const auto& cds_feat = cds_match.GetSeqfeat();
-    string cds_transcript_id = kEmptyStr;
-    string mrna_transcript_id = kEmptyStr;
-    string mrna_protein_id = kEmptyStr;
+    string cds_transcript_id;
+    string mrna_transcript_id;
+    string mrna_protein_id;
     bool must_reconcile = false;
     if (mrna_feat.IsSetQual()) {
         ITERATE(CSeq_feat::TQual, q, mrna_feat.GetQual()) {
@@ -7661,7 +7660,7 @@ static ERnaPosition s_RnaPosition (const CSeq_feat& feat)
             rval = e_RnaPosition_RIGHT_RIBOSOMAL_SUBUNIT;
         }
     } else if (rna.GetType() == CRNA_ref::eType_other || rna.GetType() == CRNA_ref::eType_miscRNA) {
-        string product = "";
+        string product;
         if (rna.GetExt().IsName()) {
             product = rna.GetExt().GetName();
             if (NStr::EqualNocase (product, "misc_RNA")) {
@@ -8060,7 +8059,7 @@ void CValidError_bioseq::x_ReportOverlappingPeptidePair (CSeq_feat_Handle f1, CS
             try {
                 const CSeq_feat* cds = m_Imp.GetCDSGivenProduct(bioseq);
                 if (cds != NULL) {
-                    string cds_loc = "";
+                    string cds_loc;
                     const CSeq_id* id = cds->GetLocation().GetId();
                     if (id != NULL) {
                         CBioseq_Handle bsh = m_Scope->GetBioseqHandle(*id);
@@ -8407,7 +8406,7 @@ void CValidError_bioseq::CheckForMultipleStructuredComments(const CBioseq& seq)
 
     sort(sc_prefixes.begin(), sc_prefixes.end());
     int num_seen = 0;
-    string previous = "";
+    string previous;
     ITERATE(vector<string>, it, sc_prefixes) {
         if (NStr::EqualNocase(previous, *it)) {
             num_seen++;
@@ -8674,8 +8673,8 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
       int tech = -1, completeness = -1;
     CConstRef<COrg_ref> org;
 
-      string name_str = "";
-      string comment_str = "";
+    string name_str;
+    string comment_str;
 
     bool is_genome_assembly = false;
     bool is_assembly = false;
@@ -8951,8 +8950,7 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
                     }
                 }
                 if (is_refseq) {
-                    string taxname = "";
-
+                    string taxname;
                     CSeqdesc_CI src_i(m_CurrentHandle, CSeqdesc::e_Source);
                     if (src_i && src_i->GetSource().IsSetOrg() && src_i->GetSource().GetOrg().IsSetTaxname()) {
                         taxname = src_i->GetSource().GetOrg().GetTaxname();
@@ -9468,7 +9466,7 @@ void CValidError_bioseq::x_ReportLineageConflictWithMol(
         }
     }
 
-    string mssg = "";
+    string mssg;
     if (NStr::FindNoCase(stranded_mol, "ssRNA") != NPOS) {
         mssg = "single-stranded RNA";
     } else if (NStr::FindNoCase(stranded_mol, "dsRNA") != NPOS) {
@@ -10118,7 +10116,7 @@ void CValidError_bioseq::x_CompareStrings
             continue;
         }
 
-        string message = "";
+        string message;
         if (NStr::Equal (*strp, it->first)) {
             message = "Colliding " + type + " in gene features";
         } else if (NStr::EqualNocase (*strp, it->first)) {

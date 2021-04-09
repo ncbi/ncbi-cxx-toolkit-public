@@ -627,7 +627,7 @@ bool s_IsAllCaps(const string& str)
 
 string s_GetInitials(vector<string>& tokens)
 {
-    string init = "";
+    string init;
     if (tokens.size() > 1) {
         string val = tokens.back();
         if (s_IsAllCaps(val)) {
@@ -650,7 +650,7 @@ CRef<CAuthor> StdAuthorFromMl(const string& val)
     CRef<CAuthor> new_auth(new CAuthor());
     vector<string> tokens;
     NStr::Split(val, " ", tokens);
-    string suffix = "";
+    string suffix;
     string init = s_GetInitials(tokens);
     if (NStr::IsBlank(init) && tokens.size() > 1) {
         suffix = tokens.back();

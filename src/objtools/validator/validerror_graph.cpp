@@ -135,7 +135,7 @@ bool CValidError_graph::x_ValidateGraphLocation (const CSeq_graph& graph)
             GetCache().GetBioseqHandleFromLocation(
                 m_Scope, loc, m_Imp.GetTSE_Handle());
         if (!bsh) {
-            string label = "";
+            string label;
             if (loc.GetId() != 0) {
                loc.GetId()->GetLabel(&label, CSeq_id::eContent);
             }

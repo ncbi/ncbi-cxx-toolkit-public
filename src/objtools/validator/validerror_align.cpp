@@ -812,7 +812,7 @@ bool CValidError_align::x_ValidateDim
                      "Dim: This alignment has dimension zero", align);
         }
     } else if (obj.GetDim() == 1) {
-        string msg = "";
+        string msg;
         EErrType et;
         if (part > 0) {
             et = eErr_SEQ_ALIGN_SegsDimOne;
@@ -1075,7 +1075,7 @@ CValidError_align::TSegmentGapV CValidError_align::FindSegmentGaps(const TDenseg
         }
         if (seggap) {
             // no sequence is present in this segment
-            string label = "";
+            string label;
             if (denseg.IsSetIds() && denseg.GetIds().size() > 0) {
                 denseg.GetIds()[0]->GetLabel(&label, CSeq_id::eContent);
             }
@@ -1140,7 +1140,7 @@ CValidError_align::TSegmentGapV CValidError_align::FindSegmentGaps(const TPacked
         }
         if (id == dim) {
             // no sequence is present in this segment
-            string label = "";
+            string label;
             if (packed.IsSetIds() && packed.GetIds().size() > 0) {
                 packed.GetIds()[0]->GetLabel(&label, CSeq_id::eContent);
             }
@@ -1176,7 +1176,7 @@ CValidError_align::TSegmentGapV CValidError_align::FindSegmentGaps(const TStd& s
     ITERATE(TStd, stdseg, std_segs) {
         bool gap = true;
         size_t len = 0;
-        string label = "";
+        string label;
         ITERATE(CStd_seg::TLoc, loc, (*stdseg)->GetLoc()) {
             if (!(*loc)->IsEmpty() && !(*loc)->IsNull()) {
                 gap = false;
@@ -1218,7 +1218,7 @@ CValidError_align::TSegmentGapV CValidError_align::FindSegmentGaps(const TDendia
     TSeqPos align_pos = 1;
     ITERATE(TDendiag, diag_seg, dendiags) {
         if (!(*diag_seg)->IsSetDim() || (*diag_seg)->GetDim() == 0) {
-            string label = "";
+            string label;
             if ((*diag_seg)->IsSetIds() && (*diag_seg)->GetIds().size() > 0) {
                 (*diag_seg)->GetIds().front()->GetLabel(&label);
             }

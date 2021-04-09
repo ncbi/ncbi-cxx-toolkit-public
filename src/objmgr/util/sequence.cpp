@@ -3321,7 +3321,7 @@ void
 CFastaOstream::SGapModText::WriteAllModsAsFasta(
     CNcbiOstream & out ) const
 {
-    string sPrefix = kEmptyStr;
+    string sPrefix;
     if( ! gap_type.empty() ) {
         out << sPrefix << "[gap-type=" << gap_type << ']';
         sPrefix = " ";

@@ -594,14 +594,14 @@ bool CAutoDefParsedtRNAClause::ParseString(string comment, string& gene_name, st
 
 CAutoDefParsedtRNAClause *s_tRNAClauseFromNote(CBioseq_Handle bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc, string comment, bool is_first, bool is_last, const CAutoDefOptions& opts)
 {
-    string product_name = "";
-    string gene_name = "";
-    if (!CAutoDefParsedtRNAClause::ParseString(comment, gene_name, product_name))  {
+    string product_name;
+    string gene_name;
+    if (!CAutoDefParsedtRNAClause::ParseString(comment, gene_name, product_name)) {
         return NULL;
     }
-         
+
     return new CAutoDefParsedtRNAClause(bh, cf, mapped_loc, gene_name, product_name, is_first, is_last, opts);
-}        
+}
 
 
 string CAutoDefFeatureClause::x_GetGeneName(const CGene_ref& gref, bool suppress_locus_tag) const
@@ -1540,8 +1540,8 @@ CAutoDefNcRNAClause::~CAutoDefNcRNAClause()
 
 bool CAutoDefNcRNAClause::x_GetProductName(string &product_name)
 {
-    string ncrna_product = "";
-    string ncrna_class = "";
+    string ncrna_product;
+    string ncrna_class;
     if (m_MainFeat.IsSetData() && m_MainFeat.GetData().IsRna()
         && m_MainFeat.GetData().GetRna().IsSetExt()) {
         const CRNA_ref::TExt& ext = m_MainFeat.GetData().GetRna().GetExt();
@@ -1857,7 +1857,7 @@ CAutoDefIntergenicSpacerClause::CAutoDefIntergenicSpacerClause(CBioseq_Handle bh
                   : CAutoDefFeatureClause(bh, main_feat, mapped_loc, opts)
 {
 
-    string comment = kEmptyStr;
+    string comment;
     if (m_MainFeat.IsSetComment()) {
         comment = m_MainFeat.GetComment();
     }

@@ -2399,7 +2399,7 @@ bool CCleanup::AddPartialToProteinTitle(CBioseq &bioseq)
     // gather some info from the Seqdesc's on the bioseq, into
     // the following variables
     bool bPartial = false;
-    string organelle = kEmptyStr;
+    string organelle;
 
     CConstRef<CSeqdesc> molinfo_desc(NULL);
     CConstRef<CSeqdesc> src_desc(NULL);
@@ -3103,7 +3103,7 @@ void s_GetAuthorsString(string *out_authors, const CAuth_list& auth_list)
     if (auth_list.GetNames().IsStd()) {
         ITERATE(CAuth_list::TNames::TStd, auth_it, auth_list.GetNames().GetStd()) {
             if ((*auth_it)->IsSetName()) {
-                string label = "";
+                string label;
                 (*auth_it)->GetName().GetLabel(&label);
                 name_list.push_back(label);
             }
@@ -3157,7 +3157,7 @@ vector<TEntrezId>& pmids, vector<TEntrezId>& muids, vector<int>& serials,
 vector<string>& published_labels,
 vector<string>& unpublished_labels)
 {
-    string label = "";
+    string label;
     bool   is_published = false;
     bool   need_label = false;
 

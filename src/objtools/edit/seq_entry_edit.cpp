@@ -1551,7 +1551,7 @@ string LabelFromType(CSeq_id::E_Choice choice)
 
 string MakeOriginalLabelForId(const CSeq_id& id)
 {
-    string val = kEmptyStr;
+    string val;
     switch (id.Which()) {
     case CSeq_id::e_Local:
         if (id.GetLocal().IsStr()) {
@@ -1840,8 +1840,8 @@ void ConvertRawToDeltaByNs(CSeq_inst& inst,
             return;
             break;
     }
-  
-    string element = "";
+
+    string element;
     size_t n_len = 0;
     ITERATE(string, it, iupacna) {
         if ((*it) == 'N') {
@@ -3523,7 +3523,7 @@ string GetTargetedLocusName(const CRNA_ref& rna)
 
 string GetTargetedLocusName(const CSeq_feat& feat)
 {
-    string tln = kEmptyStr;
+    string tln;
     if (feat.IsSetData()) {
         switch (feat.GetData().Which()) {
         case CSeqFeatData::e_Prot:
@@ -3570,7 +3570,7 @@ string GetTargetedLocusName(const CSeq_feat& feat)
 
 string GetTargetedLocusName(const CSeq_feat& cds, CScope& scope)
 {
-    string tls = kEmptyStr;
+    string tls;
     CConstRef <CSeq_feat> gene_for_feat = sequence::GetGeneForFeature(cds, scope);
     if (gene_for_feat) {
         tls = GetTargetedLocusName(*gene_for_feat);
@@ -3591,7 +3591,7 @@ string GetTargetedLocusName(const CSeq_feat& cds, CScope& scope)
 string GenerateTargetedLocusName(CBioseq_Handle seq)
 {
     CFeat_CI f(seq);
-    string tls = kEmptyStr;
+    string tls;
     bool quit = false;
     while (f && !quit) {
         switch (f->GetData().Which()) {

@@ -120,7 +120,7 @@ ESubmitterFormatErrorGroup CValidErrorFormat::GetSubmitterFormatErrorGroup(CVali
 
 string CValidErrorFormat::GetSubmitterFormatErrorGroupTitle(CValidErrItem::TErrIndex err_code) const
 {
-    string rval = "";
+    string rval;
     switch(err_code) {
         case eErr_SEQ_FEAT_NotSpliceConsensus:
         case eErr_SEQ_FEAT_NotSpliceConsensusDonor:
@@ -161,7 +161,7 @@ string CValidErrorFormat::GetSubmitterFormatErrorGroupTitle(CValidErrItem::TErrI
 
 string CValidErrorFormat::FormatForSubmitterReport(const CValidErrItem& error, CScope& scope) const
 {
-    string rval = "";
+    string rval;
 
     switch (error.GetErrIndex()) {
         case eErr_SEQ_FEAT_NotSpliceConsensus:
@@ -201,7 +201,7 @@ string CValidErrorFormat::FormatForSubmitterReport(const CValidErrItem& error, C
 
 string CValidErrorFormat::x_FormatConsensusSpliceForSubmitterReport(const CValidErrItem& error, CScope& scope) const
 {
-    string rval = "";
+    string rval;
     if (!error.IsSetMsg() || NStr::IsBlank(error.GetMsg())) {
         return rval;
     }
@@ -319,10 +319,10 @@ string CValidErrorFormat::x_FormatGenericForSubmitterReport(const CValidErrItem&
 
 string CValidErrorFormat::x_FormatECNumberForSubmitterReport(const CValidErrItem& error, CScope& scope) const
 {
-    string rval = "";
-    string ec_numbers = "";
-    string prot_name = "";
-    string locus_tag = "";
+    string rval;
+    string ec_numbers;
+    string prot_name;
+    string locus_tag;
 
     // want: accession number for sequence, ec numbers, locus tag, protein name
 
@@ -383,7 +383,7 @@ string CValidErrorFormat::x_FormatECNumberForSubmitterReport(const CValidErrItem
 
 string s_GetSpecificHostFromBioSource(const CBioSource& biosrc)
 {
-    string rval = "";
+    string rval;
 
     if (biosrc.IsSetOrg() && 
         biosrc.GetOrg().IsSetOrgname() &&
@@ -406,8 +406,8 @@ string s_GetSpecificHostFromBioSource(const CBioSource& biosrc)
 
 string CValidErrorFormat::x_FormatBadSpecificHostForSubmitterReport(const CValidErrItem& error) const
 {
-    string rval = "";
-    string spec_host = "";
+    string rval;
+    string spec_host;
     const string kAlternateName = "Specific host value is alternate name: ";
     if (NStr::StartsWith(error.GetMsg(), kAlternateName)) {
         spec_host = error.GetMsg().substr(kAlternateName.length());
@@ -433,7 +433,7 @@ string CValidErrorFormat::x_FormatBadSpecificHostForSubmitterReport(const CValid
 
 string s_GetInstCodeFromBioSource(const CBioSource& biosrc)
 {
-    string rval = "";
+    string rval;
 
     if (biosrc.IsSetOrg() && 
         biosrc.GetOrg().IsSetOrgname() &&
@@ -464,9 +464,9 @@ string s_GetInstCodeFromBioSource(const CBioSource& biosrc)
 
 string CValidErrorFormat::x_FormatBadInstCodeForSubmitterReport(const CValidErrItem& error) const
 {
-    string rval = "";
+    string rval;
 
-    string codes = "";
+    string codes;
     if (error.GetObject().GetThisTypeInfo() == CSeqdesc::GetTypeInfo()) {
         const CSeqdesc* desc = static_cast<const CSeqdesc *>(&(error.GetObject()));
         if (desc && desc->IsSource()) {
@@ -490,7 +490,7 @@ string CValidErrorFormat::x_FormatBadInstCodeForSubmitterReport(const CValidErrI
 
 string CValidErrorFormat::FormatForSubmitterReport(const CValidError& errors, CScope& scope, CValidErrItem::TErrIndex err_code) const
 {
-    string rval = "";
+    string rval;
     for ( CValidError_CI vit(errors); vit; ++vit) {
         if (err_code == vit->GetErrIndex()) {
             string this_val = FormatForSubmitterReport(*vit, scope);
@@ -509,7 +509,7 @@ string CValidErrorFormat::FormatForSubmitterReport(const CValidError& errors, CS
 string CValidErrorFormat::FormatCategoryForSubmitterReport
     (const CValidError& errors, CScope& scope, ESubmitterFormatErrorGroup grp) const
 {
-    string rval = "";
+    string rval;
     for ( CValidError_CI vit(errors); vit; ++vit) {
         CValidErrItem::TErrIndex err_code = vit->GetErrIndex();
         if (GetSubmitterFormatErrorGroup(err_code) == grp) {
@@ -575,8 +575,7 @@ vector<string> CValidErrorFormat::FormatCompleteSubmitterReport(const CValidErro
 
 static string s_GetFeatureIdLabel (const CObject_id& object_id)
 {
-    string feature_id = "";
-
+    string feature_id;
     if (object_id.IsId()) {
         feature_id = NStr::IntToString(object_id.GetId());
     } else if (object_id.IsStr()) {
@@ -588,7 +587,7 @@ static string s_GetFeatureIdLabel (const CObject_id& object_id)
 
 string CValidErrorFormat::GetFeatureIdLabel (const CFeat_id& feat_id)
 {
-    string feature_id = "";
+    string feature_id;
     if (feat_id.IsLocal()) {
         feature_id = s_GetFeatureIdLabel(feat_id.GetLocal());
     } else if (feat_id.IsGeneral()) {
@@ -606,7 +605,7 @@ string CValidErrorFormat::GetFeatureIdLabel (const CFeat_id& feat_id)
 
 string CValidErrorFormat::GetFeatureIdLabel(const CSeq_feat& ft)
 {
-    string feature_id = "";
+    string feature_id;
     if (ft.IsSetId()) {
         feature_id = CValidErrorFormat::GetFeatureIdLabel(ft.GetId());
     } else if (ft.IsSetIds()) {
@@ -637,7 +636,7 @@ static void s_FixBioseqLabelProblems (string& str)
 
 static string s_GetOrgRefContentLabel (const COrg_ref& org)
 {
-    string content = "";
+    string content;
     if (org.IsSetTaxname()) {
         content = org.GetTaxname();
     } else if (org.IsSetCommon()) {
@@ -651,8 +650,7 @@ static string s_GetOrgRefContentLabel (const COrg_ref& org)
 
 static string s_GetBioSourceContentLabel (const CBioSource& bsrc)
 {
-    string content = "";
-
+    string content;
     if (bsrc.IsSetOrg()) {
         content = s_GetOrgRefContentLabel(bsrc.GetOrg());
     }
@@ -662,7 +660,7 @@ static string s_GetBioSourceContentLabel (const CBioSource& bsrc)
 
 static string s_GetFeatureContentLabelExtras (const CSeq_feat& feat)
 {
-    string tlabel = "";
+    string tlabel;
 
     // Put Seq-feat qual into label
     if (feat.IsSetQual()) {
@@ -690,7 +688,7 @@ static string s_GetFeatureContentLabelExtras (const CSeq_feat& feat)
 
 static string s_GetCdregionContentLabel (const CSeq_feat& feat, CRef<CScope> scope)
 {
-    string content = "";
+    string content;
 
     // Check that feature data is Cdregion
     if (!feat.GetData().IsCdregion()) {
@@ -764,7 +762,7 @@ static string s_GetCdregionContentLabel (const CSeq_feat& feat, CRef<CScope> sco
 
 string CValidErrorFormat::GetFeatureContentLabel (const CSeq_feat& feat, CRef<CScope> scope)
 {
-    string content_label = "";
+    string content_label;
 
     switch (feat.GetData().Which()) {
         case CSeqFeatData::e_Pub:
@@ -824,7 +822,7 @@ string CValidErrorFormat::GetFeatureContentLabel (const CSeq_feat& feat, CRef<CS
 
 string CValidErrorFormat::GetFeatureBioseqLabel(const CSeq_feat& ft, CRef<CScope> scope, bool suppress_context)
 {
-    string desc = kEmptyStr;
+    string desc;
     // Append label for bioseq of feature location
     if (!suppress_context && scope) {
         bool find_failed = false;
@@ -868,7 +866,7 @@ string CValidErrorFormat::GetFeatureBioseqLabel(const CSeq_feat& ft, CRef<CScope
 
 string CValidErrorFormat::GetFeatureProductLocLabel(const CSeq_feat& ft, CRef<CScope> scope, bool suppress_context)
 {
-    string desc = kEmptyStr;
+    string desc;
     // Append label for product of feature
     if (ft.IsSetProduct() && scope) {
         string loc_label;
@@ -952,7 +950,7 @@ string CValidErrorFormat::GetFeatureLabel(const CSeq_feat& ft, CRef<CScope> scop
 
 string CValidErrorFormat::GetDescriptorContent (const CSeqdesc& ds)
 {
-    string content = "";
+    string content;
 
     switch (ds.Which()) {
         case CSeqdesc::e_Pub:
@@ -1038,11 +1036,11 @@ string CValidErrorFormat::GetDescriptorLabel(const CSeqdesc& ds, const CSeq_entr
 
 string CValidErrorFormat::GetBioseqLabel (CBioseq_Handle bh)
 {
-    string desc = "";
+    string desc;
 
     CBioseq_Handle::TBioseqCore bc = bh.GetBioseqCore();
     desc += " [";
-    string bc_label = "";
+    string bc_label;
     bc->GetLabel(&bc_label, CBioseq::eBoth);
     s_FixBioseqLabelProblems(bc_label);
     desc += bc_label;
@@ -1053,7 +1051,7 @@ string CValidErrorFormat::GetBioseqLabel (CBioseq_Handle bh)
 
 string CValidErrorFormat::GetBioseqSetLabel(const CBioseq_set& st, CRef<CScope> scope, bool suppress_context)
 {
-    string str = "";
+    string str;
     // GetLabel for CBioseq_set does not follow C Toolkit conventions
     // AND is a horrible performance hit for sets with lots of sequences
 
@@ -1084,7 +1082,7 @@ string CValidErrorFormat::GetBioseqSetLabel(const CBioseq_set& st, CRef<CScope> 
             str += ": ";
         }
         if (scope) {
-            string content = "";
+            string content;
             int version = 0;
             const string& accn = GetAccessionFromObjects(&st, NULL, *scope, &version);
             content += accn;

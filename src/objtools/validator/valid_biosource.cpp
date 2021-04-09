@@ -519,7 +519,7 @@ const CSeq_entry *ctx)
 
         case CSubSource::eSubtype_altitude:
             if (!(*ssit)->IsSetName() || !CSubSource::IsAltitudeValid((*ssit)->GetName())) {
-                string val = "";
+                string val;
                 if ((*ssit)->IsSetName()) {
                     val = (*ssit)->GetName();
                 }
@@ -1027,7 +1027,7 @@ const bool isViral)
     }
 
     // get taxname from object
-    string taxname = kEmptyStr;
+    string taxname;
     if (obj.GetThisTypeInfo() == CSeqdesc::GetTypeInfo()) {
         const CSeqdesc* desc = dynamic_cast <const CSeqdesc*> (&obj);
         if (desc && desc->IsSource() && desc->GetSource().IsSetTaxname()) {
@@ -1042,7 +1042,7 @@ const bool isViral)
             }
         }
     }
-    string sname = kEmptyStr;
+    string sname;
     if (subsrc.IsSetName()) {
         sname = subsrc.GetName();
     }
@@ -1414,8 +1414,8 @@ const CSeq_entry *ctx)
             "No organism name included in the source. Other qualifiers may exist.", obj, ctx);
     }
 
-    string taxname = "";
-    string lineage = "";
+    string taxname;
+    string lineage;
     if (orgref.IsSetOrgname() && orgref.GetOrgname().IsSetLineage()) {
         lineage = orgref.GetOrgname().GetLineage();
     }
@@ -1630,7 +1630,7 @@ void CValidError_imp::ValidateTaxNameOrgname
  const CSerialObject& obj, 
  const CSeq_entry *ctx)
 {
-    string mismatch = kEmptyStr;
+    string mismatch;
     if (!s_MatchOrgname(taxname, orgname, mismatch)) {
         PostObjErr(eDiag_Error, eErr_SEQ_DESCR_BioSourceInconsistency,
                     "Taxname does not match orgname ('" + taxname + "', '" + mismatch + "')",
@@ -2425,7 +2425,7 @@ void CValidError_imp::ValidateSpecificHost
         size_t len = min(chunk_size, org_rq_list.size() - i);
         vector< CRef<COrg_ref> >  tmp_rq(org_rq_list.begin() + i, org_rq_list.begin() + i + len);
         CRef<CTaxon3_reply> tmp_spec_host_reply = x_GetTaxonService()->SendOrgRefList(tmp_rq);
-        string err_msg = kEmptyStr;
+        string err_msg;
         if (tmp_spec_host_reply) {
             err_msg = tval.IncrementalSpecificHostMapUpdate(tmp_rq, *tmp_spec_host_reply);
         } else {
@@ -3023,7 +3023,7 @@ void CValidError_imp::ValidateOrgModVoucher(const COrgMod& orgmod, const CSerial
     int subtype = orgmod.GetSubtype();
     string val = orgmod.GetSubname();
 
-    string error = "";
+    string error;
     switch (subtype) {
     case COrgMod::eSubtype_culture_collection:
         error = COrgMod::IsCultureCollectionValid(val);

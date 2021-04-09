@@ -390,7 +390,7 @@ bool CValidator::BadCharsInAuthorSuffix(const string& str)
 
 string CValidator::BadCharsInAuthor(const CName_std& author, bool& last_is_bad)
 {
-    string badauthor = kEmptyStr;
+    string badauthor;
     last_is_bad = false;
 
     if (author.IsSetLast() && BadCharsInAuthorLastName(author.GetLast())) {
@@ -632,7 +632,7 @@ CValidator::TDbxrefValidFlags CValidator::IsValidDbxref(const CDbtag& xref, bool
         return flags;
     }
     const string& db = xref.GetDb();
-    string dbv = "";
+    string dbv;
     if (xref.IsSetTag() && xref.GetTag().IsStr()) {
         dbv = xref.GetTag().GetStr();
     }
@@ -646,7 +646,7 @@ CValidator::TDbxrefValidFlags CValidator::IsValidDbxref(const CDbtag& xref, bool
 
     bool src_db = false;
     bool refseq_db = false;
-    string correct_caps = "";
+    string correct_caps;
 
     if (xref.GetDBFlags(refseq_db, src_db, correct_caps)) {
         if (!NStr::EqualCase(correct_caps, db)) {

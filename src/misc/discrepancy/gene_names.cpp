@@ -232,7 +232,7 @@ const string kDuplicateAdjacent = "[n] gene[s] [is] adjacent to another gene wit
 DISCREPANCY_CASE(DUPLICATE_LOCUS_TAGS, SEQUENCE, eDisc | eOncaller | eSubmitter | eSmart, "Duplicate Locus Tags")
 {
     const auto& genes = context.FeatGenes();
-    string last_locus_tag = kEmptyStr;
+    string last_locus_tag;
     CRef<CDiscrepancyObject> last_disc_obj;
     for (const CSeq_feat* gene : genes) {
         if (gene->GetData().GetGene().IsSetLocus_tag()) {

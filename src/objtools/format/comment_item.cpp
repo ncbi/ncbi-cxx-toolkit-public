@@ -348,7 +348,7 @@ string CCommentItem::GetStringForBankIt(const CUser_object& uo, bool dump_mode)
     }
 
     CNcbiOstrstream text;
-    string pfx = "";
+    string pfx;
     if ( uvc != 0 ) {
         text << pfx << "Vector Explanation: " << *uvc;
         pfx = "~";
@@ -1203,7 +1203,7 @@ string CCommentItem::GetStringForModelEvidance(const CBioseqContext& ctx, const 
         }
         text << " (";
         int count = 0;
-        string prefix = "";
+        string prefix;
         FOR_EACH_STRING_IN_LIST (str, me.assembly) {
 #ifdef NEW_HTML_FMT
             string tr_name;

@@ -278,7 +278,7 @@ bool CWriteUtil::GetCodeBreak(
             }
             case CSeq_loc::e_Int: {
                 const CSeq_interval& intv = loc.GetInt();
-                string intv_str = "";
+                string intv_str;
                 intv_str += NStr::IntToString( intv.GetFrom()+1 );
                 intv_str += "..";
                 intv_str += NStr::IntToString( intv.GetTo()+1 );
@@ -993,7 +993,7 @@ bool CWriteUtil::GetStringForModelEvidence(
     if (numRna > 0 || numEst > 0 || numProtein > 0 || numLongSra > 0)
     {
         text << section_prefix;
-        string prefix = "";
+        string prefix;
         if (numRna > 0) {
             text << prefix << numRna << " mRNA";
             if (numRna > 1) {
@@ -1154,7 +1154,7 @@ bool CWriteUtil::GetStringsForGoMarkup(
         if (!field->IsSetData()  ||  !field->GetData().IsFields()) {
             continue;
         }
-        string descriptive="", goId="", pubmedId="", evidence="";
+        string descriptive, goId, pubmedId, evidence;
         const auto& subFields = field->GetData().GetFields();
         for (const auto& subField: subFields) {
             if (!subField->IsSetLabel()  ||  ! subField->GetLabel().IsStr()) {
@@ -1197,7 +1197,7 @@ bool CWriteUtil::GetListOfGoIds(
         if (!field->IsSetData()  ||  !field->GetData().IsFields()) {
             continue;
         }
-        string descriptive="", goId="", pubmedId="", evidence="";
+        string descriptive, goId, pubmedId, evidence;
         const auto& subFields = field->GetData().GetFields();
         for (const auto& subField: subFields) {
             if (!subField->IsSetLabel()  ||  ! subField->GetLabel().IsStr()) {

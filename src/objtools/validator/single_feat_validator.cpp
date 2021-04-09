@@ -290,7 +290,7 @@ void CSingleFeatValidator::x_ValidateBothStrands()
     bool both, both_rev;
     x_LocHasStrandBoth(m_Feat.GetLocation(), both, both_rev);
     if (both || both_rev) {
-        string suffix = "";
+        string suffix;
         if (both && both_rev) {
             suffix = "(forward and reverse)";
         } else if (both) {
@@ -478,7 +478,7 @@ void CSingleFeatValidator::x_ValidateGbQual(const CGb_qual& qual)
         }
     } else if (NStr::EqualNocase(qual.GetQual(), "inference")) {
         /* TODO: Validate inference */
-        string val = "";
+        string val;
         if (qual.IsSetVal()) {
             val = qual.GetVal();
         }
@@ -1700,7 +1700,7 @@ void CSingleFeatValidator::x_ValidateReplaceQual(const string& key, const string
         if (!has_fuzz && val.length() == GetLength (m_Feat.GetLocation(), &m_Scope)) {
             try {
                 CSeqVector nuc_vec(m_Feat.GetLocation(), m_Scope, CBioseq_Handle::eCoding_Iupac);
-                string bases = "";
+                string bases;
                 nuc_vec.GetSeqData(0, nuc_vec.size(), bases);
                 if (NStr::EqualNocase(val, bases)) {
                     PostErr(eDiag_Info, eErr_SEQ_FEAT_InvalidMatchingReplace,
@@ -2413,8 +2413,8 @@ void CSingleFeatValidator::x_ReportPseudogeneConflict(CConstRef <CSeq_feat> gene
         m_Feat.GetData().GetSubtype() != CSeqFeatData::eSubtype_cdregion)) {
         return;
     }
-    string sfp_pseudo = kEmptyStr;
-    string gene_pseudo = kEmptyStr;
+    string sfp_pseudo;
+    string gene_pseudo;
     bool has_sfp_pseudo = false;
     bool has_gene_pseudo = false;
     if (m_Feat.IsSetQual()) {
@@ -3314,7 +3314,7 @@ void CRNAValidator::x_ValidateAnticodon(const CSeq_loc& anticodon)
         }
     }
     if (!trans_splice) {
-        string loc_lbl = "";
+        string loc_lbl;
         anticodon.GetLabel(&loc_lbl);
         if (mixed_strand) {
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_AnticodonMixedStrand,
@@ -3389,8 +3389,8 @@ void CRNAValidator::x_ValidateTrnaCodons()
 
     unsigned char aa = 0, orig_aa;
     vector<char> seqData;
-    string str = "";
-    
+    string str;
+
     switch (trna.GetAa().Which()) {
         case CTrna_ext::C_Aa::e_Iupacaa:
             str = trna.GetAa().GetIupacaa();
@@ -3544,8 +3544,7 @@ void CRNAValidator::x_ValidateTrnaCodons()
             }
 
             // expand wobble base to known binding partners
-            string wobble = "";
-
+            string wobble;
 
             char ch = anticodon.c_str()[0];
             switch (ch) {

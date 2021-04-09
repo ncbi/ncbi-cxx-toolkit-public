@@ -4710,7 +4710,7 @@ void CFeatureItem::x_FormatNoteQuals(CFlatFeature& ff) const
     DO_NOTE_PREPEND_NEWLINE(exception_note);
 
     string notestr;
-    string suffix = kEmptyStr;
+    string suffix;
 //    bool add_period = false;
     bool add_period = true/*fl*/;
 
@@ -5678,8 +5678,7 @@ string CFeatureItem::x_SeqIdWriteForTable(const CBioseq& seq, bool suppress_loca
         }
     }
 
-
-    string label = kEmptyStr;
+    string label;
 
     if (accn != NULL) {
         label = accn->AsFastaString();
@@ -6607,7 +6606,7 @@ void CSourceFeatureItem::x_FormatNoteQuals(CFlatFeature& ff) const
 #undef DO_NOTE
 
     string notestr;
-    string suffix = kEmptyStr;
+    string suffix;
 
     if ( GetSource().IsSetGenome()  &&  
         GetSource().GetGenome() == CBioSource::eGenome_extrachrom ) {

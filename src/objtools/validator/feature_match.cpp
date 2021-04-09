@@ -304,7 +304,7 @@ int CMatchCDS::GetNummRNA(bool &loc_unique)
         if (!(*mrna_it)->IsAccountedFor()) {
             // count overlapping unassigned mRNAS
             if ((*mrna_it)->GetFeat().IsSetProduct()) {
-                string label = "";
+                string label;
                 (*mrna_it)->GetFeat().GetProduct().GetLabel(&label);
                 product_list.push_back(label);
             }

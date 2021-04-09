@@ -309,7 +309,7 @@ void CValidError_bioseqset::ValidateNucProtSet
                         "feature on contig, but is not",
                         seq);
                 }
-                string instantiated = "";
+                string instantiated;
                 FOR_EACH_DESCRIPTOR_ON_BIOSEQ (it, seq) {
                     if ((*it)->IsSource()) {
                         prot_biosource++;
@@ -638,8 +638,7 @@ void CValidError_bioseqset::ValidateSetElements(const CBioseq_set& seqset)
 
 void CValidError_bioseqset::SetShouldNotHaveMolInfo(const CBioseq_set& seqset)
 {
-    string class_name = "";
-
+    string class_name;
     switch (seqset.GetClass()) {
         case CBioseq_set::eClass_pop_set:
             class_name = "Pop set";
@@ -689,10 +688,10 @@ void CValidError_bioseqset::ValidatePopSet(const CBioseq_set& seqset)
 	  }
 
     CTypeConstIterator<CBioseq> seqit(ConstBegin(seqset));
-    string first_taxname = "";
+    string first_taxname;
     bool is_first = true;
     for (; seqit; ++seqit) {
-        string taxname = "";
+        string taxname;
         CBioseq_Handle bsh = m_Scope->GetBioseqHandle (*seqit);
         // Will get the first biosource either from the descriptor
         // or feature.

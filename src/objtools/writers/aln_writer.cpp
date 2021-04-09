@@ -249,7 +249,7 @@ bool CAlnWriter::WriteAlignDenseSeg(
             CSeqUtil::e_Iupacna :
             CSeqUtil::e_Iupacaa;
 
-        string seqdata = "";
+        string seqdata;
         for (int seg=0; seg<num_segs; ++seg)
         {
             const auto start = denseg.GetStarts()[seg*num_rows + row];
@@ -442,8 +442,8 @@ void CAlnWriter::AddGaps(
         return;
     }
 
-    string genomic_string = "";
-    string product_string = "";
+    string genomic_string;
+    string product_string;
 
     const unsigned int res_width = 
         (product_type == CSpliced_seg::eProduct_type_transcript) ?
@@ -558,8 +558,8 @@ bool CAlnWriter::WriteSparseAlign(const CSparse_align& sparse_align)
 
         string seq_plus;
         GetSeqString(bsh, range, eNa_strand_plus, seq_plus);
-    
-        string seqdata = "";
+
+        string seqdata;
         for (int seg=0; seg<num_segs; ++seg) {
             const auto start = sparse_align.GetFirst_starts()[seg];
             const auto len = sparse_align.GetLens()[seg];
@@ -586,7 +586,7 @@ bool CAlnWriter::WriteSparseAlign(const CSparse_align& sparse_align)
         string seq_plus;
         GetSeqString(bsh, range, eNa_strand_plus, seq_plus);
 
-        string seqdata = "";
+        string seqdata;
         const vector<ENa_strand>& strands = sparse_align.IsSetSecond_strands() ?
             sparse_align.GetSecond_strands() : vector<ENa_strand>(num_segs, eNa_strand_plus);
         for (int seg=0; seg<num_segs; ++seg) {

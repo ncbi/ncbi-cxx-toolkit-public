@@ -584,8 +584,8 @@ void CGenomeAssemblyComment::SetAssemblyMethodProgram(CUser_object& obj, string 
 {
     CStructuredCommentField field(kGenomeAssemblyData, kAssemblyMethod);
     string previous = field.GetVal(obj);
-    string program = "";
-    string version = "";
+    string program;
+    string version;
     x_GetAssemblyMethodProgramAndVersion(previous, program, version);
     if (AddValueToString(program, val, existing_text)) {
         string new_val = x_GetAssemblyMethodFromProgramAndVersion(program, version);
@@ -598,8 +598,8 @@ void CGenomeAssemblyComment::SetAssemblyMethodVersion(CUser_object& obj, string 
 {
     CStructuredCommentField field(kGenomeAssemblyData, kAssemblyMethod);
     string previous = field.GetVal(obj);
-    string program = "";
-    string version = "";
+    string program;
+    string version;
     x_GetAssemblyMethodProgramAndVersion(previous, program, version);
     if (AddValueToString(version, val, existing_text)) {
         string new_val = x_GetAssemblyMethodFromProgramAndVersion(program, version);
@@ -654,8 +654,8 @@ string CGenomeAssemblyComment::GetAssemblyMethodProgram(const CUser_object& obj)
 {
     CStructuredCommentField field(kGenomeAssemblyData, kAssemblyMethod);
     string method = field.GetVal(obj);
-    string program = "";
-    string version = "";
+    string program;
+    string version;
     x_GetAssemblyMethodProgramAndVersion(method, program, version);
     return program;
 }
@@ -665,8 +665,8 @@ string CGenomeAssemblyComment::GetAssemblyMethodVersion(const CUser_object& obj)
 {
     CStructuredCommentField field(kGenomeAssemblyData, kAssemblyMethod);
     string method = field.GetVal(obj);
-    string program = "";
-    string version = "";
+    string program;
+    string version;
     x_GetAssemblyMethodProgramAndVersion(method, program, version);
     return version;
 }

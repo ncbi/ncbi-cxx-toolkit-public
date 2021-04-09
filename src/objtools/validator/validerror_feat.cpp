@@ -352,7 +352,7 @@ CValidError_feat::EInferenceValidCode CValidError_feat::ValidateInferenceAccessi
                 // SRA
             } else if (NStr::StartsWith(remainder, "MAP_") && s_IsAllDigitsOrPeriods(remainder.substr(4))) {
             } else {
-                string ver = "";
+                string ver;
                 int acc_code = ValidateAccessionFormat (remainder);
                 if (acc_code == 0) {
                     //-5: missing version number

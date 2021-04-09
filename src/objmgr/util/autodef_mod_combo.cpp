@@ -253,8 +253,7 @@ void CAutoDefModifierCombo::AddOrgMod(COrgMod::ESubtype st, bool even_if_not_uni
 
 string CAutoDefModifierCombo::x_GetSubSourceLabel (CSubSource::ESubtype st)
 {
-    string label = "";
-    
+    string label;
     if (st == CSubSource::eSubtype_endogenous_virus_name) {
         label = "endogenous virus";
     } else if (st == CSubSource::eSubtype_transgenic) {
@@ -277,7 +276,7 @@ string CAutoDefModifierCombo::x_GetSubSourceLabel (CSubSource::ESubtype st)
 
 string CAutoDefModifierCombo::x_GetOrgModLabel(COrgMod::ESubtype st)
 {
-    string label = "";
+    string label;
     if (st == COrgMod::eSubtype_nat_host) {
         label = "from";
     } else if (m_UseModifierLabels) {
@@ -783,7 +782,7 @@ return rval;
 string CAutoDefModifierCombo::GetSourceDescriptionString(const CBioSource& bsrc)
 {
     unsigned int k;
-    string       source_description = "";
+    string       source_description;
     map<COrgMod::ESubtype, bool> orgmods;
     map<CSubSource::ESubtype, bool> subsrcs;
     bool no_extras = false;
@@ -864,7 +863,7 @@ string CAutoDefModifierCombo::GetSourceDescriptionString(const CBioSource& bsrc)
                 }
             }
             if (influenza_type == eInfluenzaA) {
-                string serotype = kEmptyStr;
+                string serotype;
                 for (auto& it : bsrc.GetOrg().GetOrgname().GetMod()) {
                     if (it->IsSetSubtype() && it->GetSubtype() == COrgMod::eSubtype_serotype &&
                         it->IsSetSubname() && !NStr::IsBlank(it->GetSubname())) {

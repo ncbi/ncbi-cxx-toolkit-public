@@ -4188,7 +4188,7 @@ CNewCleanup_imp::x_HandleTrnaProductGBQual(CSeq_feat& feat, CRNA_ref& rna, const
     if (rna_type == NCBI_RNAREF(tRNA) && rna.IsSetExt() && rna.GetExt().IsTRNA()) {
         CRNA_ref_Base::C_Ext::TTRNA& trp = rna.SetExt().SetTRNA();
         if (trp.IsSetAa() && trp.GetAa().IsNcbieaa()) {
-            string ignored = kEmptyStr;
+            string ignored;
             if (trp.GetAa().GetNcbieaa() == s_ParseSeqFeatTRnaString(product, NULL, ignored, false) &&
                 NStr::IsBlank(ignored)) {
             } else {
@@ -4206,7 +4206,7 @@ CNewCleanup_imp::x_HandleTrnaProductGBQual(CSeq_feat& feat, CRNA_ref& rna, const
             }
             return eAction_Erase;
         } else if (!trp.IsSetAa()) {
-            string ignored = kEmptyStr; 
+            string ignored;
             bool justTrnaText = false;
             char aa = s_ParseSeqFeatTRnaString(product, &justTrnaText, ignored, false);
             if (aa != '\0') {
@@ -7157,7 +7157,7 @@ void CNewCleanup_imp::RnarefGenBC(CRNA_ref& rr)
         FIELD_IS_SET(gen, Product) &&
         !FIELD_IS_SET(gen, Class)) {
         string & product = GET_MUTABLE(gen, Product);
-        string ncrna_name = kEmptyStr;
+        string ncrna_name;
         if (s_StartsWithNcrnaName(product, ncrna_name)) {
             if (product.length() > (ncrna_name.length() + 1) &&
                 product[ncrna_name.length()] == ' ') {
@@ -9007,7 +9007,7 @@ unsigned char s_GetAaAsChar(const CTrna_ext& trna)
 {
     unsigned char aa = 0;
     vector<char> seqData;
-    string str = "";
+    string str;
 
     switch (trna.GetAa().Which()) {
     case CTrna_ext::C_Aa::e_Iupacaa:
@@ -9066,7 +9066,7 @@ char s_Complement(char s)
 
 static string s_Complement(const string& str)
 {
-    string complement = "";
+    string complement;
     ITERATE(string, s, str) {
         complement += s_Complement(*s);
     }
@@ -9075,7 +9075,7 @@ static string s_Complement(const string& str)
 
 static string s_ReverseComplement(const string& str)
 {
-    string revcomp = "";
+    string revcomp;
     ITERATE(string, s, str) {
         revcomp = s_Complement(*s) + revcomp;
     }
@@ -9084,7 +9084,7 @@ static string s_ReverseComplement(const string& str)
 
 static string s_Reverse(const string& str)
 {
-    string reverse = "";
+    string reverse;
     ITERATE(string, s, str) {
         reverse = *s + reverse;
     }
@@ -10545,10 +10545,10 @@ void CNewCleanup_imp::x_ChangePopToPhy(CBioseq_set& bioseq_set)
     }
     bool all_same = true;
     CTypeConstIterator<CBioseq> seqit(ConstBegin(bioseq_set));
-    string first_taxname = "";
+    string first_taxname;
     bool is_first = true;
     for (; seqit; ++seqit) {
-        string taxname = "";
+        string taxname;
         CBioseq_Handle bsh = m_Scope->GetBioseqHandle(*seqit);
         // Will get the first biosource either from the descriptor
         // or feature.
@@ -11879,7 +11879,7 @@ void CNewCleanup_imp::MoveStandardName(CSeq_feat& sf)
             string val = (*it)->GetVal();
             const string product = sf.GetData().GetRna().GetRnaProductName();
             if (NStr::IsBlank(product)) {
-                string remainder = "";
+                string remainder;
                 sf.SetData().SetRna().SetRnaProductName(val, remainder);
                 val = remainder;
                 ChangeMade(CCleanupChange::eChangeRNAref);
