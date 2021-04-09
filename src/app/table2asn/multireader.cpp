@@ -71,7 +71,7 @@
 #include <objtools/readers/readfeat.hpp>
 #include <objtools/readers/aln_reader.hpp>
 
-#include <util/format_guess.hpp>
+#include <objtools/readers/format_guess_ex.hpp>
 
 #include "multireader.hpp"
 #include "table2asn_context.hpp"
@@ -174,24 +174,12 @@ namespace
         }
         return nullptr;
     }
-
-    TTypeInfo x_TryBinaryFormat(CNcbiIstream& In)
-    {
-        char buff[4096];
-        In.read(buff, sizeof(buff));
-        streamsize count = In.gcount();
-
-        CStreamUtils::Pushback(In, buff, count);
-        In.clear();
-
-        unique_ptr<CObjectIStream> temp_reader(CObjectIStream::CreateFromBuffer(eSerial_AsnBinary, buff, count));
-        return x_DetectObjectType(*temp_reader);
-    }
 }
 
-CRef<CSerialObject> CMultiReader::xReadASN1Binary(CObjectIStream& pObjIstrm, TTypeInfo info)
+CRef<CSerialObject> CMultiReader::xReadASN1Binary(CObjectIStream& pObjIstrm, const CFileContentInfoGenbank& content_info)
 {
-    if (info == CBioseq_set::GetTypeInfo())
+    const string& content_type = content_info.mObjectType;
+    if (content_type == "Bioseq-set")
     {
         auto obj = Ref(new CSeq_entry);
         auto& bioseq_set = obj->SetSet();
@@ -199,21 +187,21 @@ CRef<CSerialObject> CMultiReader::xReadASN1Binary(CObjectIStream& pObjIstrm, TTy
         return obj;
     }
     else
-    if (info == CSeq_submit::GetTypeInfo())
+    if (content_type == "Seq-submit")
     {
         auto seqsubmit = Ref(new CSeq_submit);
         pObjIstrm.Read(ObjectInfo(*seqsubmit));
         return seqsubmit;
     }
     else
-    if (info == CSeq_entry::GetTypeInfo())
+    if (content_type == "Seq-entry")
     {
         auto obj = Ref(new CSeq_entry);
         pObjIstrm.Read(ObjectInfo(*obj));
         return obj;
     }
     else
-    if (info == CBioseq::GetTypeInfo())
+    if (content_type == "Bioseq")
     {
         auto obj = Ref(new CSeq_entry);
         pObjIstrm.Read(ObjectInfo(obj->SetSeq()));
@@ -429,10 +417,10 @@ CMultiReader::xReadFasta(CNcbiIstream& instream)
 
 }
 
-CFormatGuess::EFormat CMultiReader::xInputGetFormat(CNcbiIstream& istr) const
+CFormatGuess::EFormat CMultiReader::xInputGetFormat(CNcbiIstream& istr, CFileContentInfo* content_info) const
     //  ----------------------------------------------------------------------------
 {
-    CFormatGuess FG(istr);
+    CFormatGuessEx FG(istr);
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eBinaryASN);
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eFasta);
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eTextASN);
@@ -440,7 +428,10 @@ CFormatGuess::EFormat CMultiReader::xInputGetFormat(CNcbiIstream& istr) const
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eGff3);
     FG.GetFormatHints().DisableAllNonpreferred();
 
-    return FG.GuessFormat();
+    if (!content_info) {
+        return FG.GuessFormat();
+    }
+    return FG.GuessFormatAndContent(*content_info);
 }
 
 CFormatGuess::EFormat CMultiReader::xAnnotGetFormat(CNcbiIstream& istr) const
@@ -833,19 +824,17 @@ namespace
 CFormatGuess::EFormat CMultiReader::OpenFile(const string& filename, CRef<CSerialObject>& input_sequence)
 {
     CFormatGuess::EFormat format;
-    TTypeInfo info{nullptr};
+    CFileContentInfo content_info;
     {
         unique_ptr<istream> istream(new CNcbiIfstream(filename));
-        format = xInputGetFormat(*istream);
-        if (format == CFormatGuess::eBinaryASN)
-            info = x_TryBinaryFormat(*istream);
+        format = xInputGetFormat(*istream, &content_info);
     }
 
     switch (format)
     {
         case CFormatGuess::eBinaryASN:
             m_obj_stream.reset(CObjectIStream::Open(eSerial_AsnBinary, filename));
-            input_sequence = xReadASN1Binary(*m_obj_stream, info);
+            input_sequence = xReadASN1Binary(*m_obj_stream, content_info.mInfoGenbank);
             break;
         case CFormatGuess::eTextASN:
             m_obj_stream.reset(CObjectIStream::Open(eSerial_AsnText, filename));
