@@ -69,7 +69,8 @@ objtools/format/items$
 objtools/align_format
 objtools/logging$
 objtools/pubseq_gateway$
-objtools/pubseq_gateway/client$
+objtools/pubseq_gateway/client
+-objtools/pubseq_gateway/client/test
 dbapi$
 dbapi/driver$
 dbapi/driver/impl$
