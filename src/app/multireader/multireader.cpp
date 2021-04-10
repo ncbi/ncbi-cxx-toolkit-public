@@ -1224,7 +1224,7 @@ void CMultiReaderApp::xProcessAlignment(
             (args["all-ids-as-local"].AsBoolean() ?
                 CAlnReader::fGenerateLocalIDs :
                 CAlnReader::fReadDefaults);
-        reader.Read(0, m_pErrors.get());
+        reader.Read(flags, m_pErrors.get());
         CRef<CSeq_entry> pEntry = reader.GetSeqEntry(fFlags, m_pErrors.get());
         if (pEntry) {
             xWriteObject(args, *pEntry, ostr);
