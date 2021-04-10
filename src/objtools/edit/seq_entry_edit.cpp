@@ -165,14 +165,14 @@ namespace {
     {
     public:
         void Init()
-        {            
+        {
             resize(sizeof(descr_insert_order)/sizeof(char), kMax_Char);
-            char index = 0;
+            unsigned char index = 0;
             while (descr_insert_order[index] != 0)
             {
                 if (descr_insert_order[index] >= size())
                     resize(descr_insert_order[index], kMax_Char);
-                at(descr_insert_order[index]) = index;
+                at(descr_insert_order[index]) = (char)index;
                 ++index;
             }
         }

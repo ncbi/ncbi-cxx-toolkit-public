@@ -5723,7 +5723,7 @@ bool CValidError_bioseq::x_PartialAdjacentToIntron(const CSeq_loc& loc)
     CBioseq_Handle bsh;
     try {
         bsh = m_Scope->GetBioseqHandle(loc);
-    } catch (CException& ex) {
+    } catch (CException&) {
         return false;
     }
     if (!bsh) {

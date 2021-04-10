@@ -100,9 +100,8 @@ void MakeMailReportPostReport(CSeq_table& table, CScope& scope)
     ITERATE(CSeqTable_column::TData::TId, id_it, table.GetColumns()[0]->GetData().GetId()) {
         CBioseq_Handle bsh = scope.GetBioseqHandle(**id_it);
         string taxname;
-        int taxid = 0;
         CRef<COrg_ref> org(new COrg_ref());
-        CSeqdesc_CI di(bsh, CSeqdesc::e_Source);        
+        CSeqdesc_CI di(bsh, CSeqdesc::e_Source);
         if (di && di->GetSource().IsSetOrg()) {
             if (di->GetSource().GetOrg().IsSetTaxname()) {
                 taxname = di->GetSource().GetOrg().GetTaxname();
@@ -119,8 +118,8 @@ void MakeMailReportPostReport(CSeq_table& table, CScope& scope)
     pub_stat->SetHeader().SetTitle("is_unpublished");
     table.SetColumns().push_back(pub_stat);
     CTaxon3 taxon3;
-	taxon3.Init();
-	CRef<CTaxon3_reply> reply = taxon3.SendOrgRefList(org_ref_list);
+    taxon3.Init();
+    CRef<CTaxon3_reply> reply = taxon3.SendOrgRefList(org_ref_list);
     if (reply) {
         ITERATE(CTaxon3_reply::TReply, reply_it, reply->GetReply()) {
             bool is_unpub = false;

@@ -7110,8 +7110,6 @@ CNewCleanup_imp::x_RRNANameBC( string &name )
 
 void CNewCleanup_imp::RnarefGenBC(CRNA_ref& rr)
 {
-    bool changed = false;
-
     CRNA_ref::C_Ext& ext = GET_MUTABLE(rr, Ext);
     CRNA_gen& gen = GET_MUTABLE(ext, Gen);
 

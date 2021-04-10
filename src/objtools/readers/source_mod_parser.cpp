@@ -295,8 +295,6 @@ namespace
     bool x_FindBrackets(const CTempString& str, size_t& start, size_t& stop, size_t& eq_pos)
     {
         size_t i = start;
-        bool found = false;
-
         eq_pos = CTempString::npos;
 
         const char* s = str.data() + start;

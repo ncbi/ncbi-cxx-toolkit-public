@@ -271,7 +271,7 @@ TSignedSeqPos CFeaturePropagator::SeqPosToAlignPos(TSignedSeqPos pos, CDense_seg
     CBioseq_Handle bsh = m_Scope.GetBioseqHandle(id);
     if (!bsh)
         return -1;
-    TSignedSeqPos length = bsh.GetBioseqLength();
+    //TSignedSeqPos length = bsh.GetBioseqLength();
     CDense_seg::TNumseg num_segs = denseg.GetNumseg();
     CDense_seg::TDim num_rows = denseg.GetDim();
     CDense_seg::TNumseg seg = 0;
@@ -327,7 +327,7 @@ TSignedSeqPos CFeaturePropagator::AlignPosToSeqPos(TSignedSeqPos pos, CDense_seg
     CBioseq_Handle bsh = m_Scope.GetBioseqHandle(id);
     if (!bsh)
         return -1;
-    TSignedSeqPos length = bsh.GetBioseqLength();
+    //TSignedSeqPos length = bsh.GetBioseqLength();
     CDense_seg::TNumseg num_segs = denseg.GetNumseg();
     CDense_seg::TDim num_rows = denseg.GetDim();
     CDense_seg::TNumseg seg = 0;
@@ -370,7 +370,7 @@ TSignedSeqPos CFeaturePropagator::AlignPosToSeqPos(TSignedSeqPos pos, CDense_seg
             while ( seg < num_segs ) 
             {
                 TSignedSeqPos start = denseg.GetStarts()[seg * num_rows + row];
-                TSignedSeqPos len   = denseg.GetLens()[seg];
+                //TSignedSeqPos len   = denseg.GetLens()[seg];
                 ENa_strand strand = eNa_strand_plus;
                 if (denseg.IsSetStrands())
                     strand = denseg.GetStrands()[seg * num_rows + row];

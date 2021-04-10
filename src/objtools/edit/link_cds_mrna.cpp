@@ -132,7 +132,6 @@ void xLinkCDSmRNAbyLabelAndLocation(CSeq_annot::C_Data::TFtable& ftable)
         ++opp_it;
 
         CRef<CSeq_feat> best_fit;
-        int best_fit_size = -1;
 
         for(; opp_it != ftable.end(); ++opp_it)
         {

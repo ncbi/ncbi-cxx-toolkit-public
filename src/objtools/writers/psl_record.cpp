@@ -207,7 +207,7 @@ CPslRecord::xInitializeBlocksStrandPositive(
     mBlockCount = static_cast<int>(exonList.size());
 
     for (auto pExon: exonList) {
-        auto partCount = pExon->GetParts().size();
+        //auto partCount = pExon->GetParts().size();
         int exonStartQ = static_cast<int>(pExon->GetProduct_start().AsSeqPos());
         int exonStartT = static_cast<int>(pExon->GetGenomic_start());
         mBlockStartsQ.push_back(exonStartQ);

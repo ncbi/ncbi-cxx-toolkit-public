@@ -456,7 +456,7 @@ private:
     static bool s_IsSalmonellaGenus(const string& taxname);
     EDiagSev x_SalmonellaErrorLevel();
 
-    typedef struct {
+    typedef struct tagSLocCheck {
         bool chk;
         bool unmarked_strand;
         bool mixed_strand;

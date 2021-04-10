@@ -898,6 +898,7 @@ static bool IsGeneticCodeValid(int gcode)
 
         try {
             const CTrans_table& tbl = CGen_code_table::GetTransTable(gcode);
+            (void)tbl;  // suppress unused-variable warning
             ret = true;
         }
         catch (CException&) {

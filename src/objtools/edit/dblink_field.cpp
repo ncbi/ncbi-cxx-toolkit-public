@@ -280,7 +280,7 @@ void CDBLinkField::SetConstraint(const string& field_name, CConstRef<CStringCons
 
 CDBLinkField::EDBLinkFieldType CDBLinkField::GetTypeForLabel(string label)
 {
-    CTempString normal = GetNormalizedDBLinkFieldName(label);
+    //CTempString normal = GetNormalizedDBLinkFieldName(label);
     for (int i = eDBLinkFieldType_Trace; i < eDBLinkFieldType_Unknown; i++) {
         const string& match = GetLabelForType((EDBLinkFieldType)i);
         if (NStr::EqualNocase(label, match)) {
