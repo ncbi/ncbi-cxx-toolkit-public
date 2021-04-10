@@ -3612,7 +3612,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "KEIB\ts\tKatedra Ekologii i Biogeografii\t\t\t",
 "KEIU\ts\tKorea University\t\t\t",
 "KEM\ts\tUniversity of Kemerovo, Department of Botany\t\t\t",
-"KEMB\ts\tKorea National Environmental Microorganisms Bank\t\t\t",
+"KEMB\tsc\tKorea National Environmental Microorganisms Bank\tKEMC\t\t",
 "KEMC\tc\tKorea Environmental Microorganism Center, Kyonggi University\tKEMB\t\t",
 "KEMH\tc\tKEMH/PMH Culture collection\t\t\t",
 "KEN\ts\tLongwood Gardens, Horticulture Department\t\t\t",

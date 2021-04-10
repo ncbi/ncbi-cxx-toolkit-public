@@ -3579,7 +3579,7 @@ KEI	s	University of Transkei, Botany Department
 KEIB	s	Katedra Ekologii i Biogeografii			
 KEIU	s	Korea University			
 KEM	s	University of Kemerovo, Department of Botany			
-KEMB	s	Korea National Environmental Microorganisms Bank			
+KEMB	sc	Korea National Environmental Microorganisms Bank	KEMC		
 KEMC	c	Korea Environmental Microorganism Center, Kyonggi University	KEMB		
 KEMH	c	KEMH/PMH Culture collection			
 KEN	s	Longwood Gardens, Horticulture Department			
