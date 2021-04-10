@@ -1712,7 +1712,7 @@ CRef<CDelta_seq> CFeatureTableReader::MakeGap(CBioseq& bioseq, const CSeq_feat& 
                     evidence = (CLinkage_evidence::EType)it->second;
                 }
 
-                switch (gap_type_info->m_eType)
+                switch (gap_type_info->m_eLinkEvid)
                 {
                     /// only the "unspecified" linkage-evidence is allowed
                 case CSeq_gap::eLinkEvid_UnspecifiedOnly:
