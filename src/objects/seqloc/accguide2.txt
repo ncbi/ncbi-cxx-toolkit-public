@@ -1234,9 +1234,9 @@ version  2 # of file format
 2+6  MY  gb_patent
 2+8  MY  gb_other_nuc
 2+10 MY  gb_other_nuc
-2+6  M?  gb_other_nuc
-2+8  M?  gb_other_nuc
-2+10 M?  gb_other_nuc
+2+6  MZ  gb_dirsub
+2+8  MZ  gb_other_nuc
+2+10 MZ  gb_other_nuc
 2+6  NC  unreserved_nuc # deliberately skipped
 2+8  NC  unreserved_nuc # deliberately skipped
 2+10 NC  unreserved_nuc # deliberately skipped
