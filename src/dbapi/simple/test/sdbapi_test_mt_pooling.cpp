@@ -68,12 +68,12 @@ bool CSDBAPITestMTPoolingApp::TestApp_Args(CArgDescriptions& argdesc)
                              "Test (S)DBAPI connection pool thread safety");
 
     argdesc.AddDefaultKey("queries-per-thread", "N", "Queries per thread",
-                          CArgDescriptions::eInteger, "1000");
+                          CArgDescriptions::eInteger, "100");
     argdesc.SetConstraint("queries-per-thread",
                           new CArgAllow_Integers(1, kMax_Int));
 
     argdesc.AddDefaultKey("pool-size", "N", "Connection pool size",
-                          CArgDescriptions::eInteger, "10");
+                          CArgDescriptions::eInteger, "3");
     argdesc.SetConstraint("pool-size", new CArgAllow_Integers(1, kMax_Int));
 
     argdesc.AddDefaultKey("wait-time", "N",
