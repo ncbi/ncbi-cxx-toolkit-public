@@ -391,7 +391,7 @@ CODBCContext::~CODBCContext()
 void
 CODBCContext::x_Close(bool delete_conn)
 {
-    CMutexGuard mg(x_GetCtxMtx());
+    CWriteLockGuard guard(x_GetCtxLock());
 
     if (m_Context) {
         // Unregister first for sake of exception safety.
@@ -432,7 +432,7 @@ CODBCContext::x_Close(bool delete_conn)
 void
 CODBCContext::SetupErrorReporter(const CDBConnParams& params)
 {
-    CMutexGuard mg(x_GetCtxMtx());
+    CWriteLockGuard guard(x_GetCtxLock());
     m_Reporter.SetServerName(params.GetServerName());
     m_Reporter.SetUserName(params.GetUserName());
 }
@@ -446,7 +446,7 @@ string CODBCContext::GetDriverName(void) const
 
 void CODBCContext::SetPacketSize(SQLUINTEGER packet_size)
 {
-    CMutexGuard mg(x_GetCtxMtx());
+    CWriteLockGuard guard(x_GetCtxLock());
 
     m_PacketSize = packet_size;
 }
@@ -455,7 +455,7 @@ void CODBCContext::SetPacketSize(SQLUINTEGER packet_size)
 bool CODBCContext::CheckSIE(int rc, SQLHDBC con,
                             const CODBC_Reporter& opening_reporter)
 {
-    CMutexGuard mg(x_GetCtxMtx());
+    CWriteLockGuard guard(x_GetCtxLock());
 
     switch(rc) {
     case SQL_SUCCESS_WITH_INFO:

@@ -246,10 +246,11 @@ private:
         EDefaultMapping                     m_DefMapping;
     };
 
-    mutable CFastMutex m_Mtx;
+    mutable CRWLock m_Lock;
 
     const CMapperFactory        m_MapperFactory;
     TValidatorSet               m_ValidatorSet;
+    CFastMutex                  m_ValidatorSetMutex;
     // 0 means *none* (even do not try to connect)
     unsigned int                m_MaxNumOfConnAttempts;
     // 0 means *unlimited*
@@ -321,7 +322,7 @@ public:
 protected:
     typedef vector<CRef<IConnValidator> > TValidators;
 
-    mutable CFastMutex m_Mtx;
+    mutable CFastRWLock m_Lock;
     TValidators        m_Validators;
 };
 
@@ -364,6 +365,7 @@ inline
 unsigned int
 CDBConnectionFactory::GetMaxNumOfConnAttempts(void) const
 {
+    CReadLockGuard guard(m_Lock);
     return m_MaxNumOfConnAttempts;
 }
 
@@ -371,6 +373,7 @@ inline
 unsigned int
 CDBConnectionFactory::GetMaxNumOfValidationAttempts(void) const
 {
+    CReadLockGuard guard(m_Lock);
     return m_MaxNumOfValidationAttempts;
 }
 
@@ -378,6 +381,7 @@ inline
 unsigned int
 CDBConnectionFactory::GetMaxNumOfServerAlternatives(void) const
 {
+    CReadLockGuard guard(m_Lock);
     return m_MaxNumOfServerAlternatives;
 }
 
@@ -385,6 +389,7 @@ inline
 unsigned int
 CDBConnectionFactory::GetMaxNumOfDispatches(void) const
 {
+    CReadLockGuard guard(m_Lock);
     return m_MaxNumOfDispatches;
 }
 
@@ -392,6 +397,7 @@ inline
 unsigned int
 CDBConnectionFactory::GetConnectionTimeout(void) const
 {
+    CReadLockGuard guard(m_Lock);
     return m_ConnectionTimeout;
 }
 
@@ -399,6 +405,7 @@ inline
 unsigned int
 CDBConnectionFactory::GetLoginTimeout(void) const
 {
+    CReadLockGuard guard(m_Lock);
     return m_LoginTimeout;
 }
 
