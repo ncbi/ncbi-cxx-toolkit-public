@@ -165,10 +165,6 @@ public:
     virtual int Run(void);
 
     static CPubseqGatewayApp *  GetInstance(void);
-    CPubseqGatewayErrorCounters &  GetErrorCounters(void);
-    CPubseqGatewayRequestCounters &  GetRequestCounters(void);
-    CPubseqGatewayCacheCounters &  GetCacheCounters(void);
-    CPubseqGatewayDBCounters &  GetDBCounters(void);
 
     COperationTiming & GetTiming(void)
     {
@@ -249,6 +245,16 @@ public:
     string GetSSLCiphers(void) const
     {
         return m_SSLCiphers;
+    }
+
+    CPSGAlerts &  GetAlerts(void)
+    {
+        return m_Alerts;
+    }
+
+    CPSGSCounters &  GetCounters(void)
+    {
+        return m_Counters;
     }
 
 private:
@@ -388,16 +394,11 @@ private:
     unique_ptr<CHttpDaemon<CPendingOperation>>
                                         m_TcpDaemon;
 
-    // The server counters
-    CPubseqGatewayErrorCounters         m_ErrorCounters;
-    CPubseqGatewayRequestCounters       m_RequestCounters;
-    CPubseqGatewayCacheCounters         m_CacheCounters;
-    CPubseqGatewayDBCounters            m_DBCounters;
-
     unique_ptr<CExcludeBlobCache>       m_ExcludeBlobCache;
 
     CPSGAlerts                          m_Alerts;
     unique_ptr<COperationTiming>        m_Timing;
+    CPSGSCounters                       m_Counters;
 
     EPSGS_StartupDataState              m_StartupDataState;
     CNcbiLogFields                      m_LogFields;

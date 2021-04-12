@@ -162,7 +162,7 @@ bool CPSGS_TSEChunkProcessor::x_ParseTSEChunkId2Info(
     }
 
     auto *  app = CPubseqGatewayApp::GetInstance();
-    app->GetErrorCounters().IncInvalidId2InfoError();
+    app->GetCounters().Increment(CPSGSCounters::ePSGS_InvalidId2InfoError);
     if (need_finish) {
         x_SendProcessorError(err_msg, CRequestStatus::e500_InternalServerError,
                              ePSGS_InvalidId2Info);
@@ -184,7 +184,7 @@ CPSGS_TSEChunkProcessor::x_TSEChunkSatToKeyspace(SCass_BlobId &  blob_id,
     if (app->SatToKeyspace(blob_id.m_Sat, blob_id.m_Keyspace))
         return true;
 
-    app->GetErrorCounters().IncServerSatToSatName();
+    app->GetCounters().Increment(CPSGSCounters::ePSGS_ServerSatToSatNameError);
     string  msg = "Unknown TSE chunk satellite number " +
                   to_string(blob_id.m_Sat) +
                   " for the blob " + blob_id.ToString();
@@ -233,7 +233,7 @@ void CPSGS_TSEChunkProcessor::x_ProcessIdModVerId2Info(void)
     string  err_msg;
 
     if (!m_IdModVerId2Info->GetTSEId().MapSatToKeyspace()) {
-        app->GetErrorCounters().IncClientSatToSatName();
+        app->GetCounters().Increment(CPSGSCounters::ePSGS_ClientSatToSatNameError);
 
         err_msg = GetName() + " failed to map sat " +
                   to_string(m_IdModVerId2Info->GetTSEId().m_Sat) +
@@ -265,7 +265,7 @@ void CPSGS_TSEChunkProcessor::x_ProcessIdModVerId2Info(void)
         do {
             // Step 1: check the id2info presense
             if (blob_record->GetId2Info().empty()) {
-                app->GetRequestCounters().IncTSEChunkSplitVersionCacheNotMatched();
+                app->GetCounters().Increment(CPSGSCounters::ePSGS_TSEChunkSplitVersionCacheNotMatched);
                 PSG_WARNING("Blob " + m_IdModVerId2Info->GetTSEId().ToString() +
                             " properties id2info is empty in cache");
                 break;  // Continue with cassandra
@@ -278,19 +278,19 @@ void CPSGS_TSEChunkProcessor::x_ProcessIdModVerId2Info(void)
                                         cache_id2_info,
                                         m_IdModVerId2Info->GetTSEId(),
                                         false)) {
-                app->GetRequestCounters().IncTSEChunkSplitVersionCacheNotMatched();
+                app->GetCounters().Increment(CPSGSCounters::ePSGS_TSEChunkSplitVersionCacheNotMatched);
                 break;  // Continue with cassandra
             }
 
             // Step 3: check the split version in cache
             if (cache_id2_info->GetSplitVersion() != m_IdModVerId2Info->GetSplitVersion()) {
-                app->GetRequestCounters().IncTSEChunkSplitVersionCacheNotMatched();
+                app->GetCounters().Increment(CPSGSCounters::ePSGS_TSEChunkSplitVersionCacheNotMatched);
                 PSG_WARNING("Blob " + m_IdModVerId2Info->GetTSEId().ToString() +
                             " split version in cache does not match the requested one");
                 break;  // Continue with cassandra
             }
 
-            app->GetRequestCounters().IncTSEChunkSplitVersionCacheMatched();
+            app->GetCounters().Increment(CPSGSCounters::ePSGS_TSEChunkSplitVersionCacheMatched);
 
             // Step 4: validate the chunk number
             if (!x_ValidateTSEChunkNumber(m_TSEChunkRequest->m_Id2Chunk,
@@ -587,7 +587,7 @@ void CPSGS_TSEChunkProcessor::OnGetBlobProp(CCassBlobFetch *  fetch_details,
     } else {
         // Not found; it is the user error, not the data inconsistency
         auto *  app = CPubseqGatewayApp::GetInstance();
-        app->GetErrorCounters().IncBlobPropsNotFoundError();
+        app->GetCounters().Increment(CPSGSCounters::ePSGS_BlobPropsNotFoundError);
 
         auto    blob_id = fetch_details->GetBlobId();
         string  message = "Blob " + blob_id.ToString() + " properties are not found";
@@ -692,8 +692,8 @@ void CPSGS_TSEChunkProcessor::OnGetBlobChunk(CCassBlobFetch *  fetch_details,
         return;
     }
     if (IPSGS_Processor::m_Reply->IsFinished()) {
-        CPubseqGatewayApp::GetInstance()->GetErrorCounters().
-                                                     IncUnknownError();
+        CPubseqGatewayApp::GetInstance()->GetCounters().Increment(
+                                            CPSGSCounters::ePSGS_UnknownError);
         PSG_ERROR("Unexpected data received "
                   "while the output has finished, ignoring");
         if (IPSGS_Processor::m_Reply->IsOutputReady())
@@ -779,9 +779,9 @@ CPSGS_TSEChunkProcessor::OnGetSplitHistoryError(
 
     if (is_error) {
         if (code == CCassandraException::eQueryTimeout)
-            app->GetErrorCounters().IncCassQueryTimeoutError();
+            app->GetCounters().Increment(CPSGSCounters::ePSGS_CassQueryTimeoutError);
         else
-            app->GetErrorCounters().IncUnknownError();
+            app->GetCounters().Increment(CPSGSCounters::ePSGS_UnknownError);
 
         // If it is an error then there will be no more activity
         fetch_details->SetReadFinished();
@@ -821,7 +821,7 @@ CPSGS_TSEChunkProcessor::OnGetSplitHistory(
     auto *      app = CPubseqGatewayApp::GetInstance();
     if (result.empty()) {
         // Split history is not found
-        app->GetErrorCounters().IncSplitHistoryNotFoundError();
+        app->GetCounters().Increment(CPSGSCounters::ePSGS_SplitHistoryNotFoundError);
 
         string      message = "Split history version " +
                               to_string(fetch_details->GetSplitVersion()) +
@@ -1013,7 +1013,7 @@ CPSGS_TSEChunkProcessor::x_ValidateTSEChunkNumber(
                           to_string(requested_chunk);
         if (need_finish) {
             auto *  app = CPubseqGatewayApp::GetInstance();
-            app->GetErrorCounters().IncMalformedArguments();
+            app->GetCounters().Increment(CPSGSCounters::ePSGS_MalformedArgs);
             x_SendProcessorError(msg, CRequestStatus::e400_BadRequest,
                                  ePSGS_MalformedParameter);
             UpdateOverallStatus(CRequestStatus::e400_BadRequest);
@@ -1035,7 +1035,7 @@ CPSGS_TSEChunkProcessor::x_TSEChunkSatToKeyspace(SCass_BlobId &  blob_id)
     if (app->SatToKeyspace(blob_id.m_Sat, blob_id.m_Keyspace))
         return true;
 
-    app->GetErrorCounters().IncClientSatToSatName();
+    app->GetCounters().Increment(CPSGSCounters::ePSGS_ClientSatToSatNameError);
 
     string  msg = "Unknown TSE chunk satellite number " +
                   to_string(blob_id.m_Sat) +
@@ -1139,7 +1139,7 @@ bool CPSGS_TSEChunkProcessor::x_Peek(unique_ptr<CCassFetch> &  fetch_details,
         string      error = fetch_details->GetLoader()->LastError();
         auto *      app = CPubseqGatewayApp::GetInstance();
 
-        app->GetErrorCounters().IncUnknownError();
+        app->GetCounters().Increment(CPSGSCounters::ePSGS_UnknownError);
         PSG_ERROR(error);
 
         CCassBlobFetch *  blob_fetch = static_cast<CCassBlobFetch *>(fetch_details.get());

@@ -357,7 +357,7 @@ CPSGS_CassBlobBase::x_RequestID2BlobChunks(TBlobPropsCB  blob_props_cb,
         x_PrepareBlobPropMessage(fetch_details, message,
                                  CRequestStatus::e500_InternalServerError,
                                  ePSGS_BadID2Info, eDiag_Error);
-        app->GetErrorCounters().IncServerSatToSatName();
+        app->GetCounters().Increment(CPSGSCounters::ePSGS_ServerSatToSatNameError);
         UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
         PSG_ERROR(message);
         return;
@@ -725,13 +725,13 @@ CPSGS_CassBlobBase::CountError(CRequestStatus::ECode  status,
     }
 
     if (status == CRequestStatus::e404_NotFound) {
-        app->GetErrorCounters().IncGetBlobNotFound();
+        app->GetCounters().Increment(CPSGSCounters::ePSGS_GetBlobNotFound);
     } else {
         if (is_error) {
             if (code == CCassandraException::eQueryTimeout)
-                app->GetErrorCounters().IncCassQueryTimeoutError();
+                app->GetCounters().Increment(CPSGSCounters::ePSGS_CassQueryTimeoutError);
             else
-                app->GetErrorCounters().IncUnknownError();
+                app->GetCounters().Increment(CPSGSCounters::ePSGS_UnknownError);
         }
     }
 
@@ -755,8 +755,8 @@ CPSGS_CassBlobBase::OnGetBlobChunk(bool  cancelled,
         return;
     }
     if (m_Reply->IsFinished()) {
-        CPubseqGatewayApp::GetInstance()->GetErrorCounters().
-                                                     IncUnknownError();
+        CPubseqGatewayApp::GetInstance()->GetCounters().Increment(
+                                            CPSGSCounters::ePSGS_UnknownError);
         PSG_ERROR("Unexpected data received "
                   "while the output has finished, ignoring");
         return;
@@ -792,7 +792,7 @@ CPSGS_CassBlobBase::x_OnBlobPropNotFound(CCassBlobFetch *  fetch_details)
     // Not found, report 500 because it is data inconsistency
     // or 404 if it was requested via sat.sat_key
     auto *  app = CPubseqGatewayApp::GetInstance();
-    app->GetErrorCounters().IncBlobPropsNotFoundError();
+    app->GetCounters().Increment(CPSGSCounters::ePSGS_BlobPropsNotFoundError);
 
     auto    blob_id = fetch_details->GetBlobId();
     string  message = "Blob " + blob_id.ToString() +
@@ -848,7 +848,8 @@ CPSGS_CassBlobBase::x_ParseId2Info(CCassBlobFetch *  fetch_details,
             fetch_details->GetBlobId().ToString() + ".";
     }
 
-    CPubseqGatewayApp::GetInstance()->GetErrorCounters().IncInvalidId2InfoError();
+    CPubseqGatewayApp::GetInstance()->GetCounters().Increment(
+                                    CPSGSCounters::ePSGS_InvalidId2InfoError);
     x_PrepareBlobPropMessage(fetch_details, err_msg,
                              CRequestStatus::e500_InternalServerError,
                              ePSGS_BadID2Info, eDiag_Error);
@@ -1119,9 +1120,9 @@ CPSGS_CassBlobBase::OnPublicCommentError(
 
     if (is_error) {
         if (code == CCassandraException::eQueryTimeout)
-            app->GetErrorCounters().IncCassQueryTimeoutError();
+            app->GetCounters().Increment(CPSGSCounters::ePSGS_CassQueryTimeoutError);
         else
-            app->GetErrorCounters().IncUnknownError();
+            app->GetCounters().Increment(CPSGSCounters::ePSGS_UnknownError);
 
         // If it is an error then there will be no more activity
         fetch_details->SetReadFinished();

@@ -38,7 +38,6 @@
 
 #include "pubseq_gateway.hpp"
 #include "pubseq_gateway_exception.hpp"
-#include "stat_counters.hpp"
 #include "resolve_processor.hpp"
 
 #include "shutdown_data.hpp"
@@ -136,7 +135,7 @@ int CPubseqGatewayApp::OnBadURL(CHttpRequest &  req,
         }
     } else {
         try {
-            m_ErrorCounters.IncBadUrlPath();
+            m_Counters.Increment(CPSGSCounters::ePSGS_BadUrlPath);
 
             string      bad_url = req.GetPath();
             x_SendMessageAndCompletionChunks(reply, kBadUrlMessage + bad_url,
@@ -251,7 +250,7 @@ int CPubseqGatewayApp::OnGet(CHttpRequest &  req,
             if (!x_IsBoolParamValid(kAutoBlobSkippingParam,
                                     auto_blob_skipping_param.m_Value,
                                     err_msg)) {
-                m_ErrorCounters.IncMalformedArguments();
+                m_Counters.Increment(CPSGSCounters::ePSGS_MalformedArgs);
                 x_SendMessageAndCompletionChunks(reply, err_msg,
                                                  CRequestStatus::e400_BadRequest,
                                                  ePSGS_MalformedParameter,
@@ -268,7 +267,7 @@ int CPubseqGatewayApp::OnGet(CHttpRequest &  req,
                                                disabled_processors))
             return 0;
 
-        m_RequestCounters.IncGetBlobBySeqId();
+        m_Counters.Increment(CPSGSCounters::ePSGS_GetBlobBySeqIdRequest);
         unique_ptr<SPSGS_RequestBase>
             req(new SPSGS_BlobBySeqIdRequest(
                         string(seq_id.data(), seq_id.size()),
@@ -381,7 +380,7 @@ int CPubseqGatewayApp::OnGetBlob(CHttpRequest &  req,
                                                    disabled_processors))
                 return 0;
 
-            m_RequestCounters.IncGetBlobBySatSatKey();
+            m_Counters.Increment(CPSGSCounters::ePSGS_GetBlobBySatSatKeyRequest);
             unique_ptr<SPSGS_RequestBase>
                     req(new SPSGS_BlobBySatSatKeyRequest(
                                 blob_id, last_modified_value,
@@ -453,7 +452,7 @@ int CPubseqGatewayApp::OnResolve(CHttpRequest &  req,
         if (fmt_param.m_Found) {
             output_format = x_GetOutputFormat(kFmtParam, fmt_param.m_Value, err_msg);
             if (output_format == SPSGS_ResolveRequest::ePSGS_UnknownFormat) {
-                m_ErrorCounters.IncMalformedArguments();
+                m_Counters.Increment(CPSGSCounters::ePSGS_MalformedArgs);
                 x_SendMessageAndCompletionChunks(reply, err_msg,
                                                  CRequestStatus::e400_BadRequest,
                                                  ePSGS_MalformedParameter,
@@ -472,7 +471,7 @@ int CPubseqGatewayApp::OnResolve(CHttpRequest &  req,
             if (request_param.m_Found) {
                 if (!x_IsBoolParamValid(flag_param.first,
                                         request_param.m_Value, err_msg)) {
-                    m_ErrorCounters.IncMalformedArguments();
+                    m_Counters.Increment(CPSGSCounters::ePSGS_MalformedArgs);
                     x_SendMessageAndCompletionChunks(reply, err_msg,
                                                      CRequestStatus::e400_BadRequest,
                                                      ePSGS_MalformedParameter,
@@ -497,7 +496,7 @@ int CPubseqGatewayApp::OnResolve(CHttpRequest &  req,
                                                             subst_param.m_Value,
                                                             err_msg);
             if (subst_option == SPSGS_RequestBase::ePSGS_UnknownAccSubstitution) {
-                m_ErrorCounters.IncMalformedArguments();
+                m_Counters.Increment(CPSGSCounters::ePSGS_MalformedArgs);
                 x_SendMessageAndCompletionChunks(reply, err_msg,
                                                  CRequestStatus::e400_BadRequest,
                                                  ePSGS_MalformedParameter,
@@ -525,7 +524,7 @@ int CPubseqGatewayApp::OnResolve(CHttpRequest &  req,
             return 0;
 
         // Parameters processing has finished
-        m_RequestCounters.IncResolve();
+        m_Counters.Increment(CPSGSCounters::ePSGS_ResolveRequest);
         unique_ptr<SPSGS_RequestBase>
             req(new SPSGS_ResolveRequest(
                         string(seq_id.data(), seq_id.size()),
@@ -628,7 +627,7 @@ int CPubseqGatewayApp::OnGetTSEChunk(CHttpRequest &  req,
             return 0;
 
         // All parameters are good
-        m_RequestCounters.IncGetTSEChunk();
+        m_Counters.Increment(CPSGSCounters::ePSGS_GetTSEChunk);
         unique_ptr<SPSGS_RequestBase>
             req(new SPSGS_TSEChunkRequest(
                         id2_chunk_value, id2_info_param.m_Value,
@@ -749,7 +748,7 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
         }
 
         // Parameters processing has finished
-        m_RequestCounters.IncGetNA();
+        m_Counters.Increment(CPSGSCounters::ePSGS_GetNamedAnnotations);
         unique_ptr<SPSGS_RequestBase>
             req(new SPSGS_AnnotRequest(
                         string(seq_id.data(), seq_id.size()),
@@ -785,7 +784,7 @@ int CPubseqGatewayApp::OnHealth(CHttpRequest &  req,
     static string   separator = "==============================================";
     static string   prefix = "PSG_HEALTH_ERROR: ";
 
-    m_RequestCounters.IncHealth();
+    m_Counters.Increment(CPSGSCounters::ePSGS_HealthRequest);
 
     auto                    now = chrono::high_resolution_clock::now();
     CRequestContextResetter context_resetter;
@@ -928,7 +927,7 @@ int CPubseqGatewayApp::OnConfig(CHttpRequest &  req,
 
     auto    http_reply = reply->GetHttpReply();
     try {
-        m_RequestCounters.IncAdmin();
+        m_Counters.Increment(CPSGSCounters::ePSGS_AdminRequest);
 
         CNcbiOstrstream             conf;
         CNcbiOstrstreamToString     converter(conf);
@@ -1004,7 +1003,7 @@ int CPubseqGatewayApp::OnInfo(CHttpRequest &  req,
     auto                    app = CPubseqGatewayApp::GetInstance();
     auto                    http_reply = reply->GetHttpReply();
     try {
-        m_RequestCounters.IncAdmin();
+        m_Counters.Increment(CPSGSCounters::ePSGS_AdminRequest);
 
         CJsonNode   info(CJsonNode::NewObjectNode());
 
@@ -1176,35 +1175,35 @@ int CPubseqGatewayApp::OnStatus(CHttpRequest &  req,
 
     auto        http_reply = reply->GetHttpReply();
     try {
-        m_RequestCounters.IncAdmin();
+        m_Counters.Increment(CPSGSCounters::ePSGS_AdminRequest);
 
         CJsonNode                       status(CJsonNode::NewObjectNode());
 
-        AppendValueNode(status, kCassandraActiveStatementsCount,
-                        static_cast<uint64_t>(
-                            m_CassConnection->GetActiveStatements()));
-        AppendValueNode(status, kNumberOfConnections,
-                        static_cast<uint64_t>(
-                            m_TcpDaemon->NumOfConnections()));
-        AppendValueNode(status, kActiveRequestCount,
-                        static_cast<uint64_t>(
-                            g_ShutdownData.m_ActiveRequestCount.load()));
-        AppendValueNode(status, kShutdownRequested,
-                        g_ShutdownData.m_ShutdownRequested);
+        m_Counters.AppendValueNode(
+            status, CPSGSCounters::ePSGS_CassandraActiveStatements,
+            static_cast<uint64_t>(m_CassConnection->GetActiveStatements()));
+        m_Counters.AppendValueNode(
+            status, CPSGSCounters::ePSGS_NumberOfConnections,
+            static_cast<uint64_t>(m_TcpDaemon->NumOfConnections()));
+        m_Counters.AppendValueNode(
+            status, CPSGSCounters::ePSGS_ActiveRequest,
+            static_cast<uint64_t>(g_ShutdownData.m_ActiveRequestCount.load()));
+        m_Counters.AppendValueNode(
+            status, CPSGSCounters::ePSGS_ShutdownRequested,
+            g_ShutdownData.m_ShutdownRequested);
 
         if (g_ShutdownData.m_ShutdownRequested) {
             auto        now = chrono::steady_clock::now();
             uint64_t    sec = std::chrono::duration_cast<std::chrono::seconds>
                                 (g_ShutdownData.m_Expired - now).count();
-            AppendValueNode(status, kGracefulShutdownExpiredInSec, sec);
+            m_Counters.AppendValueNode(
+                status, CPSGSCounters::ePSGS_GracefulShutdownExpiredInSec, sec);
         } else {
-            AppendValueNode(status, kGracefulShutdownExpiredInSec, kNA);
+            m_Counters.AppendValueNode(
+                status, CPSGSCounters::ePSGS_GracefulShutdownExpiredInSec, kNA);
         }
 
-        m_ErrorCounters.PopulateDictionary(status);
-        m_RequestCounters.PopulateDictionary(status);
-        m_CacheCounters.PopulateDictionary(status);
-        m_DBCounters.PopulateDictionary(status);
+        m_Counters.PopulateDictionary(status);
 
         string      content = status.Repr(CJsonNode::fStandardJson);
 
@@ -1394,7 +1393,7 @@ int CPubseqGatewayApp::OnGetAlerts(CHttpRequest &  req,
 
     auto        http_reply = reply->GetHttpReply();
     try {
-        m_RequestCounters.IncAdmin();
+        m_Counters.Increment(CPSGSCounters::ePSGS_AdminRequest);
 
         string      content = m_Alerts.Serialize().Repr(CJsonNode::fStandardJson);
 
@@ -1519,7 +1518,7 @@ int CPubseqGatewayApp::OnStatistics(CHttpRequest &  req,
     }
 
     try {
-        m_RequestCounters.IncAdmin();
+        m_Counters.Increment(CPSGSCounters::ePSGS_AdminRequest);
 
         // /ADMIN/statistics[?reset=yes(dflt=no)][&most_recent_time=<time>][&most_ancient_time=<time>][histogram_names=name1,name2,...]
         // /ADMIN/statistics[?reset=yes(dflt=no)][&most_recent_time=<time>][&most_ancient_time=<time>]
@@ -1709,7 +1708,7 @@ int CPubseqGatewayApp::OnTestIO(CHttpRequest &  req,
             return 0;
         }
 
-        m_RequestCounters.IncTestIO();
+        m_Counters.Increment(CPSGSCounters::ePSGS_TestIORequest);
 
         http_reply->SetContentType(ePSGS_BinaryMime);
         http_reply->SetContentLength(data_size);
@@ -1757,11 +1756,11 @@ bool CPubseqGatewayApp::x_ProcessCommonGetAndResolveParams(
     SRequestParameter   seq_id_param = x_GetParam(req, kSeqIdParam);
     if (!seq_id_param.m_Found) {
         err_msg = "Missing the '" + kSeqIdParam + "' parameter";
-        m_ErrorCounters.IncInsufficientArguments();
+        m_Counters.Increment(CPSGSCounters::ePSGS_InsufficientArgs);
     }
     else if (seq_id_param.m_Value.empty()) {
         err_msg = "Missing value of the '" + kSeqIdParam + "' parameter";
-        m_ErrorCounters.IncMalformedArguments();
+        m_Counters.Increment(CPSGSCounters::ePSGS_MalformedArgs);
     }
 
     if (err_msg.empty()) {
@@ -1781,7 +1780,7 @@ bool CPubseqGatewayApp::x_ProcessCommonGetAndResolveParams(
     if (seq_id_type_param.m_Found) {
         if (!x_ConvertIntParameter(kSeqIdTypeParam, seq_id_type_param.m_Value,
                                    seq_id_type, err_msg)) {
-            m_ErrorCounters.IncMalformedArguments();
+            m_Counters.Increment(CPSGSCounters::ePSGS_MalformedArgs);
             x_SendMessageAndCompletionChunks(reply, err_msg,
                                              CRequestStatus::e400_BadRequest,
                                              ePSGS_MalformedParameter,
@@ -1794,7 +1793,7 @@ bool CPubseqGatewayApp::x_ProcessCommonGetAndResolveParams(
             err_msg = "The '" + kSeqIdTypeParam +
                       "' value must be >= 0 and less than " +
                       to_string(CSeq_id::e_MaxChoice);
-            m_ErrorCounters.IncMalformedArguments();
+            m_Counters.Increment(CPSGSCounters::ePSGS_MalformedArgs);
             x_SendMessageAndCompletionChunks(reply, err_msg,
                                              CRequestStatus::e400_BadRequest,
                                              ePSGS_MalformedParameter,
@@ -1819,7 +1818,7 @@ CPubseqGatewayApp::x_GetUseCacheParameter(CHttpRequest &  req,
     if (use_cache_param.m_Found) {
         if (!x_IsBoolParamValid(kUseCacheParam, use_cache_param.m_Value,
                                 err_msg)) {
-            m_ErrorCounters.IncMalformedArguments();
+            m_Counters.Increment(CPSGSCounters::ePSGS_MalformedArgs);
             return SPSGS_RequestBase::ePSGS_UnknownUseCache;
         }
         if (use_cache_param.m_Value == "yes")

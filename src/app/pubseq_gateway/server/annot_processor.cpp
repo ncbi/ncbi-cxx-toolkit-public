@@ -315,8 +315,8 @@ CPSGS_AnnotProcessor::x_OnNamedAnnotData(CNAnnotRecord &&  annot_record,
         return false;
     }
     if (IPSGS_Processor::m_Reply->IsFinished()) {
-        CPubseqGatewayApp::GetInstance()->GetErrorCounters().
-                                                     IncUnknownError();
+        CPubseqGatewayApp::GetInstance()->GetCounters().Increment(
+                                        CPSGSCounters::ePSGS_UnknownError);
         PSG_ERROR("Unexpected data received "
                   "while the output has finished, ignoring");
 
@@ -406,9 +406,9 @@ CPSGS_AnnotProcessor::x_OnNamedAnnotError(CCassNamedAnnotFetch *  fetch_details,
 
     if (is_error) {
         if (code == CCassandraException::eQueryTimeout)
-            app->GetErrorCounters().IncCassQueryTimeoutError();
+            app->GetCounters().Increment(CPSGSCounters::ePSGS_CassQueryTimeoutError);
         else
-            app->GetErrorCounters().IncUnknownError();
+            app->GetCounters().Increment(CPSGSCounters::ePSGS_UnknownError);
     }
 
     if (IPSGS_Processor::m_Request->NeedTrace()) {
@@ -523,7 +523,7 @@ bool CPSGS_AnnotProcessor::x_Peek(unique_ptr<CCassFetch> &  fetch_details,
         string      error = fetch_details->GetLoader()->LastError();
         auto *      app = CPubseqGatewayApp::GetInstance();
 
-        app->GetErrorCounters().IncUnknownError();
+        app->GetCounters().Increment(CPSGSCounters::ePSGS_UnknownError);
         PSG_ERROR(error);
 
         IPSGS_Processor::m_Reply->PrepareProcessorMessage(

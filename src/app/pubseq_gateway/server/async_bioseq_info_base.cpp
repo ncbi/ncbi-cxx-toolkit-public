@@ -166,7 +166,7 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records)
         // Nothing was found
         app->GetTiming().Register(eLookupCassBioseqInfo, eOpStatusNotFound,
                                   m_BioseqRequestStart);
-        app->GetDBCounters().IncBioseqInfoNotFound();
+        app->GetCounters().Increment(CPSGSCounters::ePSGS_BioseqInfoNotFound);
 
         if (IsINSDCSeqIdType(m_BioseqResolution.m_BioseqInfo.GetSeqIdType())) {
             // Second try without seq_id_type
@@ -196,7 +196,7 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records)
 
         app->GetTiming().Register(eLookupCassBioseqInfo, eOpStatusFound,
                                   m_BioseqRequestStart);
-        app->GetDBCounters().IncBioseqInfoFoundOne();
+        app->GetCounters().Increment(CPSGSCounters::ePSGS_BioseqInfoFoundOne);
         m_BioseqResolution.m_BioseqInfo = move(records[0]);
         m_FinishedCB(move(m_BioseqResolution));
         return;
@@ -237,7 +237,7 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records)
 
     app->GetTiming().Register(eLookupCassBioseqInfo, eOpStatusFound,
                               m_BioseqRequestStart);
-    app->GetDBCounters().IncBioseqInfoFoundOne();
+    app->GetCounters().Increment(CPSGSCounters::ePSGS_BioseqInfoFoundOne);
     m_BioseqResolution.m_BioseqInfo = move(records[index]);
     m_FinishedCB(move(m_BioseqResolution));
 }
@@ -273,7 +273,7 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfoWithoutSeqIdType(
 
             app->GetTiming().Register(eLookupCassBioseqInfo, eOpStatusFound,
                                       m_BioseqRequestStart);
-            app->GetDBCounters().IncBioseqInfoFoundOne();
+            app->GetCounters().Increment(CPSGSCounters::ePSGS_BioseqInfoFoundOne);
             m_BioseqResolution.m_BioseqInfo = move(records[decision.index]);
 
             // Data callback
@@ -288,7 +288,7 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfoWithoutSeqIdType(
 
             app->GetTiming().Register(eLookupCassBioseqInfo, eOpStatusNotFound,
                                       m_BioseqRequestStart);
-            app->GetDBCounters().IncBioseqInfoNotFound();
+            app->GetCounters().Increment(CPSGSCounters::ePSGS_BioseqInfoNotFound);
 
             // Data Callback
             m_ErrorCB(CRequestStatus::e404_NotFound, ePSGS_UnresolvedSeqId,
@@ -304,7 +304,7 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfoWithoutSeqIdType(
 
             app->GetTiming().Register(eLookupCassBioseqInfo, eOpStatusFound,
                                       m_BioseqRequestStart);
-            app->GetDBCounters().IncBioseqInfoFoundMany();
+            app->GetCounters().Increment(CPSGSCounters::ePSGS_BioseqInfoFoundMany);
 
             // Error callback
             m_ErrorCB(CRequestStatus::e500_InternalServerError,
@@ -336,7 +336,7 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfoError(CRequestStatus::ECode  status,
     if (m_NoSeqIdTypeFetch)
         m_NoSeqIdTypeFetch->SetReadFinished();
 
-    CPubseqGatewayApp::GetInstance()->GetDBCounters().IncBioseqInfoError();
+    CPubseqGatewayApp::GetInstance()->GetCounters().Increment(CPSGSCounters::ePSGS_BioseqInfoError);
 
     m_ErrorCB(status, code, severity, message);
 }

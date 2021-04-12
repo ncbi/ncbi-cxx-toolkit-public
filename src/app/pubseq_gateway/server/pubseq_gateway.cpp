@@ -442,7 +442,7 @@ int CPubseqGatewayApp::Run(void)
 
     // m_IdToNameAndDescription was populated at the time of
     // dealing with arguments
-    UpdateIdToNameDescription(m_IdToNameAndDescription);
+    m_Counters.UpdateConfiguredNameDescription(m_IdToNameAndDescription);
 
     auto purge_size = round(float(m_ExcludeCacheMaxSize) *
                             float(m_ExcludeCachePurgePercentage) / 100.0);
@@ -640,30 +640,6 @@ int CPubseqGatewayApp::Run(void)
 CPubseqGatewayApp *  CPubseqGatewayApp::GetInstance(void)
 {
     return sm_PubseqApp;
-}
-
-
-CPubseqGatewayErrorCounters &  CPubseqGatewayApp::GetErrorCounters(void)
-{
-    return m_ErrorCounters;
-}
-
-
-CPubseqGatewayRequestCounters &  CPubseqGatewayApp::GetRequestCounters(void)
-{
-    return m_RequestCounters;
-}
-
-
-CPubseqGatewayCacheCounters &  CPubseqGatewayApp::GetCacheCounters(void)
-{
-    return m_CacheCounters;
-}
-
-
-CPubseqGatewayDBCounters &  CPubseqGatewayApp::GetDBCounters(void)
-{
-    return m_DBCounters;
 }
 
 
@@ -1130,7 +1106,7 @@ CPubseqGatewayApp::x_GetTraceParameter(CHttpRequest &  req,
     if (trace_protocol_param.m_Found) {
         if (!x_IsBoolParamValid(param_name,
                                 trace_protocol_param.m_Value, err_msg)) {
-            m_ErrorCounters.IncMalformedArguments();
+            m_Counters.Increment(CPSGSCounters::ePSGS_MalformedArgs);
             PSG_WARNING(err_msg);
             return false;
         }
@@ -1157,7 +1133,7 @@ CPubseqGatewayApp::x_GetHops(CHttpRequest &  req,
         string      err_msg;
         if (!x_ConvertIntParameter(kHopsParam, hops_param.m_Value,
                                    hops, err_msg)) {
-            m_ErrorCounters.IncMalformedArguments();
+            m_Counters.Increment(CPSGSCounters::ePSGS_MalformedArgs);
             x_SendMessageAndCompletionChunks(reply, err_msg,
                                              CRequestStatus::e400_BadRequest,
                                              ePSGS_MalformedParameter,
@@ -1169,7 +1145,7 @@ CPubseqGatewayApp::x_GetHops(CHttpRequest &  req,
         if (hops < 0) {
             err_msg = "Invalid '" + kHopsParam + "' value " + to_string(hops) +
                       ". It must be > 0.";
-            m_ErrorCounters.IncMalformedArguments();
+            m_Counters.Increment(CPSGSCounters::ePSGS_MalformedArgs);
             x_SendMessageAndCompletionChunks(reply, err_msg,
                                              CRequestStatus::e400_BadRequest,
                                              ePSGS_MalformedParameter,
@@ -1182,7 +1158,7 @@ CPubseqGatewayApp::x_GetHops(CHttpRequest &  req,
             err_msg = "The '" + kHopsParam + "' value " + to_string(hops) +
                       " exceeds the server configured value " +
                       to_string(m_MaxHops) + ".";
-            m_ErrorCounters.IncMaxHopsExceededError();
+            m_Counters.Increment(CPSGSCounters::ePSGS_MaxHopsExceededError);
             x_SendMessageAndCompletionChunks(reply, err_msg,
                                              CRequestStatus::e400_BadRequest,
                                              ePSGS_MalformedParameter,
@@ -1227,7 +1203,7 @@ CPubseqGatewayApp::x_GetEnabledAndDisabledProcessors(
                 string      err_msg = "The same processor name is found "
                     "in both '" + kEnableProcessor + "' (has it as " + en_processor + ") and '" +
                     kDisableProcessor + "' (has it as " + dis_processor + ") lists";
-                m_ErrorCounters.IncMalformedArguments();
+                m_Counters.Increment(CPSGSCounters::ePSGS_MalformedArgs);
                 x_SendMessageAndCompletionChunks(reply, err_msg,
                                                  CRequestStatus::e400_BadRequest,
                                                  ePSGS_MalformedParameter,
@@ -1519,7 +1495,7 @@ void CPubseqGatewayApp::x_MalformedArguments(
                                 CRef<CRequestContext> &  context,
                                 const string &  err_msg)
 {
-    m_ErrorCounters.IncMalformedArguments();
+    m_Counters.Increment(CPSGSCounters::ePSGS_MalformedArgs);
     x_SendMessageAndCompletionChunks(reply, err_msg,
                                      CRequestStatus::e400_BadRequest,
                                      ePSGS_MalformedParameter, eDiag_Error);
@@ -1533,7 +1509,7 @@ void CPubseqGatewayApp::x_InsufficientArguments(
                                 CRef<CRequestContext> &  context,
                                 const string &  err_msg)
 {
-    m_ErrorCounters.IncInsufficientArguments();
+    m_Counters.Increment(CPSGSCounters::ePSGS_InsufficientArgs);
     x_SendMessageAndCompletionChunks(reply, err_msg,
                                      CRequestStatus::e400_BadRequest,
                                      ePSGS_InsufficientArguments, eDiag_Error);

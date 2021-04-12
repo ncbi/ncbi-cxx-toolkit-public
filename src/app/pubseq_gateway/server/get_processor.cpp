@@ -181,7 +181,7 @@ CPSGS_GetProcessor::x_OnSeqIdResolveFinished(
     string      msg = "Unknown satellite number " + to_string(blob_id.m_Sat) +
                       " for bioseq info with seq_id '" +
                       m_BlobRequest->m_SeqId + "'";
-    app->GetErrorCounters().IncServerSatToSatName();
+    app->GetCounters().Increment(CPSGSCounters::ePSGS_ServerSatToSatNameError);
 
     IPSGS_Processor::m_Reply->PrepareBlobPropMessage(
         item_id, GetName(), msg, CRequestStatus::e500_InternalServerError,
@@ -542,7 +542,7 @@ bool CPSGS_GetProcessor::x_Peek(unique_ptr<CCassFetch> &  fetch_details,
         string      error = fetch_details->GetLoader()->LastError();
         auto *      app = CPubseqGatewayApp::GetInstance();
 
-        app->GetErrorCounters().IncUnknownError();
+        app->GetCounters().Increment(CPSGSCounters::ePSGS_UnknownError);
         PSG_ERROR(error);
 
         CCassBlobFetch *  blob_fetch = static_cast<CCassBlobFetch *>(fetch_details.get());
