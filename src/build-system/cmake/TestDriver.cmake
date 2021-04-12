@@ -9,8 +9,9 @@
 cmake_policy(SET CMP0057 NEW)
 
 # ---------------------------------------------------------------------------
-# Prepearation
+# Preparation
 
+cmake_policy(SET CMP0053 NEW)
 set(IS_AUTOMATED NO)
 set(IS_DB_LOAD   NO)
 
