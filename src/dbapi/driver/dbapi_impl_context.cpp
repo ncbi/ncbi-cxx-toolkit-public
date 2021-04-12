@@ -99,7 +99,7 @@ CDriverContext::~CDriverContext(void)
 void
 CDriverContext::SetApplicationName(const string& app_name)
 {
-    CWriteLockGuard guard(x_GetCtxLock());
+    CMutexGuard mg(x_GetCtxMtx());
 
     m_AppName = app_name;
 }
@@ -107,7 +107,7 @@ CDriverContext::SetApplicationName(const string& app_name)
 string
 CDriverContext::GetApplicationName(void) const
 {
-    CReadLockGuard guard(x_GetCtxLock());
+    CMutexGuard mg(x_GetCtxMtx());
 
     return m_AppName;
 }
@@ -115,7 +115,7 @@ CDriverContext::GetApplicationName(void) const
 void
 CDriverContext::SetHostName(const string& host_name)
 {
-    CWriteLockGuard guard(x_GetCtxLock());
+    CMutexGuard mg(x_GetCtxMtx());
 
     m_HostName = host_name;
 }
@@ -123,21 +123,21 @@ CDriverContext::SetHostName(const string& host_name)
 string
 CDriverContext::GetHostName(void) const
 {
-    CReadLockGuard guard(x_GetCtxLock());
+    CMutexGuard mg(x_GetCtxMtx());
 
     return m_HostName;
 }
 
 unsigned int CDriverContext::GetLoginTimeout(void) const 
 { 
-    CReadLockGuard guard(x_GetCtxLock());
+    CMutexGuard mg(x_GetCtxMtx());
 
     return m_LoginTimeout; 
 }
 
 bool CDriverContext::SetLoginTimeout (unsigned int nof_secs)
 {
-    CWriteLockGuard guard(x_GetCtxLock());
+    CMutexGuard mg(x_GetCtxMtx());
 
     m_LoginTimeout = nof_secs;
 
@@ -146,7 +146,7 @@ bool CDriverContext::SetLoginTimeout (unsigned int nof_secs)
 
 unsigned int CDriverContext::GetTimeout(void) const 
 { 
-    CReadLockGuard guard(x_GetCtxLock());
+    CMutexGuard mg(x_GetCtxMtx());
 
     return m_Timeout; 
 }
@@ -154,7 +154,7 @@ unsigned int CDriverContext::GetTimeout(void) const
 bool CDriverContext::SetTimeout(unsigned int nof_secs)
 {
     bool success = true;
-    CWriteLockGuard guard(x_GetCtxLock());
+    CMutexGuard mg(x_GetCtxMtx());
 
     try {
         m_Timeout = nof_secs;
@@ -171,7 +171,7 @@ bool CDriverContext::SetTimeout(unsigned int nof_secs)
 
 unsigned int CDriverContext::GetCancelTimeout(void) const 
 { 
-    CReadLockGuard guard(x_GetCtxLock());
+    CMutexGuard mg(x_GetCtxMtx());
 
     return m_CancelTimeout;
 }
@@ -179,7 +179,7 @@ unsigned int CDriverContext::GetCancelTimeout(void) const
 bool CDriverContext::SetCancelTimeout(unsigned int nof_secs)
 {
     bool success = true;
-    CWriteLockGuard guard(x_GetCtxLock());
+    CMutexGuard mg(x_GetCtxMtx());
 
     try {
         m_CancelTimeout = nof_secs;
@@ -192,7 +192,7 @@ bool CDriverContext::SetCancelTimeout(unsigned int nof_secs)
 
 bool CDriverContext::SetMaxBlobSize(size_t nof_bytes)
 {
-    CWriteLockGuard guard(x_GetCtxLock());
+    CMutexGuard mg(x_GetCtxMtx());
 
     m_MaxBlobSize = nof_bytes;
 
@@ -204,26 +204,26 @@ bool CDriverContext::SetMaxBlobSize(size_t nof_bytes)
 void CDriverContext::PushCntxMsgHandler(CDB_UserHandler* h,
                                          EOwnership ownership)
 {
-    CWriteLockGuard guard(x_GetCtxLock());
+    CMutexGuard mg(x_GetCtxMtx());
     m_CntxHandlers.Push(h, ownership);
 }
 
 void CDriverContext::PopCntxMsgHandler(CDB_UserHandler* h)
 {
-    CWriteLockGuard guard(x_GetCtxLock());
+    CMutexGuard mg(x_GetCtxMtx());
     m_CntxHandlers.Pop(h);
 }
 
 void CDriverContext::PushDefConnMsgHandler(CDB_UserHandler* h,
                                             EOwnership ownership)
 {
-    CWriteLockGuard guard(x_GetCtxLock());
+    CMutexGuard mg(x_GetCtxMtx());
     m_ConnHandlers.Push(h, ownership);
 }
 
 void CDriverContext::PopDefConnMsgHandler(CDB_UserHandler* h)
 {
-    CWriteLockGuard guard(x_GetCtxLock());
+    CMutexGuard mg(x_GetCtxMtx());
     m_ConnHandlers.Pop(h);
 
     // Remove this handler from all connections
@@ -285,7 +285,7 @@ void CDriverContext::ResetEnvSybase(void)
 
 void CDriverContext::x_Recycle(CConnection* conn, bool conn_reusable)
 {
-    CWriteLockGuard guard(m_PoolLock);
+    CMutexGuard mg(m_PoolMutex);
 
     TConnPool::iterator it = find(m_InUse.begin(), m_InUse.end(), conn);
 
@@ -357,7 +357,7 @@ void CDriverContext::x_Recycle(CConnection* conn, bool conn_reusable)
 void CDriverContext::x_AdjustCounts(const CConnection* conn, int delta)
 {
     if (delta != 0  &&  conn->IsReusable()) {
-        CWriteLockGuard guard(m_PoolLock);
+        CMutexGuard mg(m_PoolMutex);
         string server_name = conn->GetServerName();
         if (conn->Host() != 0  &&  server_name.find('@') == NPOS) {
             server_name += '@' + ConvertN2A(conn->Host());
@@ -379,7 +379,7 @@ void CDriverContext::x_AdjustCounts(const CConnection* conn, int delta)
 void CDriverContext::x_GetCounts(const TCountsMap& main_map,
                                  const string& name, TCounts* counts) const
 {
-    CReadLockGuard guard(m_PoolLock);
+    CMutexGuard mg(m_PoolMutex);
     auto it = main_map.find(name);
     if (it == main_map.end()) {
         counts->clear();
@@ -393,7 +393,7 @@ void CDriverContext::CloseUnusedConnections(const string&   srv_name,
                                             const string&   pool_name,
                                             unsigned int    max_closings)
 {
-    CWriteLockGuard guard(m_PoolLock);
+    CMutexGuard mg(m_PoolMutex);
 
     TConnPool::value_type con;
 
@@ -418,7 +418,7 @@ void CDriverContext::CloseUnusedConnections(const string&   srv_name,
 unsigned int CDriverContext::NofConnections(const TSvrRef& svr_ref,
                                             const string& pool_name) const
 {
-    CReadLockGuard guard(m_PoolLock);
+    CMutexGuard mg(m_PoolMutex);
 
     if ((!svr_ref  ||  !svr_ref->IsValid())  &&  pool_name.empty()) {
         return static_cast<unsigned int>(m_InUse.size() + m_NotInUse.size());
@@ -467,7 +467,7 @@ CDB_Connection* CDriverContext::MakeCDBConnection(CConnection* connection,
                                                   int delta)
 {
     connection->m_CleanupTime.Clear();
-    CWriteLockGuard guard(m_PoolLock);
+    CMutexGuard mg(m_PoolMutex);
     m_InUse.push_back(connection);
     x_AdjustCounts(connection, delta);
 
@@ -478,7 +478,7 @@ CDB_Connection*
 CDriverContext::MakePooledConnection(const CDBConnParams& params)
 {
     if (params.GetParam("is_pooled") == "true") {
-        CWriteLockGuard guard(m_PoolLock);
+        CMutexGuard mg(m_PoolMutex);
 
         string pool_name  (params.GetParam("pool_name")),
                server_name(params.GetServerName());
@@ -537,10 +537,10 @@ CDriverContext::MakePooledConnection(const CDBConnParams& params)
                     auto target = (m_PoolSemConsumers
                                    .emplace(m_PoolSemConsumers.end(),
                                             subject, !pool_name.empty()));
-                    guard.Release();
+                    mg.Release();
                     bool timed_out = true;
                     while (m_PoolSem.TryWait(deadline.GetRemainingTime())) {
-                        guard.Guard(m_PoolLock);
+                        mg.Guard(m_PoolMutex);
                         if (target->selected) {
                             timed_out = false;
                             for (const auto &it : m_PoolSemConsumers) {
@@ -553,7 +553,7 @@ CDriverContext::MakePooledConnection(const CDBConnParams& params)
                         } else {
                             m_PoolSem.TryWait();
                             m_PoolSem.Post();
-                            guard.Release();
+                            mg.Release();
                             continue;
                         }
                         CConnection* t_con = NULL;
@@ -611,7 +611,7 @@ CDriverContext::MakePooledConnection(const CDBConnParams& params)
 void
 CDriverContext::CloseAllConn(void)
 {
-    CWriteLockGuard guard(m_PoolLock);
+    CMutexGuard mg(m_PoolMutex);
     // close all connections first
     ITERATE(TConnPool, it, m_NotInUse) {
         x_AdjustCounts(*it, -1);
@@ -627,7 +627,7 @@ CDriverContext::CloseAllConn(void)
 void
 CDriverContext::DeleteAllConn(void)
 {
-    CWriteLockGuard guard(m_PoolLock);
+    CMutexGuard mg(m_PoolMutex);
     // close all connections first
     ITERATE(TConnPool, it, m_NotInUse) {
         x_AdjustCounts(*it, -1);
@@ -963,7 +963,7 @@ CDriverContext::ReadDBConfParams(const string&  service_name,
 bool
 CDriverContext::SatisfyPoolMinimum(const CDBConnParams& params)
 {
-    CWriteLockGuard guard(m_PoolLock);
+    CMutexGuard mg(m_PoolMutex);
 
     string pool_min_str = params.GetParam("pool_minsize");
     if (pool_min_str.empty()  ||  pool_min_str == "default")
@@ -991,7 +991,7 @@ CDriverContext::SatisfyPoolMinimum(const CDBConnParams& params)
             ++total_cnt;
         }
     }
-    guard.Release();
+    mg.Release();
     vector< AutoPtr<CDB_Connection> > conns(pool_min);
     for (int i = total_cnt; i < pool_min; ++i) {
         try {
@@ -1008,6 +1008,8 @@ CDriverContext::SatisfyPoolMinimum(const CDBConnParams& params)
 CDB_Connection* 
 CDriverContext::MakeConnection(const CDBConnParams& params)
 {
+    CMutexGuard mg(x_GetCtxMtx());
+
     CMakeConnActualParams act_params(params);
 
     SDBConfParams conf_params;
@@ -1222,7 +1224,7 @@ size_t CDriverContext::CloseConnsForPool(const string& pool_name,
                                          Uint4 keep_host_ip, Uint2 keep_port)
 {
     size_t      invalidated_count = 0;
-    CWriteLockGuard guard(m_PoolLock);
+    CMutexGuard mg(m_PoolMutex);
 
     ITERATE(TConnPool, it, m_InUse) {
         CConnection* t_con(*it);
@@ -1250,7 +1252,7 @@ size_t CDriverContext::CloseConnsForPool(const string& pool_name,
 void CDriverContext::CloseOldIdleConns(unsigned int max_closings,
                                        const string& pool_name)
 {
-    CWriteLockGuard guard(m_PoolLock);
+    CMutexGuard mg(m_PoolMutex);
     if (max_closings == 0) {
         return;
     }
@@ -1303,7 +1305,7 @@ void CDriverContext::DestroyConnImpl(CConnection* impl)
 
 void CDriverContext::SetClientCharset(const string& charset)
 {
-    CWriteLockGuard guard(x_GetCtxLock());
+    CMutexGuard mg(x_GetCtxMtx());
 
     m_ClientCharset = charset;
     m_ClientEncoding = eEncoding_Unknown;

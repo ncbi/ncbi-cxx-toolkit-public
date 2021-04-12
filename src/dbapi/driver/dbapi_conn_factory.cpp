@@ -104,7 +104,7 @@ CDBConnectionFactory::ConfigureFromRegistry(const IRegistry* registry)
 void
 CDBConnectionFactory::Configure(const IRegistry* registry)
 {
-    CWriteLockGuard guard(m_Lock);
+    CFastMutexGuard mg(m_Mtx);
 
     ConfigureFromRegistry(registry);
 }
@@ -112,7 +112,7 @@ CDBConnectionFactory::Configure(const IRegistry* registry)
 void
 CDBConnectionFactory::SetMaxNumOfConnAttempts(unsigned int max_num)
 {
-    CWriteLockGuard guard(m_Lock);
+    CFastMutexGuard mg(m_Mtx);
 
     m_MaxNumOfConnAttempts = max_num;
 }
@@ -120,7 +120,7 @@ CDBConnectionFactory::SetMaxNumOfConnAttempts(unsigned int max_num)
 void
 CDBConnectionFactory::SetMaxNumOfValidationAttempts(unsigned int max_num)
 {
-    CWriteLockGuard guard(m_Lock);
+    CFastMutexGuard mg(m_Mtx);
 
     m_MaxNumOfValidationAttempts = max_num;
 }
@@ -128,7 +128,7 @@ CDBConnectionFactory::SetMaxNumOfValidationAttempts(unsigned int max_num)
 void
 CDBConnectionFactory::SetMaxNumOfServerAlternatives(unsigned int max_num)
 {
-    CWriteLockGuard guard(m_Lock);
+    CFastMutexGuard mg(m_Mtx);
 
     m_MaxNumOfServerAlternatives = max_num;
 }
@@ -136,7 +136,7 @@ CDBConnectionFactory::SetMaxNumOfServerAlternatives(unsigned int max_num)
 void
 CDBConnectionFactory::SetMaxNumOfDispatches(unsigned int max_num)
 {
-    CWriteLockGuard guard(m_Lock);
+    CFastMutexGuard mg(m_Mtx);
 
     m_MaxNumOfDispatches = max_num;
 }
@@ -144,7 +144,7 @@ CDBConnectionFactory::SetMaxNumOfDispatches(unsigned int max_num)
 void
 CDBConnectionFactory::SetConnectionTimeout(unsigned int timeout)
 {
-    CWriteLockGuard guard(m_Lock);
+    CFastMutexGuard mg(m_Mtx);
 
     m_ConnectionTimeout = timeout;
 }
@@ -152,7 +152,7 @@ CDBConnectionFactory::SetConnectionTimeout(unsigned int timeout)
 void
 CDBConnectionFactory::SetLoginTimeout(unsigned int timeout)
 {
-    CWriteLockGuard guard(m_Lock);
+    CFastMutexGuard mg(m_Mtx);
 
     m_LoginTimeout = timeout;
 }
@@ -170,7 +170,6 @@ CDBConnectionFactory::GetRuntimeData(const CRef<IConnValidator> validator)
 CDBConnectionFactory::CRuntimeData&
 CDBConnectionFactory::GetRuntimeData(const string& validator_name)
 {
-    CFastMutexGuard guard(m_ValidatorSetMutex);
     TValidatorSet::iterator it = m_ValidatorSet.find(validator_name);
     if (it != m_ValidatorSet.end()) {
         return it->second;
@@ -274,7 +273,7 @@ CDBConnectionFactory::MakeDBConnection(
     const CDBConnParams& params,
     CDB_UserHandler::TExceptions& exceptions)
 {
-    CReadLockGuard guard(m_Lock);
+    CFastMutexGuard mg(m_Mtx);
 
     unique_ptr<CDB_Connection> t_con;
     CRuntimeData& rt_data = GetRuntimeData(params.GetConnValidator());
@@ -738,6 +737,8 @@ CDBConnectionFactory::GetServersList(const string& validator_name,
                                      const string& service_name,
                                      list<string>* serv_list)
 {
+    CFastMutexGuard mg(m_Mtx);
+
     const IDBServiceMapper& mapper
                         = GetRuntimeData(validator_name).GetDBServiceMapper();
     mapper.GetServersList(service_name, serv_list);
@@ -748,11 +749,11 @@ CDBConnectionFactory::WorkWithSingleServer(const string& validator_name,
                                            const string& service_name,
                                            const string& server)
 {
+    CFastMutexGuard mg(m_Mtx);
+
     CRuntimeData& rt_data = GetRuntimeData(validator_name);
     TSvrRef svr(new CDBServer(server, 0, 0, numeric_limits<unsigned int>::max()));
-    auto& service_info = rt_data.GetServiceInfo(service_name);
-    IDBServiceInfo::TGuard guard(service_info);
-    service_info.SetDispatchedServer(svr);
+    rt_data.GetServiceInfo(service_name).SetDispatchedServer(svr);
 }
 
 // Make an effort to give each request its own connection numbering.
@@ -1075,7 +1076,7 @@ CConnValidatorCoR::~CConnValidatorCoR(void)
 IConnValidator::EConnStatus
 CConnValidatorCoR::Validate(CDB_Connection& conn)
 {
-    CFastReadGuard guard(m_Lock);
+    CFastMutexGuard mg(m_Mtx);
 
     NON_CONST_ITERATE(TValidators, vr_it, m_Validators) {
         EConnStatus status = (*vr_it)->Validate(conn);
@@ -1093,7 +1094,7 @@ CConnValidatorCoR::GetName(void) const
 {
     string result("CConnValidatorCoR");
 
-    CFastReadGuard guard(m_Lock);
+    CFastMutexGuard mg(m_Mtx);
 
     ITERATE(TValidators, vr_it, m_Validators) {
         result += (*vr_it)->GetName();
@@ -1106,7 +1107,7 @@ void
 CConnValidatorCoR::Push(const CRef<IConnValidator>& validator)
 {
     if (validator.NotNull()) {
-        CFastWriteGuard guard(m_Lock);
+        CFastMutexGuard mg(m_Mtx);
 
         m_Validators.push_back(validator);
     }
@@ -1115,7 +1116,7 @@ CConnValidatorCoR::Push(const CRef<IConnValidator>& validator)
 void
 CConnValidatorCoR::Pop(void)
 {
-    CFastWriteGuard guard(m_Lock);
+    CFastMutexGuard mg(m_Mtx);
 
     m_Validators.pop_back();
 }
@@ -1123,7 +1124,7 @@ CConnValidatorCoR::Pop(void)
 CRef<IConnValidator>
 CConnValidatorCoR::Top(void) const
 {
-    CFastReadGuard guard(m_Lock);
+    CFastMutexGuard mg(m_Mtx);
 
     return m_Validators.back();
 }
@@ -1131,7 +1132,7 @@ CConnValidatorCoR::Top(void) const
 bool
 CConnValidatorCoR::Empty(void) const
 {
-    CFastReadGuard guard(m_Lock);
+    CFastMutexGuard mg(m_Mtx);
 
     return m_Validators.empty();
 }

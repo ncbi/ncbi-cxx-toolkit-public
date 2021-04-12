@@ -238,7 +238,6 @@ private:
 
 
     friend class CODBCContextRegistry;
-    friend class CODBC_Connection;
 };
 
 

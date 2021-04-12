@@ -94,20 +94,13 @@ CODBC_Connection::CODBC_Connection(CODBCContext& cntx,
 
     SQLRETURN rc;
 
-    {{
-        CWriteLockGuard guard(cntx.x_GetCtxLock());
-        rc = SQLAllocHandle(SQL_HANDLE_DBC,
-                            cntx.GetODBCContext(),
-                            const_cast<SQLHDBC*>(&m_Link));
+    rc = SQLAllocHandle(SQL_HANDLE_DBC,
+                        cntx.GetODBCContext(),
+                        const_cast<SQLHDBC*>(&m_Link));
 
-        if (rc != SQL_SUCCESS) {
-            cntx.GetReporter().ReportErrors();
-        }
-        if (rc != SQL_SUCCESS  &&  rc != SQL_SUCCESS_WITH_INFO) {
-            DATABASE_DRIVER_ERROR( "Cannot allocate a connection handle.",
-                                   100011 );
-        }
-    }}
+    if((rc != SQL_SUCCESS) && (rc != SQL_SUCCESS_WITH_INFO)) {
+        DATABASE_DRIVER_ERROR( "Cannot allocate a connection handle.", 100011 );
+    }
 
     // This might look strange, but in current design all errors related to
     // opening of a connection to a database are reported by a DriverContext.

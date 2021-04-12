@@ -259,9 +259,9 @@ public:
 protected:
     typedef list<CConnection*> TConnPool;
 
-    virtual CRWLock& x_GetCtxLock(void) const
+    virtual SSystemMutex& x_GetCtxMtx(void) const
     {
-        return m_DefaultCtxLock;
+        return m_DefaultCtxMtx;
     }
 
     // To allow children of CDriverContext to create CDB_Connection
@@ -305,8 +305,8 @@ private:
         bool         selected;
     };
 
-    mutable CRWLock m_DefaultCtxLock;
-    mutable CRWLock m_PoolLock; //< for m_PoolSem*, m_(Not)InUse, and m_Counts*
+    mutable CMutex  m_DefaultCtxMtx;
+    mutable CMutex  m_PoolMutex; //< for m_PoolSem*, m_(Not)InUse, & m_Counts*
     CSemaphore      m_PoolSem;
     list<SConsumer> m_PoolSemConsumers;
 

@@ -80,17 +80,16 @@ CDiagCompileInfo GetBlankCompileInfo(void)
 
 
 #ifdef FTDS_IN_USE
-#   define s_CTLCtxLock  s_TDSCtxLock
+#   define s_CTLCtxMtx  s_TDSCtxMtx
 #endif
 
-/// Static lock which will guard all thread-unsafe operations on most ctlib
-/// contexts and a handful of ctlib-scale operations such as cs_init and
-/// cs_ctx_*. It is added because several CTLibContext classes can share one 
+/// Static mutex which will guard all thread-unsafe operations on all ctlib
+/// contexts. It is added because several CTLibContext classes can share one
 /// global underlying context handle, so there is no other way to synchronize
-/// them but some global lock. Use of non-global context handles considered
-/// to be very rare so the impact on using it through global lock can be
+/// them but some global mutex. Use of non-global context handles considered
+/// to be very rare so the impact on using it through global mutex can be
 /// treated as insignificant.
-static CSafeStatic<CRWLock> s_CTLCtxLock(CSafeStaticLifeSpan::eLifeSpan_Long);
+DEFINE_STATIC_MUTEX(s_CTLCtxMtx);
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -192,7 +191,7 @@ CTLibContextRegistry::ClearAll(void)
 {
     if (!m_Registry.empty())
     {
-        CWriteLockGuard ctx_guard(*s_CTLCtxLock);
+        CMutexGuard ctx_mg(s_CTLCtxMtx);
         CMutexGuard mg(m_Mutex);
 
         while ( !m_Registry.empty() ) {
@@ -281,8 +280,6 @@ Connection::GetCTLConn(void)
 bool Connection::Open(const CDBConnParams& params)
 {
     if (!IsOpen() || Close()) {
-        CReadLockGuard guard(m_CTL_Context->x_GetCtxLock());
-        
         CS_RETCODE rc;
 
         string server_name;
@@ -563,8 +560,7 @@ CTLibContext::CTLibContext(bool reuse_context, CS_INT version) :
     m_LoginRetryCount(0),
     m_LoginLoopDelay(0),
     m_TDSVersion(version),
-    m_Registry(NULL),
-    m_ReusingContext(reuse_context)
+    m_Registry(NULL)
 {
 #ifdef FTDS_IN_USE
     switch (version) {
@@ -579,7 +575,7 @@ CTLibContext::CTLibContext(bool reuse_context, CS_INT version) :
     }
 #endif
 
-    CWriteLockGuard guard(*s_CTLCtxLock);
+    CMutexGuard mg(s_CTLCtxMtx);
 
     ResetEnvSybase();
 
@@ -692,7 +688,7 @@ CTLibContext::CTLibContext(bool reuse_context, CS_INT version) :
 
 CTLibContext::~CTLibContext()
 {
-    CWriteLockGuard guard(*s_CTLCtxLock);
+    CMutexGuard mg(s_CTLCtxMtx);
 
     try {
         x_Close();
@@ -742,7 +738,7 @@ bool CTLibContext::SetLoginTimeout(unsigned int nof_secs)
 {
     impl::CDriverContext::SetLoginTimeout(nof_secs);
 
-    CWriteLockGuard guard(x_GetCtxLock());
+    CMutexGuard mg(s_CTLCtxMtx);
 
     int sec = (nof_secs == 0 ? CS_NO_LIMIT : static_cast<int>(nof_secs));
 
@@ -759,7 +755,7 @@ bool CTLibContext::SetTimeout(unsigned int nof_secs)
 {
     bool success = impl::CDriverContext::SetTimeout(nof_secs);
 
-    CWriteLockGuard guard(x_GetCtxLock());
+    CMutexGuard mg(s_CTLCtxMtx);
 
     int sec = (nof_secs == 0 ? CS_NO_LIMIT : static_cast<int>(nof_secs));
 
@@ -781,7 +777,7 @@ bool CTLibContext::SetMaxBlobSize(size_t nof_bytes)
 {
     impl::CDriverContext::SetMaxBlobSize(nof_bytes);
 
-    CWriteLockGuard guard(x_GetCtxLock());
+    CMutexGuard mg(s_CTLCtxMtx);
 
     CS_INT ti_size = (CS_INT) GetMaxBlobSize();
     return Check(ct_config(CTLIB_GetContext(),
@@ -795,12 +791,9 @@ bool CTLibContext::SetMaxBlobSize(size_t nof_bytes)
 
 void CTLibContext::InitApplicationName(void)
 {
+    CMutexGuard mg(s_CTLCtxMtx);
     string app_name = GetApplicationName();
     if (app_name.empty()) {
-        CWriteLockGuard guard(x_GetCtxLock());
-        if ( !GetApplicationName().empty() ) {
-            return;
-        }
         app_name = GetDiagContext().GetAppName();
         if (app_name.empty()) {
 #ifdef FTDS_IN_USE
@@ -818,7 +811,8 @@ unsigned int
 CTLibContext::GetLoginTimeout(void) const
 {
     {
-        CReadLockGuard guard(x_GetCtxLock());
+        // For the sake of Check() and HandlerStack()
+        CMutexGuard mg(s_CTLCtxMtx);
 
         CS_INT t_out = 0;
 
@@ -843,7 +837,8 @@ CTLibContext::GetLoginTimeout(void) const
 unsigned int CTLibContext::GetTimeout(void) const
 {
     {
-        CReadLockGuard guard(x_GetCtxLock());
+        // For the sake of Check() and HandlerStack()
+        CMutexGuard mg(s_CTLCtxMtx);
 
         CS_INT t_out = 0;
 
@@ -879,7 +874,8 @@ impl::CConnection*
 CTLibContext::MakeIConnection(const CDBConnParams& params)
 {
     InitApplicationName();
-    CReadLockGuard guard(x_GetCtxLock());
+    CMutexGuard mg(s_CTLCtxMtx);
+
     CTL_Connection* ctl_conn = new CTL_Connection(*this, params);
 #if defined(FTDS_IN_USE)  &&  NCBI_FTDS_VERSION >= 95
     ctl_conn->m_OrigIntHandler = m_OrigIntHandler;
@@ -888,10 +884,9 @@ CTLibContext::MakeIConnection(const CDBConnParams& params)
 }
 
 
-CRWLock& CTLibContext::x_GetCtxLock(void) const
+SSystemMutex& CTLibContext::x_GetCtxMtx(void) const
 {
-    return m_ReusingContext ? *s_CTLCtxLock
-        : impl::CDriverContext::x_GetCtxLock();
+    return s_CTLCtxMtx;
 }
 
 
@@ -913,7 +908,7 @@ bool CTLibContext::IsAbleTo(ECapability cpb) const
 bool
 CTLibContext::SetMaxConnect(unsigned int num)
 {
-    CWriteLockGuard mg(x_GetCtxLock());
+    CMutexGuard mg(s_CTLCtxMtx);
 
     return Check(ct_config(CTLIB_GetContext(),
                            CS_SET,
@@ -927,7 +922,8 @@ CTLibContext::SetMaxConnect(unsigned int num)
 unsigned int
 CTLibContext::GetMaxConnect(void)
 {
-    CReadLockGuard guard(x_GetCtxLock());
+    // For the sake of Check() and HandlerStack()
+    CMutexGuard mg(s_CTLCtxMtx);
 
     unsigned int num = 0;
 
@@ -1063,7 +1059,7 @@ CS_RETCODE CTLibContext::CTLIB_cserr_handler(CS_CONTEXT* context, CS_CLIENTMSG* 
     CS_INT          outlen;
 
     try {
-        CReadLockGuard guard(*s_CTLCtxLock);
+        CMutexGuard mg(s_CTLCtxMtx);
 
         if (cs_config(context,
                       CS_GET,
@@ -1074,9 +1070,6 @@ CS_RETCODE CTLibContext::CTLIB_cserr_handler(CS_CONTEXT* context, CS_CLIENTMSG* 
             p_pot != 0  &&  p_pot->NofItems() > 0)
         {
             ctl_ctx = (CTLibContext*) p_pot->Get(0);
-            if (ctl_ctx != nullptr  &&  !ctl_ctx->m_ReusingContext) {
-                guard.Guard(ctl_ctx->x_GetCtxLock());
-            }
         }
         if (ctl_ctx
             &&  ctl_ctx->GetCtxHandlerStack().HandleMessage(
@@ -1216,7 +1209,7 @@ CS_RETCODE CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context,
     CDB_Exception::SMessageInContext message;
 
     try {
-        CReadLockGuard guard(*s_CTLCtxLock);
+        CMutexGuard mg(s_CTLCtxMtx);
 
         // Ignoring "The connection has been marked dead" from connection's
         // Close() method.
@@ -1236,7 +1229,6 @@ CS_RETCODE CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context,
                          (CS_INT) sizeof(ctl_conn),
                          &outlen ) == CS_SUCCEED  &&  ctl_conn != 0)
         {
-            guard.Release();
             if (ctl_conn->ServerName().size() < 127 && ctl_conn->UserName().size() < 127) {
                 server_name = ctl_conn->ServerName();
                 user_name = ctl_conn->UserName();
@@ -1253,12 +1245,8 @@ CS_RETCODE CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context,
                  p_pot != 0  &&  p_pot->NofItems() > 0)
         {
             ctl_ctx = (CTLibContext*) p_pot->Get(0);
-            if (ctl_ctx != nullptr  &&  !ctl_ctx->m_ReusingContext) {
-                guard.Guard(ctl_ctx->x_GetCtxLock());
-            }
         }
         else {
-            guard.Release();
             if (msg->severity != CS_SV_INFORM) {
                 CNcbiOstrstream err_str;
 
@@ -1449,14 +1437,13 @@ CS_RETCODE CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
     CDB_Exception::SMessageInContext message;
 
     try {
-        CReadLockGuard guard(*s_CTLCtxLock);
+        CMutexGuard mg(s_CTLCtxMtx);
 
         if (con != NULL && ct_con_props(con, CS_GET, CS_USERDATA,
                                        (void*) &ctl_conn, (CS_INT) sizeof(ctl_conn),
                                        &outlen) == CS_SUCCEED  &&
             ctl_conn != NULL)
         {
-            guard.Release();
             if (ctl_conn->ServerName().size() < 127 && ctl_conn->UserName().size() < 127) {
                 server_name = ctl_conn->ServerName();
                 user_name = ctl_conn->UserName();
@@ -1471,14 +1458,10 @@ CS_RETCODE CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
                            &outlen) == CS_SUCCEED  &&
                  p_pot != 0  &&  p_pot->NofItems() > 0)
         {
-            if (ctl_ctx != nullptr  &&  !ctl_ctx->m_ReusingContext) {
-                guard.Guard(ctl_ctx->x_GetCtxLock());
-            }
             ctl_ctx = (CTLibContext*) p_pot->Get(0);
             server_name = string(msg->svrname, msg->svrnlen);
         }
         else {
-            guard.Release();
             CNcbiOstrstream err_str;
 
             err_str << "Message from the server ";
@@ -1617,7 +1600,7 @@ void CTLibContext::SetClientCharset(const string& charset)
     impl::CDriverContext::SetClientCharset(charset);
 
     if ( !GetClientCharset().empty() ) {
-        CWriteLockGuard guard(x_GetCtxLock());
+        CMutexGuard mg(s_CTLCtxMtx);
 
         cs_locale(CTLIB_GetContext(),
                   CS_SET,
