@@ -1117,7 +1117,7 @@ public:
     ///   connecting to a server.
     ///
     /// @sa
-    ///   GetApplicationName()
+    ///   GetApplicationName(), InitApplicationName()
     virtual void SetApplicationName(const string& app_name) = 0;
     
     /// @brief 
@@ -1127,8 +1127,16 @@ public:
     ///   Application name.
     ///
     /// @sa
-    ///   SetApplicationName()
+    ///   InitApplicationName(), SetApplicationName()
     virtual string GetApplicationName(void) const = 0;
+
+    /// @brief
+    ///   Explicitly auto-initialize the application name, if necessary.
+    ///
+    /// @sa
+    ///   GetApplicationName(), SetApplicationName()
+    virtual void InitApplicationName(void)
+    { }
 
     /// @brief 
     ///   Set host name.

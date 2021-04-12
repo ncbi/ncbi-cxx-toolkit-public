@@ -789,10 +789,10 @@ bool CTLibContext::SetMaxBlobSize(size_t nof_bytes)
 }
 
 
-string CTLibContext::GetApplicationName(void) const
+void CTLibContext::InitApplicationName(void)
 {
     CMutexGuard mg(s_CTLCtxMtx);
-    string app_name = impl::CDriverContext::GetApplicationName();
+    string app_name = GetApplicationName();
     if (app_name.empty()) {
         app_name = GetDiagContext().GetAppName();
         if (app_name.empty()) {
@@ -803,9 +803,8 @@ string CTLibContext::GetApplicationName(void) const
 #endif
         }
         app_name = NStr::PrintableString(app_name);
-        const_cast<CTLibContext*>(this)->SetApplicationName(app_name);
+        SetApplicationName(app_name);
     }
-    return app_name;
 }
 
 unsigned int
@@ -874,6 +873,7 @@ string CTLibContext::GetDriverName(void) const
 impl::CConnection*
 CTLibContext::MakeIConnection(const CDBConnParams& params)
 {
+    InitApplicationName();
     CMutexGuard mg(s_CTLCtxMtx);
 
     CTL_Connection* ctl_conn = new CTL_Connection(*this, params);

@@ -1338,12 +1338,12 @@ CSDBAPI::Init(void)
 
 void CSDBAPI::SetApplicationName(const CTempString& name)
 {
-    s_GetDBContext()->SetApplicationName(name);
+    s_GetDataSource()->SetApplicationName(name);
 }
 
 string CSDBAPI::GetApplicationName(void)
 {
-    return s_GetDBContext()->GetApplicationName();
+    return s_GetDataSource()->GetApplicationName();
 }
 
 
