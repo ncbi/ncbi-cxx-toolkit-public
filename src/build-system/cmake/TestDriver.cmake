@@ -11,7 +11,9 @@ cmake_policy(SET CMP0057 NEW)
 # ---------------------------------------------------------------------------
 # Preparation
 
+# Allow variables like ${_x}, OLD behaviour produce too many warnings
 cmake_policy(SET CMP0053 NEW)
+
 set(IS_AUTOMATED NO)
 set(IS_DB_LOAD   NO)
 
