@@ -253,7 +253,6 @@ private:
 
 CNcbiApplogApp::CNcbiApplogApp(void)
 {
-    SetVersion(CVersionInfo(1, 3, 1));
 }
 
 
