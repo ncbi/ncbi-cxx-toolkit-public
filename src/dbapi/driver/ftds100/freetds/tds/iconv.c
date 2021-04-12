@@ -69,7 +69,7 @@ static const char *iconv_names[sizeof(canonic_charsets) / sizeof(canonic_charset
 static int iconv_initialized = 0;
 static const char *ucs2name;
 #ifdef TDS_HAVE_MUTEX
-static tds_mutex iconv_initialized_mtx = TDS_MUTEX_INITIALIZER;
+static tds_mutex iconv_mtx = TDS_MUTEX_INITIALIZER;
 #endif
 
 enum
@@ -201,27 +201,28 @@ tds_set_iconv_name(int charset)
 	int i;
 	iconv_t cd;
 
-#ifndef NDEBUG
-#  ifdef TDS_HAVE_MUTEX
-        tds_mutex_lock(&iconv_initialized_mtx);
-#  endif
-	assert(iconv_initialized);
-#  ifdef TDS_HAVE_MUTEX
-        tds_mutex_unlock(&iconv_initialized_mtx);
-#  endif
+#ifdef TDS_HAVE_MUTEX
+        tds_mutex_lock(&iconv_mtx);
 #endif
+	assert(iconv_initialized);
 
 	/* try using canonic name and UTF-8 and UCS2 */
 	cd = tds_sys_iconv_open(iconv_names[POS_UTF8], canonic_charsets[charset].name);
 	if (cd != (iconv_t) -1) {
 		iconv_names[charset] = canonic_charsets[charset].name;
 		tds_sys_iconv_close(cd);
+#ifdef TDS_HAVE_MUTEX
+                tds_mutex_unlock(&iconv_mtx);
+#endif
 		return iconv_names[charset];
 	}
 	cd = tds_sys_iconv_open(ucs2name, canonic_charsets[charset].name);
 	if (cd != (iconv_t) -1) {
 		iconv_names[charset] = canonic_charsets[charset].name;
 		tds_sys_iconv_close(cd);
+#ifdef TDS_HAVE_MUTEX
+                tds_mutex_unlock(&iconv_mtx);
+#endif
 		return iconv_names[charset];
 	}
 
@@ -234,6 +235,9 @@ tds_set_iconv_name(int charset)
 		if (cd != (iconv_t) -1) {
 			iconv_names[charset] = iconv_aliases[i].alias;
 			tds_sys_iconv_close(cd);
+#ifdef TDS_HAVE_MUTEX
+                        tds_mutex_unlock(&iconv_mtx);
+#endif
 			return iconv_names[charset];
 		}
 
@@ -241,12 +245,18 @@ tds_set_iconv_name(int charset)
 		if (cd != (iconv_t) -1) {
 			iconv_names[charset] = iconv_aliases[i].alias;
 			tds_sys_iconv_close(cd);
+#ifdef TDS_HAVE_MUTEX
+                        tds_mutex_unlock(&iconv_mtx);
+#endif
 			return iconv_names[charset];
 		}
 	}
 
 	/* charset not found, pretend it's ISO 8859-1 */
 	iconv_names[charset] = canonic_charsets[POS_ISO1].name;
+#ifdef TDS_HAVE_MUTEX
+        tds_mutex_unlock(&iconv_mtx);
+#endif
 	return NULL;
 }
 
@@ -337,7 +347,7 @@ tds_iconv_open(TDSCONNECTION * conn, const char *charset, int use_utf16)
 
 	/* initialize */
 #ifdef TDS_HAVE_MUTEX
-        tds_mutex_lock(&iconv_initialized_mtx);
+        tds_mutex_lock(&iconv_mtx);
 #endif
 	if (!iconv_initialized) {
 		if ((ret = tds_iconv_init()) > 0) {
@@ -347,14 +357,14 @@ tds_iconv_open(TDSCONNECTION * conn, const char *charset, int use_utf16)
 						  "could not find a name for %s that your iconv accepts.\n"
 						  "use: \"configure --disable-libiconv\"", ret, names[ret-1]);
 #ifdef TDS_HAVE_MUTEX
-                        tds_mutex_unlock(&iconv_initialized_mtx);
+                        tds_mutex_unlock(&iconv_mtx);
 #endif
 			return TDS_FAIL;
 		}
 		iconv_initialized = 1;
 	}
 #ifdef TDS_HAVE_MUTEX
-        tds_mutex_unlock(&iconv_initialized_mtx);
+        tds_mutex_unlock(&iconv_mtx);
 #endif
 
 	/* 
