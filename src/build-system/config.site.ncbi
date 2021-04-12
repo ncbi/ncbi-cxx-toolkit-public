@@ -206,7 +206,7 @@ case "$ncbi_platform" in
     *MAC       ) : ${GNUTLS_PATH=$NCBI/gnutls-3.4.0} ;;
 esac
 
-: ${GRPC_PATH=$NCBI/grpc-1.28.1-ncbi1}
+: ${GRPC_PATH=$NCBI/grpc-1.36.4-ncbi1}
 
 case "$ncbi_platform" in
     Linux64    ) : ${GSOAP_PATH=$NCBI/gsoap-2.8.15} ;;
