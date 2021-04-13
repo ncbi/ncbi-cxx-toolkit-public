@@ -26,8 +26,7 @@ SRC = reader_message reader_listener reader_message_handler \
       best_feat_finder source_mod_parser fasta_exception agp_converter \
       ucscregion_reader struct_cmt_reader \
       mod_reader mod_error descr_mod_apply feature_mod_apply mod_to_enum \
-      message_listener line_error \
-	  gff_reader
+      message_listener line_error
 
 
 DLL_LIB = submit seqset $(SEQ_LIBS) general xutil xlogging

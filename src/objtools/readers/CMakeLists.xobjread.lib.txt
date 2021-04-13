@@ -23,7 +23,6 @@ NCBI_begin_lib(xobjread)
     ucscregion_reader struct_cmt_reader
     mod_reader mod_error descr_mod_apply feature_mod_apply mod_to_enum
     message_listener line_error
-	gff_reader
   )
   NCBI_uses_toolkit_libraries(submit xlogging)
   NCBI_project_watchers(jcherry sapojnik bollin ludwigf ucko gotvyans foleyjp)
