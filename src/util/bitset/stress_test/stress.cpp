@@ -31,7 +31,6 @@ For more information please visit:  http://bitmagic.io
 #include <stdio.h>
 #include <stdlib.h>
 #undef NDEBUG
-#include <cassert>
 #include <time.h>
 #include <math.h>
 #include <string.h>
@@ -64,6 +63,8 @@ For more information please visit:  http://bitmagic.io
 #include <util/bitset/bmtask.h>
 #include <util/bitset/bmsparsevec_parallel.h>
 #include <util/bitset/bmthreadpool.h>
+
+#include <common/test_assert.h>
 
 using namespace bm;
 using namespace std;

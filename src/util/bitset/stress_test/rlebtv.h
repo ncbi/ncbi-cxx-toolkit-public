@@ -19,8 +19,6 @@ For more information please visit:  http://bitmagic.io
 #ifndef RLEBTV__H__INCLUDED__
 #define RLEBTV__H__INCLUDED__
 
-#include <cassert>
-
 /**
     GAP vector is designed to be very small.
     The size of buffer is fixed 128 short values.

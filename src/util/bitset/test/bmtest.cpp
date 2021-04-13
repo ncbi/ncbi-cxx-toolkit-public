@@ -23,7 +23,6 @@ For more information please visit:  http://bitmagic.io
 #include <time.h>
 #include <stdio.h>
 #include <sstream>
-#include <cassert>
 
 //#define BMSSE2OPT
 //#define BMSSE42OPT
