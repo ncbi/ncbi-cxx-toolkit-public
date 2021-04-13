@@ -332,8 +332,11 @@ dbloadb_asn needs asngendefs
 dbpool needs ncbi_xdbapi_ftds100
 dbpool needs ssssys
 dbsnp_ptis needs $(SEQ_LIBS)
+dbsnp_ptis needs $(Z_LIB)
 dbsnp_ptis needs grpc_integration
 dbsnp_ptis needs pub
+dbsnp_ptis needs3party $(GRPC_LIBS)
+dbsnp_ptis needs3party $(Z_LIBS)
 dbsnp_tooltip_service needs xser
 ddvlib needs3party ncbidesk
 distance needs xalgophytree
@@ -695,11 +698,8 @@ grpc++ needs3party gpr
 grpc++ needs3party grpc
 grpc++ needs3party upb
 grpc_integration needs $(CONNEXT)
-grpc_integration needs $(Z_LIB)
 grpc_integration needs connect
 grpc_integration needs xutil
-grpc_integration needs3party $(GRPC_LIBS)
-grpc_integration needs3party $(Z_LIBS)
 gsoapssl++ needs $(Z_LIB)
 gsoapssl++ needs3party $(KRB5_LIBS)
 gsoapssl++ needs3party $(NETWORK_LIBS)
