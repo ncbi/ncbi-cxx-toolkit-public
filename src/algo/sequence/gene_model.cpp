@@ -1545,6 +1545,7 @@ SImplementation::x_CreateProteinBioseq(CSeq_loc* cds_loc,
         size_t e = 0;
         size_t skip_5_prime = 0;
         size_t skip_3_prime = 0;
+        unsigned count_internal_stops = 0;
 
         for( CSeqMap_CI ci = map->BeginResolved(m_scope.GetPointer()); ci; ci.Next()) {
             int codon_start_pos = (int)ci.GetPosition() + frame;
@@ -1630,6 +1631,7 @@ SImplementation::x_CreateProteinBioseq(CSeq_loc* cds_loc,
                         internal_stop_on_mrna->SetInt().SetTo(pos_on_mrna + 2);
                         AddCodeBreak(*cds_feat_on_transcribed_mrna, *internal_stop_on_mrna, 'X');
                         transcribed_mrna_seqloc_refs.push_back(internal_stop_on_mrna);
+                        ++count_internal_stops;
                     }
 
 
@@ -1639,6 +1641,13 @@ SImplementation::x_CreateProteinBioseq(CSeq_loc* cds_loc,
             b = e;
         }
         _ASSERT( -2 <= frame && frame <= 0 );
+
+        if (count_internal_stops) {
+            CRef<CUser_object> align_info(new CUser_object);
+            align_info->SetType().SetStr("AlignInfo");
+            align_info->AddField("num_internal_stop_codon", (int)count_internal_stops);
+            cds_feat_on_transcribed_mrna->AddExt(align_info);
+        }
 
         if (frame < 0) { //last codon partial
             if (b < strprot.size() && strprot[b] != 'X') { // last partial codon translated unambiguously - add it
@@ -3605,6 +3614,9 @@ void CFeatureGenerator::SImplementation::x_SetComment(CSeq_feat& rna_feat,
         }
     }
 
+    CRef<CUser_object> align_info(new CUser_object);
+    align_info->SetType().SetStr("AlignInfo");
+
     if (m_is_best_refseq) {
         size_t indel_count = insert_locs.size() + delete_locs.size();
         size_t frameshift_count = 0;
@@ -3693,14 +3705,17 @@ void CFeatureGenerator::SImplementation::x_SetComment(CSeq_feat& rna_feat,
         if (!mismatch_locs.empty()) {
             rna_comment += " has " +
                 s_Count(mismatch_locs.GetCoveredLength(), "substitution");
+            align_info->AddField("num_substitions", (int)mismatch_locs.GetCoveredLength());
         }
         if (frameshift_count) {
             rna_comment += (mismatch_locs.empty() ? " has " : ", ") +
                            s_Count(frameshift_count, "frameshift");
+            align_info->AddField("num_frameshifts", (int)frameshift_count);
         }
         if (indel_count) {
             rna_comment += (mismatch_locs.empty() && !frameshift_count? " has " : ", ") +
                            s_Count(indel_count, "non-frameshifting indel");
+            align_info->AddField("num_nonframeshift_indel", (int)indel_count);
         }
         if (partial_unaligned_section) {
             if (!mismatch_locs.empty() || indel_count || frameshift_count) {
@@ -3827,6 +3842,9 @@ void CFeatureGenerator::SImplementation::x_SetComment(CSeq_feat& rna_feat,
         } else if (cds_feat->GetComment().find(cds_comment) == string::npos) {
             cds_feat->SetComment() += "; " + cds_comment;
         }
+    }
+    if (!align_info->GetData().empty()) {
+        rna_feat.AddExt(align_info);
     }
 }
 
