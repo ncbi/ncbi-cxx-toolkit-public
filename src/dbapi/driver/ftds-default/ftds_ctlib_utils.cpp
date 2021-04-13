@@ -33,5 +33,4 @@
 
 #include <ncbi_pch.hpp>
 #include <../impl/ncbi_ftds_ver.h>
-#define  TARGET <../NCBI_FTDS_VERSION_NAME(ftds)/ctlib/NCBI_FTDS_VERSION_NAME2(ftds,_ctlib_utils).cpp>
-#include TARGET
+#include "../ctlib/ctlib_utils.cpp"

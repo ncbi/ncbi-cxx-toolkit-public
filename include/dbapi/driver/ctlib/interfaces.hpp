@@ -45,7 +45,7 @@
 
 #ifdef FTDS_IN_USE
 
-#  if defined(NCBI_FTDS_VERSION_NAME)  &&  defined(TARGET)
+#  if defined(NCBI_FTDS_VERSION_NAME)  &&  defined(NCBI_IS_FTDS_DEFAULT)
 #    undef NCBI_FTDS_VERSION_NAME
 #    undef NCBI_FTDS_VERSION_NAME2
 #    define NCBI_FTDS_VERSION_NAME(X)    X
