@@ -73,7 +73,12 @@ namespace grpc {
 }
 #endif
 
-namespace grpc_impl {
+#ifdef GRPCPP_IMPL_CODEGEN_SYNC_STREAM_IMPL_H
+#  define GRPC_STREAM_IF_NS grpc_impl
+#else
+#  define GRPC_STREAM_IF_NS grpc
+#endif
+namespace GRPC_STREAM_IF_NS {
     namespace internal {
         class ServerStreamingInterface;
     }
@@ -105,7 +110,7 @@ public:
                        const TMessage& request, const TMessage& reply);
     CGRPCRequestLogger(TGRPCServerContext* sctx, CTempString method_name,
                        const TMessage& request,
-                       const grpc_impl::internal::ServerStreamingInterface&);
+                       const GRPC_STREAM_IF_NS::internal::ServerStreamingInterface&);
     ~CGRPCRequestLogger();
 
 private:
@@ -191,7 +196,7 @@ CGRPCRequestLogger::CGRPCRequestLogger(TGRPCServerContext* sctx,
 inline
 CGRPCRequestLogger::CGRPCRequestLogger(
     TGRPCServerContext* sctx, CTempString method_name, const TMessage& request,
-    const grpc_impl::internal::ServerStreamingInterface&)
+    const GRPC_STREAM_IF_NS::internal::ServerStreamingInterface&)
     : m_DiagContext(GetDiagContext()),
       m_RequestContext(m_DiagContext.GetRequestContext()),
 #ifdef HAVE_LIBGRPC // HAVE_LIBPROTOBUF
