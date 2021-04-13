@@ -336,7 +336,7 @@ public:
 
 protected:
     virtual impl::CConnection* MakeIConnection(const CDBConnParams& params);
-    SSystemMutex& x_GetCtxMtx(void) const;
+    CRWLock& x_GetCtxLock(void) const;
 
 private:
     CS_CONTEXT* m_Context;
@@ -346,6 +346,7 @@ private:
     CS_INT      m_LoginLoopDelay;
     CS_INT      m_TDSVersion;
     CTLibContextRegistry* m_Registry;
+    bool        m_ReusingContext;
 
     void x_AddToRegistry(void);
     void x_RemoveFromRegistry(void);
@@ -360,6 +361,7 @@ private:
 #endif
 
     friend class CTLibContextRegistry;
+    friend class ctlib::Connection;
 };
 
 
