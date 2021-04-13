@@ -230,6 +230,7 @@ CGff3Reader::ReadSeqAnnot(
 {
     mCurrentFeatureCount = 0;
     mParsingAlignment = false;
+    mAlignmentData.Reset();
     mpLocations->Reset();
     auto pAnnot = CReaderBase::ReadSeqAnnot(lr, pEC);
     if (pAnnot  &&  pAnnot->GetData().Which() == CSeq_annot::TData::e_not_set) {
@@ -308,7 +309,6 @@ CGff3Reader::xParseFeature(
         return false;
     }
     
-
     //make sure we are interested:
     if (xIsIgnoredFeatureType(pRecord->Type())) {
         return true;
