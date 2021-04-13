@@ -176,7 +176,7 @@ bool NCBI_XNCBI_EXPORT g_GetConfigFlag(const char* section,
 
     if ( section  &&  *section ) {
         CNcbiApplicationGuard app = CNcbiApplication::InstanceGuard();
-        if ( app  &&  app->HasLoadedConfig() ) {
+        if ( app  &&  app->FinishedLoadingConfig() ) {
             const string& s = app->GetConfig().Get(section, variable);
             if ( !s.empty() ) {
                 try {
@@ -264,7 +264,7 @@ int NCBI_XNCBI_EXPORT g_GetConfigInt(const char* section,
 
     if ( section  &&  *section ) {
         CNcbiApplicationGuard app = CNcbiApplication::InstanceGuard();
-        if ( app  &&  app->HasLoadedConfig() ) {
+        if ( app  &&  app->FinishedLoadingConfig() ) {
             const string& s = app->GetConfig().Get(section, variable);
             if ( !s.empty() ) {
                 try {
@@ -348,7 +348,7 @@ double NCBI_XNCBI_EXPORT g_GetConfigDouble(const char* section,
 
     if ( section  &&  *section ) {
         CNcbiApplicationGuard app = CNcbiApplication::InstanceGuard();
-        if ( app  &&  app->HasLoadedConfig() ) {
+        if ( app  &&  app->FinishedLoadingConfig() ) {
             const string& s = app->GetConfig().Get(section, variable);
             if ( !s.empty() ) {
                 try {
@@ -428,7 +428,7 @@ string NCBI_XNCBI_EXPORT g_GetConfigString(const char* section,
 
     if ( section  &&  *section ) {
         CNcbiApplicationGuard app = CNcbiApplication::InstanceGuard();
-        if ( app  &&  app->HasLoadedConfig() ) {
+        if ( app  &&  app->FinishedLoadingConfig() ) {
             const string& v = app->GetConfig().Get(section, variable);
             if ( !v.empty() ) {
 #ifdef NCBI_PARAM_ENABLE_CONFIG_DUMP
