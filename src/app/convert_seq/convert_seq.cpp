@@ -56,7 +56,7 @@
 
 #include <objtools/format/flat_file_generator.hpp>
 #include <objtools/readers/fasta.hpp>
-#include <objtools/readers/gff_reader.hpp>
+#include "gff_reader.hpp"
 #include <objtools/readers/readfeat.hpp>
 #include <objtools/readers/agp_read.hpp>
 #include <objtools/writers/agp_write.hpp>

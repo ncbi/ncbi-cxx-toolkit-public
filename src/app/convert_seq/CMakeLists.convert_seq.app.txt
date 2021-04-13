@@ -1,7 +1,7 @@
 # $Id$
 
 NCBI_begin_app(convert_seq)
-  NCBI_sources(convert_seq)
+  NCBI_sources(convert_seq gff_reader)
   NCBI_uses_toolkit_libraries(ncbi_xloader_genbank ncbi_xloader_wgs xobjwrite)
   NCBI_project_watchers(ucko drozdov foleyjp)
 NCBI_end_app()

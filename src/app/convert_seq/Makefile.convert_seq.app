@@ -1,7 +1,7 @@
 # $Id$
 
 APP = convert_seq
-SRC = convert_seq
+SRC = convert_seq gff_reader
 LIB = $(ncbi_xloader_wgs) $(SRAREAD_LIBS) xobjwrite variation_utils \
       $(OBJREAD_LIBS) $(XFORMAT_LIBS) xalnmgr xobjutil tables xregexp \
       $(PCRE_LIB) $(OBJMGR_LIBS)
