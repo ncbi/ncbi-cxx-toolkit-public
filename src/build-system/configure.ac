@@ -181,7 +181,7 @@ AC_ARG_WITH(lfs,
 AC_ARG_WITH(limited-linker,
    [ --with-limited-linker   don't attempt to build especially large projects])
 AC_ARG_WITH(experimental,
-   [ --with-experimental=... enable named experimental feature(s): Int{4,8}GI,StrictGI,PSGLoader])
+   [ --with-experimental=... enable named experimental feature(s): Int{4,8}GI,StrictGI,PSGLoader,BM64])
 AC_ARG_WITH(skew-guard,
    [ --with-skew-guard       catch incomplete rebuilds])
 
@@ -983,6 +983,10 @@ if test -n "$with_experimental"; then
             AC_DEFINE(HAVE_PSG_LOADER, 1,
                [Define to 1 to let the GenBank data loader use PubSeq Gateway.])
             NCBI_FEATURE(PSGLoader)
+            ;;
+         BM64 )
+            AC_DEFINE(BM64ADDR, 1, [Define to 1 to use 64-bit bitset indices.])
+            NCBI_FEATURE(BM64)
             ;;
          * )
             AC_MSG_ERROR([unrecognized experimental feature "$x".])
