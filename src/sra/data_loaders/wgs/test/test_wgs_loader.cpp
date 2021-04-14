@@ -2726,6 +2726,91 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr)
 }
 
 
+BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr4)
+{
+    LOG_POST("Checking WGS master sequence descriptors 4+9");
+    CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr);
+    CScope scope(*om);
+    scope.AddDefaults();
+    CBioseq_Handle bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("CAAD010000001.1"));
+    BOOST_REQUIRE(bh);
+    int desc_mask = 0;
+    map<string, int> user_count;
+    int comment_count = 0;
+    int pub_count = 0;
+    for ( CSeqdesc_CI it(bh); it; ++it ) {
+        desc_mask |= 1<<it->Which();
+        switch ( it->Which() ) {
+        case CSeqdesc::e_Comment:
+            ++comment_count;
+            break;
+        case CSeqdesc::e_Pub:
+            ++pub_count;
+            break;
+        case CSeqdesc::e_User:
+            ++user_count[it->GetUser().GetType().GetStr()];
+            break;
+        default:
+            break;
+        }
+    }
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Title));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Molinfo));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Embl));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Source));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Create_date));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Update_date));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Pub));
+    BOOST_CHECK_EQUAL(pub_count, 2);
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_User));
+    BOOST_CHECK_EQUAL(user_count.size(), 1u);
+    BOOST_CHECK_EQUAL(user_count["DBLink"], 1);
+}
+
+
+BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr7)
+{
+    LOG_POST("Checking WGS master sequence descriptors: Unverified");
+    CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr);
+    CScope scope(*om);
+    scope.AddDefaults();
+    CBioseq_Handle bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("AVKQ01000001"));
+    BOOST_REQUIRE(bh);
+    int desc_mask = 0;
+    map<string, int> user_count;
+    int comment_count = 0;
+    int pub_count = 0;
+    for ( CSeqdesc_CI it(bh); it; ++it ) {
+        desc_mask |= 1<<it->Which();
+        switch ( it->Which() ) {
+        case CSeqdesc::e_Comment:
+            ++comment_count;
+            break;
+        case CSeqdesc::e_Pub:
+            ++pub_count;
+            break;
+        case CSeqdesc::e_User:
+            ++user_count[it->GetUser().GetType().GetStr()];
+            break;
+        default:
+            break;
+        }
+    }
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Source));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Molinfo));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Pub));
+    BOOST_CHECK_EQUAL(pub_count, 1);
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Comment));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Create_date));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Update_date));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_User));
+    BOOST_CHECK_EQUAL(user_count.size(), 3u);
+    BOOST_CHECK_EQUAL(user_count["DBLink"], 1);
+    BOOST_CHECK_EQUAL(user_count["StructuredComment"], 1);
+    BOOST_CHECK_EQUAL(user_count["Unverified"], 1);
+}
+
+
 NCBITEST_INIT_TREE()
 {
     NCBITEST_DISABLE(StateTest);
