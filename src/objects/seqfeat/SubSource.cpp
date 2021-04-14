@@ -4086,9 +4086,11 @@ static const TStateMapEntry state_abbrev_array[] = {
     { "AL",                    "Alabama"              },
     { "Alabama",               "Alabama"              },
     { "Alaska",                "Alaska"               },
+    { "American Samoa",        "American Samoa"       },
     { "AR",                    "Arkansas"             },
     { "Arizona",               "Arizona"              },
     { "Arkansas",              "Arkansas"             },
+    { "AS",                    "American Samoa"       },
     { "AZ",                    "Arizona"              },
     { "CA",                    "California"           },
     { "California",            "California"           },
@@ -4104,6 +4106,8 @@ static const TStateMapEntry state_abbrev_array[] = {
     { "Florida",               "Florida"              },
     { "GA",                    "Georgia"              },
     { "Georgia",               "Georgia"              },
+    { "GU",                    "Guam"                 },
+    { "Guam",                  "Guam"                 },
     { "Hawaii",                "Hawaii"               },
     { "HI",                    "Hawaii"               },
     { "IA",                    "Iowa"                 },
@@ -4160,6 +4164,8 @@ static const TStateMapEntry state_abbrev_array[] = {
     { "Oregon",                "Oregon"               },
     { "PA",                    "Pennsylvania"         },
     { "Pennsylvania",          "Pennsylvania"         },
+    { "PR",                    "Puerto Rico"          },
+    { "Puerto Rico",           "Puerto Rico"          },
     { "Rhode Island",          "Rhode Island"         },
     { "RI",                    "Rhode Island"         },
     { "SC",                    "South Carolina"       },
@@ -4170,10 +4176,13 @@ static const TStateMapEntry state_abbrev_array[] = {
     { "Texas",                 "Texas"                },
     { "TN",                    "Tennessee"            },
     { "TX",                    "Texas"                },
+    { "US Virgin Islands",     "US Virgin Islands"    },
     { "UT",                    "Utah"                 },
     { "Utah",                  "Utah"                 },
     { "VA",                    "Virginia"             },
     { "Vermont",               "Vermont"              },
+    { "VI",                    "US Virgin Islands"    },
+    { "Virgin Islands",        "US Virgin Islands"    },
     { "Virginia",              "Virginia"             },
     { "VT",                    "Vermont"              },
     { "WA",                    "Washington"           },
@@ -4253,7 +4262,14 @@ CCountries::EStateCleanup s_DoUSAStateCleanup ( string& country ) {
 
     // confirm that country is USA
     if ( ! NStr::EqualNocase ( frst, "USA") && ! NStr::EqualNocase ( frst, "US")) {
-        return CCountries::e_NotUSA;
+        // if not, first try rescuing US territory
+        working = CCountries::NewFixCountry(working, true);
+        NStr::SplitInTwo ( working, ":", frst, scnd );
+        NStr::TruncateSpacesInPlace ( frst );
+        NStr::TruncateSpacesInPlace ( scnd );
+        if ( ! NStr::EqualNocase ( frst, "USA") && ! NStr::EqualNocase ( frst, "US")) {
+            return CCountries::e_NotUSA;
+        }
     }
 
     // split state/county/city clauses at commas
@@ -4460,9 +4476,11 @@ string CCountries::NewFixCountry (const string& test, bool us_territories)
     if (us_territories) {
         if ( NStr::StartsWith( input, "Puerto Rico") || NStr::StartsWith( input, "Guam") || NStr::StartsWith( input, "American Samoa") ) {
             input = "USA: " + input;
+            CCountries::ChangeExtraColonsToCommas(input);
             return input;
         } else if ( NStr::StartsWith( input, "Virgin Islands") ) {
             input = "USA: US " + input;
+            CCountries::ChangeExtraColonsToCommas(input);
             return input;
         }
     }

@@ -20835,6 +20835,11 @@ static void s_USAStateTest(string before, string after, CCountries::EStateCleanu
 
 BOOST_AUTO_TEST_CASE(Test_USAStateCleanup)
 {
+    s_USAStateTest("Puerto Rico: San Juan", "USA: Puerto Rico, San Juan", CCountries::e_Corrected );
+    s_USAStateTest("USA: Puerto Rico", "USA: Puerto Rico", CCountries::e_Valid );
+    s_USAStateTest("USA: Puerto Rico, Florida", "USA: Puerto Rico, Florida", CCountries::e_Ambiguous );
+    s_USAStateTest("USA: Florida, Puerto Rico", "USA: Florida, Puerto Rico", CCountries::e_Ambiguous );
+
     s_USAStateTest("USA: Bethesda, State Of maryland", "USA: Maryland, Bethesda", CCountries::e_Corrected );
     s_USAStateTest("USA:NY", "USA: New York", CCountries::e_Corrected );
     s_USAStateTest("USA: Delaware, county South carolina", "USA: Delaware, county South carolina", CCountries::e_Valid );
@@ -20852,10 +20857,10 @@ BOOST_AUTO_TEST_CASE(Test_USAStateCleanup)
     s_USAStateTest("USA: Washington, AR", "USA: Washington, Arkansas", CCountries::e_Ambiguous );
     s_USAStateTest("USA: Wisconsin, Oregon", "USA: Wisconsin, Oregon", CCountries::e_Ambiguous );
 
-    s_USAStateTest("Puerto Rico: San Juan", "Puerto Rico: San Juan", CCountries::e_NotUSA );
-    s_USAStateTest("USA: Puerto Rico", "USA: Puerto Rico", CCountries::e_Missing );
-    s_USAStateTest("USA: Puerto Rico, Florida", "USA: Florida, Puerto Rico", CCountries::e_Corrected );
-    s_USAStateTest("USA: Florida, Puerto Rico", "USA: Florida, Puerto Rico", CCountries::e_Valid );
+    s_USAStateTest("Puerto Rico: San Juan", "USA: Puerto Rico, San Juan", CCountries::e_Corrected );
+    s_USAStateTest("USA: Puerto Rico", "USA: Puerto Rico", CCountries::e_Valid );
+    s_USAStateTest("USA: Puerto Rico, Florida", "USA: Puerto Rico, Florida", CCountries::e_Ambiguous );
+    s_USAStateTest("USA: Florida, Puerto Rico", "USA: Florida, Puerto Rico", CCountries::e_Ambiguous );
 
     s_USAStateTest("USA:Los Angeles", "USA: Los Angeles", CCountries::e_Missing );
     s_USAStateTest("USA:Hayward", "USA: Hayward", CCountries::e_Missing );
@@ -20864,14 +20869,14 @@ BOOST_AUTO_TEST_CASE(Test_USAStateCleanup)
     exm["USA: Washington, Arkansas"] = "USA: Arkansas, Washington";
     // self-entry is needed for converting e_Ambiguous to e_Valid (from full name) or e_Corrected (from abbreviation)
     exm["USA: Arkansas, Washington"] = "USA: Arkansas, Washington";
-    exm["USA: Puerto Rico, Florida"] = "Puerto Rico: Florida";
-    exm["USA: Florida, Puerto Rico"] = "Puerto Rico: Florida";
+    exm["USA: Puerto Rico, Florida"] = "USA: Puerto Rico, Florida";
+    exm["USA: Florida, Puerto Rico"] = "USA: Puerto Rico, Florida";
     exm["USA: Los Angeles"] = "USA: California, Los Angeles";
     exm["USA:Hayward"] = "USA: California, Hayward";
-    exm["USA:PR"] = "USA: Puerto Rico";
-    exm["USA:GU"] = "USA: Guam";
-    exm["USA:VI"] = "USA: US Virgin Islands";
-    exm["USA:AS"] = "USA: American Samoa";
+    // exm["USA:PR"] = "USA: Puerto Rico";
+    // exm["USA:GU"] = "USA: Guam";
+    // exm["USA:VI"] = "USA: US Virgin Islands";
+    // exm["USA:AS"] = "USA: American Samoa";
     CCountries::LoadUSAExceptionMap (exm);
 
     s_USAStateTest("USA: Arkansas, Washington", "USA: Arkansas, Washington", CCountries::e_Valid );
@@ -20880,15 +20885,18 @@ BOOST_AUTO_TEST_CASE(Test_USAStateCleanup)
     s_USAStateTest("USA: Washington, AR", "USA: Arkansas, Washington", CCountries::e_Corrected );
     s_USAStateTest("USA: Wisconsin, Oregon", "USA: Wisconsin, Oregon", CCountries::e_Ambiguous );
 
-    s_USAStateTest("Puerto Rico: San Juan", "Puerto Rico: San Juan", CCountries::e_NotUSA );
-    s_USAStateTest("USA: Puerto Rico", "USA: Puerto Rico", CCountries::e_Missing );
-    s_USAStateTest("USA: Puerto Rico, Florida", "Puerto Rico: Florida", CCountries::e_NotUSA );
-    s_USAStateTest("USA: Florida, Puerto Rico", "Puerto Rico: Florida", CCountries::e_NotUSA );
+    s_USAStateTest("Puerto Rico: San Juan", "USA: Puerto Rico, San Juan", CCountries::e_Corrected );
+    s_USAStateTest("USA: Puerto Rico", "USA: Puerto Rico", CCountries::e_Valid );
+    s_USAStateTest("USA: Puerto Rico, Florida", "USA: Puerto Rico, Florida", CCountries::e_Valid );
+    s_USAStateTest("USA: Florida, Puerto Rico", "USA: Puerto Rico, Florida", CCountries::e_Corrected );
 
     s_USAStateTest("USA:Los Angeles", "USA: California, Los Angeles", CCountries::e_Corrected );
     s_USAStateTest("USA:Hayward", "USA: California, Hayward", CCountries::e_Corrected );
+    s_USAStateTest("USA: Springfield", "USA: Springfield", CCountries::e_Missing );
 
     s_USAStateTest("USA:GU", "USA: Guam", CCountries::e_Corrected );
+    s_USAStateTest("Belize", "Belize", CCountries::e_NotUSA );
+    s_USAStateTest("France: Paris", "France: Paris", CCountries::e_NotUSA );
 }
 
 
@@ -20963,6 +20971,7 @@ BOOST_AUTO_TEST_CASE(Test_NewFixCountry)
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("USA:DE:Dover"), "USA:DE,Dover");
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Burma:A:B"), "Burma:A,B");
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Puerto Rico"), "Puerto Rico");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Puerto Rico", true), "USA: Puerto Rico");
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Puerto Rico, San Juan", true), "USA: Puerto Rico, San Juan");
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Guam", true), "USA: Guam");
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("American Samoa", true), "USA: American Samoa");

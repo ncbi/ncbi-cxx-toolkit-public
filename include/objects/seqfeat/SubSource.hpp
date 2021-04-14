@@ -286,7 +286,7 @@ public:
         e_Corrected = 2, //  "USA: Hamilton, MT" -> "USA: Montana, Hamilton"
         e_Ambiguous = 3, //  "USA: Montana, Maine"
         e_Missing   = 4, //  "USA: Springfield"
-        e_NotUSA    = 5  //  "Puerto Rico: San Juan"
+        e_NotUSA    = 5  //  "France: Paris"
     };
 
     static bool IsValid(const string& country);
