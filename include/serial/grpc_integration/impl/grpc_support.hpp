@@ -56,6 +56,7 @@ namespace google {
 #ifdef HAVE_LIBGRPC
 #  include <grpc++/server.h>
 #  include <grpc++/server_context.h>
+#  include <grpc++/impl/codegen/sync_stream.h>
 #else
 namespace grpc {
     typedef int Status;
