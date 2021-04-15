@@ -1654,6 +1654,7 @@ bool CNcbiRegistry::IncludeNcbircIfAllowed(TFlags flags)
             ERR_POST_X(5, Warning << "Resetting m_SysRegistry");
             m_SysRegistry.Reset(entry.registry);
         }
+        if (!entry.actual_name.empty()) return true;
     } catch (CRegistryException& e) {
         ERR_POST_X(6, Critical << "CNcbiRegistry: "
                       "Syntax error in system-wide configuration file: "
