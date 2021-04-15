@@ -152,6 +152,7 @@ public:
     CVPath(const CVFSManager& mgr, const string& path, EType type = eSys);
     NCBI_DEPRECATED_CTOR(explicit CVPath(const string& path, EType type = eSys));
 
+    bool IsLocalFile() const;
     string ToString(EType type = eSys) const;
 
     // Check if argument string is plain VDB accession,

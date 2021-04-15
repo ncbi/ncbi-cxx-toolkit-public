@@ -281,10 +281,27 @@ void CVPath::x_Init(const CVFSManager& mgr, const string& path, EType type)
 }
 
 
+bool CVPath::IsLocalFile() const
+{
+    char buffer[32];
+    size_t size;
+    if ( VPathReadScheme(*this, buffer, sizeof(buffer), &size) != 0 ) {
+        return false;
+    }
+    if ( size == 4 && memcmp(buffer, "file", 4) == 0 ) {
+        return true;
+    }
+    if ( size == 9 && memcmp(buffer, "ncbi-file", 9) == 0 ) {
+        return true;
+    }
+    return false;
+}
+
+
 string CVPath::ToString(EType type) const
 {
     const String* str = 0;
-    if (type == eSys) {
+    if (type == eSys && IsLocalFile()) {
         if (rc_t rc = VPathMakeSysPath(*this, &str)) {
             NCBI_THROW2(CSraException, eOtherError,
                 "Cannot get path from VPath", rc);
@@ -658,6 +675,7 @@ static void s_VDBInit()
             ask_level = klogInfo;
 #endif
             KLogLevelSet(ask_level);
+            KLogHandlerSet(VDBLogWriter, 0);
             KLogLibHandlerSet(VDBLogWriter, 0);
             if ( s_GetDebugLevel() >= 2 ) {
                 const char* msg = "info: VDB initialized";
