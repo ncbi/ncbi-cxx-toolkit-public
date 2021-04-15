@@ -45,7 +45,7 @@ class CBlastxNode : public CBlastNode
 public :
 
 	CBlastxNode (int check_num, const CNcbiArguments & ncbi_args, const CArgs& args,
-			       CBlastAppDiagHandler & bah, const string & input,
+			       CBlastAppDiagHandler & bah, string & input,
 			       int query_index, int num_queries, CBlastNodeMailbox * mailbox = NULL);
 	virtual int GetBlastResults(CNcbiOstream & os);
 protected:

@@ -71,16 +71,20 @@ class NCBI_BLASTINPUT_EXPORT CTblastnNodeArgs : public CTblastnAppArgs
 {
 public:
     /// Constructor
-    CTblastnNodeArgs() {}
-    virtual ~CTblastnNodeArgs() {}
+    CTblastnNodeArgs(const string & input);
 
     /// @inheritDoc
     virtual int GetQueryBatchSize() const;
+
+    /// Get the input stream
+    virtual CNcbiIstream& GetInputStream();
 
     /// Get the output stream
     virtual CNcbiOstream& GetOutputStream();
 
     CNcbiOstrstream & GetOutputStrStream() { return m_OutputStream; }
+
+    virtual ~CTblastnNodeArgs();
 
 protected:
     /// @inheritDoc
@@ -89,6 +93,7 @@ protected:
 
 private :
     CNcbiOstrstream m_OutputStream;
+    CNcbiIstrstream * m_InputStream;
 };
 
 END_SCOPE(blast)

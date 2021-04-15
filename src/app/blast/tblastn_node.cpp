@@ -49,11 +49,12 @@ USING_SCOPE(objects);
 #endif
 
 CTblastnNode::CTblastnNode (int node_num, const CNcbiArguments & ncbi_args, const CArgs& args,
-		                      CBlastAppDiagHandler & bah, const string & input,
+		                      CBlastAppDiagHandler & bah, string & input,
                               int query_index, int num_queries,  CBlastNodeMailbox * mailbox):
-                              CBlastNode(node_num, ncbi_args, args, bah, query_index, num_queries, mailbox), m_Input(input)
+                              CBlastNode(node_num, ncbi_args, args, bah, query_index, num_queries, mailbox), m_Input(kEmptyStr)
 {
-	m_CmdLineArgs.Reset(new CTblastnNodeArgs());
+	m_Input.swap(input);
+	m_CmdLineArgs.Reset(new CTblastnNodeArgs(m_Input));
 	SetState(eInitialized);
 	SendMsg(CBlastNodeMsg::eRunRequest, (void*) this);
 }
@@ -125,7 +126,7 @@ CTblastnNode::Main()
                	ERR_POST(Warning << "Query is Empty!");
                	return BLAST_EXIT_SUCCESS;
             }
-            fasta.Reset(new CBlastFastaInputSource( m_Input, iconfig));
+            fasta.Reset(new CBlastFastaInputSource(m_CmdLineArgs->GetInputStream(), iconfig));
             input.Reset(new CBlastInput(&*fasta,
                                         m_CmdLineArgs->GetQueryBatchSize()));
         } else {

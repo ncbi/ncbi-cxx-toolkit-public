@@ -146,11 +146,33 @@ CBlastxAppArgs::GetQueryBatchSize() const
     return blast::GetQueryBatchSize(eBlastx, m_IsUngapped, is_remote);
 }
 
+/// Get the input stream
+CNcbiIstream&
+CBlastxNodeArgs::GetInputStream()
+{
+	if ( !m_InputStream ) {
+		abort();
+	}
+	return *m_InputStream;
+}
 /// Get the output stream
 CNcbiOstream&
 CBlastxNodeArgs::GetOutputStream()
 {
 	return m_OutputStream;
+}
+
+CBlastxNodeArgs::CBlastxNodeArgs(const string & input)
+{
+	m_InputStream = new CNcbiIstrstream(input.c_str(), input.length());
+}
+
+CBlastxNodeArgs::~CBlastxNodeArgs()
+{
+	if (m_InputStream) {
+		free(m_InputStream);
+		m_InputStream = NULL;
+	}
 }
 
 int
@@ -165,7 +187,6 @@ CBlastxNodeArgs::x_CreateOptionsHandle(CBlastOptions::EAPILocality locality, con
 {
     return CBlastxAppArgs::x_CreateOptionsHandle(locality, args);
 }
-
 
 END_SCOPE(blast)
 END_NCBI_SCOPE

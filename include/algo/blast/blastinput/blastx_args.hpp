@@ -49,6 +49,7 @@ public:
     /// @inheritDoc
     virtual int GetQueryBatchSize() const;
 
+    virtual ~CBlastxAppArgs() {}
 protected:
     /// @inheritDoc
     virtual CRef<CBlastOptionsHandle>
@@ -60,16 +61,20 @@ class NCBI_BLASTINPUT_EXPORT CBlastxNodeArgs : public CBlastxAppArgs
 {
 public:
     /// Constructor
-    CBlastxNodeArgs() {}
-    virtual ~CBlastxNodeArgs() {}
+    CBlastxNodeArgs(const string & input);
 
     /// @inheritDoc
     virtual int GetQueryBatchSize() const;
+
+    /// Get the input stream
+    virtual CNcbiIstream& GetInputStream();
 
     /// Get the output stream
     virtual CNcbiOstream& GetOutputStream();
 
     CNcbiOstrstream & GetOutputStrStream() { return m_OutputStream; }
+
+    virtual ~CBlastxNodeArgs();
 
 protected:
     /// @inheritDoc
@@ -78,6 +83,7 @@ protected:
 
 private :
     CNcbiOstrstream m_OutputStream;
+    CNcbiIstrstream * m_InputStream;
 };
 
 

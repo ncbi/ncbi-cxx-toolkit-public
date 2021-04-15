@@ -48,11 +48,12 @@ USING_SCOPE(objects);
 #endif
 
 CBlastpNode::CBlastpNode (int node_num, const CNcbiArguments & ncbi_args, const CArgs& args,
-		                      CBlastAppDiagHandler & bah, const string & input,
+		                      CBlastAppDiagHandler & bah, string & input,
                               int query_index, int num_queries,  CBlastNodeMailbox * mailbox):
-                              CBlastNode(node_num, ncbi_args, args, bah, query_index, num_queries, mailbox), m_Input(input)
+                              CBlastNode(node_num, ncbi_args, args, bah, query_index, num_queries, mailbox), m_Input(kEmptyStr)
 {
-	m_CmdLineArgs.Reset(new CBlastpNodeArgs());
+	m_Input.swap(input);
+	m_CmdLineArgs.Reset(new CBlastpNodeArgs(m_Input));
 	SetState(eInitialized);
 	SendMsg(CBlastNodeMsg::eRunRequest, (void*) this);
 }
@@ -110,7 +111,7 @@ CBlastpNode::Main()
                                      query_opts->UseLowercaseMasks(),
                                      query_opts->GetParseDeflines(),
                                      query_opts->GetRange());
-        CBlastFastaInputSource fasta(m_Input, iconfig);
+        CBlastFastaInputSource fasta(m_CmdLineArgs->GetInputStream(), iconfig);
         CBlastInput input(&fasta);
 
 

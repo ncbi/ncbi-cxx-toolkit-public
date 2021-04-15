@@ -171,11 +171,33 @@ CTblastnAppArgs::GetQueryBatchSize() const
     return blast::GetQueryBatchSize(eTblastn, m_IsUngapped, is_remote);
 }
 
+/// Get the input stream
+CNcbiIstream&
+CTblastnNodeArgs::GetInputStream()
+{
+	if ( !m_InputStream ) {
+		abort();
+	}
+	return *m_InputStream;
+}
 /// Get the output stream
 CNcbiOstream&
 CTblastnNodeArgs::GetOutputStream()
 {
 	return m_OutputStream;
+}
+
+CTblastnNodeArgs::CTblastnNodeArgs(const string & input)
+{
+	m_InputStream = new CNcbiIstrstream(input.c_str(), input.length());
+}
+
+CTblastnNodeArgs::~CTblastnNodeArgs()
+{
+	if (m_InputStream) {
+		free(m_InputStream);
+		m_InputStream = NULL;
+	}
 }
 
 int
