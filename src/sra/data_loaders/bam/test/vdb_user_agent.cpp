@@ -321,6 +321,7 @@ void CVDBUserAgentMonitor::Initialize()
 #endif
     SetExpectedUserAgentValues("availability-zone", SUserAgentValues::Any());
     SetExpectedUserAgentValues("names.fcgi", SUserAgentValues::Any());
+    SetExpectedUserAgentValues("retrieve", SUserAgentValues::Any());
 }
 
 END_NAMESPACE(objects);
