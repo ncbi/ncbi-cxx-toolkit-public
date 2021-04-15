@@ -57,7 +57,7 @@ public:
 
     std::string GetGffId(
         const CMappedFeat&,
-        feature::CFeatTree* =nullptr);
+        CGffFeatureContext& fc);
 
     std::string GetGffId();
 
@@ -72,22 +72,23 @@ public:
 protected:
     std::string xGetIdForGene(
         const CMappedFeat&,
-        feature::CFeatTree*);
+        CGffFeatureContext&);
 
     std::string xGetIdForRna(
         const CMappedFeat&,
-        feature::CFeatTree*);
+        CGffFeatureContext&);
 
     std::string xGetIdForCds(
         const CMappedFeat&,
-        feature::CFeatTree*);
+        CGffFeatureContext&);
 
     std::string xGetGenericId(
         const CMappedFeat&,
-        feature::CFeatTree*);
+        CGffFeatureContext&);
 
     std::string xGetGenericSuffix(
-        const CMappedFeat&);
+        const CMappedFeat&,
+        CGffFeatureContext&);
 
     std::string xExtractGeneLocusTagOrLocus(
         const CMappedFeat&);
@@ -102,7 +103,8 @@ protected:
         const CMappedFeat&);
 
     std::string xExtractFeatureLocation(
-        const CMappedFeat&);
+        const CMappedFeat&,
+        CGffFeatureContext&);
 
     std::string xDisambiguate(
         const std::string&);

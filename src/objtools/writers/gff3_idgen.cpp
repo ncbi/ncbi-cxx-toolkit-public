@@ -72,6 +72,7 @@
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/util/feature_edit.hpp>
 
+#include <objtools/writers/gff3_writer.hpp>
 #include <objtools/writers/gff3_idgen.hpp>
 #include <objtools/writers/genbank_id_resolve.hpp>
 
@@ -84,7 +85,7 @@ USING_SCOPE(objects);
 //  ------------------------------------------------------------------------------
 string CGffIdGenerator::GetGffId(
     const CMappedFeat& mf,
-    feature::CFeatTree* pFeatTree) 
+    CGffFeatureContext& fc) 
 //  -----------------------------------------------------------------------------t-
 {
     auto id = mf.GetNamedQual("ID");
@@ -93,16 +94,16 @@ string CGffIdGenerator::GetGffId(
         switch(subType) {
         default:
             if (mf.GetFeatType() == CSeqFeatData::e_Rna) {
-                id = xGetIdForRna(mf, pFeatTree);
+                id = xGetIdForRna(mf, fc);
                 break;
             }
-            id = xGetGenericId(mf, pFeatTree);
+            id = xGetGenericId(mf, fc);
             break;
         case CSeqFeatData::eSubtype_gene:
-            id = xGetIdForGene(mf, pFeatTree);
+            id = xGetIdForGene(mf, fc);
             break;
         case CSeqFeatData::eSubtype_cdregion:
-            id = xGetIdForCds(mf, pFeatTree);
+            id = xGetIdForCds(mf,fc);
             break;
         }
     }
@@ -189,7 +190,7 @@ string CGffIdGenerator::GetNextGffExonId(
 //  -----------------------------------------------------------------------------
 string CGffIdGenerator::xGetIdForGene(
     const CMappedFeat& mf,
-    feature::CFeatTree* ) 
+    CGffFeatureContext& fc) 
     //  -----------------------------------------------------------------------------
 {
     const string commonPrefix("gene-");
@@ -201,13 +202,13 @@ string CGffIdGenerator::xGetIdForGene(
     }
 
     //fall back: generic stem
-    return (commonPrefix + xGetGenericSuffix(mf));
+    return (commonPrefix + xGetGenericSuffix(mf, fc));
 }
 
 //  ----------------------------------------------------------------------------
 string CGffIdGenerator::xGetIdForRna(
     const CMappedFeat& mf,
-    feature::CFeatTree* pFeatTree) 
+    CGffFeatureContext& fc) 
 //  ----------------------------------------------------------------------------
 {
     const string commonPrefix("rna-");
@@ -228,10 +229,10 @@ string CGffIdGenerator::xGetIdForRna(
     auto subtype = mf.GetFeatSubtype();
     CMappedFeat gene;
     if (subtype == CSeqFeatData::eSubtype_mRNA) {
-        gene = feature::GetBestGeneForMrna(mf, pFeatTree);
+        gene = feature::GetBestGeneForMrna(mf, &fc.FeatTree());
     }
     else {
-        gene = feature::GetBestGeneForFeat(mf, pFeatTree);
+        gene = feature::GetBestGeneForFeat(mf, &fc.FeatTree());
     }
     auto stem = xExtractGeneLocusTagOrLocus(gene);
     if (!stem.empty()) {
@@ -239,14 +240,14 @@ string CGffIdGenerator::xGetIdForRna(
     }
 
     //fall back: generic suffix
-    return (commonPrefix + xGetGenericSuffix(mf));
+    return (commonPrefix + xGetGenericSuffix(mf, fc));
 }
 
 //  -----------------------------------------------------------------------------
 string CGffIdGenerator::xGetIdForCds(
     const CMappedFeat& mf,
-    feature::CFeatTree* pFeatTree) 
-    //  -----------------------------------------------------------------------------
+    CGffFeatureContext& fc) 
+//  -----------------------------------------------------------------------------
 {
     const string commonPrefix("cds-");
 
@@ -263,21 +264,21 @@ string CGffIdGenerator::xGetIdForCds(
     }
 
     //try to inherit from gene
-    auto gene = feature::GetBestGeneForCds(mf, pFeatTree);
+    auto gene = feature::GetBestGeneForCds(mf, &fc.FeatTree());
     auto stem = xExtractGeneLocusTagOrLocus(gene);
     if (!stem.empty()) {
         return (commonPrefix + stem);
     }
 
     //last resort: generic suffix
-    return (commonPrefix + xGetGenericSuffix(mf));
+    return (commonPrefix + xGetGenericSuffix(mf, fc));
 }
 
 //  -----------------------------------------------------------------------------
 string CGffIdGenerator::xGetGenericId(
     const CMappedFeat& mf,
-    feature::CFeatTree* ) 
-    //  -----------------------------------------------------------------------------
+    CGffFeatureContext& fc) 
+//  -----------------------------------------------------------------------------
 {
     const string commonPrefix("id-");
     string rawId;
@@ -290,7 +291,7 @@ string CGffIdGenerator::xGetGenericId(
 
     //fall back: generic suffix
     if (rawId.empty()) {
-        rawId = commonPrefix + xGetGenericSuffix(mf);
+        rawId = commonPrefix + xGetGenericSuffix(mf, fc);
     }
 
     //for native exons: attach exon number if available
@@ -305,7 +306,8 @@ string CGffIdGenerator::xGetGenericId(
 
 //  ----------------------------------------------------------------------------
 string CGffIdGenerator::xGetGenericSuffix(
-    const CMappedFeat& mf)
+    const CMappedFeat& mf,
+    CGffFeatureContext& fc) 
 //  ----------------------------------------------------------------------------
 {
     const auto dbxrefs = mf.GetDbxref();
@@ -317,13 +319,13 @@ string CGffIdGenerator::xGetGenericSuffix(
             return ostr.str();
         }
     }
-    return xExtractFeatureLocation(mf);
+    return xExtractFeatureLocation(mf, fc);
 }
 
 //  ----------------------------------------------------------------------------
 string CGffIdGenerator::xExtractGeneLocusTagOrLocus(
-    const CMappedFeat& mf)
-    //  ----------------------------------------------------------------------------
+    const CMappedFeat& mf) 
+//  -----------------------------------------------------------------------------
 {
     if (!mf) {
         return "";
@@ -348,13 +350,24 @@ string CGffIdGenerator::xExtractGeneLocusTagOrLocus(
 
 //  ----------------------------------------------------------------------------
 string CGffIdGenerator::xExtractFeatureLocation(
-    const CMappedFeat& mf)
+    const CMappedFeat& mf,
+    CGffFeatureContext& fc) 
     //  ----------------------------------------------------------------------------
 {
     string locationId;
     if (!CGenbankIdResolve::Get().GetBestId(mf, locationId)) {
         locationId = "unknown";
     } 
+    auto locationType = mf.GetLocation().Which();
+    if (locationType == CSeq_loc::e_Whole) {
+        auto bsh = fc.BioseqHandle();
+        if (bsh  &&  bsh.CanGetInst_Length()) {
+            locationId += ":1.." + NStr::NumericToString(bsh.GetInst_Length());
+            return locationId;
+        }
+        locationId += ":whole"; //for lack of better ideas
+        return locationId;
+    }
     auto inPoint = NStr::NumericToString(mf.GetLocationTotalRange().GetFrom() + 1);
     auto outPoint = NStr::NumericToString(mf.GetLocationTotalRange().GetTo() + 1);
     locationId += ":";

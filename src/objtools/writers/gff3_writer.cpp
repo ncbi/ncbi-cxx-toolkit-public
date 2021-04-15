@@ -2112,7 +2112,7 @@ bool CGff3Writer::xAssignFeatureAttributeID(
     const CMappedFeat& mf )
     //  ----------------------------------------------------------------------------
 {
-    auto rawId = m_idGenerator.GetGffId(mf, &fc.FeatTree());
+    auto rawId = m_idGenerator.GetGffId(mf, fc);
     record.SetRecordId(rawId);
     return true;
 }
