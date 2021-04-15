@@ -53,9 +53,11 @@ public:
         fErrorUnknownFile        = 1<<3,
         fErrorWrongValues        = 1<<4,
         fErrorNoHTTPLine         = 1<<5,
+        fErrorNoUserAgentLines   = 1<<6,
     };
     typedef int TErrorFlags;
     static int GetErrorFlags();
+    static size_t GetValidUserAgentCount();
     
     typedef vector<string> TErrorMessages;
     static TErrorMessages GetErrorMessages();
@@ -88,7 +90,8 @@ public:
 protected:
     void x_CheckLine();
     static void x_AddError(const string& message, TErrorFlags flags);
-
+    static void x_AddValidUserAgent();
+    
 private:
     string m_Line; // current line
     string m_FileName; // file name in http request

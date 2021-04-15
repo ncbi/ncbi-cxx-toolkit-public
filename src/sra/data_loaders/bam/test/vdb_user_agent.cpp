@@ -39,6 +39,12 @@
 BEGIN_NCBI_NAMESPACE;
 BEGIN_NAMESPACE(objects);
 
+#if !HAVE_LIBCONNEXT // external builds do not have debug version of VDB library
+# define HAVE_DEBUG_VDB_CALL 0
+#else
+# define HAVE_DEBUG_VDB_CALL 1
+#endif
+
 bool CVDBUserAgentMonitor::SUserAgentValues::operator==(const SUserAgentValues& values) const
 {
     return
@@ -92,7 +98,9 @@ void CVDBUserAgentMonitor::SetExpectedUserAgentValues(const string& file_name,
 }
 
 DEFINE_STATIC_FAST_MUTEX(s_ErrorMutex);
-static CVDBUserAgentMonitor::TErrorFlags s_ErrorFlags;
+static bool s_HaveDebugVDBHook = false;
+static size_t s_ValidUserAgentCount = 0;
+static CVDBUserAgentMonitor::TErrorFlags s_ErrorFlags = CVDBUserAgentMonitor::fNoErrors;
 static CVDBUserAgentMonitor::TErrorMessages s_ErrorMessages;
 
 void CVDBUserAgentMonitor::x_AddError(const string& message, TErrorFlags flags)
@@ -103,9 +111,27 @@ void CVDBUserAgentMonitor::x_AddError(const string& message, TErrorFlags flags)
     s_ErrorMessages.push_back(message);
 }
 
+void CVDBUserAgentMonitor::x_AddValidUserAgent()
+{
+    _TRACE("VDBUA: valid Useq-agent");
+    CFastMutexGuard guard(s_ErrorMutex);
+    s_ValidUserAgentCount += 1;
+}
+
 void CVDBUserAgentMonitor::ReportErrors()
 {
     CFastMutexGuard guard(s_ErrorMutex);
+    if ( !s_ValidUserAgentCount ) {
+        if ( s_HaveDebugVDBHook ) {
+            ERR_POST("CVDBUserAgentMonitor: no User-Agent lines");
+        }
+        else {
+            LOG_POST("CVDBUserAgentMonitor: no User-Agent lines because of non-debug VDB library");
+        }
+    }
+    else {
+        LOG_POST("CVDBUserAgentMonitor: "<<s_ValidUserAgentCount<<" User-Agent lines");
+    }
     if ( s_ErrorFlags ) {
         ERR_POST("CVDBUserAgentMonitor: error flags="<<s_ErrorFlags);
         for ( auto& msg : s_ErrorMessages ) {
@@ -117,14 +143,25 @@ void CVDBUserAgentMonitor::ReportErrors()
 void CVDBUserAgentMonitor::ResetErrors()
 {
     CFastMutexGuard guard(s_ErrorMutex);
+    s_ValidUserAgentCount = 0;
     s_ErrorFlags = fNoErrors;
     s_ErrorMessages.clear();
+}
+
+size_t CVDBUserAgentMonitor::GetValidUserAgentCount()
+{
+    CFastMutexGuard guard(s_ErrorMutex);
+    return s_ValidUserAgentCount;
 }
 
 CVDBUserAgentMonitor::TErrorFlags CVDBUserAgentMonitor::GetErrorFlags()
 {
     CFastMutexGuard guard(s_ErrorMutex);
-    return s_ErrorFlags;
+    auto flags = s_ErrorFlags;
+    if ( s_HaveDebugVDBHook && s_ValidUserAgentCount == 0 ) {
+        flags |= fErrorNoUserAgentLines;
+    }
+    return flags;
 }
 
 CVDBUserAgentMonitor::TErrorMessages CVDBUserAgentMonitor::GetErrorMessages()
@@ -216,10 +253,10 @@ void CVDBUserAgentMonitor::x_CheckLine()
             }
         }
         if ( auto exp_values = GetExpectedUserAgentValues(m_FileName) ) {
-            if ( *exp_values == SUserAgentValues::Any() ) {
-                // allow any User-Agent
+            if ( *exp_values == SUserAgentValues::Any() || values == *exp_values ) {
+                x_AddValidUserAgent();
             }
-            else if ( values != *exp_values ) {
+            else {
                 _TRACE("VDBUA: file: "<<m_FileName);
                 _TRACE("VDBUA: VALUES: "<<values);
                 _TRACE("VDBUA: REQCTX: "<<*exp_values);
@@ -245,7 +282,7 @@ CVDBUserAgentMonitor& CVDBUserAgentMonitor::GetInstance()
 }
 
 
-#if HAVE_LIBCONNEXT // external builds do not have debug version of VDB library
+#if HAVE_DEBUG_VDB_CALL
 static rc_t CC s_VDBOutWriter(void* self, const char* buffer, size_t bufsize, size_t* num_writ)
 {
     CVDBUserAgentMonitor::GetInstance().Append(buffer, bufsize);
@@ -257,12 +294,24 @@ static rc_t CC s_VDBOutWriter(void* self, const char* buffer, size_t bufsize, si
 
 void CVDBUserAgentMonitor::Initialize()
 {
-#if HAVE_LIBCONNEXT // external builds do not have debug version of VDB library
     KLogLevelSet(klogDebug);
-    if ( rc_t rc = KDbgHandlerSet(s_VDBOutWriter, 0) ) {
+#if HAVE_DEBUG_VDB_CALL
+    KWrtWriter my_writer = s_VDBOutWriter;
+    if ( KDbgWriterGet() != nullptr ) {
+        NCBI_THROW_FMT(CException, eUnknown,
+                       "CVDBUserAgentMonitor:"
+                       " KDbgHandler is already set");
+    }
+    if ( rc_t rc = KDbgHandlerSet(my_writer, 0) ) {
         NCBI_THROW_FMT(CException, eUnknown,
                        "CVDBUserAgentMonitor:"
                        " KDbgHandlerSet() failed: "<<rc);
+    }
+    s_HaveDebugVDBHook = KDbgWriterGet() != nullptr;
+    if ( s_HaveDebugVDBHook && KDbgWriterGet() != my_writer ) {
+        NCBI_THROW_FMT(CException, eUnknown,
+                       "CVDBUserAgentMonitor:"
+                       " KDbgHandler was set to something else");
     }
     if ( rc_t rc = KDbgSetString("KNS") ) {
         NCBI_THROW_FMT(CException, eUnknown,
@@ -270,6 +319,8 @@ void CVDBUserAgentMonitor::Initialize()
                        " KDbgSetString() failed: "<<rc);
     }
 #endif
+    SetExpectedUserAgentValues("availability-zone", SUserAgentValues::Any());
+    SetExpectedUserAgentValues("names.fcgi", SUserAgentValues::Any());
 }
 
 END_NAMESPACE(objects);
