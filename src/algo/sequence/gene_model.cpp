@@ -1545,7 +1545,6 @@ SImplementation::x_CreateProteinBioseq(CSeq_loc* cds_loc,
         size_t e = 0;
         size_t skip_5_prime = 0;
         size_t skip_3_prime = 0;
-        unsigned count_internal_stops = 0;
 
         for( CSeqMap_CI ci = map->BeginResolved(m_scope.GetPointer()); ci; ci.Next()) {
             int codon_start_pos = (int)ci.GetPosition() + frame;
@@ -1631,7 +1630,6 @@ SImplementation::x_CreateProteinBioseq(CSeq_loc* cds_loc,
                         internal_stop_on_mrna->SetInt().SetTo(pos_on_mrna + 2);
                         AddCodeBreak(*cds_feat_on_transcribed_mrna, *internal_stop_on_mrna, 'X');
                         transcribed_mrna_seqloc_refs.push_back(internal_stop_on_mrna);
-                        ++count_internal_stops;
                     }
 
 
@@ -1641,13 +1639,6 @@ SImplementation::x_CreateProteinBioseq(CSeq_loc* cds_loc,
             b = e;
         }
         _ASSERT( -2 <= frame && frame <= 0 );
-
-        if (count_internal_stops) {
-            CRef<CUser_object> align_info(new CUser_object);
-            align_info->SetType().SetStr("AlignInfo");
-            align_info->AddField("num_internal_stop_codon", (int)count_internal_stops);
-            cds_feat_on_transcribed_mrna->AddExt(align_info);
-        }
 
         if (frame < 0) { //last codon partial
             if (b < strprot.size() && strprot[b] != 'X') { // last partial codon translated unambiguously - add it

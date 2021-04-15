@@ -15805,17 +15805,6 @@ E18146D03F4F3E8E1C0C00255C58502C289F201ECEE149312C0374B42C51421C2040C0'H,
                 from 0,
                 to 866,
                 id local str "CDNA_33"
-              },
-              exts {
-                {
-                  type str "AlignInfo",
-                  data {
-                    {
-                      label str "num_internal_stop_codon",
-                      data int 1
-                    }
-                  }
-                }
               }
             }
           }
@@ -16567,17 +16556,6 @@ CDE05C00E7F0C012CD2EDFFE33A28EC89FB7F4E28E7F8880D9C8EE63674C21A89D8AFC6F733C80
                 id local str "CDNA_37",
                 fuzz-from lim lt,
                 fuzz-to lim gt
-              },
-              exts {
-                {
-                  type str "AlignInfo",
-                  data {
-                    {
-                      label str "num_internal_stop_codon",
-                      data int 31
-                    }
-                  }
-                }
               }
             }
           }
@@ -18886,18 +18864,7 @@ Bioseq-set ::= {
                   tag str "G00-118-995"
                 }
               },
-              pseudo TRUE,
-              exts {
-                {
-                  type str "AlignInfo",
-                  data {
-                    {
-                      label str "num_internal_stop_codon",
-                      data int 9
-                    }
-                  }
-                }
-              }
+              pseudo TRUE
             }
           }
         }
@@ -19559,17 +19526,6 @@ A05800281ED10F0EA0043DB8E33849B16F727FD3F3D68065ACF338E0F06F20893F80F049CE9B3A
                 id local str "CDNA_53",
                 fuzz-from lim lt,
                 fuzz-to lim gt
-              },
-              exts {
-                {
-                  type str "AlignInfo",
-                  data {
-                    {
-                      label str "num_internal_stop_codon",
-                      data int 1
-                    }
-                  }
-                }
               }
             }
           }
