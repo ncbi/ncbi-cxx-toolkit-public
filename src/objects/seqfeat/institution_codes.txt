@@ -6640,6 +6640,7 @@ SMNH<JPN>	s	Saitama Museum of Natural History
 SMNH<SWE>	s	Swedish Museum of Natural History	NRM		
 SMNH<UKR>	s	State Museum of Natural History			
 SMNH<USA-KS>	s	Schmidt Museum of Natural History, Emporia State University			
+SMNHTAU	s	The Steinhardt Museum of Natural History	SMNH<ISR> ,ZMTAU		
 SMNK	s	Staatliches Museum fuer Naturkunde Karlsruhe (State Museum of Natural History)			
 SMNS	s	Staatliches Museum fur Naturkunde Stuttgart			
 SMOC	s	Slezske Muzeum Opava			
@@ -8373,7 +8374,6 @@ ZMS	s	Zentralmuseum Senckenberg (SENCKENBERG world of biodiversity)
 ZMSZ	s	Zemaljski Mujski			
 ZMT<CZE>	s	Zapadomoravske muzeum v Trebici			
 ZMT<GEO>	s	Georgian State Museum, Zoological Section			
-ZMTAU	s	The Steinhardt Museum of Natural History	SMNH<ISR> 		
 ZMU	s	Zhejiang Medical University, Pharmacy Department			
 ZMUA<CHN>	s	Zooligal Museum, University of Amoy			
 ZMUA<GRC>	s	Zoological Museum, University of Athens			
