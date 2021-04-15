@@ -236,6 +236,16 @@ BOOST_AUTO_TEST_CASE(CheckWGSUserAgent)
         "BASR01",
         "BASS01",
     };
+    {{
+        // check if WGS is resolved to remote files
+        CVDBMgr mgr;
+        if ( !NStr::StartsWith(mgr.FindAccPath(accs[0]), "http") ) {
+            LOG_POST("Skipping User-Agent test because VDB files are local");
+            return;
+        }
+    }}
+
+    
     const size_t NQ = sizeof(accs)/sizeof(accs[0]);
     const size_t NS = 20;
     vector<vector<string>> ids(NQ);
@@ -250,8 +260,6 @@ BOOST_AUTO_TEST_CASE(CheckWGSUserAgent)
         }
     }
     CVDBUserAgentMonitor::Initialize();
-    CVDBUserAgentMonitor::SetExpectedUserAgentValues("names.fcgi",
-                                                     CVDBUserAgentMonitor::SUserAgentValues::Any());
     for ( size_t i = 0; i < NQ; ++i ) {
         CVDBUserAgentMonitor::SUserAgentValues values = {
             get_cip(i),
