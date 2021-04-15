@@ -90,6 +90,7 @@ static const TDbxrefPair kApprovedDbXrefs[] = {
     { "EnsemblGenomes", CDbtag::eDbtagType_EnsemblGenomes },
     { "EnsemblGenomes-Gn", CDbtag::eDbtagType_EnsemblGenomes_Gn },
     { "EnsemblGenomes-Tr", CDbtag::eDbtagType_EnsemblGenomes_Tr },
+    { "EnsemblRapid", CDbtag::eDbtagType_EnsemblRapid },
     { "FANTOM_DB", CDbtag::eDbtagType_FANTOM_DB },
     { "FBOL", CDbtag::eDbtagType_FBOL },
     { "FLYBASE", CDbtag::eDbtagType_FLYBASE },
@@ -196,6 +197,7 @@ static const TDbxrefPair kApprovedRefSeqDbXrefs[] = {
     { "CGNC", CDbtag::eDbtagType_CGNC },
     { "CloneID", CDbtag::eDbtagType_CloneID },
     { "EPDnew", CDbtag::eDbtagType_EPDnew },
+    { "EnsemblRapid", CDbtag::eDbtagType_EnsemblRapid },
     { "HPM", CDbtag::eDbtagType_HPM },
     { "HPRD", CDbtag::eDbtagType_HPRD },
     { "LRG", CDbtag::eDbtagType_LRG },
@@ -723,7 +725,8 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_EPDnew, "http://epd.vital-it.ch/cgi-bin/get_doc?format=genome&entry=" },
     { CDbtag::eDbtagType_Ensembl, "https://www.ensembl.org/id/" }, // url seems incorrect, includes msg user has been redirected and  "Error 404 Page not found" tested 7/13/2016  
     { CDbtag::eDbtagType_PseudoCAP, "http://www.pseudomonas.com/primarySequenceFeature/list?c1=name&e1=1&v1=" }, // url not found tested 7/13/2016
-    { CDbtag::eDbtagType_dbVar, "https://www.ncbi.nlm.nih.gov/dbvar/variants/" }
+    { CDbtag::eDbtagType_dbVar, "https://www.ncbi.nlm.nih.gov/dbvar/variants/" },
+    { CDbtag::eDbtagType_EnsemblRapid, "https://rapid.ensembl.org/id/" }
 };
 
 typedef CStaticPairArrayMap<CDbtag::EDbtagType, const char*> TUrlPrefixMap;

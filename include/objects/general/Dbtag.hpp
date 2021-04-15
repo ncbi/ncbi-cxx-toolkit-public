@@ -221,7 +221,8 @@ public:
         eDbtagType_Ensembl,
         eDbtagType_PseudoCAP,
         eDbtagType_MarpolBase,
-        eDbtagType_dbVar
+        eDbtagType_dbVar,
+        eDbtagType_EnsemblRapid
     };
 
     enum EDbtagGroup {
