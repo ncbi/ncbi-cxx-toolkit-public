@@ -61,8 +61,8 @@ static inline string deunderscore(const string s)
 
 static void RecursiveText(ostream& out, const TReportItemList& list, unsigned short flags)
 {
-    bool ext = flags & CDiscrepancySet::eOutput_Ext;
-    bool fatal = flags & CDiscrepancySet::eOutput_Fatal;
+    bool ext = (flags & CDiscrepancySet::eOutput_Ext) != 0;
+    bool fatal = (flags & CDiscrepancySet::eOutput_Fatal) != 0;
     for (const auto& it : list) {
         if (it->IsExtended() && !ext) {
             continue;
@@ -70,7 +70,7 @@ static void RecursiveText(ostream& out, const TReportItemList& list, unsigned sh
         if (fatal && ShowFatal(*it)) {
             out << "FATAL: ";
         }
-        out << deunderscore(it->GetTitle()) << ": " << it->GetMsg() << "\n";
+        out << deunderscore(it->GetTitle()) << ": " << it->GetMsg() << '\n';
         TReportItemList subs = it->GetSubitems();
         if (!subs.empty() && (ext || !subs[0]->IsExtended())) {
             RecursiveText(out, subs, flags);
@@ -84,7 +84,7 @@ static void RecursiveText(ostream& out, const TReportItemList& list, unsigned sh
                 if (obj->IsFixed()) {
                     out << "[FIXED] ";
                 }
-                out << obj->GetText() << "\n";
+                out << obj->GetText() << '\n';
             }
         }
     }
@@ -99,14 +99,14 @@ static void RecursiveSummary(ostream& out, const TReportItemList& list, unsigned
             if (fatal && ShowFatal(*it)) {
                 out << "FATAL: ";
             }
-            out << deunderscore(it->GetTitle()) << ": " << it->GetMsg() << "\n";
+            out << deunderscore(it->GetTitle()) << ": " << it->GetMsg() << '\n';
         }
         else if (it->IsSummary()) {
             out << string(level, '\t');
             if (fatal && ShowFatal(*it)) {
                 out << "FATAL: ";
             }
-            out << it->GetMsg() << "\n";
+            out << it->GetMsg() << '\n';
         }
         else {
             continue;
@@ -119,17 +119,17 @@ static void RecursiveSummary(ostream& out, const TReportItemList& list, unsigned
 static bool RecursiveFatalSummary(ostream& out, const TReportItemList& list, size_t level = 0)
 {
     bool found = false;
-    for (const auto& it: list) {
+    for (const auto& it : list) {
         if (it->IsFatal() && it->GetTitle() != "SOURCE_QUALS" && it->GetTitle() != "SUSPECT_PRODUCT_NAMES") {
             found = true;
             if (level == 0) {
                 out << "FATAL: ";
-                out << deunderscore(it->GetTitle()) << ": " << it->GetMsg() << "\n";
+                out << deunderscore(it->GetTitle()) << ": " << it->GetMsg() << '\n';
             }
             else if (it->IsSummary()) {
                 out << string(level, '\t');
                 out << "FATAL: ";
-                out << it->GetMsg() << "\n";
+                out << it->GetMsg() << '\n';
             }
             else {
                 continue;
@@ -177,19 +177,17 @@ void CDiscrepancyContext::OutputText(ostream& out, unsigned short flags, char gr
 }
 
 
-static const size_t XML_INDENT = 2;
-
 static void Indent(ostream& out, size_t indent)
 {
-    out << string(indent*XML_INDENT, ' ');
+    static const size_t XML_INDENT = 2;
+    out << string(indent * XML_INDENT, ' ');
 }
 
-
-static string SevLevel[] = {"INFO", "WARNING", "FATAL"};
+static string SevLevel[CReportItem::eSeverity_error + 1] = { "INFO", "WARNING", "FATAL" };
 
 static void RecursiveXML(ostream& out, const TReportItemList& list, unsigned short flags, size_t indent)
 {
-    bool ext = flags & CDiscrepancySet::eOutput_Ext;
+    bool ext = (flags & CDiscrepancySet::eOutput_Ext) != 0;
     for (const auto& it : list) {
         if (it->IsExtended() && !ext) {
             continue;
@@ -214,7 +212,7 @@ static void RecursiveXML(ostream& out, const TReportItemList& list, unsigned sho
             RecursiveXML(out, subs, flags, indent);
         }
         else {
-            for (const auto& obj: it->GetDetails()) {
+            for (const auto& obj : it->GetDetails()) {
                 Indent(out, indent);
                 out << "<object type=";
                 switch (obj->GetType()) {
@@ -259,8 +257,8 @@ static void RecursiveXML(ostream& out, const TReportItemList& list, unsigned sho
                 if (!sLocusTag.empty()) {
                     out << " locus_tag=\"" << NStr::XmlEncode(sLocusTag) << "\"";
                 }
-                string text = NStr::Replace(obj->GetText(), "\t", " ");
-                out << " label=\"" << NStr::XmlEncode(text) << "\"/>\n";
+                const string text = obj->GetText();
+                out << " label=\"" << NStr::XmlEncode(text) << "\" />\n";
             }
         }
         --indent;
