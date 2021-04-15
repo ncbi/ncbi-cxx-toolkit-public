@@ -132,7 +132,7 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr)
     for ( size_t k = 0; k < NQ; ++k ) {
         for ( size_t i = 0; i < NS; ++i ) {
             char id[99];
-            sprintf(id, "%s%06d.1", accs[r.GetRandIndex(ArraySize(accs))], int(r.GetRand(1, 100)));
+            sprintf(id, "%s%06u.1", accs[r.GetRandIndexSize_t(ArraySize(accs))], r.GetRand(1, 100));
             ids[k].push_back(id);
         }
     }
@@ -253,7 +253,7 @@ BOOST_AUTO_TEST_CASE(CheckWGSUserAgent)
     for ( size_t k = 0; k < NQ; ++k ) {
         for ( size_t i = 0; i < NS; ++i ) {
             char id[99];
-            size_t index = r.GetRandIndex(ArraySize(accs));
+            size_t index = r.GetRandIndexSize_t(ArraySize(accs));
             sprintf(id, "%s%06d.1", accs[index], int(r.GetRand(1, 100)));
             ids[k].push_back(id);
             id2index[id] = index;
