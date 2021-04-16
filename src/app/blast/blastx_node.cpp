@@ -61,7 +61,9 @@ CBlastxNode::CBlastxNode (int node_num, const CNcbiArguments & ncbi_args, const 
 int CBlastxNode::GetBlastResults(CNcbiOstream & os)
 {
 	if(GetState() == eDone) {
-		os << m_CmdLineArgs->GetOutputStrStream().rdbuf();
+		if (m_CmdLineArgs->GetOutputStrStream().rdbuf()->in_avail() > 0) {
+			os << m_CmdLineArgs->GetOutputStrStream().rdbuf();
+		}
 		return GetStatus();
 	}
 	return -1;

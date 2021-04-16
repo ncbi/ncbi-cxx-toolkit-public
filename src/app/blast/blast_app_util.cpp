@@ -989,7 +989,11 @@ int GetMTByQueriesBatchSize(EProgram p, int num_threads)
 			batch_size = NStr::StringToInt(mt_query_batch_env);
 		}
 		else {
-			batch_size = GetQueryBatchSize(p);
+			int factor = 1;
+			if ( EProgramToEBlastProgramType(p) == eBlastTypeBlastn ) {
+				factor = 2;
+			}
+			batch_size = GetQueryBatchSize(p)/factor;
 		}
 		return batch_size;
 }

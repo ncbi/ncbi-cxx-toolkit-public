@@ -135,7 +135,7 @@ CMemoryFile* CSeqDBAtlas::GetMemoryFile(const string& fileName)
     }
     CAtlasMappedFile* file(new CAtlasMappedFile(fileName));
     m_FileMemMap[fileName].reset(file);
-   	LOG_POST(Info << "Open File: " << fileName);
+   	_TRACE("Open File: " << fileName);
     ChangeOpenedFilseCount(CSeqDBAtlas::eFileCounterIncrement);
     return file;
 }
