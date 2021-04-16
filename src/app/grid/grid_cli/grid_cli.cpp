@@ -1295,10 +1295,12 @@ int CGridCommandLineInterfaceApp::Run()
 
     ifstream input_file;
     COutputFileHelper output_file_helper;
+
+    // Atom . does not match line terminators (coming with "Raw Data") thus the use of [\s\S] below
     CLogLatencyReport latency_report{
         "/connect/ (302.109)",
-        R"(\d+/\d+/\d+/P  \S+ \d+/\d+ (\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})\.(\d{6}) .+ --- SOCK#\d+\[\d+\]@([0-9.:]+): Written at offset .+ ncbi_phid=.+)",
-        R"(\d+/\d+/\d+/P  \S+ \d+/\d+ (\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})\.(\d{6}) .+ --- SOCK#\d+\[\d+\]@([0-9.:]+): Read at offset .+)"
+        R"(SOCK#\d+\[\d+\]@([0-9.:]+): Written at offset \d+[\s\S]+ ncbi_phid=[\s\S]+)",
+        R"(SOCK#\d+\[\d+\]@([0-9.:]+): Read at offset \d+[\s\S]+)"
     };
 
     {

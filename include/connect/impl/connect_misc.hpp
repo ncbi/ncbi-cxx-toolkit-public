@@ -36,6 +36,7 @@
 #include <corelib/ncbistr.hpp>
 
 #include <chrono>
+#include <deque>
 #include <memory>
 #include <mutex>
 #include <regex>
@@ -151,8 +152,9 @@ public:
 
     void SetDebug(bool debug) { m_Debug = debug; }
 
+    using TData = deque<SDiagMessage>;
     using TResult = unordered_map<string, chrono::microseconds>;
-    TResult Parse(istream& is);
+    TResult Parse(const TData& data);
 
 private:
     regex m_Start;
@@ -172,9 +174,13 @@ public:
     explicit operator bool() const { return m_Handler.get(); }
 
 private:
+    struct SHandler : CDiagHandler, TData
+    {
+        void Post(const SDiagMessage& msg) override { emplace_back(msg); }
+    };
+
     string m_Filter;
-    stringstream m_CerrOutput;
-    unique_ptr<CDiagHandler> m_Handler;
+    unique_ptr<SHandler> m_Handler;
 };
 
 END_NCBI_SCOPE

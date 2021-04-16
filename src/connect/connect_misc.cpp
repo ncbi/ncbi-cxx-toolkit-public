@@ -184,15 +184,14 @@ CServiceDiscovery::TServers CServiceDiscovery::DiscoverImpl(const string& servic
     return rv;
 }
 
-CLogLatencies::TResult CLogLatencies::Parse(istream& is)
+CLogLatencies::TResult CLogLatencies::Parse(const TData& data)
 {
     using namespace chrono;
 
-    enum : size_t { eTime = 1, eMicroseconds, eServer };
+    enum : size_t { eServer = 1 };
     enum : size_t { fNothing = 0, fStart, fStop, eBoth };
     array<const char*, eBoth> prefixes{ "         ", "Start -> ", "Stop ->  " };
 
-    array<char, 1024> line;
     cmatch m;
 
     using TServer = pair<size_t, array<system_clock::time_point, eBoth>>;
@@ -200,23 +199,17 @@ CLogLatencies::TResult CLogLatencies::Parse(istream& is)
     TServer* current = nullptr;
     TResult latencies;
 
-    for (;;) {
-        if (!is.getline(line.data(), line.size())) {
-            // If it was a partial read (the line was too long)
-            if (is.fail()  &&  is.gcount() == (streamsize) line.size() - 1) {
-                is.clear();
-            } else {
-                break;
-            }
-        }
-
+    for (const auto& msg : data) {
+        const auto msg_start = msg.m_Buffer;
+        const auto msg_len = min((size_t)1024, msg.m_BufferLen);
+        const auto msg_end = msg_start + msg_len;
         size_t matched = fNothing;
 
-        if (regex_match(line.data(), m, m_Start)) {
+        if (regex_match(msg_start, msg_end, m, m_Start)) {
             matched = fStart;
             current = &servers[m[eServer].str()];
 
-        } else if (regex_match(line.data(), m, m_Stop)) {
+        } else if (regex_match(msg_start, msg_end, m, m_Stop)) {
             matched = fStop;
 
             // If there is a server specified
@@ -226,16 +219,15 @@ CLogLatencies::TResult CLogLatencies::Parse(istream& is)
         }
 
         if (matched && current) {
-            tm tm = {};
-            stringstream ss(m[eTime].str());
-            ss >> get_time(&tm, "%Y-%m-%dT%H:%M:%S %b %d");
-            auto tp = system_clock::from_time_t(mktime(&tm)) + microseconds(stoull(m[eMicroseconds].str()));
+            auto t = msg.GetTime();
+            auto tp = system_clock::from_time_t(t.GetTimeT()) + microseconds(t.MicroSecond());
             current->first |= matched;
             current->second[matched] = tp;
         }
 
         if (m_Debug) {
-            cerr << prefixes[matched] << line.data() << endl;
+            cerr << prefixes[matched];
+            msg.Write(cerr);
         }
     }
 
@@ -262,8 +254,7 @@ CLogLatencyReport::~CLogLatencyReport()
 
     try {
         SetDiagHandler(nullptr);
-        m_CerrOutput.seekg(0);
-        const auto latencies = Parse(m_CerrOutput);
+        const auto latencies = Parse(*m_Handler);
 
         for (const auto& server : latencies) {
             const auto& server_name = server.first;
@@ -283,7 +274,7 @@ void CLogLatencyReport::Start()
         return;
     }
 
-    m_Handler.reset(new CStreamDiagHandler(&m_CerrOutput));
+    m_Handler.reset(new SHandler);
     GetDiagContext().SetOldPostFormat(false);
     SetDiagFilter(eDiagFilter_All, m_Filter.c_str());
     SetDiagHandler(m_Handler.get(), false);
