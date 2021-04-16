@@ -164,22 +164,17 @@ class NCBI_XCONNECT_EXPORT CLogLatencyReport : public CLogLatencies
 {
 public:
     template <class... TArgs>
-    CLogLatencyReport(TArgs&&... args) : CLogLatencies(forward<TArgs>(args)...) {}
+    CLogLatencyReport(string filter, TArgs&&... args) : CLogLatencies(forward<TArgs>(args)...), m_Filter(move(filter)) {}
 
     ~CLogLatencyReport();
 
     void Start();
-    explicit operator bool() const { return m_CerrBuf; }
+    explicit operator bool() const { return m_Handler.get(); }
 
 private:
-    struct SNullBuf : streambuf
-    {
-        int_type overflow(int_type c) override { return traits_type::not_eof(c); }
-    };
-
-    SNullBuf m_NullBuf;
+    string m_Filter;
     stringstream m_CerrOutput;
-    streambuf* m_CerrBuf = nullptr;
+    unique_ptr<CDiagHandler> m_Handler;
 };
 
 END_NCBI_SCOPE

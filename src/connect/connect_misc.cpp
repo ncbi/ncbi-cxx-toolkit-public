@@ -256,11 +256,11 @@ CLogLatencies::TResult CLogLatencies::Parse(istream& is)
 CLogLatencyReport::~CLogLatencyReport()
 {
     // It has not been started, nothing to report
-    if (!m_CerrBuf) {
+    if (!m_Handler) {
         return;
     }
 
-    cerr.rdbuf(m_CerrBuf);
+    SetDiagHandler(nullptr);
     m_CerrOutput.seekg(0);
     const auto latencies = Parse(m_CerrOutput);
 
@@ -269,15 +269,19 @@ CLogLatencyReport::~CLogLatencyReport()
         const auto& server_latency = server.second;
         cerr << "server=" << server_name << "&latency=" << server_latency.count() << endl;
     }
-
-    cerr.rdbuf(nullptr);
 }
 
 void CLogLatencyReport::Start()
 {
-    _ASSERT(!m_CerrBuf);
-    m_CerrBuf = cerr.rdbuf(m_CerrOutput.rdbuf());
+    // If it has already been started
+    if (m_Handler) {
+        return;
+    }
+
+    m_Handler.reset(new CStreamDiagHandler(&m_CerrOutput));
     GetDiagContext().SetOldPostFormat(false);
+    SetDiagFilter(eDiagFilter_All, m_Filter.c_str());
+    SetDiagHandler(m_Handler.get(), false);
 }
 
 NCBI_EXPORT_FUNC_DEFINE(XCONNECT, mbedtls_ctr_drbg_free);

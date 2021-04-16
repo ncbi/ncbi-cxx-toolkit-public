@@ -524,6 +524,7 @@ int CProcessing::OneRequest(const string& service, shared_ptr<CPSG_Request> requ
 {
     SDataOnlyCopy data_only_copy(params.data_only);
     CLogLatencyReport latency_report{
+        "/objtools/pubseq_gateway/client/",
         R"(\d+/\d+/\d+/P  \S+ \d+/\d+ (\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})\.(\d{6}) .+ ncbi::SDebugPrintout::Print\(\) --- \S+: (\S+:[0-9]+)/\S+?\S+&client_id=\S+)",
         R"(\d+/\d+/\d+/P  \S+ \d+/\d+ (\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})\.(\d{6}) .+ ncbi::SDebugPrintout::Print\(\) --- \S+: Closed with status \S+)"
     };
