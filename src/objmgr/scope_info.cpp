@@ -1136,7 +1136,13 @@ void CTSE_ScopeInfo::x_UserLockTSE(void)
             // scenario - in several threads:
             //   1. get new TSE handle
             //   2. call RemoveFromHistory()
-            GetDSInfo().AcquireTSEUserLock(*this);
+            try {
+                GetDSInfo().AcquireTSEUserLock(*this);
+            }
+            catch ( ... ) {
+                x_UserUnlockTSE();
+                throw;
+            }
         }
     }
 }
@@ -1171,7 +1177,14 @@ void CTSE_ScopeUserLocker::Lock(CTSE_ScopeInfo* tse) const
 {
     CObjectCounterLocker::Lock(tse);
     tse->x_InternalLockTSE();
-    tse->x_UserLockTSE();
+    try {
+        tse->x_UserLockTSE();
+    }
+    catch ( ... ) {
+        tse->x_InternalUnlockTSE();
+        CObjectCounterLocker::Unlock(tse);
+        throw;
+    }
 }
 
 
