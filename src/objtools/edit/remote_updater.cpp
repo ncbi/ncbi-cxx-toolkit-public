@@ -483,7 +483,7 @@ void CRemoteUpdater::xUpdatePubReferences(CSeq_descr& seq_descr)
                 try {
                     id = ENTREZ_ID_FROM(int, m_mlaClient->AskCitmatchpmid(*pPubEquiv, &reply));
                 }
-                catch(CException& e) 
+                catch(CException&)
                 {
                     continue;
                 }

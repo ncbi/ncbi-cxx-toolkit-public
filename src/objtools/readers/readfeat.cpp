@@ -2652,7 +2652,7 @@ bool CFeatureTableReader_Imp::x_AddQualifierToFeature (
                                 CSeq_id::fParse_ValidLocal 
                             |   CSeq_id::fParse_PartialOK);
                         }
-                        catch (CSeqIdException& e) 
+                        catch (CSeqIdException&)
                         {
                             x_ProcessMsg(
                                 ILineError::eProblem_QualifierBadValue, eDiag_Error,
@@ -2691,7 +2691,7 @@ bool CFeatureTableReader_Imp::x_AddQualifierToFeature (
                                 CSeq_id::fParse_ValidLocal |
                                 CSeq_id::fParse_PartialOK);
                     }
-                    catch (CSeqIdException& e) 
+                    catch (CSeqIdException&)
                     {
                         x_ProcessMsg(
                                 ILineError::eProblem_QualifierBadValue, eDiag_Error,

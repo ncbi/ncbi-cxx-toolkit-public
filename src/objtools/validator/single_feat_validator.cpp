@@ -980,7 +980,7 @@ size_t CSingleFeatValidator::x_CalculateLocationGaps(CBioseq_Handle bsh, const C
                     ++it;
                     ++pos;
                 }
-            } catch (CException& ex) {
+            } catch (CException&/* ex*/) {
                 /*
                 PostErr(eDiag_Fatal, eErr_INTERNAL_Exception,
                 string("Exception while checking for intervals in gaps. EXCEPTION: ") +

@@ -479,7 +479,6 @@ string CFormatGuessEx::xGuessGenbankObjectType(
     if ( types.size() != 1 ) {
         return "unknown";
     }
-    auto& test = **types.begin();
     return (*types.begin())->GetName();
 }
 

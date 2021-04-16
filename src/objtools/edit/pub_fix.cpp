@@ -508,7 +508,7 @@ bool MUIsJournalIndexed(const string& journal)
             s_GetESearchIds(req, title + "[jo]", ids);
         }
     }
-    catch (CException& e) {
+    catch (CException&) {
         return false;
     }
 

@@ -4509,7 +4509,7 @@ bool CCleanup::ParseCodeBreak(const CSeq_feat& feat,
         }
     }
 
-    string pos = NStr::TruncateSpaces(str.substr(loc_pos, end_pos - loc_pos));
+    string pos = NStr::TruncateSpaces_Unsafe(str.substr(loc_pos, end_pos - loc_pos));
 
     // handle multi-interval positions by adding a join() around them
     if (pos.find_first_of(",") != string::npos) {

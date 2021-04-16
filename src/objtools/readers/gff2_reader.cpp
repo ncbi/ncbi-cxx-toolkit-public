@@ -414,7 +414,7 @@ void CGff2Reader::x_ProcessAlignmentsGff(const list<string>& id_list,
         pAnnot = Ref(new CSeq_annot());
     }
 
-    for (const auto id : id_list) {
+    for (const string& id : id_list) {
         CRef<CSeq_align> pAlign = Ref(new CSeq_align());
         if (x_MergeAlignments(alignments.at(id), pAlign)) {
             // if available, add current browser information

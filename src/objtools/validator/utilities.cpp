@@ -347,8 +347,8 @@ static bool s_IsDescOnSeqEntry (const CSeq_entry& entry, const CSeqdesc& desc)
 {
     if (entry.IsSetDescr()) {
         const auto& descs = entry.GetDescr();
-        for (auto it : descs.Get()) {
-            if ((*it).Equals(desc)) {
+        for (auto& it : descs.Get()) {
+            if (it->Equals(desc)) {
                 return true;
             }
         }
@@ -918,8 +918,8 @@ static void UpdateToBestId(CSeq_loc& loc, CScope& scope)
             CConstRef<CSeq_id> best_id(NULL);
             CBioseq_Handle bsh = scope.GetBioseqHandle(id);
             if (bsh) {
-                const auto & ids = bsh.GetCompleteBioseq()->GetId();
-                for (auto id_it : ids) {
+                const auto& ids = bsh.GetCompleteBioseq()->GetId();
+                for (auto& id_it : ids) {
                     if (IsAccession(*id_it)) {
                         best_id = id_it;
                         break;
@@ -1274,7 +1274,7 @@ CBioseq_Handle BioseqHandleFromLocation (CScope* m_Scope, const CSeq_loc& loc)
 }
 
 
-bool s_PosIsNNotGap(const CSeqVector& vec, int pos)
+bool s_PosIsNNotGap(const CSeqVector& vec, unsigned int pos)
 {
     if (pos >= vec.size()) {
         return false;
@@ -1334,7 +1334,7 @@ bool& end_ambig)
         // check for gap at end of sequence
         if ( /* vec.IsInGap (vec.size() - 2) || */ vec.IsInGap(vec.size() - 1)) {
             end_gap = eBioseqEndIsType_All;
-            for (int i = vec.size() - 11; i < vec.size(); i++) {
+            for (unsigned int i = vec.size() - 11; i < vec.size(); i++) {
                 if (!vec.IsInGap(i)) {
                     end_gap = eBioseqEndIsType_Last;
                     break;
@@ -1346,7 +1346,7 @@ bool& end_ambig)
             // check for N bases at beginning of sequence
             if (s_PosIsNNotGap(vec, 0) /* || s_PosIsNNotGap(vec, 1) */) {
                 begin_n = eBioseqEndIsType_All;
-                for (int i = 0; i < 10; i++) {
+                for (unsigned int i = 0; i < 10; i++) {
                     if (!s_PosIsNNotGap(vec, i)) {
                         begin_n = eBioseqEndIsType_Last;
                         break;
@@ -1357,7 +1357,7 @@ bool& end_ambig)
             // check for N bases at end of sequence
             if ( /* s_PosIsNNotGap(vec, vec.size() - 2) || */ s_PosIsNNotGap(vec, vec.size() - 1)) {
                 end_n = eBioseqEndIsType_All;
-                for (int i = vec.size() - 10; i < vec.size(); i++) {
+                for (unsigned int i = vec.size() - 10; i < vec.size(); i++) {
                     if (!s_PosIsNNotGap(vec, i)) {
                         end_n = eBioseqEndIsType_Last;
                         break;
@@ -1988,7 +1988,7 @@ bool FindMatchInOrgRef (const string& str, const COrg_ref& org)
         if (NStr::IsBlank(match) && org.IsSetOrgname()) {
             const COrgName& orgname = org.GetOrgname();
             if (orgname.IsSetMod()) {
-                for (const auto mod_it : orgname.GetMod()) {
+                for (const auto& mod_it : orgname.GetMod()) {
                     if (mod_it->IsSetSubtype()
                         && (mod_it->GetSubtype() == COrgMod::eSubtype_gb_synonym
                             || mod_it->GetSubtype() == COrgMod::eSubtype_old_name)
@@ -2122,7 +2122,7 @@ bool IsCommon(const COrg_ref& org, const string& val)
         // common name, not genus
         is_common = true;
     } else if (org.IsSetOrgMod()) {
-        for (auto it : org.GetOrgname().GetMod()) {
+        for (auto& it : org.GetOrgname().GetMod()) {
             if (it->IsSetSubtype() &&
                 it->GetSubtype() == COrgMod::eSubtype_common &&
                 it->IsSetSubname() &&
@@ -2231,7 +2231,7 @@ void FixGeneticCode(CCdregion& cdr)
     }
     const auto& gcode = cdr.GetCode();
     CGenetic_code::C_E::TId genCode = 0;
-    for (auto it : gcode.Get()) {
+    for (auto& it : gcode.Get()) {
         if (it->IsId()) {
             genCode = it->GetId();
         }

@@ -468,7 +468,7 @@ bool CFeaturePropagator::IsOrdered(const CSeq_loc &loc)
     if (loc.IsMix() && loc.GetMix().Get().size() > 1) 
     {
         bool should_be_null = false;
-        for (const auto it : loc.GetMix().Get())
+        for (const auto& it : loc.GetMix().Get())
         {
             if (it->IsNull() != should_be_null) 
                 return false;
@@ -482,7 +482,7 @@ bool CFeaturePropagator::IsOrdered(const CSeq_loc &loc)
 CRef<CSeq_loc> CFeaturePropagator::MakeOrdered(const CSeq_loc &loc)
 {
     CRef<CSeq_loc> mix(new CSeq_loc());
-    for (const auto it : loc.GetMix().Get())
+    for (const auto& it : loc.GetMix().Get())
     {
         mix->SetMix().Set().push_back(it);
         CRef<CSeq_loc> null_loc(new CSeq_loc());
