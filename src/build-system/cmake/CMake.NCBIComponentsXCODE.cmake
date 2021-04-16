@@ -58,6 +58,7 @@ set(NCBI_ThirdParty_GNUTLS     ${NCBI_TOOLS_ROOT}/gnutls-3.4.0 CACHE PATH "GNUTL
 #############################################################################
 
 set(FOUNDATION_LIBS "-framework foundation")
+set(COREFOUNDATION_LIBS "-framework CoreFoundation")
 
 #############################################################################
 # in-house-resources
@@ -350,6 +351,9 @@ else()
     NCBI_define_Xcomponent(NAME PROTOBUF MODULE protobuf PACKAGE Protobuf LIB protobuf)
 endif()
 NCBI_define_Xcomponent(NAME GRPC MODULE grpc++)
+if(NCBI_COMPONENT_GRPC_FOUND)
+    set(NCBI_COMPONENT_GRPC_LIBS ${NCBI_COMPONENT_GRPC_LIBS} ${COREFOUNDATION_LIBS})
+endif()
 
 #############################################################################
 # UV
