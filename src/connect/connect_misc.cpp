@@ -260,14 +260,19 @@ CLogLatencyReport::~CLogLatencyReport()
         return;
     }
 
-    SetDiagHandler(nullptr);
-    m_CerrOutput.seekg(0);
-    const auto latencies = Parse(m_CerrOutput);
+    try {
+        SetDiagHandler(nullptr);
+        m_CerrOutput.seekg(0);
+        const auto latencies = Parse(m_CerrOutput);
 
-    for (const auto& server : latencies) {
-        const auto& server_name = server.first;
-        const auto& server_latency = server.second;
-        cerr << "server=" << server_name << "&latency=" << server_latency.count() << endl;
+        for (const auto& server : latencies) {
+            const auto& server_name = server.first;
+            const auto& server_latency = server.second;
+            cerr << "server=" << server_name << "&latency=" << server_latency.count() << endl;
+        }
+    }
+    catch (exception& ex) {
+        cerr << "Exception on calculating latencies: " << ex.what();
     }
 }
 
