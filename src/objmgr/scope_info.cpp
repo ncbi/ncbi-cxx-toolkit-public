@@ -1027,7 +1027,12 @@ CTSE_Lock CTSE_ScopeInfo::SUnloadedInfo::LockTSE(void)
 {
     _ASSERT(m_Source);
     _ASSERT(m_BlobId);
-    return m_Source->GetDataLoader()->GetBlobById(m_BlobId);
+    CTSE_Lock lock = m_Source->GetDataLoader()->GetBlobById(m_BlobId);
+    if ( !lock ) {
+        NCBI_THROW_FMT(CLoaderException, eConnectionFailed,
+                       "Data loader GetBlobById("<<m_BlobId.ToString()<<") returned null");
+    }
+    return lock;
 }
 
 
