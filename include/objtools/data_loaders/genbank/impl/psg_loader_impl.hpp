@@ -185,8 +185,8 @@ public:
         string blob_id;
     };
 
-    static void SetGetBlobByIdShouldFail(bool value);
-    static bool GetGetBlobByIdShouldFail();
+    static void NCBI_XLOADER_GENBANK_EXPORT SetGetBlobByIdShouldFail(bool value);
+    static bool NCBI_XLOADER_GENBANK_EXPORT GetGetBlobByIdShouldFail();
 
 private:
     friend class CPSG_Blob_Task;
