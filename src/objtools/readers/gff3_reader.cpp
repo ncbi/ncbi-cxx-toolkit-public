@@ -383,7 +383,7 @@ bool CGff3Reader::xUpdateAnnotFeature(
     ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
-    //if (gffRecord.Type() == "gene") {
+    //if (gffRecord.Type() == "CDS") {
     //    if (gffRecord.SeqStart() == 114392786) {
     //        cerr << "";
     //    }
@@ -546,7 +546,9 @@ bool CGff3Reader::xUpdateAnnotCds(
     string cdsId = xMakeRecordId(record);
     mpLocations->AddRecordForId(cdsId, record);
 
-    if (m_MapIdToFeature.find(cdsId) != m_MapIdToFeature.end()) {
+    auto pExistingFeature = m_MapIdToFeature.find(cdsId);
+    if (pExistingFeature != m_MapIdToFeature.end()) {
+        CSeqFeatData::ESubtype subtype = pFeature->GetData().GetSubtype();
         return true;
     }
 
@@ -1068,9 +1070,16 @@ void CGff3Reader::xPostProcessAnnot(
         if (itFeature == m_MapIdToFeature.end()) {
             continue;
         }
-        CRef<CSeq_loc> pNewLoc = mpLocations->MergeLocation(itLocation.second);
+        CRef<CSeq_loc> pNewLoc(new CSeq_loc);
+        CCdregion::EFrame frame;  
+        mpLocations->MergeLocation(pNewLoc, frame, itLocation.second);
         CRef<CSeq_feat> pFeature = itFeature->second;
         pFeature->SetLocation(*pNewLoc);
+        if (pFeature->GetData().IsCdregion()) {
+            auto& cdrData = pFeature->SetData().SetCdregion();
+            cdrData.SetFrame(
+                frame == CCdregion::eFrame_not_set ? CCdregion::eFrame_one : frame);
+        }
     }
 
     return CGff2Reader::xPostProcessAnnot(annot);

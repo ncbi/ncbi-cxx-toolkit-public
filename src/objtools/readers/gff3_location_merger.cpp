@@ -60,6 +60,7 @@ CGff3LocationRecord::CGff3LocationRecord(
             //mPartNum = 0;
         }
     }
+    mFrame = (mType == "cds" ? record.Phase() : CCdregion::eFrame_not_set);
 }
 
 //  ----------------------------------------------------------------------------
@@ -73,6 +74,7 @@ CGff3LocationRecord::CGff3LocationRecord(
     mStrand = other.mStrand;
     mType = other.mType;
     mPartNum = other.mPartNum;
+    mFrame = other.mFrame;
 }
 
 //  ----------------------------------------------------------------------------
@@ -242,40 +244,47 @@ bool CGff3LocationMerger::xGetLocationIds(
 }
 
 //  ============================================================================
-CRef<CSeq_loc>
+void
 CGff3LocationMerger::GetLocation(
-    const string& id)
+    const string& id,
+    CRef<CSeq_loc>& pSeqLoc,
+    CCdregion::EFrame& frame)
 //  ============================================================================
 {
     auto it = mMapIdToLocations.find(id);
     if (it == mMapIdToLocations.end()) { 
-        return CRef<CSeq_loc>();
+        pSeqLoc->Reset();
+        return;
     }
-    return MergeLocation(it->second);
+    MergeLocation(pSeqLoc, frame, it->second);
 }
 
 //  ============================================================================
-CRef<CSeq_loc> 
+void
 CGff3LocationMerger::MergeLocation(
+    CRef<CSeq_loc>& pSeqLoc,
+    CCdregion::EFrame& frame,
     LOCATIONS& locations)
 //  ============================================================================
 {
-    CRef<CSeq_loc> pSeqloc(new CSeq_loc);
     if (locations.empty()) {
-        pSeqloc->SetNull();
-        return pSeqloc;
+        pSeqLoc->SetNull();
+        frame = CCdregion::eFrame_not_set;
+        return;
     }
     if (locations.size() == 1) {
         auto& onlyOne = locations.front();
-        pSeqloc = onlyOne.GetLocation(mSequenceSize); 
-        return pSeqloc;
+        pSeqLoc = onlyOne.GetLocation(mSequenceSize); 
+        frame = onlyOne.mFrame;
+        return;
     }
     CGff3LocationMerger::xSortLocations(locations);
-    auto& mix = pSeqloc->SetMix();
+    auto& mix = pSeqLoc->SetMix();
     for (auto& location: locations) {
         mix.AddSeqLoc(*location.GetLocation(mSequenceSize));
     }
-    return pSeqloc;
+    const auto& front = locations.front();
+    frame = front.mFrame;
 }
 
 //  =============================================================================

@@ -62,6 +62,7 @@ public:
     ENa_strand mStrand;
     string mType;
     size_t mPartNum; 
+    CCdregion::EFrame mFrame;
 
     static bool ComparePartNumbers(
         const CGff3LocationRecord& lhs,
@@ -101,10 +102,14 @@ public:
 
     LOCATION_MAP& LocationMap() { return mMapIdToLocations; }
 
-    CRef<CSeq_loc> GetLocation(
-        const string&);
+    void GetLocation(
+        const string&,
+        CRef<CSeq_loc>&,
+        CCdregion::EFrame&);
 
-    CRef<CSeq_loc> MergeLocation(
+    void MergeLocation(
+        CRef<CSeq_loc>&,
+        CCdregion::EFrame&,
         LOCATIONS&);
 
 private:
