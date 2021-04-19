@@ -185,6 +185,9 @@ public:
         string blob_id;
     };
 
+    static void SetGetBlobByIdShouldFail(bool value);
+    static bool GetGetBlobByIdShouldFail();
+
 private:
     friend class CPSG_Blob_Task;
 

@@ -1017,37 +1017,59 @@ static CTSE_Lock x_CreateLocalCDDEntry(CDataSource* data_source,
                                        const CSeq_id_Handle& acc_ver);
 
 
+
+static bool s_GetBlobByIdShouldFail = false;
+
+void CPSGDataLoader_Impl::SetGetBlobByIdShouldFail(bool value)
+{
+    s_GetBlobByIdShouldFail = value;
+}
+
+
+bool CPSGDataLoader_Impl::GetGetBlobByIdShouldFail()
+{
+    return s_GetBlobByIdShouldFail;
+}
+
+
 CTSE_Lock CPSGDataLoader_Impl::GetBlobById(CDataSource* data_source, const CPsgBlobId& blob_id)
 {
     if (!data_source) return CTSE_Lock();
 
+    if ( GetGetBlobByIdShouldFail() ) {
+        _TRACE("GetBlobById("<<blob_id.ToPsgId()<<") should fail");
+    }
     {{
         CDataLoader::TBlobId dl_blob_id = CDataLoader::TBlobId(&blob_id);
         CTSE_LoadLock load_lock = data_source->GetTSE_LoadLock(dl_blob_id);
         if ( load_lock.IsLoaded() ) {
+            _TRACE("GetBlobById() already loaded " << blob_id.ToPsgId());
             return load_lock;
         }
     }}
-    
+
+    CTSE_Lock ret;
     if ( x_IsLocalCDDEntryId(blob_id) ) {
         if ( s_GetDebugLevel() >= 5 ) {
             LOG_POST(Info<<"PSG loader: Re-loading CDD blob: " << blob_id.ToString());
         }
         CSeq_id_Handle gi, acc_ver;
         if ( x_ParseLocalCDDEntryId(blob_id, gi, acc_ver) ) {
-            return x_CreateLocalCDDEntry(data_source, gi, acc_ver);
+            ret = x_CreateLocalCDDEntry(data_source, gi, acc_ver);
         }
-        return CTSE_Lock();
     }
-    
-    CPSG_BlobId bid(blob_id.ToPsgId());
-    auto context = make_shared<CPsgClientContext>();
-    auto request = make_shared<CPSG_Request_Blob>(bid, context);
-    request->IncludeData(m_NoSplit ? CPSG_Request_Biodata::eOrigTSE : CPSG_Request_Biodata::eSmartTSE);
-    auto reply = x_ProcessRequest(request);
-    CTSE_Lock ret = x_ProcessBlobReply(reply, data_source, CSeq_id_Handle(), true).lock;
+    else {
+        CPSG_BlobId bid(blob_id.ToPsgId());
+        auto context = make_shared<CPsgClientContext>();
+        auto request = make_shared<CPSG_Request_Blob>(bid, context);
+        request->IncludeData(m_NoSplit ? CPSG_Request_Biodata::eOrigTSE : CPSG_Request_Biodata::eSmartTSE);
+        auto reply = x_ProcessRequest(request);
+        ret = x_ProcessBlobReply(reply, data_source, CSeq_id_Handle(), true).lock;
+    }
     if (!ret) {
         _TRACE("Failed to load blob for " << blob_id.ToPsgId());
+        NCBI_THROW(CLoaderException, eLoaderFailed,
+                   "CPSGDataLoader::GetBlobById("+blob_id.ToPsgId()+") failed");
     }
     return ret;
 }
@@ -1236,6 +1258,10 @@ void CPSG_Blob_Task::DoExecute(void)
     }
 
     // Read blob data (if any) and pass to the data source.
+    if ( CPSGDataLoader_Impl::GetGetBlobByIdShouldFail() ) {
+        m_Status = eFailed;
+        return;
+    }
     load_lock = m_DataSource->GetTSE_LoadLock(dl_blob_id);
     if (!load_lock) {
         _TRACE("Cannot get TSE load lock for tse_id="<<m_ReplyResult.blob_id);
@@ -1615,6 +1641,9 @@ static CTSE_Lock x_CreateLocalCDDEntry(CDataSource* data_source,
         CTSE_LoadLock load_lock = data_source->GetTSE_LoadLock(dl_blob_id);
         if ( load_lock ) {
             if ( !load_lock.IsLoaded() ) {
+                if ( CPSGDataLoader_Impl::GetGetBlobByIdShouldFail() ) {
+                    return CTSE_Lock();
+                }
                 load_lock->SetName(kCDDAnnotName);
                 load_lock->GetSplitInfo().AddChunk(*chunk);
                 _ASSERT(load_lock->x_NeedsDelayedMainChunk());
