@@ -260,6 +260,7 @@ void ExtractExtraIds(CBioseq_Handle         bsh,
 
 static bool s_TrimLargeNucprots = false;
 static bool s_RemoveAnnot = false;
+static CSeq_inst::EMol s_MolType = CSeq_inst::eMol_not_set;
 
 bool s_RemoveAnnotsFromEntry(CSeq_entry &entry)
 {
@@ -350,6 +351,16 @@ bool TrimEntry(CConstRef<CSeq_entry> &entry, CBioseq_Handle bsh)
   return trimmed;
 }
 
+void VerifyMolType(CBioseq_Handle bsh)
+{
+    if (s_MolType == CSeq_inst::eMol_not_set) {
+        s_MolType = bsh.GetBioseqMolType();
+    } else if (s_TrimLargeNucprots && s_MolType != bsh.GetBioseqMolType()) {
+        NCBI_THROW(CException, eUnknown,
+             "Mixed input mol types not allowed with trim-large-nucprots");
+    }
+}
+
 bool HasNameAndAccession(const CSeq_id_Handle &idh)
 {
     const CTextseq_id *text_seqid = idh.GetSeqId()->GetTextseq_Id();
@@ -398,6 +409,7 @@ struct SBlobCopier
             /// This is the same blob we copied on the last call (this can
             /// happen if several bioseqs belong to the same seq-entry
             bsh = m_Scope.GetBioseqHandle(main_cache_locator.m_Idh);
+            VerifyMolType(bsh);
             if (sub_cache_locator) {
               // If no sub_cache_locations, that's because blob has been
               // invalidated (because it already exists in sub-cache), so no need to copy
@@ -444,6 +456,7 @@ struct SBlobCopier
             m_Scope.ResetDataAndHistory();
             m_Scope.AddTopLevelSeqEntry(*entry);
             bsh = m_Scope.GetBioseqHandle(main_cache_locator.m_Idh);
+            VerifyMolType(bsh);
 
             if (sub_cache_locator) {
               m_LastBlobTimestamp = blob.GetTimestamp();
@@ -1257,6 +1270,7 @@ CAsnSubCacheCreateApplication::x_FetchMissingBlobs(TIndexMapById& index_map,
                     NCBI_THROW(CException, eUnknown,
                                "Retrieved bioseq does not have this Seq-id");
                 }
+                VerifyMolType(bsh);
                 if (m_cached_seq_ids.count(idh)) {
                     CSeq_id_Handle output_idh;
                     if (m_IdType != sequence::eGetId_HandleDefault) {
