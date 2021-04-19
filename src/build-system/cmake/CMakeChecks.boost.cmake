@@ -13,7 +13,7 @@ if(EXISTS "${NCBI_ThirdParty_Boost}")
     set(BOOST_ROOT ${NCBI_ThirdParty_Boost})
 #    set(BOOST_LIBRARYDIR ${NCBI_ThirdParty_Boost}/lib)
     set(_foo_CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH})
-    find_package(Boost OPTIONAL_COMPONENTS
+    find_package(Boost 1.62.0 EXACT OPTIONAL_COMPONENTS
         unit_test_framework system thread filesystem iostreams
 #        coroutine program_options prg_exec_monitor test_exec_monitor
         context chrono date_time regex serialization timer
