@@ -301,7 +301,7 @@ protected:
         const string&);
 
     virtual void xProcessSequenceRegionPragma(
-        const string& pragma) { /* ignored for most GFF variants */ };
+        const string& /*pragma*/) { /* ignored for most GFF variants */ };
 
     //  data:
     //
