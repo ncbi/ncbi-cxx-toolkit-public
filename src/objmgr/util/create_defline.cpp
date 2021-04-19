@@ -3309,6 +3309,8 @@ bool CDeflineGenerator::x_IsComplete() const
 
 
 static const char* s_tpaPrefixList [] = {
+  "MAG ",
+  "MAG:",
   "TPA:",
   "TPA_exp:",
   "TPA_inf:",
@@ -3923,6 +3925,8 @@ string CDeflineGenerator::GenerateDefline (
         string str = s_tpaPrefixList [i];
         if (NStr::StartsWith (m_MainTitle, str, NStr::eNocase)) {
             m_MainTitle.erase (0, str.length());
+            // strip leading spaces remaining after removal of old MAG before TPA or TSA prefixes
+            m_MainTitle.erase (0, m_MainTitle.find_first_not_of (' '));
         }
     }
 
@@ -3946,7 +3950,11 @@ string CDeflineGenerator::GenerateDefline (
 
     string mag;
     if (! m_MetaGenomeSource.empty()) {
-        mag = "MAG ";
+        if ( prefix.empty() ) {
+            mag = "MAG: ";
+        } else {
+            mag = "MAG ";
+        }
     }
 
     // produce final result
