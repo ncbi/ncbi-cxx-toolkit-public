@@ -44,7 +44,7 @@ CGff3LocationRecord::CGff3LocationRecord(
     CGff3ReadRecord::SeqIdResolver seqIdResolve)
 //  ----------------------------------------------------------------------------
 {
-    mId.Assign(*record.GetSeqId(flags, seqIdResolve));
+    mGffId.Assign(*record.GetSeqId(flags, seqIdResolve));
     mStart = static_cast<TSeqPos>(record.SeqStart());
     mStop  = static_cast<TSeqPos>(record.SeqStop());
     mStrand = (record.IsSetStrand() ? record.Strand() : eNa_strand_plus);
@@ -61,6 +61,7 @@ CGff3LocationRecord::CGff3LocationRecord(
         }
     }
     mFrame = (mType == "cds" ? record.Phase() : CCdregion::eFrame_not_set);
+    mSeqId = record.Id();
 }
 
 //  ----------------------------------------------------------------------------
@@ -68,13 +69,14 @@ CGff3LocationRecord::CGff3LocationRecord(
     const CGff3LocationRecord& other)
 //  ----------------------------------------------------------------------------
 {
-    mId.Assign(other.mId);
+    mGffId.Assign(other.mGffId);
     mStart = other.mStart;
     mStop = other.mStop;
     mStrand = other.mStrand;
     mType = other.mType;
     mPartNum = other.mPartNum;
     mFrame = other.mFrame;
+    mSeqId = other.mSeqId;
 }
 
 //  ----------------------------------------------------------------------------
@@ -87,7 +89,7 @@ CGff3LocationRecord::GetLocation(
 
     if (sequenceSize == 0) {
         CRef<CSeq_interval> pInterval(new CSeq_interval);
-        pInterval->SetId().Assign(mId);
+        pInterval->SetId().Assign(mGffId);
         pInterval->SetFrom(mStart);
         pInterval->SetTo(mStop);
         pInterval->SetStrand(mStrand);
@@ -98,7 +100,7 @@ CGff3LocationRecord::GetLocation(
     if (mStrand == eNa_strand_minus) {
         if (mStart >= sequenceSize  ||  mStop < sequenceSize) {
             CRef<CSeq_interval> pInterval(new CSeq_interval);
-            pInterval->SetId().Assign(mId);
+            pInterval->SetId().Assign(mGffId);
             pInterval->SetFrom(mStart % sequenceSize);
             pInterval->SetTo(mStop % sequenceSize);
             pInterval->SetStrand(mStrand);
@@ -106,13 +108,13 @@ CGff3LocationRecord::GetLocation(
         }
         else {
             CRef<CSeq_interval> pTop(new CSeq_interval);
-            pTop->SetId().Assign(mId);
+            pTop->SetId().Assign(mGffId);
             pTop->SetFrom(0);
             pTop->SetTo(mStop % sequenceSize);
             pTop->SetStrand(mStrand);
             pLocation->SetPacked_int().AddInterval(*pTop);
             CRef<CSeq_interval> pBottom(new CSeq_interval);
-            pBottom->SetId().Assign(mId);
+            pBottom->SetId().Assign(mGffId);
             pBottom->SetFrom(mStart % sequenceSize);
             pBottom->SetTo(sequenceSize - 1);
             pBottom->SetStrand(mStrand);
@@ -123,7 +125,7 @@ CGff3LocationRecord::GetLocation(
     else {
         if (mStart >= sequenceSize  ||  mStop < sequenceSize) {
             CRef<CSeq_interval> pInterval(new CSeq_interval);
-            pInterval->SetId().Assign(mId);
+            pInterval->SetId().Assign(mGffId);
             pInterval->SetFrom(mStart % sequenceSize);
             pInterval->SetTo(mStop % sequenceSize);
             pInterval->SetStrand(mStrand);
@@ -131,13 +133,13 @@ CGff3LocationRecord::GetLocation(
         }
         else {
             CRef<CSeq_interval> pBottom(new CSeq_interval);
-            pBottom->SetId().Assign(mId);
+            pBottom->SetId().Assign(mGffId);
             pBottom->SetFrom(mStart % sequenceSize);
             pBottom->SetTo(sequenceSize - 1);
             pBottom->SetStrand(mStrand);
             pLocation->SetPacked_int().AddInterval(*pBottom);
             CRef<CSeq_interval> pTop(new CSeq_interval);
-            pTop->SetId().Assign(mId);
+            pTop->SetId().Assign(mGffId);
             pTop->SetFrom(0);
             pTop->SetTo(mStop % sequenceSize);
             pTop->SetStrand(mStrand);

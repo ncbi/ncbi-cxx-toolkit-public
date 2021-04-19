@@ -87,7 +87,6 @@ CGff2Reader::CGff2Reader(
     m_pErrors(0),
     mCurrentFeatureCount(0),
     mParsingAlignment(false),
-    mSequenceSize(0),
     mAtSequenceData(false)
 {
 }
@@ -216,23 +215,7 @@ CGff2Reader::xGetData(
         return;
     }
     if (xIsSequenceRegion(line)) {
-        vector<string> tokens;
-        NStr::Split(line, " \n", tokens, NStr::fSplit_MergeDelimiters);
-        if (tokens.size() < 4) {
-            mSequenceSize = 0;
-        }
-        else {
-            mSequenceSize = NStr::StringToNonNegativeInt(tokens[3]);
-            m_iFlags |= fAssumeCircularSequence;
-        }
-        if (mSequenceSize == -1) {
-            mSequenceSize = 0;
-            CReaderMessage warning(
-                ncbi::eDiag_Warning,
-                m_uLineNumber,
-                "Bad sequence-region pragma - ignored.");
-            throw warning;
-        }
+        xProcessSequenceRegionPragma(line);
         if (!mCurrentFeatureCount) {
             xParseTrackLine("track");
             xGetData(lr, readerData);

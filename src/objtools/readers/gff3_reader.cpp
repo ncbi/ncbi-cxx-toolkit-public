@@ -1063,7 +1063,6 @@ void CGff3Reader::xPostProcessAnnot(
     }
 
     //location fixup:
-    mpLocations->SetSequenceSize(mSequenceSize);
     for (auto itLocation: mpLocations->LocationMap()) {
         auto id = itLocation.first;
         auto itFeature = m_MapIdToFeature.find(id);
@@ -1083,6 +1082,32 @@ void CGff3Reader::xPostProcessAnnot(
     }
 
     return CGff2Reader::xPostProcessAnnot(annot);
+}
+
+//  ----------------------------------------------------------------------------
+void CGff3Reader::xProcessSequenceRegionPragma(
+    const string& pragma)
+//  ----------------------------------------------------------------------------
+{
+    TSeqPos sequenceSize(0);
+    vector<string> tokens;
+    NStr::Split(pragma, " \n", tokens, NStr::fSplit_MergeDelimiters);
+    if (tokens.size() >= 4) {
+        try {
+            sequenceSize = NStr::StringToNonNegativeInt(tokens[3]);
+        }
+        catch(exception&) {
+            sequenceSize = -1;
+        }
+    }
+    if (sequenceSize == -1) {
+        CReaderMessage warning(
+            ncbi::eDiag_Warning,
+            m_uLineNumber,
+            "Bad sequence-region pragma - ignored.");
+        throw warning;
+    }
+    mpLocations->SetSequenceSize(sequenceSize);
 }
 
 END_objects_SCOPE

@@ -56,13 +56,14 @@ public:
     CRef<CSeq_loc> GetLocation(
         TSeqPos sequenceSize);
 
-    CSeq_id mId;
+    CSeq_id mGffId;
     TSeqPos mStart;
     TSeqPos mStop;
     ENa_strand mStrand;
     string mType;
     size_t mPartNum; 
     CCdregion::EFrame mFrame;
+    string mSeqId;
 
     static bool ComparePartNumbers(
         const CGff3LocationRecord& lhs,

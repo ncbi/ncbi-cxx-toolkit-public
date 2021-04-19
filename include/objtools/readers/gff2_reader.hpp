@@ -108,9 +108,6 @@ public:
         ILineReader&,
         ILineErrorListener* =nullptr);
 
-    unsigned int
-    SequenceSize() const { return mSequenceSize; };
-
     bool
     AtSequenceData() const { return mAtSequenceData; };
 
@@ -303,6 +300,9 @@ protected:
     bool xNeedsNewSeqAnnot(
         const string&);
 
+    virtual void xProcessSequenceRegionPragma(
+        const string& pragma) { /* ignored for most GFF variants */ };
+
     //  data:
     //
 protected:
@@ -312,7 +312,7 @@ protected:
     bool mParsingAlignment;
     CRef<CAnnotdesc> m_CurrentBrowserInfo;
     CRef<CAnnotdesc> m_CurrentTrackInfo;
-    unsigned int mSequenceSize;
+    //unsigned int mSequenceSize;
     bool mAtSequenceData;
 };
 

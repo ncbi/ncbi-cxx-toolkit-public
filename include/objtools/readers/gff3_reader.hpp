@@ -218,6 +218,10 @@ protected:
     virtual bool xParseAlignment(
         const string& strLine);
 
+    virtual void xProcessSequenceRegionPragma(
+        const string& pragma);
+
+
     // Data:
     map<string, string> mCdsParentMap;
     map<string, CRef<CSeq_interval> > mMrnaLocs;
