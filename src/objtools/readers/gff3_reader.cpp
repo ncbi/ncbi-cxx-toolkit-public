@@ -1110,5 +1110,12 @@ void CGff3Reader::xProcessSequenceRegionPragma(
     mpLocations->SetSequenceSize(sequenceSize);
 }
 
+//  ----------------------------------------------------------------------------
+TSeqPos CGff3Reader::SequenceSize() const
+//  ----------------------------------------------------------------------------
+{
+    return mpLocations->SequenceSize();
+}
+
 END_objects_SCOPE
 END_NCBI_SCOPE

@@ -113,6 +113,10 @@ public:
         CCdregion::EFrame&,
         LOCATIONS&);
 
+    TSeqPos SequenceSize() const {
+        return mSequenceSize;
+    }
+
 private:
     static bool xGetLocationIds(
         const CGff2Record&,

@@ -107,6 +107,8 @@ public:
         ILineReader& lr,
         ILineErrorListener* pErrors=nullptr);
 
+    TSeqPos SequenceSize() const;
+
 protected:
     virtual void xProcessData(
         const TReaderData&,
@@ -220,7 +222,6 @@ protected:
 
     virtual void xProcessSequenceRegionPragma(
         const string& pragma);
-
 
     // Data:
     map<string, string> mCdsParentMap;
