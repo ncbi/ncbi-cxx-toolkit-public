@@ -247,7 +247,7 @@ public:
             m_inside = true;
 
             int val = member.GetMember().GetPrimitiveValueInt();
-            if ((val == CBioseq_set::eClass_genbank))
+            if (val == CBioseq_set::eClass_genbank)
             {
                 StartWritingSet(m_out);
 

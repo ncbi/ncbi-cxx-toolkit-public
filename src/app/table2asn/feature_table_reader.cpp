@@ -1697,7 +1697,7 @@ CRef<CDelta_seq> CFeatureTableReader::MakeGap(CBioseq& bioseq, const CSeq_feat& 
                 if (sLE_name != kLinkageEvidence_qual)
                     continue;
 
-                CLinkage_evidence::EType evidence = (CLinkage_evidence::EType) - 1; //CLinkage_evidence::eType_unspecified;
+                CLinkage_evidence::EType evidence = (CLinkage_evidence::EType)(-1); //CLinkage_evidence::eType_unspecified;
 
                 CEnumeratedTypeValues::TNameToValue::const_iterator it = linkage_evidence_to_value_map.find(CFastaReader::CanonicalizeString((**sLE_qual).GetVal()));
                 if (it == linkage_evidence_to_value_map.end())
@@ -1740,7 +1740,7 @@ CRef<CDelta_seq> CFeatureTableReader::MakeGap(CBioseq& bioseq, const CSeq_feat& 
                 default:
                     break;
                 }
-                if (evidence != -1)
+                if (evidence != (CLinkage_evidence::EType)(-1))
                     evidences.insert(evidence);
             }
         }

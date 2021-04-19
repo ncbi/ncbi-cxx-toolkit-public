@@ -97,13 +97,13 @@ public:
     void Init() override;
     int Run() override;
 
-    bool HandleSubmitBlock(CSubmit_block& block);
-    bool HandleSeqEntry(CRef<CSeq_entry>& se);
+    bool HandleSubmitBlock(CSubmit_block& block) override;
+    bool HandleSeqEntry(CRef<CSeq_entry>& se) override;
     bool HandleSeqEntry(CSeq_entry_Handle entry);
     bool HandleSeqID( const string& seqID );
 
     // IProcessorCallback interface functionality
-    virtual void Process(CRef<CSerialObject>& obj);
+    void Process(CRef<CSerialObject>& obj) override;
 
     bool ObtainSeqEntryFromSeqEntry(
         unique_ptr<CObjectIStream>& is,
@@ -619,7 +619,7 @@ void CCleanupApp::x_ProcessOneDirectory(const string& dirname, const string& suf
     size_t num_files = 0;
 
     CDir::TEntries files(dir.GetEntries(mask, CDir::eFile));
-    for(CDir::TEntry ii : files) {
+    for (CDir::TEntry ii : files) {
         if (ii->IsFile()) {
             string fname = CDirEntry::MakePath(dirname, ii->GetName());
             x_ProcessOneFile(fname);
@@ -1307,7 +1307,7 @@ void CCleanupApp::x_CloseOStream()
 // IProcessorCallback interface functionality
 void CCleanupApp::Process(CRef<CSerialObject>& obj)
 {
-    static long long cnt;
+    //static long long cnt;
     //cerr << ++cnt << ' ' << obj->GetThisTypeInfo()->GetName() << '\n';
     if (obj->GetThisTypeInfo() == CSeq_entry::GetTypeInfo()) {
         CRef<CSeq_entry> entry(dynamic_cast<CSeq_entry*>(obj.GetPointer()));

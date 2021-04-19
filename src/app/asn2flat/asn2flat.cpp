@@ -96,17 +96,17 @@ public:
     CHTMLFormatterEx(CRef<CScope> scope);
     ~CHTMLFormatterEx() override;
 
-    void FormatProteinId(string &, const CSeq_id& seq_id, const string& prot_id) const;
-    void FormatTranscriptId(string &, const CSeq_id& seq_id, const string& nuc_id) const;
-    void FormatNucSearch(CNcbiOstream& os, const string& id) const;
-    void FormatNucId(string& str, const CSeq_id& seq_id, TIntId gi, const string& acc_id) const;
-    void FormatTaxid(string& str, const TTaxId taxid, const string& taxname) const;
-    void FormatLocation(string& str, const CSeq_loc& loc, TIntId gi, const string& visible_text) const;
-    void FormatModelEvidence(string& str, const SModelEvidance& me) const;
-    void FormatTranscript(string& str, const string& name) const;
-    void FormatGeneralId(CNcbiOstream& os, const string& id) const;
-    void FormatGapLink(CNcbiOstream& os, TSeqPos gap_size, const string& id, bool is_prot) const;
-    void FormatUniProtId(string& str, const string& prot_id) const;
+    void FormatProteinId(string&, const CSeq_id& seq_id, const string& prot_id) const override;
+    void FormatTranscriptId(string &, const CSeq_id& seq_id, const string& nuc_id) const override;
+    void FormatNucSearch(CNcbiOstream& os, const string& id) const override;
+    void FormatNucId(string& str, const CSeq_id& seq_id, TIntId gi, const string& acc_id) const override;
+    void FormatTaxid(string& str, const TTaxId taxid, const string& taxname) const override;
+    void FormatLocation(string& str, const CSeq_loc& loc, TIntId gi, const string& visible_text) const override;
+    void FormatModelEvidence(string& str, const SModelEvidance& me) const override;
+    void FormatTranscript(string& str, const string& name) const override;
+    void FormatGeneralId(CNcbiOstream& os, const string& id) const override;
+    void FormatGapLink(CNcbiOstream& os, TSeqPos gap_size, const string& id, bool is_prot) const override;
+    void FormatUniProtId(string& str, const string& prot_id) const override;
 
 private:
     mutable CRef<CScope> m_scope;
