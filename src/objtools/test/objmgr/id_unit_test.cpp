@@ -42,6 +42,8 @@
 #include <objmgr/annot_ci.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/data_loaders/genbank/readers.hpp>
+#include <objtools/data_loaders/genbank/id1/reader_id1.hpp>
+#include <objtools/data_loaders/genbank/impl/psg_loader_impl.hpp>
 
 #include <corelib/ncbi_system.hpp>
 #include <dbapi/driver/drivers.hpp>
@@ -1501,6 +1503,90 @@ BOOST_AUTO_TEST_CASE(MTCrash1)
 #endif
 
 
+BOOST_AUTO_TEST_CASE(TestGetBlobById)
+{
+    LOG_POST("Testing CDataLoader::GetBlobById()");
+    bool is_psg = CGBDataLoader::IsUsingPSGLoader();
+    CRef<CObjectManager> om = CObjectManager::GetInstance();
+    om->RevokeAllDataLoaders();
+    CRef<CReader> reader;
+    if ( is_psg ) {
+        CGBDataLoader::RegisterInObjectManager(*om);
+    }
+    else {
+        CGBLoaderParams params;
+        reader = new CId1Reader();
+        params.SetReaderPtr(reader);
+        CGBDataLoader::RegisterInObjectManager(*om, params);
+    }
+    CRef<CScope> scope(new CScope(*om));
+    scope->AddDefaults();
+    
+    map<int, set<CConstRef<CSeq_entry>>> entries;
+    map<int, CBlobIdKey> blob_ids;
+    for ( int t = 0; t < 4; ++t ) {
+        int gi_start = 2;
+        int gi_end = 100;
+        int gi_stop_check = gi_end / 2;
+        bool no_connection = false;
+        if ( t == 0 ) {
+            LOG_POST("Collecting entries");
+        }
+        else if ( t == 1 ) {
+            LOG_POST("Re-loading entries");
+        }
+        else if ( t == 2 ) {
+            LOG_POST("Re-loading entries with errors");
+            if ( is_psg ) {
+                CPSGDataLoader_Impl::SetGetBlobByIdShouldFail(true);
+                no_connection = true;
+            }
+            else {
+                reader->SetMaximumConnections(0);
+                no_connection = true;
+            }
+        }
+        else {
+            LOG_POST("Re-loading entries without errors");
+            if ( is_psg ) {
+                CPSGDataLoader_Impl::SetGetBlobByIdShouldFail(false);
+            }
+            else {
+                reader->SetMaximumConnections(1);
+            }
+        }
+        if ( no_connection ) {
+            LOG_POST("Multiple exception messages may appear below.");
+        }
+        for ( int gi = gi_start; gi <= gi_end; ++gi ) {
+            CSeq_id_Handle idh = CSeq_id_Handle::GetGiHandle(GI_FROM(int, gi));
+            CBioseq_Handle bh;
+            if ( no_connection ) {
+                if ( gi < gi_stop_check ) {
+                    BOOST_CHECK_THROW(scope->GetBioseqHandle(idh), CException);
+                }
+                continue;
+            }
+            else {
+                bh = scope->GetBioseqHandle(idh);
+            }
+            BOOST_REQUIRE(bh);
+            if ( t == 0 ) {
+                blob_ids[gi] = bh.GetTSE_Handle().GetBlobId();
+            }
+            auto entry = bh.GetTSE_Handle().GetTSECore();
+            if ( gi < gi_stop_check ) {
+                BOOST_CHECK(entries[gi].insert(entry).second);
+            }
+        }
+    }
+    /*
+    for ( auto& s : blob_ids ) {
+    }
+    */
+}
+
+
 NCBITEST_INIT_TREE()
 {
     NCBITEST_DISABLE(CheckAll);
@@ -1516,4 +1602,5 @@ NCBITEST_INIT_TREE()
     // GBLoader name test needs multiple PubSeqOS readers
     NCBITEST_DISABLE(TestGBLoaderName);
 #endif
+    NCBITEST_DISABLE(TestGetBlobById);
 }
