@@ -73,15 +73,13 @@ COligoSpecificityTemplate::COligoSpecificityTemplate(const CBioseq_Handle& templ
                                                int word_size,
                                                TSeqPos allowed_total_mismatch,
                                                TSeqPos allowed_3end_mismatch,
-                                               TSeqPos max_mismatch,
-                                               bool allow_transcript_variants)
+                                               TSeqPos max_mismatch)
     : m_TemplateHandle(template_handle),
       m_Id(template_handle.GetSeqId()),
       m_WordSize(word_size),
       m_AllowedTotalMismatch(allowed_total_mismatch),
       m_Allowed3EndMismatch(allowed_3end_mismatch),
       m_MaxMismatch(max_mismatch),
-      m_AllowTranscriptVariants(allow_transcript_variants),
       m_UseITree(false),
       m_MismatchRegionLength3End(10),
       m_MaxHSPSize(0),
@@ -99,6 +97,7 @@ COligoSpecificityTemplate::COligoSpecificityTemplate(const CBioseq_Handle& templ
                          CSeq_id::WorstRank);
     m_TemplateType = wid->IdentifyAccession();
     m_AllowedSeqloc = NULL;
+    m_Allowed_Splice_Variants = NULL;
 }
 
 COligoSpecificityTemplate::~COligoSpecificityTemplate()
@@ -985,29 +984,8 @@ void COligoSpecificityCheck::x_SavePrimerInfo(CSeq_align& left_align,
     info.index = index;
     info.self_forward_primer = is_self_forward_primer;
     info.self_reverse_primer = is_self_reverse_primer;
-    TGi master_gi = ZERO_GI;
-    TGi subj_gi = ZERO_GI;
-    
-    if (left_align.GetSeq_id(0).Which() == CSeq_id::e_Gi) {
-        master_gi = left_align.GetSeq_id(0).GetGi();
-    } else {
-        master_gi = 
-            FindGi(m_Scope->GetBioseqHandle(left_align.GetSeq_id(0)).
-                   GetBioseqCore()->GetId());
-        
-    }
-       
-       
-    if (left_align.GetSeq_id(1).Which() == CSeq_id::e_Gi) {
-        subj_gi = left_align.GetSeq_id(1).GetGi();
-    } else {
-        subj_gi = 
-            FindGi(m_Scope->GetBioseqHandle(left_align.GetSeq_id(1)).
-                   GetBioseqCore()->GetId());
-    }
-    //    cout << "master_gi = " << master_gi  << endl;
-    //   cout << "subj_gi = " << subj_gi  << endl;
-    
+
+
     bool left_template_aln_overlap = m_Hits->m_TemplateRange.IntersectingWith(left_align.GetSeqRange(1));
     bool right_template_aln_overlap = m_Hits->m_TemplateRange.IntersectingWith(right_align.GetSeqRange(1));
 
@@ -1058,29 +1036,21 @@ void COligoSpecificityCheck::x_SavePrimerInfo(CSeq_align& left_align,
                 break;
             }
         }
+
         
         //transcript variants
-        
-        if (m_Hits->m_AllowTranscriptVariants && !hit_assigned && master_gi != ZERO_GI && subj_gi != ZERO_GI) {
-            IGeneInfoInput::TGeneIdList master_gene_id_list;
-            IGeneInfoInput::TGeneIdList subj_gene_id_list;
-            if (m_FileReader.GetGeneIdsForGi(master_gi, master_gene_id_list) 
-                && m_FileReader.GetGeneIdsForGi(subj_gi, subj_gene_id_list)){
-                
-                ITERATE(IGeneInfoInput::TGeneIdList, iter1, master_gene_id_list) {
-                    ITERATE(IGeneInfoInput::TGeneIdList, iter2, subj_gene_id_list) {
-                        if (*iter1 == *iter2){
-                            m_VariantHit[m_CurrentPrimerIndex].push_back(info);
-                            hit_assigned = true;
-                            break;
-                        }
-                    }
-                    if (hit_assigned) {
-                        break;
-                    }
+        if (m_Hits->m_Allowed_Splice_Variants && !hit_assigned) {
+            ITERATE(list<CRef<CSeq_id> >, iter, *(m_Hits->m_Allowed_Splice_Variants)) {       
+                if(IsSameBioseq(**iter, left_align.GetSeq_id(1), m_Scope)) {
+                                                       
+                    m_VariantHit[m_CurrentPrimerIndex].push_back(info);
+                    hit_assigned = true;
+                    break;
                 }
-            } 
+            }   
         }
+
+
         //non specific hit
         if (!hit_assigned) {
              

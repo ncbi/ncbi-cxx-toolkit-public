@@ -89,8 +89,7 @@ public:
                            int word_size,
                            TSeqPos allowed_total_mismatch = 1,
                            TSeqPos allowed_3end_mismatch = 1,
-                           TSeqPos max_mismatch = 7,
-                           bool allow_transcript_variants = false);
+                           TSeqPos max_mismatch = 7);
 
     //destructor
     ~COligoSpecificityTemplate();
@@ -129,15 +128,6 @@ public:
         m_MaxMismatch = max_mismatch;
     }
 
-
-    ///whether to count transcript of the same gene as non-specific
-    ///@param allow_transcript_variants: a transcript variant from same gene 
-    ///as the input template will not be reported as non-specific primer hit.
-    ///
-    void SetAllowTranscriptVariants(bool allow_transcript_variants) {
-        m_AllowTranscriptVariants = allow_transcript_variants;
-    }
-
     ///Allowed seqid will not be counted as non-specific hits
     ///@param allowed_seqid_index:  the position index for allowed seqid
     ///
@@ -149,6 +139,12 @@ public:
     void SetAllowedSeq(const list<CRef<CSeq_loc> >* allowed_seq) {
         m_AllowedSeqloc = allowed_seq;
     }
+
+    //allowed splice variants will not be treated as off-target
+    void SetAllowedSpliceVariants(const list<CRef<CSeq_id> >* allowed_splice_variants) {
+        m_Allowed_Splice_Variants = allowed_splice_variants;
+    }
+    
 
     ///The maximal number of non-specific targets to return.  
     ///Default is 20 if not specified
@@ -207,13 +203,11 @@ private:
     vector<CIntervalTree*> m_RangeTreeListPlusStrand;
     vector<CIntervalTree*> m_RangeTreeListMinusStrand;
 
-    ///count splice variants as non-specific?
-    bool m_AllowTranscriptVariants;
-
     ///user specified hits that can be disregarded for specificity checking
     vector<TSeqPos> m_AllowedSeqidIndex;
 
     const list<CRef<CSeq_loc> >* m_AllowedSeqloc;
+    const list<CRef<CSeq_id> >* m_Allowed_Splice_Variants;
 
     bool m_UseITree;
 
