@@ -58,6 +58,7 @@
 #include "getblob_processor.hpp"
 #include "tse_chunk_processor.hpp"
 #include "osg_processor.hpp"
+#include "cdd_processor.hpp"
 #include "favicon.hpp"
 
 
@@ -94,6 +95,7 @@ const unsigned int      kDefaultMaxHops = 2;
 const unsigned long     kDefaultSmallBlobSize = 16;
 const bool              kDefaultCassandraProcessorsEnabled = true;
 const bool              kDefaultOSGProcessorsEnabled = false;
+const bool              kDefaultCDDProcessorsEnabled = false;
 const string            kDefaultTestSeqId = "gi|2";
 const bool              kDefaultTestSeqIdIgnoreError = true;
 const bool              kDefaultSSLEnable = false;
@@ -154,6 +156,7 @@ CPubseqGatewayApp::CPubseqGatewayApp() :
     m_StartupDataState(ePSGS_NoCassConnection),
     m_LogFields("http"),
     m_OSGProcessorsEnabled(kDefaultOSGProcessorsEnabled),
+    m_CDDProcessorsEnabled(kDefaultCDDProcessorsEnabled),
     m_SSLEnable(kDefaultSSLEnable),
     m_SSLCiphers(kDefaultSSLCiphers)
 {
@@ -278,6 +281,9 @@ void CPubseqGatewayApp::ParseArgs(void)
     m_OSGProcessorsEnabled = registry.GetBool(
             "OSG_PROCESSOR", "enabled",
             kDefaultOSGProcessorsEnabled);
+    m_CDDProcessorsEnabled = registry.GetBool(
+            "CDD_PROCESSOR", "enabled",
+            kDefaultCDDProcessorsEnabled);
     m_CassandraProcessorsEnabled = registry.GetBool(
             "CASSANDRA_PROCESSOR", "enabled",
             kDefaultCassandraProcessorsEnabled);
@@ -1565,6 +1571,8 @@ void CPubseqGatewayApp::x_RegisterProcessors(void)
             unique_ptr<IPSGS_Processor>(new CPSGS_TSEChunkProcessor()));
     m_RequestDispatcher.AddProcessor(
         unique_ptr<IPSGS_Processor>(new psg::osg::CPSGS_OSGProcessor()));
+    m_RequestDispatcher.AddProcessor(
+        unique_ptr<IPSGS_Processor>(new psg::cdd::CPSGS_CDDProcessor()));
 }
 
 

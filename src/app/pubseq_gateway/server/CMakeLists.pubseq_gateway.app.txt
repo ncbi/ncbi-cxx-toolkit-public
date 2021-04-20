@@ -13,9 +13,9 @@ NCBI_begin_app(pubseq_gateway)
     resolve_base async_resolve_base async_bioseq_info_base annot_processor
     get_processor psgs_dispatcher cass_blob_id ipsgs_processor
     osg_connection osg_mapper osg_caller osg_fetch osg_processor osg_processor_base
-    osg_resolve_base osg_resolve osg_getblob_base osg_getblob osg_annot
+    osg_resolve_base osg_resolve osg_getblob_base osg_getblob osg_annot cdd_processor
   )
-  NCBI_uses_toolkit_libraries(xregexp id2 seq psg_cassandra psg_protobuf psg_cache xconnext connext xconnserv xconnect)
+  NCBI_uses_toolkit_libraries(cdd_access xregexp id2 seq psg_cassandra psg_protobuf psg_cache xconnext connext xconnserv xconnect)
   NCBI_requires(OpenSSL CASSANDRA MT Linux H2O LMDB UV PROTOBUF connext -ICC)
   NCBI_project_watchers(satskyse)
 NCBI_end_app()
