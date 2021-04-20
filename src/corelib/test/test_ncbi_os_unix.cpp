@@ -66,7 +66,8 @@ int main()
     LOG_POST("Trying to daemonize at \"/\", "
              "expecting failure for the check to continue successfully");
     _ASSERT(CCurrentProcess::Daemonize("/test_ncbi_os_unix.log") == 0);
-    _ASSERT(errno == EACCES  ||  errno == EPERM  ||  errno == ENOENT);
+    _ASSERT(errno == EACCES  ||  errno == EPERM  ||  errno == ENOENT
+            ||  errno == EROFS/*Darwin seems to have that in place*/);
     _ASSERT(CCurrentProcess::Daemonize("./test_ncbi_os_unix.log",
                                        CCurrentProcess::fDF_KeepCWD |
                                        CCurrentProcess::fDF_KeepStdout) != 0);
