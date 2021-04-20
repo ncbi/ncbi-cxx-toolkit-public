@@ -86,7 +86,7 @@ static const int kMinRetryCount = 1;
 static const int kDefaultRetryCount = 3;
 static const char kDefaultPreferredServer[] = "localhost";
 static const int kDefaultPreference = 90;
-static const int kDefaultEnabledCDD = true;
+static const int kDefaultEnabledCDD = false;
 static const int kDefaultEnabledSNP = true;
 static const int kDefaultEnabledWGS = true;
 
