@@ -46,6 +46,7 @@
 #include <objtools/data_loaders/genbank/impl/psg_loader_impl.hpp>
 
 #include <corelib/ncbi_system.hpp>
+#include <corelib/ncbiapp.hpp>
 #include <dbapi/driver/drivers.hpp>
 #include <connect/ncbi_core_cxx.hpp>
 #include <connect/ncbi_util.h>
@@ -699,23 +700,78 @@ BOOST_AUTO_TEST_CASE(CheckExtSNPGraph)
 }
 
 
+static const char kNativeCDDSection[] = "GENBANK";
+static const char kNativeCDDParam[] = "vdb_cdd";
+static string s_SavedNativeCDD;
+
+static string s_SetNativeCDDParam(const string& value)
+{
+    auto app = CNcbiApplication::InstanceGuard();
+    string old_value = app->GetConfig().Get(kNativeCDDSection, kNativeCDDParam);
+    if ( value.empty() ) {
+        app->GetConfig().Unset(kNativeCDDSection, kNativeCDDParam);
+    }
+    else {
+        app->GetConfig().Set(kNativeCDDSection, kNativeCDDParam, value);
+    }
+    return old_value;
+}
+
+static void s_SetNativeCDD(bool native = true)
+{
+    s_SavedNativeCDD = s_SetNativeCDDParam(native? "0": "1");
+}
+
+static void s_RestoreCDDType()
+{
+    s_SetNativeCDDParam(s_SavedNativeCDD);
+}
+
 BOOST_AUTO_TEST_CASE(CheckExtCDD)
 {
-    LOG_POST("Checking ExtAnnot CDD");
+    LOG_POST("Checking ExtAnnot ID CDD");
+    s_SetNativeCDD();
     SAnnotSelector sel(CSeqFeatData::eSubtype_region);
     sel.SetResolveAll().SetAdaptiveDepth();
     sel.AddNamedAnnots("CDD");
     s_CheckFeat(sel, "AAC73113.1");
+    s_RestoreCDDType();
+}
+
+
+BOOST_AUTO_TEST_CASE(CheckExtCDD2)
+{
+    LOG_POST("Checking ExtAnnot VDB CDD");
+    s_SetNativeCDD(false);
+    SAnnotSelector sel(CSeqFeatData::eSubtype_region);
+    sel.SetResolveAll().SetAdaptiveDepth();
+    sel.AddNamedAnnots("CDD");
+    s_CheckFeat(sel, "AAC73113.1");
+    s_RestoreCDDType();
 }
 
 
 BOOST_AUTO_TEST_CASE(CheckExtCDDonWGS)
 {
-    LOG_POST("Checking ExtAnnot CDD on WGS sequence");
+    LOG_POST("Checking ExtAnnot ID CDD on WGS sequence");
+    s_SetNativeCDD();
     SAnnotSelector sel(CSeqFeatData::eSubtype_region);
     sel.SetResolveAll().SetAdaptiveDepth();
     sel.AddNamedAnnots("CDD");
     s_CheckFeat(sel, "RLL67630.1");
+    s_RestoreCDDType();
+}
+
+
+BOOST_AUTO_TEST_CASE(CheckExtCDD2onWGS)
+{
+    LOG_POST("Checking ExtAnnot VDB CDD on WGS sequence");
+    s_SetNativeCDD(false);
+    SAnnotSelector sel(CSeqFeatData::eSubtype_region);
+    sel.SetResolveAll().SetAdaptiveDepth();
+    sel.AddNamedAnnots("CDD");
+    s_CheckFeat(sel, "RLL67630.1");
+    s_RestoreCDDType();
 }
 
 
@@ -1538,8 +1594,10 @@ BOOST_AUTO_TEST_CASE(TestGetBlobById)
         else if ( t == 2 ) {
             LOG_POST("Re-loading entries with errors");
             if ( is_psg ) {
+#ifdef HAVE_PSG_LOADER
                 CPSGDataLoader_Impl::SetGetBlobByIdShouldFail(true);
                 no_connection = true;
+#endif
             }
             else {
                 reader->SetMaximumConnections(0);
@@ -1549,7 +1607,9 @@ BOOST_AUTO_TEST_CASE(TestGetBlobById)
         else {
             LOG_POST("Re-loading entries without errors");
             if ( is_psg ) {
+#ifdef HAVE_PSG_LOADER
                 CPSGDataLoader_Impl::SetGetBlobByIdShouldFail(false);
+#endif
             }
             else {
                 reader->SetMaximumConnections(1);
