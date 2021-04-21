@@ -16,6 +16,7 @@
 
 
 set(NCBI_TRACE_ALLCOMPONENTS TRUE)
+conan_define_targets()
 #############################################################################
 function(NCBI_define_Pkgcomponent)
     cmake_parse_arguments(DC "" "NAME;PACKAGE" "" ${ARGN})
@@ -26,6 +27,8 @@ function(NCBI_define_Pkgcomponent)
     if("${DC_PACKAGE}" STREQUAL "")
         message(FATAL_ERROR "No package name")
     endif()
+    set(_package ${DC_PACKAGE})
+    string(TOUPPER ${DC_PACKAGE} DC_PACKAGE)
     if(NCBI_PTBCFG_COMPONENT_StaticComponents)
         set(_suffixes .a .so)
     else()
@@ -45,29 +48,33 @@ function(NCBI_define_Pkgcomponent)
         set(_defines ${CONAN_DEFINES_${DC_PACKAGE}})
         set(NCBI_COMPONENT_${DC_NAME}_INCLUDE ${_include} PARENT_SCOPE)
         set(NCBI_COMPONENT_${DC_NAME}_DEFINES ${_defines} PARENT_SCOPE)
-        set(_all_libs "")
-        if(NOT "${CONAN_LIB_DIRS_${DC_PACKAGE}}" STREQUAL "" AND NOT "${CONAN_LIBS_${DC_PACKAGE}}" STREQUAL "")
-            foreach(_lib IN LISTS CONAN_LIBS_${DC_PACKAGE})
-                set(_this_found NO)
-                foreach(_dir IN LISTS CONAN_LIB_DIRS_${DC_PACKAGE})
-                    foreach(_sfx IN LISTS _suffixes)
-                        if(EXISTS ${_dir}/lib${_lib}${_sfx})
-                            list(APPEND _all_libs ${_dir}/lib${_lib}${_sfx})
-                            set(_this_found YES)
-                            if(NCBI_TRACE_COMPONENT_${DC_NAME} OR NCBI_TRACE_ALLCOMPONENTS)
-                                message("${DC_NAME}: found:  ${_dir}/lib${_lib}${_sfx}")
+        if(TARGET CONAN_PKG::${_package})
+            set(_all_libs CONAN_PKG::${_package})
+        else()
+            set(_all_libs "")
+            if(NOT "${CONAN_LIB_DIRS_${DC_PACKAGE}}" STREQUAL "" AND NOT "${CONAN_LIBS_${DC_PACKAGE}}" STREQUAL "")
+                foreach(_lib IN LISTS CONAN_LIBS_${DC_PACKAGE})
+                    set(_this_found NO)
+                    foreach(_dir IN LISTS CONAN_LIB_DIRS_${DC_PACKAGE})
+                        foreach(_sfx IN LISTS _suffixes)
+                            if(EXISTS ${_dir}/lib${_lib}${_sfx})
+                                list(APPEND _all_libs ${_dir}/lib${_lib}${_sfx})
+                                set(_this_found YES)
+                                if(NCBI_TRACE_COMPONENT_${DC_NAME} OR NCBI_TRACE_ALLCOMPONENTS)
+                                    message("${DC_NAME}: found:  ${_dir}/lib${_lib}${_sfx}")
+                                endif()
+                                break()
                             endif()
+                        endforeach()
+                        if(_this_found)
                             break()
                         endif()
                     endforeach()
-                    if(_this_found)
-                        break()
+                    if(NOT _this_found)
+                        list(APPEND _all_libs ${_lib})
                     endif()
                 endforeach()
-                if(NOT _this_found)
-                    list(APPEND _all_libs ${_lib})
-                endif()
-            endforeach()
+            endif()
         endif()
         set(NCBI_COMPONENT_${DC_NAME}_LIBS ${_all_libs} PARENT_SCOPE)
         string(TOUPPER ${DC_NAME} _upname)
@@ -95,12 +102,12 @@ endfunction()
 
 #############################################################################
 # BACKWARD, UNWIND
-NCBI_define_Pkgcomponent(NAME BACKWARD PACKAGE BACKWARD-CPP)
+NCBI_define_Pkgcomponent(NAME BACKWARD PACKAGE backward-cpp)
 list(REMOVE_ITEM NCBI_ALL_COMPONENTS BACKWARD)
 if(NCBI_COMPONENT_BACKWARD_FOUND)
     set(HAVE_LIBBACKWARD_CPP YES)
 endif()
-#NCBI_define_Pkgcomponent(NAME UNWIND PACKAGE LIBUNWIND)
+#NCBI_define_Pkgcomponent(NAME UNWIND PACKAGE libunwind)
 #list(REMOVE_ITEM NCBI_ALL_COMPONENTS UNWIND)
 
 #############################################################################
@@ -114,7 +121,7 @@ endif()
 
 #############################################################################
 # PCRE
-NCBI_define_Pkgcomponent(NAME PCRE PACKAGE PCRE)
+NCBI_define_Pkgcomponent(NAME PCRE PACKAGE pcre)
 if(NOT NCBI_COMPONENT_PCRE_FOUND)
     set(NCBI_COMPONENT_PCRE_FOUND ${NCBI_COMPONENT_LocalPCRE_FOUND})
     set(NCBI_COMPONENT_PCRE_INCLUDE ${NCBI_COMPONENT_LocalPCRE_INCLUDE})
@@ -124,7 +131,7 @@ endif()
 
 #############################################################################
 # Z
-NCBI_define_Pkgcomponent(NAME Z PACKAGE ZLIB)
+NCBI_define_Pkgcomponent(NAME Z PACKAGE zlib)
 if(NOT NCBI_COMPONENT_Z_FOUND)
     set(NCBI_COMPONENT_Z_FOUND ${NCBI_COMPONENT_LocalZ_FOUND})
     set(NCBI_COMPONENT_Z_INCLUDE ${NCBI_COMPONENT_LocalZ_INCLUDE})
@@ -134,7 +141,7 @@ endif()
 
 #############################################################################
 # BZ2
-NCBI_define_Pkgcomponent(NAME BZ2 PACKAGE BZIP2)
+NCBI_define_Pkgcomponent(NAME BZ2 PACKAGE bzip2)
 if(NOT NCBI_COMPONENT_BZ2_FOUND)
     set(NCBI_COMPONENT_BZ2_FOUND ${NCBI_COMPONENT_LocalBZ2_FOUND})
     set(NCBI_COMPONENT_BZ2_INCLUDE ${NCBI_COMPONENT_LocalBZ2_INCLUDE})
@@ -144,7 +151,7 @@ endif()
 
 #############################################################################
 # Boost
-NCBI_define_Pkgcomponent(NAME Boost PACKAGE BOOST)
+NCBI_define_Pkgcomponent(NAME Boost PACKAGE boost)
 
 #############################################################################
 # Boost.Test.Included
@@ -178,19 +185,23 @@ endif()
 
 #############################################################################
 # JPEG
-NCBI_define_Pkgcomponent(NAME JPEG PACKAGE LIBJPEG)
+NCBI_define_Pkgcomponent(NAME JPEG PACKAGE libjpeg)
 
 #############################################################################
 # PNG
-NCBI_define_Pkgcomponent(NAME PNG PACKAGE LIBPNG)
+NCBI_define_Pkgcomponent(NAME PNG PACKAGE libpng)
+
+#############################################################################
+# GIF
+NCBI_define_Pkgcomponent(NAME GIF PACKAGE giflib)
 
 #############################################################################
 # TIFF
-NCBI_define_Pkgcomponent(NAME TIFF PACKAGE LIBTIFF)
+NCBI_define_Pkgcomponent(NAME TIFF PACKAGE libtiff)
 
 #############################################################################
 # SQLITE3
-NCBI_define_Pkgcomponent(NAME SQLITE3 PACKAGE SQLITE3)
+NCBI_define_Pkgcomponent(NAME SQLITE3 PACKAGE sqlite3)
 if(NCBI_COMPONENT_SQLITE3_FOUND)
     check_symbol_exists(sqlite3_unlock_notify ${NCBI_COMPONENT_SQLITE3_INCLUDE}/sqlite3.h HAVE_SQLITE3_UNLOCK_NOTIFY)
     check_include_file(sqlite3async.h HAVE_SQLITE3ASYNC_H -I${NCBI_COMPONENT_SQLITE3_INCLUDE})
@@ -198,7 +209,7 @@ endif()
 
 #############################################################################
 # BerkeleyDB
-NCBI_define_Pkgcomponent(NAME BerkeleyDB PACKAGE LIBDB)
+NCBI_define_Pkgcomponent(NAME BerkeleyDB PACKAGE libdb)
 if(NCBI_COMPONENT_BerkeleyDB_FOUND)
     set(HAVE_BERKELEY_DB 1)
     set(HAVE_BDB         1)
@@ -207,24 +218,24 @@ endif()
 
 #############################################################################
 # XML
-NCBI_define_Pkgcomponent(NAME XML PACKAGE LIBXML2)
+NCBI_define_Pkgcomponent(NAME XML PACKAGE libxml2)
 
 #############################################################################
 # XSLT
-NCBI_define_Pkgcomponent(NAME XSLT PACKAGE LIBXSLT)
+NCBI_define_Pkgcomponent(NAME XSLT PACKAGE libxslt)
 
 #############################################################################
 # EXSLT
-NCBI_define_Pkgcomponent(NAME EXSLT PACKAGE LIBXSLT)
+NCBI_define_Pkgcomponent(NAME EXSLT PACKAGE libxslt)
 
 #############################################################################
 # UV
-NCBI_define_Pkgcomponent(NAME UV PACKAGE LIBUV)
+NCBI_define_Pkgcomponent(NAME UV PACKAGE libuv)
 
 #############################################################################
 # NGHTTP2
-NCBI_define_Pkgcomponent(NAME NGHTTP2 PACKAGE LIBNGHTTP2)
+NCBI_define_Pkgcomponent(NAME NGHTTP2 PACKAGE libnghttp2)
 
-#############################################################################
-# NETTLE
-NCBI_define_Pkgcomponent(NAME NETTLE PACKAGE NETTLE)
+##############################################################################
+# GRPC/PROTOBUF
+NCBI_define_Pkgcomponent(NAME PROTOBUF PACKAGE protobuf)
