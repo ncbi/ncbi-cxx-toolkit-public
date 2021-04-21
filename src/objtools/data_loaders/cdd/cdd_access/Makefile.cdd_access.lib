@@ -1,3 +1,5 @@
+# $Id$
+
 LIB = cdd_access
 SRC = cdd_access__ cdd_access___ cdd_client
 
@@ -5,9 +7,9 @@ CPPFLAGS = $(ORIG_CPPFLAGS) -DNCBI_CDD_ACCESS_EXPORTS
 
 LIB_OR_DLL = both
 
-DLL_LIB = $(SOBJMGR_LIBS)
+DLL_LIB = id2 seqsplit seqset $(SEQ_LIBS) general xser xconnect xutil xncbi
 
 WATCHERS = grichenk
 
 USES_LIBRARIES =  \
-    seqloc seq id2 xconnect
+    seq id2 xconnect
