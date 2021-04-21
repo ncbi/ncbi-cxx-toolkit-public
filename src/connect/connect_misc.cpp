@@ -41,6 +41,13 @@
 #include <connect/ncbi_socket.hpp>
 
 #include <corelib/ncbi_system.hpp>
+#include <corelib/ncbisys.hpp>
+
+#if defined(NCBI_OS_MSWIN)
+#  include <io.h>
+#elif defined(NCBI_OS_UNIX)
+#  include <unistd.h>
+#endif
 
 BEGIN_NCBI_SCOPE
 
@@ -278,6 +285,13 @@ void CLogLatencyReport::Start()
     GetDiagContext().SetOldPostFormat(false);
     SetDiagFilter(eDiagFilter_All, m_Filter.c_str());
     SetDiagHandler(m_Handler.get(), false);
+
+    // Swapping stdout and stderr, so latency is reported to stdout and output of measured code to stderr
+    auto saved_stderr = NcbiSys_dup(NcbiSys_fileno(stderr));
+    _ASSERT(saved_stderr >= 0);
+    _VERIFY(NcbiSys_dup2(NcbiSys_fileno(stdout), NcbiSys_fileno(stderr)) >= 0);
+    _VERIFY(NcbiSys_dup2(saved_stderr, NcbiSys_fileno(stdout)) >= 0);
+    _VERIFY(NcbiSys_close(saved_stderr) >= 0);
 }
 
 NCBI_EXPORT_FUNC_DEFINE(XCONNECT, mbedtls_ctr_drbg_free);
