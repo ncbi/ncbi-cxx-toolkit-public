@@ -199,7 +199,7 @@ CTblastnNode::Main()
                     results = rmt_blast->GetResultSet();
                 } else {
                     CLocalBlast lcl_blast(query_factory, opts_hndl, db_adapter);
-                    lcl_blast.SetNumberOfThreads(m_CmdLineArgs->GetNumThreads());
+                    lcl_blast.SetNumberOfThreads(1);
                     results = lcl_blast.Run();
                 }
 
@@ -234,7 +234,7 @@ CTblastnNode::Main()
                 _ASSERT(psi_opts.NotEmpty());
 
                 CRef<CPsiBlast> psiblast(new CPsiBlast(pssm, db_adapter, psi_opts));
-                psiblast->SetNumberOfThreads(m_CmdLineArgs->GetNumThreads());
+                psiblast->SetNumberOfThreads(1);
 
                 results = psiblast->Run(); 
             }
