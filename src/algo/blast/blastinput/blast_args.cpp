@@ -1539,13 +1539,6 @@ CMappingArgs::ExtractAlgorithmOptions(const CArgs& args,
     }
 
     if (args.Exist(kArgMaxDbWordCount) && args[kArgMaxDbWordCount]) {
-        if (!opt.GetLookupDbFilter()) {
-            ERR_POST(Warning << (string)"The parameter " + kArgMaxDbWordCount +
-                     " is ignored when " + kArgLimitLookup + " is set to false."
-                     " Use -" + kArgLimitLookup + " T so that " +
-                     kArgMaxDbWordCount + " has effect.");
-
-        }
         opt.SetMaxDbWordCount(args[kArgMaxDbWordCount].AsInteger());
     }
 
