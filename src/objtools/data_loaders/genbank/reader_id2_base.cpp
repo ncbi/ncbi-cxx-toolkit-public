@@ -112,6 +112,18 @@ int CId2ReaderBase::GetDebugLevel(void)
 }
 
 
+bool CId2ReaderBase::GetVDB_CDD_Enabled()
+{
+    return NCBI_PARAM_TYPE(GENBANK, VDB_CDD)::GetDefault();
+}
+
+
+void CId2ReaderBase::SetVDB_CDD_Enabled(bool enabled)
+{
+    return NCBI_PARAM_TYPE(GENBANK, VDB_CDD)::SetDefault(enabled);
+}
+
+
 static const char kSpecialId_label[] = "LABEL";
 static const char kSpecialId_taxid[] = "TAXID";
 static const char kSpecialId_hash[] = "HASH";
@@ -1639,7 +1651,7 @@ void CId2ReaderBase::x_SetContextData(CID2_Request& request)
                 // enable VDB-based SNP sequences
                 param->SetValue().push_back("vdb-snp");
             }
-            if (NCBI_PARAM_TYPE(GENBANK, VDB_CDD)::GetDefault()) {
+            if ( GetVDB_CDD_Enabled() ) {
                 // enable VDB-based CDD sequences
                 param->SetValue().push_back("vdb-cdd");
             }
@@ -2694,7 +2706,7 @@ void CId2ReaderBase::x_ProcessGetBlobId(
     }
     TContentsMask mask = 0;
     {{ // TODO: temporary logic, this info should be returned by server
-        if ( blob_id.GetSubSat() == CID2_Blob_Id::eSub_sat_main ||
+        if ( (blob_id.GetSubSat() == CID2_Blob_Id::eSub_sat_main && !reply.IsSetAnnot_info()) ||
              (blob_id.GetSat() >= CProcessor_ExtAnnot::eSat_VDB_WGS_MIN &&
               blob_id.GetSat() <= CProcessor_ExtAnnot::eSat_VDB_WGS_MAX) ) {
             mask |= fBlobHasAllLocal;

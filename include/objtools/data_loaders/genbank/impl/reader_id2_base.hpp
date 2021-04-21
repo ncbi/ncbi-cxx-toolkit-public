@@ -153,6 +153,8 @@ public:
         eTraceBlobData = 9
     };
     static int GetDebugLevel(void);
+    static bool GetVDB_CDD_Enabled();
+    static void SetVDB_CDD_Enabled(bool enabled = true);
 
 protected:
     virtual string x_ConnDescription(TConn conn) const = 0;
