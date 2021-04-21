@@ -1090,7 +1090,7 @@ void CGff3Reader::xProcessSequenceRegionPragma(
 {
     TSeqPos sequenceSize(0);
     vector<string> tokens;
-    NStr::Split(pragma, " \n", tokens, NStr::fSplit_MergeDelimiters);
+    NStr::Split(pragma, " \t", tokens, NStr::fSplit_MergeDelimiters);
     if (tokens.size() >= 4) {
         try {
             sequenceSize = NStr::StringToNonNegativeInt(tokens[3]);
