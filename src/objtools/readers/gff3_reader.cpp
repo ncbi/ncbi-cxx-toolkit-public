@@ -548,7 +548,6 @@ bool CGff3Reader::xUpdateAnnotCds(
 
     auto pExistingFeature = m_MapIdToFeature.find(cdsId);
     if (pExistingFeature != m_MapIdToFeature.end()) {
-        CSeqFeatData::ESubtype subtype = pFeature->GetData().GetSubtype();
         return true;
     }
 
@@ -1107,7 +1106,7 @@ void CGff3Reader::xProcessSequenceRegionPragma(
             "Bad sequence-region pragma - ignored.");
         throw warning;
     }
-    mpLocations->SetSequenceSize(sequenceSize);
+    mpLocations->SetSequenceSize(tokens[1], sequenceSize);
 }
 
 //  ----------------------------------------------------------------------------

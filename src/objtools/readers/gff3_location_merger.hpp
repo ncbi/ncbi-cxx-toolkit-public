@@ -53,9 +53,6 @@ public:
     CGff3LocationRecord(
         const CGff3LocationRecord&);
 
-    CRef<CSeq_loc> GetLocation(
-        TSeqPos sequenceSize);
-
     CSeq_id mGffId;
     TSeqPos mStart;
     TSeqPos mStop;
@@ -92,7 +89,8 @@ public:
     };
 
     void SetSequenceSize(
-        TSeqPos sequenceSize) { mSequenceSize = sequenceSize; }
+        const string& seqId,
+        TSeqPos sequenceSize) { mSequenceSizes[seqId] = sequenceSize; }
 
     bool AddRecord(
         const CGff2Record&);
@@ -114,19 +112,25 @@ public:
         LOCATIONS&);
 
     TSeqPos SequenceSize() const {
-        return mSequenceSize;
+        return 0;
     }
+
+    TSeqPos GetSequenceSize(
+        const string&) const;
 
 private:
     static bool xGetLocationIds(
         const CGff2Record&,
         list<string>&);
 
+    CRef<CSeq_loc> xGetRecordLocation(
+        const CGff3LocationRecord&);
+
     static void xSortLocations(
         LOCATIONS&);
 
     unsigned int mFlags;
-    TSeqPos mSequenceSize;
+    map<string, TSeqPos> mSequenceSizes;
     CGff3ReadRecord::SeqIdResolver mIdResolver;
 
     LOCATION_MAP mMapIdToLocations;
