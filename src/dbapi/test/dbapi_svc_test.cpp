@@ -956,18 +956,18 @@ private:
 
 int CTestNcbiDblbSvcResApp::SanityCheck(void)
 {
+    static const STimeout kTimeout = {1, 0};
     int num_failed = 0;
+    EIO_Status status;
 
     // Verify BK server gets the appropriate error message back.
     {{
         string          exp_host(s_BrokenHost->Get());
         string          exp_msg (s_BrokenMessage->Get());
         unsigned short  exp_port(s_BrokenPort->Get());
-
-        STimeout timeout = {1, 0};
-        CSocket sock(exp_host, exp_port, &timeout, fSOCK_LogOn);
+        CSocket sock(exp_host, exp_port, &kTimeout, fSOCK_LogOn);
         string  got_msg;
-        if (sock.ReadLine(got_msg) == eIO_Success) {
+        if ((status = sock.ReadLine(got_msg)) == eIO_Success) {
             if (got_msg == exp_msg) {
                 ERR_POST(Info <<
                          "Sanity test passed for broken server (" <<
@@ -983,7 +983,7 @@ int CTestNcbiDblbSvcResApp::SanityCheck(void)
             ++num_failed;
             ERR_POST(Critical <<
                      "Sanity test failed for broken server (" <<
-                     exp_host << ":" << NStr::IntToString(exp_port) << ") - unable to read.");
+                     exp_host << ":" << NStr::IntToString(exp_port) << ") - unable to read: " << IO_StatusStr(status));
         }
     }}
 
@@ -992,11 +992,9 @@ int CTestNcbiDblbSvcResApp::SanityCheck(void)
         string          exp_host(s_DownHost->Get());
         string          exp_msg (s_DownMessage->Get());
         unsigned short  exp_port(s_DownPort->Get());
-
-        STimeout timeout = {1, 0};
-        CSocket sock(s_DownHost->Get(), exp_port, &timeout, fSOCK_LogOn);
+        CSocket sock(s_DownHost->Get(), exp_port, &kTimeout, fSOCK_LogOn);
         string  got_msg;
-        if (sock.ReadLine(got_msg) == eIO_Success) {
+        if ((status = sock.ReadLine(got_msg)) == eIO_Success) {
             if (got_msg == exp_msg) {
                 ERR_POST(Info <<
                          "Sanity test passed for down server (" <<
@@ -1012,7 +1010,7 @@ int CTestNcbiDblbSvcResApp::SanityCheck(void)
             ++num_failed;
             ERR_POST(Critical <<
                      "Sanity test failed for down server (" <<
-                     exp_host << ":" << NStr::IntToString(exp_port) << ") - unable to read.");
+                     exp_host << ":" << NStr::IntToString(exp_port) << ") - unable to read: " << IO_StatusStr(status));
         }
     }}
 
@@ -1020,10 +1018,8 @@ int CTestNcbiDblbSvcResApp::SanityCheck(void)
     {{
         string          exp_host(s_NonexistHost->Get());
         unsigned short  exp_port(s_NonexistPort->Get());
-
-        STimeout timeout = {1, 0};
-        CSocket sock(exp_host, exp_port, &timeout, fSOCK_LogOn);
-        if (sock.Wait(eIO_Write, &timeout) == eIO_Success) {
+        CSocket sock(exp_host, exp_port, &kTimeout, fSOCK_LogOn);
+        if (sock.Wait(eIO_Write, &kTimeout) == eIO_Success) {
             ++num_failed;
             ERR_POST(Critical <<
                      "Sanity failure - able to connect to non-existent server (" <<
@@ -1041,10 +1037,8 @@ int CTestNcbiDblbSvcResApp::SanityCheck(void)
     {{
         string          exp_host(s_UpHost->Get());
         unsigned short  exp_port(s_UpPort->Get());
-
-        STimeout timeout = {1, 0};
-        CSocket sock(exp_host, exp_port, &timeout, fSOCK_LogOn);
-        if (sock.Wait(eIO_Write, &timeout) == eIO_Success) {
+        CSocket sock(exp_host, exp_port, &kTimeout, fSOCK_LogOn);
+        if ((status = sock.Wait(eIO_Write, &kTimeout)) == eIO_Success) {
             ERR_POST(Info <<
                      "Sanity test passed for up server (" <<
                      exp_host << ":" << NStr::IntToString(exp_port) << ").");
@@ -1052,7 +1046,7 @@ int CTestNcbiDblbSvcResApp::SanityCheck(void)
             ++num_failed;
             ERR_POST(Critical <<
                      "Sanity test failed for up server (" <<
-                     exp_host << ":" << NStr::IntToString(exp_port) << ") - unable to connect.");
+                     exp_host << ":" << NStr::IntToString(exp_port) << ") - unable to connect: " << IO_StatusStr(status));
         }
     }}
 
