@@ -756,6 +756,11 @@ CNcbiOstream& PrintSAMHeader(CNcbiOstream& ostr,
     IBlastSeqInfoSrc* seqinfo_src = db_adapter->MakeSeqInfoSrc();
     _ASSERT(seq_src && seqinfo_src);
 
+    CRef<CSeqDB> seqdb;
+    if (db_adapter->IsBlastDb()) {
+        seqdb.Reset(db_adapter->GetSearchDatabase()->GetSeqDb());
+    }
+
     ostr << "@HD\t" << "VN:1.0\t" << "GO:query" << endl;
 
     BlastSeqSrcResetChunkIterator(seq_src);
@@ -767,8 +772,24 @@ CNcbiOstream& PrintSAMHeader(CNcbiOstream& ostr,
         GetSequenceLengthAndId(seqinfo_src, oid, CSeq_id::BlastRank, seqid,
                                &length);
 
-        ostr << "@SQ\t" << "SN:" << s_GetBareId(*seqid) << "\tLN:" << length
-             << endl;
+        ostr << "@SQ\t" << "SN:" << s_GetBareId(*seqid) << "\tLN:" << length;
+        
+        vector<TTaxId> taxids;
+        if (seqdb.NotEmpty()) {
+            seqdb->GetTaxIDs(oid, taxids);
+        }
+
+        if (!taxids.empty() && taxids[0] != 0) {
+            ostr << "\tSP:";
+            for (vector<TTaxId>::iterator it = taxids.begin();
+                 it != taxids.end(); ++it) {
+                if (it != taxids.begin()) {
+                    ostr << ",";
+                }
+                ostr << *it;
+            }
+        }
+        ostr << endl;
     }
     BlastSeqSrcIteratorFree(it);
 
