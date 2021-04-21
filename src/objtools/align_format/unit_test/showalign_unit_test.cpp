@@ -143,7 +143,7 @@ BOOST_AUTO_TEST_CASE(TestAccConversionExt)
     string output = CNcbiOstrstreamToString(output_stream);        
     BOOST_REQUIRE(output.find("NP_001263315.1") != NPOS);
     BOOST_REQUIRE(output.find("XP_015137661.1") != NPOS);
-    BOOST_REQUIRE(output.find("AGN32861.1") != NPOS);
+    BOOST_REQUIRE(output.find("AUD54591.1") != NPOS);
     BOOST_REQUIRE(output.find("BAM13279.1") != NPOS);
     BOOST_REQUIRE(output.find("P01014.1") != NPOS);
     scope->GetObjectManager().RevokeAllDataLoaders();                
