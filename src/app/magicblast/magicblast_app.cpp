@@ -332,7 +332,7 @@ int CMagicBlastApp::Run(void)
                    m_CmdLineArgs->GetQueryOptionsArgs().GetNonNullPointer()));
 
         m_UsageReport.AddParam(CBlastUsageReport::eSRA,
-                               query_opts->GetInputFormat() !=
+                               query_opts->GetInputFormat() ==
                                                 CMapperQueryOptionsArgs::eSra);
 
         if(query_opts->GetInputFormat() != CMapperQueryOptionsArgs::eSra &&
