@@ -5,6 +5,6 @@ NCBI_begin_app(unit_test_eutils)
   NCBI_requires(Boost.Test.Included)
   NCBI_uses_toolkit_libraries(eutils_client test_boost)
   NCBI_add_test()
-  NCBI_project_watchers(kotliaro)
+  NCBI_project_watchers(whlavina)
 NCBI_end_app()
 
