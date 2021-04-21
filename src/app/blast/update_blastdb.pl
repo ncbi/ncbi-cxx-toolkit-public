@@ -209,7 +209,7 @@ if ($location ne "NCBI") {
         }
         if (@files2download) {
             my $gsutil = &get_gsutil_path();
-            my $awscli = undef; # &get_awscli_path(); # aws s3 required credentials, fall back to curl
+            my $awscli = &get_awscli_path();
             my $cmd;
             my $fh = File::Temp->new();
             if ($location eq "GCP" and defined($gsutil)) {
@@ -223,7 +223,8 @@ if ($location ne "NCBI") {
                 }
                 $cmd .= join(" ", @files2download) . " .";
             } elsif ($location eq "AWS" and defined ($awscli)) {
-                my $aws_cmd = "$awscli s3 cp ";
+                # https://registry.opendata.aws/ncbi-blast-databases/#usageexamples
+                my $aws_cmd = "$awscli s3 cp --no-sign-request ";
                 $aws_cmd .= "--only-show-errors " unless $opt_verbose >= 3;
                 print $fh join("\n", @files2download);
                 $cmd = "/usr/bin/xargs -P $opt_nt -n 1 -I{}";
