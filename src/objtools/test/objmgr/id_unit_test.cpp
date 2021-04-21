@@ -42,7 +42,7 @@
 #include <objmgr/annot_ci.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/data_loaders/genbank/readers.hpp>
-#include <objtools/data_loaders/genbank/id1/reader_id1.hpp>
+#include <objtools/data_loaders/genbank/id2/reader_id2.hpp>
 #include <objtools/data_loaders/genbank/impl/psg_loader_impl.hpp>
 
 #include <corelib/ncbi_system.hpp>
@@ -700,78 +700,68 @@ BOOST_AUTO_TEST_CASE(CheckExtSNPGraph)
 }
 
 
-static const char kNativeCDDSection[] = "GENBANK";
-static const char kNativeCDDParam[] = "vdb_cdd";
-static string s_SavedNativeCDD;
-
-static string s_SetNativeCDDParam(const string& value)
+static string s_GetVDB_CDD_Source()
 {
-    auto app = CNcbiApplication::InstanceGuard();
-    string old_value = app->GetConfig().Get(kNativeCDDSection, kNativeCDDParam);
-    if ( value.empty() ) {
-        app->GetConfig().Unset(kNativeCDDSection, kNativeCDDParam);
-    }
-    else {
-        app->GetConfig().Set(kNativeCDDSection, kNativeCDDParam, value);
-    }
-    return old_value;
+    return CId2Reader::GetVDB_CDD_Enabled()? "CGI": "ID";
 }
 
-static void s_SetNativeCDD(bool native = true)
-{
-    s_SavedNativeCDD = s_SetNativeCDDParam(native? "0": "1");
-}
 
-static void s_RestoreCDDType()
-{
-    s_SetNativeCDDParam(s_SavedNativeCDD);
-}
+struct SInvertVDB_CDD {
+    void s_Invert()
+        {
+            CId2Reader::SetVDB_CDD_Enabled(!CId2Reader::GetVDB_CDD_Enabled());
+        }
+    SInvertVDB_CDD()
+        {
+            s_Invert();
+        }
+    ~SInvertVDB_CDD()
+        {
+            s_Invert();
+        }
+    SInvertVDB_CDD(const SInvertVDB_CDD&) = delete;
+    void operator=(const SInvertVDB_CDD&) = delete;
+};
 
 BOOST_AUTO_TEST_CASE(CheckExtCDD)
 {
-    LOG_POST("Checking ExtAnnot ID CDD");
-    s_SetNativeCDD();
+    LOG_POST("Checking ExtAnnot "<<s_GetVDB_CDD_Source()<<" CDD");
     SAnnotSelector sel(CSeqFeatData::eSubtype_region);
     sel.SetResolveAll().SetAdaptiveDepth();
     sel.AddNamedAnnots("CDD");
     s_CheckFeat(sel, "AAC73113.1");
-    s_RestoreCDDType();
 }
 
 
 BOOST_AUTO_TEST_CASE(CheckExtCDD2)
 {
-    LOG_POST("Checking ExtAnnot VDB CDD");
-    s_SetNativeCDD(false);
+    SInvertVDB_CDD invert;
+    LOG_POST("Checking ExtAnnot "<<s_GetVDB_CDD_Source()<<" CDD");
     SAnnotSelector sel(CSeqFeatData::eSubtype_region);
     sel.SetResolveAll().SetAdaptiveDepth();
     sel.AddNamedAnnots("CDD");
     s_CheckFeat(sel, "AAC73113.1");
-    s_RestoreCDDType();
 }
 
 
 BOOST_AUTO_TEST_CASE(CheckExtCDDonWGS)
 {
-    LOG_POST("Checking ExtAnnot ID CDD on WGS sequence");
-    s_SetNativeCDD();
+    LOG_POST("Checking ExtAnnot "<<s_GetVDB_CDD_Source()<<" CDD on WGS sequence");
     SAnnotSelector sel(CSeqFeatData::eSubtype_region);
     sel.SetResolveAll().SetAdaptiveDepth();
     sel.AddNamedAnnots("CDD");
     s_CheckFeat(sel, "RLL67630.1");
-    s_RestoreCDDType();
 }
 
 
 BOOST_AUTO_TEST_CASE(CheckExtCDD2onWGS)
 {
-    LOG_POST("Checking ExtAnnot VDB CDD on WGS sequence");
-    s_SetNativeCDD(false);
+    SInvertVDB_CDD invert;
+    LOG_POST("Checking ExtAnnot "<<s_GetVDB_CDD_Source()<<" CDD on WGS sequence");
     SAnnotSelector sel(CSeqFeatData::eSubtype_region);
     sel.SetResolveAll().SetAdaptiveDepth();
     sel.AddNamedAnnots("CDD");
     s_CheckFeat(sel, "RLL67630.1");
-    s_RestoreCDDType();
 }
 
 
@@ -1571,7 +1561,7 @@ BOOST_AUTO_TEST_CASE(TestGetBlobById)
     }
     else {
         CGBLoaderParams params;
-        reader = new CId1Reader();
+        reader = new CId2Reader();
         params.SetReaderPtr(reader);
         CGBDataLoader::RegisterInObjectManager(*om, params);
     }
