@@ -2113,7 +2113,7 @@ CDataLoader::TTSE_LockSet CPSGDataLoader_Impl::GetAnnotRecordsNA(
     if ( kCreateLocalCDDEntries ) {
         CSeq_id_Handle gi;
         CSeq_id_Handle acc_ver;
-        bool is_protein = false;
+        bool is_protein = true;
         TIds ids;
         GetIds(idh, ids);
         for ( auto id : ids ) {
