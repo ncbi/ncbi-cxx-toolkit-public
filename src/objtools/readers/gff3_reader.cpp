@@ -1091,20 +1091,24 @@ void CGff3Reader::xProcessSequenceRegionPragma(
     TSeqPos sequenceSize(0);
     vector<string> tokens;
     NStr::Split(pragma, " \t", tokens, NStr::fSplit_MergeDelimiters);
-    if (tokens.size() >= 4) {
-        try {
-            sequenceSize = NStr::StringToNonNegativeInt(tokens[3]);
-        }
-        catch(exception&) {
-            sequenceSize = -1;
-        }
-    }
-    if (sequenceSize == -1) {
+    if (tokens.size() < 2) {
         CReaderMessage warning(
             ncbi::eDiag_Warning,
             m_uLineNumber,
             "Bad sequence-region pragma - ignored.");
         throw warning;
+    }
+    if (tokens.size() >= 4) {
+        try {
+            sequenceSize = NStr::StringToNonNegativeInt(tokens[3]);
+        }
+        catch(exception&) {
+            CReaderMessage warning(
+                ncbi::eDiag_Warning,
+                m_uLineNumber,
+                "Bad sequence-region pragma - ignored.");
+            throw warning;
+        }
     }
     mpLocations->SetSequenceSize(tokens[1], sequenceSize);
 }
