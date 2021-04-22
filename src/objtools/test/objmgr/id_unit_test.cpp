@@ -146,8 +146,12 @@ string s_AsString(const vector<CSeq_id_Handle>& ids)
     return CNcbiOstrstreamToString(out);
 }
 
+enum EIncludePubseqos2 {
+    eIncludePubseqos2,
+    eExcludePubseqos2
+};
 
-bool s_HaveID2(void)
+bool s_HaveID2(EIncludePubseqos2 include_pubseqos2 = eIncludePubseqos2)
 {
     const char* env = getenv("GENBANK_LOADER_METHOD_BASE");
     if ( !env ) {
@@ -160,6 +164,11 @@ bool s_HaveID2(void)
     if ( NStr::EndsWith(env, "id1", NStr::eNocase) ||
          NStr::EndsWith(env, "pubseqos", NStr::eNocase) ) {
         // non-ID2 based readers
+        return false;
+    }
+    if ( include_pubseqos2 == eExcludePubseqos2 &&
+         NStr::EndsWith(env, "pubseqos2", NStr::eNocase) ) {
+        // only exact ID2 requested
         return false;
     }
     return true;
@@ -735,6 +744,10 @@ BOOST_AUTO_TEST_CASE(CheckExtCDD)
 
 BOOST_AUTO_TEST_CASE(CheckExtCDD2)
 {
+    if ( !s_HaveID2() || CGBDataLoader::IsUsingPSGLoader() ) {
+        LOG_POST("Skipping ExtAnnot second CDD without ID2");
+        return;
+    }
     SInvertVDB_CDD invert;
     LOG_POST("Checking ExtAnnot "<<s_GetVDB_CDD_Source()<<" CDD");
     SAnnotSelector sel(CSeqFeatData::eSubtype_region);
@@ -756,12 +769,30 @@ BOOST_AUTO_TEST_CASE(CheckExtCDDonWGS)
 
 BOOST_AUTO_TEST_CASE(CheckExtCDD2onWGS)
 {
+    if ( !s_HaveID2() || CGBDataLoader::IsUsingPSGLoader() ) {
+        LOG_POST("Skipping ExtAnnot second CDD on WGS sequence without ID2");
+        return;
+    }
     SInvertVDB_CDD invert;
     LOG_POST("Checking ExtAnnot "<<s_GetVDB_CDD_Source()<<" CDD on WGS sequence");
     SAnnotSelector sel(CSeqFeatData::eSubtype_region);
     sel.SetResolveAll().SetAdaptiveDepth();
     sel.AddNamedAnnots("CDD");
     s_CheckFeat(sel, "RLL67630.1");
+}
+
+
+BOOST_AUTO_TEST_CASE(CheckExtCDDonPDB)
+{
+    if ( !s_HaveID2(eExcludePubseqos2) && !CGBDataLoader::IsUsingPSGLoader() ) {
+        LOG_POST("Skipping ExtAnnot CDD on PDB sequence without ID2/PSG");
+        return;
+    }
+    LOG_POST("Checking ExtAnnot CDD on PDB sequence");
+    SAnnotSelector sel(CSeqFeatData::eSubtype_region);
+    sel.SetResolveAll().SetAdaptiveDepth();
+    sel.AddNamedAnnots("CDD");
+    s_CheckFeat(sel, "pdb|4XNUA");
 }
 
 
