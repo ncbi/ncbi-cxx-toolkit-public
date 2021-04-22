@@ -784,7 +784,7 @@ BOOST_AUTO_TEST_CASE(CheckExtCDD2onWGS)
 
 BOOST_AUTO_TEST_CASE(CheckExtCDDonPDB)
 {
-    if ( !s_HaveID2(eExcludePubseqos2) && !CGBDataLoader::IsUsingPSGLoader() ) {
+    if ( !(s_HaveID2(eExcludePubseqos2) && CId2Reader::GetVDB_CDD_Enabled()) && !CGBDataLoader::IsUsingPSGLoader() ) {
         LOG_POST("Skipping ExtAnnot CDD on PDB sequence without ID2/PSG");
         return;
     }
