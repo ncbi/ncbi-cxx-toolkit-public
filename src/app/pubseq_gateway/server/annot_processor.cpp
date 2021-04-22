@@ -44,7 +44,7 @@ using namespace std::placeholders;
 
 
 CPSGS_AnnotProcessor::CPSGS_AnnotProcessor() :
-    m_AnnotRequest(nullptr)
+    m_AnnotRequest(nullptr), m_BlobStage(false)
 {}
 
 
@@ -59,7 +59,9 @@ CPSGS_AnnotProcessor::CPSGS_AnnotProcessor(
                       bind(&CPSGS_AnnotProcessor::x_OnSeqIdResolveError,
                            this, _1, _2, _3, _4),
                       bind(&CPSGS_AnnotProcessor::x_OnResolutionGoodData,
-                           this))
+                           this)),
+    CPSGS_CassBlobBase(request, reply, GetName()),
+    m_BlobStage(false)
 {
     // Convenience to avoid calling
     // m_Request->GetRequest<SPSGS_AnnotRequest>() everywhere
@@ -346,11 +348,13 @@ CPSGS_AnnotProcessor::x_OnNamedAnnotData(CNAnnotRecord &&  annot_record,
 
     auto    other_proc_priority = m_AnnotRequest->RegisterProcessedName(
                     m_Priority, annot_record.GetAnnotName());
+    bool    annot_was_sent = false;
     if (other_proc_priority == kUnknownPriority) {
         // Has not been processed yet at all
         IPSGS_Processor::m_Reply->PrepareNamedAnnotationData(
             annot_record.GetAnnotName(), GetName(),
             ToJson(annot_record, sat).Repr(CJsonNode::fStandardJson));
+        annot_was_sent = true;
     } else if (other_proc_priority < m_Priority) {
         // Was processed by a lower priority processor so it needs to be
         // send anyway
@@ -366,6 +370,7 @@ CPSGS_AnnotProcessor::x_OnNamedAnnotData(CNAnnotRecord &&  annot_record,
         IPSGS_Processor::m_Reply->PrepareNamedAnnotationData(
             annot_record.GetAnnotName(), GetName(),
             ToJson(annot_record, sat).Repr(CJsonNode::fStandardJson));
+        annot_was_sent = true;
     } else {
         // The other processor has already processed it
         if (IPSGS_Processor::m_Request->NeedTrace()) {
@@ -376,6 +381,13 @@ CPSGS_AnnotProcessor::x_OnNamedAnnotData(CNAnnotRecord &&  annot_record,
                 "(my priority is " + to_string(m_Priority) + ")",
                 IPSGS_Processor::m_Request->GetStartTimestamp());
         }
+    }
+
+    if (annot_was_sent) {
+        // May be the blob needs to be requested as well...
+        if (x_NeedToRequestBlobProp())
+            x_RequestBlobProp(sat, annot_record.GetSatKey(),
+                              annot_record.GetModified());
     }
 
     x_Peek(false);
@@ -431,6 +443,252 @@ CPSGS_AnnotProcessor::x_OnNamedAnnotError(CCassNamedAnnotFetch *  fetch_details,
     } else {
         x_Peek(false);
     }
+}
+
+
+bool CPSGS_AnnotProcessor::x_NeedToRequestBlobProp(void)
+{
+    // Check the tse option
+    if (m_AnnotRequest->m_TSEOption != SPSGS_BlobRequestBase::ePSGS_SlimTSE &&
+        m_AnnotRequest->m_TSEOption != SPSGS_BlobRequestBase::ePSGS_SmartTSE) {
+        return false;
+    }
+
+    // Check the number of requested annotations.
+    // The feature of retrieving the blob should work only if it is the only
+    // one annotation
+    if (m_AnnotRequest->m_Names.size() != 1) {
+        return false;
+    }
+
+    // This is exactly one annotation requested;
+    // it conforms to cassandra processor;
+    // the tse option is slim or smart so the blob needs to be sent if the size
+    // is small enough.
+    // So, to know the size, let's request the blob properties
+    return true;
+}
+
+
+void CPSGS_AnnotProcessor::x_RequestBlobProp(int32_t  sat, int32_t  sat_key,
+                                             int64_t  last_modified)
+{
+    if (IPSGS_Processor::m_Request->NeedTrace()) {
+        IPSGS_Processor::m_Reply->SendTrace(
+            "Retrieve blob props for " + to_string(sat) + "." + to_string(sat_key) +
+            " to check if the blob size is small (if so to send it right away).",
+            IPSGS_Processor::m_Request->GetStartTimestamp());
+    }
+
+    m_AnnotRequest->m_BlobId = SPSGS_BlobId(to_string(sat) + "." + to_string(sat_key));
+    SCass_BlobId    blob_id(m_AnnotRequest->m_BlobId.GetId());
+
+    auto    app = CPubseqGatewayApp::GetInstance();
+    if (!blob_id.MapSatToKeyspace()) {
+        app->GetCounters().Increment(CPSGSCounters::ePSGS_ServerSatToSatNameError);
+
+        string  err_msg = GetName() + " processor failed to map sat " +
+                          to_string(blob_id.m_Sat) +
+                          " to a Cassandra keyspace while requesting the blob props";
+        IPSGS_Processor::m_Reply->PrepareProcessorMessage(
+                IPSGS_Processor::m_Reply->GetItemId(), GetName(),
+                err_msg, CRequestStatus::e404_NotFound,
+                ePSGS_UnknownResolvedSatellite, eDiag_Error);
+        PSG_WARNING(err_msg);
+
+        // It could be only one annotation and the blob prop retrieval happens
+        // after sending the annotation so it is safe to say that the processor
+        // is finished
+        m_Completed = true;
+        SignalFinishProcessing();
+        return;
+    }
+
+    unique_ptr<CCassBlobFetch>  fetch_details;
+    fetch_details.reset(new CCassBlobFetch(*m_AnnotRequest, blob_id));
+
+    unique_ptr<CBlobRecord> blob_record(new CBlobRecord);
+    CPSGCache               psg_cache(IPSGS_Processor::m_Request,
+                                      IPSGS_Processor::m_Reply);
+    auto                    blob_prop_cache_lookup_result =
+                                    psg_cache.LookupBlobProp(
+                                        blob_id.m_Sat,
+                                        blob_id.m_SatKey,
+                                        last_modified,
+                                        *blob_record.get());
+
+    CCassBlobTaskLoadBlob *     load_task = nullptr;
+    if (blob_prop_cache_lookup_result == ePSGS_CacheHit) {
+        load_task = new CCassBlobTaskLoadBlob(app->GetCassandraTimeout(),
+                                              app->GetCassandraMaxRetries(),
+                                              app->GetCassandraConnection(),
+                                              m_BlobId.m_Keyspace,
+                                              move(blob_record),
+                                              false, nullptr);
+        fetch_details->SetLoader(load_task);
+    } else {
+        if (m_AnnotRequest->m_UseCache == SPSGS_RequestBase::ePSGS_CacheOnly) {
+            // No data in cache and not going to the DB
+            if (IPSGS_Processor::m_Request->NeedTrace()) {
+                string      trace_msg;
+                if (blob_prop_cache_lookup_result == ePSGS_CacheNotHit)
+                    trace_msg = "Blob properties are not found";
+                else
+                    trace_msg = "Blob properties are not found (cache lookup error)";
+
+                IPSGS_Processor::m_Reply->SendTrace(
+                    trace_msg, IPSGS_Processor::m_Request->GetStartTimestamp());
+            }
+
+            m_Completed = true;
+            SignalFinishProcessing();
+            return;
+        }
+
+        load_task = new CCassBlobTaskLoadBlob(app->GetCassandraTimeout(),
+                                              app->GetCassandraMaxRetries(),
+                                              app->GetCassandraConnection(),
+                                              blob_id.m_Keyspace,
+                                              blob_id.m_SatKey,
+                                              last_modified,
+                                              false, nullptr);
+        fetch_details->SetLoader(load_task);
+    }
+
+    load_task->SetDataReadyCB(IPSGS_Processor::m_Reply->GetDataReadyCB());
+    load_task->SetErrorCB(
+        CGetBlobErrorCallback(bind(&CPSGS_AnnotProcessor::OnGetBlobError,
+                                   this, _1, _2, _3, _4, _5),
+                              fetch_details.get()));
+    load_task->SetPropsCallback(
+        CBlobPropCallback(bind(&CPSGS_AnnotProcessor::OnAnnotBlobProp,
+                               this, _1, _2, _3),
+                          IPSGS_Processor::m_Request,
+                          IPSGS_Processor::m_Reply,
+                          fetch_details.get(),
+                          blob_prop_cache_lookup_result != ePSGS_CacheHit));
+
+    if (IPSGS_Processor::m_Request->NeedTrace()) {
+        IPSGS_Processor::m_Reply->SendTrace(
+                            "Cassandra request: " +
+                            ToJson(*load_task).Repr(CJsonNode::fStandardJson),
+                            IPSGS_Processor::m_Request->GetStartTimestamp());
+    }
+
+    m_FetchDetails.push_back(move(fetch_details));
+
+    // Initiate cassandra request
+    load_task->Wait();
+}
+
+
+// Triggered for the annotation blob props;
+// If the id2 blob props are sent then the other blob prop handler is used
+void CPSGS_AnnotProcessor::OnAnnotBlobProp(CCassBlobFetch *  fetch_details,
+                                           CBlobRecord const &  blob,
+                                           bool is_found)
+{
+    if (m_Cancelled) {
+        m_Completed = true;
+        return;
+    }
+
+    if (!is_found) {
+        if (IPSGS_Processor::m_Request->NeedTrace()) {
+            IPSGS_Processor::m_Reply->SendTrace(
+                "Blob properties are not found",
+                IPSGS_Processor::m_Request->GetStartTimestamp());
+        }
+
+        m_Completed = true;
+        SignalFinishProcessing();
+        return;
+    }
+
+    auto    app = CPubseqGatewayApp::GetInstance();
+    unsigned int    max_to_send = max(app->GetSendBlobIfSmall(),
+                                      m_AnnotRequest->m_SendBlobIfSmall);
+    if (blob.GetSize() > max_to_send) {
+        // Nothing needs to be sent because the blob is too big
+        if (IPSGS_Processor::m_Request->NeedTrace()) {
+            IPSGS_Processor::m_Reply->SendTrace(
+                "Blob size is too large (" + to_string(blob.GetSize()) +
+                " > " + to_string(max_to_send) + " max allowed to send)",
+                IPSGS_Processor::m_Request->GetStartTimestamp());
+        }
+
+        m_Completed = true;
+        SignalFinishProcessing();
+        return;
+    }
+
+    // Send the blob props and send a corresponding blob props
+    m_BlobStage = true;
+    CPSGS_CassBlobBase::OnGetBlobProp(bind(&CPSGS_AnnotProcessor::OnGetBlobProp,
+                                           this, _1, _2, _3),
+                                      bind(&CPSGS_AnnotProcessor::OnGetBlobChunk,
+                                           this, _1, _2, _3, _4, _5),
+                                      bind(&CPSGS_AnnotProcessor::OnGetBlobError,
+                                           this, _1, _2, _3, _4, _5),
+                                      fetch_details, blob, is_found);
+
+    if (IPSGS_Processor::m_Reply->IsOutputReady())
+        x_Peek(false);
+}
+
+
+void CPSGS_AnnotProcessor::OnGetBlobProp(CCassBlobFetch *  fetch_details,
+                                         CBlobRecord const &  blob,
+                                         bool is_found)
+{
+    if (m_Cancelled) {
+        m_Completed = true;
+        return;
+    }
+
+    CPSGS_CassBlobBase::OnGetBlobProp(bind(&CPSGS_AnnotProcessor::OnGetBlobProp,
+                                           this, _1, _2, _3),
+                                      bind(&CPSGS_AnnotProcessor::OnGetBlobChunk,
+                                           this, _1, _2, _3, _4, _5),
+                                      bind(&CPSGS_AnnotProcessor::OnGetBlobError,
+                                           this, _1, _2, _3, _4, _5),
+                                      fetch_details, blob, is_found);
+
+    if (IPSGS_Processor::m_Reply->IsOutputReady())
+        x_Peek(false);
+}
+
+
+void CPSGS_AnnotProcessor::OnGetBlobError(CCassBlobFetch *  fetch_details,
+                                          CRequestStatus::ECode  status,
+                                          int  code,
+                                          EDiagSev  severity,
+                                          const string &  message)
+{
+    if (m_Cancelled) {
+        m_Completed = true;
+        return;
+    }
+
+    CPSGS_CassBlobBase::OnGetBlobError(fetch_details, status, code,
+                                       severity, message);
+
+    if (IPSGS_Processor::m_Reply->IsOutputReady())
+        x_Peek(false);
+}
+
+
+void CPSGS_AnnotProcessor::OnGetBlobChunk(CCassBlobFetch *  fetch_details,
+                                          CBlobRecord const &  blob,
+                                          const unsigned char *  chunk_data,
+                                          unsigned int  data_size,
+                                          int  chunk_no)
+{
+    CPSGS_CassBlobBase::OnGetBlobChunk(m_Cancelled, fetch_details,
+                                       chunk_data, data_size, chunk_no);
+
+    if (IPSGS_Processor::m_Reply->IsOutputReady())
+        x_Peek(false);
 }
 
 
@@ -491,11 +749,18 @@ void CPSGS_AnnotProcessor::x_Peek(bool  need_wait)
             break;
     }
 
-    // Ready packets needs to be send only once when everything is finished
-    if (overall_final_state) {
-        if (AreAllFinishedRead()) {
-            if (IPSGS_Processor::m_Reply->IsOutputReady()) {
-                IPSGS_Processor::m_Reply->Flush(false);
+    if (m_BlobStage) {
+        // It is a stage of sending the blob. So the chunks need to be sent as
+        // soon as they are available
+        if (IPSGS_Processor::m_Reply->IsOutputReady())
+            IPSGS_Processor::m_Reply->Flush(false);
+    } else {
+        // Ready packets needs to be send only once when everything is finished
+        if (overall_final_state) {
+            if (AreAllFinishedRead()) {
+                if (IPSGS_Processor::m_Reply->IsOutputReady()) {
+                    IPSGS_Processor::m_Reply->Flush(false);
+                }
             }
         }
     }

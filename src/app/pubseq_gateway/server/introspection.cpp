@@ -219,6 +219,23 @@ void AppendNamesParameter(CJsonNode &  node)
     node.SetByKey("names", names);
 }
 
+void AppendSendBlobIfSmallParameter(CJsonNode &  node)
+{
+    CJsonNode   send_blob_if_small(CJsonNode::NewObjectNode());
+    send_blob_if_small.SetBoolean("mandatory", false);
+    send_blob_if_small.SetString("description",
+        "- tse -- value of the tse URL parameter\n"
+        "- id2-split -- whether the ID2-split version of the blob is available\n"
+        "- small blob -- size of the commpressed blob data <= send+blob_if_small\n"
+        "- large blob -- size of the compressed blob data > send_blob_if_small\n"
+        "| tse   | id2-split | small blob                          | large blob                                 |\n"
+        "| slim  | no        | Send original (non-split) blob data | Do not send original (non-split) blob data |\n"
+        "| smart | no        | Send original (non-split) blob data | Send original (non-split) blob data        |\n"
+        "| slim  | yes       | Send all ID2 chunks of the blob     | Send only split-info chunk                 |\n"
+        "| smart | yes       | Send all ID2 chunks of the blob     | Send only split-info chunk                 |");
+    node.SetByKey("send_blob_if_small", send_blob_if_small);
+}
+
 void AppendUsernameParameter(CJsonNode &  node)
 {
     CJsonNode   username(CJsonNode::NewObjectNode());
@@ -350,6 +367,7 @@ CJsonNode  GetIdGetblobRequestNode(void)
     AppendLastModifiedParameter(id_getblob_params);
     AppendUseCacheParameter(id_getblob_params);
     AppendTraceParameter(id_getblob_params);
+    AppendSendBlobIfSmallParameter(id_getblob_params);
     id_getblob.SetByKey("parameters", id_getblob_params);
 
     CJsonNode   id_getblob_reply(CJsonNode::NewObjectNode());
@@ -377,6 +395,7 @@ CJsonNode  GetIdGetRequestNode(void)
     AppendClientIdParameter(id_get_params);
     AppendAccSubstitutionParameter(id_get_params);
     AppendTraceParameter(id_get_params);
+    AppendSendBlobIfSmallParameter(id_get_params);
     id_get.SetByKey("parameters", id_get_params);
 
     CJsonNode   id_get_reply(CJsonNode::NewObjectNode());
@@ -464,6 +483,8 @@ CJsonNode  GetIdGetNaRequestNode(void)
     AppendTseOptionParameter(id_get_na_params, "none");
     AppendFmtParameter(id_get_na_params);
     AppendTraceParameter(id_get_na_params);
+    AppendClientIdParameter(id_get_na_params);
+    AppendSendBlobIfSmallParameter(id_get_na_params);
     id_get_na.SetByKey("parameters", id_get_na_params);
 
     CJsonNode   id_get_na_reply(CJsonNode::NewObjectNode());

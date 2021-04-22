@@ -90,7 +90,7 @@ const unsigned int      kDefaultExcludeCachePurgePercentage = 20;
 const unsigned int      kDefaultExcludeCacheInactivityPurge = 60;
 const string            kDefaultAuthToken = "";
 const bool              kDefaultAllowIOTest = false;
-const unsigned long     kDefaultSlimMaxBlobSize = 10 * 1024;
+const unsigned long     kDefaultSendBlobIfSmall = 10 * 1024;
 const unsigned int      kDefaultMaxHops = 2;
 const unsigned long     kDefaultSmallBlobSize = 16;
 const bool              kDefaultCassandraProcessorsEnabled = true;
@@ -147,7 +147,7 @@ CPubseqGatewayApp::CPubseqGatewayApp() :
     m_TickSpan(kTickSpan),
     m_StartTime(GetFastLocalTime()),
     m_AllowIOTest(kDefaultAllowIOTest),
-    m_SlimMaxBlobSize(kDefaultSlimMaxBlobSize),
+    m_SendBlobIfSmall(kDefaultSendBlobIfSmall),
     m_MaxHops(kDefaultMaxHops),
     m_CassandraProcessorsEnabled(kDefaultCassandraProcessorsEnabled),
     m_TestSeqId(kDefaultTestSeqId),
@@ -232,8 +232,8 @@ void CPubseqGatewayApp::ParseArgs(void)
     m_AllowIOTest = registry.GetBool("DEBUG", "psg_allow_io_test",
                                      kDefaultAllowIOTest);
 
-    m_SlimMaxBlobSize = x_GetDataSize(registry, "SERVER", "slim_max_blob_size",
-                                      kDefaultSlimMaxBlobSize);
+    m_SendBlobIfSmall = x_GetDataSize(registry, "SERVER", "send_blob_if_small",
+                                      kDefaultSendBlobIfSmall);
     m_MaxHops = registry.GetInt("SERVER", "max_hops", kDefaultMaxHops);
 
     try {

@@ -32,6 +32,7 @@
  *
  */
 
+#include "cass_blob_base.hpp"
 #include "resolve_base.hpp"
 
 USING_NCBI_SCOPE;
@@ -41,7 +42,8 @@ USING_IDBLOB_SCOPE;
 class CCassFetch;
 
 
-class CPSGS_AnnotProcessor : public CPSGS_ResolveBase
+class CPSGS_AnnotProcessor : public CPSGS_ResolveBase,
+                             public CPSGS_CassBlobBase
 {
 public:
     virtual IPSGS_Processor* CreateProcessor(shared_ptr<CPSGS_Request> request,
@@ -84,6 +86,21 @@ private:
                              int  code,
                              EDiagSev  severity,
                              const string &  message);
+private:
+    bool x_NeedToRequestBlobProp(void);
+    void x_RequestBlobProp(int32_t  sat, int32_t  sat_key, int64_t  last_modified);
+
+    void OnAnnotBlobProp(CCassBlobFetch *  fetch_details,
+                         CBlobRecord const &  blob, bool is_found);
+    void OnGetBlobProp(CCassBlobFetch *  fetch_details,
+                       CBlobRecord const &  blob, bool is_found);
+    void OnGetBlobError(CCassBlobFetch *  fetch_details,
+                        CRequestStatus::ECode  status, int  code,
+                        EDiagSev  severity, const string &  message);
+    void OnGetBlobChunk(CCassBlobFetch *  fetch_details,
+                        CBlobRecord const &  blob,
+                        const unsigned char *  chunk_data,
+                        unsigned int  data_size, int  chunk_no);
 
 private:
     void x_Peek(bool  need_wait);
@@ -96,6 +113,8 @@ private:
     vector<string>              m_ValidNames;
 
     SPSGS_AnnotRequest *        m_AnnotRequest;
+
+    bool                        m_BlobStage;
 };
 
 #endif  // PSGS_RESOLVEPROCESSOR__HPP

@@ -124,8 +124,7 @@ void CPSGS_GetBlobProcessor::Process(void)
         return;
     }
 
-    if (m_BlobRequest->m_TSEOption != SPSGS_BlobRequestBase::ePSGS_NoneTSE &&
-        m_BlobRequest->m_TSEOption != SPSGS_BlobRequestBase::ePSGS_SlimTSE) {
+    if (m_BlobRequest->m_TSEOption != SPSGS_BlobRequestBase::ePSGS_NoneTSE) {
         if (!m_BlobRequest->m_ClientId.empty()) {
             // Adding to exclude blob cache is unconditional however skipping
             // is only for the blobs identified by seq_id/seq_id_type

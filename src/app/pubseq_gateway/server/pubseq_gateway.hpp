@@ -141,9 +141,9 @@ public:
         return m_PublicComments.get();
     }
 
-    unsigned long GetSlimMaxBlobSize(void) const
+    unsigned long GetSendBlobIfSmall(void) const
     {
-        return m_SlimMaxBlobSize;
+        return m_SendBlobIfSmall;
     }
 
     int OnBadURL(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
@@ -294,6 +294,8 @@ private:
     SPSGS_RequestBase::EPSGS_CacheAndDbUse x_GetUseCacheParameter(
                                                 CHttpRequest &  req,
                                                 string &  err_msg);
+    int  x_GetSendBlobIfSmallParameter(CHttpRequest &  req,
+                                       shared_ptr<CPSGS_Reply>  reply);
     bool x_IsBoolParamValid(const string &  param_name,
                             const CTempString &  param_value,
                             string &  err_msg) const;
@@ -388,7 +390,7 @@ private:
     bool                                m_AllowIOTest;
     unique_ptr<char []>                 m_IOTestBuffer;
 
-    unsigned long                       m_SlimMaxBlobSize;
+    unsigned long                       m_SendBlobIfSmall;
     int                                 m_MaxHops;
 
     bool                                m_CassandraProcessorsEnabled;

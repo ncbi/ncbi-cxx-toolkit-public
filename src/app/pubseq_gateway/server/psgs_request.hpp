@@ -418,6 +418,8 @@ struct SPSGS_BlobRequestBase : public SPSGS_RequestBase
     EPSGS_TSEOption         m_TSEOption;
     EPSGS_CacheAndDbUse     m_UseCache;
     string                  m_ClientId;
+    unsigned long           m_SendBlobIfSmall;  // 0 - means do not send
+                                                // only for slim and smart
 
     // Both cases: by seq_id/seq_id_type and by sat/sat_key store the
     // required blob id here.
@@ -436,6 +438,7 @@ struct SPSGS_BlobRequestBase : public SPSGS_RequestBase
     SPSGS_BlobRequestBase(EPSGS_TSEOption  tse_option,
                           EPSGS_CacheAndDbUse  use_cache,
                           const string &  client_id,
+                          int  send_blob_if_small,
                           int  hops,
                           EPSGS_Trace  trace,
                           const vector<string> &  enabled_processors,
@@ -447,6 +450,7 @@ struct SPSGS_BlobRequestBase : public SPSGS_RequestBase
         m_TSEOption(tse_option),
         m_UseCache(use_cache),
         m_ClientId(client_id),
+        m_SendBlobIfSmall(send_blob_if_small),
         m_ExcludeBlobCacheAdded(false),
         m_ExcludeBlobCacheCompleted(false)
     {}
@@ -454,6 +458,7 @@ struct SPSGS_BlobRequestBase : public SPSGS_RequestBase
     SPSGS_BlobRequestBase() :
         m_TSEOption(ePSGS_UnknownTSE),
         m_UseCache(ePSGS_UnknownUseCache),
+        m_SendBlobIfSmall(0),
         m_ExcludeBlobCacheAdded(false),
         m_ExcludeBlobCacheCompleted(false)
     {}
@@ -482,12 +487,14 @@ struct SPSGS_BlobBySeqIdRequest : public SPSGS_BlobRequestBase
                              EPSGS_AccSubstitutioOption  subst_option,
                              bool  auto_blob_skipping,
                              const string &  client_id,
+                             int  send_blob_if_small,
                              int  hops,
                              EPSGS_Trace  trace,
                              const vector<string> &  enabled_processors,
                              const vector<string> &  disabled_processors,
                              const TPSGS_HighResolutionTimePoint &  start_timestamp) :
-        SPSGS_BlobRequestBase(tse_option, use_cache, client_id, hops, trace,
+        SPSGS_BlobRequestBase(tse_option, use_cache, client_id, send_blob_if_small,
+                              hops, trace,
                               enabled_processors, disabled_processors,
                               start_timestamp),
         m_SeqId(seq_id),
@@ -532,12 +539,14 @@ struct SPSGS_BlobBySatSatKeyRequest : public SPSGS_BlobRequestBase
                                  EPSGS_TSEOption  tse_option,
                                  EPSGS_CacheAndDbUse  use_cache,
                                  const string &  client_id,
+                                 int  send_blob_if_small,
                                  int  hops,
                                  EPSGS_Trace  trace,
                                  const vector<string> &  enabled_processors,
                                  const vector<string> &  disabled_processors,
                                  const TPSGS_HighResolutionTimePoint &  start_timestamp) :
-        SPSGS_BlobRequestBase(tse_option, use_cache, client_id, hops, trace,
+        SPSGS_BlobRequestBase(tse_option, use_cache, client_id, send_blob_if_small,
+                              hops, trace,
                               enabled_processors, disabled_processors,
                               start_timestamp),
         m_LastModified(last_modified)
@@ -568,34 +577,33 @@ struct SPSGS_BlobBySatSatKeyRequest : public SPSGS_BlobRequestBase
 };
 
 
-struct SPSGS_AnnotRequest : public SPSGS_RequestBase
+struct SPSGS_AnnotRequest : public SPSGS_BlobRequestBase
 {
     SPSGS_AnnotRequest(const string &  seq_id,
                        int  seq_id_type,
                        vector<string> &  names,
                        EPSGS_CacheAndDbUse  use_cache,
+                       const string &  client_id,
                        SPSGS_BlobRequestBase::EPSGS_TSEOption  tse_option,
+                       int  send_blob_if_small,
                        int  hops,
                        EPSGS_Trace  trace,
                        const vector<string> &  enabled_processors,
                        const vector<string> &  disabled_processors,
                        const TPSGS_HighResolutionTimePoint &  start_timestamp) :
-        SPSGS_RequestBase(hops, trace,
-                          enabled_processors, disabled_processors,
-                          start_timestamp),
+        SPSGS_BlobRequestBase(tse_option, use_cache, client_id, send_blob_if_small,
+                              hops, trace,
+                              enabled_processors, disabled_processors,
+                              start_timestamp),
         m_SeqId(seq_id),
         m_SeqIdType(seq_id_type),
         m_Names(move(names)),
-        m_UseCache(use_cache),
-        m_TSEOption(tse_option),
         m_Lock(false),
         m_ProcessedBioseqInfo(kUnknownPriority)
     {}
 
     SPSGS_AnnotRequest() :
         m_SeqIdType(-1),
-        m_UseCache(ePSGS_UnknownUseCache),
-        m_TSEOption(SPSGS_BlobRequestBase::EPSGS_TSEOption::ePSGS_UnknownTSE),
         m_Lock(false),
         m_ProcessedBioseqInfo(kUnknownPriority)
     {}
@@ -643,8 +651,6 @@ public:
     string                                      m_SeqId;
     int                                         m_SeqIdType;
     vector<string>                              m_Names;
-    EPSGS_CacheAndDbUse                         m_UseCache;
-    SPSGS_BlobRequestBase::EPSGS_TSEOption      m_TSEOption;
 
 private:
     // A list of names which have been already processed by some processors

@@ -175,6 +175,22 @@ public:
         m_FetchType = ePSGS_BlobBySatSatKeyFetch;
     }
 
+    CCassBlobFetch(const SPSGS_AnnotRequest &  blob_request,
+                   const SCass_BlobId &  blob_id) :
+        m_BlobId(blob_id),
+        m_TSEOption(blob_request.m_TSEOption),
+        m_ClientId(blob_request.m_ClientId),
+        m_BlobPropSent(false),
+        m_UserProvidedBlobId(true),
+        m_TotalSentBlobChunks(0),
+        m_BlobPropItemId(0),
+        m_BlobChunkItemId(0)
+    {
+        // Note: this constructor is for the case when a blob is retrieved for
+        // an annotation after an annotation record is received.
+        m_FetchType = ePSGS_BlobBySatSatKeyFetch;
+    }
+
     virtual string Serialize(void) const
     {
         return "CCassBlobFetch; BlobId: " + m_BlobId.ToString() +

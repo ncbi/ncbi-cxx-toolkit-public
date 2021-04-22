@@ -338,7 +338,7 @@ void CPSGS_TSEChunkProcessor::x_ProcessIdModVerId2Info(void)
                                       INT64_MIN,
                                       SPSGS_BlobRequestBase::ePSGS_UnknownTSE,
                                       SPSGS_RequestBase::ePSGS_UnknownUseCache,
-                                      "", 0, trace_flag,
+                                      "", 0, 0, trace_flag,
                                       vector<string>(), vector<string>(),
                                       chrono::high_resolution_clock::now());
 
@@ -496,7 +496,7 @@ void CPSGS_TSEChunkProcessor::x_ProcessSatInfoChunkVerId2Info(void)
                                       INT64_MIN,
                                       SPSGS_BlobRequestBase::ePSGS_UnknownTSE,
                                       SPSGS_RequestBase::ePSGS_UnknownUseCache,
-                                      "", 0, trace_flag,
+                                      "", 0, 0, trace_flag,
                                       vector<string>(), vector<string>(),
                                       chrono::high_resolution_clock::now());
 
@@ -910,7 +910,7 @@ CPSGS_TSEChunkProcessor::x_RequestTSEChunk(
         chunk_request(SPSGS_BlobId(chunk_blob_id.ToString()), INT64_MIN,
                       SPSGS_BlobRequestBase::ePSGS_UnknownTSE,
                       SPSGS_RequestBase::ePSGS_UnknownUseCache,
-                      "", 0, trace_flag,
+                      "", 0, 0, trace_flag,
                       vector<string>(), vector<string>(),
                       chrono::high_resolution_clock::now());
     unique_ptr<CCassBlobFetch>  cass_blob_fetch;

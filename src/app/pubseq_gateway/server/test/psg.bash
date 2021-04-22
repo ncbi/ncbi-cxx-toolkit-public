@@ -85,7 +85,15 @@ TESTS="many_chunk_blob get_auto_blob_skipping_no2 get_auto_blob_skipping_no1
        get_split_tse_whole get_split_tse_orig get_non_split_tse_smart
        get_non_split_tse_whole get_non_split_tse_orig get_blob_split_tse_whole
        get_blob_split_tse_orig get_blob_non_split_tse_smart
-       get_blob_non_split_tse_whole get_blob_non_split_tse_orig"
+       get_blob_non_split_tse_whole get_blob_non_split_tse_orig
+       get_slim_send_if_small_50 get_slim_send_if_small_50000
+       get_smart_send_if_small_50 get_smart_send_if_small_50000
+       getblob_slim_send_if_small_50 getblob_slim_send_if_small_50000
+       getblob_smart_send_if_small_50 getblob_smart_send_if_small_50000
+       getna_slim_send_if_small_50 getna_slim_send_if_small_50000
+       getna_smart_send_if_small_50 getna_smart_send_if_small_50000
+       getna_slim_send_if_small_50_2 getna_slim_send_if_small_50000_2
+       getna_smart_send_if_small_50_2 getna_smart_send_if_small_50000_2"
 if echo $TESTS | grep -w $obasename > /dev/null; then
     # The chunks may come in an arbitrary order so diff may fail
     curl "${curl_https}" -s -i "${full_url}" | grep --text '^PSG-Reply-Chunk: ' | sed  -r 's/item_id=[0-9]+&//g' | sort > $ofile

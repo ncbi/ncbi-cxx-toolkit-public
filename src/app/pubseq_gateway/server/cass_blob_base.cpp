@@ -166,17 +166,18 @@ CPSGS_CassBlobBase::x_OnBlobPropSlimTSE(TBlobPropsCB  blob_props_cb,
     // - by sat/sat_key
     // - by seq_id/seq_id_type
     // So get the reference to the blob base request
-    auto &      blob_request = m_Request->GetRequest<SPSGS_BlobRequestBase>();
+    auto &          blob_request = m_Request->GetRequest<SPSGS_BlobRequestBase>();
+    auto *          app = CPubseqGatewayApp::GetInstance();
+
+    unsigned int    max_to_send = max(app->GetSendBlobIfSmall(),
+                                      blob_request.m_SendBlobIfSmall);
 
     fetch_details->SetReadFinished();
     if (blob.GetId2Info().empty()) {
         x_PrepareBlobPropCompletion(fetch_details);
 
         // An original blob may be required if its size is small
-        auto *          app = CPubseqGatewayApp::GetInstance();
-        unsigned int    slim_max_blob_size = app->GetSlimMaxBlobSize();
-
-        if (blob.GetSize() <= slim_max_blob_size) {
+        if (blob.GetSize() <= max_to_send) {
             // The blob is small, get it, but first check in the
             // exclude blob cache
             if (x_CheckExcludeBlobCache(fetch_details,
@@ -199,9 +200,16 @@ CPSGS_CassBlobBase::x_OnBlobPropSlimTSE(TBlobPropsCB  blob_props_cb,
         return;
     }
 
-    // Not in the cache, request the split INFO blob only
-    x_RequestID2BlobChunks(blob_props_cb, blob_chunk_cb, blob_error_cb,
-                           fetch_details, blob, true);
+    // Not in the cache
+    if (blob.GetSize() <= max_to_send) {
+        // Request the split INFO blob and all split chunks
+        x_RequestID2BlobChunks(blob_props_cb, blob_chunk_cb, blob_error_cb,
+                               fetch_details, blob, false);
+    } else {
+        // Request the split INFO blob only
+        x_RequestID2BlobChunks(blob_props_cb, blob_chunk_cb, blob_error_cb,
+                               fetch_details, blob, true);
+    }
 
     // It is important to send completion after: there could be
     // an error of converting/translating ID2 info
@@ -223,9 +231,21 @@ CPSGS_CassBlobBase::x_OnBlobPropSmartTSE(TBlobPropsCB  blob_props_cb,
         x_RequestOriginalBlobChunks(blob_chunk_cb, blob_error_cb,
                                     fetch_details, blob);
     } else {
-        // Request the split INFO blob only
-        x_RequestID2BlobChunks(blob_props_cb, blob_chunk_cb, blob_error_cb,
-                               fetch_details, blob, true);
+        auto &          blob_request = m_Request->GetRequest<SPSGS_BlobRequestBase>();
+        auto *          app = CPubseqGatewayApp::GetInstance();
+
+        unsigned int    max_to_send = max(app->GetSendBlobIfSmall(),
+                                          blob_request.m_SendBlobIfSmall);
+
+        if (blob.GetSize() <= max_to_send) {
+            // Request the split INFO blob and all split chunks
+            x_RequestID2BlobChunks(blob_props_cb, blob_chunk_cb, blob_error_cb,
+                                   fetch_details, blob, false);
+        } else {
+            // Request the split INFO blob only
+            x_RequestID2BlobChunks(blob_props_cb, blob_chunk_cb, blob_error_cb,
+                                   fetch_details, blob, true);
+        }
 
         // It is important to send completion after: there could be
         // an error of converting/translating ID2 info
@@ -295,7 +315,7 @@ CPSGS_CassBlobBase::x_RequestOriginalBlobChunks(TBlobChunkCB  blob_chunk_cb,
                               SPSGS_BlobRequestBase::ePSGS_UnknownTSE,
                               SPSGS_RequestBase::ePSGS_UnknownUseCache,
                               fetch_details->GetClientId(),
-                              0, trace_flag,
+                              0, 0, trace_flag,
                               vector<string>(), vector<string>(),
                               chrono::high_resolution_clock::now());
 
@@ -377,7 +397,7 @@ CPSGS_CassBlobBase::x_RequestID2BlobChunks(TBlobPropsCB  blob_props_cb,
                           INT64_MIN,
                           SPSGS_BlobRequestBase::ePSGS_UnknownTSE,
                           SPSGS_RequestBase::ePSGS_UnknownUseCache,
-                          "", 0, trace_flag,
+                          "", 0, 0, trace_flag,
                           vector<string>(), vector<string>(),
                           chrono::high_resolution_clock::now());
 
@@ -508,7 +528,7 @@ CPSGS_CassBlobBase::x_RequestId2SplitBlobs(TBlobPropsCB  blob_props_cb,
                           INT64_MIN,
                           SPSGS_BlobRequestBase::ePSGS_UnknownTSE,
                           SPSGS_RequestBase::ePSGS_UnknownUseCache,
-                          "", 0, trace_flag,
+                          "", 0, 0, trace_flag,
                           vector<string>(), vector<string>(),
                           chrono::high_resolution_clock::now());
 

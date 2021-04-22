@@ -74,6 +74,7 @@ static string  kTraceParam = "trace";
 static string  kMostRecentTimeParam = "most_recent_time";
 static string  kMostAncientTimeParam = "most_ancient_time";
 static string  kHistogramNamesParam = "histogram_names";
+static string  kSendBlobIfSmallParam = "send_blob_if_small";
 static string  kNA = "n/a";
 
 static vector<pair<string, SPSGS_ResolveRequest::EPSGS_BioseqIncludeData>>
@@ -267,6 +268,10 @@ int CPubseqGatewayApp::OnGet(CHttpRequest &  req,
                                                disabled_processors))
             return 0;
 
+        int     send_blob_if_small = x_GetSendBlobIfSmallParameter(req, reply);
+        if (send_blob_if_small < 0)
+            return 0;
+
         m_Counters.Increment(CPSGSCounters::ePSGS_GetBlobBySeqIdRequest);
         unique_ptr<SPSGS_RequestBase>
             req(new SPSGS_BlobBySeqIdRequest(
@@ -276,7 +281,8 @@ int CPubseqGatewayApp::OnGet(CHttpRequest &  req,
                         auto_blob_skipping,
                         string(client_id_param.m_Value.data(),
                                client_id_param.m_Value.size()),
-                        hops, trace, enabled_processors, disabled_processors,
+                        send_blob_if_small, hops, trace,
+                        enabled_processors, disabled_processors,
                         now));
         shared_ptr<CPSGS_Request>
             request(new CPSGS_Request(move(req), context));
@@ -380,6 +386,10 @@ int CPubseqGatewayApp::OnGetBlob(CHttpRequest &  req,
                                                    disabled_processors))
                 return 0;
 
+            int     send_blob_if_small = x_GetSendBlobIfSmallParameter(req, reply);
+            if (send_blob_if_small < 0)
+                return 0;
+
             m_Counters.Increment(CPSGSCounters::ePSGS_GetBlobBySatSatKeyRequest);
             unique_ptr<SPSGS_RequestBase>
                     req(new SPSGS_BlobBySatSatKeyRequest(
@@ -387,7 +397,7 @@ int CPubseqGatewayApp::OnGetBlob(CHttpRequest &  req,
                                 tse_option, use_cache,
                                 string(client_id_param.m_Value.data(),
                                        client_id_param.m_Value.size()),
-                                hops, trace,
+                                send_blob_if_small, hops, trace,
                                 enabled_processors, disabled_processors, now));
             shared_ptr<CPSGS_Request>
                     request(new CPSGS_Request(move(req), context));
@@ -747,12 +757,22 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
             }
         }
 
+        SRequestParameter   client_id_param = x_GetParam(req, kClientIdParam);
+
+        int     send_blob_if_small = x_GetSendBlobIfSmallParameter(req, reply);
+        if (send_blob_if_small < 0)
+            return 0;
+
+
         // Parameters processing has finished
         m_Counters.Increment(CPSGSCounters::ePSGS_GetNamedAnnotations);
         unique_ptr<SPSGS_RequestBase>
             req(new SPSGS_AnnotRequest(
                         string(seq_id.data(), seq_id.size()),
-                        seq_id_type, names, use_cache, tse_option,
+                        seq_id_type, names, use_cache,
+                        string(client_id_param.m_Value.data(),
+                               client_id_param.m_Value.size()),
+                        tse_option, send_blob_if_small,
                         hops, trace,
                         enabled_processors, disabled_processors,
                         now));
@@ -1826,6 +1846,44 @@ CPubseqGatewayApp::x_GetUseCacheParameter(CHttpRequest &  req,
         return SPSGS_RequestBase::ePSGS_DbOnly;
     }
     return SPSGS_RequestBase::ePSGS_CacheAndDb;
+}
+
+
+int
+CPubseqGatewayApp::x_GetSendBlobIfSmallParameter(CHttpRequest &  req,
+                                                 shared_ptr<CPSGS_Reply>  reply)
+{
+    int                 send_blob_if_small_value = 0;   // default
+    SRequestParameter   send_blob_if_small_param = x_GetParam(req, kSendBlobIfSmallParam);
+
+    if (send_blob_if_small_param.m_Found) {
+        string      err_msg;
+        if (!x_ConvertIntParameter(kSendBlobIfSmallParam,
+                                   send_blob_if_small_param.m_Value,
+                                   send_blob_if_small_value, err_msg)) {
+            m_Counters.Increment(CPSGSCounters::ePSGS_MalformedArgs);
+            x_SendMessageAndCompletionChunks(reply, err_msg,
+                                             CRequestStatus::e400_BadRequest,
+                                             ePSGS_MalformedParameter,
+                                             eDiag_Error);
+            PSG_WARNING(err_msg);
+            return -1;
+        }
+
+        if (send_blob_if_small_value < 0) {
+            m_Counters.Increment(CPSGSCounters::ePSGS_MalformedArgs);
+            err_msg = "Invalid " + kSendBlobIfSmallParam +
+                      " value. It must be an integer >= 0";
+            x_SendMessageAndCompletionChunks(reply, err_msg,
+                                             CRequestStatus::e400_BadRequest,
+                                             ePSGS_MalformedParameter,
+                                             eDiag_Error);
+            PSG_WARNING(err_msg);
+            return -1;
+        }
+    }
+
+    return send_blob_if_small_value;
 }
 
 
