@@ -134,6 +134,14 @@ echo "comment-basic-suppressed..."
 for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 10000 -c 4 -t 4 -m 4  "${url}/ID/getblob?blob_id=4.94088756" > ${outdir}/h2load.${i}.out &); done
 finilize "comment-basic-suppressed"
 
+echo "get_na_smart_send_if_small_50000..."
+for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 10000 -c 4 -t 4 -m 4  "${url}/ID/get_na?fmt=json&all_info=yes&seq_id=NW_019824422&names=NA000150051.1&tse=smart&send_blob_if_small=50000" > ${outdir}/h2load.${i}.out &); done
+finilize "get_na_smart_send_if_small_50000"
+
+echo "get_na_slim_send_if_small_50000..."
+for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 10000 -c 4 -t 4 -m 4  "${url}/ID/get_na?fmt=json&all_info=yes&seq_id=NW_024096525&names=NA000288180.1&tse=slim&send_blob_if_small=50000" > ${outdir}/h2load.${i}.out &); done
+finilize "get_na_slim_send_if_small_50000"
+
 echo "status..."
 for i in `seq 1 100`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 10000 -c 4 -t 4 -m 4  "${url}/ADMIN/status" > ${outdir}/h2load.${i}.out &); done
 finilize "status"
