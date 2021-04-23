@@ -2531,6 +2531,10 @@ bool CGff3Writer::xAssignSourceAttributesOrgMod(
     const CBioSource& bioSrc)
 //  ----------------------------------------------------------------------------
 {
+    const vector<string> ignoredKeys = {
+        "old-lineage"
+    };
+
     typedef list<CRef<COrgMod> > MODS;
 
     if (!bioSrc.IsSetOrg()) {
@@ -2548,6 +2552,10 @@ bool CGff3Writer::xAssignSourceAttributesOrgMod(
     for (MODS::const_iterator cit = mods.begin(); cit != mods.end(); ++cit) {
         string key, value;
         if (CWriteUtil::GetOrgModSubType(**cit, key, value)) {
+            auto ignoredIt = std::find(ignoredKeys.begin(), ignoredKeys.end(), key);
+            if (ignoredIt != ignoredKeys.end()) {
+                continue;
+            }
             record.SetAttribute(key, value);
         }
     }
