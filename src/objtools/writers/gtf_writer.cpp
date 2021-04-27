@@ -998,7 +998,7 @@ bool CGtfWriter::xAssignFeatureAttributeTranscriptId(
     }
 
     if (!mrnaFeat) {
-        record.SetTranscriptId(xGenericTranscriptId(mf));
+        //record.SetTranscriptId("dummy");
         return true;
     }
 
