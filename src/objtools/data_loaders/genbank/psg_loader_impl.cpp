@@ -1268,11 +1268,13 @@ void CPSG_Blob_Task::DoExecute(void)
         m_Status = eFailed;
         return;
     }
-    bool delayed_main_chunk = false;
-    if (load_lock && load_lock.IsLoaded()) {
-        delayed_main_chunk = load_lock->x_NeedsDelayedMainChunk() &&
-            !load_lock->GetSplitInfo().GetChunk(kDelayedMain_ChunkId).IsLoaded();
-        if ( !delayed_main_chunk ) {
+    CPSGDataLoader_Impl::EMainChunkType main_chunk_type = CPSGDataLoader_Impl::eNoDelayedMainChunk;
+    if ( load_lock.IsLoaded() ) {
+        if ( load_lock->x_NeedsDelayedMainChunk() &&
+             !load_lock->GetSplitInfo().GetChunk(kDelayedMain_ChunkId).IsLoaded() ) {
+            main_chunk_type = CPSGDataLoader_Impl::eDelayedMainChunk;
+        }
+        else {
             _TRACE("Already loaded tse_id="<<m_ReplyResult.blob_id);
             m_ReplyResult.lock = load_lock;
             m_Status = eCompleted;
@@ -1284,8 +1286,10 @@ void CPSG_Blob_Task::DoExecute(void)
         auto& blob_id = *load_lock->GetBlobId();
         dynamic_cast<CPsgBlobId&>(const_cast<CBlobId&>(blob_id)).SetId2Info(id2_info);
         m_Loader.x_ReadBlobData(*m_PsgBlobInfo,
-                                *split_blob_slot->first, *split_blob_slot->second,
-                                load_lock, true);
+                                *split_blob_slot->first,
+                                *split_blob_slot->second,
+                                load_lock,
+                                CPSGDataLoader_Impl::eIsSplitInfo);
         CTSE_Split_Info& tse_split_info = load_lock->GetSplitInfo();
         for ( auto& chunk_slot : m_ChunkBlobMap[id2_info] ) {
             TChunkId chunk_id = chunk_slot.first;
@@ -1316,25 +1320,22 @@ void CPSG_Blob_Task::DoExecute(void)
             }
             
             CSplitParser::Load(*chunk, *id2_chunk);
-            if ( delayed_main_chunk ) {
-                load_lock->GetSplitInfo().GetChunk(kDelayedMain_ChunkId).SetLoaded();
-                //_ASSERT(!load_lock->x_NeedsDelayedMainChunk());
-            }
-            else {
-                chunk->SetLoaded();
-            }
+            chunk->SetLoaded();
         }
     }
     else if ( main_blob_slot && main_blob_slot->first && main_blob_slot->second ) {
         m_Loader.x_ReadBlobData(*m_PsgBlobInfo,
-                                *main_blob_slot->first, *main_blob_slot->second,
-                                load_lock, false);
+                                *main_blob_slot->first,
+                                *main_blob_slot->second,
+                                load_lock,
+                                CPSGDataLoader_Impl::eNoSplitInfo);
     }
     else {
         _TRACE("No data for tse_id="<<m_ReplyResult.blob_id);
         load_lock.Reset();
     }
     if ( load_lock ) {
+        m_Loader.x_SetLoaded(load_lock, main_chunk_type);
         m_ReplyResult.lock = load_lock;
         m_Status = eCompleted;
     }
@@ -2315,16 +2316,8 @@ void CPSGDataLoader_Impl::x_ReadBlobData(
     const CPSG_BlobInfo& blob_info,
     const CPSG_BlobData& blob_data,
     CTSE_LoadLock& load_lock,
-    bool is_split_info)
+    ESplitInfoType split_info_type)
 {
-    bool delayed_main_chunk = false;
-    if ( load_lock.IsLoaded() ) {
-        delayed_main_chunk = load_lock->x_NeedsDelayedMainChunk() &&
-            !load_lock->GetSplitInfo().GetChunk(kDelayedMain_ChunkId).IsLoaded();
-        if ( !delayed_main_chunk ) {
-            return;
-        }
-    }
     if ( !load_lock.IsLoaded() ) {
         load_lock->SetBlobVersion(psg_blob_info.GetBlobVersion());
         load_lock->SetBlobState(psg_blob_info.blob_state);
@@ -2336,7 +2329,7 @@ void CPSGDataLoader_Impl::x_ReadBlobData(
         return;
     }
 
-    if ( is_split_info ) {
+    if ( split_info_type == eIsSplitInfo ) {
         CRef<CID2S_Split_Info> split_info(new CID2S_Split_Info);
         *in >> *split_info;
         if ( s_GetDebugLevel() >= 8 ) {
@@ -2357,7 +2350,13 @@ void CPSGDataLoader_Impl::x_ReadBlobData(
     if ( m_AddWGSMasterDescr ) {
         CWGSMasterSupport::AddWGSMaster(load_lock);
     }
-    if ( delayed_main_chunk ) {
+}
+
+
+void CPSGDataLoader_Impl::x_SetLoaded(CTSE_LoadLock& load_lock,
+                                      EMainChunkType main_chunk_type)
+{
+    if ( main_chunk_type == eDelayedMainChunk ) {
         load_lock->GetSplitInfo().GetChunk(kDelayedMain_ChunkId).SetLoaded();
         //_ASSERT(!load_lock->x_NeedsDelayedMainChunk());
     }

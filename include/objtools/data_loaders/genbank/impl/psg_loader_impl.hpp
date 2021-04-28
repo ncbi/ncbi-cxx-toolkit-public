@@ -198,12 +198,23 @@ private:
     SReplyResult x_RetryBlobRequest(const string& blob_id, CDataSource* data_source, CSeq_id_Handle req_idh);
     shared_ptr<SPsgBioseqInfo> x_GetBioseqInfo(const CSeq_id_Handle& idh);
     CTSE_Lock x_LoadBlob(const SPsgBlobInfo& psg_blob_info, CDataSource& data_source);
+
+    enum EMainChunkType {
+        eNoDelayedMainChunk,
+        eDelayedMainChunk
+    };
+    enum ESplitInfoType {
+        eNoSplitInfo,
+        eIsSplitInfo
+    };
+    // caller of x_ReadBlobData() should call SetLoaded();
     void x_ReadBlobData(
         const SPsgBlobInfo& psg_blob_info,
         const CPSG_BlobInfo& blob_info,
         const CPSG_BlobData& blob_data,
         CTSE_LoadLock& load_lock,
-        bool is_split_info);
+        ESplitInfoType split_info_type);
+    void x_SetLoaded(CTSE_LoadLock& load_lock, EMainChunkType main_chunk_type);
 
     typedef map<void*, size_t> TIdxMap;
 
