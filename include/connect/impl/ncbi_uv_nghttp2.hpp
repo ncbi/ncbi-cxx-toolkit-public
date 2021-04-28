@@ -246,7 +246,7 @@ struct NCBI_XXCONNECT2_EXPORT SUv_Timer : SUv_Handle<uv_timer_t>
 
     void Start()               { Start(m_Timeout, m_Repeat); }
     void SetRepeat(uint64_t r) { Start(r, r);                }
-    void ResetRepeat()         { Start(m_Repeat, m_Repeat);  }
+    void ResetRepeat()         { if (m_Repeat) Start(m_Repeat, m_Repeat); }
 
     uint64_t GetDefaultRepeat() const { return m_Repeat; }
 
