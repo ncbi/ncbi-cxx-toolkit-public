@@ -575,7 +575,11 @@ CDriverContext::MakePooledConnection(const CDBConnParams& params)
 #endif
                     if (params.GetParam("pool_allow_temp_overflow")
                         != "true") {
-                        return NULL;
+                        string msg = FORMAT("Connection pool full (size "
+                                            << pool_max << ") for "
+                                            << (pool_name.empty() ? server_name
+                                                : pool_name));
+                        DATABASE_DRIVER_ERROR(msg, 200011);
                     }
                 }
             }
