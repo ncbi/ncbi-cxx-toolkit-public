@@ -730,6 +730,12 @@ struct SInvertVDB_CDD {
         }
     SInvertVDB_CDD(const SInvertVDB_CDD&) = delete;
     void operator=(const SInvertVDB_CDD&) = delete;
+
+
+    static bool IsPossible()
+        {
+            return !CGBDataLoader::IsUsingPSGLoader() && s_HaveID2(eExcludePubseqos2);
+        }
 };
 
 BOOST_AUTO_TEST_CASE(CheckExtCDD)
@@ -744,7 +750,7 @@ BOOST_AUTO_TEST_CASE(CheckExtCDD)
 
 BOOST_AUTO_TEST_CASE(CheckExtCDD2)
 {
-    if ( !s_HaveID2() || CGBDataLoader::IsUsingPSGLoader() ) {
+    if ( !SInvertVDB_CDD::IsPossible() ) {
         LOG_POST("Skipping ExtAnnot second CDD without ID2");
         return;
     }
@@ -769,7 +775,7 @@ BOOST_AUTO_TEST_CASE(CheckExtCDDonWGS)
 
 BOOST_AUTO_TEST_CASE(CheckExtCDD2onWGS)
 {
-    if ( !s_HaveID2() || CGBDataLoader::IsUsingPSGLoader() ) {
+    if ( !SInvertVDB_CDD::IsPossible() ) {
         LOG_POST("Skipping ExtAnnot second CDD on WGS sequence without ID2");
         return;
     }
@@ -1668,8 +1674,28 @@ BOOST_AUTO_TEST_CASE(TestGetBlobById)
 }
 
 
+NCBITEST_INIT_CMDLINE(arg_descrs)
+{
+    arg_descrs->AddFlag("psg",
+        "Update all test cases to current reader code (dangerous).",
+        true );
+    arg_descrs->AddOptionalKey("id2-service", "ID2Service",
+                               "Service name for ID2 connection.",
+                               CArgDescriptions::eString);
+}
+
+
 NCBITEST_INIT_TREE()
 {
+    auto app = CNcbiApplication::Instance();
+    const CArgs& args = app->GetArgs();
+    if ( args["psg"] ) {
+        app->GetConfig().Set("genbank", "loader_psg", "1");
+    }
+    if ( args["id2-service"] ) {
+        app->GetConfig().Set("genbank/id2", "service", args["id2-service"].AsString());
+    }
+    
     NCBITEST_DISABLE(CheckAll);
     NCBITEST_DISABLE(CheckExtHPRD);
     NCBITEST_DISABLE(CheckExtMGC);
