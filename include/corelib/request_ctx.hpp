@@ -571,6 +571,7 @@ private:
     int                           m_ErrorStatus = 500;
     CRef<CRequestContext>         m_SavedContext;
     mutable CRef<CRequestContext> m_RequestContext;
+    bool                          m_OriginatesFromThrow;
 };
 
 
