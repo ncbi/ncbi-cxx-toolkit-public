@@ -529,6 +529,7 @@ CDBConnectionFactory::DispatchServerName(
 
         // Try to connect up to a given number of attempts ...
         unsigned int attempts = GetMaxNumOfConnAttempts();
+        bool need_exclude = true;
         ctx.conn_status = IConnValidator::eInvalidConn;
 
         // We don't check value of conn_status inside of a loop below by design.
@@ -545,6 +546,7 @@ CDBConnectionFactory::DispatchServerName(
                                             cur_params,
                                             t_con);
                 if (t_con != NULL) {
+                    need_exclude = false;
                     break;
                 }
             } catch (CDB_Exception& ex) {
@@ -554,6 +556,9 @@ CDBConnectionFactory::DispatchServerName(
                     ctx.conn_status
                         = params.GetConnValidator()->ValidateException(ex);
                 }
+                if (ex.GetDBErrCode() == 200011) { // pool full
+                    need_exclude = false;
+                }
             }
         }
 
@@ -561,7 +566,6 @@ CDBConnectionFactory::DispatchServerName(
             return t_con;
         }
         else if (!t_con) {
-            bool need_exclude = true;
             if (cur_srv_name == service_name  &&  cur_host == 0  &&  cur_port == 0
                 &&  (ctx.conn_status != IConnValidator::eTempInvalidConn
                         ||  (GetMaxNumOfValidationAttempts()
