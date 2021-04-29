@@ -19,7 +19,7 @@ script="$0"
 method="$1"
 
 # Maximum number of parallel running test configurations
-max_tasks=1
+max_tasks=2
 # Sleep timeout between checks on finished 'run' tasks (seconds)
 sleeptime=60
 
