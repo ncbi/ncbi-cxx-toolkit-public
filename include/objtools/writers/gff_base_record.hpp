@@ -117,6 +117,7 @@ public:
         return *m_pLoc; };
     unsigned int SeqStart() const {return mSeqStart; };
     unsigned int SeqStop() const {return mSeqStop; };
+    objects::ENa_strand SeqStrand() const;
 
 protected:
     // xEscapedValue returns either reference to unmodified string

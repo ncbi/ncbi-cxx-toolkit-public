@@ -342,7 +342,6 @@ bool CGtfWriter::xWriteRecordsTranscript(
     if (!xAssignFeaturesTranscript(records, context, mf, transcriptId)) {
         return false;
     }
-
     for (const auto& record: records) {
         if (!xWriteRecord(record)) {
             return false;
@@ -499,9 +498,6 @@ bool CGtfWriter::xAssignFeaturesCds(
     string transcriptId(parentTranscriptId);
 
     const auto& mfLoc = mf.GetLocation();
-    auto mfStrand = (mfLoc.IsSetStrand() && mfLoc.GetStrand() == eNa_strand_minus) ?
-        eNa_strand_minus :
-        eNa_strand_plus;
 
     CSeq_loc mfLocAsPackedInt;
     mfLocAsPackedInt.Assign(mfLoc);
@@ -512,12 +508,13 @@ bool CGtfWriter::xAssignFeaturesCds(
     unsigned int partNum = 1;
     for ( auto it = sublocs.begin(); it != sublocs.end(); it++ ) {
         const CSeq_interval& intv = **it;
+        auto strand = intv.IsSetStrand() ? intv.GetStrand() : eNa_strand_plus;
         CRef<CGtfRecord> pRecord( 
             new CGtfRecord(context, (m_uFlags & fNoExonNumbers)));
         if (!xAssignFeature(*pRecord, context, mf)) {
             return false;
         }
-        pRecord->SetEndpoints(intv.GetFrom(), intv.GetTo(), mfStrand);
+        pRecord->SetEndpoints(intv.GetFrom(), intv.GetTo(), strand);
         if (needsPartNumbers) {
             pRecord->SetAttribute("part", NStr::NumericToString(partNum++));
         }
@@ -527,7 +524,7 @@ bool CGtfWriter::xAssignFeaturesCds(
         else {
             transcriptId = pRecord->TranscriptId();
         }
-        pRecord->SetCdsPhase(sublocs, mfStrand);
+        pRecord->SetCdsPhase(sublocs, strand);
         recordList.push_back(pRecord);
     }
 
@@ -536,14 +533,15 @@ bool CGtfWriter::xAssignFeaturesCds(
     while (basesToLose > 0) {
         auto pLastRecord = recordList.back();
         auto lastSize = pLastRecord->SeqStop() - pLastRecord->SeqStart() + 1;
+        auto lastStrand = pLastRecord->SeqStrand();
         if (lastSize > basesToLose) {
             if (mfLoc.GetStrand() == eNa_strand_minus) {
                 pLastRecord->SetEndpoints(
-                    pLastRecord->SeqStart() + basesToLose, pLastRecord->SeqStop(), mfStrand);
+                    pLastRecord->SeqStart() + basesToLose, pLastRecord->SeqStop(), lastStrand);
             }
             else {
                 pLastRecord->SetEndpoints(
-                    pLastRecord->SeqStart(), pLastRecord->SeqStop() - basesToLose, mfStrand);
+                    pLastRecord->SeqStart(), pLastRecord->SeqStop() - basesToLose, lastStrand);
             }
             basesToLose = 0;
         }
@@ -564,6 +562,7 @@ bool CGtfWriter::xAssignFeaturesCds(
             const CSeq_interval& currentLoc = **currentIt;
             auto currentFrom = currentLoc.GetFrom();
             auto currentTo = currentLoc.GetTo();
+            auto currentStrand = currentLoc.IsSetStrand() ? currentLoc.GetStrand() : eNa_strand_plus;
 
             CRef<CGtfRecord> pRecord( 
                 new CGtfRecord(context, (m_uFlags & fNoExonNumbers)));
@@ -573,16 +572,16 @@ bool CGtfWriter::xAssignFeaturesCds(
             pRecord->SetType("start_codon");
 
             if (currentTo >= currentFrom + basePairsNeeded -1) {
-                if (mfStrand == eNa_strand_minus) {
-                    pRecord->SetEndpoints(currentTo - basePairsNeeded + 1, currentTo,  mfStrand);
+                if (currentStrand == eNa_strand_minus) {
+                    pRecord->SetEndpoints(currentTo - basePairsNeeded + 1, currentTo,  currentStrand);
                 }
                 else {
-                    pRecord->SetEndpoints(currentFrom, currentFrom + basePairsNeeded -1, mfStrand);
+                    pRecord->SetEndpoints(currentFrom, currentFrom + basePairsNeeded -1, currentStrand);
                 }
                 basePairsNeeded = 0;
             }
             else {
-                pRecord->SetEndpoints(currentFrom, currentTo, mfStrand);
+                pRecord->SetEndpoints(currentFrom, currentTo, currentStrand);
                 basePairsNeeded = basePairsNeeded - (currentTo - currentFrom + 1);
             }
 
@@ -609,6 +608,7 @@ bool CGtfWriter::xAssignFeaturesCds(
             const CSeq_interval& currentLoc = **currentIt;
             auto currentFrom = currentLoc.GetFrom();
             auto currentTo = currentLoc.GetTo();
+            auto currentStrand = currentLoc.IsSetStrand() ? currentLoc.GetStrand() : eNa_strand_plus;
 
             CRef<CGtfRecord> pRecord( 
                 new CGtfRecord(context, (m_uFlags & fNoExonNumbers)));
@@ -618,16 +618,16 @@ bool CGtfWriter::xAssignFeaturesCds(
             pRecord->SetType("stop_codon");
 
             if (currentTo >= currentFrom + basePairsNeeded - 1) {
-                if (mfStrand == eNa_strand_minus) {
-                    pRecord->SetEndpoints(currentFrom, currentFrom + basePairsNeeded - 1,  mfStrand);
+                if (currentStrand == eNa_strand_minus) {
+                    pRecord->SetEndpoints(currentFrom, currentFrom + basePairsNeeded - 1,  currentStrand);
                 }
                 else {
-                    pRecord->SetEndpoints(currentTo - basePairsNeeded + 1, currentTo, mfStrand);
+                    pRecord->SetEndpoints(currentTo - basePairsNeeded + 1, currentTo, currentStrand);
                 }
                 basePairsNeeded = 0;
             }
             else {
-                pRecord->SetEndpoints(currentFrom, currentTo, mfStrand);
+                pRecord->SetEndpoints(currentFrom, currentTo, currentStrand);
                 basePairsNeeded = basePairsNeeded - (currentTo - currentFrom + 1);
             }
 
@@ -1015,6 +1015,7 @@ bool CGtfWriter::xAssignFeatureAttributeTranscriptId(
             featId.clear();
         }
     }
+
     if (featId.empty()) {
         featId = mf.GetNamedQual("orig_transcript_id");
     }

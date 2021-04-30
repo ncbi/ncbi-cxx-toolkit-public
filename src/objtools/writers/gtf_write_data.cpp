@@ -81,7 +81,6 @@ bool CGtfRecord::MakeChildRecord(
         location.GetFrom(), location.GetTo(), 
         (location.IsSetStrand() ? location.GetStrand() : eNa_strand_plus));
     mScore = parent.mScore;
-    mStrand = parent.mStrand;
 
     mAttributes.insert( parent.mAttributes.begin(), parent.mAttributes.end() );
     if ( 0 != uExonNumber ) {

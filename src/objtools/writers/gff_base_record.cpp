@@ -491,5 +491,18 @@ const string& CGffBaseRecord::xEscapedValue(
     }
 }
 
+//  ----------------------------------------------------------------------------
+ENa_strand CGffBaseRecord::SeqStrand() const
+//  ----------------------------------------------------------------------------
+{
+    switch (this->mStrand[0]) {
+        default:
+            return eNa_strand_plus;
+        case '-':
+            return eNa_strand_minus;
+        case '?':
+            return eNa_strand_other;
+    }
+}
 END_objects_SCOPE
 END_NCBI_SCOPE
