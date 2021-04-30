@@ -521,6 +521,9 @@ void CAlignSort::MergeSortedFiles(const vector<string> &input_files,
             }
         }
     }
+
+    // lastly, call Flush(); we're done
+    sorted_output.Flush();
 }
 
 END_NCBI_SCOPE
