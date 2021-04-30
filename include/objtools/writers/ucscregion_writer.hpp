@@ -39,8 +39,8 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
 //  ============================================================================
-class NCBI_XOBJWRITE_EXPORT CUCSCRegionWriter: 
-    public CWriterBase 
+class NCBI_XOBJWRITE_EXPORT CUCSCRegionWriter:
+    public CWriterBase
 //  ============================================================================
 {
 public:

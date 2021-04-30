@@ -49,8 +49,8 @@ BEGIN_objects_SCOPE
 class NCBI_XOBJWRITE_EXPORT CSrcError:
     public CLineError
 //  ============================================================================
-{   
-protected: 
+{
+protected:
     CSrcError(const CLineError& other):CLineError(other){};
     CSrcError(
         ncbi::EDiagSev severity,
@@ -63,14 +63,14 @@ public:
 };
 
 /**
-  * Used to generate tables showing qualifier-field entries occuring in the 
-  * BioSources of instances of Bioseq and Seq-entry. 
+  * Used to generate tables showing qualifier-field entries occuring in the
+  * BioSources of instances of Bioseq and Seq-entry.
   */
 //  ============================================================================
 class NCBI_XOBJWRITE_EXPORT CSrcWriter:
     public CObject
 //  ============================================================================
-{    
+{
 public:
     typedef map<string, size_t> COLUMNMAP;
     typedef map<string, string> NAMEMAP;
@@ -90,18 +90,18 @@ public:
     virtual ~CSrcWriter()
     {};
 
-    /** Write a table of the specified qualifier-field entries 
-      * found in the BioSource of a given Bioseq. 
+    /** Write a table of the specified qualifier-field entries
+      * found in the BioSource of a given Bioseq.
       */
-    virtual bool WriteBioseqHandle( 
+    virtual bool WriteBioseqHandle(
         CBioseq_Handle,
         const FIELDS&,
         CNcbiOstream&);
 
-    /** Write a table of the specified qualifier-field entries 
-      * found in the BioSources of a vector of Bioseqs. 
+    /** Write a table of the specified qualifier-field entries
+      * found in the BioSources of a vector of Bioseqs.
       */
-    virtual bool WriteBioseqHandles( 
+    virtual bool WriteBioseqHandles(
         const vector<pair<string,CBioseq_Handle> >&,
         const FIELDS&,
         CNcbiOstream&,
@@ -120,20 +120,19 @@ public:
 
     /** Write a table of all qualifier-field entries occurring
       * in the BioSources for a given Seq-entry,
-      * with columns appearing in a canonical order. 
+      * with columns appearing in a canonical order.
       */
     virtual bool WriteSeqEntry(
         const CSeq_entry&,
         CScope&,
         CNcbiOstream&,
         bool = false);
-    
-  
+
 protected:
     void xInit();
 
     virtual bool xGather(CBioseq_Handle, string id, const FIELDS&, ILineErrorListener* =0);
-    virtual bool xGatherId(CBioseq_Handle, ILineErrorListener* =0); 
+    virtual bool xGatherId(CBioseq_Handle, ILineErrorListener* =0);
     virtual bool xGatherGi(CBioseq_Handle, ILineErrorListener* =0);
     virtual bool xGatherLocalId(CBioseq_Handle, ILineErrorListener* = 0);
     virtual bool xGatherBankitId(CBioseq_Handle, ILineErrorListener* = 0);
@@ -155,7 +154,7 @@ protected:
     virtual bool xGatherTaxonId(const CBioSource&, const string&, ILineErrorListener* =0);
 
     virtual bool xFormatTabDelimited(const FIELDS&, CNcbiOstream&);
-     
+
     static FIELDS xGetOrderedFieldNames(const FIELDS&);
     static HANDLER xGetHandler(const string&);
     static string xPrimerSetNames(const CPCRPrimerSet&);
@@ -166,14 +165,13 @@ protected:
     static NAMELIST xGetSubSourceSubtypeNames();
     static string xCompressFieldName(const string&);
     static FIELDS xProcessFieldNames(const FIELDS&);
- 
 
     void xPrepareTableColumn(const string&, const string&, const string& ="");
     void xAppendColumnValue(const string&, const string&);
     bool xValueNeedsQuoting(const string&);
     string xDequotedValue(const string&);
     string xGetColStub(const string&);
-    string xGetOriginalId(const CBioseq_Handle&) const; 
+    string xGetOriginalId(const CBioseq_Handle&) const;
 
 
 public:

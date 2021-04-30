@@ -78,7 +78,7 @@ public:
             attributes +=  ATTR_SEPARATOR;
             attributes += baseAttributes;
         }
-        return attributes;   
+        return attributes;
     }
 protected:
     string mRecordId;
@@ -91,11 +91,11 @@ class CGff3FeatureRecord
 {
 public:
     CGff3FeatureRecord()
-        : CGffFeatureRecord("") 
+        : CGffFeatureRecord("")
     {};
-    
-    CGff3FeatureRecord(const CGff3FeatureRecord& rhs) 
-        : CGffFeatureRecord(rhs), mRecordId(rhs.mRecordId), mParent(rhs.mParent) 
+
+    CGff3FeatureRecord(const CGff3FeatureRecord& rhs)
+        : CGffFeatureRecord(rhs), mRecordId(rhs.mRecordId), mParent(rhs.mParent)
     {};
 
     void SetRecordId(
@@ -125,7 +125,7 @@ public:
             attributes +=  ATTR_SEPARATOR;
             attributes += baseAttributes;
         }
-        return attributes;   
+        return attributes;
     }
 
 protected:
@@ -148,18 +148,18 @@ public:
         fIncludeProts = (fGff2WriterLast << 4),
         fGff3WriterLast = fIncludeProts,
     } TFlags;
-    
+
 public:
     CGff3Writer(
         CScope&,
         CNcbiOstream&,
         unsigned int = fNormal,
-        bool sortAlignments = false 
+        bool sortAlignments = false
         );
     CGff3Writer(
         CNcbiOstream&,
         unsigned int = fNormal,
-        bool sortAlignments = false 
+        bool sortAlignments = false
         );
     virtual ~CGff3Writer() = default;
 
@@ -181,7 +181,7 @@ protected:
 protected:
     virtual bool x_WriteBioseqHandle(
         CBioseq_Handle ) override;
-	virtual bool x_WriteSeqAnnotHandle(
+    virtual bool x_WriteSeqAnnotHandle(
         CSeq_annot_Handle ) override;
     virtual bool x_WriteFeatureContext(
         CGffFeatureContext&);
@@ -193,7 +193,7 @@ protected:
 
     virtual bool xWriteAlign(
         CAlign_CI align_it) override;
-    bool xWriteAlign( 
+    bool xWriteAlign(
         const CSeq_align&,
         const string& = "");
     virtual bool xWriteAlignDenseg(
@@ -254,10 +254,10 @@ protected:
         const CMappedFeat&) override;
 
 
-    virtual bool xWriteRecord( 
+    virtual bool xWriteRecord(
         const CGffBaseRecord& );
 
-    void xWriteAlignment( 
+    void xWriteAlignment(
         const CGffAlignRecord& record );
 
     virtual bool xWriteFeatureRecords(
@@ -351,7 +351,7 @@ protected:
         CGffAlignRecord&,
         const CSpliced_seg&,
         const CSpliced_exon&);
-        
+
     virtual void x_SortAlignments(TAlignCache& alignCache,
                                    CScope& scope);
     bool xAssignSource(

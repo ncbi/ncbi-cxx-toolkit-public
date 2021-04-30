@@ -46,7 +46,7 @@ public:
         eInterrupted,
         eInternal,
     };
-    
+
     virtual const char* GetErrCodeString() const override
     {
         switch (GetErrCode()) {
@@ -62,7 +62,7 @@ public:
             return CException::GetErrCodeString();
         }
     }
-    
+
     /// Include standard NCBI exception behavior.
     NCBI_EXCEPTION_DEFAULT(CObjWriterException, CException);
 };

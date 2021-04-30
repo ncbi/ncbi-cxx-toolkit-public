@@ -45,14 +45,14 @@ class NCBI_XOBJWRITE_EXPORT CGffRecord
 public:
     CGffRecord();
     ~CGffRecord() {};
-    
+
     bool SetRecord(
         const CSeq_annot&,
         const CSeq_feat& );
-        
+
     void DumpRecord(
         CNcbiOstream& );
-        
+
 protected:
     static string FeatIdString(
         const CFeat_id& id );
@@ -79,18 +79,18 @@ protected:
     bool AssignAttributesExtended(
         const CSeq_feat& );
 
-    void AddAttribute( 
+    void AddAttribute(
         const string& key,
         const string& value );
 
     static CSeq_feat::TData::ESubtype GetSubtypeOf(
         const CSeq_annot&,
         const CFeat_id& );
-        
+
     static bool IsParentOf(
         CSeq_feat::TData::ESubtype,
         CSeq_feat::TData::ESubtype );
-        
+
     string m_strSeqId;
     string m_strSource;
     string m_strType;

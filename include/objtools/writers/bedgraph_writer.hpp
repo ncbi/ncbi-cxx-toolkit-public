@@ -42,14 +42,14 @@ BEGIN_objects_SCOPE
 /// CWriterBase implementation that will render given Genbank objects in the
 /// BED file format (http://http://genome.ucsc.edu/FAQ/FAQformat#format1).
 ///
-/// When assigned from typical Genbank annotations, only locations will be 
-/// generated. Multi-interval Genbank features will be broken up into multiple 
-/// single interval BED feature records. Block parameters could be used to 
+/// When assigned from typical Genbank annotations, only locations will be
+/// generated. Multi-interval Genbank features will be broken up into multiple
+/// single interval BED feature records. Block parameters could be used to
 /// encode multi-interval BED records but this is currently not supported.
 /// [[I will ad support though upon request]]
 ///
 class NCBI_XOBJWRITE_EXPORT CBedGraphWriter:
-    public CWriterBase 
+    public CWriterBase
 //  ============================================================================
 {
 public:
@@ -87,7 +87,7 @@ public:
     ///   true if the Seq-annot was processed.
     ///   false if the Seq-annot did not contain a feature table.
     ///
-    bool WriteAnnot( 
+    bool WriteAnnot(
         const CSeq_annot&,
         const string& = "",
         const string& = "");

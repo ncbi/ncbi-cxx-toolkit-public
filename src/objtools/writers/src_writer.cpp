@@ -143,7 +143,7 @@ const CSrcWriter::FIELDS CSrcWriter::sAllSeqEntryFields(
         xGetOrderedFieldNames(CSrcWriter::sDefaultSeqEntryFields));
 
 //  ----------------------------------------------------------------------------
-bool CSrcWriter::WriteBioseqHandle( 
+bool CSrcWriter::WriteBioseqHandle(
         CBioseq_Handle bsh,
         const FIELDS& desiredFields,
         CNcbiOstream& out)
@@ -162,7 +162,7 @@ bool CSrcWriter::WriteBioseqHandle(
 
 
 //  ----------------------------------------------------------------------------
-bool CSrcWriter::WriteBioseqHandles( 
+bool CSrcWriter::WriteBioseqHandles(
         const vector<pair<string,CBioseq_Handle> >& vecIdBsh,
         const FIELDS& desiredFields,
         CNcbiOstream& out,
@@ -190,7 +190,7 @@ bool CSrcWriter::WriteSeqEntry(
         const CSeq_entry& seqEntry,
         CScope& scope,
         CNcbiOstream& out,
-        const bool nucsOnly) 
+        const bool nucsOnly)
 //  ----------------------------------------------------------------------------
 {
     CSeq_entry_Handle handle = scope.AddTopLevelSeqEntry(seqEntry);
@@ -216,7 +216,7 @@ CSrcWriter::FIELDS CSrcWriter::xProcessFieldNames(
         colNames.push_back("id");
     }
     for (FIELDS::const_iterator cit = desiredFields.begin();
-            cit != desiredFields.end();  ++cit)  {  
+            cit != desiredFields.end();  ++cit)  {
         NAMEMAP::const_iterator mapIterator = sFieldnameToColname.find(xCompressFieldName(*cit));
         if (mapIterator != sFieldnameToColname.end()) {
             colNames.push_back(mapIterator->second);
@@ -332,7 +332,7 @@ void CSrcWriter::xInit()
         sFieldnameToColname["subsrcnote"] = "subsource-note";
 
         NAMELIST nameList = xGetOrgModSubtypeNames();
-        for (NAMELIST::const_iterator cit=nameList.begin();  
+        for (NAMELIST::const_iterator cit=nameList.begin();
                 cit != nameList.end();  ++cit) {
 
             if (*cit != "other") {
@@ -421,7 +421,7 @@ CSrcWriter::FIELDS CSrcWriter::xGetOrderedFieldNames(const FIELDS& defaultFields
 
 
 //  ----------------------------------------------------------------------------
-CSrcWriter::NAMELIST CSrcWriter::xGetOrgModSubtypeNames() 
+CSrcWriter::NAMELIST CSrcWriter::xGetOrgModSubtypeNames()
     //  ----------------------------------------------------------------------------
 {
     NAMELIST subtypeNames;
@@ -431,14 +431,14 @@ CSrcWriter::NAMELIST CSrcWriter::xGetOrgModSubtypeNames()
 
     for (TVALUES::const_iterator cit = nameValPairs.begin();
             cit != nameValPairs.end();  ++cit) {
-        subtypeNames.push_back(cit->first);    
+        subtypeNames.push_back(cit->first);
     }
     return subtypeNames;
 }
 
 
 //  ----------------------------------------------------------------------------
-CSrcWriter::NAMELIST CSrcWriter::xGetSubSourceSubtypeNames() 
+CSrcWriter::NAMELIST CSrcWriter::xGetSubSourceSubtypeNames()
     //  ----------------------------------------------------------------------------
 {
     NAMELIST subtypeNames;
@@ -446,9 +446,9 @@ CSrcWriter::NAMELIST CSrcWriter::xGetSubSourceSubtypeNames()
     typedef const CEnumeratedTypeValues::TValues TVALUES;
     TVALUES nameValPairs = CSubSource::ENUM_METHOD_NAME(ESubtype)()->GetValues();
 
-    for (TVALUES::const_iterator cit = nameValPairs.begin(); 
+    for (TVALUES::const_iterator cit = nameValPairs.begin();
             cit != nameValPairs.end();  ++cit) {
-        subtypeNames.push_back(cit->first);    
+        subtypeNames.push_back(cit->first);
     }
     return subtypeNames;
 }
@@ -456,7 +456,7 @@ CSrcWriter::NAMELIST CSrcWriter::xGetSubSourceSubtypeNames()
 
 //  ----------------------------------------------------------------------------
 string CSrcWriter::xCompressFieldName(
-        const string& fieldName) 
+        const string& fieldName)
 //  ----------------------------------------------------------------------------
 {
     string name = NStr::TruncateSpaces(fieldName);
@@ -508,7 +508,7 @@ CSrcWriter::HANDLER CSrcWriter::xGetHandler(
 
 //  ----------------------------------------------------------------------------
 bool CSrcWriter::xHandleSourceField(
-        const CBioSource& src, 
+        const CBioSource& src,
         const string& fieldName,
         ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
@@ -531,12 +531,12 @@ bool CSrcWriter::xHandleSourceField(
 //  ----------------------------------------------------------------------------
 bool CSrcWriter::xTryDefaultId(
         const string& id,
-        ILineErrorListener*) 
+        ILineErrorListener*)
 //  ----------------------------------------------------------------------------
 {
     if (id.empty()) {
         return false;
-    } 
+    }
 
     string displayName;
     string colName;
@@ -566,7 +566,7 @@ bool CSrcWriter::xGather(
 {
     // for each of biosources we may create individual record
     // with the same ID
-    bool wantGi = ( find(desiredFields.begin(), desiredFields.end(), "gi") != desiredFields.end() ); 
+    bool wantGi = ( find(desiredFields.begin(), desiredFields.end(), "gi") != desiredFields.end() );
     bool wantLocalId = ( find(desiredFields.begin(), desiredFields.end(), "localid") != desiredFields.end() );
     bool wantBankitId = ( find(desiredFields.begin(), desiredFields.end(), "bankitid") != desiredFields.end() );
     bool wantDef = ( find(desiredFields.begin(), desiredFields.end(), "definition") != desiredFields.end() );
@@ -578,13 +578,13 @@ bool CSrcWriter::xGather(
         return xTryDefaultId(default_id);
     }
 
-    if (!xGatherId(bsh) || 
+    if (!xGatherId(bsh) ||
         (wantGi && !xGatherGi(bsh)) ||
         (wantLocalId && !xGatherLocalId(bsh)) ||
         (wantBankitId && !xGatherBankitId(bsh)) ||
         (wantDef && !xGatherDefline(bsh))) {
-        return false; // Not sure if this is the correct logic. 
-                      // If any of the accession, GI, Local ID or definition are invalid/not found, 
+        return false; // Not sure if this is the correct logic.
+                      // If any of the accession, GI, Local ID or definition are invalid/not found,
                       // the row is not counted.
     }
 
@@ -702,7 +702,7 @@ bool CSrcWriter::xGather(
     }
 
 
-    if (num_sources == 0) { 
+    if (num_sources == 0) {
         mSrcTable->SetNum_rows(mSrcTable->GetNum_rows()+1);
     }
 
@@ -820,7 +820,7 @@ bool CSrcWriter::xGatherLocalId(
         if ( NStr::IsBlank(local_id) ) {
             return true;
         }
-    } 
+    }
 
     xPrepareTableColumn(colName, displayName, defaultValue);
     xAppendColumnValue(colName, local_id);
@@ -941,7 +941,7 @@ bool CSrcWriter::xGatherOrgnameLineage(
     const string displayName = "lineage";
     const string defaultValue;
 
-    if (!src.IsSetOrg()  ||  !src.GetOrg().IsSetOrgname()  
+    if (!src.IsSetOrg()  ||  !src.GetOrg().IsSetOrgname()
             ||  !src.GetOrg().GetOrgname().IsSetLineage()) {
         return true;
     }
@@ -1056,7 +1056,7 @@ bool CSrcWriter::xGatherSubtypeFeat(
         }
         if (value.empty()  &&  CSubSource::NeedsNoText(subsrc.GetSubtype())) {
             value = "true";
-        }        
+        }
         xPrepareTableColumn(key, key, "");
         xAppendColumnValue(key, value);
     }
@@ -1149,7 +1149,7 @@ bool CSrcWriter::xGatherDb(
         curDisplayName += tag.GetDb();
         xPrepareTableColumn(curColName, curDisplayName, "");
         xAppendColumnValue(curColName, dbtagStr);
-    } 
+    }
     return true;
 }
 
@@ -1275,7 +1275,7 @@ string CSrcWriter::xPrimerSetNames(const CPCRPrimerSet& pset)
     string names;
     typedef list<CRef<CPCRPrimer> > PRIMERS;
     const PRIMERS& primers = pset.Get();
-    for (PRIMERS::const_iterator cit = primers.begin(); 
+    for (PRIMERS::const_iterator cit = primers.begin();
             cit != primers.end(); ++cit) {
         const CPCRPrimer& primer = **cit;
         names += ",";
@@ -1294,7 +1294,7 @@ string CSrcWriter::xPrimerSetSequences(const CPCRPrimerSet& pset)
     string sequences;
     typedef list<CRef<CPCRPrimer> > PRIMERS;
     const PRIMERS& primers = pset.Get();
-    for (PRIMERS::const_iterator cit = primers.begin(); 
+    for (PRIMERS::const_iterator cit = primers.begin();
             cit != primers.end(); ++cit) {
         const CPCRPrimer& primer = **cit;
         sequences += ",";
@@ -1350,7 +1350,7 @@ bool CSrcWriter::xFormatTabDelimited(
 
 
     unsigned int numRows = mSrcTable->GetNum_rows();
-    for (unsigned int u=0; u < numRows; ++u) {     
+    for (unsigned int u=0; u < numRows; ++u) {
         for (NAMELIST::const_iterator cit = colNames.begin();
                 cit != colNames.end();  ++cit) {
             const CSeqTable_column& column = mSrcTable->GetColumn(*cit);
@@ -1366,7 +1366,7 @@ bool CSrcWriter::xFormatTabDelimited(
         }
         out << '\n';
     }
-    return true;  
+    return true;
 }
 
 
@@ -1407,7 +1407,7 @@ bool CSrcWriter::ValidateFields(
         ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
-    for (FIELDS::const_iterator cit = fields.begin(); cit != fields.end(); ++cit) { 
+    for (FIELDS::const_iterator cit = fields.begin(); cit != fields.end(); ++cit) {
         string field = *cit;
         NAMEMAP::const_iterator mapIter = sFieldnameToColname.find(xCompressFieldName(field));
         if (mapIter == sFieldnameToColname.end()) {

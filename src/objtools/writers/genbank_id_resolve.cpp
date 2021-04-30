@@ -90,14 +90,14 @@ bool CGenbankIdResolve::GetBestId(
     }
     return true;
 }
-    
+
 //  ----------------------------------------------------------------------------
 bool CGenbankIdResolve::GetBestId(
     const CMappedFeat& mf,
     string& best_id)
 //  ----------------------------------------------------------------------------
 {
-	CSeq_id_Handle idh = mf.GetLocationId();
+    CSeq_id_Handle idh = mf.GetLocationId();
     if (idh) {
         return GetBestId(idh, mf.GetScope(), best_id);
     }
@@ -114,15 +114,15 @@ bool CGenbankIdResolve::GetBestId(
 {
     const CSeq_id* pId = loc.GetId();
     if (!pId) {
-        NCBI_THROW(CObjWriterException, eBadInput, 
-            "CGenbankIdResolve: Location without good ID");    
+        NCBI_THROW(CObjWriterException, eBadInput,
+            "CGenbankIdResolve: Location without good ID");
     }
     return GetBestId(
         CSeq_id_Handle::GetHandle(*pId),
         xGetDefaultScope(),
         best_id);
 }
-    
+
 //  -----------------------------------------------------------------------------
 CScope& CGenbankIdResolve::xGetDefaultScope()
 //  -----------------------------------------------------------------------------

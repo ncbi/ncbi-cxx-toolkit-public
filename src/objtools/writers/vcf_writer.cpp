@@ -114,7 +114,7 @@ CVcfWriter::~CVcfWriter()
 };
 
 //  ----------------------------------------------------------------------------
-bool CVcfWriter::WriteAnnot( 
+bool CVcfWriter::WriteAnnot(
     const CSeq_annot& orig_annot,
     const string&,
     const string& )
@@ -126,7 +126,7 @@ bool CVcfWriter::WriteAnnot(
     SAnnotSelector sel = SetAnnotSelector();
 
     CFeat_CI mf(sah, sel);
-    for ( ; mf; ++mf ) 
+    for ( ; mf; ++mf )
     {
         const CSeq_id *seq_id = mf->GetLocation().GetId();
         const CBioseq_Handle& bsh = m_Scope.GetBioseqHandle( *seq_id );
@@ -199,7 +199,7 @@ bool CVcfWriter::x_WriteMeta(
         return x_WriteMetaCreateNew( annot );
     }
     const CAnnotdesc::TUser& meta = *pVcfMetaInfo;
-    const CUser_field::C_Data::TStrs& directives = 
+    const CUser_field::C_Data::TStrs& directives =
         meta.GetFieldRef("meta-information")->GetData().GetStrs();
     for (CUser_field::C_Data::TStrs::const_iterator cit = directives.begin();
             cit != directives.end(); ++cit ) {
@@ -217,7 +217,7 @@ bool CVcfWriter::x_WriteMetaCreateNew(
     if ( annot.IsSetDesc() ) {
         const CAnnot_descr& desc = annot.GetDesc();
         for ( list< CRef< CAnnotdesc > >::const_iterator cit = desc.Get().begin();
-            cit != desc.Get().end(); ++cit ) 
+            cit != desc.Get().end(); ++cit )
         {
             if ( (*cit)->IsCreate_date() ) {
                 const CDate& date = (*cit)->GetCreate_date();
@@ -228,7 +228,7 @@ bool CVcfWriter::x_WriteMetaCreateNew(
         }
     }
 
-    m_Os << "##fileformat=VCFv4.1" 
+    m_Os << "##fileformat=VCFv4.1"
          << '\n';
     if ( ! datestr.empty() ) {
         m_Os << "##filedate=" << datestr << '\n';
@@ -257,14 +257,13 @@ bool CVcfWriter::x_WriteHeader(
 {
     m_Os << "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO";
 
-    
     CConstRef<CUser_object> pVcfMetaInfo = s_GetVcfMetaInfo( annot );
     if (m_GenotypeHeaders.empty()) {
         m_Os << '\n';
         return true;
     }
     m_Os << "\tFORMAT";
-    for ( vector<string>::const_iterator cit = m_GenotypeHeaders.begin(); 
+    for ( vector<string>::const_iterator cit = m_GenotypeHeaders.begin();
             cit != m_GenotypeHeaders.end(); ++cit ) {
         m_Os << '\t' << *cit;
     }
@@ -302,7 +301,6 @@ bool CVcfWriter::x_WriteData(
             CSeq_feat_EditHandle sfeh(sfh);
             CRef<CSeq_feat> trimmed_feat = sequence::CFeatTrim::Apply(*mapped_feat.GetOriginalSeq_feat(), range);
             sfeh.Replace(*trimmed_feat);
-           
             if (!x_WriteFeature(mapped_feat)) {
                 return false;
             }
@@ -317,9 +315,9 @@ void CVcfWriter::x_GetTypeRefAlt(const CVariation_inst &inst, int &rtype, string
     int current_type = inst.GetType();
     if (current_type != CVariation_inst::eType_identity)
         rtype = current_type;
-    if (inst.IsSetDelta() && !inst.GetDelta().empty() && inst.GetDelta().front()->IsSetSeq() 
-        && inst.GetDelta().front()->GetSeq().IsLiteral() 
-        && inst.GetDelta().front()->GetSeq().GetLiteral().IsSetSeq_data() 
+    if (inst.IsSetDelta() && !inst.GetDelta().empty() && inst.GetDelta().front()->IsSetSeq()
+        && inst.GetDelta().front()->GetSeq().IsLiteral()
+        && inst.GetDelta().front()->GetSeq().GetLiteral().IsSetSeq_data()
         && inst.GetDelta().front()->GetSeq().GetLiteral().GetSeq_data().IsIupacna())
     {
         string a = inst.GetDelta().front()->GetSeq().GetLiteral().GetSeq_data().GetIupacna().Get();
@@ -339,7 +337,7 @@ void CVcfWriter::x_GetTypeRefAlt(const CVariation_inst &inst, int &rtype, string
         }
 
         alt_types.push_back(current_type);
-    } else if (current_type == CVariation_inst::eType_del || 
+    } else if (current_type == CVariation_inst::eType_del ||
                current_type == CVariation_inst::eType_delins) {
         alt_types.push_back(CVariation_inst::eType_del);
     }
@@ -347,7 +345,7 @@ void CVcfWriter::x_GetTypeRefAlt(const CVariation_inst &inst, int &rtype, string
 
 //  ----------------------------------------------------------------------------
 bool CVcfWriter::xWriteFeature(
-    CFeat_CI feat_it) 
+    CFeat_CI feat_it)
 //  ----------------------------------------------------------------------------
 {
     if (!feat_it) {
@@ -362,7 +360,7 @@ bool CVcfWriter::xWriteFeature(
 bool CVcfWriter::x_WriteFeature(
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
-{ 
+{
     if (IsCanceled()) {
         NCBI_THROW(
             CObjWriterException,
@@ -378,7 +376,7 @@ bool CVcfWriter::x_WriteFeature(
     switch(vr.GetData().Which())
     {
     case  CVariation_Base::C_Data::e_Instance : x_GetTypeRefAlt(vr.GetData().GetInstance(),type,ref,alt_types, alt); break;
-    case  CVariation_Base::C_Data::e_Set : 
+    case  CVariation_Base::C_Data::e_Set :
         for (CVariation_ref::TData::TSet::TVariations::const_iterator inst = vr.GetData().GetSet().GetVariations().begin(); inst != vr.GetData().GetSet().GetVariations().end(); ++inst)
         {
 
@@ -388,10 +386,11 @@ bool CVcfWriter::x_WriteFeature(
         }
 
         break;
-    default: break;            
+    default:
+        break;
     }
 
-    if ( type != CVariation_inst::eType_identity && type != CVariation_inst::eType_ins && 
+    if ( type != CVariation_inst::eType_identity && type != CVariation_inst::eType_ins &&
          type != CVariation_inst::eType_del  && type != CVariation_inst::eType_delins &&
          type != CVariation_inst::eType_snv  && type != CVariation_inst::eType_mnp )
     {
@@ -402,7 +401,7 @@ bool CVcfWriter::x_WriteFeature(
     const CSeq_loc& loc = mf.GetLocation();
     unsigned int start = loc.GetStart(eExtreme_Positional) + 1; // position in VCF is 1-based
     string anchor;
-    if (type == CVariation_inst::eType_ins || type == CVariation_inst::eType_del  || type == CVariation_inst::eType_delins) 
+    if (type == CVariation_inst::eType_ins || type == CVariation_inst::eType_del || type == CVariation_inst::eType_delins)
     {
         ENa_strand strand = eNa_strand_unknown;
         if (loc.IsSetStrand())
@@ -420,15 +419,15 @@ bool CVcfWriter::x_WriteFeature(
             if (pos > 0)
                 pos--;
             else
-                pos =  loc.GetStop(eExtreme_Positional) + 1 ; 
+                pos =  loc.GetStop(eExtreme_Positional) + 1 ;
         }
-        const CBioseq_Handle& bsh = m_Scope.GetBioseqHandle( *seq_id );         
+        const CBioseq_Handle& bsh = m_Scope.GetBioseqHandle( *seq_id );
         if (bsh)
         {
             CRef<CSeqVector> seqvec(new CSeqVector(bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac,strand)));
             if (seqvec)
             {
-                try 
+                try
                 {
                     seqvec->GetSeqData(pos, pos+1, anchor);
                 }
@@ -489,7 +488,7 @@ bool CVcfWriter::x_WriteFeatureChrom(
     if (mf.IsSetExts())
         for (CSeq_feat::TExts::const_iterator uo = mf.GetExts().begin(); uo != mf.GetExts().end(); ++uo)
         {
-            if ((*uo)->IsSetType()  && (*uo)->GetType().IsStr() && (*uo)->GetType().GetStr() ==  "VCF_COLUMN_1_ID" 
+            if ((*uo)->IsSetType()  && (*uo)->GetType().IsStr() && (*uo)->GetType().GetStr() ==  "VCF_COLUMN_1_ID"
                 && (*uo)->IsSetData() && !(*uo)->GetData().empty() && (*uo)->GetData().front()->IsSetData() && (*uo)->GetData().front()->GetData().IsStr())
             {
                 id = (*uo)->GetData().front()->GetData().GetStr();
@@ -540,10 +539,10 @@ bool CVcfWriter::x_WriteFeaturePos(
 //  ----------------------------------------------------------------------------
 {
     m_Os << "\t";
-  
-    if ((type == CVariation_inst::eType_ins || type == CVariation_inst::eType_del || type == CVariation_inst::eType_delins) && start > 1) 
+
+    if ((type == CVariation_inst::eType_ins || type == CVariation_inst::eType_del || type == CVariation_inst::eType_delins) && start > 1)
         start--;
-    
+
     m_Os << NStr::UIntToString(start);
     return true;
 }
@@ -587,8 +586,8 @@ bool CVcfWriter::x_WriteFeatureRef(
     m_Os << "\t";
 
     if (!anchor.empty())
-    {   
-        if (type == CVariation_inst::eType_del || type == CVariation_inst::eType_delins) 
+    {
+        if (type == CVariation_inst::eType_del || type == CVariation_inst::eType_delins)
         {
             if (start > 1)
                 m_Os << anchor << ref;
@@ -606,7 +605,7 @@ bool CVcfWriter::x_WriteFeatureRef(
         m_Os << ref;
         return true;
     }
-  
+
     m_Os << "?";
     return true;
 }
@@ -629,7 +628,7 @@ bool CVcfWriter::x_WriteFeatureAlt(
     for (auto alt_type : alt_types) {
         if (count) {
             m_Os << ",";
-        }       
+        }
 
         if (alt_type != CVariation_inst::eType_del) {
             const string alt_string = alt[index++];
@@ -646,13 +645,13 @@ bool CVcfWriter::x_WriteFeatureAlt(
             }
             ++count;
             continue;
-        } 
-        
-        // CVariation_inst::eType_del 
-        if (!anchor.empty()) { 
+        }
+
+        // CVariation_inst::eType_del
+        if (!anchor.empty()) {
             m_Os << anchor;
             ++count;
-        }    
+        }
     }
 
     if (!count) {
@@ -672,11 +671,11 @@ bool CVcfWriter::x_WriteFeatureQual(
 
     if ( mf.IsSetExt() ) {
         const CSeq_feat::TExt& ext = mf.GetExt();
-        if ( ext.IsSetType() && ext.GetType().IsStr() && 
-            ext.GetType().GetStr() == "VcfAttributes" ) 
+        if ( ext.IsSetType() && ext.GetType().IsStr() &&
+            ext.GetType().GetStr() == "VcfAttributes" )
         {
             if ( ext.HasField( "score" ) ) {
-                score = NStr::DoubleToString( 
+                score = NStr::DoubleToString(
                     ext.GetField( "score" ).GetData().GetReal() );
             }
         }
@@ -695,8 +694,8 @@ bool CVcfWriter::x_WriteFeatureFilter(
     vector<string> filters;
     if ( mf.IsSetExt() ) {
         const CSeq_feat::TExt& ext = mf.GetExt();
-        if ( ext.IsSetType() && ext.GetType().IsStr() && 
-            ext.GetType().GetStr() == "VcfAttributes" ) 
+        if ( ext.IsSetType() && ext.GetType().IsStr() &&
+            ext.GetType().GetStr() == "VcfAttributes" )
         {
             if ( ext.HasField( "filter" ) ) {
                 filters.push_back( ext.GetField( "filter" ).GetData().GetStr() );
@@ -742,7 +741,7 @@ bool CVcfWriter::x_WriteFeatureInfo(
         const vector<CRef<CDbtag> >& refs = mf.GetDbxref();
         string pmids;
         for ( vector<CRef<CDbtag> >::const_iterator cit = refs.begin();
-            cit != refs.end(); ++cit) 
+            cit != refs.end(); ++cit)
         {
             const CDbtag& ref = **cit;
             if (ref.IsSetDb()  &&  ref.IsSetTag()  &&  ref.GetDb() == "PM") {
@@ -762,7 +761,7 @@ bool CVcfWriter::x_WriteFeatureInfo(
     if (var.IsSetVariant_prop()) {
         const CVariantProperties& props = var.GetVariant_prop();
         if ( props.IsSetAllele_frequency()) {
-            infos.push_back( string("AF=") + 
+            infos.push_back( string("AF=") +
                 NStr::DoubleToString( props.GetAllele_frequency(), 4));
         }
         if (props.IsSetResource_link()) {
@@ -873,7 +872,7 @@ bool CVcfWriter::x_WriteFeatureInfo(
 
         if (var.IsSetOther_ids()) {
             const list<CRef<CDbtag> >&  oids = var.GetOther_ids();
-            list<CRef<CDbtag> >::const_iterator cit; 
+            list<CRef<CDbtag> >::const_iterator cit;
             for (cit = oids.begin(); cit != oids.end(); ++cit) {
                 const CDbtag& dbtag = **cit;
                 if (dbtag.GetType() != CDbtag::eDbtagType_BioProject) {
@@ -899,8 +898,8 @@ bool CVcfWriter::x_WriteFeatureInfo(
     if ( mf.IsSetExt() ) {
         string info = ".";
         const CSeq_feat::TExt& ext = mf.GetExt();
-        if ( ext.IsSetType() && ext.GetType().IsStr() && 
-            ext.GetType().GetStr() == "VcfAttributes" ) 
+        if ( ext.IsSetType() && ext.GetType().IsStr() &&
+            ext.GetType().GetStr() == "VcfAttributes" )
         {
             if ( ext.HasField( "info" ) ) {
                 vector<string> extraInfos;
@@ -910,7 +909,7 @@ bool CVcfWriter::x_WriteFeatureInfo(
                         cit != extraInfos.end();
                         ++cit) {
                     string value = *cit;
-                    vector<string>::iterator fit = 
+                    vector<string>::iterator fit =
                         std::find(infos.begin(), infos.end(), value);
                     if (fit == infos.end()) {
                         infos.push_back(value);
@@ -919,14 +918,14 @@ bool CVcfWriter::x_WriteFeatureInfo(
             }
         }
     }
-   
+
     if (infos.empty()) {
         m_Os << ".";
     }
     else {
         m_Os << NStr::Join(infos, ";");
     }
-    return true;     
+    return true;
 }
 
 //  ----------------------------------------------------------------------------
@@ -943,7 +942,7 @@ bool CVcfWriter::x_WriteFeatureGenotypeData(
     m_Os << "\t" << NStr::Join(labels, ":");
 
     CConstRef<CUser_field> pGenotypeData = mf.GetExt().GetFieldRef("genotype-data");
-    const vector<CRef<CUser_field> > columns = pGenotypeData->GetData().GetFields(); 
+    const vector<CRef<CUser_field> > columns = pGenotypeData->GetData().GetFields();
     for ( size_t hpos = 0; hpos < m_GenotypeHeaders.size(); ++hpos ) {
 
         _ASSERT(m_GenotypeHeaders[hpos] == columns[hpos]->GetLabel().GetStr());

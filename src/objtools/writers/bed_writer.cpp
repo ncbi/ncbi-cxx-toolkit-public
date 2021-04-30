@@ -75,7 +75,7 @@ public:
     bool
     GetBedFeature(
         CBedFeatureRecord&) const;
-    
+
 private:
     bool xAddFound(
         int);
@@ -103,7 +103,7 @@ bool CThreeFeatRecord::AddFeature(
 //  ----------------------------------------------------------------------------
 {
     string threeFeatType;
-    if (!feature.IsSetId()  ||  !feature.GetId().IsLocal()  
+    if (!feature.IsSetId()  ||  !feature.GetId().IsLocal()
             ||  !feature.GetId().GetLocal().IsId()) {
         return false;
     }
@@ -135,7 +135,7 @@ bool CThreeFeatRecord::AddFeature(
         return true;
     }
     for (CRef<CSeqFeatXref> pXref:  feature.GetXref()) {
-        if (!pXref->IsSetId()  ||  !pXref->GetId().IsLocal()  || 
+        if (!pXref->IsSetId()  ||  !pXref->GetId().IsLocal()  ||
                 !pXref->GetId().GetLocal().IsId()) {
             continue;
         }
@@ -332,14 +332,14 @@ CThreeFeatManager::GetAnyRecord(
     mRecords.erase(it);
     return true;
 }
-    
+
 //  ----------------------------------------------------------------------------
 CThreeFeatManager::RECORD_IT
 CThreeFeatManager::xFindExistingRecord(
     const CSeq_feat& feature)
 //  ----------------------------------------------------------------------------
 {
-    if (!feature.IsSetId()  ||  !feature.GetId().IsLocal()  
+    if (!feature.IsSetId()  ||  !feature.GetId().IsLocal()
             ||  !feature.GetId().GetLocal().IsId()) {
         return mRecords.end();
     }
@@ -394,7 +394,7 @@ CBedWriter::~CBedWriter()
 //  ----------------------------------------------------------------------------
 
 //  ----------------------------------------------------------------------------
-bool CBedWriter::WriteAnnot( 
+bool CBedWriter::WriteAnnot(
     const CSeq_annot& annot,
     const string&,
     const string& )
@@ -414,7 +414,7 @@ bool CBedWriter::WriteAnnot(
             }
         }
     }
-    
+
     CBedTrackRecord track;
     if ( ! track.Assign(annot) ) {
         return false;
@@ -551,7 +551,7 @@ bool CBedWriter::xWriteFeature(
     CBioseq_Handle dummy_arg)
 {
     // Inefficient!
-    // Store track and annot_handle, and only recreate track 
+    // Store track and annot_handle, and only recreate track
     // if the annot_handle has changed since the last call.
     CBedTrackRecord track;
     if ( ! track.Assign(*(annot_handle.GetCompleteSeq_annot())) ) {
@@ -564,7 +564,7 @@ bool CBedWriter::xWriteFeature(
 
 //  ----------------------------------------------------------------------------
 bool CBedWriter::xWriteFeature(
-    CFeat_CI feat_it) 
+    CFeat_CI feat_it)
 //  ----------------------------------------------------------------------------
 {
     if (!feat_it) {
@@ -574,7 +574,7 @@ bool CBedWriter::xWriteFeature(
     const auto& annot_handle = feat_it.GetAnnot();
 
     // Inefficient!
-    // Store track and annot_handle, and only recreate track 
+    // Store track and annot_handle, and only recreate track
     // if the annot_handle has changed since the last call.
     CBedTrackRecord track;
     if ( ! track.Assign(*(annot_handle.GetCompleteSeq_annot())) ) {

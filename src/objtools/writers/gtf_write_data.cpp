@@ -78,7 +78,7 @@ bool CGtfRecord::MakeChildRecord(
     m_strTranscriptId = parent.TranscriptId();
 
     CGffBaseRecord::SetLocation(
-        location.GetFrom(), location.GetTo(), 
+        location.GetFrom(), location.GetTo(),
         (location.IsSetStrand() ? location.GetStrand() : eNa_strand_plus));
     mScore = parent.mScore;
 
@@ -94,7 +94,7 @@ string CGtfRecord::StrAttributes() const
 //  ----------------------------------------------------------------------------
 {
     string strAttributes;
-	strAttributes.reserve(256);
+    strAttributes.reserve(256);
     CGtfRecord::TAttributes attrs;
     attrs.insert( Attributes().begin(), Attributes().end() );
     CGtfRecord::TAttrIt it;
@@ -120,7 +120,7 @@ string CGtfRecord::StrAttributes() const
             strAttributes += x_AttributeToString(strKey, value);
         }
     }
-    
+
     if ( ! m_bNoExonNumbers ) {
         it = attrs.find( "exon_number" );
         if ( it != attrs.end() ) {
@@ -135,7 +135,7 @@ string CGtfRecord::StrStructibutes() const
 //  ----------------------------------------------------------------------------
 {
     string strAttributes;
-	strAttributes.reserve(256);
+    strAttributes.reserve(256);
     CGtfRecord::TAttributes attrs;
     attrs.insert( Attributes().begin(), Attributes().end() );
     CGtfRecord::TAttrIt it;
@@ -196,6 +196,6 @@ string CGtfRecord::x_AttributeToString(
     str += "\"; ";
     return str;
 }
-    
+
 END_objects_SCOPE
 END_NCBI_SCOPE

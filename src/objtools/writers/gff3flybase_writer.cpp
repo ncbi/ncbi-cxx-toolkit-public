@@ -35,7 +35,7 @@
 #include <objects/seqalign/Score.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seqdesc.hpp>
-#include <objmgr/util/sequence.hpp> 
+#include <objmgr/util/sequence.hpp>
 #include <objmgr/util/create_defline.hpp>
 #include <objtools/alnmgr/alnmap.hpp>
 #include <objects/seqalign/Product_pos.hpp>
@@ -82,7 +82,7 @@ bool CGff3FlybaseWriter::xIsNeededScore(
         return false;
     }
     string key = score.GetId().GetStr();
-    if (seqId == mCurrentIdForAttributes  &&  
+    if (seqId == mCurrentIdForAttributes  &&
             std::find(coreScores.begin(), coreScores.end(), key) == coreScores.end()) {
         return false;
     }
@@ -116,7 +116,7 @@ bool CGff3FlybaseWriter::xAssignTaxid(
             continue;
         }
         const auto& tags = src.GetOrg().GetDb();
-        for (auto cit = tags.begin(); 
+        for (auto cit = tags.begin();
                 taxonIdStr.empty()  &&  cit != tags.end(); ++cit) {
             const auto& tag = **cit;
             if (!tag.IsSetDb()  ||  tag.GetDb() != "taxon") {
@@ -145,7 +145,6 @@ bool CGff3FlybaseWriter::xAssignTaxid(
     return false;
 }
 
- 
 //  ----------------------------------------------------------------------------
 bool CGff3FlybaseWriter::xAssignDefline(
     CBioseq_Handle bsh,
@@ -167,7 +166,6 @@ bool CGff3FlybaseWriter::xAssignDefline(
     return false;
 }
 
-    
 //  ----------------------------------------------------------------------------
 bool CGff3FlybaseWriter::WriteHeader()
 //  ----------------------------------------------------------------------------
@@ -214,7 +212,7 @@ bool CGff3FlybaseWriter::xAssignAlignmentSplicedLocation(
 
 
     ENa_strand seqStrand = eNa_strand_plus;
-    if (spliced.CanGetProduct_strand()  &&  
+    if (spliced.CanGetProduct_strand()  &&
             spliced.GetProduct_strand() == objects::eNa_strand_minus) {
          seqStrand = eNa_strand_minus;
     }
@@ -261,7 +259,7 @@ bool CGff3FlybaseWriter::xAssignAlignmentSplicedTarget(
     string seqStart = NStr::IntToString(exon.GetGenomic_start()+1);
     string seqStop = NStr::IntToString(exon.GetGenomic_end()+1);
     string seqStrand = "+";
-    if (spliced.IsSetGenomic_strand()  &&  
+    if (spliced.IsSetGenomic_strand()  &&
             spliced.GetGenomic_strand() == objects::eNa_strand_minus) {
          seqStrand = "-";
     }
@@ -270,7 +268,7 @@ bool CGff3FlybaseWriter::xAssignAlignmentSplicedTarget(
     target += " " + seqStart;
     target += " " + seqStop;
     target += " " + seqStrand;
-    record.SetAttribute("Target", target); 
+    record.SetAttribute("Target", target);
     return true;
 }
 
@@ -301,7 +299,7 @@ bool CGff3FlybaseWriter::xAssignAlignmentSplicedScores(
         typedef list<CRef<CScore> > SCORES;
 
         const SCORES& scores = exon.GetScores().Get();
-        for (SCORES::const_iterator cit = scores.begin(); cit != scores.end(); 
+        for (SCORES::const_iterator cit = scores.begin(); cit != scores.end();
                 ++cit) {
             const CScore& score = **cit;
             if (!score.IsSetId()  ||  !score.GetId().IsStr()) {
@@ -332,7 +330,7 @@ bool CGff3FlybaseWriter::xAssignAlignmentScores(
     typedef vector<CRef<CScore> > SCORES;
     if (align.IsSetScore()) {
         const SCORES& scores = align.GetScore();
-        for (SCORES::const_iterator cit = scores.begin(); cit != scores.end(); 
+        for (SCORES::const_iterator cit = scores.begin(); cit != scores.end();
                 ++cit) {
             const CScore& score = **cit;
             if (!xIsNeededScore(record.StrSeqId(), score)) {
@@ -394,7 +392,7 @@ bool CGff3FlybaseWriter::xAssignAlignmentDensegTarget(
     string target;
     pSourceId->GetLabel(&target, CSeq_id::eContent);
 
-    ENa_strand strand = 
+    ENa_strand strand =
         (alnMap.StrandSign(srcRow) == -1) ? eNa_strand_minus : eNa_strand_plus;
     int numSegs = alnMap.GetNumSegs();
 
@@ -413,7 +411,7 @@ bool CGff3FlybaseWriter::xAssignAlignmentDensegTarget(
     if (strand == eNa_strand_minus) {
         swap(start2, stop2);
         stop2 += alnMap.GetLen(start_seg-1)-1;
-    } 
+    }
     else {
         stop2 += alnMap.GetLen(stop_seg+1)-1;
     }
@@ -425,7 +423,7 @@ bool CGff3FlybaseWriter::xAssignAlignmentDensegTarget(
     target += " " + NStr::IntToString(start2/tgtWidth + 1);
     target += " " + NStr::IntToString(stop2/tgtWidth + 1);
     target += " " + string(strand == eNa_strand_plus ? "+" : "-");
-    record.SetAttribute("Target", target); 
+    record.SetAttribute("Target", target);
     return true;
 }
 
@@ -438,8 +436,8 @@ bool CGff3FlybaseWriter::xAssignAlignmentDensegLocation(
 {
     unsigned int seqStart = alnMap.GetSeqStart(0);
     unsigned int seqStop = alnMap.GetSeqStop(0);
-    ENa_strand seqStrand = (alnMap.StrandSign(0) == 1 ? 
-        eNa_strand_plus : 
+    ENa_strand seqStrand = (alnMap.StrandSign(0) == 1 ?
+        eNa_strand_plus :
         eNa_strand_minus);
     record.SetLocation(seqStart, seqStop, seqStrand);
     return true;
@@ -458,7 +456,7 @@ bool CGff3FlybaseWriter::xAssignAlignmentDensegScores(
         return true;
     }
     const SCORES& scores = denseSeg.GetScores();
-    for (SCORES::const_iterator cit = scores.begin(); cit != scores.end(); 
+    for (SCORES::const_iterator cit = scores.begin(); cit != scores.end();
             ++cit) {
         const CScore& score = **cit;
         if (!score.IsSetId()  ||  !score.GetId().IsStr()) {
@@ -468,7 +466,7 @@ bool CGff3FlybaseWriter::xAssignAlignmentDensegScores(
         if (key == "score"  ||  xIsNeededScore(record.StrSeqId(), score)) {
             record.SetScore(score);
         }
-    }        
+    }
     return true;
 }
 
@@ -491,13 +489,13 @@ bool CGff3FlybaseWriter::xAssignAlignmentSplicedGap(
         default:
             break;
         case CSpliced_exon_chunk::e_Mismatch:
-            record.AddMatch(chunk.GetMismatch()); 
+            record.AddMatch(chunk.GetMismatch());
             break;
         case CSpliced_exon_chunk::e_Diag:
-            record.AddMatch(chunk.GetDiag()/tgtWidth); 
+            record.AddMatch(chunk.GetDiag()/tgtWidth);
             break;
         case CSpliced_exon_chunk::e_Match:
-            record.AddMatch(chunk.GetMatch()/tgtWidth); 
+            record.AddMatch(chunk.GetMatch()/tgtWidth);
             break;
         case CSpliced_exon_chunk::e_Genomic_ins:
             {
@@ -516,12 +514,12 @@ bool CGff3FlybaseWriter::xAssignAlignmentSplicedGap(
         case CSpliced_exon_chunk::e_Product_ins:
             {
                 const unsigned int insert_length = chunk.GetProduct_ins()/tgtWidth;
-                if (insert_length > 0) { 
+                if (insert_length > 0) {
                     record.AddDeletion(insert_length);
                 }
-                if (isProteinProd) { 
+                if (isProteinProd) {
                     const unsigned int reverse_shift = chunk.GetProduct_ins()%tgtWidth;
-                    if (reverse_shift > 0) { 
+                    if (reverse_shift > 0) {
                         record.AddReverseShift(reverse_shift);
                     }
                 }
@@ -541,7 +539,7 @@ struct SFlybaseCompareAlignments {
 
     bool operator()(
             const pair<CConstRef<CSeq_align>, string>& p1,
-            const pair<CConstRef<CSeq_align>, string>& p2) 
+            const pair<CConstRef<CSeq_align>, string>& p2)
     {
 
         CConstRef<CSeq_align> align1 = p1.first;
@@ -587,7 +585,7 @@ struct SFlybaseCompareAlignments {
 
             return make_tuple(
                 subject_accession,
-                align.GetSeqStart(0), 
+                align.GetSeqStart(0),
                 align.GetSeqStop(0),
                 align.GetSeqStrand(0),
                 target_accession,

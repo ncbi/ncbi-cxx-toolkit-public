@@ -83,14 +83,14 @@ CBedGraphWriter::~CBedGraphWriter()
 };
 
 //  ----------------------------------------------------------------------------
-bool CBedGraphWriter::WriteAnnot( 
+bool CBedGraphWriter::WriteAnnot(
     const CSeq_annot& annot,
     const string&,
     const string& )
 //  ----------------------------------------------------------------------------
 {
     m_colCount = 4;
-    
+
     CBedTrackRecord track;
     if (!track.Assign(annot)) {
         return false;
@@ -178,7 +178,7 @@ bool CBedGraphWriter::xWriteAnnotSeqTable(
             }
         }}
         bedRecord.SetChromStart(chromStart);
-        
+
         int chromEnd(0);
         {{
             const vector<CRef<CSeqTable_column> > columns = table.GetColumns();
@@ -220,13 +220,12 @@ bool CBedGraphWriter::xWriteAnnotSeqTable(
                         if (columns[col]->TryGetInt(row, intValue)) {
                             chromValue = intValue;
                             break;
-                        } 
+                        }
                     }
                 }
             }
         }}
         bedRecord.SetChromValue(chromValue);
-        
         bedRecord.Write(m_Os);
     }
     return true;

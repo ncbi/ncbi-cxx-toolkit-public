@@ -44,7 +44,7 @@ class CScope;
 class CSparse_align;
 class CSparse_seg;
 class CPslFormatter;
- 
+
 //  ----------------------------------------------------------------------------
 class NCBI_XOBJWRITE_EXPORT CPslWriter:
     public CWriterBase

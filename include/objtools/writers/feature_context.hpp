@@ -25,7 +25,7 @@
  *
  * Authors:  Frank Ludwig
  *
- * File Description:  
+ * File Description:
  *
  */
 
@@ -50,7 +50,7 @@ public:
 
     CGffFeatureContext(
         const CFeat_CI& feat_iter,
-        CBioseq_Handle bsh=CBioseq_Handle(), 
+        CBioseq_Handle bsh=CBioseq_Handle(),
         CSeq_annot_Handle sah=CSeq_annot_Handle()) :
         m_ft(feat_iter), m_bsh(bsh), m_sah(sah),
         m_bSequenceHasBioSource(false),
@@ -85,9 +85,9 @@ public:
     bool HasSequenceBioSource() const { return m_bSequenceHasBioSource; };
 
     bool ShouldInheritPseudo() const { return mShouldInheritPseudo; };
-    void AssignShouldInheritPseudo(bool shouldInheritPseudo) { 
-        mShouldInheritPseudo = shouldInheritPseudo; 
-    }; 
+    void AssignShouldInheritPseudo(bool shouldInheritPseudo) {
+        mShouldInheritPseudo = shouldInheritPseudo;
+    };
 
 protected:
     feature::CFeatTree m_ft;

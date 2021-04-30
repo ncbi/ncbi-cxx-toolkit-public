@@ -25,7 +25,7 @@
  *
  * Authors:  Sergiy Gotvyanskyy, Justin Foley
  *
- * File Description: Extend CFastaOstream to handle features. 
+ * File Description: Extend CFastaOstream to handle features.
  *                   Write object as a hierarchy of FASTA objects
  *
  */
@@ -38,7 +38,7 @@
 #include <objtools/writers/writer.hpp>
 
 BEGIN_NCBI_SCOPE
-BEGIN_SCOPE(objects) 
+BEGIN_SCOPE(objects)
 
 class CSeq_entry;
 class CBioseq;
@@ -47,16 +47,15 @@ class CBioseq_Handle;
 class CSeq_entry_Handle;
 
 
-class NCBI_XOBJWRITE_EXPORT CFastaOstreamEx 
+class NCBI_XOBJWRITE_EXPORT CFastaOstreamEx
 : public CFeatWriter, public CInterruptable, public CFastaOstream
 {
 public:
 
     explicit CFastaOstreamEx(CNcbiOstream& out);
     virtual ~CFastaOstreamEx() = default;
-   
 
-    bool WriteFeatures(CFeat_CI feat_it, 
+    bool WriteFeatures(CFeat_CI feat_it,
         bool translate_cds);
 
     void WriteFeature(const CSeq_feat& feat,
@@ -85,7 +84,7 @@ protected:
     void x_WriteTranslatedCds(const CSeq_feat& cds,
         CScope& scope);
 
-    void x_WriteFeatureAttributes(const CSeq_feat& feat, 
+    void x_WriteFeatureAttributes(const CSeq_feat& feat,
         CScope& scope) const;
 
     void x_AddGeneAttributes(const CSeq_feat& feat,
@@ -100,7 +99,7 @@ protected:
         CScope& scope,
         string& defline) const;
 
-    void x_AddReadingFrameAttribute(const CSeq_feat& feat, 
+    void x_AddReadingFrameAttribute(const CSeq_feat& feat,
         string& defline) const;
 
     void x_AddncRNAClassAttribute(const CSeq_feat& feat,
@@ -117,17 +116,17 @@ protected:
     void x_AddRNAProductAttribute(const CSeq_feat& feat,
         string& defline) const;
 
-    void x_AddPartialAttribute(const CSeq_feat& feat, 
+    void x_AddPartialAttribute(const CSeq_feat& feat,
         CScope& scope,
         string& defline) const;
 
-    void x_AddExceptionAttribute(const CSeq_feat& feat, 
+    void x_AddExceptionAttribute(const CSeq_feat& feat,
         string& defline) const;
 
     void x_AddProteinIdAttribute(const CSeq_feat& feat,
         CScope& scope,
         string& defline) const;
-    
+
     void x_AddTranscriptIdAttribute(const CSeq_feat& feat,
         CScope& scope,
         string& defline) const;
@@ -136,9 +135,9 @@ protected:
         CScope& scope,
         string& defline) const;
 
-    bool x_GetCodeBreak(const CSeq_feat& feat, 
+    bool x_GetCodeBreak(const CSeq_feat& feat,
         const CCode_break& code_break,
-        CScope& scope, 
+        CScope& scope,
         string& cbstring) const;
 
     void x_AddLocationAttribute(const CSeq_feat& feat,
@@ -152,7 +151,7 @@ protected:
     void x_AddMiscQualifierAttributes(const CSeq_feat& feat,
         string& defline) const;
 
-    void x_AddGBkeyAttribute(const CSeq_feat& feat, 
+    void x_AddGBkeyAttribute(const CSeq_feat& feat,
         string& defline) const;
 
     void x_AddDeflineAttribute(const string& label,
@@ -184,7 +183,7 @@ protected:
 
 
 // this would generate CDS and genes into own files
-// up to three files created: 
+// up to three files created:
 // filename_without_ext.fsa for nucleotide sequences
 // filename_without_ext_cds_from_genomic.fna for CDS's
 // filename_without_ext_rna_from_genomic.fna for RNA's
@@ -243,7 +242,7 @@ protected:
 class NCBI_XOBJWRITE_EXPORT CQualScoreWriter
 {
 public:
-    CQualScoreWriter(CNcbiOstream& ostr, 
+    CQualScoreWriter(CNcbiOstream& ostr,
                      bool enable_gi=false);
 
     virtual ~CQualScoreWriter(void);

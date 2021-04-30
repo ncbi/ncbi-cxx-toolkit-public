@@ -42,7 +42,7 @@ BEGIN_objects_SCOPE
 
 //  ============================================================================
 class NCBI_XOBJWRITE_EXPORT CWiggleWriter:
-    public CWriterBase 
+    public CWriterBase
 //  ============================================================================
 {
 public:
@@ -55,7 +55,7 @@ public:
         size_t = 0 );
     ~CWiggleWriter();
 
-    bool WriteAnnot( 
+    bool WriteAnnot(
         const CSeq_annot&,
         const string& = "",
         const string& = "" );
@@ -65,7 +65,7 @@ public:
 protected:
     bool xWriteAnnotTable( const CSeq_annot& );
     bool xWriteAnnotGraphs( const CSeq_annot& );
-    
+
     bool xWriteTrackLine( const CAnnot_descr& );
     bool xWriteDefaultTrackLine();
     bool xWriteSingleGraph( const CSeq_graph& );
@@ -84,12 +84,12 @@ protected:
 
     bool xIsFixedStepData(const CSeq_table&, string&, int&, int&, int&);
     bool xIsVariableStepData(const CSeq_table&, string&, int&);
-    
+
     bool xTableGetChromName(const CSeq_table&, int, string&);
     bool xTableGetPosIn(const CSeq_table&, int, int&);
     bool xTableGetPosOut(const CSeq_table&, int, int, int&);
     bool xTableGetValue(const CSeq_table&, int, double&);
- 
+
     CScope* mpScope;
     size_t m_uTrackSize;
 };

@@ -37,7 +37,7 @@ BEGIN_objects_SCOPE
 
 //  ============================================================================
 /// Encapsulation of the BED feature record. That's columnar data with at least
-/// three and at most twelve columns. Each column has a fixed, well defined 
+/// three and at most twelve columns. Each column has a fixed, well defined
 /// meaning, and all records of the same track must have the same number of
 /// columns.
 ///
@@ -67,22 +67,22 @@ public:
     const string& ChromStart() const { return m_strChromStart; };
     const string& ChromEnd() const { return m_strChromEnd; };
     const string& Name() const { return m_strName; };
-    const string& Score() const { return m_strScore; }; 
-    const string& Strand() const { return m_strStrand; };   
-    const string& ThickStart() const { return m_strThickStart; };   
-    const string& ThickEnd() const { return m_strThickEnd; };   
-    const string& ItemRgb() const { return m_strItemRgb; };   
-    const string& BlockCount() const { return m_strBlockCount; };   
-    const string& BlockSizes() const { return m_strBlockSizes; };   
+    const string& Score() const { return m_strScore; };
+    const string& Strand() const { return m_strStrand; };
+    const string& ThickStart() const { return m_strThickStart; };
+    const string& ThickEnd() const { return m_strThickEnd; };
+    const string& ItemRgb() const { return m_strItemRgb; };
+    const string& BlockCount() const { return m_strBlockCount; };
+    const string& BlockSizes() const { return m_strBlockSizes; };
     const string& BlockStarts() const { return m_strBlockStarts; };
-   
+
     size_t ColumnCount() const { return m_uColumnCount; };
 
 protected:
     size_t m_uColumnCount;
     string m_strChrom;
     string m_strChromStart;
-    string m_strChromEnd; 
+    string m_strChromEnd;
     string m_strName;
     string m_strScore;
     string m_strStrand;

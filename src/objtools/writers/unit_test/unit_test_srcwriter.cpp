@@ -116,19 +116,15 @@ public:
         NStr::Split( sFileName, ".", fileNamePieces, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
         BOOST_REQUIRE(fileNamePieces.size() == 3);
 
-        
-
         string sTestName = fileNamePieces.front();
         BOOST_REQUIRE(!sTestName.empty());
         string sObjType = *(next(fileNamePieces.begin()));
         BOOST_REQUIRE(!sObjType.empty());
         string sFileType = fileNamePieces.back();
         BOOST_REQUIRE(!sFileType.empty());
-       
-            
+
         STestInfo & test_info_to_load =
             (*m_pTestNameToInfoMap)[sTestName];
-   
 
         // Figure out which test to perform
         if (sObjType == "seqentry" || sObjType == "ids" || sObjType == "srcchk") {
@@ -140,15 +136,15 @@ public:
         if (sFileType == mExtInput) {
             BOOST_REQUIRE( test_info_to_load.mInFile.GetPath().empty() );
             test_info_to_load.mInFile = file;
-        } 
+        }
         else if (sFileType == mExtOutput) {
             BOOST_REQUIRE( test_info_to_load.mOutFile.GetPath().empty() );
             test_info_to_load.mOutFile = file;
-        } 
+        }
         else if (sFileType == mExtErrors) {
             BOOST_REQUIRE( test_info_to_load.mErrorFile.GetPath().empty() );
             test_info_to_load.mErrorFile = file;
-        } 
+        }
 
         else {
             BOOST_FAIL("Unknown file type " << sFileName << ".");
@@ -167,7 +163,7 @@ private:
 //  ----------------------------------------------------------------------------
 void sUpdateCase(CDir& test_cases_dir, const string& test_name)
 //  ----------------------------------------------------------------------------
-{   
+{
     string input = CDir::ConcatPath( test_cases_dir.GetPath(), test_name + "." + extInput);
     string output = CDir::ConcatPath( test_cases_dir.GetPath(), test_name + "." + extOutput);
     string errors = CDir::ConcatPath( test_cases_dir.GetPath(), test_name + "." + extErrors);
@@ -201,7 +197,6 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
         writer.WriteSeqEntry(*pEntry, *pScope, ofstr);
     } else if (test_type == "srcchk") {
         vector<pair<string, CBioseq_Handle> > vecIdBsh;
-      
         while (!pI->EndOfData()) {
             CRef<CSeq_entry> pEntry(new CSeq_entry);
             *pI >> *pEntry;
@@ -238,7 +233,7 @@ void sUpdateAll(CDir& test_cases_dir)
         fFF_Default | fFF_Recursive );
 
     ITERATE(TTestNameToInfoMap, name_to_info_it, testNameToInfoMap) {
-        const string & sName = name_to_info_it->first + 
+        const string & sName = name_to_info_it->first +
             "." + name_to_info_it->second.mObjType;
         sUpdateCase(test_cases_dir, sName);
     }
@@ -250,24 +245,22 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
 //  ----------------------------------------------------------------------------
 {
     cerr << "Testing " << testInfo.mInFile.GetName() << " against " <<
-        testInfo.mOutFile.GetName() << " and " << 
+        testInfo.mOutFile.GetName() << " and " <<
         testInfo.mErrorFile.GetName() << endl;
 
     string logName = CDirEntry::GetTmpName();
     CErrorLogger logger(logName);
-  
 
     // get a scope
     CRef<CObjectManager> pObjMngr = CObjectManager::GetInstance();
     CGBDataLoader::RegisterInObjectManager(*pObjMngr).GetLoader()->SetAlwaysLoadExternal(false);
     CRef<CScope> pScope(new CScope(*pObjMngr));
     pScope->AddDefaults();
-   
+
     // get a writer object
     CSrcWriter writer(0);
     writer.SetDelimiter("\t");
-   
-    
+
     CNcbiIfstream ifstr(testInfo.mInFile.GetPath().c_str());
     unique_ptr<CObjectIStream> pI(CObjectIStream::Open(eSerial_AsnText, ifstr));
     // create a temporary result file
@@ -353,7 +346,7 @@ BOOST_AUTO_TEST_CASE(RunTests)
     const CArgs& args = CNcbiApplication::Instance()->GetArgs();
 
     CDir test_cases_dir( args["test-dir"].AsDirectory() );
-    BOOST_REQUIRE_MESSAGE( test_cases_dir.IsDir(), 
+    BOOST_REQUIRE_MESSAGE( test_cases_dir.IsDir(),
         "Cannot find dir: " << test_cases_dir.GetPath() );
 
     bool update_all = args["update-all"].AsBoolean();

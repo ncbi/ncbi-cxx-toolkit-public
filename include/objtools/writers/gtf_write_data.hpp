@@ -47,11 +47,11 @@ class CGtfRecord
 //  ============================================================================
     : public CGffWriteRecordFeature
 {
-public: 
+public:
     CGtfRecord(
         CGffFeatureContext& fc,
         bool bNoExonNumbers = false ) :
-    CGffWriteRecordFeature(fc), 
+    CGffWriteRecordFeature(fc),
     m_bNoExonNumbers(bNoExonNumbers) {};
 
     ~CGtfRecord() {};
@@ -60,7 +60,7 @@ public:
     void SetCdsPhase(
         const list< CRef< CSeq_interval > >&,
         ENa_strand );
- 
+
     void SetCdsPhase_Force(
         int phase) {
             mPhase = NStr::NumericToString(phase); };
@@ -79,12 +79,12 @@ public:
     void SetTranscriptId(
         const std::string& transcriptId) { m_strTranscriptId = transcriptId; };
     void SetExonNumber(
-        unsigned int exonNumber) 
+        unsigned int exonNumber)
     {
         SetAttribute("exon_number", NStr::NumericToString(exonNumber));
     };
     void SetPartNumber(
-        unsigned int partNumber) 
+        unsigned int partNumber)
     {
         SetAttribute("part", NStr::NumericToString(partNumber));
     };

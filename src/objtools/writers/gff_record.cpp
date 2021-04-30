@@ -73,7 +73,7 @@ bool CGffRecord::AssignSeqId(
         const CSeq_loc& location = feature.GetLocation();
         const CSeq_id* pId = location.GetId();
         switch ( pId->Which() ) {
-            
+
             case CSeq_id::e_Local:
                 if ( pId->GetLocal().IsId() ) {
                     m_strSeqId = NStr::UIntToString( pId->GetLocal().GetId() );
@@ -92,8 +92,8 @@ bool CGffRecord::AssignSeqId(
                     m_strSeqId = pId->GetOther().GetAccession();
                     if ( pId->GetOther().CanGetVersion() ) {
                         m_strSeqId += ".";
-                        m_strSeqId += NStr::UIntToString( 
-                            pId->GetOther().GetVersion() ); 
+                        m_strSeqId += NStr::UIntToString(
+                            pId->GetOther().GetVersion() );
                     }
                 }
                 break;
@@ -451,7 +451,7 @@ void CGffRecord::AddAttribute(
     m_strAttributes += value;
     m_strAttributes += "\"";
 }
-    
+
 //  ----------------------------------------------------------------------------
 string CGffRecord::FeatIdString(
     const CFeat_id& id )

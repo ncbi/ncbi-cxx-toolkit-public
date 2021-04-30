@@ -67,7 +67,7 @@ CUCSCRegionWriter::~CUCSCRegionWriter()
 };
 
 //  ----------------------------------------------------------------------------
-bool CUCSCRegionWriter::WriteAnnot( 
+bool CUCSCRegionWriter::WriteAnnot(
     const CSeq_annot& annot,
     const CTempString& separators)
 //  ----------------------------------------------------------------------------
@@ -81,7 +81,7 @@ bool CUCSCRegionWriter::WriteAnnot(
     }
     string separator = separators;
     separator.append("\t\t\t");
-    
+
     if (annot.IsSetData() && annot.GetData().IsFtable())
     {
         //size_t line_number=0;
@@ -92,11 +92,11 @@ bool CUCSCRegionWriter::WriteAnnot(
             if (!feat.IsSetLocation()) continue;
             //if (!feat.IsSetTitle()) continue;
             //if (!feat.GetData().IsRegion()) continue;
-            
+
             CSeq_loc PackedLoc;
             PackedLoc.Assign(feat.GetLocation());
             PackedLoc.ChangeToPackedInt();
-            
+
             ITERATE(CPacked_seqint::Tdata, lociter, PackedLoc.GetPacked_int().Get()) {
                 const CSeq_interval& CurrInt = **lociter;
 
@@ -120,7 +120,7 @@ bool CUCSCRegionWriter::WriteAnnot(
                 string label;
                 feat.GetLocation().GetId()->GetLabel(&label, CSeq_id::eContent);
 
-                m_Os << label << separator[0] 
+                m_Os << label << separator[0]
                      << from_loc + 1 << separator[1]
                      << to_loc + 1;
                 if (!strand.empty())

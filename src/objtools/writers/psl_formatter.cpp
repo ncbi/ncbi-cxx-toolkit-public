@@ -439,8 +439,8 @@ CPslFormatter::Format(
     const CPslRecord& record)
 //  ----------------------------------------------------------------------------
 {
-    mOstr << xFieldMatches(record) 
-         << xFieldMisMatches(record) 
+    mOstr << xFieldMatches(record)
+         << xFieldMisMatches(record)
          << xFieldRepMatches(record)
          << xFieldCountN(record)
          << xFieldNumInsertQ(record)
@@ -459,7 +459,7 @@ CPslFormatter::Format(
          << xFieldBlockCount(record)
          << xFieldBlockSizes(record)
          << xFieldStartsQ(record)
-         << xFieldStartsT(record) 
+         << xFieldStartsT(record)
          << endl;
 }
 

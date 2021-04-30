@@ -61,12 +61,12 @@ CBedFeatureRecord::CBedFeatureRecord():
     m_strName( "." ),
     m_strScore( "0" ),
     m_strStrand( "." ),
-    m_strThickStart( "." ), 
-    m_strThickEnd( "." ), 
-    m_strItemRgb( "." ), 
-    m_strBlockCount( "." ), 
-    m_strBlockSizes( "." ), 
-    m_strBlockStarts( "." ) 
+    m_strThickStart( "." ),
+    m_strThickEnd( "." ),
+    m_strItemRgb( "." ),
+    m_strBlockCount( "." ),
+    m_strBlockSizes( "." ),
+    m_strBlockStarts( "." )
 {
 }
 
@@ -148,11 +148,11 @@ bool CBedFeatureRecord::AssignDisplayData(
     bool bUseScore )
 //  ----------------------------------------------------------------------------
 {
-    if ( ! mf.GetData().IsUser() ) { 
+    if ( ! mf.GetData().IsUser() ) {
         return false;
     }
     const CUser_object& uo = mf.GetData().GetUser();
-    if ( ! uo.IsSetType() || ! uo.GetType().IsStr() || 
+    if ( ! uo.IsSetType() || ! uo.GetType().IsStr() ||
         uo.GetType().GetStr() != "Display Data" ) {
         return false;
     }
@@ -248,7 +248,7 @@ bool CBedFeatureRecord::AssignLocation(
             CGenbankIdResolve::Get().GetBestId(
                 CSeq_id_Handle::GetHandle(interval.GetId()), scope, bestId);
             m_strChrom = bestId;
-            // its OK for this to silently fail. 
+            // its OK for this to silently fail.
             // Seq-ids that dont look up are just meant to be output directly
         } catch(...) { ; }
     }
@@ -361,7 +361,7 @@ bool CBedFeatureRecord::SetName(
         return true;
     }
     if (data.IsGene()) {
-    } 
+    }
     return false;
 }
 
@@ -440,7 +440,7 @@ bool CBedFeatureRecord::SetNoThick(
         m_strThickEnd = NStr::IntToString(chromInt.GetFrom());
         return true;
     }
-    
+
     if (loc.IsPnt()) {
         const CSeq_point& chromPt = loc.GetPnt();
         m_strThickStart = NStr::IntToString(chromPt.GetPoint());

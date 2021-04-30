@@ -48,9 +48,9 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 //  ----------------------------------------------------------------------------
 CGff3SourceRecord::CGff3SourceRecord(
     CGffFeatureContext& fc,
-    const string& id): 
+    const string& id):
 //  ----------------------------------------------------------------------------
-    CGff3WriteRecordFeature(fc, id) 
+    CGff3WriteRecordFeature(fc, id)
 {};
 
 //  ----------------------------------------------------------------------------
@@ -86,7 +86,7 @@ bool CGff3SourceRecord::AssignData(
     string value;
     if (CWriteUtil::GetBiomol(bsh, value)) {
         SetAttribute("mol_type", value);
-    } 
+    }
 
     const CBioSource& bs = desc.GetSource();
     if ( ! x_AssignBiosrcAttributes(bs) ) {
@@ -117,7 +117,7 @@ bool CGff3SourceRecord::x_AssignBiosrcAttributes(
         const COrg_ref& org = bs.GetOrg();
         if ( org.IsSetDb() ) {
             const vector< CRef< CDbtag > >& tags = org.GetDb();
-            for ( vector< CRef< CDbtag > >::const_iterator it = tags.begin(); 
+            for ( vector< CRef< CDbtag > >::const_iterator it = tags.begin();
                     it != tags.end(); ++it ) {
                 string tag;
                 if (CWriteUtil::GetDbTag(**it, tag)) {

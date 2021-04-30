@@ -134,7 +134,7 @@ protected:
     void xPutMessage(
         const string& message,
         EDiagSev severity);
-        
+
     CWriterListener* mpMessageListener;
     int mMatches = -1;                          // number of bases that match that aren't repeats
     int mMisMatches = -1;                       // number of bases that don't match
@@ -159,7 +159,6 @@ protected:
     vector<int> mBlockStartsQ;                  // list of block starting positions in query
     vector<int> mBlockStartsT;                  // list of block starting positions in target
 };
- 
 
 END_objects_SCOPE
 END_NCBI_SCOPE

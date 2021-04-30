@@ -37,7 +37,7 @@
 #include <objtools/logging/message.hpp>
 
 BEGIN_NCBI_SCOPE
-BEGIN_SCOPE(objects) 
+BEGIN_SCOPE(objects)
 
 //  ============================================================================
 class NCBI_XOBJUTIL_EXPORT CWriterMessage: public CObjtoolsMessage

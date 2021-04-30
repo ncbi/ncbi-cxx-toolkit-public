@@ -48,7 +48,7 @@ public:
     typedef enum {
         fNormal =       0,
     } TFlags;
-    
+
 public:
     CVcfWriter(
         CScope&,
@@ -57,7 +57,7 @@ public:
 
     virtual ~CVcfWriter();
 
-    bool WriteAnnot( 
+    bool WriteAnnot(
         const CSeq_annot&,
         const string& = "",
         const string& = "" ) override;
@@ -87,23 +87,23 @@ protected:
 
     bool x_WriteFeatureChrom(
         const CMappedFeat& );
-        
+
     bool x_WriteFeaturePos(
         const CMappedFeat&,
         unsigned int start,
         const int type
         );
-        
+
     bool x_WriteFeatureId(
         const CMappedFeat& );
-        
+
     bool x_WriteFeatureRef(
         const unsigned int start,
         const int type,
         const string &anchor,
         const string &ref
         );
-        
+
     bool x_WriteFeatureAlt(
         const unsigned int start,
         const int type,
@@ -111,16 +111,16 @@ protected:
         const list<int>& alt_types,
         const vector<string> &alt
         );
-        
+
     bool x_WriteFeatureQual(
         const CMappedFeat&);
-        
+
     bool x_WriteFeatureFilter(
         const CMappedFeat& );
-        
+
     bool x_WriteFeatureInfo(
         const CMappedFeat& );
-        
+
     bool x_WriteFeatureGenotypeData(
         const CMappedFeat& );
 

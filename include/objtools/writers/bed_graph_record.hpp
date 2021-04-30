@@ -37,7 +37,7 @@ BEGIN_objects_SCOPE
 
 //  ============================================================================
 /// Encapsulation of the BED feature record. That's columnar data with at least
-/// three and at most twelve columns. Each column has a fixed, well defined 
+/// three and at most twelve columns. Each column has a fixed, well defined
 /// meaning, and all records of the same track must have the same number of
 /// columns.
 ///
@@ -59,7 +59,7 @@ public:
 protected:
     string m_chromId;
     string m_chromStart;
-    string m_chromEnd; 
+    string m_chromEnd;
     string m_chromValue;
 };
 

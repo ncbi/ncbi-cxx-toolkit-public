@@ -74,12 +74,12 @@ CRef<CUser_object> CWriteUtil::GetDescriptor(
             pUser->Assign(user);
             return pUser;
         }
-    }    
+    }
     return pUser;
 }
 
 //  ----------------------------------------------------------------------------
-bool CWriteUtil::GetGenomeString( 
+bool CWriteUtil::GetGenomeString(
     const CBioSource& bs,
     string& genome_str )
 //  ----------------------------------------------------------------------------
@@ -153,7 +153,7 @@ bool CWriteUtil::GetIdType(
     case CSeq_id::e_Tpd: EMIT("tpd");
     case CSeq_id::e_Gpipe: EMIT("gpipe");
     case CSeq_id::e_Named_annot_track: EMIT("NADB");
-    case CSeq_id::e_General: 
+    case CSeq_id::e_General:
         EMIT(seqId.GetGeneral().GetDb());
     }
 #undef EMIT
@@ -319,7 +319,7 @@ bool CWriteUtil::GetTrnaCodons(
     for (cit++; cit != values.end(); ++cit) {
         codons += ",";
         codons += NStr::IntToString(*cit);
-    } 
+    }
     codonStr = codons;
     return true;
 }
@@ -402,7 +402,7 @@ bool CWriteUtil::GetTrnaAntiCodon(
 }
 
 //  ----------------------------------------------------------------------------
-bool CWriteUtil::GetDbTag( 
+bool CWriteUtil::GetDbTag(
     const CDbtag& dbtag,
     string& dbTagStr )
 //
@@ -433,7 +433,7 @@ bool CWriteUtil::GetDbTag(
     dbTagStr = str;
     return true;
 }
-        
+
 //  ----------------------------------------------------------------------------
 bool CWriteUtil::GetBiomol(
     CBioseq_Handle bsh,
@@ -449,7 +449,7 @@ bool CWriteUtil::GetBiomol(
     if (!molinfo.IsSetBiomol()) {
         return false;
     }
- 
+
     int inst = bsh.GetInst_Mol();
     int mol = molinfo.GetBiomol();
 
@@ -466,11 +466,11 @@ bool CWriteUtil::GetBiomol(
                     EMIT("genomic RNA");
             }
         }
-        case CMolInfo::eBiomol_mRNA: 
+        case CMolInfo::eBiomol_mRNA:
             EMIT("mRNA");
-        case CMolInfo::eBiomol_rRNA: 
+        case CMolInfo::eBiomol_rRNA:
             EMIT("rRNA");
-        case CMolInfo::eBiomol_tRNA: 
+        case CMolInfo::eBiomol_tRNA:
             EMIT("tRNA");
         case CMolInfo::eBiomol_pre_RNA:
         case CMolInfo::eBiomol_snRNA:
@@ -478,7 +478,7 @@ bool CWriteUtil::GetBiomol(
         case CMolInfo::eBiomol_snoRNA:
         case CMolInfo::eBiomol_ncRNA:
         case CMolInfo::eBiomol_tmRNA:
-        case CMolInfo::eBiomol_transcribed_RNA: 
+        case CMolInfo::eBiomol_transcribed_RNA:
             EMIT("transcribed RNA");
         case CMolInfo::eBiomol_other_genetic:
         case CMolInfo::eBiomol_other: {
@@ -491,10 +491,10 @@ bool CWriteUtil::GetBiomol(
                     EMIT("other RNA");
             }
         }
-        case CMolInfo::eBiomol_cRNA: 
+        case CMolInfo::eBiomol_cRNA:
             EMIT("viral cRNA");
 
-        case CMolInfo::eBiomol_genomic_mRNA: 
+        case CMolInfo::eBiomol_genomic_mRNA:
             EMIT("genomic RNA");
     }
     switch (inst) {
@@ -515,31 +515,31 @@ string CWriteUtil::UrlEncode(
 //  ----------------------------------------------------------------------------
 {
     static const char s_Table[256][4] = {
-        "%00", "%01", "%02", "%03", "%04", "%05", "%06", "%07", "%08", "%09", 
-        "%0A", "%0B", "%0C", "%0D", "%0E", "%0F", "%10", "%11", "%12", "%13", 
-        "%14", "%15", "%16", "%17", "%18", "%19", "%1A", "%1B", "%1C", "%1D", 
+        "%00", "%01", "%02", "%03", "%04", "%05", "%06", "%07", "%08", "%09",
+        "%0A", "%0B", "%0C", "%0D", "%0E", "%0F", "%10", "%11", "%12", "%13",
+        "%14", "%15", "%16", "%17", "%18", "%19", "%1A", "%1B", "%1C", "%1D",
         "%1E", "%1F", " ",   "!",   "%22", "%23", "$",   "%25", "%26", "%27",
-        "%28", "%29", "%2A", "%2B", "%2C", "-",   ".",   "%2F", "0",   "1",   
-        "2",   "3",   "4",   "5",   "6",   "7",   "8",   "9",   ":",   "%3B", 
-        "%3C", "%3D", "%3E", "%3F", "@",   "A",   "B",   "C",   "D",   "E",   
+        "%28", "%29", "%2A", "%2B", "%2C", "-",   ".",   "%2F", "0",   "1",
+        "2",   "3",   "4",   "5",   "6",   "7",   "8",   "9",   ":",   "%3B",
+        "%3C", "%3D", "%3E", "%3F", "@",   "A",   "B",   "C",   "D",   "E",
         "F",   "G",   "H",   "I",   "J",   "K",   "L",   "M",   "N",   "O",
-        "P",   "Q",   "R",   "S",   "T",   "U",   "V",   "W",   "X",   "Y",   
-        "Z",   "%5B", "%5C", "%5D", "^",   "_",   "%60", "a",   "b",   "c",   
-        "d",   "e",   "f",   "g",   "h",   "i",   "j",   "k",   "l",   "m",   
+        "P",   "Q",   "R",   "S",   "T",   "U",   "V",   "W",   "X",   "Y",
+        "Z",   "%5B", "%5C", "%5D", "^",   "_",   "%60", "a",   "b",   "c",
+        "d",   "e",   "f",   "g",   "h",   "i",   "j",   "k",   "l",   "m",
         "n",   "o",   "p",   "q",   "r",   "s",   "t",   "u",   "v",   "w",
-        "x",   "y",   "z",   "%7B", "%7C", "%7D", "%7E", "%7F", "%80", "%81", 
-        "%82", "%83", "%84", "%85", "%86", "%87", "%88", "%89", "%8A", "%8B", 
-        "%8C", "%8D", "%8E", "%8F", "%90", "%91", "%92", "%93", "%94", "%95", 
+        "x",   "y",   "z",   "%7B", "%7C", "%7D", "%7E", "%7F", "%80", "%81",
+        "%82", "%83", "%84", "%85", "%86", "%87", "%88", "%89", "%8A", "%8B",
+        "%8C", "%8D", "%8E", "%8F", "%90", "%91", "%92", "%93", "%94", "%95",
         "%96", "%97", "%98", "%99", "%9A", "%9B", "%9C", "%9D", "%9E", "%9F",
-        "%A0", "%A1", "%A2", "%A3", "%A4", "%A5", "%A6", "%A7", "%A8", "%A9", 
-        "%AA", "%AB", "%AC", "%AD", "%AE", "%AF", "%B0", "%B1", "%B2", "%B3", 
-        "%B4", "%B5", "%B6", "%B7", "%B8", "%B9", "%BA", "%BB", "%BC", "%BD", 
+        "%A0", "%A1", "%A2", "%A3", "%A4", "%A5", "%A6", "%A7", "%A8", "%A9",
+        "%AA", "%AB", "%AC", "%AD", "%AE", "%AF", "%B0", "%B1", "%B2", "%B3",
+        "%B4", "%B5", "%B6", "%B7", "%B8", "%B9", "%BA", "%BB", "%BC", "%BD",
         "%BE", "%BF", "%C0", "%C1", "%C2", "%C3", "%C4", "%C5", "%C6", "%C7",
-        "%C8", "%C9", "%CA", "%CB", "%CC", "%CD", "%CE", "%CF", "%D0", "%D1", 
-        "%D2", "%D3", "%D4", "%D5", "%D6", "%D7", "%D8", "%D9", "%DA", "%DB", 
-        "%DC", "%DD", "%DE", "%DF", "%E0", "%E1", "%E2", "%E3", "%E4", "%E5", 
+        "%C8", "%C9", "%CA", "%CB", "%CC", "%CD", "%CE", "%CF", "%D0", "%D1",
+        "%D2", "%D3", "%D4", "%D5", "%D6", "%D7", "%D8", "%D9", "%DA", "%DB",
+        "%DC", "%DD", "%DE", "%DF", "%E0", "%E1", "%E2", "%E3", "%E4", "%E5",
         "%E6", "%E7", "%E8", "%E9", "%EA", "%EB", "%EC", "%ED", "%EE", "%EF",
-        "%F0", "%F1", "%F2", "%F3", "%F4", "%F5", "%F6", "%F7", "%F8", "%F9", 
+        "%F0", "%F1", "%F2", "%F3", "%F4", "%F5", "%F6", "%F7", "%F8", "%F9",
         "%FA", "%FB", "|", "%FD", "%FE", "%FF"
     };
 
@@ -553,7 +553,7 @@ string CWriteUtil::UrlEncode(
 //  ----------------------------------------------------------------------------
 bool CWriteUtil::IsLocationOrdered(
     const CSeq_loc& loc)
-//  Look whether the given location contains any eNull intervals. If so, the 
+//  Look whether the given location contains any eNull intervals. If so, the
 //  location is ordered, otherwise not.
 //  ----------------------------------------------------------------------------
 {
@@ -572,31 +572,31 @@ bool CWriteUtil::IsLocationOrdered(
         return false;
     }
 }
-    
+
 //  ----------------------------------------------------------------------------
 bool CWriteUtil::IsSequenceCircular(
     CBioseq_Handle bsh)
 //  ----------------------------------------------------------------------------
 {
-    if (!bsh  ||  !bsh.IsSetInst_Topology()  
+    if (!bsh  ||  !bsh.IsSetInst_Topology()
               ||  bsh.GetInst_Topology() != CSeq_inst::eTopology_circular) {
         return false;
     }
     return true;
 }
-    
+
 //  ----------------------------------------------------------------------------
 bool CWriteUtil::NeedsQuoting(
     const string& str )
 //  ----------------------------------------------------------------------------
 {
     if(str.empty())
-		return true;
+        return true;
 
-	for (size_t u=0; u < str.length(); ++u) {
+    for (size_t u=0; u < str.length(); ++u) {
         if (str[u] == '\"')
-			return false;
-		if (str[u] == ' ' || str[u] == ';' || str[u] == ':' || str[u] == '=') {
+            return false;
+        if (str[u] == ' ' || str[u] == ';' || str[u] == ':' || str[u] == '=') {
             return true;
         }
     }
@@ -650,7 +650,7 @@ bool CWriteUtil::GetBestId(
 {
     return CGenbankIdResolve::Get().GetBestId(idh, scope, best_id);
 }
-    
+
 //  ----------------------------------------------------------------------------
 bool CWriteUtil::GetBestId(
     const CMappedFeat& mf,
@@ -665,7 +665,7 @@ bool CWriteUtil::IsNucProtSet(
     CSeq_entry_Handle seh)
 //  ----------------------------------------------------------------------------
 {
-    return (seh.IsSet()  &&  seh.GetSet().IsSetClass()  &&  
+    return (seh.IsSet()  &&  seh.GetSet().IsSetClass()  &&
         seh.GetSet().GetClass() == CBioseq_set::eClass_nuc_prot);
 }
 
@@ -692,7 +692,7 @@ bool CWriteUtil::GetQualifier(
     }
     return false;
 }
- 
+
 //  ---------------------------------------------------------------------------
 void CGffFeatureContext::xAssignSequenceIsGenomicRecord()
 //  ---------------------------------------------------------------------------
@@ -856,7 +856,7 @@ CConstRef<CUser_object> CWriteUtil::GetModelEvidence(
 }
 
 //  -----------------------------------------------------------------------------
-size_t 
+size_t
 s_CountAccessions(
     const CUser_field& field)
 //  -----------------------------------------------------------------------------
@@ -899,7 +899,7 @@ bool CWriteUtil::GetStringForModelEvidence(
         return false;
     }
 
-    size_t numRna(0), numEst(0), numProtein(0), numLongSra(0), 
+    size_t numRna(0), numEst(0), numProtein(0), numLongSra(0),
         rnaseqBaseCoverage(0), rnaseqBiosamplesIntronsFull(0);
     string method;
     const CUser_object::TData& fields = me->GetData();
@@ -912,7 +912,6 @@ bool CWriteUtil::GetStringForModelEvidence(
             continue;
         }
         const string& label = field.GetLabel().GetStr();
-        
         if (label == "Method") {
             method = field.GetData().GetStr();
             continue;
@@ -1147,7 +1146,7 @@ bool CWriteUtil::GetStringsForGoMarkup(
 {
     goMarkup.clear();
     for (const auto& field: fields) {
-        if (!field->IsSetLabel()  ||  !field->GetLabel().IsId()  
+        if (!field->IsSetLabel()  ||  !field->GetLabel().IsId()
                 ||  field->GetLabel().GetId() != 0) {
             continue;
         }
@@ -1190,7 +1189,7 @@ bool CWriteUtil::GetListOfGoIds(
 //  ----------------------------------------------------------------------------
 {
     for (const auto& field: fields) {
-        if (!field->IsSetLabel()  ||  !field->GetLabel().IsId()  
+        if (!field->IsSetLabel()  ||  !field->GetLabel().IsId()
                 ||  field->GetLabel().GetId() != 0) {
             continue;
         }
@@ -1347,7 +1346,7 @@ bool CWriteUtil::IsTransspliced(const CMappedFeat& mf)
 //  ----------------------------------------------------------------------------
 bool CWriteUtil::GetTranssplicedEndpoints(
 //  ----------------------------------------------------------------------------
-    const CSeq_loc& loc, 
+    const CSeq_loc& loc,
     unsigned int& inPoint,
     unsigned int& outPoint)
 //  start determined by the minimum start of any sub interval
@@ -1385,9 +1384,9 @@ ENa_strand CWriteUtil::GetEffectiveStrand(
     const CSeq_interval& interval)
 //  ----------------------------------------------------------------------------
 {
-    // if it's not explicitely minus, then it's plus 
+    // if it's not explicitely minus, then it's plus
     //  (not true for other location types)
-    return (interval.IsSetStrand() && interval.GetStrand() == eNa_strand_minus) 
+    return (interval.IsSetStrand() && interval.GetStrand() == eNa_strand_minus)
         ?
         eNa_strand_minus :
         eNa_strand_plus;

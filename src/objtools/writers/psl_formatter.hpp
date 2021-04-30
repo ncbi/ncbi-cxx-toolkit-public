@@ -102,7 +102,6 @@ protected:
     CNcbiOstream& mOstr;
     bool mDebugMode;
 };
- 
 
 END_objects_SCOPE
 END_NCBI_SCOPE

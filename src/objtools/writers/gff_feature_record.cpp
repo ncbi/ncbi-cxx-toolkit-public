@@ -38,7 +38,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ----------------------------------------------------------------------------
-CGffFeatureRecord::CGffFeatureRecord( 
+CGffFeatureRecord::CGffFeatureRecord(
     const string& id):
 //  ----------------------------------------------------------------------------
     CGffBaseRecord(id)
@@ -46,7 +46,7 @@ CGffFeatureRecord::CGffFeatureRecord(
 
 //  ----------------------------------------------------------------------------
 CGffFeatureRecord::CGffFeatureRecord(
-    const CGffFeatureRecord& other): 
+    const CGffFeatureRecord& other):
 //  ----------------------------------------------------------------------------
 CGffBaseRecord(other){};
 
@@ -78,7 +78,7 @@ void CGffFeatureRecord::SetEndpoints(
 void CGffFeatureRecord::SetLocation(
     const CSeq_interval& interval,
     unsigned int wrapSize,
-    unsigned int wrapPoint) 
+    unsigned int wrapPoint)
 //  ----------------------------------------------------------------------------
 {
     m_pLoc.Reset(new CSeq_loc());
@@ -246,7 +246,7 @@ string CGffAlignRecord::StrAttributes() const
         attributes +=  ATTR_SEPARATOR;
         attributes += baseAttributes;
     }
-    return attributes;   
+    return attributes;
 }
 
 END_objects_SCOPE

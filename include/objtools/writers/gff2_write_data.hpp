@@ -56,7 +56,7 @@ public:
     typedef TAttributes::const_iterator TAttrCit;
 
 public:
-    CGffWriteRecord( 
+    CGffWriteRecord(
         CGffFeatureContext& fc,
         const string& id="" );
     CGffWriteRecord(

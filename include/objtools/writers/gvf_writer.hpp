@@ -68,7 +68,7 @@ protected:
         CGffFeatureContext&,
         const CMappedFeat& ) override;
 
-    virtual bool xWriteRecord( 
+    virtual bool xWriteRecord(
         const CGffBaseRecord& ) override;
 
     virtual bool xWriteFeatureVariationRef(

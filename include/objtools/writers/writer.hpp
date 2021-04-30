@@ -72,7 +72,7 @@ protected:
 
 //  ============================================================================
 /// Defines and provides stubs for a general interface to a variety of file
-/// formatters. These writers take Genbank object in raw or handle form, and 
+/// formatters. These writers take Genbank object in raw or handle form, and
 /// render them to an output stream in their respective formats.
 ///
 class NCBI_XOBJWRITE_EXPORT CWriterBase:
@@ -87,7 +87,7 @@ public:
         fDebugOutput = (1<<0),
         fWriterBaseLast = fDebugOutput,
     } TFlags;
-    
+
 protected:
     CWriterBase(
         CNcbiOstream& ostr,
@@ -113,7 +113,7 @@ public:
     /// @param descr
     ///   parameter describing the object. Handling will be format specific
     ///
-    virtual bool WriteAnnot( 
+    virtual bool WriteAnnot(
         const CSeq_annot& /*annot*/,
         const string& /*name*/ = "",
         const string& /*descr*/ = "" )
@@ -132,10 +132,10 @@ public:
     /// @param descr
     ///   parameter describing the object. Handling will be format specific.
     ///
-    virtual bool WriteAlign( 
+    virtual bool WriteAlign(
         const CSeq_align&,
         const string& /*name*/ = "",
-        const string& /*descr*/ = "" ) 
+        const string& /*descr*/ = "" )
     {
         cerr << "Object type not supported!" << endl;
         return false;
@@ -224,7 +224,7 @@ public:
     // Report errors and warnings in form as a CWriterMessage
     // If a message listener is attached then the attached listener will be used
     // to deal with the message. Otherwise, aa equivalent  CObjWriterException will
-    // be thrown. 
+    // be thrown.
     /// @param message
     ///   message to process.
     virtual void PutMessage(const CWriterMessage& message) {

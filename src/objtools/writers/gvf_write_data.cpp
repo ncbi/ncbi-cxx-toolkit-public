@@ -96,8 +96,8 @@ bool CGvfWriteRecord::x_AssignSource(
     mMethod = ".";
     if ( mapped_feat.IsSetExt() ) {
         const CSeq_feat::TExt& ext = mapped_feat.GetExt();
-        if ( ext.IsSetType() && ext.GetType().IsStr() && 
-            ext.GetType().GetStr() == "GvfAttributes" ) 
+        if ( ext.IsSetType() && ext.GetType().IsStr() &&
+            ext.GetType().GetStr() == "GvfAttributes" )
         {
             if ( ext.HasField( "source" ) ) {
                 mMethod = ext.GetField( "source" ).GetData().GetStr();
@@ -126,8 +126,8 @@ bool CGvfWriteRecord::x_AssignType(
     mType = ".";
     if ( mapped_feat.IsSetExt() ) {
         const CSeq_feat::TExt& ext = mapped_feat.GetExt();
-        if ( ext.IsSetType() && ext.GetType().IsStr() && 
-            ext.GetType().GetStr() == "GvfAttributes" ) 
+        if ( ext.IsSetType() && ext.GetType().IsStr() &&
+            ext.GetType().GetStr() == "GvfAttributes" )
         {
             if ( ext.HasField( "orig-var-type" ) ) {
                 mType = ext.GetField( "orig-var-type" ).GetData().GetStr();
@@ -153,13 +153,13 @@ bool CGvfWriteRecord::x_AssignType(
         if ( var_ref.IsSetConsequence() ) {
             const CVariation_ref::TConsequence& consequences = var_ref.GetConsequence();
             for ( CVariation_ref::TConsequence::const_iterator cit = consequences.begin();
-                cit != consequences.end(); ++cit ) 
+                cit != consequences.end(); ++cit )
             {
                 if ( (*cit)->IsLoss_of_heterozygosity() ) {
                     mType = "loss_of_heterozygosity";
                     return true;
                 }
-            } 
+            }
         }
         mType = "copy_number_loss";
         return true;
@@ -173,7 +173,6 @@ bool CGvfWriteRecord::x_AssignType(
         return true;
     }
     switch( var_ref.GetData().GetInstance().GetType() ) {
-    
     default:
         return true;
     case CVariation_inst::eType_snv:
@@ -223,13 +222,13 @@ bool CGvfWriteRecord::x_AssignAttributesCustom(
         return true;
     }
     const CSeq_feat::TExt& ext = mf.GetExt();
-    if ( ! ext.IsSetType() || ! ext.GetType().IsStr() || 
-        ext.GetType().GetStr() != "GvfAttributes" ) 
+    if ( ! ext.IsSetType() || ! ext.GetType().IsStr() ||
+        ext.GetType().GetStr() != "GvfAttributes" )
     {
         return true;
     }
     const CUser_object::TData& data = ext.GetData();
-    for ( CUser_object::TData::const_iterator cit = data.begin(); 
+    for ( CUser_object::TData::const_iterator cit = data.begin();
         cit != data.end(); ++cit )
     {
         string key, value;
@@ -245,7 +244,7 @@ bool CGvfWriteRecord::x_AssignAttributesCustom(
         }
         key = key.substr( string("custom-").length() );
         SetAttribute(key, value);
-    } 
+    }
     return true;
 }
 
@@ -256,8 +255,8 @@ bool CGvfWriteRecord::x_AssignAttributeID(
 {
     if ( mf.IsSetExt() ) {
         const CSeq_feat::TExt& ext = mf.GetExt();
-        if ( ext.IsSetType() && ext.GetType().IsStr() && 
-            ext.GetType().GetStr() == "GvfAttributes" ) 
+        if ( ext.IsSetType() && ext.GetType().IsStr() &&
+            ext.GetType().GetStr() == "GvfAttributes" )
         {
             if ( ext.HasField( "id" ) ) {
                 SetAttribute(
@@ -290,8 +289,8 @@ bool CGvfWriteRecord::x_AssignAttributeParent(
 {
     if ( mf.IsSetExt() ) {
         const CSeq_feat::TExt& ext = mf.GetExt();
-        if ( ext.IsSetType() && ext.GetType().IsStr() && 
-            ext.GetType().GetStr() == "GvfAttributes" ) 
+        if ( ext.IsSetType() && ext.GetType().IsStr() &&
+            ext.GetType().GetStr() == "GvfAttributes" )
         {
             if ( ext.HasField( "parent" ) ) {
                 SetAttribute(
@@ -338,11 +337,11 @@ bool CGvfWriteRecord::x_AssignAttributeVarType(
 {
     if ( mf.IsSetExt() ) {
         const CSeq_feat::TExt& ext = mf.GetExt();
-        if ( ext.IsSetType() && ext.GetType().IsStr() && 
-            ext.GetType().GetStr() == "GvfAttributes" ) 
+        if ( ext.IsSetType() && ext.GetType().IsStr() &&
+            ext.GetType().GetStr() == "GvfAttributes" )
         {
             if ( ext.HasField( "custom-var_type" ) ) {
-                SetAttribute("var_type", 
+                SetAttribute("var_type",
                     ext.GetField( "custom-var_type" ).GetData().GetStr());
                 return true;
             }
@@ -365,9 +364,9 @@ bool CGvfWriteRecord::x_AssignAttributeStartRange(
         return true;
     }
     const CSeq_interval::TFuzz_from& fuzz = intv.GetFuzz_from();
-    
+
     switch( fuzz.Which() ) {
-    
+
         default:
             return true;
 
@@ -409,9 +408,9 @@ bool CGvfWriteRecord::x_AssignAttributeEndRange(
         return true;
     }
     const CSeq_interval::TFuzz_to& fuzz = intv.GetFuzz_to();
-    
+
     switch( fuzz.Which() ) {
-    
+
         default:
             return true;
 
@@ -500,6 +499,6 @@ void CGvfWriteRecord::x_AppendAttribute(
         strAttributes += "\"";
     }
 }
-    
+
 END_objects_SCOPE
 END_NCBI_SCOPE

@@ -90,7 +90,7 @@ CPslWriter::CPslWriter(
 bool CPslWriter::WriteAnnot(
     const CSeq_annot& annot,
     const string& name,
-    const string& descr) 
+    const string& descr)
 //  ----------------------------------------------------------------------------
 {
     if (!annot.IsAlign()) {
@@ -108,7 +108,7 @@ bool CPslWriter::WriteAnnot(
 bool CPslWriter::WriteAlign(
     const CSeq_align& align,
     const string& name,
-    const string& descr) 
+    const string& descr)
 //  ----------------------------------------------------------------------------
 {
     if (IsCanceled()) {

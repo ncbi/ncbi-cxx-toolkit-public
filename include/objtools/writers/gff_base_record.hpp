@@ -54,15 +54,15 @@ public:
     typedef TScores::iterator TScoreIt;
     typedef TScores::const_iterator TScoreCit;
 
-    CGffBaseRecord( 
+    CGffBaseRecord(
         const string& id="");
     CGffBaseRecord(
         const CGffBaseRecord&);
     virtual ~CGffBaseRecord();
 
 public: //attribute management
-    const TAttributes& Attributes() const { 
-        return mAttributes; 
+    const TAttributes& Attributes() const {
+        return mAttributes;
     };
     bool AddAttribute(
         const string&,

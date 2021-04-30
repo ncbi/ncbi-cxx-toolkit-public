@@ -68,7 +68,7 @@ const char* CGff3WriteRecordFeature::MULTIVALUE_SEPARATOR
     = ",";
 
 //  ----------------------------------------------------------------------------
-string s_MakeGffDbtag( 
+string s_MakeGffDbtag(
     const CSeq_id_Handle& idh,
     CScope& scope )
 //  ----------------------------------------------------------------------------
@@ -81,26 +81,26 @@ string s_MakeGffDbtag(
     gi_idh.GetSeqId()->GetLabel( &strGffTag, CSeq_id::eContent );
     return strGffTag;
 }
-        
+
 //  ----------------------------------------------------------------------------
 CConstRef<CUser_object> s_GetUserObjectByType(
     const CUser_object& uo,
     const string& strType )
 //  ----------------------------------------------------------------------------
 {
-    if ( uo.IsSetType() && uo.GetType().IsStr() && 
+    if ( uo.IsSetType() && uo.GetType().IsStr() &&
             uo.GetType().GetStr() == strType ) {
         return CConstRef<CUser_object>( &uo );
     }
     const CUser_object::TData& fields = uo.GetData();
-    for ( CUser_object::TData::const_iterator it = fields.begin(); 
-            it != fields.end(); 
+    for ( CUser_object::TData::const_iterator it = fields.begin();
+            it != fields.end();
             ++it ) {
         const CUser_field& field = **it;
         if ( field.IsSetData() ) {
             const CUser_field::TData& data = field.GetData();
             if ( data.Which() == CUser_field::TData::e_Object ) {
-                CConstRef<CUser_object> recur = s_GetUserObjectByType( 
+                CConstRef<CUser_object> recur = s_GetUserObjectByType(
                     data.GetObject(), strType );
                 if ( recur ) {
                     return recur;
@@ -110,7 +110,7 @@ CConstRef<CUser_object> s_GetUserObjectByType(
     }
     return CConstRef<CUser_object>();
 }
-    
+
 //  ----------------------------------------------------------------------------
 CGff3WriteRecordFeature::CGff3WriteRecordFeature(
     CGffFeatureContext& fc,
@@ -167,7 +167,7 @@ bool CGff3WriteRecordFeature::AssignFromAsn(
         return CGtfFeatureRecord::AssignFromAsn(mf, flags);
     }
 
-    list< CRef< CSeq_interval > >::iterator it, it_ceil=sublocs.end(), 
+    list< CRef< CSeq_interval > >::iterator it, it_ceil=sublocs.end(),
         it_floor=sublocs.end();
     //fl new circular coordinate handling starts here >>>
     for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
@@ -182,7 +182,7 @@ bool CGff3WriteRecordFeature::AssignFromAsn(
         }
         if (it_floor != sublocs.end()  &&  it_ceil != sublocs.end()) {
             break;
-        } 
+        }
     }
     if ( it_ceil != sublocs.end()  &&  it_floor != sublocs.end() ) {
         (*it_ceil)->SetTo( (*it_ceil)->GetTo() + (*it_floor)->GetTo() + 1 );
@@ -191,7 +191,7 @@ bool CGff3WriteRecordFeature::AssignFromAsn(
 
     return CGtfFeatureRecord::AssignFromAsn(mf, flags);
 };
-    
+
 //  ----------------------------------------------------------------------------
 bool CGff3WriteRecordFeature::x_AssignType(
     const CMappedFeat& mf,
@@ -313,7 +313,6 @@ bool CGff3WriteRecordFeature::x_AssignStart(
 {
     if ( m_pLoc ) {
         if (sIsTransspliced(mapped_feat)) {
-            
             if (!sGetTranssplicedInPoint(*m_pLoc, mSeqStart)) {
                 return false;
             }
@@ -468,7 +467,7 @@ bool CGff3WriteRecordFeature::x_AssignAttributes(
     if ( !x_AssignAttributesMiscFeature( mf ) ) {
         return false;
     }
-    
+
     switch( mf.GetData().GetSubtype() ) {
         default:
             break;
@@ -502,14 +501,14 @@ bool CGff3WriteRecordFeature::x_AssignAttributes(
             return false;
         }
     }
-    
+
     //  deriviate attributes --- depend on other attributes. Hence need to be
-    //  done last: 
+    //  done last:
     if ( !x_AssignAttributeName( mf ) ) {
         return false;
     }
 
-    return true; 
+    return true;
 }
 
 //  ----------------------------------------------------------------------------
@@ -723,7 +722,7 @@ bool CGff3WriteRecordFeature::x_AssignAttributeDbXref(
         case CSeq_feat::TData::e_Rna:
         case CSeq_feat::TData::e_Cdregion: {
             if ( mf.IsSetProduct() ) {
-                CSeq_id_Handle idh = sequence::GetId( 
+                CSeq_id_Handle idh = sequence::GetId(
                     mf.GetProductId(), mf.GetScope(), sequence::eGetId_ForceAcc);
                 if (!idh) {
                     idh = sequence::GetId(
@@ -789,7 +788,7 @@ bool CGff3WriteRecordFeature::x_AssignAttributeGeneSynonym(
     list<string>::const_iterator it = syns.begin();
     if (!gene_ref.IsSetLocus() && !gene_ref.IsSetLocus_tag()) {
         ++it;
-    }    
+    }
     if (it == syns.end()) {
         return true;
     }
@@ -843,7 +842,7 @@ bool CGff3WriteRecordFeature::x_AssignAttributeName(
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
-    vector<string> value;   
+    vector<string> value;
     switch ( mf.GetFeatSubtype() ) {
 
         default:
@@ -916,7 +915,7 @@ bool CGff3WriteRecordFeature::x_AssignAttributeProduct(
     if (subtype == CSeqFeatData::eSubtype_cdregion) {
 
         // Possibility 1:
-        // Product name comes from a prot-ref which stored in the seqfeat's 
+        // Product name comes from a prot-ref which stored in the seqfeat's
         // xrefs:
         const CProt_ref* pProtRef = mf.GetProtXref();
         if ( pProtRef && pProtRef->IsSetName() ) {
@@ -926,15 +925,15 @@ bool CGff3WriteRecordFeature::x_AssignAttributeProduct(
         }
 
         // Possibility 2:
-        // Product name is from the prot-ref refered to by the seqfeat's 
+        // Product name is from the prot-ref refered to by the seqfeat's
         // data.product:
         if (mf.IsSetProduct()) {
             const CSeq_id* pId = mf.GetProduct().GetId();
             if (pId) {
-                CBioseq_Handle bsh = mf.GetScope().GetBioseqHandle(*pId); 
+                CBioseq_Handle bsh = mf.GetScope().GetBioseqHandle(*pId);
                 if (bsh) {
                     CFeat_CI it(bsh, SAnnotSelector(CSeqFeatData::eSubtype_prot));
-                    if (it  &&  it->IsSetData() 
+                    if (it  &&  it->IsSetData()
                             &&  it->GetData().GetProt().IsSetName()
                             &&  !it->GetData().GetProt().GetName().empty()) {
                         SetAttribute("product",
@@ -943,7 +942,7 @@ bool CGff3WriteRecordFeature::x_AssignAttributeProduct(
                     }
                 }
             }
-            
+
             string product;
             if (CGenbankIdResolve::Get().GetBestId(
                     mf.GetProductId(), mf.GetScope(), product)) {
@@ -981,7 +980,7 @@ bool CGff3WriteRecordFeature::x_AssignAttributeProduct(
             return true;
         }
 
-        if (rna.IsSetExt()  &&  rna.GetExt().IsGen()  &&  
+        if (rna.IsSetExt()  &&  rna.GetExt().IsGen()  &&
                 rna.GetExt().GetGen().IsSetProduct() ) {
             SetAttribute("product", rna.GetExt().GetGen().GetProduct());
             return true;
@@ -991,9 +990,9 @@ bool CGff3WriteRecordFeature::x_AssignAttributeProduct(
     // finally, look for gb_qual
     if (mf.IsSetQual()) {
         const CSeq_feat::TQual& quals = mf.GetQual();
-        for ( CSeq_feat::TQual::const_iterator cit = quals.begin(); 
+        for ( CSeq_feat::TQual::const_iterator cit = quals.begin();
                 cit != quals.end(); ++cit) {
-            if ((*cit)->IsSetQual()  &&  (*cit)->IsSetVal()  &&  
+            if ((*cit)->IsSetQual()  &&  (*cit)->IsSetVal()  &&
                     (*cit)->GetQual() == "product") {
                 SetAttribute("product", (*cit)->GetVal());
                 return true;
@@ -1016,8 +1015,8 @@ bool CGff3WriteRecordFeature::x_AssignAttributeEvidence(
     bool bExperiment = false;
     bool bInference = false;
     const CSeq_feat::TQual& quals = mapped_feat.GetQual();
-    for ( CSeq_feat::TQual::const_iterator it = quals.begin(); 
-            ( it != quals.end() ) && ( !bExperiment && !bInference ); 
+    for ( CSeq_feat::TQual::const_iterator it = quals.begin();
+            ( it != quals.end() ) && ( !bExperiment && !bInference );
             ++it ) {
         if ( ! (*it)->CanGetQual() ) {
             continue;
@@ -1054,7 +1053,7 @@ bool CGff3WriteRecordFeature::x_AssignAttributeModelEvidence(
 //  ----------------------------------------------------------------------------
 {
     if ( mapped_feat.IsSetExt() ) {
-        CConstRef<CUser_object> model_evidence = s_GetUserObjectByType( 
+        CConstRef<CUser_object> model_evidence = s_GetUserObjectByType(
             mapped_feat.GetExt(), "ModelEvidence" );
         if ( model_evidence ) {
             string strNote;
@@ -1127,7 +1126,7 @@ bool CGff3WriteRecordFeature::x_AssignAttributeTranscriptId(
         return true;
     }
     const CSeq_feat::TQual& quals = mf.GetQual();
-    for ( CSeq_feat::TQual::const_iterator cit = quals.begin(); 
+    for ( CSeq_feat::TQual::const_iterator cit = quals.begin();
       cit != quals.end(); ++cit ) {
         if ( (*cit)->GetQual() == "transcript_id" ) {
             SetAttribute("transcript_id", (*cit)->GetVal());
@@ -1184,7 +1183,7 @@ bool CGff3WriteRecordFeature::x_AssignAttributeTranslationTable(
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
-    if ( !mf.IsSetData()  ||  
+    if ( !mf.IsSetData()  ||
             mf.GetFeatSubtype() != CSeqFeatData::eSubtype_cdregion ) {
         return true;
     }
@@ -1204,7 +1203,7 @@ bool CGff3WriteRecordFeature::x_AssignAttributeCodeBreak(
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
-    if ( !mf.IsSetData()  ||  
+    if ( !mf.IsSetData()  ||
             mf.GetFeatSubtype() != CSeqFeatData::eSubtype_cdregion ) {
         return true;
     }
@@ -1233,7 +1232,7 @@ bool CGff3WriteRecordFeature::x_AssignAttributeOldLocusTag(
     }
     string old_locus_tags;
     vector<CRef<CGb_qual> > quals = mf.GetQual();
-    for ( vector<CRef<CGb_qual> >::const_iterator it = quals.begin(); 
+    for ( vector<CRef<CGb_qual> >::const_iterator it = quals.begin();
             it != quals.end(); ++it ) {
         if ( (**it).IsSetQual()  &&  (**it).IsSetVal() ) {
             string qual = (**it).GetQual();
@@ -1259,8 +1258,8 @@ bool CGff3WriteRecordFeature::x_AssignAttributeExonNumber(
 {
     if (mf.IsSetQual()) {
         const CSeq_feat::TQual& quals = mf.GetQual();
-        for ( CSeq_feat::TQual::const_iterator cit = quals.begin(); 
-            cit != quals.end(); 
+        for ( CSeq_feat::TQual::const_iterator cit = quals.begin();
+            cit != quals.end();
             ++cit ) {
             const CGb_qual& qual = **cit;
             if (qual.IsSetQual()  &&  qual.GetQual() == "number") {
@@ -1308,7 +1307,7 @@ void CGff3WriteRecordFeature::ForceAttributeID(
 {
     DropAttributes("ID");
     SetAttribute("ID", strId);
-}  
+}
 
 END_objects_SCOPE
 END_NCBI_SCOPE

@@ -49,7 +49,7 @@ void CExonNumberAssigner::xInitialize(
     mCdsMf = cdsMf;
     mCdsLoc.Assign(cdsMf.GetLocation());
     mCdsLoc.ChangeToPackedInt();
-    
+
     mRnaMf = feature::GetBestMrnaForCds(mCdsMf);
     if (mRnaMf) {
         mRnaLoc.Assign(mRnaMf.GetLocation());
@@ -115,9 +115,8 @@ void CExonNumberAssigner::AssignExonNumberTo(
 {
     auto exonNumber = CdsGetExonNumberFor(gtfRecord);
     _ASSERT(exonNumber); // indicator of faulty assignment logic
-    gtfRecord.SetExonNumber(exonNumber); 
+    gtfRecord.SetExonNumber(exonNumber);
 }
 
-    
 END_objects_SCOPE
 END_NCBI_SCOPE

@@ -49,7 +49,7 @@ public:
 
 public:
     CGffIdGenerator(
-        TFlags flags = fNormal): 
+        TFlags flags = fNormal):
         mFlags(flags),
         mLastTrulyGenericSuffix(0)
     {};
@@ -92,7 +92,7 @@ protected:
 
     std::string xExtractGeneLocusTagOrLocus(
         const CMappedFeat&);
-    
+
     std::string xExtractLocalId(
         const CMappedFeat&);
 

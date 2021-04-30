@@ -45,7 +45,7 @@ class NCBI_XOBJWRITE_EXPORT CGffFeatureRecord
     : public CGffBaseRecord
 {
 public:
-    CGffFeatureRecord( 
+    CGffFeatureRecord(
         const string& id="");
     CGffFeatureRecord(
         const CGffFeatureRecord& other);
@@ -76,7 +76,7 @@ class NCBI_XOBJWRITE_EXPORT CGffSourceRecord
     : public CGffBaseRecord
 {
 public:
-    CGffSourceRecord( 
+    CGffSourceRecord(
         const string& id=""): CGffBaseRecord(id) {};
 };
 
@@ -86,7 +86,7 @@ class NCBI_XOBJWRITE_EXPORT CGffAlignRecord
     : public CGffBaseRecord
 {
 public:
-    CGffAlignRecord( 
+    CGffAlignRecord(
         const string& id="");
 
     void

@@ -85,7 +85,7 @@ USING_SCOPE(objects);
 //  ------------------------------------------------------------------------------
 string CGffIdGenerator::GetGffId(
     const CMappedFeat& mf,
-    CGffFeatureContext& fc) 
+    CGffFeatureContext& fc)
 //  -----------------------------------------------------------------------------t-
 {
     auto id = mf.GetNamedQual("ID");
@@ -120,7 +120,7 @@ string CGffIdGenerator::GetGffId()
 {
     return string("id-") + NStr::NumericToString(++mLastTrulyGenericSuffix);
 }
-   
+
 //  -----------------------------------------------------------------------------
 string CGffIdGenerator::GetGffSourceId(
     CBioseq_Handle bsh)
@@ -154,7 +154,7 @@ string CGffIdGenerator::GetGffSourceId(
     locationId += seqStop;
     return locationId;
 }
- 
+
 //  -----------------------------------------------------------------------------
 void CGffIdGenerator::Reset()
 //  -----------------------------------------------------------------------------
@@ -186,12 +186,12 @@ string CGffIdGenerator::GetNextGffExonId(
     }
     return id;
 }
- 
+
 //  -----------------------------------------------------------------------------
 string CGffIdGenerator::xGetIdForGene(
     const CMappedFeat& mf,
-    CGffFeatureContext& fc) 
-    //  -----------------------------------------------------------------------------
+    CGffFeatureContext& fc)
+//  -----------------------------------------------------------------------------
 {
     const string commonPrefix("gene-");
 
@@ -208,7 +208,7 @@ string CGffIdGenerator::xGetIdForGene(
 //  ----------------------------------------------------------------------------
 string CGffIdGenerator::xGetIdForRna(
     const CMappedFeat& mf,
-    CGffFeatureContext& fc) 
+    CGffFeatureContext& fc)
 //  ----------------------------------------------------------------------------
 {
     const string commonPrefix("rna-");
@@ -246,7 +246,7 @@ string CGffIdGenerator::xGetIdForRna(
 //  -----------------------------------------------------------------------------
 string CGffIdGenerator::xGetIdForCds(
     const CMappedFeat& mf,
-    CGffFeatureContext& fc) 
+    CGffFeatureContext& fc)
 //  -----------------------------------------------------------------------------
 {
     const string commonPrefix("cds-");
@@ -277,7 +277,7 @@ string CGffIdGenerator::xGetIdForCds(
 //  -----------------------------------------------------------------------------
 string CGffIdGenerator::xGetGenericId(
     const CMappedFeat& mf,
-    CGffFeatureContext& fc) 
+    CGffFeatureContext& fc)
 //  -----------------------------------------------------------------------------
 {
     const string commonPrefix("id-");
@@ -307,7 +307,7 @@ string CGffIdGenerator::xGetGenericId(
 //  ----------------------------------------------------------------------------
 string CGffIdGenerator::xGetGenericSuffix(
     const CMappedFeat& mf,
-    CGffFeatureContext& fc) 
+    CGffFeatureContext& fc)
 //  ----------------------------------------------------------------------------
 {
     const auto dbxrefs = mf.GetDbxref();
@@ -324,7 +324,7 @@ string CGffIdGenerator::xGetGenericSuffix(
 
 //  ----------------------------------------------------------------------------
 string CGffIdGenerator::xExtractGeneLocusTagOrLocus(
-    const CMappedFeat& mf) 
+    const CMappedFeat& mf)
 //  -----------------------------------------------------------------------------
 {
     if (!mf) {
@@ -351,13 +351,13 @@ string CGffIdGenerator::xExtractGeneLocusTagOrLocus(
 //  ----------------------------------------------------------------------------
 string CGffIdGenerator::xExtractFeatureLocation(
     const CMappedFeat& mf,
-    CGffFeatureContext& fc) 
-    //  ----------------------------------------------------------------------------
+    CGffFeatureContext& fc)
+//  ----------------------------------------------------------------------------
 {
     string locationId;
     if (!CGenbankIdResolve::Get().GetBestId(mf, locationId)) {
         locationId = "unknown";
-    } 
+    }
     auto locationType = mf.GetLocation().Which();
     if (locationType == CSeq_loc::e_Whole) {
         auto bsh = fc.BioseqHandle();

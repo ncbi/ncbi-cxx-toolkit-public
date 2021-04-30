@@ -75,7 +75,7 @@ CGffBaseRecord::CGffBaseRecord(
     mPhase(other.mPhase)
 {
     m_pLoc = other.m_pLoc;
-    mAttributes.insert( 
+    mAttributes.insert(
         other.mAttributes.begin(), other.mAttributes.end());
 }
 
@@ -95,7 +95,7 @@ bool CGffBaseRecord::AddAttribute(
     if (it == mAttributes.end()) {
         mAttributes[key] = vector<string>();
     }
-    if (std::find(mAttributes[key].begin(), mAttributes[key].end(), value) == 
+    if (std::find(mAttributes[key].begin(), mAttributes[key].end(), value) ==
             mAttributes[key].end()) {
         mAttributes[key].push_back(value);
     }
@@ -133,14 +133,14 @@ bool CGffBaseRecord::AddAttributes(
 //  ----------------------------------------------------------------------------
 {
     if (values.empty()) {
-        return true; //nothing to do 
+        return true; //nothing to do
     }
     TAttrIt it = mAttributes.find(key);
     if (it == mAttributes.end()) {
         mAttributes[key] = vector<string>(values.begin(), values.end());
         return true;
     }
-    for (vector<string>::const_iterator cit = values.begin(); 
+    for (vector<string>::const_iterator cit = values.begin();
             cit != values.end(); ++cit) {
         string current = *cit;
         vector<string>::iterator iit = std::find(
@@ -198,7 +198,7 @@ string CGffBaseRecord::StrType() const
 
 //  ----------------------------------------------------------------------------
 void CGffBaseRecord::SetSeqId(
-    const string& seqId) 
+    const string& seqId)
 //  ----------------------------------------------------------------------------
 {
     mSeqId = seqId;
@@ -371,7 +371,7 @@ string CGffBaseRecord::StrAttributes() const
     //
 
     string attributes;
-	attributes.reserve(256);
+    attributes.reserve(256);
 
     typedef vector<TAttrCit> SORTATTRS;
     TAttrCit gapAttr = mAttributes.end();
@@ -386,8 +386,8 @@ string CGffBaseRecord::StrAttributes() const
         }
     }
     sort(sortedAttrs.begin(), sortedAttrs.end(), lessAttrCit);
-    for (SORTATTRS::const_iterator cit = sortedAttrs.begin(); 
-            cit != sortedAttrs.end(); ++cit) { 
+    for (SORTATTRS::const_iterator cit = sortedAttrs.begin();
+            cit != sortedAttrs.end(); ++cit) {
         const string& key = (*cit)->first;
 
         if (!attributes.empty()) {
@@ -396,7 +396,7 @@ string CGffBaseRecord::StrAttributes() const
         attributes += xEscapedString(key);
         attributes += "=";
         bool got_values = false;
-        for (auto vit : (*cit)->second) 
+        for (auto vit : (*cit)->second)
         {
             auto singleValue = xEscapedValue(key, vit);
             if (!singleValue.empty()) {
@@ -414,18 +414,18 @@ string CGffBaseRecord::StrAttributes() const
     for (TScoreCit ait = mExtraScores.begin(); ait != mExtraScores.end(); ++ait) {
         sortedScores.push_back(ait);
     }
-   
+
     sort(sortedScores.begin(), sortedScores.end(), lessScoreCit);
-    for (auto cit : sortedScores) 
-    { 
+    for (auto cit : sortedScores)
+    {
         const string& key = cit->first;
 
         if (!attributes.empty()) {
             attributes += ATTR_SEPARATOR;
         }
         attributes += xEscapedString(key);
-        attributes += "=";	
-		attributes += xEscapedValue(key, cit->second);
+        attributes += "=";
+        attributes += xEscapedValue(key, cit->second);
     }
     if (gapAttr != mAttributes.end()) {
         const string& key = gapAttr->first;
@@ -435,7 +435,7 @@ string CGffBaseRecord::StrAttributes() const
         }
         attributes += xEscapedString(key);
         attributes += "=";
-		attributes += xEscapedValue(key, gapAttr->second[0]);
+        attributes += xEscapedValue(key, gapAttr->second[0]);
     }
     if ( attributes.empty() ) {
         attributes = ".";

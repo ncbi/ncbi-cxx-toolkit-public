@@ -71,7 +71,7 @@ CGffWriteRecord::CGffWriteRecord(
     m_fc( other.m_fc )
 //  ----------------------------------------------------------------------------
 {
-    mAttributes.insert( 
+    mAttributes.insert(
         other.mAttributes.begin(), other.mAttributes.end() );
 };
 
@@ -86,7 +86,7 @@ string CGffWriteRecord::StrAttributes() const
 //  ----------------------------------------------------------------------------
 {
     string strAttributes;
-	strAttributes.reserve(256);
+    strAttributes.reserve(256);
     CGffWriteRecord::TAttributes attrs;
     attrs.insert( Attributes().begin(), Attributes().end() );
     CGffWriteRecord::TAttrIt it;
@@ -100,13 +100,13 @@ string CGffWriteRecord::StrAttributes() const
         strAttributes += strKey;
         strAttributes += "=";
 //        strAttributes += " ";
-		
-		bool quote = NeedsQuoting(it->second.front());
-		if ( quote )
-			strAttributes += '\"';		
-		strAttributes += it->second.front();
-		if ( quote )
-			strAttributes += '\"';
+
+        bool quote = NeedsQuoting(it->second.front());
+        if ( quote )
+            strAttributes += '\"';
+        strAttributes += it->second.front();
+        if ( quote )
+            strAttributes += '\"';
     }
     if ( strAttributes.empty() ) {
         strAttributes = ".";
@@ -147,14 +147,14 @@ void CGffWriteRecord::x_StrAttributesAppendValue(
     strAttributes += "=";
     strAttributes += strValue;
 
-	attrs.erase(it);
+    attrs.erase(it);
 }
 
 //  ----------------------------------------------------------------------------
 bool CGffWriteRecord::CorrectLocation(
     const CGffWriteRecord& parent,
     const CSeq_interval& interval,
-    unsigned int seqLength ) 
+    unsigned int seqLength )
 //  ----------------------------------------------------------------------------
 {
     if ( interval.CanGetFrom() ) {
@@ -176,7 +176,7 @@ bool CGffWriteRecord::CorrectLocation(
     if ( interval.IsSetStrand() ) {
         SetStrand(interval.GetStrand());
     }
-    return true; 
+    return true;
 }
 
 //  ----------------------------------------------------------------------------
@@ -194,7 +194,7 @@ bool CGffWriteRecord::CorrectPhase(
 //  ----------------------------------------------------------------------------
 bool CGffWriteRecord::AssignSequenceNumber(
     unsigned int uSequenceNumber,
-    const string& strPrefix ) 
+    const string& strPrefix )
 //  ----------------------------------------------------------------------------
 {
     vector<string> ids;

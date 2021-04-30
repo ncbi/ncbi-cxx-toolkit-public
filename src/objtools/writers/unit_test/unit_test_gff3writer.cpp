@@ -123,7 +123,7 @@ public:
         BOOST_REQUIRE(!sObjType.empty());
         string sFileType = vecFileNamePieces[2];
         BOOST_REQUIRE(!sFileType.empty());
-            
+
         STestInfo & test_info_to_load =
             (*m_pTestNameToInfoMap)[vecFileNamePieces[0]];
 
@@ -140,15 +140,15 @@ public:
         if (sFileType == mExtInput) {
             BOOST_REQUIRE( test_info_to_load.mInFile.GetPath().empty() );
             test_info_to_load.mInFile = file;
-        } 
+        }
         else if (sFileType == mExtOutput) {
             BOOST_REQUIRE( test_info_to_load.mOutFile.GetPath().empty() );
             test_info_to_load.mOutFile = file;
-        } 
+        }
         else if (sFileType == mExtErrors) {
             BOOST_REQUIRE( test_info_to_load.mErrorFile.GetPath().empty() );
             test_info_to_load.mErrorFile = file;
-        } 
+        }
 
         else {
             BOOST_FAIL("Unknown file type " << sFileName << ".");
@@ -169,7 +169,7 @@ CGff3Writer* sGetWriter(CScope& scope, CNcbiOstream& ostr)
 }
 
 void sUpdateCase(CDir& test_cases_dir, const string& test_name)
-{   
+{
     string input = CDir::ConcatPath( test_cases_dir.GetPath(), test_name + "." + extInput);
     string output = CDir::ConcatPath( test_cases_dir.GetPath(), test_name + "." + extOutput);
     string errors = CDir::ConcatPath( test_cases_dir.GetPath(), test_name + "." + extErrors);
@@ -276,7 +276,7 @@ void sUpdateAll(CDir& test_cases_dir)
         fFF_Default | fFF_Recursive );
 
     ITERATE(TTestNameToInfoMap, name_to_info_it, testNameToInfoMap) {
-        const string & sName = name_to_info_it->first + 
+        const string & sName = name_to_info_it->first +
             "." + name_to_info_it->second.mObjType;
         sUpdateCase(test_cases_dir, sName);
     }
@@ -361,7 +361,7 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
     if (!success) {
         CDirEntry deResult = CDirEntry(resultName);
         if (keep) {
-            deResult.Copy(testInfo.mOutFile.GetPath() + "." + extKeep, 
+            deResult.Copy(testInfo.mOutFile.GetPath() + "." + extKeep,
                 CDirEntry::fCF_Overwrite);
         }
         deResult.Remove();
@@ -412,7 +412,7 @@ BOOST_AUTO_TEST_CASE(RunTests)
     const CArgs& args = CNcbiApplication::Instance()->GetArgs();
 
     CDir test_cases_dir( args["test-dir"].AsDirectory() );
-    BOOST_REQUIRE_MESSAGE( test_cases_dir.IsDir(), 
+    BOOST_REQUIRE_MESSAGE( test_cases_dir.IsDir(),
         "Cannot find dir: " << test_cases_dir.GetPath() );
 
     bool update_all = args["update-all"].AsBoolean();
@@ -426,7 +426,7 @@ BOOST_AUTO_TEST_CASE(RunTests)
         sUpdateCase(test_cases_dir, update_case);
         return;
     }
-   
+
     const vector<string> kEmptyStringVec;
     TTestNameToInfoMap testNameToInfoMap;
     CTestNameToInfoMapLoader testInfoLoader(
@@ -452,7 +452,7 @@ BOOST_AUTO_TEST_CASE(RunTests)
     ITERATE(TTestNameToInfoMap, name_to_info_it, testNameToInfoMap) {
         const string & sName = name_to_info_it->first;
         const STestInfo & testInfo = name_to_info_it->second;
-        
+
         cout << "Running test: " << sName << endl;
 
         BOOST_CHECK_NO_THROW(sRunTest(sName, testInfo, args["keep-diffs"]));

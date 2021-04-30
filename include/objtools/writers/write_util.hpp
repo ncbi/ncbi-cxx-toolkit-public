@@ -56,7 +56,7 @@ public:
         const CSeq_annot& annot,
         const string& );
 
-    static bool GetGenomeString( 
+    static bool GetGenomeString(
         const CBioSource&,
         string& );
 
@@ -100,7 +100,7 @@ public:
 
     static bool GetBestId(
         CSeq_id_Handle,
-        CScope&, 
+        CScope&,
         string&);
 
     static bool GetBestId(
@@ -145,7 +145,7 @@ public:
     static CConstRef<CUser_object> GetUserObjectByType(
         const CUser_object& uo,
         const string& strType);
-        
+
     static CConstRef<CUser_object> GetUserObjectByType(
         const list<CRef<CUser_object > >& uos,
         const string& strType);
@@ -168,7 +168,7 @@ public:
     static bool GetListOfGoIds(
         const vector<CRef<CUser_field > >& fields,
         list<std::string>& goIds);
-        
+
     static bool IsThreeFeatFormat(
         const CSeq_annot&);
 
@@ -204,7 +204,7 @@ public:
         const CMappedFeat& mf);
 
     static bool GetTranssplicedEndpoints(
-        const CSeq_loc& loc, 
+        const CSeq_loc& loc,
         unsigned int& inPoint,
         unsigned int& outPoint);
 

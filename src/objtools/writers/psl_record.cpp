@@ -312,7 +312,7 @@ CPslRecord::xValidateSegment(
     const CSpliced_seg& splicedSeg)
 //  ----------------------------------------------------------------------------
 {
-    if (!splicedSeg.CanGetProduct_type()  ||  
+    if (!splicedSeg.CanGetProduct_type()  ||
             splicedSeg.GetProduct_type() == CSpliced_seg::eProduct_type_protein) {
         // would love to support but need proper sample data first!
         throw CWriterMessage(

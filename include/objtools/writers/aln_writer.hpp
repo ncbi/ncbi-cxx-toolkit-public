@@ -88,10 +88,10 @@ protected:
         CSpliced_seg::TProduct_type product_type,
         const CSpliced_exon::TParts& exon_chunks,
         string& genomic_seq,
-        string& product_seq); 
+        string& product_seq);
 
     void ProcessSeqId(const CSeq_id& id, CBioseq_Handle& bsh, CRange<TSeqPos>& range);
-   
+
     void GetSeqString(CBioseq_Handle bsh,
         const CRange<TSeqPos>& range,
         ENa_strand strand,

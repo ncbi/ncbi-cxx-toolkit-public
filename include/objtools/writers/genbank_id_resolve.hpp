@@ -61,18 +61,18 @@ public:
     SetLabelType(
         CSeq_id::ELabelType labelType) { mLabelType = labelType; };
 
-    bool 
+    bool
     GetBestId(
         CSeq_id_Handle,
-        CScope&, 
+        CScope&,
         string&);
 
-    bool 
+    bool
     GetBestId(
         const CMappedFeat&,
         string&);
 
-    bool 
+    bool
     GetBestId(
         const CSeq_loc&,
         string&);

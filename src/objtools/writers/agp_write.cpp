@@ -118,8 +118,8 @@ inline void WriteLinkageEvidence( CNcbiOstream &os, const CSeqMap_CI& iter )
         const CSeq_gap & gap = iter.GetData().GetGap();
         if( gap.IsSetLinkage_evidence() ) {
             string linkage_evidence_str;
-            CLinkage_evidence::VecToString( 
-                linkage_evidence_str, 
+            CLinkage_evidence::VecToString(
+                linkage_evidence_str,
                 gap.GetLinkage_evidence() );
             os << linkage_evidence_str;
         }
@@ -226,7 +226,7 @@ static void s_AgpWrite(CNcbiOstream& os,
             // col 6a
             os << '\t';
             {{
-                // Ideally this will be a valid accession.version identifier as assigned by GenBank/EMBL/DDBJ. 
+                // Ideally this will be a valid accession.version identifier as assigned by GenBank/EMBL/DDBJ.
                 // If the sequence has not been submitted to a public repository yet a local identifier should be used.
                 CSeq_id_Handle idh =
                     sequence::GetId(*iter.GetRefSeqid().GetSeqId(), scope,

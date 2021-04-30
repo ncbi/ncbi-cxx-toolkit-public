@@ -51,10 +51,10 @@ public:
     ~CErrorLogger() {
         mStream.close();
     };
-    
+
     bool
     PutError(
-        const ILineError& err ) 
+        const ILineError& err )
     {
         StoreError(err);
 
@@ -71,5 +71,5 @@ public:
 
 protected:
     ofstream mStream;
-};    
-        
+};
+

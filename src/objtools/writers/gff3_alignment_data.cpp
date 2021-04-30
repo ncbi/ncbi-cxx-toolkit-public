@@ -52,7 +52,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 CGffFeatureContext CGffAlignmentRecord::sDummyContext;
 
 //  ----------------------------------------------------------------------------
-string CGffAlignmentRecord::StrAttributes() const 
+string CGffAlignmentRecord::StrAttributes() const
 //  ----------------------------------------------------------------------------
 {
     string str = mIdAttribute;
@@ -64,7 +64,7 @@ string CGffAlignmentRecord::StrAttributes() const
         str += ";Gap=";
         str += m_strAlignment;
     }
-    return str; 
+    return str;
 };
 
 //  ----------------------------------------------------------------------------

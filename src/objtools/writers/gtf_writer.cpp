@@ -87,7 +87,7 @@ public:
         mLastSuffixes[prefix] = 1;
         return prefix + "_1";
     }
-    
+
 private:
     static map<string, int> mLastSuffixes;
 };
@@ -99,19 +99,19 @@ CConstRef<CUser_object> sGetUserObjectByType(
     const string& strType )
     //  ----------------------------------------------------------------------------
 {
-    if ( uo.IsSetType() && uo.GetType().IsStr() && 
+    if ( uo.IsSetType() && uo.GetType().IsStr() &&
         uo.GetType().GetStr() == strType ) {
         return CConstRef<CUser_object>( &uo );
     }
     const CUser_object::TData& fields = uo.GetData();
-    for ( CUser_object::TData::const_iterator it = fields.begin(); 
-        it != fields.end(); 
+    for ( CUser_object::TData::const_iterator it = fields.begin();
+        it != fields.end();
         ++it ) {
         const CUser_field& field = **it;
         if ( field.IsSetData() ) {
             const CUser_field::TData& data = field.GetData();
             if ( data.Which() == CUser_field::TData::e_Object ) {
-                CConstRef<CUser_object> recur = sGetUserObjectByType( 
+                CConstRef<CUser_object> recur = sGetUserObjectByType(
                     data.GetObject(), strType );
                 if ( recur ) {
                     return recur;
@@ -169,7 +169,7 @@ CGtfWriter::~CGtfWriter()
 
 //  ----------------------------------------------------------------------------
 bool CGtfWriter::x_WriteBioseqHandle(
-    CBioseq_Handle bsh ) 
+    CBioseq_Handle bsh )
 //  ----------------------------------------------------------------------------
 {
     SAnnotSelector sel = SetAnnotSelector();
@@ -203,7 +203,7 @@ bool CGtfWriter::WriteHeader()
 };
 
 //  ----------------------------------------------------------------------------
-bool CGtfWriter::xWriteRecord( 
+bool CGtfWriter::xWriteRecord(
     const CGffWriteRecord* pRecord )
 //  ----------------------------------------------------------------------------
 {
@@ -260,7 +260,7 @@ bool CGtfWriter::xWriteFeature(
         case CSeqFeatData::eSubtype_J_segment:
         case CSeqFeatData::eSubtype_V_segment:
             return xWriteRecordsTranscript(context, mf);
-        case CSeqFeatData::eSubtype_gene: 
+        case CSeqFeatData::eSubtype_gene:
             return xWriteRecordsGene(context, mf);
         case CSeqFeatData::eSubtype_cdregion:
             return xWriteRecordsCds(context, mf);
@@ -371,7 +371,7 @@ bool CGtfWriter::xAssignFeaturesGene(
     unsigned int partNum = 1;
     for ( auto it = sublocs.begin(); it != sublocs.end(); it++ ) {
         const CSeq_interval& intv = **it;
-        CRef<CGtfRecord> pRecord( 
+        CRef<CGtfRecord> pRecord(
             new CGtfRecord(context, (m_uFlags & fNoExonNumbers)));
         if (!xAssignFeature(*pRecord, context, mf)) {
             return false;
@@ -394,7 +394,7 @@ bool CGtfWriter::xAssignFeaturesTranscript(
     const string& transcriptId)
 //  ----------------------------------------------------------------------------
 {
-    // note: GTF transcript locations are the minimum covering interval of all 
+    // note: GTF transcript locations are the minimum covering interval of all
     //  its exons. Hence it's either a single interval, or two intervals if the
     //  covering interval wraps around the origin.
 
@@ -444,9 +444,9 @@ bool CGtfWriter::xAssignFeaturesTranscript(
             }
             break;
 
-            case eNa_strand_other: { 
+            case eNa_strand_other: {
                 //feature contains parts from both strands
-                // for now, don't even attempt to origin wrap these things (rw-1299). 
+                // for now, don't even attempt to origin wrap these things (rw-1299).
                 iterationDone = true;
             }
             break;
@@ -509,7 +509,7 @@ bool CGtfWriter::xAssignFeaturesCds(
     for ( auto it = sublocs.begin(); it != sublocs.end(); it++ ) {
         const CSeq_interval& intv = **it;
         auto strand = intv.IsSetStrand() ? intv.GetStrand() : eNa_strand_plus;
-        CRef<CGtfRecord> pRecord( 
+        CRef<CGtfRecord> pRecord(
             new CGtfRecord(context, (m_uFlags & fNoExonNumbers)));
         if (!xAssignFeature(*pRecord, context, mf)) {
             return false;
@@ -554,7 +554,7 @@ bool CGtfWriter::xAssignFeaturesCds(
     // generate start codon:
     if (!mfLoc.IsPartialStart(eExtreme_Biological)) {
         int basePairsNeeded = 3;
-        auto currentIt = sublocs.begin(); 
+        auto currentIt = sublocs.begin();
         unsigned int partNumber = 1;
         unsigned int baseCount = 0;
 
@@ -564,7 +564,7 @@ bool CGtfWriter::xAssignFeaturesCds(
             auto currentTo = currentLoc.GetTo();
             auto currentStrand = currentLoc.IsSetStrand() ? currentLoc.GetStrand() : eNa_strand_plus;
 
-            CRef<CGtfRecord> pRecord( 
+            CRef<CGtfRecord> pRecord(
                 new CGtfRecord(context, (m_uFlags & fNoExonNumbers)));
             if (!xAssignFeature(*pRecord, context, mf)) {
                 return false;
@@ -593,7 +593,7 @@ bool CGtfWriter::xAssignFeaturesCds(
             }
             _ASSERT(baseCount < 3);
             pRecord->SetCdsPhase_Force((3-baseCount)%3);
-            baseCount += pRecord->GetExtent(); 
+            baseCount += pRecord->GetExtent();
             recordList.push_back(pRecord);
             currentIt++;
         }
@@ -603,14 +603,14 @@ bool CGtfWriter::xAssignFeaturesCds(
     if (!mfLoc.IsPartialStop(eExtreme_Biological)) {
         list<CRef<CGtfRecord>> stopCodonParts;
         int basePairsNeeded = 3;
-        auto currentIt = sublocs.rbegin(); 
+        auto currentIt = sublocs.rbegin();
         while (basePairsNeeded > 0) {
             const CSeq_interval& currentLoc = **currentIt;
             auto currentFrom = currentLoc.GetFrom();
             auto currentTo = currentLoc.GetTo();
             auto currentStrand = currentLoc.IsSetStrand() ? currentLoc.GetStrand() : eNa_strand_plus;
 
-            CRef<CGtfRecord> pRecord( 
+            CRef<CGtfRecord> pRecord(
                 new CGtfRecord(context, (m_uFlags & fNoExonNumbers)));
             if (!xAssignFeature(*pRecord, context, mf)) {
                 return false;
@@ -657,7 +657,7 @@ bool CGtfWriter::xAssignFeaturesCds(
         for (auto& pRecord: recordList) {
             exonNumberAssigner.AssignExonNumberTo(*pRecord);
         }
-    }   
+    }
     return true;
 }
 
@@ -691,7 +691,7 @@ bool CGtfWriter::xWriteFeatureExons(
     const list<CRef<CSeq_interval>>& sublocs = pLocMrna->GetPacked_int().Get();
     for (auto it = sublocs.begin(); it != sublocs.end(); ++it) {
         const CSeq_interval& subint = **it;
-        CRef<CGtfRecord> pExon( 
+        CRef<CGtfRecord> pExon(
             new CGtfRecord(context, (m_uFlags & fNoExonNumbers)));
         pExon->MakeChildRecord(*pMrna, subint, uExonNumber++);
         pExon->DropAttributes("gbkey");
@@ -772,7 +772,7 @@ bool CGtfWriter::xAssignFeatureMethod(
     }
 
     if (mf.IsSetExt()) {
-        CConstRef<CUser_object> model_evidence = sGetUserObjectByType( 
+        CConstRef<CUser_object> model_evidence = sGetUserObjectByType(
             mf.GetExt(), "ModelEvidence");
         if (model_evidence) {
             string strMethod;
@@ -785,7 +785,7 @@ bool CGtfWriter::xAssignFeatureMethod(
     }
 
     if (mf.IsSetExts()) {
-        CConstRef<CUser_object> model_evidence = sGetUserObjectByType( 
+        CConstRef<CUser_object> model_evidence = sGetUserObjectByType(
             mf.GetExts(), "ModelEvidence");
         if (model_evidence) {
             string strMethod;
@@ -833,7 +833,7 @@ bool CGtfWriter::xAssignFeatureAttributesQualifiers(
         "Parent",
         "gff_type",
         "transcript_id",
-        "gene_id", 
+        "gene_id",
     };
 
     CGtfRecord& record = dynamic_cast<CGtfRecord&>(rec);
@@ -904,7 +904,7 @@ string CGtfWriter::xGenericGeneId(
 //  ----------------------------------------------------------------------------
 {
     static unsigned int uId = 1;
-    string strGeneId = string( "unassigned_gene_" ) + 
+    string strGeneId = string( "unassigned_gene_" ) +
         NStr::UIntToString(uId);
     if (mf.GetData().GetSubtype() == CSeq_feat::TData::eSubtype_gene) {
         uId++;
@@ -948,7 +948,7 @@ bool CGtfWriter::xAssignFeatureAttributeTranscriptBiotype(
     if (!CSoMap::FeatureToSoType(feature, so_type)) {
         return true;
     }
-    
+
     record.SetAttribute("transcript_biotype", so_type);
     return true;
 }
@@ -988,7 +988,7 @@ bool CGtfWriter::xAssignFeatureAttributeTranscriptId(
                 mrnaFeat = feature::GetParentFeature(mf);
             }
             else {
-                mrnaFeat = mf; 
+                mrnaFeat = mf;
                 //there must be one somewhere, and that's the closest we can
                 // get to it.
             }
@@ -1036,11 +1036,11 @@ bool CGtfWriter::xAssignFeatureAttributeTranscriptId(
         mFeatMap[mf] = featId;
         record.SetTranscriptId(featId);
         return true;
-    }     
+    }
     unsigned int suffix = 1;
     featId += "_";
     while (true) {
-        auto qualifiedId = featId + NStr::UIntToString(suffix);   
+        auto qualifiedId = featId + NStr::UIntToString(suffix);
         cit = find(mUsedFeatIds.begin(), mUsedFeatIds.end(), qualifiedId);
         if (mUsedFeatIds.end() == cit) {
             mUsedFeatIds.push_back(qualifiedId);
@@ -1049,7 +1049,7 @@ bool CGtfWriter::xAssignFeatureAttributeTranscriptId(
             return true;
         }
         ++suffix;
-    }   
+    }
     return true;
 }
 
@@ -1100,7 +1100,7 @@ bool CGtfWriter::xAssignFeatureAttributeGeneId(
         geneId = geneRef.GetSyn().front();
     }
     if (geneId.empty()) {
-        geneId = xGenericGeneId(mf); 
+        geneId = xGenericGeneId(mf);
         //we know the ID is going to be unique if we get it this way
         // not point in further checking
         usedGeneIds.push_back(geneId);

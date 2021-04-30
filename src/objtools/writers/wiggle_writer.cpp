@@ -90,7 +90,7 @@ CWiggleWriter::~CWiggleWriter()
 };
 
 //  ----------------------------------------------------------------------------
-bool CWiggleWriter::WriteAnnot( 
+bool CWiggleWriter::WriteAnnot(
     const CSeq_annot& annot,
     const string&,
     const string& )
@@ -205,8 +205,8 @@ bool CWiggleWriter::xWriteTrackLine( const CAnnot_descr& descr )
             continue;
         }
         const CUser_object& user = (*it)->GetUser();
-        if ( ! user.CanGetType() || ! user.GetType().IsStr() || 
-            user.GetType().GetStr() != "Track Data") 
+        if ( ! user.CanGetType() || ! user.GetType().IsStr() ||
+            user.GetType().GetStr() != "Track Data")
         {
             ++it;
             continue;
@@ -215,7 +215,7 @@ bool CWiggleWriter::xWriteTrackLine( const CAnnot_descr& descr )
             ++it;
             continue;
         }
-        
+
         const vector< CRef< CUser_field > >& fields = user.GetData();
         for ( size_t u=0; u < fields.size(); ++u ) {
             const CUser_field& field = *(fields[u]);
@@ -233,7 +233,7 @@ bool CWiggleWriter::xWriteTrackLine( const CAnnot_descr& descr )
 }
 
 //  ----------------------------------------------------------------------------
-bool CWiggleWriter::xWriteSingleGraphFixedStep( 
+bool CWiggleWriter::xWriteSingleGraphFixedStep(
     const CSeq_graph& graph,
     size_t uSeqStart )
 //  ----------------------------------------------------------------------------
@@ -296,13 +296,13 @@ bool CWiggleWriter::xWriteSingleGraphFixedStep(
     strFixedStep += strStep;
     strSpan += strComp;
     strFixedStep += strSpan;
-   
+
     m_Os << strFixedStep << '\n';
     return true;
 }
 
 //  ----------------------------------------------------------------------------
-bool CWiggleWriter::xWriteSingleGraphRecordsByte( 
+bool CWiggleWriter::xWriteSingleGraphRecordsByte(
     const CSeq_graph& graph,
     size_t uStartRecord )
 //  ----------------------------------------------------------------------------
@@ -316,7 +316,7 @@ bool CWiggleWriter::xWriteSingleGraphRecordsByte(
     if ( ! graph.GetGraph().IsByte() || ! graph.GetGraph().GetByte().CanGetValues() ) {
         return false;
     }
-    double dA = graph.GetA(); 
+    double dA = graph.GetA();
     double dB = graph.GetB();
     size_t uNumVals = graph.GetNumval();
     const vector<char>& values = graph.GetGraph().GetByte().GetValues();
@@ -338,7 +338,7 @@ bool CWiggleWriter::xWriteSingleGraphRecordsByte(
 }
 
 //  ----------------------------------------------------------------------------
-bool CWiggleWriter::xWriteSingleGraphRecordsInt( 
+bool CWiggleWriter::xWriteSingleGraphRecordsInt(
     const CSeq_graph& graph,
     size_t uStartRecord )
 //  ----------------------------------------------------------------------------
@@ -352,7 +352,7 @@ bool CWiggleWriter::xWriteSingleGraphRecordsInt(
     if ( ! graph.GetGraph().IsInt() || ! graph.GetGraph().GetInt().CanGetValues() ) {
         return false;
     }
-    double dA = graph.GetA(); 
+    double dA = graph.GetA();
     double dB = graph.GetB();
     size_t uNumVals = graph.GetNumval();
     const vector<int>& values = graph.GetGraph().GetInt().GetValues();
@@ -374,7 +374,7 @@ bool CWiggleWriter::xWriteSingleGraphRecordsInt(
 }
 
 //  ----------------------------------------------------------------------------
-bool CWiggleWriter::xWriteSingleGraphRecordsReal( 
+bool CWiggleWriter::xWriteSingleGraphRecordsReal(
     const CSeq_graph& graph,
     size_t uStartRecord )
 //  ----------------------------------------------------------------------------
@@ -388,7 +388,7 @@ bool CWiggleWriter::xWriteSingleGraphRecordsReal(
     if ( ! graph.GetGraph().IsReal() || ! graph.GetGraph().GetReal().CanGetValues() ) {
         return false;
     }
-    double dA = graph.GetA(); 
+    double dA = graph.GetA();
     double dB = graph.GetB();
     size_t uNumVals = graph.GetNumval();
     const vector<double>& values = graph.GetGraph().GetReal().GetValues();
@@ -543,7 +543,7 @@ bool CWiggleWriter::xIsFixedStepData(
             return false;
         }
         currentIn = nextIn;
-    }  
+    }
     return true;
 }
 
@@ -554,7 +554,7 @@ bool CWiggleWriter::xIsVariableStepData(
     int& span)
 //
 //  Criterion: At least two rows or it is simply not worth it.
-//    All table rows have the same ID, and the table has a "span" column. 
+//    All table rows have the same ID, and the table has a "span" column.
 //  ----------------------------------------------------------------------------
 {
     chrom.clear();
@@ -613,7 +613,7 @@ bool CWiggleWriter::xWriteTableFixedStep(
     }
 
     //write fixedStep directive
-    m_Os << "fixedStep chrom=" << chrom << " span=" << span << 
+    m_Os << "fixedStep chrom=" << chrom << " span=" << span <<
         " start=" << (start+1) << " step=" << step << '\n';
 
     //write "value" lines
@@ -687,8 +687,8 @@ bool CWiggleWriter::xWriteTableVariableStep(
 bool CWiggleWriter::xWriteTableBedStyle(
     const CSeq_table& table)
 //
-//  Record format is: 
-//      chromName posIn posOut value 
+//  Record format is:
+//      chromName posIn posOut value
 //  ----------------------------------------------------------------------------
 {
     int numRows = table.GetNum_rows();
@@ -838,8 +838,8 @@ bool CWiggleWriter::xTableGetValue(
                     int intValue(0);
                     if (!columns[u]->TryGetInt(index, intValue)) {
                         return false;
-                    } 
-                    value = intValue;  
+                    }
+                    value = intValue;
                     return true;
                 }
                 return true;

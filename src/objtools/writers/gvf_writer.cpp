@@ -120,14 +120,14 @@ bool CGvfWriter::WriteHeader(
 
     if ( ! WriteHeader() ) {
         return false;
-    } 
+    }
     if ( ! pDescPragmas ) {
         return true;
     }
 
     const CAnnotdesc::TUser& pragmas = pDescPragmas->GetUser();
     const CUser_object::TData& data = pragmas.GetData();
-    for ( CUser_object::TData::const_iterator cit = data.begin(); 
+    for ( CUser_object::TData::const_iterator cit = data.begin();
         cit != data.end(); ++cit )
     {
         string key, value;
@@ -142,7 +142,7 @@ bool CGvfWriter::WriteHeader(
             continue;
         }
         m_Os << "##" << key << " " << value << '\n';
-    } 
+    }
     return true;
 }
 
@@ -211,7 +211,7 @@ bool CGvfWriter::xWriteFeatureVariationRef(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGvfWriter::xWriteRecord( 
+bool CGvfWriter::xWriteRecord(
     const CGffBaseRecord& pRecord )
 //  ----------------------------------------------------------------------------
 {

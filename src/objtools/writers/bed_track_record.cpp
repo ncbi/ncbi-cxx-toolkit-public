@@ -70,7 +70,7 @@ bool CBedTrackRecord::Assign(
             continue;
         case CAnnotdesc::e_User: {
                 const auto& uo = field->GetUser();
-                if (!uo.IsSetType()  ||  !uo.GetType().IsStr()  ||  
+                if (!uo.IsSetType()  ||  !uo.GetType().IsStr()  ||
                         uo.GetType().GetStr() != "Track Data") {
                     continue;
                 }
@@ -117,7 +117,7 @@ bool CBedTrackRecord::xImportKeyValuePairs(
             continue;
         }
         mKeyValuePairs[key] = valueStr;
-    }  
+    }
     return true;
 }
 
@@ -134,7 +134,6 @@ CBedTrackRecord::xGetKeyValue(
     return val->second;
 }
 
-    
 //  ----------------------------------------------------------------------------
 bool CBedTrackRecord::Write(
     CNcbiOstream& ostr )
@@ -162,7 +161,7 @@ bool CBedTrackRecord::Write(
     for (auto pair: mKeyValuePairs) {
         auto key = pair.first;
         auto value = pair.second;
-        
+
         if (key == "name") {
             continue;
         }

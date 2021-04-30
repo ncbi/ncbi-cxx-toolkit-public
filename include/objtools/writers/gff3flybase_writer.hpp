@@ -29,7 +29,7 @@
  *
  * File Description:
  */
- 
+
 #include <objects/seqalign/Spliced_seg.hpp>
 #include <objects/seqalign/Spliced_exon.hpp>
 #include <objtools/writers/gff3_writer.hpp>
@@ -37,8 +37,8 @@
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
-//  ---------------------------------------------------------------------------- 
-class NCBI_XOBJWRITE_EXPORT CGff3FlybaseWriter 
+//  ----------------------------------------------------------------------------
+class NCBI_XOBJWRITE_EXPORT CGff3FlybaseWriter
     : public objects::CGff3Writer {
 //  ----------------------------------------------------------------------------
 public:

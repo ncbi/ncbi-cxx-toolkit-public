@@ -45,11 +45,11 @@ BEGIN_objects_SCOPE
 /// GFF (or GFF2) is a predecessor of GTF, GFF3, GVF and probably half a dozen
 /// other dialects in use today. GFF files consist of feature records, with each
 /// feature record consisting of nine columns.
-/// There is some agreed upon meaning of the first eight columns and on the 
+/// There is some agreed upon meaning of the first eight columns and on the
 /// general grammer of the column contents. Beyond that, there has never been
 /// a universally agreed upon defintion of the format (probably the prime reason
 /// the format is deprecated now).
-/// For the purpose of this implementation, GFF is taken to be the greatest 
+/// For the purpose of this implementation, GFF is taken to be the greatest
 /// common denominator between GTF and GFF3 (and this GVF). Those other writers
 /// then derive from this one, adding their own bits and pieces to complete the
 /// format renderer.
@@ -64,7 +64,7 @@ public:
         fGenerateMissingTranscripts = (fWriterBaseLast << 2),
         fGff2WriterLast = fSoQuirks,
     } TFlags;
-    
+
 public:
     /// Constructor.
     /// @param scope
@@ -116,15 +116,15 @@ public:
     /// @param asmblyAccession
     ///   optional assembly accession to use for the file header
     ///
-    virtual bool WriteAnnot( 
+    virtual bool WriteAnnot(
         const CSeq_annot& annot,
         const string& asmblyName="",
         const string& asmblyAccession="" );
 
     /// Write a Seq-align object.
     /// Calling this function on a general GFF2 writer (as opposed to GFF3 or
-    /// another more specialized format will fail because GFF2 at this general 
-    /// level does not address alignments; you will need at least a GFF3 writer 
+    /// another more specialized format will fail because GFF2 at this general
+    /// level does not address alignments; you will need at least a GFF3 writer
     /// for that.
     /// @param align
     ///   Seq-align object to be rendered
@@ -133,7 +133,7 @@ public:
     /// @param asmblyAccession
     ///   optional assembly accession to use for the file header
     ///
-    virtual bool WriteAlign( 
+    virtual bool WriteAlign(
         const CSeq_align&,
         const string& asmblyName="",
         const string& asmblyAccession="" );
@@ -169,7 +169,7 @@ public:
 
     /// Write Seq-annot contained in given handle
     /// Essentially, write out embedded feature table. Other annotation
-    /// types are not supported in the generic GFF2 writer(i.e. there will be 
+    /// types are not supported in the generic GFF2 writer(i.e. there will be
     /// a header and nothing else.
     /// @param sah
     ///   Seq-annot handle to be processed
@@ -347,7 +347,7 @@ protected:
     virtual bool x_WriteSequenceHeader(
         CSeq_id_Handle ) { return true; };
 
-    virtual bool x_WriteAnnot( 
+    virtual bool x_WriteAnnot(
         const CSeq_annot& );
 
     virtual bool x_WriteAlign(
@@ -381,7 +381,7 @@ protected:
     virtual bool x_WriteTrackLine(
         const CRef< CUser_object > );
 
-    virtual bool xGeneratingMissingTranscripts() const 
+    virtual bool xGeneratingMissingTranscripts() const
     {
         return (m_uFlags & fGenerateMissingTranscripts);
     }

@@ -120,7 +120,7 @@ protected:
     static std::string xGenericTranscriptId(
         const CMappedFeat&);
 
-    bool xWriteRecord( 
+    bool xWriteRecord(
         const CGffWriteRecord* );
 
     virtual bool xWriteFeature(
