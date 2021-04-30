@@ -58,7 +58,7 @@ public:
     CApplyObject(CBioseq_Handle bsh, const string& user_label);
     CApplyObject(CBioseq_Handle bsh, const CSeq_feat& feat);
     CApplyObject(CBioseq_Handle bsh);
-    
+
     bool PreExists() const { if (m_Original) return true; else return false; };
     CObject& SetObject() { return *m_Editable; };
     const CObject& GetObject() const { return *m_Editable; };

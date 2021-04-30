@@ -168,7 +168,7 @@ void s_CheckLocationPolicyResults(const CSeq_feat& cds, bool partial5, bool part
 BOOST_AUTO_TEST_CASE(Test_SeqLocPrintUseBestID)
 {
   CRef <CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
-  CRef <CSeq_entry> 
+  CRef <CSeq_entry>
      prot_entry = unit_test_util::GetProteinSequenceFromGoodNucProtSet(entry);
 
   // add seq_ids
@@ -200,7 +200,7 @@ BOOST_AUTO_TEST_CASE(Test_SeqLocPrintUseBestID)
   pnt->SetId().SetLocal().SetStr("prot");
   new_seq_loc->SetPnt(*pnt);
   new_feat->SetLocation(*new_seq_loc);
-  
+
   CRef <CScope> scope(new CScope(*CObjectManager::GetInstance()));
   CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
 
@@ -214,7 +214,6 @@ BOOST_AUTO_TEST_CASE(Test_SeqLocPrintUseBestID)
 }
 
 // cout << MSerial_AsnText << *entry << endl;
-  
 };
 
 BOOST_AUTO_TEST_CASE(Test_ApplyPolicyToFeature)
@@ -223,7 +222,7 @@ BOOST_AUTO_TEST_CASE(Test_ApplyPolicyToFeature)
     STANDARD_SETUP
 
     edit::CLocationEditPolicy policy(edit::CLocationEditPolicy::ePartialPolicy_eNoChange,
-                                     edit::CLocationEditPolicy::ePartialPolicy_eNoChange, 
+                                     edit::CLocationEditPolicy::ePartialPolicy_eNoChange,
                                      false, false,
                                      edit::CLocationEditPolicy::eMergePolicy_NoChange);
     CRef<CSeq_feat> cds = unit_test_util::GetCDSFromGoodNucProtSet (entry);
@@ -303,7 +302,6 @@ BOOST_AUTO_TEST_CASE(Test_ApplyPolicyToFeature)
     BOOST_CHECK_EQUAL(edit::ApplyPolicyToFeature(policy, *cds, scope, true, true), true);
     cds = unit_test_util::GetCDSFromGoodNucProtSet (entry);
     s_CheckLocationPolicyResults(*cds, false, false, 0, 26);
-    
 
     scope.RemoveTopLevelSeqEntry(seh);
     cds->SetLocation().SetInt().SetFrom(1);
@@ -326,7 +324,7 @@ BOOST_AUTO_TEST_CASE(Test_ApplyPolicyToFeature)
     BOOST_CHECK_EQUAL(edit::ApplyPolicyToFeature(policy, *cds, scope, true, true), true);
     cds = unit_test_util::GetCDSFromGoodNucProtSet (entry);
     s_CheckLocationPolicyResults(*cds, false, false, 0, 26);
-    
+
     scope.RemoveTopLevelSeqEntry(seh);
     cds->SetLocation().SetInt().SetFrom(3);
     cds->SetLocation().SetInt().SetTo(26);
@@ -344,7 +342,7 @@ BOOST_AUTO_TEST_CASE(Test_ApplyPolicyToFeature)
     BOOST_CHECK_EQUAL(edit::ApplyPolicyToFeature(policy, *cds, scope, true, true), true);
     cds = unit_test_util::GetCDSFromGoodNucProtSet (entry);
     s_CheckLocationPolicyResults(*cds, false, false, 0, 26);
-    
+
     scope.RemoveTopLevelSeqEntry(seh);
     cds->SetLocation().SetInt().SetFrom(2);
     cds->SetLocation().SetInt().SetTo(22);
@@ -463,7 +461,7 @@ BOOST_AUTO_TEST_CASE(Test_ReverseComplementLocation)
     // mix
     CRef<objects::CSeq_loc> mix_loc = unit_test_util::MakeMixLoc (id);
     edit::ReverseComplementLocation(*mix_loc, scope);
-    s_CheckLocationAndStrandResults(*mix_loc, false, false, 
+    s_CheckLocationAndStrandResults(*mix_loc, false, false,
                                     entry->GetSeq().GetInst().GetLength() - 1,
                                     entry->GetSeq().GetInst().GetLength() - 57,
                                     eNa_strand_minus);
@@ -633,7 +631,7 @@ BOOST_AUTO_TEST_CASE(Test_AdjustForTrim)
     bool adjusted = false;
 
     // cut to the right, should have no change
-    edit::SeqLocAdjustForTrim(*loc, 75, 100, id.GetPointer(), cut, trim5, adjusted); 
+    edit::SeqLocAdjustForTrim(*loc, 75, 100, id.GetPointer(), cut, trim5, adjusted);
     BOOST_CHECK_EQUAL(cut, false);
     BOOST_CHECK_EQUAL(adjusted, false);
     BOOST_CHECK_EQUAL(trim5, 0);
@@ -643,7 +641,7 @@ BOOST_AUTO_TEST_CASE(Test_AdjustForTrim)
     cut = false;
     trim5 = 0;
     adjusted = false;
-    edit::SeqLocAdjustForTrim(*loc, 0, 4, id.GetPointer(), cut, trim5, adjusted); 
+    edit::SeqLocAdjustForTrim(*loc, 0, 4, id.GetPointer(), cut, trim5, adjusted);
     BOOST_CHECK_EQUAL(cut, false);
     BOOST_CHECK_EQUAL(adjusted, true);
     BOOST_CHECK_EQUAL(trim5, 0);
@@ -653,7 +651,7 @@ BOOST_AUTO_TEST_CASE(Test_AdjustForTrim)
     cut = false;
     trim5 = 0;
     adjusted = false;
-    edit::SeqLocAdjustForTrim(*loc, 10, 19, id.GetPointer(), cut, trim5, adjusted); 
+    edit::SeqLocAdjustForTrim(*loc, 10, 19, id.GetPointer(), cut, trim5, adjusted);
     BOOST_CHECK_EQUAL(cut, false);
     BOOST_CHECK_EQUAL(adjusted, true);
     BOOST_CHECK_EQUAL(trim5, 0);
@@ -663,7 +661,7 @@ BOOST_AUTO_TEST_CASE(Test_AdjustForTrim)
     cut = false;
     trim5 = 0;
     adjusted = false;
-    edit::SeqLocAdjustForTrim(*loc, 0, 9, id.GetPointer(), cut, trim5, adjusted); 
+    edit::SeqLocAdjustForTrim(*loc, 0, 9, id.GetPointer(), cut, trim5, adjusted);
     BOOST_CHECK_EQUAL(cut, false);
     BOOST_CHECK_EQUAL(adjusted, true);
     BOOST_CHECK_EQUAL(trim5, 5);
@@ -673,7 +671,7 @@ BOOST_AUTO_TEST_CASE(Test_AdjustForTrim)
     cut = false;
     trim5 = 0;
     adjusted = false;
-    edit::SeqLocAdjustForTrim(*loc, 20, 25, id.GetPointer(), cut, trim5, adjusted); 
+    edit::SeqLocAdjustForTrim(*loc, 20, 25, id.GetPointer(), cut, trim5, adjusted);
     BOOST_CHECK_EQUAL(cut, false);
     BOOST_CHECK_EQUAL(adjusted, true);
     BOOST_CHECK_EQUAL(trim5, 0);
@@ -683,7 +681,7 @@ BOOST_AUTO_TEST_CASE(Test_AdjustForTrim)
     cut = false;
     trim5 = 0;
     adjusted = false;
-    edit::SeqLocAdjustForTrim(*loc, 0, 25, id.GetPointer(), cut, trim5, adjusted); 
+    edit::SeqLocAdjustForTrim(*loc, 0, 25, id.GetPointer(), cut, trim5, adjusted);
     BOOST_CHECK_EQUAL(cut, true);
 
     // Test for point
@@ -694,7 +692,7 @@ BOOST_AUTO_TEST_CASE(Test_AdjustForTrim)
     cut = false;
     trim5 = 0;
     adjusted = false;
-    edit::SeqLocAdjustForTrim(*loc, 20, 30, id.GetPointer(), cut, trim5, adjusted); 
+    edit::SeqLocAdjustForTrim(*loc, 20, 30, id.GetPointer(), cut, trim5, adjusted);
     BOOST_CHECK_EQUAL(cut, false);
     BOOST_CHECK_EQUAL(adjusted, false);
     BOOST_CHECK_EQUAL(trim5, 0);
@@ -704,7 +702,7 @@ BOOST_AUTO_TEST_CASE(Test_AdjustForTrim)
     cut = false;
     trim5 = 0;
     adjusted = false;
-    edit::SeqLocAdjustForTrim(*loc, 0, 4, id.GetPointer(), cut, trim5, adjusted); 
+    edit::SeqLocAdjustForTrim(*loc, 0, 4, id.GetPointer(), cut, trim5, adjusted);
     BOOST_CHECK_EQUAL(cut, false);
     BOOST_CHECK_EQUAL(adjusted, true);
     BOOST_CHECK_EQUAL(trim5, 0);
@@ -714,7 +712,7 @@ BOOST_AUTO_TEST_CASE(Test_AdjustForTrim)
     cut = false;
     trim5 = 0;
     adjusted = false;
-    edit::SeqLocAdjustForTrim(*loc, 0, 10, id.GetPointer(), cut, trim5, adjusted); 
+    edit::SeqLocAdjustForTrim(*loc, 0, 10, id.GetPointer(), cut, trim5, adjusted);
     BOOST_CHECK_EQUAL(cut, true);
     BOOST_CHECK_EQUAL(trim5, 1);
 
@@ -734,7 +732,7 @@ BOOST_AUTO_TEST_CASE(Test_AdjustForTrim)
     cut = false;
     trim5 = 0;
     adjusted = false;
-    edit::SeqLocAdjustForTrim(*loc, 120, 130, id.GetPointer(), cut, trim5, adjusted); 
+    edit::SeqLocAdjustForTrim(*loc, 120, 130, id.GetPointer(), cut, trim5, adjusted);
     BOOST_CHECK_EQUAL(cut, false);
     BOOST_CHECK_EQUAL(adjusted, false);
     BOOST_CHECK_EQUAL(trim5, 0);
@@ -744,7 +742,7 @@ BOOST_AUTO_TEST_CASE(Test_AdjustForTrim)
     cut = false;
     trim5 = 0;
     adjusted = false;
-    edit::SeqLocAdjustForTrim(*loc, 106, 120, id.GetPointer(), cut, trim5, adjusted); 
+    edit::SeqLocAdjustForTrim(*loc, 106, 120, id.GetPointer(), cut, trim5, adjusted);
     to[2] = 105;
     BOOST_CHECK_EQUAL(cut, false);
     BOOST_CHECK_EQUAL(adjusted, true);
@@ -755,7 +753,7 @@ BOOST_AUTO_TEST_CASE(Test_AdjustForTrim)
     cut = false;
     trim5 = 0;
     adjusted = false;
-    edit::SeqLocAdjustForTrim(*loc, 85, 94, id.GetPointer(), cut, trim5, adjusted); 
+    edit::SeqLocAdjustForTrim(*loc, 85, 94, id.GetPointer(), cut, trim5, adjusted);
     from[2] = 85;
     to[2] = 95;
     BOOST_CHECK_EQUAL(cut, false);
@@ -767,7 +765,7 @@ BOOST_AUTO_TEST_CASE(Test_AdjustForTrim)
     cut = false;
     trim5 = 0;
     adjusted = false;
-    edit::SeqLocAdjustForTrim(*loc, 72, 76, id.GetPointer(), cut, trim5, adjusted); 
+    edit::SeqLocAdjustForTrim(*loc, 72, 76, id.GetPointer(), cut, trim5, adjusted);
     from[2] = 80;
     to[2] = 90;
     BOOST_CHECK_EQUAL(cut, false);
@@ -788,7 +786,7 @@ BOOST_AUTO_TEST_CASE(Test_AdjustForTrim)
     BOOST_CHECK_EQUAL(adjusted, true);
     BOOST_CHECK_EQUAL(trim5, 0);
     s_CheckPackedInt(loc->GetPacked_int(), from, to);
-    
+
     // cut left portion of first interval
     cut = false;
     trim5 = 0;
@@ -828,7 +826,7 @@ BOOST_AUTO_TEST_CASE(Test_AdjustForTrim)
     cut = false;
     trim5 = 0;
     adjusted = false;
-    edit::SeqLocAdjustForTrim(*loc, 120, 130, id.GetPointer(), cut, trim5, adjusted); 
+    edit::SeqLocAdjustForTrim(*loc, 120, 130, id.GetPointer(), cut, trim5, adjusted);
     BOOST_CHECK_EQUAL(cut, false);
     BOOST_CHECK_EQUAL(adjusted, false);
     BOOST_CHECK_EQUAL(trim5, 0);
@@ -838,7 +836,7 @@ BOOST_AUTO_TEST_CASE(Test_AdjustForTrim)
     cut = false;
     trim5 = 0;
     adjusted = false;
-    edit::SeqLocAdjustForTrim(*loc, 106, 120, id.GetPointer(), cut, trim5, adjusted); 
+    edit::SeqLocAdjustForTrim(*loc, 106, 120, id.GetPointer(), cut, trim5, adjusted);
     to[2] = 105;
     BOOST_CHECK_EQUAL(cut, false);
     BOOST_CHECK_EQUAL(adjusted, true);
@@ -849,7 +847,7 @@ BOOST_AUTO_TEST_CASE(Test_AdjustForTrim)
     cut = false;
     trim5 = 0;
     adjusted = false;
-    edit::SeqLocAdjustForTrim(*loc, 85, 94, id.GetPointer(), cut, trim5, adjusted); 
+    edit::SeqLocAdjustForTrim(*loc, 85, 94, id.GetPointer(), cut, trim5, adjusted);
     from[2] = 85;
     to[2] = 95;
     BOOST_CHECK_EQUAL(cut, false);
@@ -861,7 +859,7 @@ BOOST_AUTO_TEST_CASE(Test_AdjustForTrim)
     cut = false;
     trim5 = 0;
     adjusted = false;
-    edit::SeqLocAdjustForTrim(*loc, 72, 76, id.GetPointer(), cut, trim5, adjusted); 
+    edit::SeqLocAdjustForTrim(*loc, 72, 76, id.GetPointer(), cut, trim5, adjusted);
     from[2] = 80;
     to[2] = 90;
     BOOST_CHECK_EQUAL(cut, false);
@@ -882,7 +880,7 @@ BOOST_AUTO_TEST_CASE(Test_AdjustForTrim)
     BOOST_CHECK_EQUAL(adjusted, true);
     BOOST_CHECK_EQUAL(trim5, 0);
     s_CheckMixLoc(*loc, from, to);
-    
+
     // cut left portion of first interval
     cut = false;
     trim5 = 0;
@@ -905,7 +903,6 @@ BOOST_AUTO_TEST_CASE(Test_AdjustForTrim)
     adjusted = false;
     edit::SeqLocAdjustForTrim(*loc, 5, 59, id.GetPointer(), cut, trim5, adjusted);
     BOOST_CHECK_EQUAL(cut, true);
-    
 }
 
 
@@ -921,15 +918,15 @@ BOOST_AUTO_TEST_CASE(Test_AdjustForInsert)
     loc->SetInt().SetTo(50);
 
     // insert to right, no change
-    edit::SeqLocAdjustForInsert(*loc, 75, 100, id.GetPointer()); 
+    edit::SeqLocAdjustForInsert(*loc, 75, 100, id.GetPointer());
     s_CheckInterval(loc->GetInt(), 10, 50);
 
     // insert in middle, move right end
-    edit::SeqLocAdjustForInsert(*loc, 20, 29, id.GetPointer()); 
+    edit::SeqLocAdjustForInsert(*loc, 20, 29, id.GetPointer());
     s_CheckInterval(loc->GetInt(), 10, 60);
 
     // insert to left, shift both endpoints
-    edit::SeqLocAdjustForInsert(*loc, 5, 9, id.GetPointer()); 
+    edit::SeqLocAdjustForInsert(*loc, 5, 9, id.GetPointer());
     s_CheckInterval(loc->GetInt(), 15, 65);
 
     // Test for point
@@ -937,11 +934,11 @@ BOOST_AUTO_TEST_CASE(Test_AdjustForInsert)
     loc->SetPnt().SetPoint(10);
 
     // insert to right, no change
-    edit::SeqLocAdjustForInsert(*loc, 75, 100, id.GetPointer()); 
+    edit::SeqLocAdjustForInsert(*loc, 75, 100, id.GetPointer());
     BOOST_CHECK_EQUAL(loc->GetPnt().GetPoint(), 10);
-   
+
     // insert to left, shift
-    edit::SeqLocAdjustForInsert(*loc, 5, 7, id.GetPointer()); 
+    edit::SeqLocAdjustForInsert(*loc, 5, 7, id.GetPointer());
     BOOST_CHECK_EQUAL(loc->GetPnt().GetPoint(), 13);
 
 
@@ -957,11 +954,11 @@ BOOST_AUTO_TEST_CASE(Test_AdjustForInsert)
     s_MakePackedInt(*loc, *id, from, to);
 
     // insert to right, no change
-    edit::SeqLocAdjustForInsert(*loc, 120, 130, id.GetPointer()); 
+    edit::SeqLocAdjustForInsert(*loc, 120, 130, id.GetPointer());
     s_CheckPackedInt(loc->GetPacked_int(), from, to);
 
     // insert to left, shift all
-    edit::SeqLocAdjustForInsert(*loc, 1, 5, id.GetPointer()); 
+    edit::SeqLocAdjustForInsert(*loc, 1, 5, id.GetPointer());
     for (vector<TSeqPos>::iterator it = from.begin(); it != from.end(); ++it) {
         (*it) += 5;
     }
@@ -1001,11 +998,11 @@ BOOST_AUTO_TEST_CASE(Test_AdjustForInsert)
     s_MakeMixLoc(*loc, *id, from, to);
 
     // insert to right, no change
-    edit::SeqLocAdjustForInsert(*loc, 120, 130, id.GetPointer()); 
+    edit::SeqLocAdjustForInsert(*loc, 120, 130, id.GetPointer());
     s_CheckMixLoc(*loc, from, to);
 
     // insert to left, shift all
-    edit::SeqLocAdjustForInsert(*loc, 1, 5, id.GetPointer()); 
+    edit::SeqLocAdjustForInsert(*loc, 1, 5, id.GetPointer());
     for (vector<TSeqPos>::iterator it = from.begin(); it != from.end(); ++it) {
         (*it) += 5;
     }
@@ -1053,13 +1050,13 @@ BOOST_AUTO_TEST_CASE(Test_SplitLocationForGap)
     loc1->SetInt().SetFrom(10);
     loc1->SetInt().SetTo(50);
 
-    // gap to right, no change   
-    edit::SplitLocationForGap(*loc1, *loc2, 75, 100, id.GetPointer(), options); 
+    // gap to right, no change
+    edit::SplitLocationForGap(*loc1, *loc2, 75, 100, id.GetPointer(), options);
     s_CheckInterval(loc1->GetInt(), 10, 50);
     BOOST_CHECK_EQUAL(loc2->Which(), CSeq_loc::e_not_set);
 
     // gap in middle
-    edit::SplitLocationForGap(*loc1, *loc2, 20, 29, id.GetPointer(), options); 
+    edit::SplitLocationForGap(*loc1, *loc2, 20, 29, id.GetPointer(), options);
     s_CheckInterval(loc1->GetInt(), 10, 19);
     s_CheckInterval(loc2->GetInt(), 30, 50);
 
@@ -1068,7 +1065,7 @@ BOOST_AUTO_TEST_CASE(Test_SplitLocationForGap)
     loc1->SetInt().SetFrom(10);
     loc1->SetInt().SetTo(50);
     loc2->Reset();
-    edit::SplitLocationForGap(*loc1, *loc2, 5, 9, id.GetPointer(), options); 
+    edit::SplitLocationForGap(*loc1, *loc2, 5, 9, id.GetPointer(), options);
     BOOST_CHECK_EQUAL(loc1->Which(), CSeq_loc::e_not_set);
     s_CheckInterval(loc2->GetInt(), 10, 50);
 
@@ -1078,10 +1075,10 @@ BOOST_AUTO_TEST_CASE(Test_SplitLocationForGap)
     loc2->Reset();
 
     // gap to right, no change
-    edit::SplitLocationForGap(*loc1, *loc2, 75, 100, id.GetPointer(), options); 
+    edit::SplitLocationForGap(*loc1, *loc2, 75, 100, id.GetPointer(), options);
     BOOST_CHECK_EQUAL(loc1->GetPnt().GetPoint(), 10);
     BOOST_CHECK_EQUAL(loc2->Which(), CSeq_loc::e_not_set);
-   
+
     // gap to left, move to loc2
     edit::SplitLocationForGap(*loc1, *loc2, 5, 7, id.GetPointer(), options);
     BOOST_CHECK_EQUAL(loc1->Which(), CSeq_loc::e_not_set);
@@ -1100,12 +1097,12 @@ BOOST_AUTO_TEST_CASE(Test_SplitLocationForGap)
     loc2->Reset();
 
     // gap to right, no change
-    edit::SplitLocationForGap(*loc1, *loc2, 120, 130, id.GetPointer(), options); 
+    edit::SplitLocationForGap(*loc1, *loc2, 120, 130, id.GetPointer(), options);
     s_CheckPackedInt(loc1->GetPacked_int(), from, to);
     BOOST_CHECK_EQUAL(loc2->Which(), CSeq_loc::e_not_set);
 
     // gap to left, move to loc2
-    edit::SplitLocationForGap(*loc1, *loc2, 1, 5, id.GetPointer(), options); 
+    edit::SplitLocationForGap(*loc1, *loc2, 1, 5, id.GetPointer(), options);
     BOOST_CHECK_EQUAL(loc1->Which(), CSeq_loc::e_not_set);
     s_CheckPackedInt(loc2->GetPacked_int(), from, to);
 
@@ -1156,12 +1153,12 @@ BOOST_AUTO_TEST_CASE(Test_SplitLocationForGap)
     loc2->Reset();
 
     // gap to right, no change
-    edit::SplitLocationForGap(*loc1, *loc2, 120, 130, id.GetPointer(), options); 
+    edit::SplitLocationForGap(*loc1, *loc2, 120, 130, id.GetPointer(), options);
     s_CheckMixLoc(*loc1, from, to);
     BOOST_CHECK_EQUAL(loc2->Which(), CSeq_loc::e_not_set);
 
     // gap to left, move to loc2
-    edit::SplitLocationForGap(*loc1, *loc2, 1, 5, id.GetPointer(), options); 
+    edit::SplitLocationForGap(*loc1, *loc2, 1, 5, id.GetPointer(), options);
     BOOST_CHECK_EQUAL(loc1->Which(), CSeq_loc::e_not_set);
     s_CheckMixLoc(*loc2, from, to);
 
@@ -1204,7 +1201,7 @@ BOOST_AUTO_TEST_CASE(Test_SplitLocationForGap_GB8665Plus)
     CRef<CSeq_loc> loc1(new CSeq_loc());
     CRef<CSeq_id> id(new CSeq_id());
     id->SetLocal().SetStr("nuc1");
-    
+
     CRef<CSeq_loc> loc2(new CSeq_loc());
 
     unsigned int options = edit::eSplitLocOption_make_partial | edit::eSplitLocOption_split_in_exon;
@@ -1215,7 +1212,7 @@ BOOST_AUTO_TEST_CASE(Test_SplitLocationForGap_GB8665Plus)
     from.push_back(29); to.push_back(34);
     from.push_back(39); to.push_back(49);
     from.push_back(51); to.push_back(59);
-    
+
     s_MakePackedInt(*loc1, *id, from, to);
     loc2->Reset();
 
@@ -1459,7 +1456,7 @@ BOOST_AUTO_TEST_CASE(Test_CorrectIntervalOrder)
     BOOST_CHECK_EQUAL(e->SetPacked_pnt().SetPoints().front(), 34);
     BOOST_CHECK_EQUAL(e->SetPacked_pnt().SetPoints().back(), 36);
     BOOST_CHECK_EQUAL(edit::CorrectIntervalOrder(*e), false);
-    
+
     c->SetMix().Set().push_back(e);
     // won't correct, IDs differ
     BOOST_CHECK_EQUAL(edit::CorrectIntervalOrder(*c), false);
@@ -1509,8 +1506,8 @@ BOOST_AUTO_TEST_CASE(Test_CorrectIntervalOrder)
 }
 
 
-void Check5Policy(CSeq_feat& imp, CScope& scope, 
-    edit::CLocationEditPolicy::EPartialPolicy policy_choice, 
+void Check5Policy(CSeq_feat& imp, CScope& scope,
+    edit::CLocationEditPolicy::EPartialPolicy policy_choice,
     bool expect_set5, bool expect_clear5,
     bool extend = false)
 {
@@ -1530,8 +1527,8 @@ void Check5Policy(CSeq_feat& imp, CScope& scope,
 }
 
 
-void Check3Policy(CSeq_feat& imp, CScope& scope, 
-    edit::CLocationEditPolicy::EPartialPolicy policy_choice, 
+void Check3Policy(CSeq_feat& imp, CScope& scope,
+    edit::CLocationEditPolicy::EPartialPolicy policy_choice,
     bool expect_set3, bool expect_clear3, bool extend = false)
 {
     CRef<edit::CLocationEditPolicy> policy(new edit::CLocationEditPolicy());
@@ -1664,11 +1661,11 @@ void Check5Policy(bool good_end, bool is_minus, bool already_partial)
 
     STANDARD_SETUP
 
-    Check5Policy(*cds, scope, 
+    Check5Policy(*cds, scope,
         edit::CLocationEditPolicy::ePartialPolicy_eNoChange,
         false, false);
 
-    Check5Policy(*cds, scope, 
+    Check5Policy(*cds, scope,
             edit::CLocationEditPolicy::ePartialPolicy_eSetAtEnd,
             !already_partial, false);
 
@@ -1694,7 +1691,7 @@ void Check5Policy(bool good_end, bool is_minus, bool already_partial)
         false, good_end & already_partial);
 
 
-    Check5Policy(*cds, scope, 
+    Check5Policy(*cds, scope,
         edit::CLocationEditPolicy::ePartialPolicy_eClearNotAtEnd,
         false, false);
 
@@ -1748,7 +1745,7 @@ void Check3Extend(bool good_end, bool is_minus, bool already_partial)
     STANDARD_SETUP
 
     if (is_minus) {
-        BOOST_CHECK_EQUAL(cds->GetLocation().GetStop(eExtreme_Biological), 0);        
+        BOOST_CHECK_EQUAL(cds->GetLocation().GetStop(eExtreme_Biological), 0);
     } else {
         BOOST_CHECK_EQUAL(cds->GetLocation().GetStop(eExtreme_Biological), entry->GetSet().GetSeq_set().back()->GetSeq().GetInst().GetLength() - 1);
     }
@@ -1756,21 +1753,21 @@ void Check3Extend(bool good_end, bool is_minus, bool already_partial)
     CRef<edit::CLocationEditPolicy> policy(new edit::CLocationEditPolicy());
     BOOST_CHECK_EQUAL(false, policy->Extend3(*cds, scope));
     if (is_minus) {
-        BOOST_CHECK_EQUAL(cds->GetLocation().GetStop(eExtreme_Biological), 0);        
+        BOOST_CHECK_EQUAL(cds->GetLocation().GetStop(eExtreme_Biological), 0);
     } else {
         BOOST_CHECK_EQUAL(cds->GetLocation().GetStop(eExtreme_Biological), entry->GetSet().GetSeq_set().back()->GetSeq().GetInst().GetLength() - 1);
     }
 
     TruncateTransSplicedCDSForExtension(entry, false, true);
     if (is_minus) {
-        BOOST_CHECK_EQUAL(cds->GetLocation().GetStop(eExtreme_Biological), 1);        
+        BOOST_CHECK_EQUAL(cds->GetLocation().GetStop(eExtreme_Biological), 1);
     } else {
         BOOST_CHECK_EQUAL(cds->GetLocation().GetStop(eExtreme_Biological), entry->GetSet().GetSeq_set().back()->GetSeq().GetInst().GetLength() - 2);
     }
 
     BOOST_CHECK_EQUAL(true, policy->Extend3(*cds, scope));
     if (is_minus) {
-        BOOST_CHECK_EQUAL(cds->GetLocation().GetStop(eExtreme_Biological), 0);        
+        BOOST_CHECK_EQUAL(cds->GetLocation().GetStop(eExtreme_Biological), 0);
     } else {
         BOOST_CHECK_EQUAL(cds->GetLocation().GetStop(eExtreme_Biological), entry->GetSet().GetSeq_set().back()->GetSeq().GetInst().GetLength() - 1);
     }
@@ -1813,11 +1810,11 @@ void Check3Policy(bool good_end, bool is_minus, bool already_partial)
 
     STANDARD_SETUP
 
-    Check3Policy(*cds, scope, 
+    Check3Policy(*cds, scope,
         edit::CLocationEditPolicy::ePartialPolicy_eNoChange,
         false, false);
 
-    Check3Policy(*cds, scope, 
+    Check3Policy(*cds, scope,
             edit::CLocationEditPolicy::ePartialPolicy_eSetAtEnd,
             !already_partial, false);
 
@@ -1843,7 +1840,7 @@ void Check3Policy(bool good_end, bool is_minus, bool already_partial)
         false, good_end & already_partial);
 
 
-    Check3Policy(*cds, scope, 
+    Check3Policy(*cds, scope,
         edit::CLocationEditPolicy::ePartialPolicy_eClearNotAtEnd,
         false, false);
 
@@ -1939,7 +1936,7 @@ void CheckAdjustStart(TSeqPos start, TSeqPos expect_start, bool partial_start, C
     CFeat_CI c(*bi, CSeqFeatData::e_Cdregion);
     BOOST_CHECK_EQUAL(c->GetLocation().GetStart(eExtreme_Biological), expect_start);
     CCdregion::EFrame after_frame = c->GetData().GetCdregion().IsSetFrame() ? c->GetData().GetCdregion().GetFrame() : CCdregion::eFrame_one;
-    if (after_frame == CCdregion::eFrame_not_set) { 
+    if (after_frame == CCdregion::eFrame_not_set) {
         after_frame = CCdregion::eFrame_not_set;
     }
     BOOST_CHECK_EQUAL(after_frame, frame);
@@ -1971,7 +1968,7 @@ void CheckAdjustStop(TSeqPos stop, TSeqPos expect_stop, bool partial_stop, bool 
     CFeat_CI c(*bi, CSeqFeatData::e_Cdregion);
     BOOST_CHECK_EQUAL(c->GetLocation().GetStop(eExtreme_Biological), expect_stop);
     CCdregion::EFrame after_frame = c->GetData().GetCdregion().IsSetFrame() ? c->GetData().GetCdregion().GetFrame() : CCdregion::eFrame_one;
-    if (after_frame == CCdregion::eFrame_not_set) { 
+    if (after_frame == CCdregion::eFrame_not_set) {
         after_frame = CCdregion::eFrame_not_set;
     }
     BOOST_CHECK_EQUAL(after_frame, CCdregion::eFrame_one);
@@ -1979,8 +1976,8 @@ void CheckAdjustStop(TSeqPos stop, TSeqPos expect_stop, bool partial_stop, bool 
 
 
 static void CheckAdjustStartAndStop(
-        const CRange<TSeqPos>& range, 
-        const CRange<TSeqPos>& expected_range, 
+        const CRange<TSeqPos>& range,
+        const CRange<TSeqPos>& expected_range,
         bool partial_start,
         CCdregion::EFrame frame,
         bool partial_stop,
@@ -1990,17 +1987,17 @@ static void CheckAdjustStartAndStop(
 
     auto cds = unit_test_util::AddMiscFeature(entry);
     cds->SetData().SetCdregion();
- 
+
     cds->SetLocation().SetInt().SetFrom(range.GetFrom());
     cds->SetLocation().SetInt().SetTo(range.GetTo());
     if (is_minus) {
         cds->SetLocation().SetInt().SetStrand(eNa_strand_minus);
-    }   
+    }
     cds->SetLocation().SetPartialStart(partial_start, eExtreme_Biological);
     cds->SetLocation().SetPartialStop(partial_stop, eExtreme_Biological);
 
     STANDARD_SETUP
-    const bool change_expected = 
+    const bool change_expected =
     (range.GetFrom() != expected_range.GetFrom() || range.GetTo() != expected_range.GetTo());
     BOOST_CHECK_EQUAL(edit::IsExtendable(*cds, scope), change_expected);
 
@@ -2012,7 +2009,7 @@ static void CheckAdjustStartAndStop(
     BOOST_CHECK_EQUAL(fi->GetLocation().GetStop(eExtreme_Biological), is_minus ? expected_range.GetFrom() : expected_range.GetTo());
 
     CCdregion::EFrame after_frame = fi->GetData().GetCdregion().IsSetFrame() ? fi->GetData().GetCdregion().GetFrame() : CCdregion::eFrame_one;
-    if (after_frame == CCdregion::eFrame_not_set) { 
+    if (after_frame == CCdregion::eFrame_not_set) {
         after_frame = CCdregion::eFrame_not_set;
     }
     BOOST_CHECK_EQUAL(after_frame, frame);
@@ -2031,7 +2028,7 @@ BOOST_AUTO_TEST_CASE(Test_RW_566)
     CheckAdjustStart(3, 0, true, CCdregion::eFrame_one);
     CheckAdjustStart(4, 4, false, CCdregion::eFrame_one);
     CheckAdjustStart(4, 4, true, CCdregion::eFrame_one);
-    
+
     CheckAdjustStart(22, 22, false, CCdregion::eFrame_one);
     CheckAdjustStart(22, 22, true, CCdregion::eFrame_one);
     CheckAdjustStart(23, 23, false, CCdregion::eFrame_one);
@@ -2108,10 +2105,10 @@ BOOST_AUTO_TEST_CASE(Test_RW_566)
     CheckAdjustStop(25, 22, true, true);
     CheckAdjustStop(26, 26, false, true);
     CheckAdjustStop(26, 26, true, true);
-    
+
     CheckAdjustStartAndStop(
-            CRange<TSeqPos>(1,31), 
-            CRange<TSeqPos>(0,33), 
+            CRange<TSeqPos>(1,31),
+            CRange<TSeqPos>(0,33),
             true, CCdregion::eFrame_three, true, true);
 }
 

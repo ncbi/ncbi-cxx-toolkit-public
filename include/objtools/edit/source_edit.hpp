@@ -39,7 +39,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 BEGIN_SCOPE(edit)
 
-/// Function removes old-name modifier and the tax-id, 
+/// Function removes old-name modifier and the tax-id,
 /// resets the common name and removes the synonyms for taxname
 NCBI_XOBJEDIT_EXPORT bool CleanupForTaxnameChange( objects::CBioSource& src );
 NCBI_XOBJEDIT_EXPORT bool RemoveOldName( objects::CBioSource& src );

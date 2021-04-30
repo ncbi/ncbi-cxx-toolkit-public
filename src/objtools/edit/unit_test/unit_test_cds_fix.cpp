@@ -166,11 +166,11 @@ NCBITEST_AUTO_INIT()
 
 void CheckTerminalExceptionResults (CSeq_feat& cds, CScope& scope,
                   bool strict, bool extend,
-                  bool expected_rval, bool set_codebreak, 
+                  bool expected_rval, bool set_codebreak,
                   bool set_comment, TSeqPos expected_endpoint)
 {
     const CCdregion& cdr = cds.GetData().GetCdregion();
-    BOOST_CHECK_EQUAL(edit::SetTranslExcept(cds, 
+    BOOST_CHECK_EQUAL(edit::SetTranslExcept(cds,
                                             "TAA stop codon is completed by the addition of 3' A residues to the mRNA",
                                             strict, extend, scope),
                       expected_rval);
@@ -189,7 +189,7 @@ void CheckTerminalExceptionResults (CSeq_feat& cds, CScope& scope,
 
 void OneTerminalTranslationExceptionTest(bool strict, bool extend, TSeqPos endpoint,
                                          const string& seq,
-                                         bool expected_rval, bool set_codebreak, bool set_comment,                                         
+                                         bool expected_rval, bool set_codebreak, bool set_comment,
                                          TSeqPos expected_endpoint)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
@@ -200,10 +200,10 @@ void OneTerminalTranslationExceptionTest(bool strict, bool extend, TSeqPos endpo
     CBioseq& nuc_seq = entry->SetSet().SetSeq_set().front()->SetSeq();
     nuc_seq.SetInst().SetSeq_data().SetIupacna().Set(seq);
     cds->SetLocation().SetInt().SetTo(endpoint);
-    
+
     // Should not set translation exception if coding region already has stop codon
     CheckTerminalExceptionResults(*cds, seh.GetScope(),
-                                  strict, extend, expected_rval, 
+                                  strict, extend, expected_rval,
                                   set_codebreak, set_comment, expected_endpoint);
 
     cdr.ResetCode_break();
@@ -215,8 +215,8 @@ void OneTerminalTranslationExceptionTest(bool strict, bool extend, TSeqPos endpo
     unit_test_util::RevComp(entry);
     seh = scope.AddTopLevelSeqEntry(*entry);
     CheckTerminalExceptionResults(*cds, seh.GetScope(),
-                                  strict, extend, expected_rval, 
-                                  set_codebreak, set_comment, 
+                                  strict, extend, expected_rval,
+                                  set_codebreak, set_comment,
                                   nuc_seq.GetLength() - expected_endpoint - 1);
 }
 
@@ -225,40 +225,40 @@ BOOST_AUTO_TEST_CASE(Test_AddTerminalTranslationException)
 {
     string original_seq = "ATGCCCAGAAAAACAGAGATAAACTAAGGGATGCCCAGAAAAACAGAGATAAACTAAGGG";
     // no change if normal
-    OneTerminalTranslationExceptionTest(true, true, 26, 
+    OneTerminalTranslationExceptionTest(true, true, 26,
                                         original_seq,
                                         false, false, false, 26);
 
     // should not set translation exception, but should extend to cover stop codon if extend is true
-    OneTerminalTranslationExceptionTest(true, true, 23, 
+    OneTerminalTranslationExceptionTest(true, true, 23,
                                         original_seq,
                                         true, false, false, 26);
 
     // but no change if extend flag is false
-    OneTerminalTranslationExceptionTest(true, false, 23, 
+    OneTerminalTranslationExceptionTest(true, false, 23,
                                         original_seq,
                                         false, false, false, 23);
 
     // should be set if last A in stop codon is replaced with other NT and coding region is one shorter
     string changed_seq = original_seq;
     changed_seq[26] = 'C';
-    OneTerminalTranslationExceptionTest(true, true, 25, 
+    OneTerminalTranslationExceptionTest(true, true, 25,
                                         changed_seq,
                                         true, true, true, 25);
 
     // should extend for partial stop codon and and add terminal exception if coding region missing
     // entire last codon
-    OneTerminalTranslationExceptionTest(true, true, 23, 
+    OneTerminalTranslationExceptionTest(true, true, 23,
                                         changed_seq,
                                         true, true, true, 25);
 
     // for non-strict, first NT could be N
     changed_seq[24] = 'N';
-    OneTerminalTranslationExceptionTest(false, true, 25, 
+    OneTerminalTranslationExceptionTest(false, true, 25,
                                         changed_seq,
                                         true, true, true, 25);
     // but not for strict
-    OneTerminalTranslationExceptionTest(true, true, 23, 
+    OneTerminalTranslationExceptionTest(true, true, 23,
                                         changed_seq,
                                         false, false, false, 23);
 
@@ -298,7 +298,7 @@ BOOST_AUTO_TEST_CASE(Test_FeaturePartialSynchronization)
     BOOST_CHECK_EQUAL(cds->IsSetPartial(), false);
     BOOST_CHECK_EQUAL(feature::AdjustFeaturePartialFlagForLocation(*cds), true);
     BOOST_CHECK_EQUAL(cds->IsSetPartial(), true);
-            
+
     BOOST_CHECK_EQUAL(edit::AdjustProteinFeaturePartialsToMatchCDS(*prot_feat, *cds), true);
     BOOST_CHECK_EQUAL(prot_feat->GetLocation().IsPartialStart(eExtreme_Biological), true);
     BOOST_CHECK_EQUAL(prot_feat->GetLocation().IsPartialStop(eExtreme_Biological), false);
@@ -386,7 +386,7 @@ BOOST_AUTO_TEST_CASE(Test_MakemRNAforCDS_with_complex_UTR)
         CNcbiIstrstream istr(sc_TestEntry2);
         istr >> MSerial_AsnText >> entry;
     }
-       
+
     CScope scope(*CObjectManager::GetInstance());
     CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(entry);
     CRef<CSeq_feat> cds = entry.SetSet().SetSeq_set().front()->SetSet().SetAnnot().front()->SetData().SetFtable().front();
@@ -407,7 +407,7 @@ BOOST_AUTO_TEST_CASE(Test_MakemRNAforCDS_with_exons)
         CNcbiIfstream istr(sc_TestEntry3);
         istr >> MSerial_AsnText >> entry;
     }
-       
+
     CScope scope(*CObjectManager::GetInstance());
     CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(entry);
     auto it = entry.SetSet().SetAnnot().front()->SetData().SetFtable().begin();
@@ -742,7 +742,7 @@ BOOST_AUTO_TEST_CASE(Test_SuspectRule)
 
     BOOST_CHECK_EQUAL(rule->ApplyToString(test), true);
     BOOST_CHECK_EQUAL(test, "foo foo foo foo");
-    
+
     test = "30S ribosomal protein S12";
     rule->SetFind().Reset();
     rule->SetFind().SetString_constraint().SetMatch_location(eString_location_equals);
@@ -823,7 +823,7 @@ BOOST_AUTO_TEST_CASE(Test_SuspectRule)
     word_sub.Reset(new CWord_substitution);
     // all the syns won't match because of missing word_sub.Word;
     syns.clear();
-    syns.push_back("fruit");     
+    syns.push_back("fruit");
     syns.push_back("apple");
     syns.push_back("apple, pear");
     syns.push_back("grape");
@@ -892,7 +892,7 @@ BOOST_AUTO_TEST_CASE(Test_PromoteCDSToNucProtSet_And_DemoteCDSToNucSeq)
     CRef<CSeq_id> product_id(new CSeq_id());
     product_id->SetLocal().SetStr("prot");
     cds->SetProduct().SetWhole().Assign(*product_id);
-    
+
     seh = scope.AddTopLevelSeqEntry(*nuc);
     fh = scope.GetSeq_featHandle(*cds);
     BOOST_CHECK_EQUAL(feature::PromoteCDSToNucProtSet(fh), false);

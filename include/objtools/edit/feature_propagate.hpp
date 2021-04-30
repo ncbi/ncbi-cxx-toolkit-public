@@ -119,7 +119,6 @@ private:
     public:
         CSynonymMapper(CFeaturePropagator *e) : m_e(e) {}
         virtual ~CSynonymMapper(void) {}
-        
         virtual CSeq_id_Handle GetBestSynonym(const CSeq_id& id) {return sequence::GetId(m_e->m_Scope.GetBioseqHandle(id), sequence::eGetId_Best);}
     private:
         CFeaturePropagator* m_e;

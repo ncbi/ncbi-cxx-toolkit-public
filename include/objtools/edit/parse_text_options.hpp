@@ -28,7 +28,7 @@
 * Authors:  Colleen Bollin, Andrea Asztalos
 *
 * File Description:
-*   Classes that implement string parsing. 
+*   Classes that implement string parsing.
 */
 
 #include <corelib/ncbistd.hpp>
@@ -52,7 +52,7 @@ public:
         eMarkerType_Letters
     };
 
-    CParseTextMarker() 
+    CParseTextMarker()
         : m_MarkerType(eMarkerType_None),
         m_Text(kEmptyStr) {}
     ~CParseTextMarker() {}
@@ -62,7 +62,7 @@ public:
     void SetLetters() { m_MarkerType = eMarkerType_Letters; }
     bool FindInText(const string& val, size_t& pos, size_t& len, size_t start_search, bool case_insensitive, bool whole_word) const;
     void Reset();
-    
+
     static void s_GetDigitsPosition(const string& str, size_t& pos, size_t& len, size_t start_search);
     static void s_GetLettersPosition(const string& str, size_t& pos, size_t& len, size_t start_search);
 
@@ -75,7 +75,7 @@ private:
 class NCBI_XOBJEDIT_EXPORT CParseTextOptions : public CObject
 {
 public:
-    CParseTextOptions() 
+    CParseTextOptions()
         : m_IncludeStartMarker(false),
         m_IncludeStopMarker(false),
         m_RemoveFromParsed(false),
@@ -91,7 +91,7 @@ public:
     void SetStopDigits() { m_StopMarker.SetDigits(); }
     void SetStartLetters() { m_StartMarker.SetLetters(); }
     void SetStopLetters() { m_StopMarker.SetLetters(); }
-    
+
     void SetIncludeStart(bool val) { m_IncludeStartMarker = val; }
     void SetIncludeStop(bool val) { m_IncludeStopMarker = val; }
     /// if true, removes the parsed text from the parsed text
@@ -100,7 +100,7 @@ public:
     void SetShouldRmvBeforePattern(bool val) { m_RemoveBeforePattern = val; }
     /// if true, removes the rhs delimiter from the parsed text
     void SetShouldRmvAfterPattern(bool val) { m_RemoveAfterPattern = val; }
-    
+
     void SetCaseInsensitive(bool val) { m_CaseInsensitive = val; }
     void SetWholeWord(bool val) { m_WholeWord = val; }
     void Reset();

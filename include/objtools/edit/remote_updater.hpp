@@ -28,7 +28,7 @@
 *
 * File Description:
 *   Front-end class for making remote request to MLA and taxon
-* 
+*
 * ===========================================================================
 */
 
@@ -75,7 +75,7 @@ public:
 };
 
 class NCBI_XOBJEDIT_EXPORT CRemoteUpdaterException: public CException
-{   
+{
 public:
     using CException::CException;
 };
@@ -86,10 +86,10 @@ public:
 
    using FLogger = function<void(const string&)>;
 
-   // With this constructor, an exception is thrown 
+   // With this constructor, an exception is thrown
    // if the updater cannot retrieve a publication for a PMID.
    CRemoteUpdater(bool enable_caching = true);
-   // With this constructor, failure to retrieve 
+   // With this constructor, failure to retrieve
    // a publication for a PMID is logged with the supplied message listener.
    // If no message listener is supplied, an exception is thrown.
    CRemoteUpdater(IObjtoolsListener* pMessageListener);
@@ -120,7 +120,7 @@ public:
 private:
    void xUpdatePubReferences(CSeq_entry& entry);
    void xUpdatePubReferences(CSeq_descr& descr);
-   void xUpdateOrgTaxname(FLogger f_logger, COrg_ref& org); 
+   void xUpdateOrgTaxname(FLogger f_logger, COrg_ref& org);
    void xUpdateOrgTaxname(COrg_ref& org);
    bool xUpdatePubPMID(list<CRef<CPub>>& pubs, TEntrezId id);
 

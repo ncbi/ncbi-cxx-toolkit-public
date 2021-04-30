@@ -56,8 +56,8 @@ BEGIN_SCOPE(objects)
 BEGIN_SCOPE(edit)
 
 void CAnnotGetter::AddAnnotations(const SAnnotSelector& sel,
-                               CScope& scope, 
-                               CRef<CSeq_entry> seq_entry) 
+                               CScope& scope,
+                               CRef<CSeq_entry> seq_entry)
 {
     if (seq_entry.IsNull()) {
         return;
@@ -78,7 +78,7 @@ void CAnnotGetter::AddAnnotations(const SAnnotSelector& sel,
 
 void CAnnotGetter::x_AddAnnotations(const SAnnotSelector& sel,
     CScope& scope,
-    CBioseq& bioseq) 
+    CBioseq& bioseq)
 {
     const CSeq_id* id = bioseq.GetFirstId();
     if (!id) {
@@ -91,14 +91,12 @@ void CAnnotGetter::x_AddAnnotations(const SAnnotSelector& sel,
     }
 
     CAnnot_CI annot_it(CFeat_CI(bsh, sel));
-    
     for (; annot_it; ++annot_it) {
         CRef<CSeq_annot> new_annot = x_GetCompleteSeqAnnot(*annot_it);
         bioseq.SetAnnot().push_back(new_annot);
     }
 }
 
-    
 CRef<CSeq_annot> CAnnotGetter::x_GetCompleteSeqAnnot(const CSeq_annot_Handle& annot_handle)
 {
     CConstRef<CSeq_annot> annot = annot_handle.GetCompleteSeq_annot();

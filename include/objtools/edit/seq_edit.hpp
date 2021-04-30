@@ -36,7 +36,7 @@ BEGIN_SCOPE(edit)
 
 
 NCBI_XOBJEDIT_EXPORT void g_ConvertDeltaToRawSeq(
-                                CBioseq& bioseq, 
+                                CBioseq& bioseq,
                                 CScope* pScope=nullptr);
 END_SCOPE(edit)
 END_SCOPE(objects)

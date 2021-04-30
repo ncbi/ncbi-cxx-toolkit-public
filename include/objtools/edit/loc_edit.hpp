@@ -67,8 +67,8 @@ public:
         eMergePolicy_Order,
         eMergePolicy_SingleInterval };
 
-    CLocationEditPolicy(EPartialPolicy partial5 = ePartialPolicy_eNoChange, 
-                    EPartialPolicy partial3 = ePartialPolicy_eNoChange, 
+    CLocationEditPolicy(EPartialPolicy partial5 = ePartialPolicy_eNoChange,
+                    EPartialPolicy partial3 = ePartialPolicy_eNoChange,
                     bool extend_5 = true,
                     bool extend_3 = true,
                     EMergePolicy merge = eMergePolicy_NoChange
@@ -122,37 +122,37 @@ private:
 };
 
 
-NCBI_XOBJEDIT_EXPORT bool 
-    ApplyPolicyToFeature(const CLocationEditPolicy& policy, 
-                         const CSeq_feat& orig_feat, 
-                         CScope& scope, 
+NCBI_XOBJEDIT_EXPORT bool
+    ApplyPolicyToFeature(const CLocationEditPolicy& policy,
+                         const CSeq_feat& orig_feat,
+                         CScope& scope,
                          bool adjust_gene, bool retranslate_cds);
 
-NCBI_XOBJEDIT_EXPORT CRef<CSeq_loc> 
+NCBI_XOBJEDIT_EXPORT CRef<CSeq_loc>
     SeqLocExtend(const CSeq_loc& loc, size_t pos, CScope* scope);
 
 NCBI_XOBJEDIT_EXPORT void ReverseComplementLocation(CSeq_loc& loc, CScope& scope);
 
 NCBI_XOBJEDIT_EXPORT void ReverseComplementFeature(CSeq_feat& feat, CScope& scope);
 
-NCBI_XOBJEDIT_EXPORT void SeqLocAdjustForTrim(CSeq_loc& loc, 
+NCBI_XOBJEDIT_EXPORT void SeqLocAdjustForTrim(CSeq_loc& loc,
                                                 TSeqPos from, TSeqPos to,
                                                 const CSeq_id* seqid,
                                                 bool& bCompleteCut,
                                                 TSeqPos& trim5,
                                                 bool& bAdjusted);
 
-NCBI_XOBJEDIT_EXPORT void SeqLocAdjustForInsert(CSeq_loc& loc, 
+NCBI_XOBJEDIT_EXPORT void SeqLocAdjustForInsert(CSeq_loc& loc,
                                                 TSeqPos from, TSeqPos to,
                                                 const CSeq_id* seqid);
 
-NCBI_XOBJEDIT_EXPORT void FeatureAdjustForTrim(CSeq_feat& feat, 
+NCBI_XOBJEDIT_EXPORT void FeatureAdjustForTrim(CSeq_feat& feat,
                                                 TSeqPos from, TSeqPos to,
                                                 const CSeq_id* seqid,
                                                 bool& bCompleteCut,
                                                 bool& bAdjusted);
 
-NCBI_XOBJEDIT_EXPORT void FeatureAdjustForInsert(CSeq_feat& feat, 
+NCBI_XOBJEDIT_EXPORT void FeatureAdjustForInsert(CSeq_feat& feat,
                                                  TSeqPos from, TSeqPos to,
                                                  const CSeq_id* seqid);
 
@@ -163,9 +163,9 @@ typedef enum {
   eSplitLocOption_split_in_intron = 0x04
 } ESplitLocOptions;
 
-NCBI_XOBJEDIT_EXPORT 
+NCBI_XOBJEDIT_EXPORT
     void SplitLocationForGap(CSeq_loc& loc1, CSeq_loc& loc2,
-                             size_t start, size_t stop, 
+                             size_t start, size_t stop,
                              const CSeq_id* seqid,
                              unsigned int options = eSplitLocOption_make_partial | eSplitLocOption_split_in_exon);
 

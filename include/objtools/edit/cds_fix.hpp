@@ -62,7 +62,7 @@ NCBI_XOBJEDIT_EXPORT vector<CRef<objects::CSeq_id> > GetNewProtIdFromExistingPro
 NCBI_XOBJEDIT_EXPORT string GetIdHashOrValue(const string &base, int offset);
 NCBI_XOBJEDIT_EXPORT bool IsGeneralIdProtPresent(objects::CSeq_entry_Handle tse);
 
-// these methods are being moved to ncbi::feature namespace 
+// these methods are being moved to ncbi::feature namespace
 // please modify your usage of them
 NCBI_DEPRECATED NCBI_XOBJEDIT_EXPORT bool AdjustProteinMolInfoToMatchCDS(CMolInfo& molinfo, const CSeq_feat& cds);
 NCBI_DEPRECATED NCBI_XOBJEDIT_EXPORT bool AdjustForCDSPartials(const CSeq_feat& cds, CSeq_entry_Handle seh);

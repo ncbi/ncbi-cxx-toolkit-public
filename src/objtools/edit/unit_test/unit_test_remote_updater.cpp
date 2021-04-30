@@ -74,13 +74,12 @@ public:
     using TReply = CMla_back;
     CRef<CPub> AskGetpubpmid
         (const CPubMedId& req, TReply* reply=0) override;
-    
 
 };
 
 
 template<EError_val MLAError_val>
-CRef<CPub> CMLAClient_THROW<MLAError_val>::AskGetpubpmid(const CPubMedId& req, CMla_back* reply) 
+CRef<CPub> CMLAClient_THROW<MLAError_val>::AskGetpubpmid(const CPubMedId& req, CMla_back* reply)
 {
     if (reply) {
         reply->SetError(MLAError_val);
@@ -92,7 +91,7 @@ CRef<CPub> CMLAClient_THROW<MLAError_val>::AskGetpubpmid(const CPubMedId& req, C
 }
 
 
-static CRef<CSeqdesc> s_CreateDescriptor(void) 
+static CRef<CSeqdesc> s_CreateDescriptor(void)
 {
     auto pDesc = Ref(new CSeqdesc());
     auto pPub = Ref(new CPub());
@@ -104,7 +103,7 @@ static CRef<CSeqdesc> s_CreateDescriptor(void)
 
 class CCheckMsg {
 public:
-    CCheckMsg(const string& msg) : 
+    CCheckMsg(const string& msg) :
         m_Expected(msg) {}
 
     bool operator()(const CException& e) {
@@ -126,8 +125,8 @@ BOOST_AUTO_TEST_CASE(Test_RW_1130)
         string expectedMsg = "Failed to retrieve publication for PMID 1234. "
             "3 attempts made. "
             "CMLAClient : cannot-connect-pmdb";
-        BOOST_CHECK_EXCEPTION(updater.UpdatePubReferences(*pDesc), 
-                CException, 
+        BOOST_CHECK_EXCEPTION(updater.UpdatePubReferences(*pDesc),
+                CException,
                 CCheckMsg(expectedMsg));
     }
 
@@ -139,8 +138,8 @@ BOOST_AUTO_TEST_CASE(Test_RW_1130)
         string expectedMsg = "Failed to retrieve publication for PMID 1234. "
         "4 attempts made. "
          "CMLAClient : cannot-connect-searchbackend-pmdb";
-        BOOST_CHECK_EXCEPTION(updater.UpdatePubReferences(*pDesc), 
-                CException, 
+        BOOST_CHECK_EXCEPTION(updater.UpdatePubReferences(*pDesc),
+                CException,
                 CCheckMsg(expectedMsg));
     }
 
@@ -150,21 +149,21 @@ BOOST_AUTO_TEST_CASE(Test_RW_1130)
         updater.SetMLAClient(*pMLAClient);
         string expectedMsg = "Failed to retrieve publication for PMID 1234. "
             "CMLAClient : not-found";
-        BOOST_CHECK_EXCEPTION(updater.UpdatePubReferences(*pDesc), 
-                CException, 
+        BOOST_CHECK_EXCEPTION(updater.UpdatePubReferences(*pDesc),
+                CException,
                 CCheckMsg(expectedMsg));
 
         BOOST_CHECK_THROW(updater.UpdatePubReferences(*pDesc), CException);
     }
 
 
-    { 
+    {
         CRemoteUpdater updater(nullptr);
         updater.SetMLAClient(*pMLAClient);
         string expectedMsg = "Failed to retrieve publication for PMID 1234. "
             "CMLAClient : not-found";
-        BOOST_CHECK_EXCEPTION(updater.UpdatePubReferences(*pDesc), 
-                CException, 
+        BOOST_CHECK_EXCEPTION(updater.UpdatePubReferences(*pDesc),
+                CException,
                 CCheckMsg(expectedMsg));
 
         BOOST_CHECK_THROW(updater.UpdatePubReferences(*pDesc), CException);

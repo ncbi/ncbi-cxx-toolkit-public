@@ -146,7 +146,7 @@ CRef<CSeq_loc> GetLastCodonLoc(const CSeq_feat& cds, CScope& scope)
     CRef<CSeq_id> new_id(new CSeq_id());
     new_id->Assign(*(cds_loc.GetId()));
     CRef<CSeq_loc> codon_loc(new CSeq_loc());
-    codon_loc->SetInt().SetId(*new_id);    
+    codon_loc->SetInt().SetId(*new_id);
     if (cds_loc.GetStrand() == eNa_strand_minus) {
         codon_loc->SetInt().SetFrom(stop);
         codon_loc->SetInt().SetTo(stop + except_len - 1);
@@ -224,7 +224,7 @@ TSeqPos ExtendLocationForTranslExcept(objects::CSeq_loc& loc, objects::CScope& s
     CRef<CSeq_loc> overhang(new CSeq_loc());
     overhang->SetInt().SetId().Assign(*loc.GetId());
 
-    if (loc.GetStrand() == eNa_strand_minus) {                
+    if (loc.GetStrand() == eNa_strand_minus) {
         if (stop < 3) {
             len = stop;
         } else {
@@ -248,7 +248,7 @@ TSeqPos ExtendLocationForTranslExcept(objects::CSeq_loc& loc, objects::CScope& s
     if (len > 0) {
         CSeqVector vec(*overhang, scope, CBioseq_Handle::eCoding_Iupac);
         string seq_string;
-        vec.GetSeqData(0, len, seq_string);   
+        vec.GetSeqData(0, len, seq_string);
         if (vec[0] == 'T') {
             except_len++;
             if (len > 1 && vec[1] == 'A') {
@@ -257,9 +257,9 @@ TSeqPos ExtendLocationForTranslExcept(objects::CSeq_loc& loc, objects::CScope& s
                     // adding a real stop codon
                     except_len ++;
                 }
-            }            
+            }
         }
-    } 
+    }
     // extend
     if (except_len > 0) {
         ExtendStop(loc, except_len, scope);
@@ -447,7 +447,7 @@ bool AdjustForCDSPartials(const CSeq_feat& cds, CSeq_entry_Handle seh)
             feh.Replace(*new_feat);
             any_change = true;
         }
-    }        
+    }
 
     // change or create molinfo on protein bioseq
     bool found = false;
@@ -484,13 +484,12 @@ string s_GetProductName (const CSeq_feat& cds, CScope& scope)
     string prot_nm(kEmptyStr);
     if (cds.IsSetProduct()) {
         CBioseq_Handle prot_bsq = sequence::GetBioseqFromSeqLoc(cds.GetProduct(), scope);
-   
         if (prot_bsq) {
             CFeat_CI prot_ci(prot_bsq, CSeqFeatData::e_Prot);
             if (prot_ci) {
                 prot_nm = s_GetProductName(prot_ci->GetOriginalFeature().GetData().GetProt());
             }
-        }   
+        }
     } else if (cds.IsSetXref()) {
         ITERATE(CSeq_feat::TXref, it, cds.GetXref()) {
             if ((*it)->IsSetData() && (*it)->GetData().IsProt()) {
@@ -499,7 +498,6 @@ string s_GetProductName (const CSeq_feat& cds, CScope& scope)
         }
     }
     return prot_nm;
-
 }
 
 
@@ -559,18 +557,18 @@ CRef<CSeq_feat> MakemRNAforCDS(const CSeq_feat& cds, CScope& scope)
         new_mrna->SetData().SetRna().SetType(CRNA_ref::eType_mRNA);
         new_mrna->SetLocation().Assign(cd_loc);
         new_mrna->SetData().SetRna().SetExt().SetName(prot_nm);
-      
+
         bool found3 = false;
         bool found5 = false;
         CRef<CSeq_loc> loc(new CSeq_loc());
         loc->Assign(new_mrna->GetLocation());
         CFeat_CI utr1, utr2;
-        if (bsh) 
+        if (bsh)
         {
-            utr1 = CFeat_CI(bsh, cd_loc.IsReverseStrand() ? CSeqFeatData::eSubtype_5UTR : CSeqFeatData::eSubtype_3UTR); 
+            utr1 = CFeat_CI(bsh, cd_loc.IsReverseStrand() ? CSeqFeatData::eSubtype_5UTR : CSeqFeatData::eSubtype_3UTR);
             utr2 = CFeat_CI(bsh, cd_loc.IsReverseStrand() ? CSeqFeatData::eSubtype_3UTR : CSeqFeatData::eSubtype_5UTR);
         }
-        else if (sah) 
+        else if (sah)
         {
             utr1 = CFeat_CI(sah, cd_loc.IsReverseStrand() ? CSeqFeatData::eSubtype_5UTR : CSeqFeatData::eSubtype_3UTR);
             utr2 = CFeat_CI(sah, cd_loc.IsReverseStrand() ? CSeqFeatData::eSubtype_3UTR : CSeqFeatData::eSubtype_5UTR);
@@ -615,7 +613,7 @@ CRef<CSeq_feat> MakemRNAforCDS(const CSeq_feat& cds, CScope& scope)
             exon = CFeat_CI(bsh, CSeqFeatData::eSubtype_exon);
         else if (sah)
             exon = CFeat_CI(sah, CSeqFeatData::eSubtype_exon);
-        for (; exon; ++exon) 
+        for (; exon; ++exon)
         {
             if (!sequence::IsSameBioseq(*exon->GetLocation().GetId(), *overlap_loc->GetId(), &scope))
                 continue;
@@ -652,27 +650,26 @@ CRef<CSeq_feat> MakemRNAforCDS(const CSeq_feat& cds, CScope& scope)
         new_mrna->SetLocation(*loc);
 
         if (!found5)
-            new_mrna->SetLocation().SetPartialStart(true, eExtreme_Positional); 
+            new_mrna->SetLocation().SetPartialStart(true, eExtreme_Positional);
         if (!found3)
-            new_mrna->SetLocation().SetPartialStop(true, eExtreme_Positional); 
+            new_mrna->SetLocation().SetPartialStop(true, eExtreme_Positional);
 
         new_mrna->SetPartial(new_mrna->GetLocation().IsPartialStart(eExtreme_Positional) || new_mrna->GetLocation().IsPartialStop(eExtreme_Positional));
     }
     return new_mrna;
-} 
+}
 
 /// GetmRNAforCDS
 /// A function to find a CSeq_feat representing the
-/// appropriate mRNA for a given CDS. 
+/// appropriate mRNA for a given CDS.
 /// @param cds        The feature for which the mRNA to be found
-/// @param scope      The scope 
+/// @param scope      The scope
 ///
 /// @return           CConstRef<CSeq_feat> for new mRNA (will be NULL if none is found)
 
 CConstRef<CSeq_feat> GetmRNAforCDS(const CSeq_feat& cds, CScope& scope)
 {
     CConstRef<CSeq_feat> mrna;
-    
     bool has_xref = false;
     if (cds.IsSetXref()) {
         /* using FeatID from feature cross-references:
@@ -691,7 +688,7 @@ CConstRef<CSeq_feat> GetmRNAforCDS(const CSeq_feat& cds, CScope& scope)
         }
     }
     if (!has_xref) {
-        /* using original location to find mRNA: 
+        /* using original location to find mRNA:
         * mRNA must include the CDS location and the internal interval boundaries need to be identical
         */
         mrna = sequence::GetBestOverlappingFeat( cds.GetLocation(), CSeqFeatData::eSubtype_mRNA, sequence::eOverlap_CheckIntRev, scope);
@@ -769,7 +766,7 @@ static CRef<CSeq_loc> TruncateSeqLoc (const CSeq_loc& orig_loc, size_t new_len)
                 new_loc.Reset(new CSeq_loc());
                 new_loc->Assign(*partial_loc);
             }
-            len += len_wanted;  
+            len += len_wanted;
         }
     }
 
@@ -932,7 +929,7 @@ bool ExtendCDSToStopCodon (CSeq_feat& cds, CScope& scope)
                 last_interval->SetInt().SetFrom(this_start);
                 last_interval->SetInt().SetTo(this_stop + extension);
             }
-                
+
             if (new_loc) {
                 new_loc->Add(*last_interval);
             } else {
@@ -1018,11 +1015,11 @@ bool DemoteCDSToNucSeq(objects::CSeq_feat_Handle& orig_feat)
 
     CSeq_annot_EditHandle old_annot = annot_handle.GetEditHandle();
     CSeq_annot_EditHandle new_annot = ftable.GetEditHandle();
-    orig_feat = new_annot.TakeFeat(feh);   
+    orig_feat = new_annot.TakeFeat(feh);
     const list< CRef< CSeq_feat > > &feat_list = old_annot.GetSeq_annotCore()->GetData().GetFtable();
     if (feat_list.empty())
     {
-        old_annot.Remove();       
+        old_annot.Remove();
     }
     return true;
 }
@@ -1095,7 +1092,7 @@ CCdregion::TFrame ApplyCDSFrame::s_FindMatchingFrame(const CSeq_feat& cds, CScop
     for (int enumI = CCdregion::eFrame_one; enumI < CCdregion::eFrame_three + 1; ++enumI) {
         CCdregion::EFrame fr = (CCdregion::EFrame) (enumI);
         tmp_cds->SetData().SetCdregion().SetFrame(fr);
-    
+
         string new_prot_seq;
         CSeqTranslator::Translate(*tmp_cds, scope, new_prot_seq);
         if (NStr::EndsWith(new_prot_seq, '*'))
@@ -1147,7 +1144,7 @@ string GetIdHashOrValue(const string &base, int offset)
 }
 
 CRef<objects::CSeq_id> GetNewLocalProtId(const string &id_base, CScope &scope, int &offset)
-{   
+{
     string id_base_hash = GetIdHash(id_base);
     CRef<objects::CSeq_id> new_id(new objects::CSeq_id());
     string new_str = id_base;
@@ -1160,9 +1157,9 @@ CRef<objects::CSeq_id> GetNewLocalProtId(const string &id_base, CScope &scope, i
         new_hash += "_" + NStr::NumericToString(offset);
     new_id_hash->SetLocal().SetStr(new_hash);
     objects::CBioseq_Handle b_found = scope.GetBioseqHandle(*new_id);
-    objects::CBioseq_Handle b_found_hash = scope.GetBioseqHandle(*new_id_hash); // as we consider ID_NUM and HASH_NUM to be synonyms we need to check for the existence of both at the same time 
+    objects::CBioseq_Handle b_found_hash = scope.GetBioseqHandle(*new_id_hash); // as we consider ID_NUM and HASH_NUM to be synonyms we need to check for the existence of both at the same time
     // to avoid a situation where ID_1 and HASH_1 are both created
-    while (b_found || b_found_hash) 
+    while (b_found || b_found_hash)
     {
         offset++;
         new_id->SetLocal().SetStr(id_base + "_" + NStr::NumericToString(offset));
@@ -1176,7 +1173,7 @@ CRef<objects::CSeq_id> GetNewLocalProtId(const string &id_base, CScope &scope, i
 }
 
 static CRef<objects::CSeq_id> GetNewGeneralProtId(const string &id_base, const string &db, CScope &scope, int &offset)
-{    
+{
     string id_base_hash = GetIdHash(id_base);
     CRef<objects::CSeq_id> new_id(new objects::CSeq_id());
     new_id->SetGeneral().SetDb(db);
@@ -1191,9 +1188,9 @@ static CRef<objects::CSeq_id> GetNewGeneralProtId(const string &id_base, const s
         new_hash += "_" + NStr::NumericToString(offset);
     new_id_hash->SetGeneral().SetTag().SetStr(new_hash);
     objects::CBioseq_Handle b_found = scope.GetBioseqHandle(*new_id);
-    objects::CBioseq_Handle b_found_hash = scope.GetBioseqHandle(*new_id_hash); // as we consider ID_NUM and HASH_NUM to be synonyms we need to check for the existence of both at the same time 
+    objects::CBioseq_Handle b_found_hash = scope.GetBioseqHandle(*new_id_hash); // as we consider ID_NUM and HASH_NUM to be synonyms we need to check for the existence of both at the same time
     // to avoid a situation where ID_1 and HASH_1 are both created
-    while (b_found || b_found_hash) 
+    while (b_found || b_found_hash)
     {
         offset++;
         new_id->SetGeneral().SetTag().SetStr(id_base + "_" + NStr::NumericToString(offset));
@@ -1211,7 +1208,7 @@ static CRef<objects::CSeq_id> GetGeneralOrLocal(objects::CSeq_id_Handle hid, CSc
     CRef<objects::CSeq_id> new_id;
     if (hid.GetSeqId()->IsLocal())
     {
-        string id_base;           
+        string id_base;
         if (hid.GetSeqId()->GetLocal().IsId())
         {
             id_base =  NStr::NumericToString(hid.GetSeqId()->GetLocal().GetId());
@@ -1248,7 +1245,7 @@ static CRef<objects::CSeq_id> GetGeneralOrLocal(objects::CSeq_id_Handle hid, CSc
 vector<CRef<objects::CSeq_id> > GetNewProtIdFromExistingProt(objects::CBioseq_Handle bsh, int &offset, string& id_label)
 {
     vector<CRef<objects::CSeq_id> > ids;
-    for(auto it : bsh.GetId()) 
+    for(auto it : bsh.GetId())
     {
         if (it.GetSeqIdOrNull())
         {
@@ -1267,7 +1264,7 @@ vector<CRef<objects::CSeq_id> > GetNewProtIdFromExistingProt(objects::CBioseq_Ha
 
     if (ids.empty())
         NCBI_THROW(CException, eUnknown, "Seq-id not found");
-    
+
     ids.front()->GetLabel(&id_label, objects::CSeq_id::eBoth);
     return ids;
 }
@@ -1277,24 +1274,23 @@ CRef<objects::CSeq_id> GetNewProtId(objects::CBioseq_Handle bsh, int &offset, st
     objects::CSeq_id_Handle hid = sequence::GetId(bsh, sequence::eGetId_Best);
     objects::CSeq_id_Handle gen_id;
 
-    for (auto it : bsh.GetId()) 
+    for (auto it : bsh.GetId())
     {
         if (it.GetSeqId()->IsGeneral() && it.GetSeqId()->GetGeneral().IsSetDb() &&
-            !it.GetSeqId()->GetGeneral().IsSkippable()) 
+            !it.GetSeqId()->GetGeneral().IsSkippable())
         {
             gen_id = it;
-        }        
+        }
     }
-    if (gen_id && general_only) 
+    if (gen_id && general_only)
     {
         hid = gen_id;
-    } 
+    }
 
-      
     if (!hid)
         NCBI_THROW(CException, eUnknown, "Seq-id of the requested type not found");
-  
-    CRef<objects::CSeq_id> new_id = GetGeneralOrLocal(hid, bsh.GetScope(), offset, true);   
+
+    CRef<objects::CSeq_id> new_id = GetGeneralOrLocal(hid, bsh.GetScope(), offset, true);
     new_id->GetLabel(&id_label, objects::CSeq_id::eBoth);
     return new_id;
 }
@@ -1302,16 +1298,16 @@ CRef<objects::CSeq_id> GetNewProtId(objects::CBioseq_Handle bsh, int &offset, st
 bool IsGeneralIdProtPresent(objects::CSeq_entry_Handle tse)
 {
     bool found = false;
-    for (CBioseq_CI b_iter(tse, CSeq_inst::eMol_aa); b_iter; ++b_iter) 
+    for (CBioseq_CI b_iter(tse, CSeq_inst::eMol_aa); b_iter; ++b_iter)
     {
-        for (auto it : b_iter->GetId()) 
+        for (auto it : b_iter->GetId())
         {
             if (it.GetSeqId()->IsGeneral() && it.GetSeqId()->GetGeneral().IsSetDb() &&
-                !it.GetSeqId()->GetGeneral().IsSkippable()) 
+                !it.GetSeqId()->GetGeneral().IsSkippable())
             {
                 found = true;
                 break;
-            }        
+            }
         }
     }
     return found;

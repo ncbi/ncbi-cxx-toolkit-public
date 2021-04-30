@@ -41,8 +41,7 @@ BEGIN_SCOPE(edit)
 CFindITSParser::CFindITSParser(const char *input, CSeq_entry_Handle tse) :  m_istr(input), m_tse(tse)
 {
     m_lr.Reset(ILineReader::New(m_istr));
- 
-    if (m_lr.Empty()) 
+    if (m_lr.Empty())
     {
         NCBI_THROW(CException, eUnknown, "Unable to read Label RNA|ITS results");
     }
@@ -51,7 +50,7 @@ CFindITSParser::CFindITSParser(const char *input, CSeq_entry_Handle tse) :  m_is
 CRef <CSeq_feat> CFindITSParser::ParseLine()
 {
    const CTempString& line = *++*m_lr;
-   return x_ParseLine(line, m_tse, m_bsh, m_negative, m_msg);  
+   return x_ParseLine(line, m_tse, m_bsh, m_negative, m_msg);
 }
 
 // Dear Future self: https://xkcd.com/1421/
@@ -60,7 +59,7 @@ CRef <CSeq_feat> CFindITSParser :: x_ParseLine(const CTempString &line, CSeq_ent
     CRef <CSeq_feat> null_mrna(NULL);
     vector<string> arr;
     NStr::Split(line,"\t",arr);
-    if (arr.size() != 9)  
+    if (arr.size() != 9)
     {
         if (arr.size() == 1)
             msg = "No features found for: " + line;
@@ -74,18 +73,18 @@ CRef <CSeq_feat> CFindITSParser :: x_ParseLine(const CTempString &line, CSeq_ent
     string r58S = arr[4];
     string its2 = arr[5];
     string lsu = arr[6];
-    string error = arr[7];  
-    string strand = arr[8]; 
+    string error = arr[7];
+    string strand = arr[8];
 
     bsh = x_GetBioseqHandleFromIdGuesser(accession,tse);
-    if (!bsh) 
+    if (!bsh)
     {
         msg = "No bioseq found for: " + accession;
         return null_mrna;
     }
 
     arr.clear();
-    NStr::TruncateSpacesInPlace(error);  
+    NStr::TruncateSpacesInPlace(error);
     if (!error.empty() && error !=  "Broken or partial sequence, no 5.8S!" && error !=  "Broken or partial sequence, only partial 5.8S!")
     {
         msg = "Error returned for: "+accession+" "+error;
@@ -124,7 +123,7 @@ CRef <CSeq_feat> CFindITSParser :: x_ParseLine(const CTempString &line, CSeq_ent
     bool r58S_too_large(false);
     bool its1_span(false);
     bool its2_span(false);
-   
+
     vector<int> starts;
     vector<int> stops;
     vector<bool> spans;
@@ -137,7 +136,7 @@ CRef <CSeq_feat> CFindITSParser :: x_ParseLine(const CTempString &line, CSeq_ent
 
     its1_span = spans[1];
     its2_span = spans[3];
-  
+
     vector<string> comments;
     if (ssu != "Not found")
     {
@@ -147,7 +146,7 @@ CRef <CSeq_feat> CFindITSParser :: x_ParseLine(const CTempString &line, CSeq_ent
     }
     if (its1 != "Not found")
     {
-        comments.push_back("internal transcribed spacer 1");     
+        comments.push_back("internal transcribed spacer 1");
     }
     if (r58S != "Not found")
     {
@@ -156,7 +155,7 @@ CRef <CSeq_feat> CFindITSParser :: x_ParseLine(const CTempString &line, CSeq_ent
     }
     if (its2 != "Not found")
     {
-        comments.push_back("internal transcribed spacer 2");      
+        comments.push_back("internal transcribed spacer 2");
     }
     if (lsu != "Not found")
     {
@@ -185,18 +184,17 @@ CRef <CSeq_feat> CFindITSParser :: x_ParseLine(const CTempString &line, CSeq_ent
         msg = "5.8S too large in: "+accession;
         return null_mrna;
     }
-    
 
     string comment;
     switch(comments.size())
     {
     case 0 : comment = "does not contain rna label";break;
-    case 1 : 
+    case 1 :
     {
-        if (!ssu_present && !lsu_present) 
+        if (!ssu_present && !lsu_present)
         {
             comment = "contains "+comments.front();
-        } 
+        }
     }
     break;
     case 2 : comment = "contains " + comments[0]+" and "+comments[1];break;
@@ -225,7 +223,7 @@ void CFindITSParser :: GetSpan(const string& str, vector<int>& starts, vector<in
     spans.push_back(span);
 }
 
-bool CFindITSParser :: IsLengthTooLarge(const string& str, int max_length, 
+bool CFindITSParser :: IsLengthTooLarge(const string& str, int max_length,
                                         int i,
                                         const vector<int>& starts,
                                         const vector<int>& stops,
@@ -282,11 +280,11 @@ CRef <CSeq_feat> CFindITSParser :: x_CreateMiscRna(const string &comment, CBiose
     loc->SetInt().SetFrom(0);
     loc->SetInt().SetTo(bsh.GetBioseqLength()-1);
     loc->SetInt().SetStrand(eNa_strand_plus);
-    loc->SetPartialStart(true, eExtreme_Positional); 
-    loc->SetPartialStop(true, eExtreme_Positional); 
+    loc->SetPartialStart(true, eExtreme_Positional);
+    loc->SetPartialStop(true, eExtreme_Positional);
     loc->SetId(*bsh.GetSeqId());
     new_mrna->SetLocation(*loc);
-    
+
     new_mrna->SetPartial(true);
     return new_mrna;
 }
@@ -297,16 +295,16 @@ CRef <CSeq_feat> CFindITSParser :: x_CreateRRna(const string &comment, CBioseq_H
     new_rrna->SetData().SetRna().SetType(CRNA_ref::eType_rRNA);
     string remainder;
     new_rrna->SetData().SetRna().SetRnaProductName(comment, remainder);
-  
+
     CRef<CSeq_loc> loc(new CSeq_loc());
     loc->SetInt().SetFrom(0);
     loc->SetInt().SetTo(bsh.GetBioseqLength()-1);
     loc->SetInt().SetStrand(eNa_strand_plus);
-    loc->SetPartialStart(true, eExtreme_Positional); 
-    loc->SetPartialStop(true, eExtreme_Positional); 
+    loc->SetPartialStart(true, eExtreme_Positional);
+    loc->SetPartialStop(true, eExtreme_Positional);
     loc->SetId(*bsh.GetSeqId());
     new_rrna->SetLocation(*loc);
-    
+
     new_rrna->SetPartial(true);
     return new_rrna;
 }
@@ -315,7 +313,7 @@ CBioseq_Handle CFindITSParser :: x_GetBioseqHandleFromIdGuesser(const string &id
 {
     CRef<edit::CStringConstraint> constraint(new edit::CStringConstraint(id_str, edit::CStringConstraint::eMatchType_Equals));
     CBioseq_CI bi(tse, CSeq_inst::eMol_na);
-    while (bi) 
+    while (bi)
     {
         if (edit::CSeqIdGuesser::DoesSeqMatchConstraint(*bi,constraint))
             return *bi;

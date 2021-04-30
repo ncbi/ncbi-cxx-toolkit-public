@@ -71,7 +71,7 @@ CPromote::CPromote(CBioseq_Handle& seq, TFlags flags, TFeatTypes types) :
     m_Seq(seq), m_Flags(flags), m_Types(types)
 {
     if ( !m_Seq ) {
-        NCBI_THROW(CEditException, eInvalid, 
+        NCBI_THROW(CEditException, eInvalid,
             "Cannot initialize with a NULL bioseq handle");
     }
 }
@@ -126,7 +126,7 @@ void CPromote::PromoteFeatures(const CSeq_annot_Handle& annot) const
     // detach Seq-annot from scope
     CConstRef<CSeq_annot> sap = annot.GetCompleteSeq_annot();
     if ( !sap->GetData().IsFtable() ) {
-        NCBI_THROW(CEditException, eInvalid, 
+        NCBI_THROW(CEditException, eInvalid,
             "Cannot promote a non-Ftable annotation");
     }
     annot.GetEditHandle().Remove();
@@ -168,7 +168,7 @@ void CPromote::x_PromoteFeatures(CSeq_annot& annot) const
     }
 
     // promote other feature types
-    NON_CONST_ITERATE (CSeq_annot::C_Data::TFtable, it, feats) {    
+    NON_CONST_ITERATE (CSeq_annot::C_Data::TFtable, it, feats) {
         CSeq_feat& feat = **it;
         if ( !feat.CanGetData()  ||  !feat.CanGetLocation() ) {
             continue;
@@ -178,7 +178,7 @@ void CPromote::x_PromoteFeatures(CSeq_annot& annot) const
         if ( x_DoPromoteCdregion()  &&  feat.GetData().IsCdregion() ) {
             x_PromoteCdregion(feat, &rna_map);
         }
-    
+
         // promote full lenght pub feature to descriptors
         if ( x_DoPromotePub()  &&  feat.GetData().IsPub() ) {
             x_PromotePub(feat);
@@ -304,7 +304,7 @@ void CPromote::x_CopyCdregionToRNA
         return;
     }
 
-    CSeq_entry_Handle gps = 
+    CSeq_entry_Handle gps =
         mrna.GetExactComplexityLevel(CBioseq_set::eClass_gen_prod_set);
     if ( !gps ) {
         return;
@@ -315,7 +315,6 @@ void CPromote::x_CopyCdregionToRNA
     mcds->Assign(cds);
 
     // create mapper from genomic to mRNA using mRNA feature
-    
     CConstRef<CSeq_feat> mfeat = (*rna_map)[mrna];
     if ( !mfeat ) {
         return;
@@ -362,13 +361,13 @@ void CPromote::x_PromoteRna(CSeq_feat& feat) const
 {
     // find gen-prod set
     _ASSERT((m_Flags & fPromote_GenProdSet) != 0);
-    CSeq_entry_Handle gps = 
+    CSeq_entry_Handle gps =
         m_Seq.GetExactComplexityLevel(CBioseq_set::eClass_gen_prod_set);
     if ( !gps ) {
         return;
     }
     _ASSERT(gps);
-    
+
     // find the mRNA id
     CRef<CSeq_id> sip;
     if ( !feat.IsSetProduct()  &&  (!feat.IsSetPseudo()  ||  !feat.GetPseudo()) ) {
@@ -377,7 +376,7 @@ void CPromote::x_PromoteRna(CSeq_feat& feat) const
     if ( !sip ) {
         return;
     }
-    
+
     // get the actual mRNA sequence
     CSeqVector rnaseq(feat.GetLocation(), m_Seq.GetScope());
     string data;
@@ -460,7 +459,7 @@ CBioseq_EditHandle CPromote::x_MakeNewRna
 
 CBioseq_EditHandle CPromote::x_MakeNewProtein(CSeq_id& id, const string& data) const
 {
-    return x_MakeNewBioseq(id, CSeq_inst::eMol_aa, data, 
+    return x_MakeNewBioseq(id, CSeq_inst::eMol_aa, data,
                            CSeq_data::e_Ncbieaa, data.length());
 }
 
@@ -479,7 +478,7 @@ CSeq_id* CPromote::x_GetProductId(CSeq_feat& feat, const string& qval) const
         if ( qual.IsSetQual()  &&  qual.GetQual() == qval  &&
              qual.IsSetVal()  &&  !qual.GetVal().empty() ) {
             if ( !id.empty() ) {
-                LOG_POST_X(1, Warning << *ftype << " " << qval << " " 
+                LOG_POST_X(1, Warning << *ftype << " " << qval << " "
                               << qual.GetVal() << " replacing " << id);
             }
             id = qual.GetVal();
@@ -538,7 +537,7 @@ CSeqdesc* CPromote::x_MakeMolinfoDesc(const CSeq_feat& feat) const
     CSeqdesc::TMolinfo& mi = desc->SetMolinfo();
 
     // set biomol
-    TBiomolMap::const_iterator it = 
+    TBiomolMap::const_iterator it =
         sc_BiomolMap.find(feat.GetData().GetSubtype());
     if ( it != sc_BiomolMap.end() ) {
         mi.SetBiomol(it->second);
@@ -558,7 +557,7 @@ void CPromote::x_SetSeqFeatProduct(CSeq_feat& feat, const CBioseq_Handle& prod) 
     _ASSERT(prod);
 
     CConstRef<CSeq_id> prod_id = prod.GetSeqId();
-    feat.SetProduct().SetWhole().Assign(*prod_id);    
+    feat.SetProduct().SetWhole().Assign(*prod_id);
 }
 
 
@@ -586,7 +585,7 @@ void CPromote::x_AddProtFeature(CBioseq_EditHandle pseq, CProt_ref& prp,
     // creat new Prot feature
     CRef<CSeq_feat> prot(new CSeq_feat);
     prot->SetData().SetProt(prp);
-    
+
     // set feature location
     CRef<CSeq_loc> loc(new CSeq_loc);
     loc->SetWhole().Assign(*pseq.GetSeqId());

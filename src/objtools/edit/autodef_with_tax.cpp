@@ -42,7 +42,7 @@
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
-      
+
 
 CConstRef<CUser_object> GetOptionsForSet(CBioseq_set_Handle set)
 {
@@ -63,7 +63,7 @@ CConstRef<CUser_object> GetOptionsForSet(CBioseq_set_Handle set)
 bool CAutoDefWithTaxonomy::RegeneratePopsetTitles(CSeq_entry_Handle se)
 {
     bool any = false;
-    // update the title of the set 
+    // update the title of the set
     for (CSeq_entry_CI si(se, CSeq_entry_CI::fRecursive | CSeq_entry_CI::fIncludeGivenEntry, CSeq_entry::e_Set); si; ++si) {
         if (si->IsSet() && si->GetSet().GetCompleteBioseq_set()->NeedsDocsumTitle()) {
             CAutoDefWithTaxonomy autodef;

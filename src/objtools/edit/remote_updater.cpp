@@ -28,7 +28,7 @@
 *
 * File Description:
 *   Front-end class for making remote request to MLA and taxon
-* 
+*
 * ===========================================================================
 */
 #include <ncbi_pch.hpp>
@@ -102,7 +102,7 @@ CRef<CPub> s_GetPubFrompmid(CMLAClient& mlaClient, TEntrezId id, int maxAttempts
     CMLAClient::TReply reply;
 
     int maxCount = max(1, maxAttempts);
-    for (int count=0; count<maxCount; ++count) { 
+    for (int count=0; count<maxCount; ++count) {
         try {
             result = mlaClient.AskGetpubpmid(request, &reply);
             return result;
@@ -115,13 +115,13 @@ CRef<CPub> s_GetPubFrompmid(CMLAClient& mlaClient, TEntrezId id, int maxAttempts
             }
 
             CNcbiOstrstream oss;
-            oss << "Failed to retrieve publication for PMID " 
-                << id 
+            oss << "Failed to retrieve publication for PMID "
+                << id
                 << ". ";
             if (isConnectionError) {
                 oss << count+1 << " attempts made. ";
             }
-            oss << "CMLAClient : " 
+            oss << "CMLAClient : "
                 << errorVal;
             string msg = CNcbiOstrstreamToString(oss);
             if (pMessageListener) {
@@ -141,7 +141,7 @@ CRef<CPub> s_GetPubFrompmid(CMLAClient& mlaClient, TEntrezId id, int maxAttempts
 bool CRemoteUpdater::xUpdatePubPMID(list<CRef<CPub>>& arr, TEntrezId id)
 {
     CMLAClient::TReply reply;
-    auto new_pub = 
+    auto new_pub =
         s_GetPubFrompmid(*m_mlaClient, id, m_MaxMlaAttempts, m_pMessageListener);
     if (!new_pub) {
         return false;
@@ -161,7 +161,7 @@ bool CRemoteUpdater::xUpdatePubPMID(list<CRef<CPub>>& arr, TEntrezId id)
 }
 
 
-void CRemoteUpdater::SetMaxMlaAttempts(int maxAttempts) 
+void CRemoteUpdater::SetMaxMlaAttempts(int maxAttempts)
 {
     m_MaxMlaAttempts = maxAttempts;
 }
@@ -196,14 +196,13 @@ public:
         CRef<CT3Reply> reply = GetOrgReply(org);
         if (reply->IsError() && pMessageListener)
         {
-            const string& error_message = 
+            const string& error_message =
                 "Taxon update: " +
                 (org.IsSetTaxname() ? org.GetTaxname() : NStr::NumericToString(org.GetTaxId())) + ": " +
                 reply->GetError().GetMessage();
 
             pMessageListener->PutMessage(
                     CObjEditMessage(error_message, eDiag_Error));
-        
         }
         else
         if (reply->IsData() && reply->SetData().IsSetOrg())
@@ -220,11 +219,10 @@ public:
         CRef<CT3Reply> reply = GetOrgReply(org);
         if (reply->IsError() && f_logger)
         {
-            const string& error_message = 
+            const string& error_message =
                 "Taxon update: " +
                 (org.IsSetTaxname() ? org.GetTaxname() : NStr::NumericToString(org.GetTaxId())) + ": " +
                 reply->GetError().GetMessage();
-        
             f_logger(error_message);
         }
         else
@@ -253,7 +251,7 @@ public:
         {
             CTaxon3_request request;
 
-            CRef<CT3Request> rq(new CT3Request);                    
+            CRef<CT3Request> rq(new CT3Request);
             CRef<COrg_ref> org(new COrg_ref);
             org->Assign(in_org);
             rq->SetOrg(*org);
@@ -284,12 +282,12 @@ public:
         CRef<CTaxon3_reply> result(new CTaxon3_reply);
 
         ITERATE (vector<CRef< COrg_ref> >, it, query)
-        {            
+        {
             result->SetReply().push_back(GetOrgReply(**it));
         }
 
         return result;
-    }  
+    }
 protected:
     unique_ptr<CTaxon3> m_taxon;
     unique_ptr<CCachedReplyMap> m_cache;
@@ -309,7 +307,7 @@ void CRemoteUpdater::UpdateOrgFromTaxon(FLogger logger, CSeqdesc& obj)
 }
 
 void CRemoteUpdater::xUpdateOrgTaxname(FLogger logger, COrg_ref& org)
-{ // remove after the deprecated UpdateOrgFromTaxon(FLogger, CSeqdes&) 
+{ // remove after the deprecated UpdateOrgFromTaxon(FLogger, CSeqdes&)
   // has been removed.
     CMutexGuard guard(m_Mutex);
 
@@ -322,7 +320,7 @@ void CRemoteUpdater::xUpdateOrgTaxname(FLogger logger, COrg_ref& org)
         m_taxClient.reset(new CCachedTaxon3_impl);
         m_taxClient->Init();
     }
-        
+
     CRef<COrg_ref> new_org = m_taxClient->GetOrg(org, logger);
     if (new_org.NotEmpty())
     {
@@ -357,7 +355,7 @@ void CRemoteUpdater::xUpdateOrgTaxname(COrg_ref& org)
         m_taxClient.reset(new CCachedTaxon3_impl);
         m_taxClient->Init();
     }
-        
+
     CRef<COrg_ref> new_org = m_taxClient->GetOrg(org, m_pMessageListener);
     if (new_org.NotEmpty())
     {
@@ -369,9 +367,7 @@ void CRemoteUpdater::xUpdateOrgTaxname(COrg_ref& org)
 CRemoteUpdater& CRemoteUpdater::GetInstance()
 {
     CMutexGuard guard(m_static_mutex);
-    
     static CRemoteUpdater instance;
-
     return instance;
 }
 
@@ -465,10 +461,10 @@ void CRemoteUpdater::xUpdatePubReferences(CSeq_descr& seq_descr)
     for (auto pDesc : seq_descr.Set()) {
         if (!pDesc->IsPub() || !pDesc->GetPub().IsSetPub()) {
             continue;
-        }   
+        }
 
         auto& arr = pDesc->SetPub().SetPub().Set();
-        if (m_mlaClient.Empty()) 
+        if (m_mlaClient.Empty())
             m_mlaClient.Reset(new CMLAClient());
 
         auto id = FindPMID(arr);
@@ -560,10 +556,10 @@ namespace
 }
 
 void CRemoteUpdater::UpdateOrgFromTaxon(CSeq_entry& entry)
-{   
+{
     TOrgMap org_to_update;
 
-    _UpdateOrgFromTaxon(entry, org_to_update); 
+    _UpdateOrgFromTaxon(entry, org_to_update);
     if (org_to_update.empty())
         return;
 
@@ -594,9 +590,9 @@ void CRemoteUpdater::UpdateOrgFromTaxon(CSeq_entry& entry)
 
 void CRemoteUpdater::UpdateOrgFromTaxon(FLogger /*logger*/, CSeq_entry& entry)
 {
-    // this method is deprecated. 
+    // this method is deprecated.
     // until we remove it, it simply calls the non-deprecated method
-    UpdateOrgFromTaxon(entry);   
+    UpdateOrgFromTaxon(entry);
 }
 
 void CRemoteUpdater::UpdateOrgFromTaxon(FLogger logger, CSeq_entry_EditHandle& obj)
@@ -662,7 +658,7 @@ CRef<CAuthor> StdAuthorFromMl(const string& val)
     if (!NStr::IsBlank(suffix)) {
         new_auth->SetName().SetName().SetSuffix(suffix);
     }
-    if (!NStr::IsBlank(init)) {                
+    if (!NStr::IsBlank(init)) {
         new_auth->SetName().SetName().SetFirst(init.substr(0, 1));
         vector<string> letters;
         NStr::Split(init, "", letters);
@@ -686,7 +682,6 @@ void FixMedLineList(CAuth_list& auth_list)
     auth_list.SetNames().SetStd().insert(auth_list.SetNames().SetStd().begin(), standard_names.begin(), standard_names.end());
 }
 
- 
 }
 
 void CRemoteUpdater::ConvertToStandardAuthors(CAuth_list& auth_list)

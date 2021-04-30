@@ -28,7 +28,7 @@
 * Authors:  Igor Filippov, Andrea Asztalos
 *
 * File Description:
-*   Functions that provides fixes for author names  
+*   Functions that provides fixes for author names
 */
 
 #include <corelib/ncbistd.hpp>
@@ -42,7 +42,7 @@ BEGIN_SCOPE(edit)
 // returns one or more (skip_rest = true) initials from the input string
 NCBI_XOBJEDIT_EXPORT string GetFirstInitial(string input, bool skip_rest);
 
-// generates the contents of the 'initials' member based on the first name and 
+// generates the contents of the 'initials' member based on the first name and
 // existing value
 NCBI_XOBJEDIT_EXPORT bool GenerateInitials(CName_std& name);
 
@@ -56,5 +56,4 @@ END_SCOPE(edit)
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-#endif    
-    // OBJTOOLS_EDIT__PUBLICATION_EDIT__HPP
+#endif  // OBJTOOLS_EDIT__PUBLICATION_EDIT__HPP

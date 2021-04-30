@@ -53,8 +53,8 @@ public:
         eDBLinkFieldType_Assembly,
         eDBLinkFieldType_Unknown };
 
-    CDBLinkField (EDBLinkFieldType field_type) : m_FieldType(field_type) 
-            { m_ConstraintFieldType = eDBLinkFieldType_Unknown; 
+    CDBLinkField (EDBLinkFieldType field_type) : m_FieldType(field_type)
+            { m_ConstraintFieldType = eDBLinkFieldType_Unknown;
               m_StringConstraint = NULL; };
 
     virtual vector<CConstRef<CObject> > GetObjects(CBioseq_Handle bsh) override;

@@ -77,7 +77,7 @@ namespace {
     // Maybe this can be put in a shared place and others can use it,
     // but it would need more cleanup first.
     template<typename Key, typename Data, typename Compare = less<Key>, typename Alloc = allocator<pair<const Key,Data> > >
-    class CMapWithOriginalOrderingIteration : private map<Key, Data, Compare, Alloc>  
+    class CMapWithOriginalOrderingIteration : private map<Key, Data, Compare, Alloc>
     {
     public:
         typedef typename map<Key, Data, Compare, Alloc>::value_type value_type;
@@ -105,7 +105,7 @@ namespace {
             return result;
         }
 
-        Data & 
+        Data &
             operator[](const Key & k)
         {
             iterator find_iter = find(k);
@@ -115,7 +115,7 @@ namespace {
             }
 
             // not in map, so add
-            pair<iterator, bool> result = insert( 
+            pair<iterator, bool> result = insert(
                 value_type(k, Data()) );
             _ASSERT( result.second );
             return result.first->second;
@@ -281,7 +281,7 @@ static void s_AddBioseqToPartsSet
     // Test that the new part has the same molecular type as other parts
     for ( CSeq_entry_CI it(parts); it; ++it ) {
         if ( it->IsSeq()  &&  it->GetSeq().GetInst_Mol() != seq_mol ) {
-            NCBI_THROW(CEditException, eInvalid, 
+            NCBI_THROW(CEditException, eInvalid,
                 "Unable to add part due to conflicting molecular types");
         }
     }
@@ -373,7 +373,7 @@ static void s_AddProtToNuc(const CBioseq_EditHandle& nuc, const CBioseq_EditHand
     _ASSERT(CSeq_inst::IsAa(prot.GetInst_Mol()));
 
     CSeq_entry_EditHandle nuc_entry = nuc.GetParentEntry();
-    CSeq_entry_EditHandle::TSet nuc_prot = 
+    CSeq_entry_EditHandle::TSet nuc_prot =
         nuc_entry.ConvertSeqToSet(CBioseq_set::eClass_nuc_prot);
     prot.MoveTo(nuc_prot);
 }
@@ -408,7 +408,7 @@ static void s_AddBioseqToBioseq(const CBioseq_EditHandle& to, const CBioseq_Edit
     CRef<CSeq_id> id(s_MakeUniqueLocalId());
     seq->SetId().push_back(id);
     CBioseq_EditHandle master = segset.AttachBioseq(*seq, 0);
-    
+
     master.SetInst_Repr(CSeq_inst::eRepr_seg);
     master.SetInst_Mol(to.GetInst_Mol());
     master.SetInst_Length(to.GetInst_Length() + add.GetInst_Length());
@@ -428,7 +428,7 @@ void AddBioseqToBioseq
 
     CBioseq_Handle::TInst_Mol to_mol  = to.GetInst_Mol();
     CBioseq_Handle::TInst_Mol add_mol = add.GetInst_Mol();
-    
+
     // adding a protein to a nucletide
     if ( CSeq_inst::IsNa(to_mol)  &&  CSeq_inst::IsAa(add_mol) ) {
         s_AddProtToNuc(to.GetEditHandle(), add.GetEditHandle());
@@ -441,7 +441,7 @@ void AddBioseqToBioseq
 
 //  --  AddBioseqToBioseqSet
 
-// A nuc-prot associates one or more proteins with a single 
+// A nuc-prot associates one or more proteins with a single
 // nucleotide.
 
 static void s_AddBioseqToNucProtSet
@@ -458,7 +458,7 @@ static void s_AddBioseqToNucProtSet
     } else {
         CSeq_entry_CI it(nuc_prot);
         while ( it ) {
-            if ( it->IsSeq()  &&  
+            if ( it->IsSeq()  &&
                  CSeq_inst::IsNa(it->GetSeq().GetInst_Mol()) ) {
                 break;
             }
@@ -576,7 +576,7 @@ bool AddSeqdescToSeqEntryRecursively(CSeq_entry& entry, CSeqdesc& desc)
         AddSeqdescToBioseq(desc, entry.SetSeq());
         rval = true;
     } else if (entry.IsSet()) {
-        if (entry.GetSet().IsSetClass() && 
+        if (entry.GetSet().IsSetClass() &&
             (entry.GetSet().GetClass() == CBioseq_set::eClass_nuc_prot ||
              entry.GetSet().GetClass() == CBioseq_set::eClass_segset)) {
             AddSeqdescToBioseqSet(desc, entry.SetSet());
@@ -662,18 +662,18 @@ static void s_PromoteSingletonSetsInSet(
     typedef vector<CSeq_entry_EditHandle> TBioseqSetsToPromote;
     TBioseqSetsToPromote bioseqSetsToPromote;
 
-    CSeq_entry_CI direct_child_set_ci( bioseq_set_h, 
+    CSeq_entry_CI direct_child_set_ci( bioseq_set_h,
         CSeq_entry_CI::eNonRecursive, CSeq_entry::e_Set );
     for( ; direct_child_set_ci; ++direct_child_set_ci ) {
 
-        CBioseq_set_EditHandle direct_child_set_eh = 
+        CBioseq_set_EditHandle direct_child_set_eh =
             direct_child_set_ci->GetSet().GetEditHandle();
         if( s_IsSingletonSet(direct_child_set_eh) ) {
 
             // get handle to the sets one child
-            CSeq_entry_CI direct_child_direct_child_ci( 
+            CSeq_entry_CI direct_child_direct_child_ci(
                 direct_child_set_eh, CSeq_entry_CI::eNonRecursive );
-            CSeq_entry_EditHandle direct_child_direct_child_eh = 
+            CSeq_entry_EditHandle direct_child_direct_child_eh =
                 direct_child_direct_child_ci->GetEditHandle();
             ++direct_child_direct_child_ci;
             _ASSERT( ! direct_child_direct_child_ci );
@@ -682,16 +682,16 @@ static void s_PromoteSingletonSetsInSet(
             // types will be moved to the children of this child
             CSeqdesc_CI::TDescChoices desc_choices_to_erase;
             desc_choices_to_erase.push_back( CSeqdesc::e_Title );
-            BioseqSetDescriptorPropagateDown( direct_child_set_eh, 
+            BioseqSetDescriptorPropagateDown( direct_child_set_eh,
                 desc_choices_to_erase );
 
             // push down annotation
-            direct_child_direct_child_eh.TakeAllAnnots( 
+            direct_child_direct_child_eh.TakeAllAnnots(
                 direct_child_set_eh.GetParentEntry() );
 
-            // remember for later because removing now will 
+            // remember for later because removing now will
             // confuse the iteration
-            bioseqSetsToPromote.push_back( 
+            bioseqSetsToPromote.push_back(
                 direct_child_direct_child_eh );
         }
     }
@@ -759,11 +759,11 @@ template<class T>
 struct CSerialObjectSet {
     // we just have to delcare a class because
     // we can't have template-parameterized typedefs
-    typedef set< CConstRef<T>, SSerialObjectLessThan<T> > Type;    
+    typedef set< CConstRef<T>, SSerialObjectLessThan<T> > Type;
 };
 
-static void s_MakeGroupsForUniqueValues( 
-    const CSeq_entry_Handle & target, 
+static void s_MakeGroupsForUniqueValues(
+    const CSeq_entry_Handle & target,
     const CScope::TBioseqHandles & bioseq_handles )
 {
     if( ! target || ! target.IsSet() ) {
@@ -775,7 +775,7 @@ static void s_MakeGroupsForUniqueValues(
 
     CBioseq_set_Handle target_parent_h  = target.GetParentBioseq_set();
 
-    CBioseq_set::EClass child_class = ( 
+    CBioseq_set::EClass child_class = (
         bioseq_set_h.IsSetClass() ?
         bioseq_set_h.GetClass() :
         CBioseq_set::eClass_not_set );
@@ -796,7 +796,7 @@ static void s_MakeGroupsForUniqueValues(
         new_bioseq_set = target_parent_h.GetEditHandle().AttachEntry( *pEntry, 0 ).GetSet();
     }
 
-    // as we go along, accumulate the Seq-descrs and annots that we would like to add to 
+    // as we go along, accumulate the Seq-descrs and annots that we would like to add to
     // new_bioseq_set.
     typedef vector< CConstRef<CSeqdesc> > TDescRefVec;
     TDescRefVec vecDescsToAddToNewBioseqSet;
@@ -807,19 +807,19 @@ static void s_MakeGroupsForUniqueValues(
     // add SeqEntries for this category here
     // AddItemListToSet(pBioseqSet, bioseq_handles, TRUE /* for_segregate */ );
     ITERATE( CScope::TBioseqHandles, bioseq_it, bioseq_handles ) {
-        
-        // If it's directly in a nuc-prot bioseq-set return its seq-entry 
+
+        // If it's directly in a nuc-prot bioseq-set return its seq-entry
         // because nuc-prot sets need to travel together,
         // otherwise return the seq-entry that directly contains this bioseq
         // This is like C toolkit's GetBestTopParentForData
         CSeq_entry_Handle best_entry_for_bioseq = bioseq_it->GetParentEntry();
-        if( best_entry_for_bioseq && 
-            best_entry_for_bioseq.HasParentEntry() ) 
+        if( best_entry_for_bioseq &&
+            best_entry_for_bioseq.HasParentEntry() )
         {
             CSeq_entry_Handle parent_entry = best_entry_for_bioseq.GetParentEntry();
             if( parent_entry && parent_entry.IsSet() &&
-                FIELD_EQUALS( parent_entry.GetSet(), 
-                    Class, CBioseq_set::eClass_nuc_prot ) ) 
+                FIELD_EQUALS( parent_entry.GetSet(),
+                    Class, CBioseq_set::eClass_nuc_prot ) )
             {
                 best_entry_for_bioseq = parent_entry;
             }
@@ -828,15 +828,15 @@ static void s_MakeGroupsForUniqueValues(
             continue;
         }
 
-        // 
+        //
         CBioseq_set_Handle orig_parent = best_entry_for_bioseq.GetParentBioseq_set();
 
         if( orig_parent ) {
 
-            // if new_bioseq_set was of class genbank set, 
+            // if new_bioseq_set was of class genbank set,
             // it can get the orig_parent's class instead
-            if( orig_parent.IsSetClass() && 
-                ( ! new_bioseq_set.IsSetClass() || 
+            if( orig_parent.IsSetClass() &&
+                ( ! new_bioseq_set.IsSetClass() ||
                   new_bioseq_set.GetClass() == CBioseq_set::eClass_genbank ) )
             {
                 new_bioseq_set.GetEditHandle().SetClass( orig_parent.GetClass() );
@@ -846,7 +846,7 @@ static void s_MakeGroupsForUniqueValues(
 
             CSeqdesc_CI desc_ci( orig_parent.GetParentEntry(), CSeqdesc::e_not_set, 1 );
             for( ; desc_ci; ++desc_ci ) {
-                vecDescsToAddToNewBioseqSet.push_back( 
+                vecDescsToAddToNewBioseqSet.push_back(
                     CConstRef<CSeqdesc>(&*desc_ci) );
             }
 
@@ -926,8 +926,8 @@ static void s_MakeGroupsForUniqueValues(
                 break;
             }
 
-            if( sibling_it->IsSet() && 
-                FIELD_EQUALS( sibling_it->GetSet(), Class, 
+            if( sibling_it->IsSet() &&
+                FIELD_EQUALS( sibling_it->GetSet(), Class,
                     CBioseq_set::eClass_nuc_prot ) )
             {
                 bNeedsNewSet = true;
@@ -938,7 +938,7 @@ static void s_MakeGroupsForUniqueValues(
             // remaining entries must be put into another set
             CRef<CSeq_entry> pRemainderEntry( new CSeq_entry );
             pRemainderEntry->SetSet().SetClass( child_class );
-            CBioseq_set_Handle remainder_bioseq_set = 
+            CBioseq_set_Handle remainder_bioseq_set =
                 target_parent_h.GetEditHandle().AttachEntry( *pRemainderEntry ).GetSet();
 
             ITERATE( vector<CSeq_entry_Handle>, sibling_it, siblingVec ) {
@@ -980,8 +980,7 @@ void SegregateSetsByBioseqList(
 
 
     // MakeGroupsForUniqueValues
-    s_MakeGroupsForUniqueValues( target, 
-        bioseq_handles );
+    s_MakeGroupsForUniqueValues( target, bioseq_handles );
 
     // copy bioseq list alignments
     TVecOfSeqEntryHandles vecOfSeqEntryHandles;
@@ -1027,12 +1026,12 @@ static bool s_DivvyUpAlignments_ProcessAnnot_Dendiag(
         align.GetSegs().GetDendiag() )
     {
         CConstRef<CDense_diag> pDendiag = *dendiag_iter;
-        if( FIELD_EQUALS(*pDendiag, Dim, 2) && 
-            pDendiag->IsSetIds() && pDendiag->GetIds().size() == 2 ) 
+        if( FIELD_EQUALS(*pDendiag, Dim, 2) &&
+            pDendiag->IsSetIds() && pDendiag->GetIds().size() == 2 )
         {
             // figure out which input entry this belongs to
             // (empty handle for "all")
-            // If it belongs to multiple input entries, 
+            // If it belongs to multiple input entries,
             // then it belongs *nowhere*, and we set bRemoveDendiag to true
             CSeq_entry_Handle dest_input_entry;
             bool bRemoveDendiag = false;
@@ -1050,7 +1049,7 @@ static bool s_DivvyUpAlignments_ProcessAnnot_Dendiag(
                     continue;
                 }
 
-                CSeq_entry_Handle candidate_input_entry = 
+                CSeq_entry_Handle candidate_input_entry =
                     find_input_entry_iter->second;
                 _ASSERT(candidate_input_entry);
 
@@ -1089,16 +1088,16 @@ static bool s_DivvyUpAlignments_ProcessAnnot_Dendiag(
     // "they all move to the same spot"
     if( mapEntryToDenseDiags.size() == 1 )
     {
-        CSeq_entry_Handle dest_input_entry = 
+        CSeq_entry_Handle dest_input_entry =
             mapEntryToDenseDiags.begin()->first;
         mapEntryToAlignVec[dest_input_entry].push_back( align.GetSeq_align() );
     } else {
         // each moves to a different spot and some might even be deleted,
         // so we will have to copy the original align and break it into pieces
 
-        NON_CONST_ITERATE( TMapEntryToDenseDiags, 
+        NON_CONST_ITERATE( TMapEntryToDenseDiags,
             entry_to_dendiags_iter,
-            mapEntryToDenseDiags ) 
+            mapEntryToDenseDiags )
         {
             const CSeq_entry_Handle & dest_input_entry =
                 entry_to_dendiags_iter->first;
@@ -1150,9 +1149,9 @@ static bool s_DivvyUpAlignments_ProcessAnnot_Denseg(
     const CDense_seg::TIds & ids = align.GetSegs().GetDenseg().GetIds();
     for( size_t iRow = 0; iRow < ids.size(); ++iRow ) {
         CBioseq_Handle id_bioseq = scope.GetBioseqHandle(*ids[iRow]);
-        CSeq_entry_Handle id_bioseq_entry = 
-            ( id_bioseq ? 
-            id_bioseq.GetParentEntry() : 
+        CSeq_entry_Handle id_bioseq_entry =
+            ( id_bioseq ?
+            id_bioseq.GetParentEntry() :
         CSeq_entry_Handle() );
         TMapDescendentToInputEntry::const_iterator find_input_entry_iter =
             ( id_bioseq_entry ?
@@ -1165,7 +1164,7 @@ static bool s_DivvyUpAlignments_ProcessAnnot_Denseg(
             continue;
         }
 
-        const CSeq_entry_Handle & id_input_entry = 
+        const CSeq_entry_Handle & id_input_entry =
             find_input_entry_iter->second;
         _ASSERT(id_input_entry);
 
@@ -1181,17 +1180,17 @@ static bool s_DivvyUpAlignments_ProcessAnnot_Denseg(
     } else {
         // each row may end up in a different seq-entry
 
-        ITERATE(TMapInputEntryToDensegRows, 
-            input_entry_to_denseg_it, 
-            mapInputEntryToDensegRows) 
+        ITERATE(TMapInputEntryToDensegRows,
+            input_entry_to_denseg_it,
+            mapInputEntryToDensegRows)
         {
-            const CSeq_entry_Handle & dest_input_entry = 
+            const CSeq_entry_Handle & dest_input_entry =
                 input_entry_to_denseg_it->first;
             const TRowVec & rowVec = input_entry_to_denseg_it->second;
 
             // C++ toolkit has a handy function just for this purpose
             // (Note that it doesn't copy scores)
-            CRef<CDense_seg> pNewDenseg = 
+            CRef<CDense_seg> pNewDenseg =
                 align.GetSegs().GetDenseg().ExtractRows(rowVec);
             CRef<CSeq_align> pNewSeqAlign( new CSeq_align );
             pNewSeqAlign->Assign( *align.GetSeq_align() );
@@ -1244,16 +1243,16 @@ static void s_DivvyUpAlignments_ProcessAnnot(
         if( segs.IsDendiag() ) {
 
             if( s_DivvyUpAlignments_ProcessAnnot_Dendiag(
-                align, mapDescendentToInputEntry, mapEntryToAlignVec) ) 
+                align, mapDescendentToInputEntry, mapEntryToAlignVec) )
             {
                 bAnyAlignNeedsChange = true;
             }
 
-        } else if( segs.IsDenseg() && 
-            ! RAW_FIELD_IS_EMPTY(segs.GetDenseg(), Ids)  ) 
+        } else if( segs.IsDenseg() &&
+            ! RAW_FIELD_IS_EMPTY(segs.GetDenseg(), Ids)  )
         {
             if( s_DivvyUpAlignments_ProcessAnnot_Denseg(
-                align, mapDescendentToInputEntry, mapEntryToAlignVec) ) 
+                align, mapDescendentToInputEntry, mapEntryToAlignVec) )
             {
                 bAnyAlignNeedsChange = true;
             }
@@ -1264,14 +1263,13 @@ static void s_DivvyUpAlignments_ProcessAnnot(
         }
     } // <-- ITERATE through alignments on annot
 
-    // check for the (hopefully common) easy case 
+    // check for the (hopefully common) easy case
     // where we don't have to move the annot at all
     if( ! bAnyAlignNeedsChange ) {
         // easy: nothing to do
         return;
     }
-    
-        
+
     // use this as a template so we don't have to repeatedly
     // copy the whole annot and erase its aligns
     CRef<CSeq_annot> pOldAnnotWithNoAligns( new CSeq_annot );
@@ -1280,19 +1278,19 @@ static void s_DivvyUpAlignments_ProcessAnnot(
 
     // for each destination input entry, fill in mapSeqAnnotToDest
     // with a copy of seq-annot that just includes the aligns we care about
-    ITERATE( TMapEntryToAlignVec::TKeyVec, 
-        entry_to_aligns_iter, 
+    ITERATE( TMapEntryToAlignVec::TKeyVec,
+        entry_to_aligns_iter,
         mapEntryToAlignVec.GetKeysInOriginalOrder() )
     {
         const CSeq_entry_Handle & dest_input_entry = *entry_to_aligns_iter;
-        TAlignVec & aligns_to_copy = 
+        TAlignVec & aligns_to_copy =
             mapEntryToAlignVec.find(dest_input_entry)->second;
 
         // make copy of annot without aligns, but then
         // add the aligns that are relevant to this dest input entry
         CRef<CSeq_annot> pNewAnnot( new CSeq_annot );
         pNewAnnot->Assign(*pOldAnnotWithNoAligns);
-        CSeq_annot::C_Data::TAlign & new_aligns = 
+        CSeq_annot::C_Data::TAlign & new_aligns =
             pNewAnnot->SetData().SetAlign();
 
         _ASSERT( new_aligns.empty() );
@@ -1312,7 +1310,7 @@ static void s_DivvyUpAlignments_ProcessAnnot(
 
 void DivvyUpAlignments(const TVecOfSeqEntryHandles & vecOfSeqEntryHandles)
 {
-    // create a mapping from all descendents of each member of 
+    // create a mapping from all descendents of each member of
     // vecOfSeqEntryHandles to that member.
     TMapDescendentToInputEntry mapDescendentToInputEntry;
     ITERATE(TVecOfSeqEntryHandles, input_entry_iter, vecOfSeqEntryHandles) {
@@ -1325,7 +1323,7 @@ void DivvyUpAlignments(const TVecOfSeqEntryHandles & vecOfSeqEntryHandles)
     }
 
     // This mapping will hold the destination of each Seq_annot that
-    // should be moved.  An empty destination handle 
+    // should be moved.  An empty destination handle
     // means "copy to all members of vecOfSeqEntryHandles"
     // (read that carefully: one code path moves and the other copies.)
     TMapSeqAnnotToDest mapSeqAnnotToDest;
@@ -1346,9 +1344,9 @@ void DivvyUpAlignments(const TVecOfSeqEntryHandles & vecOfSeqEntryHandles)
     }
 
     // do all the moves and copies that were requested
-    ITERATE(TMapSeqAnnotToDest::TKeyVec, 
-        annot_move_iter, 
-        mapSeqAnnotToDest.GetKeysInOriginalOrder() ) 
+    ITERATE(TMapSeqAnnotToDest::TKeyVec,
+        annot_move_iter,
+        mapSeqAnnotToDest.GetKeysInOriginalOrder() )
     {
         CRef<CSeq_annot> pAnnot = *annot_move_iter;
         const CSeq_entry_Handle & dest_entry_h = mapSeqAnnotToDest.find(pAnnot)->second;
@@ -1448,7 +1446,7 @@ void BioseqSetDescriptorPropagateUp(CBioseq_set_Handle set)
             CRef<CSeqdesc> cpy(new CSeqdesc());
             cpy->Assign(**d);
             etop.AddSeqdesc(*cpy);
-        }        
+        }
     }
 }
 
@@ -1471,7 +1469,7 @@ void BioseqSetDescriptorPropagateDown(
     // deleted )
     CConstRef<CSeq_descr> pSeqDescrToCopy;
     {
-        // we have this pSeqDescrWithChosenDescs variable because 
+        // we have this pSeqDescrWithChosenDescs variable because
         // we want pSeqDescrToCopy to be protected
         // once it's set
         CRef<CSeq_descr> pSeqDescrWithChosenDescs( new CSeq_descr );
@@ -1481,7 +1479,7 @@ void BioseqSetDescriptorPropagateDown(
                 sorted_choices_to_delete.end(), desc_ci->Which() ) )
             {
                 // not one of the deleted ones, so add it
-                pSeqDescrWithChosenDescs->Set().push_back( 
+                pSeqDescrWithChosenDescs->Set().push_back(
                     CRef<CSeqdesc>( SerialClone(*desc_ci) ) );
             }
         }
@@ -1492,7 +1490,7 @@ void BioseqSetDescriptorPropagateDown(
     CSeq_entry_CI direct_child_ci( bioseq_set_h, CSeq_entry_CI::eNonRecursive );
     for( ; direct_child_ci; ++direct_child_ci ) {
         CRef<CSeq_descr> pNewDescr( SerialClone(*pSeqDescrToCopy) );
-        direct_child_ci->GetEditHandle().AddDescr( 
+        direct_child_ci->GetEditHandle().AddDescr(
             *SerialClone(*pSeqDescrToCopy) );
     }
 
@@ -1756,7 +1754,7 @@ void s_AddLiteral(CSeq_inst& inst, const string& element)
     CRef<CDelta_seq> ds(new CDelta_seq());
     ds->SetLiteral().SetSeq_data().SetIupacna().Set(element);
     ds->SetLiteral().SetLength(element.length());
-    
+
     inst.SetExt().SetDelta().Set().push_back(ds);
 }
 
@@ -1797,19 +1795,19 @@ void s_AddGap(CSeq_inst& inst, size_t n_len, bool is_unknown, bool is_assembly_g
 /// Use a negative number for a maximum to indicate that there is no upper
 /// limit.
 /// @param inst        The Seq-inst to adjust
-/// @param min_unknown The minimum number of Ns to be converted to a gap of 
+/// @param min_unknown The minimum number of Ns to be converted to a gap of
 ///                    unknown length
-/// @param max_unknown The maximum number of Ns to be converted to a gap of 
+/// @param max_unknown The maximum number of Ns to be converted to a gap of
 ///                    unknown length
-/// @param min_known   The minimum number of Ns to be converted to a gap of 
+/// @param min_known   The minimum number of Ns to be converted to a gap of
 ///                    known length
-/// @param max_known   The maximum number of Ns to be converted to a gap of 
+/// @param max_known   The maximum number of Ns to be converted to a gap of
 ///                    known length
 ///
 /// @return            none
-void ConvertRawToDeltaByNs(CSeq_inst& inst, 
-                           size_t min_unknown, int max_unknown, 
-                           size_t min_known,   int max_known, 
+void ConvertRawToDeltaByNs(CSeq_inst& inst,
+                           size_t min_unknown, int max_unknown,
+                           size_t min_known,   int max_known,
                            bool is_assembly_gap, int gap_type, int linkage, int linkage_evidence )
 {
     // can only convert if starting as raw
@@ -1926,10 +1924,10 @@ TLocAdjustmentVector NormalizeUnknownLengthGaps(CSeq_inst& inst, size_t unknown_
         if ((*it)->IsLiteral()) {
             if ((*it)->GetLiteral().IsSetLength()) {
                 orig_len = (*it)->GetLiteral().GetLength();
-            }            
+            }
             if ((*it)->GetLiteral().IsSetFuzz()
                 && orig_len != unknown_length
-                && (!(*it)->GetLiteral().IsSetSeq_data() || (*it)->GetLiteral().GetSeq_data().IsGap())) {                
+                && (!(*it)->GetLiteral().IsSetSeq_data() || (*it)->GetLiteral().GetSeq_data().IsGap())) {
 
                 int diff = unknown_length - orig_len;
                 (*it)->SetLiteral().SetLength(unknown_length);
@@ -1947,9 +1945,9 @@ TLocAdjustmentVector NormalizeUnknownLengthGaps(CSeq_inst& inst, size_t unknown_
 }
 
 
-void ConvertRawToDeltaByNs(CBioseq_Handle bsh, 
-                           size_t min_unknown, int max_unknown, 
-                           size_t min_known, int max_known, 
+void ConvertRawToDeltaByNs(CBioseq_Handle bsh,
+                           size_t min_unknown, int max_unknown,
+                           size_t min_known, int max_known,
                            bool is_assembly_gap, int gap_type, int linkage, int linkage_evidence )
 {
     CRef<CSeq_inst> inst(new CSeq_inst());
@@ -2083,7 +2081,7 @@ void ResetLinkageEvidence(CSeq_ext& ext)
 **** Trim functions
 *******************************************************************************/
 
-void s_BasicValidation(CBioseq_Handle bsh, 
+void s_BasicValidation(CBioseq_Handle bsh,
                        const TCuts& cuts)
 {
     // Should be a nuc!
@@ -2122,16 +2120,16 @@ void s_BasicValidation(CBioseq_Handle bsh,
 }
 
 
-/// Implementation detail: first trim all associated annotation, then 
+/// Implementation detail: first trim all associated annotation, then
 /// trim sequence data
-void TrimSequenceAndAnnotation(CBioseq_Handle bsh, 
+void TrimSequenceAndAnnotation(CBioseq_Handle bsh,
                                const TCuts& cuts,
                                EInternalTrimType internal_cut_conversion)
 {
     // Check the input data for anomalies
     s_BasicValidation(bsh, cuts);
 
-    // Sort the cuts 
+    // Sort the cuts
     TCuts sorted_cuts;
     GetSortedCuts(bsh, cuts, sorted_cuts, internal_cut_conversion);
 
@@ -2169,13 +2167,13 @@ void TrimSequenceAndAnnotation(CBioseq_Handle bsh,
             // renormalize the nuc-prot set
             DeleteProteinAndRenormalizeNucProtSet(*feat_ci);
         }
-        else 
+        else
         if (bFeatureTrimmed) {
             // Further modify the copy of the feature
 
             // If this feat is a Cdregion, then RETRANSLATE the protein
             // sequence AND adjust any protein feature
-            if ( copy_feat->IsSetData() && 
+            if ( copy_feat->IsSetData() &&
                  copy_feat->GetData().Which() == CSeqFeatData::e_Cdregion &&
                  copy_feat->IsSetProduct() )
             {
@@ -2202,12 +2200,12 @@ void TrimSequenceAndAnnotation(CBioseq_Handle bsh,
     for (; align_ci; ++align_ci) {
         // Only DENSEG type is supported
         const CSeq_align& align = *align_ci;
-        if ( align.CanGetSegs() && 
+        if ( align.CanGetSegs() &&
              align.GetSegs().Which() == CSeq_align::C_Segs::e_Denseg )
         {
             // Make sure mandatory fields are present in the denseg
             const CDense_seg& denseg = align.GetSegs().GetDenseg();
-            if (! (denseg.CanGetDim() && denseg.CanGetNumseg() && 
+            if (! (denseg.CanGetDim() && denseg.CanGetNumseg() &&
                    denseg.CanGetIds() && denseg.CanGetStarts() &&
                    denseg.CanGetLens()) )
             {
@@ -2233,7 +2231,7 @@ void TrimSequenceAndAnnotation(CBioseq_Handle bsh,
         // Only certain types of graphs are supported.
         // See C Toolkit function GetGraphsProc in api/sqnutil2.c
         const CMappedGraph& graph = *graph_ci;
-        if ( graph.IsSetTitle() && 
+        if ( graph.IsSetTitle() &&
              (NStr::CompareNocase( graph.GetTitle(), "Phrap Quality" ) == 0 ||
               NStr::CompareNocase( graph.GetTitle(), "Phred Quality" ) == 0 ||
               NStr::CompareNocase( graph.GetTitle(), "Gap4" ) == 0) )
@@ -2262,7 +2260,7 @@ void TrimSequenceAndAnnotation(CBioseq_Handle bsh,
 **** Trim functions divided up into trimming separate distinct objects, i.e.,
 **** the sequence data itself and all associated annotation.
 ****
-**** Used by callers who need access to each edited object so that they can 
+**** Used by callers who need access to each edited object so that they can
 **** pass these edited objects to a command undo/redo framework, for example.
 *******************************************************************************/
 
@@ -2278,7 +2276,7 @@ public:
     explicit CRangeCmp(ESortOrder sortorder = eAscending)
       : m_sortorder(sortorder) {};
 
-    bool operator()(const TRange& a1, const TRange& a2) 
+    bool operator()(const TRange& a1, const TRange& a2)
     {
         if (m_sortorder == eAscending) {
             if (a1.GetTo() == a2.GetTo()) {
@@ -2339,7 +2337,7 @@ static void s_MergeCuts(TCuts& sorted_cuts)
 
 
 /// Adjust any internal cuts to terminal cuts
-static void s_AdjustInternalCutLocations(TCuts& cuts, 
+static void s_AdjustInternalCutLocations(TCuts& cuts,
                                          TSeqPos seq_length,
                                          EInternalTrimType internal_cut_conversion)
 {
@@ -2359,7 +2357,7 @@ static void s_AdjustInternalCutLocations(TCuts& cuts,
                     cut.SetTo(seq_length-1);
                 }
             }
-            else 
+            else
             if (internal_cut_conversion == eTrimTo5PrimeEnd) {
                 // Extend the cut to 5' end
                 cut.SetFrom(0);
@@ -2377,9 +2375,9 @@ static void s_AdjustInternalCutLocations(TCuts& cuts,
 /// 2) Merge abutting and overlapping cuts.
 /// 3) Sort the cuts from greatest to least so that sequence
 ///    data and annotation will be deleted from greatest loc to smallest loc.
-///    That way we don't have to adjust coordinate values after 
+///    That way we don't have to adjust coordinate values after
 ///    each cut.
-void GetSortedCuts(CBioseq_Handle bsh, 
+void GetSortedCuts(CBioseq_Handle bsh,
                    const TCuts& cuts,
                    TCuts& sorted_cuts,
                    EInternalTrimType internal_cut_conversion)
@@ -2408,7 +2406,7 @@ void GetSortedCuts(CBioseq_Handle bsh,
     sort(sorted_cuts.begin(), sorted_cuts.end(), asc);
 
     // Adjust internal cuts to terminal cuts
-    s_AdjustInternalCutLocations(sorted_cuts, bsh.GetBioseqLength(), 
+    s_AdjustInternalCutLocations(sorted_cuts, bsh.GetBioseqLength(),
                                  internal_cut_conversion);
 
     // Merge abutting and overlapping cuts
@@ -2419,7 +2417,7 @@ void GetSortedCuts(CBioseq_Handle bsh,
     ***************************************************************************/
     // Sort the ranges from greatest to least so that sequence
     // data and annotation will be deleted from greatest loc to smallest loc.
-    // That way we don't have to adjust coordinate values after 
+    // That way we don't have to adjust coordinate values after
     // each delete.
     CRangeCmp descend(CRangeCmp::eDescending);
     sort(sorted_cuts.begin(), sorted_cuts.end(), descend);
@@ -2427,8 +2425,8 @@ void GetSortedCuts(CBioseq_Handle bsh,
 
 
 /// Trim sequence data
-void TrimSeqData(CBioseq_Handle bsh, 
-                 CRef<CSeq_inst> inst, 
+void TrimSeqData(CBioseq_Handle bsh,
+                 CRef<CSeq_inst> inst,
                  const TCuts& sorted_cuts)
 {
     // Should be a nuc!
@@ -2575,7 +2573,7 @@ static void s_GetTrimCoordinates(CBioseq_Handle bsh,
 }
 
 
-static void s_SeqIntervalDelete(CRef<CSeq_interval> interval, 
+static void s_SeqIntervalDelete(CRef<CSeq_interval> interval,
                                 TSeqPos cut_from,
                                 TSeqPos cut_to,
                                 bool& bCompleteCut,
@@ -2623,12 +2621,12 @@ static void s_SeqIntervalDelete(CRef<CSeq_interval> interval,
     /***************************************************************************
      * Cases below are partial overlapping cases
     ***************************************************************************/
-    // Case 4: Cut is completely inside the feature 
+    // Case 4: Cut is completely inside the feature
     //         OR
-    //         Cut is to the "left" side of the feature (i.e., feat_from is 
+    //         Cut is to the "left" side of the feature (i.e., feat_from is
     //         inside the cut)
     //         OR
-    //         Cut is to the "right" side of the feature (i.e., feat_to is 
+    //         Cut is to the "right" side of the feature (i.e., feat_to is
     //         inside the cut)
     if (feat_to > cut_to) {
         // Left side cut or cut is completely inside feature
@@ -2651,8 +2649,8 @@ static void s_SeqIntervalDelete(CRef<CSeq_interval> interval,
 }
 
 
-static void s_SeqLocDelete(CRef<CSeq_loc> loc, 
-                           TSeqPos from, 
+static void s_SeqLocDelete(CRef<CSeq_loc> loc,
+                           TSeqPos from,
                            TSeqPos to,
                            bool& bCompleteCut,
                            bool& bTrimmed)
@@ -2679,10 +2677,10 @@ static void s_SeqLocDelete(CRef<CSeq_loc> loc,
             if (intervals->CanGet()) {
                 // Process each interval in the list
                 CPacked_seqint::Tdata::iterator it;
-                for (it = intervals->Set().begin(); 
-                     it != intervals->Set().end(); ) 
+                for (it = intervals->Set().begin();
+                     it != intervals->Set().end(); )
                 {
-                    // Initial value: assume that all intervals 
+                    // Initial value: assume that all intervals
                     // will be deleted resulting in bCompleteCut = true.
                     // Later on if any interval is not deleted, then set
                     // bCompleteCut = false
@@ -2717,8 +2715,8 @@ static void s_SeqLocDelete(CRef<CSeq_loc> loc,
             if (mix->CanGet()) {
                 // Process each seqloc in the list
                 CSeq_loc_mix::Tdata::iterator it;
-                for (it = mix->Set().begin(); 
-                     it != mix->Set().end(); ) 
+                for (it = mix->Set().begin();
+                     it != mix->Set().end(); )
                 {
                     // Initial value: assume that all seqlocs
                     // will be deleted resulting in bCompleteCut = true.
@@ -2747,16 +2745,16 @@ static void s_SeqLocDelete(CRef<CSeq_loc> loc,
         }
         break;
 
-        // Other choices not supported yet 
+        // Other choices not supported yet
         default:
-        {           
+        {
         }
         break;
     }
 }
 
 
-static void s_UpdateSeqGraphLoc(CRef<CSeq_graph> graph, 
+static void s_UpdateSeqGraphLoc(CRef<CSeq_graph> graph,
                                 const TCuts& sorted_cuts)
 {
     for (TCuts::size_type ii = 0; ii < sorted_cuts.size(); ++ii) {
@@ -2776,9 +2774,9 @@ static void s_UpdateSeqGraphLoc(CRef<CSeq_graph> graph,
 }
 
 
-/// Trim Seq-graph annotation 
-void TrimSeqGraph(CBioseq_Handle bsh, 
-                  CRef<CSeq_graph> graph, 
+/// Trim Seq-graph annotation
+void TrimSeqGraph(CBioseq_Handle bsh,
+                  CRef<CSeq_graph> graph,
                   const TCuts& sorted_cuts)
 {
     // Get range that original seqgraph data covers
@@ -2800,7 +2798,7 @@ void TrimSeqGraph(CBioseq_Handle bsh,
         copy_stop = trim_stop;
     }
 
-    // Copy over seqgraph data values.  Handle BYTE type only (see 
+    // Copy over seqgraph data values.  Handle BYTE type only (see
     // C Toolkit's GetGraphsProc function in api/sqnutil2.c)
     CSeq_graph::TGraph& dst_data = graph->SetGraph();
     if (dst_data.IsByte()) {
@@ -2848,19 +2846,19 @@ bool s_FindSegment(const CDense_seg& denseg,
 }
 
 
-void s_CutDensegSegment(CRef<CSeq_align> align, 
+void s_CutDensegSegment(CRef<CSeq_align> align,
                         CDense_seg::TDim row,
                         TSeqPos pos)
 {
-    // Find the segment where pos occurs for the sequence (identified by 
+    // Find the segment where pos occurs for the sequence (identified by
     // row).
-    // If pos is not the start of the segment, cut the segment in two, with 
+    // If pos is not the start of the segment, cut the segment in two, with
     // one of the segments using pos as the new start.
 
 
     // Find the segment where pos lies
     const CDense_seg& denseg = align->GetSegs().GetDenseg();
-    CDense_seg::TNumseg foundseg; 
+    CDense_seg::TNumseg foundseg;
     TSeqPos seg_start;
     if ( !s_FindSegment(denseg, row, pos, foundseg, seg_start) ) {
         return;
@@ -2881,7 +2879,7 @@ void s_CutDensegSegment(CRef<CSeq_align> align,
     // 5) Replace old denseg with new denseg
 
     // Allocate a new denseg with numseg size = original size + 1
-    CRef<CDense_seg> new_denseg(new CDense_seg);    
+    CRef<CDense_seg> new_denseg(new CDense_seg);
     new_denseg->SetDim( denseg.GetDim() );
     new_denseg->SetNumseg( denseg.GetNumseg() + 1 );
     ITERATE( CDense_seg::TIds, idI, denseg.GetIds() ) {
@@ -2904,8 +2902,8 @@ void s_CutDensegSegment(CRef<CSeq_align> align,
 
         // Copy strands
         if ( denseg.IsSetStrands() ) {
-            for (CDense_seg::TDim curdim = 0; curdim < denseg.GetDim(); 
-                 ++curdim) 
+            for (CDense_seg::TDim curdim = 0; curdim < denseg.GetDim();
+                 ++curdim)
             {
                 TSeqPos index = curseg * denseg.GetDim() + curdim;
                 new_denseg->SetStrands().push_back(denseg.GetStrands()[index]);
@@ -2921,11 +2919,11 @@ void s_CutDensegSegment(CRef<CSeq_align> align,
     {
         first_len  = pos - seg_start;
         second_len = denseg.GetLens()[foundseg] - first_len;
-    } 
+    }
     else {
         second_len = pos - seg_start;
         first_len  = denseg.GetLens()[foundseg] - second_len;
-    }   
+    }
 
     // Set starts, strands, and lens for the split segments (foundseg and foundseg+1)
     // Populate foundseg in new denseg
@@ -2944,7 +2942,7 @@ void s_CutDensegSegment(CRef<CSeq_align> align,
         if (denseg.IsSetStrands()) {
             new_denseg->SetStrands().push_back(denseg.GetStrands()[index]);
         }
-    }    
+    }
     new_denseg->SetLens().push_back(first_len);
     // Populate foundseg+1 in new denseg
     for (CDense_seg::TDim curdim = 0; curdim < denseg.GetDim(); ++curdim) {
@@ -2962,10 +2960,10 @@ void s_CutDensegSegment(CRef<CSeq_align> align,
         if (denseg.IsSetStrands()) {
             new_denseg->SetStrands().push_back(denseg.GetStrands()[index]);
         }
-    }    
+    }
     new_denseg->SetLens().push_back(second_len);
 
-    // Copy elements (starts, lens, strands) after the cut (starting from foundseg+1 in 
+    // Copy elements (starts, lens, strands) after the cut (starting from foundseg+1 in
     // original denseg)
     for (CDense_seg::TNumseg curseg = foundseg+1; curseg < denseg.GetNumseg(); ++curseg) {
         // Copy starts
@@ -2979,8 +2977,8 @@ void s_CutDensegSegment(CRef<CSeq_align> align,
 
         // Copy strands
         if ( denseg.IsSetStrands() ) {
-            for (CDense_seg::TDim curdim = 0; curdim < denseg.GetDim(); 
-                 ++curdim) 
+            for (CDense_seg::TDim curdim = 0; curdim < denseg.GetDim();
+                 ++curdim)
             {
                 TSeqPos index = curseg * denseg.GetDim() + curdim;
                 new_denseg->SetStrands().push_back(denseg.GetStrands()[index]);
@@ -2988,14 +2986,14 @@ void s_CutDensegSegment(CRef<CSeq_align> align,
         }
     }
 
-    // Update 
+    // Update
     align->SetSegs().SetDenseg(*new_denseg);
 }
 
 
 /// Trim Seq-align annotation
-void TrimSeqAlign(CBioseq_Handle bsh, 
-                  CRef<CSeq_align> align, 
+void TrimSeqAlign(CBioseq_Handle bsh,
+                  CRef<CSeq_align> align,
                   const TCuts& sorted_cuts)
 {
     // Assumption:  only DENSEG type is supported so caller should
@@ -3025,7 +3023,7 @@ void TrimSeqAlign(CBioseq_Handle bsh,
         if (cut_to < cut_from) {
             cut_len = cut_from - cut_to + 1;
             cut_from = cut_to;
-        } 
+        }
 
         // Note: row is 0-based
 
@@ -3045,7 +3043,7 @@ void TrimSeqAlign(CBioseq_Handle bsh,
             else if (seg_start < cut_from) {
                 // This is before the cut, no change needed
             }
-            else if (seg_start >= cut_from && 
+            else if (seg_start >= cut_from &&
                      seg_start + denseg.GetLens()[curseg] <= cut_from + cut_len) {
                 // This is in the gap, indicate it with a -1
                 align->SetSegs().SetDenseg().SetStarts()[index] = -1;
@@ -3086,21 +3084,21 @@ void TrimSeqFeat(CRef<CSeq_feat> feat, const TCuts& sorted_cuts, bool& bFeatureD
         TSeqPos from = cut.GetFrom();
         TSeqPos to = cut.GetTo();
 
-        // Update Seqloc "feature made from" 
+        // Update Seqloc "feature made from"
         if (feat->CanGetLocation()) {
             CRef<CSeq_feat::TLocation> new_location(new CSeq_feat::TLocation);
             new_location->Assign(feat->GetLocation());
 
             // check if the cut overlaps feature location, then feature should be marked partial
-            if (to >= new_location->GetStart(eExtreme_Positional) && 
+            if (to >= new_location->GetStart(eExtreme_Positional) &&
                 to < new_location->GetStop(eExtreme_Positional) &&
                 from <= new_location->GetStart(eExtreme_Positional))
             {
                 partial_start = true;
             }
-            if (from <= new_location->GetStop(eExtreme_Positional) && 
+            if (from <= new_location->GetStop(eExtreme_Positional) &&
                 from > new_location->GetStart(eExtreme_Positional) &&
-                to >= new_location->GetStop(eExtreme_Positional)) 
+                to >= new_location->GetStop(eExtreme_Positional))
             {
                 partial_stop = true;
             }
@@ -3114,7 +3112,7 @@ void TrimSeqFeat(CRef<CSeq_feat> feat, const TCuts& sorted_cuts, bool& bFeatureD
                 SetPartial(feat->SetLocation(), feat, strand, partial_start, partial_stop);
             }
 
-            // No need to cut anymore nor update.  Feature will be completely deleted.  
+            // No need to cut anymore nor update.  Feature will be completely deleted.
             if (bFeatureDeleted) {
                 return;
             }
@@ -3135,18 +3133,18 @@ void TrimSeqFeat(CRef<CSeq_feat> feat, const TCuts& sorted_cuts, bool& bFeatureD
 
 /// Secondary function needed after trimming Seq-feat.
 /// If the trim completely covers the feature (boolean reference bFeatureDeleted
-/// from TrimSeqFeat() returns true), then delete protein sequence and 
+/// from TrimSeqFeat() returns true), then delete protein sequence and
 /// re-normalize nuc-prot set.
 void DeleteProteinAndRenormalizeNucProtSet(const CSeq_feat_Handle& feat_h)
 {
     // First, if the feature is a Cdregion, then delete the protein sequence
     CMappedFeat mapped_feat(feat_h);
-    if ( mapped_feat.IsSetData() && 
+    if ( mapped_feat.IsSetData() &&
          mapped_feat.GetData().Which() == CSeqFeatData::e_Cdregion &&
          mapped_feat.IsSetProduct() )
     {
         // Use Cdregion feat.product seqloc to get protein bioseq handle
-        CBioseq_Handle prot_h = 
+        CBioseq_Handle prot_h =
             mapped_feat.GetScope().GetBioseqHandle(mapped_feat.GetProduct());
 
         // Should be a protein!
@@ -3159,13 +3157,13 @@ void DeleteProteinAndRenormalizeNucProtSet(const CSeq_feat_Handle& feat_h)
             prot_eh.Remove();
 
             // If lone nuc remains, renormalize the nuc-prot set
-            if (bssh && bssh.IsSetClass() 
+            if (bssh && bssh.IsSetClass()
                 && bssh.GetClass() == CBioseq_set::eClass_nuc_prot
-                && !bssh.IsEmptySeq_set() 
-                && bssh.GetBioseq_setCore()->GetSeq_set().size() == 1) 
+                && !bssh.IsEmptySeq_set()
+                && bssh.GetBioseq_setCore()->GetSeq_set().size() == 1)
             {
-                // Renormalize the lone nuc that's inside the nuc-prot set into  
-                // a nuc bioseq.  This call will remove annots/descrs from the 
+                // Renormalize the lone nuc that's inside the nuc-prot set into
+                // a nuc bioseq.  This call will remove annots/descrs from the
                 // set and attach them to the seq.
                 bssh.GetParentEntry().GetEditHandle().ConvertSetToSeq();
             }
@@ -3180,7 +3178,7 @@ void DeleteProteinAndRenormalizeNucProtSet(const CSeq_feat_Handle& feat_h)
 
 /// Secondary function needed after trimming Seq-feat.
 /// If TrimSeqFeat()'s bFeatureTrimmed returns true, then adjust cdregion frame.
-void AdjustCdregionFrame(TSeqPos original_nuc_len, 
+void AdjustCdregionFrame(TSeqPos original_nuc_len,
                          CRef<CSeq_feat> cds,
                          const TCuts& sorted_cuts)
 {
@@ -3189,7 +3187,7 @@ void AdjustCdregionFrame(TSeqPos original_nuc_len,
     CSeq_loc::TStrand eStrand = eNa_strand_unknown;
     if (cds->CanGetLocation()) {
         bIsPartialStart = cds->GetLocation().IsPartialStart(eExtreme_Biological);
-        eStrand = cds->GetLocation().GetStrand(); 
+        eStrand = cds->GetLocation().GetStrand();
     }
 
     for (TCuts::size_type ii = 0; ii < sorted_cuts.size(); ++ii) {
@@ -3198,7 +3196,7 @@ void AdjustCdregionFrame(TSeqPos original_nuc_len,
         TSeqPos to = cut.GetTo();
 
         // Adjust Seq-feat.data.cdregion frame
-        if (cds->CanGetData() && 
+        if (cds->CanGetData() &&
             cds->GetData().GetSubtype() == CSeqFeatData::eSubtype_cdregion &&
             cds->GetData().IsCdregion())
         {
@@ -3211,8 +3209,8 @@ void AdjustCdregionFrame(TSeqPos original_nuc_len,
                   to == original_nuc_len - 1 &&
                   bIsPartialStart)
                  ||
-                 (eStrand != eNa_strand_minus && 
-                  from == 0 && 
+                 (eStrand != eNa_strand_minus &&
+                  from == 0 &&
                   bIsPartialStart) )
             {
                 TSeqPos old_frame = new_cdregion->GetFrame();
@@ -3248,15 +3246,15 @@ CRef<CBioseq> SetNewProteinSequence(CScope& new_scope,
         if (!new_protein_bioseq) {
             // too short to translate
         }
-        else if (new_protein_bioseq->GetInst().GetSeq_data().IsIupacaa()) 
+        else if (new_protein_bioseq->GetInst().GetSeq_data().IsIupacaa())
         {
-            new_inst->SetSeq_data().SetIupacaa().Set( 
+            new_inst->SetSeq_data().SetIupacaa().Set(
                 new_protein_bioseq->GetInst().GetSeq_data().GetIupacaa().Get());
             new_inst->SetLength( new_protein_bioseq->GetInst().GetLength() );
         }
-        else if (new_protein_bioseq->GetInst().GetSeq_data().IsNcbieaa()) 
+        else if (new_protein_bioseq->GetInst().GetSeq_data().IsNcbieaa())
         {
-            new_inst->SetSeq_data().SetNcbieaa().Set( 
+            new_inst->SetSeq_data().SetNcbieaa().Set(
                 new_protein_bioseq->GetInst().GetSeq_data().GetNcbieaa().Get());
             new_inst->SetLength( new_protein_bioseq->GetInst().GetLength() );
         }
@@ -3270,15 +3268,15 @@ CRef<CBioseq> SetNewProteinSequence(CScope& new_scope,
 void RetranslateCdregion(CBioseq_Handle nuc_bsh,
                          bool isPartialStart,
                          bool isPartialStop,
-                         CRef<CSeq_inst> trimmed_nuc_inst, 
+                         CRef<CSeq_inst> trimmed_nuc_inst,
                          CRef<CSeq_feat> cds,
                          const TCuts& sorted_cuts)
 {
-    if ( cds->IsSetData() && 
+    if ( cds->IsSetData() &&
          cds->GetData().Which() == CSeqFeatData::e_Cdregion &&
          cds->IsSetProduct() )
     {
-        // In order to retranslate correctly, we need to create a 
+        // In order to retranslate correctly, we need to create a
         // new scope with the trimmed sequence data.
 
         // Keep track of original seqinst
@@ -3291,18 +3289,18 @@ void RetranslateCdregion(CBioseq_Handle nuc_bsh,
         bseh.SetInst(*trimmed_nuc_inst);
         CScope& new_scope = bseh.GetScope();
 
-        // Use Cdregion.Product to get handle to protein bioseq 
+        // Use Cdregion.Product to get handle to protein bioseq
         CBioseq_Handle prot_bsh = new_scope.GetBioseqHandle(cds->GetProduct());
         if (!prot_bsh.IsProtein()) {
             return;
         }
 
-        // Make a copy 
+        // Make a copy
         CRef<CSeq_inst> new_inst(new CSeq_inst());
         new_inst->Assign(prot_bsh.GetInst());
 
         // Edit the copy
-        CRef<CBioseq> new_protein_bioseq = 
+        CRef<CBioseq> new_protein_bioseq =
             SetNewProteinSequence(new_scope, cds, new_inst);
         if ( !new_protein_bioseq ) {
             return;
@@ -3318,12 +3316,12 @@ void RetranslateCdregion(CBioseq_Handle nuc_bsh,
         CMolInfo::ECompleteness completeness = CMolInfo::eCompleteness_complete;
         if (partial5 && partial3) {
             completeness = CMolInfo::eCompleteness_no_ends;
-        } 
-        else 
+        }
+        else
         if (partial5) {
             completeness = CMolInfo::eCompleteness_no_left;
-        } 
-        else 
+        }
+        else
         if (partial3) {
             completeness = CMolInfo::eCompleteness_no_right;
         }
@@ -3339,8 +3337,8 @@ void RetranslateCdregion(CBioseq_Handle nuc_bsh,
             // update existing descr
             if (!(*it)->SetMolinfo().IsSetCompleteness() && completeness != CMolInfo::eCompleteness_complete) {
                 (*it)->SetMolinfo().SetCompleteness(completeness);
-            } 
-            else 
+            }
+            else
             if (!(*it)->SetMolinfo().IsSetCompleteness() && completeness == CMolInfo::eCompleteness_complete) {
                 // do nothing, complete is implied by there being no completeness flag
             }
@@ -3351,7 +3349,7 @@ void RetranslateCdregion(CBioseq_Handle nuc_bsh,
         }
         else {
             if (completeness != CMolInfo::eCompleteness_complete) {
-                // add new descr 
+                // add new descr
                 CRef<CSeqdesc> desc(new CSeqdesc);
                 desc->SetMolinfo().SetBiomol(CMolInfo::eBiomol_peptide);
                 desc->SetMolinfo().SetCompleteness(completeness);
@@ -3398,7 +3396,7 @@ void RetranslateCdregion(CBioseq_Handle nuc_bsh,
 /*******************************************************************************
 **** LOW-LEVEL API
 ****
-**** Trim functions 
+**** Trim functions
 *******************************************************************************/
 
 
@@ -3622,7 +3620,7 @@ void SetTargetedLocusName(CBioseq_Handle seq, const string& tls)
     CBioseq_EditHandle bh(seq);
     if (bh.GetCompleteBioseq()->IsSetDescr()) {
         NON_CONST_ITERATE(CBioseq::TDescr::Tdata, it, bh.SetDescr().Set()) {
-            if ((*it)->IsUser() && 
+            if ((*it)->IsUser() &&
                 (*it)->GetUser().GetObjectType() == CUser_object::eObjectType_AutodefOptions) {
                 CAutoDefOptions* opts = new CAutoDefOptions();
                 opts->InitFromUserObject((*it)->GetUser());
@@ -3644,7 +3642,6 @@ void SetTargetedLocusName(CBioseq_Handle seq, const string& tls)
         new_desc->SetUser().Assign(*new_obj);
         bh.SetDescr().Set().push_back(new_desc);
     }
-    
 }
 
 
@@ -3662,7 +3659,7 @@ string GetTargetedLocusNameConsensus(const string& tls1, const string& tls2)
         return tls2;
     } else if (NStr::IsBlank(tls2)) {
         return tls1;
-    } 
+    }
 
     if (NStr::Equal(tls1, tls2)) {
         return tls1;

@@ -59,7 +59,7 @@ CApplyObject::CApplyObject(CBioseq_Handle bsh, const CSeqdesc& desc) : m_Delete(
     m_Original.Reset(&desc);
     CRef<CSeqdesc> new_desc(new CSeqdesc());
     new_desc->Assign(desc);
-    m_Editable = new_desc.GetPointer();    
+    m_Editable = new_desc.GetPointer();
 }
 
 
@@ -76,7 +76,7 @@ CApplyObject::CApplyObject(CBioseq_Handle bsh, CSeqdesc::E_Choice subtype): m_De
     m_Original.Reset(NULL);
     CRef<CSeqdesc> new_desc(new CSeqdesc());
     new_desc->Select(subtype);
-    m_Editable = new_desc.GetPointer();    
+    m_Editable = new_desc.GetPointer();
 }
 
 
@@ -91,7 +91,7 @@ CApplyObject::CApplyObject(CBioseq_Handle bsh, const string& user_label) : m_Del
     m_Original.Reset(NULL);
     CRef<CSeqdesc> new_desc(new CSeqdesc());
     new_desc->SetUser().SetType().SetStr(user_label);
-    m_Editable = new_desc.GetPointer();    
+    m_Editable = new_desc.GetPointer();
 }
 
 
@@ -143,7 +143,7 @@ void CApplyObject::ApplyChange()
     CSeqdesc* desc = dynamic_cast<CSeqdesc * >(m_Editable.GetPointer());
     CSeq_feat* feat = dynamic_cast<CSeq_feat * >(m_Editable.GetPointer());
     CSeq_inst* inst = dynamic_cast<CSeq_inst * >(m_Editable.GetPointer());
-    
+
     if (desc) {
         if (m_Original) {
             const CSeqdesc* orig_desc = dynamic_cast<const CSeqdesc* >(m_Original.GetPointer());

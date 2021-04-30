@@ -48,7 +48,7 @@
 
 #include <cstdio>
 
-// This header must be included before any Boost.Test header. 
+// This header must be included before any Boost.Test header.
 #include <corelib/test_boost.hpp>
 
 
@@ -94,9 +94,9 @@ public:
 
         CFile file(dirEntry);
         string name = file.GetName();
-        if (NStr::EndsWith(name, ".txt")  ||  
+        if (NStr::EndsWith(name, ".txt")  ||
                 NStr::EndsWith(name, ".new")  ||
-                NStr::EndsWith(name, ".sh")  ||  
+                NStr::EndsWith(name, ".sh")  ||
                 NStr::StartsWith(name, ".")) {
             return;
         }
@@ -110,8 +110,8 @@ public:
         BOOST_REQUIRE(!tsTestName.empty());
         CTempString tsFileType = vecFileNamePieces[1];
         BOOST_REQUIRE(!tsFileType.empty());
-    
-        STestInfo & test_info_to_load = 
+
+        STestInfo & test_info_to_load =
             (*m_pTestNameToInfoMap)[vecFileNamePieces[0]];
 
         // figure out what type of file we have and set appropriately
@@ -142,7 +142,7 @@ private:
 };
 
 
-void sUpdateCase(CDir& test_cases_dir, const string& test_name) 
+void sUpdateCase(CDir& test_cases_dir, const string& test_name)
 {
     string input = CDir::ConcatPath( test_cases_dir.GetPath(), test_name + "." + extInput);
     string output = CDir::ConcatPath( test_cases_dir.GetPath(), test_name + "." + extOutput);
@@ -179,7 +179,7 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
 
 
 void sUpdateAll(CDir& test_cases_dir) {
-    
+
     const vector<string> kEmptyStringVec;
     TTestNameToInfoMap testNameToInfoMap;
     CTestNameToInfoMapLoader testInfoLoader(
@@ -190,7 +190,7 @@ void sUpdateAll(CDir& test_cases_dir) {
         kEmptyStringVec,
         testInfoLoader,
         fFF_Default | fFF_Recursive );
-    
+
     ITERATE(TTestNameToInfoMap, name_to_info_it, testNameToInfoMap) {
         const string & sName = name_to_info_it->first;
         sUpdateCase(test_cases_dir, sName);
@@ -200,8 +200,8 @@ void sUpdateAll(CDir& test_cases_dir) {
 
 void sRunTest(const string &sTestName, const STestInfo& testInfo, bool keep)
 {
-    cerr << "Testing " << testInfo.mInFile.GetName() << " against " << 
-        testInfo.mOutFile.GetName() << " and " << 
+    cerr << "Testing " << testInfo.mInFile.GetName() << " against " <<
+        testInfo.mOutFile.GetName() << " and " <<
         testInfo.mErrorFile.GetName() << endl;
 
 
@@ -228,7 +228,7 @@ void sRunTest(const string &sTestName, const STestInfo& testInfo, bool keep)
     }
     ofstr.close();
 
-    bool successOutput = 
+    bool successOutput =
         testInfo.mOutFile.CompareTextContents(newOutput, CFile::eIgnoreWs);
     bool successErrors = true; // No check for errors yet
  //       testInfo.mErrorFile.CompareTextContents(newErrors, CFile::eIgnoreWs);
@@ -237,14 +237,14 @@ void sRunTest(const string &sTestName, const STestInfo& testInfo, bool keep)
         if (keep) {
             deNewOutput.Copy(testInfo.mOutFile.GetPath() + "." + extKeep);
         }
-    }   
+    }
     /*
     if (!successErrors) {
         CDirEntry deNewErrors= CDirEntry(newErrors);
         if (keep) {
             deNewErrors.Copy(testInfo.mErrorFile.GetPath() + "." + extKeep);
         }
-    }   
+    }
     */
 
     if (!successOutput  ||  !successErrors) {
@@ -279,7 +279,7 @@ NCBITEST_INIT_CMDLINE(arg_descrs)
         "Keep output files that are different from the expected.",
         true );
     arg_descrs->AddDefaultKey("single-case",
-        "SINGLE_CASE", 
+        "SINGLE_CASE",
         "Run specified case only",
         CArgDescriptions::eString,
         "");
@@ -295,29 +295,29 @@ BOOST_AUTO_TEST_CASE(RunTests)
     const CArgs& args = CNcbiApplication::Instance()->GetArgs();
 
     CDir test_cases_dir( args["test-dir"].AsDirectory() );
-    BOOST_REQUIRE_MESSAGE( test_cases_dir.IsDir(), 
+    BOOST_REQUIRE_MESSAGE( test_cases_dir.IsDir(),
         "Cannot find dir: " << test_cases_dir.GetPath() );
 
     bool update_all = args["update-all"].AsBoolean();
     if (update_all) {
         sUpdateAll(test_cases_dir);
         return;
-    }   
+    }
 
     string update_case = args["update-case"].AsString();
     if (!update_case.empty()) {
         sUpdateCase(test_cases_dir, update_case);
         return;
-    }   
-                                   
+    }
+
     string single_case = args["single-case"].AsString();
     if (!single_case.empty()) {
         STestInfo testInfo;
-        testInfo.mInFile = CDir::ConcatPath( 
+        testInfo.mInFile = CDir::ConcatPath(
             test_cases_dir.GetPath(), single_case + "." + extInput);
         testInfo.mOutFile = CDir::ConcatPath(
             test_cases_dir.GetPath(), single_case + "." + extOutput);
-        testInfo.mErrorFile = CDir::ConcatPath( 
+        testInfo.mErrorFile = CDir::ConcatPath(
             test_cases_dir.GetPath(), single_case + "." + extErrors);
         BOOST_CHECK_NO_THROW(
             sRunTest(single_case, testInfo, args["keep-diffs"]));
@@ -332,7 +332,7 @@ BOOST_AUTO_TEST_CASE(RunTests)
                    kEmptyStringVec,
                    testInfoLoader,
                    fFF_Default | fFF_Recursive );
-    
+
     ITERATE(TTestNameToInfoMap, name_to_info_it, testNameToInfoMap) {
         const string & sName = name_to_info_it->first;
         const STestInfo & testInfo = name_to_info_it->second;
@@ -351,5 +351,5 @@ BOOST_AUTO_TEST_CASE(RunTests)
         cout << "Running test: " << sName << endl;
 
         BOOST_CHECK_NO_THROW(sRunTest(sName, testInfo, args["keep-diffs"]));
-    }   
+    }
 }

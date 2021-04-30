@@ -164,14 +164,13 @@ BOOST_AUTO_TEST_CASE(Test_AddBiosample)
     edit::CDBLinkField dblink_field(edit::CDBLinkField::eDBLinkFieldType_BioSample);
 
     vector<CRef<edit::CApplyObject> > apply_objects = dblink_field.GetApplyObjects(*bi);
-    
+
     BOOST_CHECK_EQUAL(apply_objects.size(), 1);
 
     CRef<CUser_object> user = edit::CDBLinkField::MakeUserObject();
     dblink_field.SetVal(*user, "biosample value");
 
     BOOST_CHECK_EQUAL(user->GetType().GetStr(), "DBLink");
-    
     BOOST_CHECK_EQUAL(user->GetData().front()->GetLabel().GetStr(), "BioSample");
     BOOST_CHECK_EQUAL(user->GetData().front()->GetData().GetStrs().front(), "biosample value");
 }
@@ -354,9 +353,8 @@ BOOST_AUTO_TEST_CASE(Test_GBBlock)
     edit::CGBBlockField gb_block_field(edit::CGBBlockField::eGBBlockFieldType_Keyword);
 
     vector<CRef<edit::CApplyObject> > apply_objects = gb_block_field.GetApplyObjects(*bi);
-    
-    BOOST_CHECK_EQUAL(apply_objects.size(), 1);    
-   
+    BOOST_CHECK_EQUAL(apply_objects.size(), 1);
+
     gb_block_field.SetVal(apply_objects[0]->SetObject(), "my keyword", edit::eExistingText_add_qual);
     apply_objects[0]->ApplyChange();
 
@@ -386,9 +384,8 @@ BOOST_AUTO_TEST_CASE(Test_CommentDescriptors)
         BOOST_CHECK_EQUAL("Unable to create comment field handler", "Error");
     } else {
         vector<CRef<edit::CApplyObject> > apply_objects = comment_field->GetApplyObjects(*bi);
-    
-        BOOST_CHECK_EQUAL(apply_objects.size(), 1);    
-   
+        BOOST_CHECK_EQUAL(apply_objects.size(), 1);
+
         comment_field->SetVal(apply_objects[0]->SetObject(), "my comment", edit::eExistingText_replace_old);
         apply_objects[0]->ApplyChange();
 
@@ -415,9 +412,8 @@ BOOST_AUTO_TEST_CASE(Test_DefinitionLine)
         BOOST_CHECK_EQUAL("Unable to create definition line handler", "Error");
     } else {
         vector<CRef<edit::CApplyObject> > apply_objects = defline->GetApplyObjects(*bi);
-    
-        BOOST_CHECK_EQUAL(apply_objects.size(), 1);    
-   
+        BOOST_CHECK_EQUAL(apply_objects.size(), 1);
+
         defline->SetVal(apply_objects[0]->SetObject(), "my defline", edit::eExistingText_replace_old);
         apply_objects[0]->ApplyChange();
 
@@ -449,7 +445,7 @@ BOOST_AUTO_TEST_CASE(Test_ReorderFields)
     f3->SetLabel().SetStr("Assembly Provider");
     f3->SetData().SetStr("1");
     user->SetData().push_back(f3);
-    
+
     CConstRef<CComment_set> rules = CComment_set::GetCommentRules();
     const CComment_rule& rule = rules->FindCommentRule(prefix);
     BOOST_CHECK_EQUAL(rule.ReorderFields(*user), true);
@@ -485,7 +481,7 @@ BOOST_AUTO_TEST_CASE(Test_EquivalentQualifierNames)
     name1.assign("codon start");
     name2.assign("coDONstart");
     BOOST_CHECK_EQUAL(edit::CFieldHandler::QualifierNamesAreEquivalent(name1, name2), true);
-    
+
     name1.assign("codon start");
     name2.assign("   codonstart ");
     BOOST_CHECK_EQUAL(edit::CFieldHandler::QualifierNamesAreEquivalent(name1, name2), true);

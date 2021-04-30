@@ -107,7 +107,7 @@ bool CDBLinkField::SetVal(CUser_object& user, const string & newValue, EExisting
                 rval = true;
             }
         }
-        
+
         // if User object now has no fields, reset so it will be detected as empty
         if (user.GetData().empty()) {
             user.ResetData();
@@ -150,7 +150,7 @@ void CDBLinkField::_ParseAndAppend(CUser_field::C_Data::TStrs& strs, const strin
 bool CDBLinkField::SetVal(CUser_field& field, const string & newValue, EExistingText existing_text)
 {
     bool rval = false;
-    
+
     if (field.IsSetData()) {
 #if 0
         if (field.GetData().IsStr()) {
@@ -201,7 +201,7 @@ bool CDBLinkField::SetVal(CUser_field& field, const string & newValue, EExisting
         _ParseAndAppend(field.SetData().SetStrs(), newValue, eExistingText_replace_old);
         rval = true;
     }
-   
+
     if (field.IsSetData() && field.GetData().IsStrs())
     {
         field.SetNum(CUser_field::TNum(field.GetData().GetStrs().size()));
@@ -305,7 +305,7 @@ const string& CDBLinkField::GetLabelForType(EDBLinkFieldType field_type)
     if (field_type < 0 || field_type >= eDBLinkFieldType_Unknown)
         return kEmptyStr;
     else
-        return g_types[field_type]; 
+        return g_types[field_type];
 }
 
 
@@ -344,7 +344,7 @@ vector<CRef<CApplyObject> > CDBLinkField::GetApplyObjects(CBioseq_Handle bsh)
     if (objects.empty()) {
         CRef<CApplyObject> new_obj(new CApplyObject(bsh, kDBLink));
         objects.push_back(new_obj);
-    }        
+    }
 
     return objects;
 }
@@ -499,7 +499,7 @@ vector<string> CDBLinkField::GetFieldNames()
 
     for (int field_type = CDBLinkField::eDBLinkFieldType_Trace;
          field_type < CDBLinkField::eDBLinkFieldType_Unknown;
-         field_type++) {       
+         field_type++) {
         const string& field_name = CDBLinkField::GetLabelForType((CDBLinkField::EDBLinkFieldType)field_type);
         options.push_back(field_name);
     }

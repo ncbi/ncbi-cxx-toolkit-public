@@ -429,7 +429,7 @@ void TestTrimForFrame(TSeqPos gap_len, CCdregion::EFrame frame)
     edit::TGappedFeatList gapped_list = ListGappedFeatures(f, *scope);
     gapped_list.front()->CalculateRelevantIntervals(true, true);
     vector<CRef<CSeq_feat> > adjusted_feats = gapped_list.front()->AdjustForRelevantGapIntervals(true, true, true, true, false);
-    
+
     string before_protstr;
     CSeqTranslator::Translate(*(adjusted_feats[0]), *scope, before_protstr);
 
@@ -983,15 +983,15 @@ edit::TGappedFeatList TryOneCaseMixLoc(TSeqPos start1, TSeqPos stop1, TSeqPos st
     add1->SetInt().SetId().Assign(id);
     add1->SetInt().SetFrom(start1);
     add1->SetInt().SetTo(stop1);
-    if (is_minus) 
-        add1->SetStrand(eNa_strand_minus);    
+    if (is_minus)
+        add1->SetStrand(eNa_strand_minus);
     mix->Set().push_back(add1);
 
     CRef<CSeq_loc> add2(new CSeq_loc());
     add2->SetInt().SetId().Assign(id);
     add2->SetInt().SetFrom(start2);
     add2->SetInt().SetTo(stop2);
-    if (is_minus) 
+    if (is_minus)
       add2->SetStrand(eNa_strand_minus);
     mix->Set().push_back(add2);
 
@@ -1103,7 +1103,7 @@ BOOST_AUTO_TEST_CASE(Test_FeatGapInfoMiscMixLoc)
 
     // remove
     TestRemoveMiscMixLoc(12, 15, 17, 21, false);
-    TestRemoveMiscMixLoc(17, 21, 12, 15, true);    
+    TestRemoveMiscMixLoc(17, 21, 12, 15, true);
 }
 
 

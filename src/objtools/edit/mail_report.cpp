@@ -90,7 +90,7 @@ CRef<CSeq_table> MakeMailReportPreReport(CSeq_entry_Handle seh)
 void MakeMailReportPostReport(CSeq_table& table, CScope& scope)
 {
     CRef<CSeqTable_column> new_tax(new CSeqTable_column());
-    new_tax->SetHeader().SetTitle("new taxname");   
+    new_tax->SetHeader().SetTitle("new taxname");
     table.SetColumns().push_back(new_tax);
     CRef<CSeqTable_column> taxon(new CSeqTable_column());
     taxon->SetHeader().SetTitle("tax ID");
@@ -152,7 +152,7 @@ void MakeMailReportPostReport(CSeq_table& table, CScope& scope)
             pub_stat->SetData().SetInt().push_back(0);
             taxon->SetData().SetInt().push_back(0);
         }
-    }    
+    }
 }
 
 

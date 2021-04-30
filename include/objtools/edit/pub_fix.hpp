@@ -95,7 +95,7 @@ public:
     void DebugDump(CNcbiOstream& out) const;
     // utility method
     static void get_lastnames(const CAuth_list& authors, list<string>& lastnames, string& auth_string);
-    
+
     // public vars
     EOutcome outcome;
     int pub_year;

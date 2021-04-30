@@ -399,7 +399,7 @@ static void s_GetESearchIds(CESearch_Request& req,
                     if (pRes->GetData().IsInfo() &&
                         pRes->GetData().GetInfo().IsSetContent() &&
                         pRes->GetData().GetInfo().GetContent().IsSetIdList()) {
-                
+
                         const auto& idList = pRes->GetData().GetInfo().GetContent().GetIdList();
                         if (idList.IsSetId()) {
                             ids = idList.GetId();
@@ -407,12 +407,12 @@ static void s_GetESearchIds(CESearch_Request& req,
                         req.Disconnect();
                         return;
                     }
-                    else 
+                    else
                     if (pRes->GetData().IsERROR()) {
-                        NCBI_THROW(CException, eUnknown, 
+                        NCBI_THROW(CException, eUnknown,
                                 pRes->GetData().GetERROR());
                     }
-                } // pRest->IsSetData() 
+                } // pRest->IsSetData()
             } // istr.GetStatusCode() == 200
         }
         catch(CException& e) {
@@ -420,19 +420,19 @@ static void s_GetESearchIds(CESearch_Request& req,
                     << ": " << e);
         }
         req.Disconnect();
-   
+
         int sleepSeconds = sqrt(retry);
         if (sleepSeconds) {
             SleepSec(sleepSeconds);
         }
     } // retry
-    
-    NCBI_THROW(CException, eUnknown, 
+
+    NCBI_THROW(CException, eUnknown,
             "failed to execute query: " + term);
 }
 
 
-static bool s_IsIndexed(CRef<CEUtils_ConnContext> pContext, 
+static bool s_IsIndexed(CRef<CEUtils_ConnContext> pContext,
         const string& id) {
 
     // error handling is modeled on that of CEUtilsClient::x_Summary()
@@ -448,7 +448,7 @@ static bool s_IsIndexed(CRef<CEUtils_ConnContext> pContext,
             if (istr.GetStatusCode() == 200) {
                 success = true;
                 break;
-            } 
+            }
         }
         catch (...) {
         }
@@ -457,11 +457,11 @@ static bool s_IsIndexed(CRef<CEUtils_ConnContext> pContext,
         int sleepSeconds = sqrt(retry);
         if (sleepSeconds) {
             SleepSec(sleepSeconds);
-        }   
+        }
     }
 
     if (!success) {
-        NCBI_THROW(CException, eUnknown, 
+        NCBI_THROW(CException, eUnknown,
                 "failed to execute esummary request: " + request.GetQueryString());
     }
 
@@ -491,7 +491,7 @@ bool MUIsJournalIndexed(const string& journal)
     title = NStr::Sanitize(title);
 
     list<string> ids;
-    auto pContext = Ref(new CEUtils_ConnContext()); 
+    auto pContext = Ref(new CEUtils_ConnContext());
     CESearch_Request req("nlmcatalog", pContext);
     req.SetRetMax(2);
     req.SetUseHistory(false);
@@ -818,7 +818,7 @@ bool TenAuthorsProcess(CCit_art& cit, CCit_art& new_cit, IMessageListener* err_l
         if (auth.IsSetName() && auth.GetName().IsName() && auth.GetName().GetName().IsSetLast()) {
 
             const string& last_name = auth.GetName().GetName().GetLast();
-            if (find_if(new_author_names.begin(), new_author_names.end(), 
+            if (find_if(new_author_names.begin(), new_author_names.end(),
                 [&last_name](const CTempString& cur_name)
                 {
                     return NStr::EqualNocase(last_name, cur_name);
@@ -844,7 +844,7 @@ bool TenAuthorsProcess(CCit_art& cit, CCit_art& new_cit, IMessageListener* err_l
             string last_name = name.IsSetLast() ? name.GetLast() : "",
                    initials = name.IsSetInitials() ? name.GetInitials() : "";
 
-            replace_authors = NStr::EqualNocase(last_name, "et") && 
+            replace_authors = NStr::EqualNocase(last_name, "et") &&
                               NStr::EqualNocase(initials, "al");
         }
 
@@ -852,7 +852,7 @@ bool TenAuthorsProcess(CCit_art& cit, CCit_art& new_cit, IMessageListener* err_l
         // This is done according to the next document:
         // ~cavanaug/WORK/MedArch/doc.medarch.4genbank.txt
         //
-        //    If the MedArchCitArt has zero Name-std Author.name ...     
+        //    If the MedArchCitArt has zero Name-std Author.name ...
         //
         //    Or if the InputCitArt has more than 10 Name - std Author.name while
         //    the MedArchCitArt has less than 12 ...
@@ -962,7 +962,7 @@ void PropagateInPress(bool inpress, CCit_art& cit_art)
     CImprint* imprint = nullptr;
 
     switch (cit_art.GetFrom().Which()) {
-        
+
     case CCit_art::C_From::e_Journal:
         if (cit_art.GetFrom().GetJournal().IsSetImp()) {
             imprint = &cit_art.SetFrom().SetJournal().SetImp();
@@ -1409,7 +1409,7 @@ CAuthListValidator::EOutcome CAuthListValidator::validate(const CCit_art& gb_art
     // check minimum required # of matching authors
     if (actual_matched_to_min < cfg_matched_to_min) {
         ERR_POST_TO_LISTENER(m_err_log, eDiag_Error, err_AuthList, err_AuthList_LowMatch,
-            "Only " << cnt_matched << " authors matched between " << cnt_gb << " Genbank and " 
+            "Only " << cnt_matched << " authors matched between " << cnt_gb << " Genbank and "
             << cnt_pm << " PubMed. Match/Min ratio " << fixed << setprecision(2) << actual_matched_to_min
             << " is below threshold " << fixed << setprecision(2) << cfg_matched_to_min);
         outcome = eFailed_validation;
@@ -1422,7 +1422,7 @@ void CAuthListValidator::DebugDump(CNcbiOstream& out) const
     out << "\n--- Debug Dump of CAuthListValidator object ---\n";
     out << "pub_year: " << pub_year << "\n";
     out << "PubMed Auth-list limit in " << pub_year << ": " << reported_limit << "\n";
-    out << "Configured ratio 'matched' to 'min(gb,pm)': " << cfg_matched_to_min 
+    out << "Configured ratio 'matched' to 'min(gb,pm)': " << cfg_matched_to_min
         << "; actual: " << actual_matched_to_min << "\n";
     out << "Configured ratio 'removed' to 'gb': " << cfg_removed_to_gb
         << "; actual: " << actual_removed_to_gb << "\n";

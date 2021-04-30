@@ -67,7 +67,7 @@ bool CFieldHandler::QualifierNamesAreEquivalent (string name1, string name2)
     NStr::ReplaceInPlace (name2, " ", "");
     NStr::ReplaceInPlace (name2, "_", "");
     NStr::ReplaceInPlace (name2, "-", "");
-    
+
     return NStr::EqualNocase(name1, name2);
 }
 
@@ -99,7 +99,6 @@ vector<CRef<CApplyObject> > CFieldHandler::GetApplyObjectsFromRelatedObjects(vec
             CRef<CApplyObject> apply(new CApplyObject(bsh, *obj_feat));
             rval.push_back(apply);
         }
- 
     }
 
     return rval;
@@ -158,13 +157,13 @@ bool DoesObjectMatchFieldConstraint (const CObject& object, const string& field_
     if (NStr::IsBlank(field_name) || !string_constraint) {
         return true;
     }
-    
-    CRef<CFieldHandler> fh = CFieldHandlerFactory::Create(field_name); 
+
+    CRef<CFieldHandler> fh = CFieldHandlerFactory::Create(field_name);
     if (!fh) {
         return false;
     }
 
-    vector<string> val_list; 
+    vector<string> val_list;
     vector<CConstRef<CObject> > objs = fh->GetRelatedObjects (object, scope);
     ITERATE(vector<CConstRef<CObject> >, it, objs) {
         vector<string> add = fh->GetVals(**it);
@@ -180,13 +179,13 @@ bool DoesApplyObjectMatchFieldConstraint (const CApplyObject& object, const stri
     if (NStr::IsBlank(field_name) || !string_constraint) {
         return true;
     }
-    
-    CRef<CFieldHandler> fh = CFieldHandlerFactory::Create(field_name); 
+
+    CRef<CFieldHandler> fh = CFieldHandlerFactory::Create(field_name);
     if (!fh) {
         return false;
     }
 
-    vector<string> val_list; 
+    vector<string> val_list;
     vector<CConstRef<CObject> > objs = fh->GetRelatedObjects (object);
     ITERATE(vector<CConstRef<CObject> >, it, objs) {
         vector<string> add = fh->GetVals(**it);
@@ -220,7 +219,7 @@ vector<CConstRef<CSeq_feat> > GetRelatedFeatures (const CSeq_feat& obj_feat, CSe
 
     // is one feature type a protein and the other not?
     bool obj_is_prot = (CSeqFeatData::GetTypeFromSubtype(obj_type) == CSeqFeatData::e_Prot);
-    bool constraint_is_prot = (CSeqFeatData::GetTypeFromSubtype(constraint_type) == CSeqFeatData::e_Prot);               
+    bool constraint_is_prot = (CSeqFeatData::GetTypeFromSubtype(constraint_type) == CSeqFeatData::e_Prot);
     if (obj_is_prot && constraint_is_prot) {
         // find feature anywhere on protein sequence
         CBioseq_Handle p_bsh = scope->GetBioseqHandle(obj_feat.GetLocation());
@@ -235,7 +234,7 @@ vector<CConstRef<CSeq_feat> > GetRelatedFeatures (const CSeq_feat& obj_feat, CSe
             } else {
                 feat_list = GetRelatedFeatures(*cds, constraint_type, scope);
             }
-        }                      
+        }
     } else if (!obj_is_prot && constraint_is_prot) {
         // examine objects on protein sequence
         // need to find coding region for obj_feat
@@ -248,7 +247,7 @@ vector<CConstRef<CSeq_feat> > GetRelatedFeatures (const CSeq_feat& obj_feat, CSe
             const CSeq_feat* cds = sequence::GetBestCdsForMrna(obj_feat, *scope);
             if (cds) {
                 feat_list = GetRelatedFeatures(*cds, constraint_type, scope);
-            }                    
+            }
         } else if (obj_type == CSeqFeatData::eSubtype_gene) {
             list<CMappedFeat> cds_feats;
             feature::GetCdssForGene(scope->GetSeq_featHandle(obj_feat), cds_feats);
@@ -266,11 +265,11 @@ vector<CConstRef<CSeq_feat> > GetRelatedFeatures (const CSeq_feat& obj_feat, CSe
             }
         } else if (obj_type == CSeqFeatData::eSubtype_gene) {
             sequence::TFeatScores scores;
-            sequence::GetOverlappingFeatures (obj_feat.GetLocation(), 
-                                              CSeqFeatData::GetTypeFromSubtype(constraint_type), 
-                                              constraint_type, 
+            sequence::GetOverlappingFeatures (obj_feat.GetLocation(),
+                                              CSeqFeatData::GetTypeFromSubtype(constraint_type),
+                                              constraint_type,
                                               sequence::eOverlap_Contains,
-                                              scores, *scope);            
+                                              scores, *scope);
             ITERATE (sequence::TFeatScores, it, scores) {
                 feat_list.push_back(it->second);
             }

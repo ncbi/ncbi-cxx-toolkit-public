@@ -106,10 +106,9 @@ BOOST_AUTO_TEST_CASE(Test_RemoveOldName)
     unit_test_util::SetOrgMod(src, COrgMod::eSubtype_strain, "strain");
     edit::RemoveOldName(src);
     FOR_EACH_ORGMOD_ON_BIOSOURCE ( orgmod, src ) {
-        if ((*orgmod)->IsSetSubtype()) 
+        if ((*orgmod)->IsSetSubtype())
             BOOST_CHECK_EQUAL((*orgmod)->GetSubtype() != COrgMod::eSubtype_old_name, true);
     }
- 
 }
 
 BOOST_AUTO_TEST_CASE(Test_RemoveTaxId)
@@ -156,7 +155,7 @@ BOOST_AUTO_TEST_CASE(Test_CleanupForTaxnameChange)
     }
 
     FOR_EACH_ORGMOD_ON_BIOSOURCE ( orgmod, src ) {
-        if ((*orgmod)->IsSetSubtype()) 
+        if ((*orgmod)->IsSetSubtype())
             BOOST_CHECK_EQUAL((*orgmod)->GetSubtype() != COrgMod::eSubtype_old_name, true);
     }
 
@@ -235,7 +234,7 @@ BOOST_AUTO_TEST_CASE(Test_SQD_2100)
     src1->ResetOrg();
     src1->SetOrg().SetTaxId(TAX_ID_CONST(588858));
     src1->SetOrg().SetOrgname().SetMod().push_back(CRef<COrgMod>(new COrgMod(COrgMod::eSubtype_strain, "14028S")));
-    src1->SetOrg().SetOrgname().SetMod().push_back(CRef<COrgMod>(new COrgMod(COrgMod::eSubtype_serovar, "Typhimurium")));     
+    src1->SetOrg().SetOrgname().SetMod().push_back(CRef<COrgMod>(new COrgMod(COrgMod::eSubtype_serovar, "Typhimurium")));
     src2->ResetOrg();
     src2->SetOrg().SetTaxId(TAX_ID_CONST(1159899));
     src2->SetOrg().SetOrgname().SetMod().push_back(CRef<COrgMod>(new COrgMod(COrgMod::eSubtype_strain, "LT2-4")));
@@ -278,7 +277,7 @@ BOOST_AUTO_TEST_CASE(Test_SQD_2100)
     common = edit::MakeCommonBioSource(*src1, *src2);
     BOOST_CHECK(!common);
 
-    // 
+    //
     // Tax IDs not species level same
 
     src2->SetOrg().SetDb().front()->SetTag().SetId(1069680);

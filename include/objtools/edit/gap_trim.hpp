@@ -122,7 +122,7 @@ protected:
 };
 
 typedef vector<CRef<CFeatGapInfo> > TGappedFeatList;
-NCBI_XOBJEDIT_EXPORT 
+NCBI_XOBJEDIT_EXPORT
 TGappedFeatList ListGappedFeatures(CFeat_CI& feat_it, CScope& scope);
 
 NCBI_XOBJEDIT_EXPORT

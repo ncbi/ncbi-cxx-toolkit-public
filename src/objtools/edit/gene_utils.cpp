@@ -53,21 +53,21 @@ CConstRef <CSeq_feat> GetGeneForFeature(const CSeq_feat& feat, CScope& scope)
   }
 
   if (gene) {
-     CBioseq_Handle 
+     CBioseq_Handle
        bioseq_hl = sequence::GetBioseqFromSeqLoc(feat.GetLocation(), scope);
      if (!bioseq_hl) {
         return (CConstRef <CSeq_feat> ());
      }
      CTSE_Handle tse_hl = bioseq_hl.GetTSE_Handle();
      if (gene->CanGetLocus_tag() && !(gene->GetLocus_tag().empty()) ) {
-         CSeq_feat_Handle 
+         CSeq_feat_Handle
              seq_feat_hl = tse_hl.GetGeneWithLocus(gene->GetLocus_tag(), true);
          if (seq_feat_hl) {
               return (seq_feat_hl.GetOriginalSeq_feat());
          }
      }
      else if (gene->CanGetLocus() && !(gene->GetLocus().empty())) {
-         CSeq_feat_Handle 
+         CSeq_feat_Handle
               seq_feat_hl = tse_hl.GetGeneWithLocus(gene->GetLocus(), false);
          if (seq_feat_hl) {
             return (seq_feat_hl.GetOriginalSeq_feat());
@@ -76,7 +76,7 @@ CConstRef <CSeq_feat> GetGeneForFeature(const CSeq_feat& feat, CScope& scope)
      else return (CConstRef <CSeq_feat>());
   }
   else {
-   return( 
+   return(
      CConstRef <CSeq_feat>(sequence::GetBestOverlappingFeat(feat.GetLocation(),
                                                   CSeqFeatData::e_Gene,
                                                   sequence::eOverlap_Contained,

@@ -36,7 +36,7 @@
 #include <objmgr/util/autodef.hpp>
 
 BEGIN_NCBI_SCOPE
-BEGIN_SCOPE(objects)    
+BEGIN_SCOPE(objects)
 
 
 class NCBI_XOBJEDIT_EXPORT CAutoDefWithTaxonomy : public CAutoDef

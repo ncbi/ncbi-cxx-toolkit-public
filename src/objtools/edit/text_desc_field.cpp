@@ -100,7 +100,7 @@ vector<CRef<CApplyObject> > CTextDescriptorField::GetApplyObjects(CBioseq_Handle
     if (objects.empty()) {
         CRef<CApplyObject> new_obj(new CApplyObject(bsh, m_Subtype));
         objects.push_back(new_obj);
-    }        
+    }
 
     return objects;
 }

@@ -291,10 +291,10 @@ CFeatGapInfo::TLocList CFeatGapInfo::Split(const CSeq_loc& orig, bool in_intron,
             if (make_partial)
             {
                 loc2->SetPartialStart(true, objects::eExtreme_Positional);
-		        if (left_loc->Which() != CSeq_loc::e_not_set)
-		        {
-		            left_loc->SetPartialStop(true, objects::eExtreme_Positional);
-		        }
+                if (left_loc->Which() != CSeq_loc::e_not_set)
+                {
+                    left_loc->SetPartialStop(true, objects::eExtreme_Positional);
+                }
             }
             locs.push_back(loc2);
         }
@@ -386,7 +386,6 @@ CRef<CBioseq> CFeatGapInfo::AdjustProteinSeq(const CBioseq& seq, const CSeq_feat
 
     // also fix protein feature locations
     if (prot_seq->IsSetAnnot()) {
-        
         CRef<CSeq_loc_Mapper> nuc2prot_mapper(
             new CSeq_loc_Mapper(orig_cds, CSeq_loc_Mapper::eLocationToProduct, &scope));
         CRef<CSeq_loc> prot_shadow = nuc2prot_mapper->Map(feat.GetLocation());
@@ -571,7 +570,7 @@ vector<CRef<CSeq_feat> > CFeatGapInfo::AdjustForRelevantGapIntervals(bool make_p
                         }
                         split_feat->SetProduct().SetWhole().Assign(*new_id);
                     }
-                    protein_seqid_offset++;                       
+                    protein_seqid_offset++;
                 }
                 rval.push_back(split_feat);
             }
@@ -596,13 +595,13 @@ void CFeatGapInfo::x_AdjustFrame(CCdregion& cdregion, TSeqPos frame_adjust)
     frame_adjust = frame_adjust % 3;
     if (frame_adjust == 0) {
         return;
-    } 
+    }
 
     CCdregion::TFrame orig_frame = cdregion.SetFrame();
     if (orig_frame == CCdregion::eFrame_not_set) {
         orig_frame = CCdregion::eFrame_one;
     }
-    
+
     if (frame_adjust == 1) {
         if (orig_frame == CCdregion::eFrame_one) {
             cdregion.SetFrame(CCdregion::eFrame_three); //

@@ -55,16 +55,16 @@ public:
     virtual string
     Compose(void) const
     {
-        return x_GetSeverityString() + ": " + GetText(); 
+        return x_GetSeverityString() + ": " + GetText();
     }
 
-    virtual void Write( 
+    virtual void Write(
         CNcbiOstream& out ) const
     {
-        out << "                " << 
+        out << "                " <<
            x_GetSeverityString()
            << ":" << endl;
-        out << "Problem:        " << 
+        out << "Problem:        " <<
             GetText() << endl;
         out << endl;
     };
@@ -97,7 +97,7 @@ public:
 
 private:
 
-    string x_GetSeverityString(void) const 
+    string x_GetSeverityString(void) const
     {
         return CNcbiDiag::SeverityName(GetSeverity());
     }

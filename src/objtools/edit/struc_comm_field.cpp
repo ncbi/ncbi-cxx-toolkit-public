@@ -92,7 +92,7 @@ bool CStructuredCommentField::SetVal(CObject& object, const string & newValue, E
                 rval = true;
             }
         }
-        
+
         // if User object now has no fields, reset so it will be detected as empty
         if (user->GetData().empty()) {
             user->ResetData();
@@ -149,7 +149,7 @@ void CStructuredCommentField::x_InsertFieldAtCorrectPosition(CUser_object& user,
 bool CStructuredCommentField::SetVal(CUser_field& field, const string & newValue, EExistingText existing_text)
 {
     bool rval = false;
-    
+
     if (field.IsSetData()) {
         if (field.GetData().IsStr()) {
             string curr_val = field.GetData().GetStr();
@@ -199,7 +199,7 @@ vector<string> CStructuredCommentField::GetVals(const CObject& object)
     if (IsStructuredCommentForThisField(*user) && user->IsSetData()) {
         CUser_object::TData::const_iterator it = user->GetData().begin();
         while (it != user->GetData().end()) {
-            if ((*it)->IsSetLabel() && (*it)->GetLabel().IsStr() && (*it)->IsSetData() 
+            if ((*it)->IsSetLabel() && (*it)->GetLabel().IsStr() && (*it)->IsSetData()
                 && NStr::Equal((*it)->GetLabel().GetStr(), m_FieldName)) {
                 switch((*it)->GetData().Which()) {
                     case CUser_field::TData::e_Str:
@@ -271,7 +271,7 @@ vector<CRef<CApplyObject> > CStructuredCommentField::GetApplyObjects(CBioseq_Han
         desc->SetUser(*MakeUserObject(m_Prefix));
         CRef<CApplyObject> new_obj(new CApplyObject(bsh, *desc));
         objects.push_back(new_obj);
-    }        
+    }
 
     return objects;
 }

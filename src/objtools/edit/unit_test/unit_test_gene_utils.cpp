@@ -104,7 +104,7 @@ BOOST_AUTO_TEST_CASE(Test_GetGeneForFeature)
 
    STANDARD_SETUP
 
-   ITERATE (list <CRef <CSeq_feat> >, it, 
+   ITERATE (list <CRef <CSeq_feat> >, it,
            entry->SetSet().SetAnnot().front()->SetData().SetFtable()) {
       CConstRef <CSeq_feat> gene4cds = edit::GetGeneForFeature(**it, scope);
       NCBITEST_CHECK_MESSAGE(gene == gene4cds, "Didn't get right gene");

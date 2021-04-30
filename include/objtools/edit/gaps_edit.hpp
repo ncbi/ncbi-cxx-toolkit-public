@@ -54,12 +54,12 @@ public:
     typedef set<int> TEvidenceSet;
     using TCountToEvidenceMap = map<TSeqPos, TEvidenceSet>;
 
-    CGapsEditor(CSeq_gap::EType gap_type, 
+    CGapsEditor(CSeq_gap::EType gap_type,
                 const TEvidenceSet& evidences,
-                TSeqPos gapNmin, 
+                TSeqPos gapNmin,
                 TSeqPos gap_Unknown_length);
 
-    CGapsEditor(CSeq_gap::EType gap_type, 
+    CGapsEditor(CSeq_gap::EType gap_type,
                 const TEvidenceSet& defaultEvidence,
                 const TCountToEvidenceMap& countToEvidenceMap,
                 TSeqPos m_gapNmin,

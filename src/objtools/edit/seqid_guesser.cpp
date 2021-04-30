@@ -42,7 +42,7 @@ BEGIN_SCOPE(objects)
 BEGIN_SCOPE(edit)
 
 
-CSeqIdGuesser::CSeqIdGuesser(CSeq_entry_Handle entry) : m_SeqEntry(entry) 
+CSeqIdGuesser::CSeqIdGuesser(CSeq_entry_Handle entry) : m_SeqEntry(entry)
 {
     // to do: build up table of strings and seq-ids
     CBioseq_CI bi(m_SeqEntry);
@@ -98,10 +98,10 @@ CSeqIdGuesser::CSeqIdGuesser(CSeq_entry_Handle entry) : m_SeqEntry(entry)
                             if (!NStr::EqualNocase(file_id, local)) {
                                 x_AddIdString(file_id, *id);
                             }
-                        } 
+                        }
                     } else if (NStr::EqualNocase(dbtag.GetDb(), "NCBIFILE")) {
                         // File ID are usually a filename plus a slash plus the original local ID
-                        // add the filename as its own identifier, but only add the local ID if it hasn't 
+                        // add the filename as its own identifier, but only add the local ID if it hasn't
                         // already been encountered
                         size_t pos = NStr::Find(tag_str, "/", NStr::eNocase, NStr::eReverseSearch);
                         if (pos != string::npos) {
@@ -111,9 +111,9 @@ CSeqIdGuesser::CSeqIdGuesser(CSeq_entry_Handle entry) : m_SeqEntry(entry)
                             if (!NStr::EqualNocase(file_id, local)) {
                                 x_AddIdString(file_id, *id);
                             }
-                        } 
+                        }
                     }
-                }                 
+                }
             }
         }
         ++bi;
@@ -177,22 +177,22 @@ vector<string> CSeqIdGuesser::GetIdStrings(CBioseq_Handle bsh)
                         if (!NStr::EqualNocase(file_id, local)) {
                             id_str.push_back(file_id);
                         }
-                    } 
+                    }
                 } else if (NStr::EqualNocase(dbtag.GetDb(), "NCBIFILE")) {
                     // File ID are usually a filename plus a slash plus the original local ID
-                    // add the filename as its own identifier, but only add the local ID if it hasn't 
+                    // add the filename as its own identifier, but only add the local ID if it hasn't
                     // already been encountered
                     size_t pos = NStr::Find(tag_str, "/", NStr::eNocase, NStr::eReverseSearch);
                     if (pos != string::npos) {
                         string file = tag_str.substr(0, pos);
-                        id_str.push_back(file);                       
+                        id_str.push_back(file);
                         string file_id = tag_str.substr(pos + 1);
                         if (!NStr::EqualNocase(file_id, local)) {
                             id_str.push_back(file_id);
                         }
-                    } 
+                    }
                 }
-            }                 
+            }
         }
     }
     return id_str;

@@ -609,7 +609,7 @@ void CFeatTableEdit::xAddTranscriptAndProteinIdsToMrna(const string& cds_transcr
         return;
     }
 
-    bool use_local_ids = false; // 
+    bool use_local_ids = false;
 
     string transcript_id = mrna.GetNamedQual("transcript_id");
     if (NStr::IsBlank(transcript_id)) {
@@ -1506,10 +1506,10 @@ string CFeatTableEdit::xNextLocusTag()
     return nextTag;
 }
 
-//	----------------------------------------------------------------------------
+//  ----------------------------------------------------------------------------
 string CFeatTableEdit::xNextProteinId(
     const CMappedFeat& mf)
-    //	----------------------------------------------------------------------------
+//  ----------------------------------------------------------------------------
 {
     const string dbPrefix("gnl|");
 
@@ -1546,10 +1546,10 @@ string CFeatTableEdit::xNextProteinId(
     return proteinId;
 }
 
-//	----------------------------------------------------------------------------
+//  ----------------------------------------------------------------------------
 string CFeatTableEdit::xNextTranscriptId(
     const CMappedFeat& cds)
-    //	----------------------------------------------------------------------------
+//  ----------------------------------------------------------------------------
 {
     const string dbPrefix("gnl|");
 
@@ -1946,7 +1946,7 @@ static void s_SetProtRef(const CSeq_feat& cds,
                 }
             }
         }
-    } // prot_ref.IsSetName() 
+    } // prot_ref.IsSetName()
 }
 
 static bool AssignLocalIdIfEmpty(ncbi::objects::CSeq_feat& feature, unsigned& id)
@@ -2174,7 +2174,7 @@ CFeatTableEdit::MergeFeatures(
 //  ============================================================================
 {
     FeatMap featMap;
-    
+
     auto& thisFeatures = mAnnot.SetData().SetFtable();
     for (auto pThisFeat: thisFeatures) {
     //(assumption: only local IDs are at issue)
@@ -2228,7 +2228,7 @@ CFeatTableEdit::xRenameFeatureId(
     else {
         oldFeatIdAsStr = NStr::NumericToString(oldFeatId.GetId());
     }
-    
+
     string newFeatIdAsStr = oldFeatIdAsStr + "x";
     CRef<CObject_id> pNewFeatId(new CObject_id);
     pNewFeatId->SetStr(oldFeatIdAsStr + "x");

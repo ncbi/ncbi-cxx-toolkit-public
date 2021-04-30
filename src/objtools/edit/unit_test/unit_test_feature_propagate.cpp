@@ -261,7 +261,7 @@ CRef<CSeq_feat> CreateCds(CRef<CSeq_loc> main_loc, CRef<CSeq_entry> seq)
 {
     CRef<CSeq_feat> cds = unit_test_util::AddMiscFeature(seq, 15);
     cds->SetData().SetCdregion();
-    cds->SetLocation().Assign(*main_loc);   
+    cds->SetLocation().Assign(*main_loc);
     return cds;
 }
 
@@ -293,7 +293,7 @@ void TestCds(bool loc_partial5, bool loc_partial3)
     CRef<CSeq_align> align;
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
-   
+
     const CSeq_id &id1 = *seq1->GetSeq().GetId().front();
     const CSeq_id &id2 = *seq2->GetSeq().GetId().front();
     const CSeq_id &id3 = *seq3->GetSeq().GetId().front();
@@ -337,7 +337,7 @@ void TestCdsWithCodeBreak(bool subloc_partial5, bool subloc_partial3)
     CRef<CSeq_align> align;
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
-   
+
     const CSeq_id &id1 = *seq1->GetSeq().GetId().front();
     const CSeq_id &id2 = *seq2->GetSeq().GetId().front();
     const CSeq_id &id3 = *seq3->GetSeq().GetId().front();
@@ -379,7 +379,7 @@ void TestCdsFromLastBioseq(bool loc_partial5, bool loc_partial3)
     CRef<CSeq_align> align;
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
-   
+
     const CSeq_id &id1 = *seq1->GetSeq().GetId().front();
     const CSeq_id &id2 = *seq2->GetSeq().GetId().front();
     const CSeq_id &id3 = *seq3->GetSeq().GetId().front();
@@ -421,7 +421,7 @@ void TestCdsFromLastBioseqWithCodeBreak()
     CRef<CSeq_align> align;
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
-   
+
     const CSeq_id &id1 = *seq1->GetSeq().GetId().front();
     const CSeq_id &id2 = *seq2->GetSeq().GetId().front();
     const CSeq_id &id3 = *seq3->GetSeq().GetId().front();
@@ -463,7 +463,7 @@ void TestTrnaAnticodon(bool subloc_partial5, bool subloc_partial3)
     CRef<CSeq_align> align;
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
-   
+
     const CSeq_id &id1 = *seq1->GetSeq().GetId().front();
     const CSeq_id &id2 = *seq2->GetSeq().GetId().front();
     const CSeq_id &id3 = *seq3->GetSeq().GetId().front();
@@ -494,7 +494,7 @@ void TestTrnaAnticodon(bool subloc_partial5, bool subloc_partial3)
     BOOST_CHECK_EQUAL(new_feat2->GetData().GetRna().GetExt().GetTRNA().IsSetAnticodon(), true);
     BOOST_CHECK(expected_subloc2->Equals(new_feat2->GetData().GetRna().GetExt().GetTRNA().GetAnticodon()));
     BOOST_CHECK_EQUAL(listener.Count(), 0);
-    
+
     listener.Clear();
 }
 
@@ -505,7 +505,7 @@ void TestTrnaAnticodonFromLastBioseq()
     CRef<CSeq_align> align;
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
-   
+
     const CSeq_id &id1 = *seq1->GetSeq().GetId().front();
     const CSeq_id &id2 = *seq2->GetSeq().GetId().front();
     const CSeq_id &id3 = *seq3->GetSeq().GetId().front();
@@ -547,7 +547,7 @@ void TestCdsFromLastBioseqOutsideAlign()
     CRef<CSeq_align> align;
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
-   
+
     const CSeq_id &id1 = *seq1->GetSeq().GetId().front();
     const CSeq_id &id2 = *seq2->GetSeq().GetId().front();
     const CSeq_id &id3 = *seq3->GetSeq().GetId().front();
@@ -565,7 +565,7 @@ void TestCdsFromLastBioseqOutsideAlign()
     CRef<CSeq_feat> new_feat1 = propagator1.Propagate(*cds);
     BOOST_CHECK(new_feat1.IsNull());
 
-    listener.Clear();    
+    listener.Clear();
 }
 
 // propagate 2 exon cds with 1 exon outside of the alignment from seq 3 to seq 1
@@ -575,7 +575,7 @@ void TestTwoIntCdsFromLastBioseqOutsideAlign()
     CRef<CSeq_align> align;
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
-   
+
     const CSeq_id &id1 = *seq1->GetSeq().GetId().front();
     const CSeq_id &id2 = *seq2->GetSeq().GetId().front();
     const CSeq_id &id3 = *seq3->GetSeq().GetId().front();
@@ -598,7 +598,7 @@ void TestTwoIntCdsFromLastBioseqOutsideAlign()
     BOOST_CHECK_EQUAL(new_feat1->GetData().GetCdregion().IsSetCode_break(), false);
     BOOST_CHECK_EQUAL(listener.Count(), 0);
 
-    listener.Clear();    
+    listener.Clear();
 }
 
 // propagate 2 exon cds on minus strand from seq 3 to seq 1
@@ -608,7 +608,7 @@ void TestTwoIntCdsOnMinusStrand()
     CRef<CSeq_align> align;
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
-   
+
     const CSeq_id &id1 = *seq1->GetSeq().GetId().front();
     const CSeq_id &id2 = *seq2->GetSeq().GetId().front();
     const CSeq_id &id3 = *seq3->GetSeq().GetId().front();
@@ -627,7 +627,7 @@ void TestTwoIntCdsOnMinusStrand()
     BOOST_CHECK(expected_loc1->Equals(new_feat1->GetLocation()));
     BOOST_CHECK_EQUAL(listener.Count(), 0);
 
-    listener.Clear();    
+    listener.Clear();
 }
 
 // test partial when the stop is cut off
@@ -637,7 +637,7 @@ void TestPartialWhenCutStop(bool partial3)
     CRef<CSeq_align> align;
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
-   
+
     const CSeq_id &id1 = *seq1->GetSeq().GetId().front();
     const CSeq_id &id2 = *seq2->GetSeq().GetId().front();
     const CSeq_id &id3 = *seq3->GetSeq().GetId().front();
@@ -675,7 +675,7 @@ void TestPartialWhenCutStop(bool partial3)
     BOOST_CHECK(expected_loc1->Equals(new_feat1->GetLocation()));
 //    BOOST_CHECK(expected_loc1->Equals(*new_loc));
     BOOST_CHECK_EQUAL(listener.Count(), 0);
-    listener.Clear();    
+    listener.Clear();
 }
 
 // test partial when the last interval is cut off
@@ -685,7 +685,7 @@ void TestPartialWhenCutLastInterval(bool partial3)
     CRef<CSeq_align> align;
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
-   
+
     const CSeq_id &id1 = *seq1->GetSeq().GetId().front();
     const CSeq_id &id2 = *seq2->GetSeq().GetId().front();
     const CSeq_id &id3 = *seq3->GetSeq().GetId().front();
@@ -723,7 +723,7 @@ void TestPartialWhenCutLastInterval(bool partial3)
     BOOST_CHECK(expected_loc1->Equals(new_feat1->GetLocation()));
 // BOOST_CHECK(expected_loc1->Equals(*new_loc));
     BOOST_CHECK_EQUAL(listener.Count(), 0);
-    listener.Clear();    
+    listener.Clear();
 }
 
 // test partial when the start is cut off
@@ -733,7 +733,7 @@ void TestPartialWhenCutStart(bool partial5)
     CRef<CSeq_align> align;
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
-   
+
     const CSeq_id &id1 = *seq1->GetSeq().GetId().front();
     const CSeq_id &id2 = *seq2->GetSeq().GetId().front();
     const CSeq_id &id3 = *seq3->GetSeq().GetId().front();
@@ -760,7 +760,7 @@ void TestPartialWhenCutStart(bool partial5)
     CRef<CSeq_loc> expected_loc1 = CreateTwoIntLoc(10, 15, 20, 25, eNa_strand_plus, id2, true, false);
     BOOST_CHECK(expected_loc1->Equals(new_feat1->GetLocation()));
     BOOST_CHECK_EQUAL(listener.Count(), 0);
-    listener.Clear();    
+    listener.Clear();
 }
 
 // test fuse abutting intervals
@@ -770,7 +770,7 @@ void TestFuseAbuttingIntervals()
     CRef<CSeq_align> align;
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
-   
+
     const CSeq_id &id1 = *seq1->GetSeq().GetId().front();
     const CSeq_id &id2 = *seq2->GetSeq().GetId().front();
     const CSeq_id &id3 = *seq3->GetSeq().GetId().front();
@@ -806,7 +806,7 @@ void TestFuseAbuttingIntervals()
     expected_loc1->SetInt().SetStrand(eNa_strand_plus);
     BOOST_CHECK(expected_loc1->Equals(new_feat1->GetLocation()));
     BOOST_CHECK_EQUAL(listener.Count(), 0);
-    listener.Clear();    
+    listener.Clear();
 }
 
 // test do not fuse abutting intervals
@@ -816,7 +816,7 @@ void TestDoNotFuseAbuttingIntervals()
     CRef<CSeq_align> align;
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
-   
+
     const CSeq_id &id1 = *seq1->GetSeq().GetId().front();
     const CSeq_id &id2 = *seq2->GetSeq().GetId().front();
     const CSeq_id &id3 = *seq3->GetSeq().GetId().front();
@@ -851,7 +851,7 @@ void TestDoNotFuseAbuttingIntervals()
     CRef<CSeq_loc> expected_loc1 = CreateTwoIntLoc(5, 9, 10, 15, eNa_strand_plus, id2, false, false);
     BOOST_CHECK(expected_loc1->Equals(new_feat1->GetLocation()));
     BOOST_CHECK_EQUAL(listener.Count(), 0);
-    listener.Clear();    
+    listener.Clear();
 }
 
 // test extend over gaps
@@ -861,7 +861,7 @@ void TestExtendOverGap()
     CRef<CSeq_align> align;
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
-   
+
     const CSeq_id &id1 = *seq1->GetSeq().GetId().front();
     const CSeq_id &id2 = *seq2->GetSeq().GetId().front();
     const CSeq_id &id3 = *seq3->GetSeq().GetId().front();
@@ -896,7 +896,7 @@ void TestExtendOverGap()
     CRef<CSeq_loc> expected_loc1 = CreateLoc(5, 25, id2, false, false);
     BOOST_CHECK(expected_loc1->Equals(new_feat1->GetLocation()));
     BOOST_CHECK_EQUAL(listener.Count(), 0);
-    listener.Clear();    
+    listener.Clear();
 }
 
 // test do not extend over gaps
@@ -906,7 +906,7 @@ void TestDoNotExtendOverGap()
     CRef<CSeq_align> align;
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
-   
+
     const CSeq_id &id1 = *seq1->GetSeq().GetId().front();
     const CSeq_id &id2 = *seq2->GetSeq().GetId().front();
     const CSeq_id &id3 = *seq3->GetSeq().GetId().front();
@@ -942,7 +942,7 @@ void TestDoNotExtendOverGap()
     expected_loc1->ResetStrand();
     BOOST_CHECK(expected_loc1->Equals(new_feat1->GetLocation()));
     BOOST_CHECK_EQUAL(listener.Count(), 0);
-    listener.Clear();    
+    listener.Clear();
 }
 
 // test ordered vs. joined locations
@@ -952,7 +952,7 @@ void TestOrderedLoc()
     CRef<CSeq_align> align;
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
-   
+
     const CSeq_id &id1 = *seq1->GetSeq().GetId().front();
     const CSeq_id &id2 = *seq2->GetSeq().GetId().front();
     const CSeq_id &id3 = *seq3->GetSeq().GetId().front();
@@ -970,7 +970,7 @@ void TestOrderedLoc()
     BOOST_CHECK(expected_loc1->Equals(new_feat1->GetLocation()));
     BOOST_CHECK_EQUAL(listener.Count(), 0);
 
-    listener.Clear();    
+    listener.Clear();
 }
 
 // test circular topology
@@ -980,7 +980,7 @@ void TestCircularTopology()
     CRef<CSeq_align> align;
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
-   
+
     seq1->SetSeq().SetInst().SetTopology(CSeq_inst::eTopology_circular);
     seq2->SetSeq().SetInst().SetTopology(CSeq_inst::eTopology_circular);
     seq3->SetSeq().SetInst().SetTopology(CSeq_inst::eTopology_circular);
@@ -1019,7 +1019,7 @@ void TestCircularTopology()
     CRef<CSeq_loc> expected_loc1 = CreateTwoIntLoc(55, 64, 0, 5, eNa_strand_plus, id2, false, false);
     BOOST_CHECK(expected_loc1->Equals(new_feat1->GetLocation()));
     BOOST_CHECK_EQUAL(listener.Count(), 0);
-    listener.Clear();    
+    listener.Clear();
 
 }
 
@@ -1032,7 +1032,7 @@ void TestPointLocInside()
     CRef<CSeq_align> align;
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
-   
+
     const CSeq_id &id1 = *seq1->GetSeq().GetId().front();
     const CSeq_id &id2 = *seq2->GetSeq().GetId().front();
     const CSeq_id &id3 = *seq3->GetSeq().GetId().front();
@@ -1052,7 +1052,7 @@ void TestPointLocInside()
     BOOST_CHECK(expected_loc1->Equals(new_feat1->GetLocation()));
     BOOST_CHECK_EQUAL(listener.Count(), 0);
 
-    listener.Clear();   
+    listener.Clear();
 }
 
 // test point location outside alignment
@@ -1062,7 +1062,7 @@ void TestPointLocOutside()
     CRef<CSeq_align> align;
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
-   
+
     const CSeq_id &id1 = *seq1->GetSeq().GetId().front();
     const CSeq_id &id2 = *seq2->GetSeq().GetId().front();
     const CSeq_id &id3 = *seq3->GetSeq().GetId().front();
@@ -1080,7 +1080,7 @@ void TestPointLocOutside()
     CRef<CSeq_feat> new_feat1 = propagator1.Propagate(*cds);
     BOOST_CHECK(new_feat1.IsNull());
 
-    listener.Clear();   
+    listener.Clear();
 }
 
 // test partial when the stop is cut off and do not extend
@@ -1090,7 +1090,7 @@ void TestPartialWhenCutStopDoNotExtend(bool partial3)
     CRef<CSeq_align> align;
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
-   
+
     const CSeq_id &id1 = *seq1->GetSeq().GetId().front();
     const CSeq_id &id2 = *seq2->GetSeq().GetId().front();
     const CSeq_id &id3 = *seq3->GetSeq().GetId().front();
@@ -1117,7 +1117,7 @@ void TestPartialWhenCutStopDoNotExtend(bool partial3)
     CRef<CSeq_loc> expected_loc1 = CreateTwoIntLoc(5, 15, 20, 29, eNa_strand_plus, id2, false, true);
     BOOST_CHECK(expected_loc1->Equals(new_feat1->GetLocation()));
     BOOST_CHECK_EQUAL(listener.Count(), 0);
-    listener.Clear();    
+    listener.Clear();
 }
 
 // test partial when the last interval is cut off and do not extend
@@ -1127,7 +1127,7 @@ void TestPartialWhenCutLastIntervalDoNotExtend(bool partial3)
     CRef<CSeq_align> align;
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
-   
+
     const CSeq_id &id1 = *seq1->GetSeq().GetId().front();
     const CSeq_id &id2 = *seq2->GetSeq().GetId().front();
     const CSeq_id &id3 = *seq3->GetSeq().GetId().front();
@@ -1155,7 +1155,7 @@ void TestPartialWhenCutLastIntervalDoNotExtend(bool partial3)
     expected_loc1->SetInt().SetStrand(eNa_strand_plus);
     BOOST_CHECK(expected_loc1->Equals(new_feat1->GetLocation()));
     BOOST_CHECK_EQUAL(listener.Count(), 0);
-    listener.Clear();    
+    listener.Clear();
 }
 
 // test partial when the start is cut off and do not extend
@@ -1165,7 +1165,7 @@ void TestPartialWhenCutStartDoNotExtend(bool partial5)
     CRef<CSeq_align> align;
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
-   
+
     const CSeq_id &id1 = *seq1->GetSeq().GetId().front();
     const CSeq_id &id2 = *seq2->GetSeq().GetId().front();
     const CSeq_id &id3 = *seq3->GetSeq().GetId().front();
@@ -1192,7 +1192,7 @@ void TestPartialWhenCutStartDoNotExtend(bool partial5)
     CRef<CSeq_loc> expected_loc1 = CreateTwoIntLoc(10, 15, 20, 25, eNa_strand_plus, id2, true, false);
     BOOST_CHECK(expected_loc1->Equals(new_feat1->GetLocation()));
     BOOST_CHECK_EQUAL(listener.Count(), 0);
-    listener.Clear();    
+    listener.Clear();
 }
 
 void TestFeatInsideGap(bool is_minus)
@@ -1220,7 +1220,7 @@ void TestFeatInsideGap(bool is_minus)
     seq2->SetSeq().SetInst().SetRepr(CSeq_inst::eRepr_raw);
     seq2->SetSeq().SetInst().SetMol(CSeq_inst::eMol_na);
     entry->SetSet().SetSeq_set().push_back(seq2);
-    
+
     CRef<CSeq_align> align(new CSeq_align());
     align->SetType(objects::CSeq_align::eType_global);
     align->SetDim(entry->GetSet().GetSeq_set().size());
@@ -1239,7 +1239,7 @@ void TestFeatInsideGap(bool is_minus)
     denseg.SetStarts().push_back(-1);
     denseg.SetStarts().push_back(9);
     denseg.SetStarts().push_back(5);
-    
+
     CRef<CSeq_annot> annot(new CSeq_annot());
     annot->SetData().SetAlign().push_back(align);
     entry->SetSet().SetAnnot().push_back(annot);
@@ -1287,7 +1287,7 @@ BOOST_AUTO_TEST_CASE(Test_FeaturePropagation)
     TestTrnaAnticodon(false, false);
     TestTrnaAnticodon(false, true);
     TestTrnaAnticodon(true, false);
-    TestTrnaAnticodon(true, true);   
+    TestTrnaAnticodon(true, true);
 
     TestTrnaAnticodonFromLastBioseq();
 
@@ -1325,7 +1325,7 @@ BOOST_AUTO_TEST_CASE(Test_FeaturePropagation)
 }
 
 
-void CheckPropagatedCDSLocation(CSeq_entry& entry, const CSeq_feat& cds, 
+void CheckPropagatedCDSLocation(CSeq_entry& entry, const CSeq_feat& cds,
                                 bool stop_at_stop, bool fix_partials,
                                 const vector<CRef<CSeq_loc> >& expected_loc)
 {
@@ -1479,7 +1479,7 @@ BOOST_AUTO_TEST_CASE(Test_PropagateAll)
     ImproveAlignment(*align, front_insert);
 
     CRef<CSeq_entry> last = entry->SetSet().SetSeq_set().back();
-    
+
     // will not be able to propagate the first feature to either of the
     // other sequences.
     // second feature can only be propagated to the middle sequence.
@@ -1516,7 +1516,6 @@ BOOST_AUTO_TEST_CASE(Test_PropagateAll)
     BOOST_CHECK_EQUAL(second_feats.size(), 2);
     BOOST_CHECK_EQUAL(listener.Count(), 1);
     BOOST_CHECK_EQUAL(listener.GetMessage(0).GetText(), "Unable to propagate location of feature lcl|good3:1-10 to lcl|good2");
-    
 }
 
 BOOST_AUTO_TEST_CASE(Test_PropagateAllReportFailures)
@@ -1528,7 +1527,7 @@ BOOST_AUTO_TEST_CASE(Test_PropagateAllReportFailures)
     ImproveAlignment(*align, front_insert);
 
     CRef<CSeq_entry> last = entry->SetSet().SetSeq_set().back();
-    
+
     // will not be able to propagate the first feature to either of the
     // other sequences.
     // second feature can only be propagated to the middle sequence.
@@ -1567,7 +1566,6 @@ BOOST_AUTO_TEST_CASE(Test_PropagateAllReportFailures)
     BOOST_CHECK_EQUAL(second_feats.size(), 2);
     BOOST_CHECK_EQUAL(listener.Count(), 1);
     BOOST_CHECK_EQUAL(listener.GetMessage(0).GetText(), "Unable to propagate location of feature lcl|good3:1-10 to lcl|good2");
-    
 }
 
 CObject_id::TId s_FindHighestFeatId(const CSeq_entry_Handle entry)
@@ -1968,7 +1966,7 @@ BOOST_AUTO_TEST_CASE(Test_Propagate1FeatureWithXrefs)
     BOOST_CHECK(prop_mrna->IsSetId());
     BOOST_CHECK(prop_mrna->GetId().GetLocal().GetId() == (++feat_id));
     BOOST_TEST_MESSAGE("the Xref is missing");
-    BOOST_CHECK(!prop_mrna->IsSetXref()); 
+    BOOST_CHECK(!prop_mrna->IsSetXref());
     listener.Clear();
 }
 
@@ -2156,7 +2154,7 @@ BOOST_AUTO_TEST_CASE(Test_PropagateFeaturesWithXrefsWithCDS)
     BOOST_CHECK(prop_mrna->GetXref().size() == 2);
 
     ++feat_it;
-    auto prop_cds_withoutprot = *feat_it; 
+    auto prop_cds_withoutprot = *feat_it;
     BOOST_CHECK(prop_cds_withoutprot->IsSetId());
     BOOST_CHECK(prop_cds_withoutprot->GetId().GetLocal().GetId() == (++feat_id));
     BOOST_CHECK(!prop_cds_withoutprot->IsSetXref());
@@ -2248,7 +2246,7 @@ CRef<CSeq_entry> BuildAlignmentWithInternalGap()
     denseg.SetStarts().push_back(20);
     denseg.SetStarts().push_back(20);
     denseg.SetStarts().push_back(-1);
-    
+
     CRef<CSeq_annot> annot(new CSeq_annot());
     annot->SetData().SetAlign().push_back(align);
     entry->SetSet().SetAnnot().push_back(annot);
@@ -2303,7 +2301,7 @@ BOOST_AUTO_TEST_CASE(Test_DoNotPropagateToGap_RW_887)
 
     CBioseq_CI b_iter(seh, CSeq_inst::eMol_na);
     CBioseq_Handle src_bseq = *b_iter;
-    
+
     ++b_iter;
 
     CMessageListener_Basic listener;

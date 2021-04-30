@@ -61,7 +61,7 @@ enum EExistingText {
 };
 
 
-/// Add text to an existing string, using the "existing_text" directive to combine 
+/// Add text to an existing string, using the "existing_text" directive to combine
 /// new text with existing text
 NCBI_XOBJEDIT_EXPORT bool AddValueToString (string& str, const string& value, EExistingText existing_text);
 
@@ -78,14 +78,14 @@ public:
     };
 
     CStringConstraint(const string& match_text,
-                      EMatchType match_type = eMatchType_Contains, 
+                      EMatchType match_type = eMatchType_Contains,
                       bool ignore_case = false,
                       bool ignore_space = false,
                       bool negation = false)
           : m_MatchText(match_text),
             m_MatchType(match_type),
-            m_IgnoreCase(ignore_case), 
-            m_IgnoreSpace(ignore_space), 
+            m_IgnoreCase(ignore_case),
+            m_IgnoreSpace(ignore_space),
             m_NotPresent(negation) {}
     ~CStringConstraint() {}
 

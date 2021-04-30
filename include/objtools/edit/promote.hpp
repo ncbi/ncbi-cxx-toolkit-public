@@ -115,8 +115,8 @@ private:
     bool x_DoPromoteCdregion(void) const;
     bool x_DoPromoteRna(void) const;
     bool x_DoPromotePub(void) const;
-    
-    CBioseq_EditHandle x_MakeNewBioseq(CSeq_id& id, CSeq_inst::TMol mol, 
+
+    CBioseq_EditHandle x_MakeNewBioseq(CSeq_id& id, CSeq_inst::TMol mol,
         const string& data, TCoding code, size_t length) const;
     CBioseq_EditHandle x_MakeNewRna(CSeq_id& id,
         const string& data, TCoding code, size_t length) const;

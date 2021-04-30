@@ -32,11 +32,11 @@
 
 #include <objtools/cleanup/capitalization_string.hpp>
 
-// Temporary forwarding header. 
+// Temporary forwarding header.
 //
 // WARNING!
 // The functions previously defined in src/objtools/edit/capitalization_string.cpp
-// have been moved to src/cleanup/capitalization_string.cpp. 
+// have been moved to src/cleanup/capitalization_string.cpp.
 // Please update your code accordingly.
 //
 
@@ -62,7 +62,7 @@ CAPITALIZATION_STRING_ALIAS_ENUM_VALUE(eCapChange_capword_afterspacepunc)
 
 
 #define CAPITALIZATION_STRING_ALIAS_FUNCTION(function_name) \
-    NCBI_DEPRECATED static auto& function_name = objects::function_name; 
+    NCBI_DEPRECATED static auto& function_name = objects::function_name;
 
 CAPITALIZATION_STRING_ALIAS_FUNCTION(FixCapitalizationInString)
 //CAPITALIZATION_STRING_ALIAS_FUNCTION(FixAbbreviationsInElement)
@@ -90,12 +90,12 @@ CAPITALIZATION_STRING_ALIAS_FUNCTION(FixCountryCapitalization)
 #undef CAPITALIZATION_STRING_ALIAS_FUNCTION
 
 // Special case due to default parameter
-NCBI_DEPRECATED static void FixAbbreviationsInElement(string& result, bool fix_end_of_sentence=true) 
+NCBI_DEPRECATED static void FixAbbreviationsInElement(string& result, bool fix_end_of_sentence=true)
 {
     objects::FixAbbreviationsInElement(result, fix_end_of_sentence);
 }
 
-END_SCOPE(edit)  
+END_SCOPE(edit)
 END_SCOPE(objects)
 END_NCBI_SCOPE
 

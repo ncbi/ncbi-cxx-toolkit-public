@@ -84,7 +84,7 @@ void AddBioseqToBioseq(const CBioseq_Handle& to, const CBioseq_Handle& add);
 /// This function will add the Bioseq to the set if:
 ///   1. The set is of class 'parts' and the Bioseq has the same
 ///      molecular type as the other parts.
-///   2. 
+///   2.
 /// @param bsst
 ///   Bioseq to change
 /// @param seq
@@ -108,12 +108,12 @@ CRef<CSeq_entry> SeqEntryFromSeqSubmit(const CSeq_submit& submit);
 /// @param bioseq_handles
 ///   The array of bioseqs that should end up in the second part of the target, with the rest in the first part.
 NCBI_XOBJEDIT_EXPORT
-void SegregateSetsByBioseqList(const CSeq_entry_Handle & target, 
-    const CScope::TBioseqHandles & bioseq_handles );    
+void SegregateSetsByBioseqList(const CSeq_entry_Handle & target,
+    const CScope::TBioseqHandles & bioseq_handles );
 
 typedef vector<CSeq_entry_Handle> TVecOfSeqEntryHandles;
 
-/// Call this if the alignments directly under these seq-entries are 
+/// Call this if the alignments directly under these seq-entries are
 /// all jumbled up between each other.
 /// It will move each Seq-align into the proper location.
 /// In particular, it looks at all the seq-ids in each seq-align.  If
@@ -128,7 +128,7 @@ NCBI_XOBJEDIT_EXPORT
 void DivvyUpAlignments(const TVecOfSeqEntryHandles & vecOfSeqEntryHandles);
 
 /// Moves descriptors down to children of the given bioseq-set.  Each child
-/// gets a copy of all the descriptors.  It does NOT check for 
+/// gets a copy of all the descriptors.  It does NOT check for
 /// duplicate Seqdescs.
 ///
 /// @param bioseq_set_h
@@ -139,11 +139,11 @@ void DivvyUpAlignments(const TVecOfSeqEntryHandles & vecOfSeqEntryHandles);
 NCBI_XOBJEDIT_EXPORT
 void BioseqSetDescriptorPropagateDown(
     const CBioseq_set_Handle & bioseq_set_h,
-    const vector<CSeqdesc::E_Choice> &choices_to_delete = 
+    const vector<CSeqdesc::E_Choice> &choices_to_delete =
         vector<CSeqdesc::E_Choice>() );
 
 /// Moves descriptors up from children of the given bioseq-set if each child
-/// has an identical copy of the descriptor.  It does NOT check for 
+/// has an identical copy of the descriptor.  It does NOT check for
 /// duplicate Seqdescs. Will not move molinfo, title, or source descriptors.
 ///
 /// @param bioseq_set_h
@@ -171,14 +171,14 @@ void HandleCollidingIds(CSeq_entry& entry);
 
 
 NCBI_XOBJEDIT_EXPORT
-void ConvertRawToDeltaByNs(CSeq_inst& inst, 
-                           size_t min_unknown, int max_unknown, 
+void ConvertRawToDeltaByNs(CSeq_inst& inst,
+                           size_t min_unknown, int max_unknown,
                            size_t min_known, int max_known,
                            bool is_assembly_gap = false, int gap_type = CSeq_gap::eType_unknown, int linkage = -1, int linkage_evidence = -1 );
 
 NCBI_XOBJEDIT_EXPORT
-void ConvertRawToDeltaByNs(CBioseq_Handle bsh, 
-                           size_t min_unknown, int max_unknown, 
+void ConvertRawToDeltaByNs(CBioseq_Handle bsh,
+                           size_t min_unknown, int max_unknown,
                            size_t min_known, int max_known,
                            bool is_assembly_gap = false, int gap_type = CSeq_gap::eType_unknown, int linkage = -1, int linkage_evidence = -1 );
 
@@ -216,11 +216,11 @@ void SortSeqDescr(CSeq_descr& entry);
 **** Trim functions
 *******************************************************************************/
 
-/// A list of trim coordinates 
+/// A list of trim coordinates
 typedef CRange<TSeqPos> TRange;
 typedef vector<TRange> TCuts;
 
-/// Any internal cut listed in TCuts will be converted to a terminal cut 
+/// Any internal cut listed in TCuts will be converted to a terminal cut
 /// using one of these options.  The default is eTrimToClosestEnd.
 enum EInternalTrimType {
     eTrimToClosestEnd = 0,  // default
@@ -231,7 +231,7 @@ enum EInternalTrimType {
 
 /// Trim sequence data and all associated annotation
 NCBI_XOBJEDIT_EXPORT
-void TrimSequenceAndAnnotation(CBioseq_Handle bsh, 
+void TrimSequenceAndAnnotation(CBioseq_Handle bsh,
                                const TCuts& cuts,
                                EInternalTrimType internal_cut_conversion = eTrimToClosestEnd);
 
@@ -242,7 +242,7 @@ void TrimSequenceAndAnnotation(CBioseq_Handle bsh,
 **** Trim functions divided up into trimming separate distinct objects, i.e.,
 **** the sequence data itself and all associated annotation.
 ****
-**** Used by callers who need access to each edited object so that they can 
+**** Used by callers who need access to each edited object so that they can
 **** pass these edited objects to a command undo/redo framework, for example.
 *******************************************************************************/
 
@@ -250,44 +250,44 @@ void TrimSequenceAndAnnotation(CBioseq_Handle bsh,
 /// 2) Adjust any internal cuts to terminal cuts according to option.
 /// 3) Sort the cuts from greatest to least so that sequence
 ///    data and annotation will be deleted from greatest loc to smallest loc.
-///    That way we don't have to adjust coordinate values after 
+///    That way we don't have to adjust coordinate values after
 ///    each cut.
 NCBI_XOBJEDIT_EXPORT
-void GetSortedCuts(CBioseq_Handle bsh, 
+void GetSortedCuts(CBioseq_Handle bsh,
                    const TCuts& cuts,
                    TCuts& sorted_cuts,
                    EInternalTrimType internal_cut_conversion = eTrimToClosestEnd);
 
 /// Trim sequence data
 NCBI_XOBJEDIT_EXPORT
-void TrimSeqData(CBioseq_Handle bsh, 
-                 CRef<CSeq_inst> inst, 
+void TrimSeqData(CBioseq_Handle bsh,
+                 CRef<CSeq_inst> inst,
                  const TCuts& sorted_cuts);
 
-/// Trim Seq-graph annotation 
+/// Trim Seq-graph annotation
 NCBI_XOBJEDIT_EXPORT
-void TrimSeqGraph(CBioseq_Handle bsh, 
-                  CRef<CSeq_graph> graph, 
+void TrimSeqGraph(CBioseq_Handle bsh,
+                  CRef<CSeq_graph> graph,
                   const TCuts& sorted_cuts);
 
 /// Trim Seq-align annotation
 NCBI_XOBJEDIT_EXPORT
-void TrimSeqAlign(CBioseq_Handle bsh, 
-                  CRef<CSeq_align> align, 
+void TrimSeqAlign(CBioseq_Handle bsh,
+                  CRef<CSeq_align> align,
                   const TCuts& sorted_cuts);
 
 /// Trim Seq-feat annotation
 NCBI_XOBJEDIT_EXPORT
-void TrimSeqFeat(CRef<CSeq_feat> feat, 
+void TrimSeqFeat(CRef<CSeq_feat> feat,
                  const TCuts& sorted_cuts,
-                 bool& bFeatureDeleted, 
+                 bool& bFeatureDeleted,
                  bool& bFeatureTrimmed,
-                 bool& partial_start, 
+                 bool& partial_start,
                  bool& partial_stop);
 
 /// Secondary function needed after trimming Seq-feat.
 /// If the trim completely covers the feature (boolean reference bFeatureDeleted
-/// from TrimSeqFeat() returns true), then delete protein sequence and 
+/// from TrimSeqFeat() returns true), then delete protein sequence and
 /// re-normalize nuc-prot set.
 NCBI_XOBJEDIT_EXPORT
 void DeleteProteinAndRenormalizeNucProtSet(const CSeq_feat_Handle& feat_h);
@@ -295,7 +295,7 @@ void DeleteProteinAndRenormalizeNucProtSet(const CSeq_feat_Handle& feat_h);
 /// Secondary function needed after trimming Seq-feat.
 /// If TrimSeqFeat()'s bFeatureTrimmed returns true, then adjust cdregion frame.
 NCBI_XOBJEDIT_EXPORT
-void AdjustCdregionFrame(TSeqPos original_nuc_len, 
+void AdjustCdregionFrame(TSeqPos original_nuc_len,
                          CRef<CSeq_feat> cds,
                          const TCuts& sorted_cuts);
 
@@ -310,8 +310,8 @@ CRef<CBioseq> SetNewProteinSequence(CScope& new_scope,
 /// Secondary function needed after trimming Seq-feat.
 /// If TrimSeqFeat()'s bFeatureTrimmed returns true, then retranslate cdregion.
 NCBI_XOBJEDIT_EXPORT
-void RetranslateCdregion(CBioseq_Handle nuc_bsh, 
-                         bool partial_start, 
+void RetranslateCdregion(CBioseq_Handle nuc_bsh,
+                         bool partial_start,
                          bool partial_stop,
                          CRef<CSeq_inst> trimmed_nuc_inst,
                          CRef<CSeq_feat> cds,
@@ -320,7 +320,7 @@ void RetranslateCdregion(CBioseq_Handle nuc_bsh,
 /*******************************************************************************
 **** LOW-LEVEL API
 ****
-**** Trim functions 
+**** Trim functions
 *******************************************************************************/
 
 

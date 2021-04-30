@@ -57,7 +57,7 @@ public:
         unsigned int = 1, //starting locus tag
         unsigned int = 1, //starting feature id
         IObjtoolsListener* = nullptr);
-    
+
     CFeatTableEdit(
         CSeq_annot&,
         unsigned int sequenceSize,
@@ -65,7 +65,7 @@ public:
         unsigned int = 1, //starting locus tag
         unsigned int = 1, //starting feature id
         IObjtoolsListener* = nullptr);
-    
+
     ~CFeatTableEdit();
 
     void GenerateLocusTags();
@@ -190,7 +190,7 @@ protected:
 
     using FeatMap = map<string, CRef<CSeq_feat>>;
     void xRenameFeatureId(
-        const CObject_id&, 
+        const CObject_id&,
         FeatMap&);
 
     CSeq_annot& mAnnot;

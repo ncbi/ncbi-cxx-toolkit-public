@@ -61,7 +61,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 BEGIN_SCOPE(edit)
 
-string PrintBestSeqId(const CSeq_id& sid, CScope& scope) 
+string PrintBestSeqId(const CSeq_id& sid, CScope& scope)
 {
    string best_id(kEmptyStr);
 
@@ -89,24 +89,24 @@ string PrintSeqIntUseBestID(const CSeq_interval& seq_int, CScope& scope, bool ra
     }
 
     // strand
-    ENa_strand 
-      this_strand 
+    ENa_strand
+      this_strand
          = (seq_int.CanGetStrand()) ? seq_int.GetStrand(): eNa_strand_unknown;
     location += strand_symbol[(int)this_strand];
     int from, to;
     string lab_from(kEmptyStr), lab_to(kEmptyStr);
-    if (eNa_strand_minus == this_strand 
+    if (eNa_strand_minus == this_strand
                                || eNa_strand_both_rev ==  this_strand) {
            to = seq_int.GetFrom();
            from = seq_int.GetTo();
            if (seq_int.CanGetFuzz_to()) {
                const CInt_fuzz& f_from = seq_int.GetFuzz_to();
-               f_from.GetLabel(&lab_from, from, false); 
+               f_from.GetLabel(&lab_from, from, false);
            }
            else lab_from = NStr::IntToString(++from);
            if (seq_int.CanGetFuzz_from()) {
                const CInt_fuzz& f_to = seq_int.GetFuzz_from();
-               f_to.GetLabel(&lab_to, to); 
+               f_to.GetLabel(&lab_to, to);
            }
            else lab_to = NStr::IntToString(++to);
     }
@@ -124,7 +124,7 @@ string PrintSeqIntUseBestID(const CSeq_interval& seq_int, CScope& scope, bool ra
            }
            else lab_to = NStr::IntToString(++to);
     }
-    location += lab_from + "-" + lab_to; 
+    location += lab_from + "-" + lab_to;
     return location;
 };
 
@@ -149,16 +149,16 @@ string PrintPntAndPntsUseBestID(const CSeq_loc& seq_loc, CScope& scope, bool ran
   }
   return location;
 }
-    
+
 string SeqLocPrintUseBestID(const CSeq_loc& seq_loc, CScope& scope, bool range_only)
 {
   string location(kEmptyStr);
   if (seq_loc.IsInt()) {
      location = PrintSeqIntUseBestID(seq_loc.GetInt(), scope, range_only);
-  } 
+  }
   else if (seq_loc.IsMix() || seq_loc.IsEquiv()) {
      location = "(";
-     const list <CRef <CSeq_loc> >* seq_loc_ls; 
+     const list <CRef <CSeq_loc> >* seq_loc_ls;
      if (seq_loc.IsMix()) {
         seq_loc_ls = &(seq_loc.GetMix().Get());
      }
@@ -175,7 +175,7 @@ string SeqLocPrintUseBestID(const CSeq_loc& seq_loc, CScope& scope, bool range_o
      if (!location.empty()) {
         location = location.substr(0, location.size()-2);
      }
-     location += ")"; 
+     location += ")";
   }
   else if (seq_loc.IsPacked_int()) {
      location = "(";
@@ -202,9 +202,9 @@ string SeqLocPrintUseBestID(const CSeq_loc& seq_loc, CScope& scope, bool range_o
      location = PrintPntAndPntsUseBestID(tmp_loc, scope, range_only);
      if (seq_loc.GetBond().CanGetB()) {
        tmp_loc.SetBond().Assign(seq_loc.GetBond().GetB());
-       location 
+       location
           += "=" + PrintPntAndPntsUseBestID(tmp_loc, scope, range_only);
-     } 
+     }
   }
   else {
     seq_loc.GetLabel(&location);
@@ -241,7 +241,7 @@ bool CLocationEditPolicy::Is3AtEndOfSeq(const CSeq_loc& loc, CBioseq_Handle bsh)
             rval = true;
         }
     } else {
-        if (bsh && loc.GetStop(eExtreme_Biological) == bsh.GetInst_Length() - 1) {                        
+        if (bsh && loc.GetStop(eExtreme_Biological) == bsh.GetInst_Length() - 1) {
             rval = true;
         }
     }
@@ -298,15 +298,14 @@ bool CLocationEditPolicy::Is3AtEndOfSeq(const CSeq_loc& loc, CScope& scope, bool
 
 
 bool CLocationEditPolicy::Interpret5Policy
-(const CSeq_feat& orig_feat, 
- CScope& scope, 
- bool& do_set_5_partial, 
+(const CSeq_feat& orig_feat,
+ CScope& scope,
+ bool& do_set_5_partial,
  bool& do_clear_5_partial) const
 {
     do_set_5_partial = false;
     do_clear_5_partial = false;
     const CSeq_loc& loc = orig_feat.GetLocation();
-   
 
     switch (m_PartialPolicy5) {
         case ePartialPolicy_eNoChange:
@@ -405,7 +404,6 @@ bool CLocationEditPolicy::Interpret3Policy
 {
     do_set_3_partial = false;
     do_clear_3_partial = false;
-    
     const CSeq_loc& loc = orig_feat.GetLocation();
 
     switch (m_PartialPolicy3) {
@@ -623,7 +621,7 @@ bool CLocationEditPolicy::ApplyPolicyToFeature(CSeq_feat& feat, CScope& scope) c
                 if (changed) {
                     feat.SetLocation().Assign(*new_loc);
                     any_change = true;
-                }                
+                }
             }
             break;
         case CLocationEditPolicy::eMergePolicy_Order:
@@ -634,7 +632,7 @@ bool CLocationEditPolicy::ApplyPolicyToFeature(CSeq_feat& feat, CScope& scope) c
                 if (changed) {
                     feat.SetLocation().Assign(*new_loc);
                     any_change = true;
-                } 
+                }
             }
             break;
         case CLocationEditPolicy::eMergePolicy_SingleInterval:
@@ -815,7 +813,7 @@ bool CLocationEditPolicy::Extend3(CSeq_feat& feat, CScope& scope)
         last_l.SetPos(num_intervals - 1);
 
         ENa_strand strand = last_l.GetStrand();
-        if (strand == eNa_strand_minus) {                
+        if (strand == eNa_strand_minus) {
             CRef<CSeq_loc> new_loc = SeqLocExtend3(feat.GetLocation(), 0, &scope);
             if (new_loc) {
                 feat.SetLocation().Assign(*new_loc);
@@ -834,14 +832,13 @@ bool CLocationEditPolicy::Extend3(CSeq_feat& feat, CScope& scope)
 }
 
 
-bool ApplyPolicyToFeature(const CLocationEditPolicy& policy, const CSeq_feat& orig_feat, 
+bool ApplyPolicyToFeature(const CLocationEditPolicy& policy, const CSeq_feat& orig_feat,
     CScope& scope, bool adjust_gene, bool retranslate_cds)
 {
     CRef<CSeq_feat> new_feat(new CSeq_feat());
     new_feat->Assign(orig_feat);
 
     bool any_change = policy.ApplyPolicyToFeature(*new_feat, scope);
-    
     if (any_change) {
         CSeq_feat_Handle fh = scope.GetSeq_featHandle(orig_feat);
         // This is necessary, to make sure that we are in "editing mode"
@@ -875,7 +872,7 @@ bool ApplyPolicyToFeature(const CLocationEditPolicy& policy, const CSeq_feat& or
                     const CSeq_annot_Handle& ah = gh.GetAnnot();
                     CSeq_entry_EditHandle egh = ah.GetParentEntry().GetEditHandle();
                     CSeq_feat_EditHandle geh(gh);
-                    geh.Replace(*new_gene);                    
+                    geh.Replace(*new_gene);
                 }
             }
         }
@@ -1147,7 +1144,7 @@ void NormalizeLoc(CSeq_loc& loc)
                 } else if (loc.GetEquiv().Get().size() == 0) {
                     // no sub intervals, reset
                     loc.Reset();
-                }                
+                }
             }}
             break;
         case CSeq_loc::e_Mix:
@@ -1170,7 +1167,7 @@ void NormalizeLoc(CSeq_loc& loc)
                 } else if (loc.GetMix().Get().size() == 0) {
                     // no sub intervals, reset
                     loc.Reset();
-                }                
+                }
             }}
             break;
         case CSeq_loc::e_Packed_int:
@@ -1207,7 +1204,7 @@ void NormalizeLoc(CSeq_loc& loc)
 }
 
 
-void SeqLocAdjustForTrim(CSeq_interval& interval, 
+void SeqLocAdjustForTrim(CSeq_interval& interval,
                          TSeqPos cut_from, TSeqPos cut_to,
                          const CSeq_id* seqid,
                          bool& bCompleteCut,
@@ -1262,12 +1259,12 @@ void SeqLocAdjustForTrim(CSeq_interval& interval,
     /***************************************************************************
      * Cases below are partial overlapping cases
     ***************************************************************************/
-    // Case 4: Cut is completely inside the feature 
+    // Case 4: Cut is completely inside the feature
     //         OR
-    //         Cut is to the "left" side of the feature (i.e., feat_from is 
+    //         Cut is to the "left" side of the feature (i.e., feat_from is
     //         inside the cut)
     //         OR
-    //         Cut is to the "right" side of the feature (i.e., feat_to is 
+    //         Cut is to the "right" side of the feature (i.e., feat_to is
     //         inside the cut)
     if (feat_to > cut_to) {
         // Left side cut or cut is completely inside feature
@@ -1298,7 +1295,7 @@ void SeqLocAdjustForTrim(CSeq_interval& interval,
 }
 
 
-void SeqLocAdjustForTrim(CPacked_seqint& packint, 
+void SeqLocAdjustForTrim(CPacked_seqint& packint,
                 TSeqPos from, TSeqPos to,
                 const CSeq_id* seqid,
                 bool& bCompleteCut,
@@ -1309,12 +1306,12 @@ void SeqLocAdjustForTrim(CPacked_seqint& packint,
         bool from5 = true;
         // Process each interval in the list
         CPacked_seqint::Tdata::iterator it;
-        for (it = packint.Set().begin(); 
-                it != packint.Set().end(); ) 
+        for (it = packint.Set().begin();
+                it != packint.Set().end(); )
         {
             bool bDeleted = false;
             TSeqPos this_trim = 0;
-            SeqLocAdjustForTrim(**it, from, to, seqid, 
+            SeqLocAdjustForTrim(**it, from, to, seqid,
                                 bDeleted, this_trim, bAdjusted);
 
             if (from5) {
@@ -1332,14 +1329,14 @@ void SeqLocAdjustForTrim(CPacked_seqint& packint,
         if (packint.Get().empty()) {
             packint.Reset();
         }
-    }    
+    }
     if (!packint.IsSet()) {
         bCompleteCut = true;
     }
 }
 
 
-void SeqLocAdjustForTrim(CSeq_loc_mix& mix, 
+void SeqLocAdjustForTrim(CSeq_loc_mix& mix,
                 TSeqPos from, TSeqPos to,
                 const CSeq_id* seqid,
                 bool& bCompleteCut,
@@ -1350,8 +1347,8 @@ void SeqLocAdjustForTrim(CSeq_loc_mix& mix,
         bool from5 = true;
         // Process each seqloc in the list
         CSeq_loc_mix::Tdata::iterator it;
-        for (it = mix.Set().begin(); 
-                it != mix.Set().end(); ) 
+        for (it = mix.Set().begin();
+                it != mix.Set().end(); )
         {
             bool bDeleted = false;
             TSeqPos this_trim = 0;
@@ -1376,7 +1373,7 @@ void SeqLocAdjustForTrim(CSeq_loc_mix& mix,
 }
 
 
-void SeqLocAdjustForTrim(CSeq_point& pnt, 
+void SeqLocAdjustForTrim(CSeq_point& pnt,
                 TSeqPos from, TSeqPos to,
                 const CSeq_id* seqid,
                 bool& bCompleteCut,
@@ -1398,7 +1395,7 @@ void SeqLocAdjustForTrim(CSeq_point& pnt,
 }
 
 
-void SeqLocAdjustForTrim(CPacked_seqpnt& pack, 
+void SeqLocAdjustForTrim(CPacked_seqpnt& pack,
                 TSeqPos from, TSeqPos to,
                 const CSeq_id* seqid,
                 bool& bCompleteCut, TSeqPos& trim5, bool& bAdjusted)
@@ -1435,7 +1432,7 @@ void SeqLocAdjustForTrim(CPacked_seqpnt& pack,
 }
 
 
-void SeqLocAdjustForTrim(CSeq_bond& bond, 
+void SeqLocAdjustForTrim(CSeq_bond& bond,
                 TSeqPos from, TSeqPos to,
                 const CSeq_id* seqid,
                 bool& bCompleteCut,
@@ -1460,9 +1457,9 @@ void SeqLocAdjustForTrim(CSeq_bond& bond,
 }
 
 
-void SeqLocAdjustForTrim(CSeq_loc_equiv& equiv, 
+void SeqLocAdjustForTrim(CSeq_loc_equiv& equiv,
                 TSeqPos from, TSeqPos to,
-                const CSeq_id* seqid,                
+                const CSeq_id* seqid,
                 bool& bCompleteCut,
                 TSeqPos& trim5,
                 bool& bAdjusted)
@@ -1489,7 +1486,7 @@ void SeqLocAdjustForTrim(CSeq_loc_equiv& equiv,
 }
 
 
-void SeqLocAdjustForTrim(CSeq_loc& loc, 
+void SeqLocAdjustForTrim(CSeq_loc& loc,
                 TSeqPos from, TSeqPos to,
                 const CSeq_id* seqid,
                 bool& bCompleteCut,
@@ -1501,7 +1498,7 @@ void SeqLocAdjustForTrim(CSeq_loc& loc,
     {
         // Single interval
         case CSeq_loc::e_Int:
-            SeqLocAdjustForTrim(loc.SetInt(), from, to, seqid, 
+            SeqLocAdjustForTrim(loc.SetInt(), from, to, seqid,
                                 bCompleteCut, trim5, bAdjusted);
             break;
 
@@ -1515,7 +1512,7 @@ void SeqLocAdjustForTrim(CSeq_loc& loc,
             SeqLocAdjustForTrim(loc.SetMix(), from, to, seqid, bCompleteCut, trim5, bAdjusted);
             break;
         case CSeq_loc::e_Pnt:
-            SeqLocAdjustForTrim(loc.SetPnt(), from, to , seqid, bCompleteCut, trim5, bAdjusted); 
+            SeqLocAdjustForTrim(loc.SetPnt(), from, to , seqid, bCompleteCut, trim5, bAdjusted);
             break;
         case CSeq_loc::e_Packed_pnt:
             SeqLocAdjustForTrim(loc.SetPacked_pnt(), from, to, seqid, bCompleteCut, trim5, bAdjusted);
@@ -1540,7 +1537,7 @@ void SeqLocAdjustForTrim(CSeq_loc& loc,
 }
 
 
-void SeqLocAdjustForInsert(CSeq_interval& interval, 
+void SeqLocAdjustForInsert(CSeq_interval& interval,
                          TSeqPos insert_from, TSeqPos insert_to,
                          const CSeq_id* seqid)
 {
@@ -1587,15 +1584,15 @@ void SeqLocAdjustForInsert(CSeq_interval& interval,
 }
 
 
-void SeqLocAdjustForInsert(CPacked_seqint& packint, 
+void SeqLocAdjustForInsert(CPacked_seqint& packint,
                          TSeqPos insert_from, TSeqPos insert_to,
                          const CSeq_id* seqid)
 {
     if (packint.IsSet()) {
         // Process each interval in the list
         CPacked_seqint::Tdata::iterator it;
-        for (it = packint.Set().begin(); 
-                it != packint.Set().end(); it++) 
+        for (it = packint.Set().begin();
+                it != packint.Set().end(); it++)
         {
             SeqLocAdjustForInsert(**it, insert_from, insert_to, seqid);
         }
@@ -1603,15 +1600,15 @@ void SeqLocAdjustForInsert(CPacked_seqint& packint,
 }
 
 
-void SeqLocAdjustForInsert(CSeq_loc_mix& mix, 
+void SeqLocAdjustForInsert(CSeq_loc_mix& mix,
                          TSeqPos insert_from, TSeqPos insert_to,
                          const CSeq_id* seqid)
 {
     if (mix.IsSet()) {
         // Process each seqloc in the list
         CSeq_loc_mix::Tdata::iterator it;
-        for (it = mix.Set().begin(); 
-                it != mix.Set().end(); it++) 
+        for (it = mix.Set().begin();
+                it != mix.Set().end(); it++)
         {
             SeqLocAdjustForInsert(**it, insert_from, insert_to, seqid);
         }
@@ -1619,7 +1616,7 @@ void SeqLocAdjustForInsert(CSeq_loc_mix& mix,
 }
 
 
-void SeqLocAdjustForInsert(CSeq_point& pnt, 
+void SeqLocAdjustForInsert(CSeq_point& pnt,
                          TSeqPos insert_from, TSeqPos insert_to,
                          const CSeq_id* seqid)
 {
@@ -1637,7 +1634,7 @@ void SeqLocAdjustForInsert(CSeq_point& pnt,
 }
 
 
-void SeqLocAdjustForInsert(CPacked_seqpnt& packpnt, 
+void SeqLocAdjustForInsert(CPacked_seqpnt& packpnt,
                 TSeqPos from, TSeqPos to,
                 const CSeq_id* seqid)
 {
@@ -1656,7 +1653,7 @@ void SeqLocAdjustForInsert(CPacked_seqpnt& packpnt,
 }
 
 
-void SeqLocAdjustForInsert(CSeq_bond& bond, 
+void SeqLocAdjustForInsert(CSeq_bond& bond,
                 TSeqPos from, TSeqPos to,
                 const CSeq_id* seqid)
 {
@@ -1670,7 +1667,7 @@ void SeqLocAdjustForInsert(CSeq_bond& bond,
 }
 
 
-void SeqLocAdjustForInsert(CSeq_loc_equiv& equiv, 
+void SeqLocAdjustForInsert(CSeq_loc_equiv& equiv,
                 TSeqPos from, TSeqPos to,
                 const CSeq_id* seqid)
 {
@@ -1682,7 +1679,7 @@ void SeqLocAdjustForInsert(CSeq_loc_equiv& equiv,
 }
 
 
-void SeqLocAdjustForInsert(CSeq_loc& loc, 
+void SeqLocAdjustForInsert(CSeq_loc& loc,
                 TSeqPos from, TSeqPos to,
                 const CSeq_id* seqid)
 {
@@ -1774,7 +1771,7 @@ CRef<CSeq_interval> SplitLocationForGap(CSeq_interval& before,
                 after->SetFuzz_from().SetLim(CInt_fuzz::eLim_lt);
             }
         }
-    } 
+    }
     if (feat_from < start) {
         before.SetTo(start - 1);
         if (options & eSplitLocOption_make_partial) {
@@ -1789,7 +1786,7 @@ CRef<CSeq_interval> SplitLocationForGap(CSeq_interval& before,
 
 void SplitLocationForGap(CSeq_loc::TPacked_int& before_intervals,
                          CSeq_loc::TPacked_int& after_intervals,
-                         TSeqPos start, TSeqPos stop, 
+                         TSeqPos start, TSeqPos stop,
                          const CSeq_id* seqid, unsigned int options)
 {
     if (before_intervals.IsSet()) {
@@ -1833,12 +1830,12 @@ void SplitLocationForGap(CSeq_loc::TPacked_int& before_intervals,
 }
 
 
-void SplitLocationForGap(CSeq_loc& loc1, CSeq_loc& loc2, 
-                         size_t start, size_t stop, 
+void SplitLocationForGap(CSeq_loc& loc1, CSeq_loc& loc2,
+                         size_t start, size_t stop,
                          const CSeq_id* seqid, unsigned int options)
 {
     // Given a seqloc and a range, place the portion of the location before the range
-    // into loc1 and the remainder of the location into loc2 
+    // into loc1 and the remainder of the location into loc2
 
     switch(loc1.Which())
     {
@@ -1846,7 +1843,7 @@ void SplitLocationForGap(CSeq_loc& loc1, CSeq_loc& loc2,
         case CSeq_loc::e_Int:
             {{
                 bool cut = false;
-                CRef<CSeq_interval> after = SplitLocationForGap(loc1.SetInt(), 
+                CRef<CSeq_interval> after = SplitLocationForGap(loc1.SetInt(),
                     static_cast<TSeqPos>(start), static_cast<TSeqPos>(stop),
                     seqid, cut, options);
                 if (cut) {
@@ -1966,8 +1963,8 @@ void SplitLocationForGap(CSeq_loc& loc1, CSeq_loc& loc2,
                  if (before_equiv.IsSet()) {
                     // Process each seqloc in the list
                     CSeq_loc_equiv::Tdata::iterator it;
-                    for (it = before_equiv.Set().begin(); 
-                         it != before_equiv.Set().end(); ) 
+                    for (it = before_equiv.Set().begin();
+                         it != before_equiv.Set().end(); )
                     {
                         CRef<CSeq_loc> after(new CSeq_loc());
                         SplitLocationForGap(**it, *after, start, stop, seqid, options);
@@ -2082,12 +2079,12 @@ void TrnaAdjustForTrim(CTrna_ext& trna,
         SeqLocAdjustForTrim(trna.SetAnticodon(), from, to, seqid, cut, trim5, trimmed);
         if (cut) {
             trna.ResetAnticodon();
-        } 
+        }
     }
 }
 
 
-void FeatureAdjustForTrim(CSeq_feat& feat, 
+void FeatureAdjustForTrim(CSeq_feat& feat,
                             TSeqPos from, TSeqPos to,
                             const CSeq_id* seqid,
                             bool& bCompleteCut,
@@ -2136,12 +2133,12 @@ void TrnaAdjustForInsert(CTrna_ext& trna,
                         const CSeq_id* seqid)
 {
     if (trna.IsSetAnticodon()) {
-        SeqLocAdjustForInsert(trna.SetAnticodon(), from, to, seqid); 
+        SeqLocAdjustForInsert(trna.SetAnticodon(), from, to, seqid);
     }
 }
 
 
-void FeatureAdjustForInsert(CSeq_feat& feat, 
+void FeatureAdjustForInsert(CSeq_feat& feat,
                             TSeqPos from, TSeqPos to,
                             const CSeq_id* seqid)
 {
@@ -2183,7 +2180,7 @@ bool CorrectIntervalOrder(CPacked_seqpnt& ppnt)
         if (!seq_mac_is_sorted(ppnt.GetPoints().begin(), ppnt.GetPoints().end(), s_PPntComparePlus)) {
             stable_sort(ppnt.SetPoints().begin(), ppnt.SetPoints().end(), s_PPntComparePlus);
             rval = true;
-        }        
+        }
     } else if (ppnt.IsSetStrand() && ppnt.GetStrand() == eNa_strand_minus) {
         if (!seq_mac_is_sorted(ppnt.GetPoints().begin(), ppnt.GetPoints().end(), s_PPntCompareMinus)) {
             stable_sort(ppnt.SetPoints().begin(), ppnt.SetPoints().end(), s_PPntCompareMinus);

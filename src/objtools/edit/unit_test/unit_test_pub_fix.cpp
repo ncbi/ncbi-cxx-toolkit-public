@@ -804,7 +804,7 @@ BOOST_AUTO_TEST_CASE(Test_FixPub)
 
 BOOST_AUTO_TEST_CASE(Test_FixPubPreserveOriginalListOfAuthors)
 {
-    static const string TEST_PUB = 
+    static const string TEST_PUB =
         "Pub ::= \
          equiv { \
            pmid 1302004, \
@@ -926,7 +926,7 @@ BOOST_AUTO_TEST_CASE(Test_FixPubPreserveOriginalListOfAuthors)
              } \
            } \
          }";
-        
+
     CPub pub;
     CNcbiIstrstream input(TEST_PUB);
 

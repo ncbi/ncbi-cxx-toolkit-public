@@ -52,7 +52,7 @@ void g_ConvertDeltaToRawSeq(CBioseq& bioseq, CScope* pScope)
     CSeqVector seq_vec(bioseq, pScope, CBioseq_Handle::eCoding_Iupac);
     string seqdata;
     seq_vec.GetSeqData(0, seq_inst.GetLength(), seqdata);
-    auto pSeqData  = 
+    auto pSeqData =
         Ref(new CSeq_data(seqdata, seq_vec.GetCoding()));
     CSeqportUtil::Pack(pSeqData.GetPointer());
 

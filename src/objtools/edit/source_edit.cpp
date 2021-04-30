@@ -160,7 +160,7 @@ void AddMissingCommonOrgMods(const COrg_ref& o1, const COrg_ref& o2, COrg_ref& c
 
 
 CRef<CBioSource> MakeCommonBioSource(const objects::CBioSource& src1, const objects::CBioSource& src2)
-{ 
+{
     CRef<CBioSource> common(NULL);
 
     if (!src1.IsSetOrg() || !src2.IsSetOrg()) {

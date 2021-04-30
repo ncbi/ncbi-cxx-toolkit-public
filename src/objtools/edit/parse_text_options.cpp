@@ -26,7 +26,7 @@
 * Author:  Colleen Bollin, Andrea Asztalos
 *
 * File Description:
-*   
+*
 */
 
 #include <ncbi_pch.hpp>
@@ -82,7 +82,7 @@ void CParseTextMarker::SetText(const string& val)
 }
 
 
-bool CParseTextMarker::FindInText(const string& val, size_t& pos, size_t& len, size_t start_search, 
+bool CParseTextMarker::FindInText(const string& val, size_t& pos, size_t& len, size_t start_search,
     bool case_insensitive, bool whole_word) const
 {
     bool found = false;

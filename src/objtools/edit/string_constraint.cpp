@@ -62,22 +62,22 @@ bool AddValueToString (string& str, const string& value, EExistingText existing_
                 break;
             case eExistingText_append_none:
                 str = str + value;
-                break;            
+                break;
             case eExistingText_prefix_semi:
                 str = value + "; " + str;
-                break;            
+                break;
             case eExistingText_prefix_space:
                 str = value + " " + str;
-                break;            
+                break;
             case eExistingText_prefix_colon:
                 str = value + ": " + str;
-                break; 
+                break;
             case eExistingText_prefix_comma:
                 str = value + ", " + str;
-                break; 
+                break;
             case eExistingText_prefix_none:
                 str = value + str;
-                break; 
+                break;
             default:
                 rval = false;
                 break;
@@ -93,9 +93,8 @@ bool CStringConstraint::DoesTextMatch (const string& text)
     if (match.length() == 0) {
         return true;
     }
-        
+
     bool rval = false;
-    
     string tmp = text;
     if (m_IgnoreSpace) {
         NStr::ReplaceInPlace(match, " ", "");
@@ -105,9 +104,9 @@ bool CStringConstraint::DoesTextMatch (const string& text)
         NStr::ToLower(match);
         NStr::ToLower(tmp);
     }
-    
+
     switch (m_MatchType) {
-        case eMatchType_Contains: 
+        case eMatchType_Contains:
             if (NStr::Find(tmp, match) != string::npos) {
                 rval = true;
             }
@@ -143,7 +142,7 @@ bool CStringConstraint::DoesTextMatch (const string& text)
     if (m_NotPresent) {
         rval = !rval;
     }
-    return rval;    
+    return rval;
 }
 
 bool CStringConstraint::IsInRange(const string& str, const string &tmp)
@@ -162,7 +161,7 @@ bool CStringConstraint::IsInRange(const string& str, const string &tmp)
             for ( ; start <= end; ++start)
             {
                 string match = first + NStr::IntToString(start);
-                if (NStr::Equal(match, tmp)) 
+                if (NStr::Equal(match, tmp))
                 {
                     range = true;
                     break;

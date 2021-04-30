@@ -168,7 +168,7 @@ static CRef<CSeq_entry> BuildSequence()
     entry->SetSeq().SetId().push_back(id);
 
     CRef<CSeqdesc> mdesc(new CSeqdesc());
-    mdesc->SetMolinfo().SetBiomol(CMolInfo::eBiomol_genomic);    
+    mdesc->SetMolinfo().SetBiomol(CMolInfo::eBiomol_genomic);
     entry->SetSeq().SetDescr().Set().push_back(mdesc);
     return entry;
 }
@@ -377,7 +377,7 @@ void CheckAutoDefOptions
 
 
 static void CheckDeflineMatches(CSeq_entry_Handle seh,
-                                objects::CAutoDefWithTaxonomy& autodef, 
+                                objects::CAutoDefWithTaxonomy& autodef,
                                 CRef<CAutoDefModifierCombo> mod_combo)
 {
     // check defline for each nucleotide sequence
@@ -393,7 +393,7 @@ static void CheckDeflineMatches(CSeq_entry_Handle seh,
        if (desc_it) {
            orig_defline = desc_it->GetTitle();
        }
-       
+
        string new_defline = autodef.GetOneDefLine(mod_combo, bh);
 
        BOOST_CHECK_EQUAL(orig_defline, new_defline);
@@ -435,7 +435,7 @@ static void CheckDeflineMatches(CRef<CSeq_entry> entry,
 
     objects::CAutoDefWithTaxonomy autodef;
 
-    // add to autodef 
+    // add to autodef
     autodef.AddSources (seh);
 
     CRef<CAutoDefModifierCombo> mod_combo;
@@ -466,7 +466,7 @@ static void CheckDeflineMatches(CRef<CSeq_entry> entry, bool use_best = false,
 
     objects::CAutoDefWithTaxonomy autodef;
 
-    // add to autodef 
+    // add to autodef
     autodef.AddSources (seh);
 
     CRef<CAutoDefModifierCombo> mod_combo;
@@ -492,7 +492,7 @@ static void CheckDeflineMatches(CRef<CSeq_entry> entry, CSeqFeatData::ESubtype f
 
     objects::CAutoDefWithTaxonomy autodef;
 
-    // add to autodef 
+    // add to autodef
     autodef.AddSources(seh);
 
     CRef<CAutoDefModifierCombo> mod_combo = autodef.FindBestModifierCombo();
@@ -530,7 +530,7 @@ static void AddFeat (CRef<CSeq_feat> feat, CRef<CSeq_entry> entry)
     CRef<CSeq_annot> annot;
 
     if (entry->IsSeq()) {
-        if (!entry->GetSeq().IsSetAnnot() 
+        if (!entry->GetSeq().IsSetAnnot()
             || !entry->GetSeq().GetAnnot().front()->IsFtable()) {
             CRef<CSeq_annot> new_annot(new CSeq_annot());
             entry->SetSeq().SetAnnot().push_back(new_annot);
@@ -539,7 +539,7 @@ static void AddFeat (CRef<CSeq_feat> feat, CRef<CSeq_entry> entry)
             annot = entry->SetSeq().SetAnnot().front();
         }
     } else if (entry->IsSet()) {
-        if (!entry->GetSet().IsSetAnnot() 
+        if (!entry->GetSet().IsSetAnnot()
             || !entry->GetSet().GetAnnot().front()->IsFtable()) {
             CRef<CSeq_annot> new_annot(new CSeq_annot());
             entry->SetSet().SetAnnot().push_back(new_annot);
@@ -578,7 +578,7 @@ static CRef<CSeq_entry> MakeProteinForNucProtSet (string id, string protein_name
     pseq->SetId().push_back(pid);
 
     CRef<CSeqdesc> mpdesc(new CSeqdesc());
-    mpdesc->SetMolinfo().SetBiomol(CMolInfo::eBiomol_peptide);    
+    mpdesc->SetMolinfo().SetBiomol(CMolInfo::eBiomol_peptide);
     pseq->SetDescr().Set().push_back(mpdesc);
 
     CRef<CSeq_entry> pentry(new CSeq_entry());
@@ -638,7 +638,7 @@ static CRef<CSeq_entry> BuildNucProtSet(const string& protein_name, const string
     nseq->SetId().push_back(id);
 
     CRef<CSeqdesc> mdesc(new CSeqdesc());
-    mdesc->SetMolinfo().SetBiomol(CMolInfo::eBiomol_genomic);    
+    mdesc->SetMolinfo().SetBiomol(CMolInfo::eBiomol_genomic);
     nseq->SetDescr().Set().push_back(mdesc);
 
     CRef<CSeq_entry> nentry(new CSeq_entry());
@@ -1002,7 +1002,6 @@ BOOST_AUTO_TEST_CASE(Test_GB_3395)
     dloop->ResetComment();
     AddTitle(seq, "Sebaea microphylla D-loop, complete sequence.");
     CheckDeflineMatches(seq, true);
-   
 }
 
 
@@ -1108,7 +1107,6 @@ BOOST_AUTO_TEST_CASE(Test_GB_3458)
 
     AddTitle(nuc, "Sebaea microphylla M2 and fake protein name (M1) genes, complete cds.");
     CheckDeflineMatches(entry, true);
-    
 }
 
 
@@ -1289,7 +1287,7 @@ CRef<CSeq_feat> s_AddCDS(CRef<CSeq_entry> np, const string& name, TSeqPos from, 
     new_cds->SetProduct().SetWhole().Assign(*new_id);
     new_cds->SetLocation().SetInt().SetFrom(from);
     new_cds->SetLocation().SetInt().SetTo(to);
-    np->SetSet().SetAnnot().front()->SetData().SetFtable().push_back(new_cds);    
+    np->SetSet().SetAnnot().front()->SetData().SetFtable().push_back(new_cds);
     return new_cds;
 }
 
@@ -1403,7 +1401,7 @@ BOOST_AUTO_TEST_CASE(Test_SQD_2181)
 
     objects::CAutoDefWithTaxonomy autodef;
 
-    // add to autodef 
+    // add to autodef
     autodef.AddSources (seh);
 
     CRef<CAutoDefModifierCombo> mod_combo(new CAutoDefModifierCombo ());
@@ -1461,13 +1459,12 @@ BOOST_AUTO_TEST_CASE(Test_GB_4043)
 
     objects::CAutoDefWithTaxonomy autodef;
 
-    // add to autodef 
+    // add to autodef
     autodef.AddSources (seh);
     autodef.SetKeepIntrons(true);
 
     CRef<CAutoDefModifierCombo> mod_combo;
     mod_combo = autodef.FindBestModifierCombo();
-    
 
     CheckDeflineMatches(seh, autodef, mod_combo);
 }
@@ -1534,7 +1531,7 @@ BOOST_AUTO_TEST_CASE(Test_GB_4242)
 
     objects::CAutoDefWithTaxonomy autodef;
 
-    // add to autodef 
+    // add to autodef
     autodef.AddSources(seh);
 
     CRef<CAutoDefModifierCombo> mod_combo;
@@ -1594,7 +1591,7 @@ BOOST_AUTO_TEST_CASE(Test_RemovableuORF)
 
     objects::CAutoDefWithTaxonomy autodef;
 
-    // add to autodef 
+    // add to autodef
     autodef.AddSources(seh);
 
     CRef<CAutoDefModifierCombo> mod_combo;
@@ -1641,7 +1638,7 @@ BOOST_AUTO_TEST_CASE(Test_RemovableMobileElement)
 
     objects::CAutoDefWithTaxonomy autodef;
 
-    // add to autodef 
+    // add to autodef
     autodef.AddSources(seh);
 
     CRef<CAutoDefModifierCombo> mod_combo;
@@ -1710,7 +1707,7 @@ BOOST_AUTO_TEST_CASE(GB_5272a)
 
     objects::CAutoDefWithTaxonomy autodef;
 
-    // add to autodef 
+    // add to autodef
     autodef.AddSources(seh);
 
     CRef<CAutoDefModifierCombo> mod_combo;
@@ -1901,7 +1898,7 @@ BOOST_AUTO_TEST_CASE(Test_GB_5447)
     cds2->ResetComment();
     cds2->SetLocation().SetInt().SetFrom(cds1->GetLocation().GetStart(eExtreme_Positional));
     cds2->SetLocation().SetInt().SetTo(nuc->GetSeq().GetInst().GetLength() - 1);
-    
+
     CRef<CSeq_entry> pentry(new CSeq_entry());
     pentry->SetSeq().SetInst().SetMol(objects::CSeq_inst::eMol_aa);
     pentry->SetSeq().SetInst().SetRepr(objects::CSeq_inst::eRepr_raw);
@@ -2191,7 +2188,7 @@ BOOST_AUTO_TEST_CASE(Test_GB_6557)
     CRef<CSeq_entry> nuc = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet(nps);
     CRef<CSeq_feat> prot = unit_test_util::GetProtFeatFromGoodNucProtSet(nps);
     prot->SetData().SetProt().SetName().front() = "LIA2 macronuclear isoform";
-    
+
     string defline = "Sebaea microphylla LIA2 macronuclear isoform gene, complete cds.";
     AddTitle(nuc, defline);
     CheckDeflineMatches(nps, true);
@@ -2394,50 +2391,50 @@ BOOST_AUTO_TEST_CASE(Test_GB_7485)
 
 BOOST_AUTO_TEST_CASE(Test_GB_7534)
 {
-	CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
-	unit_test_util::SetTaxname(entry, "Amomum chryseum");
-	unit_test_util::SetGenome(entry, CBioSource::eGenome_chloroplast);
-	CRef<CSeq_feat> prot = unit_test_util::GetProtFeatFromGoodNucProtSet(entry);
-	prot->SetData().SetProt().SetName().front() = "maturase K";
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
+    unit_test_util::SetTaxname(entry, "Amomum chryseum");
+    unit_test_util::SetGenome(entry, CBioSource::eGenome_chloroplast);
+    CRef<CSeq_feat> prot = unit_test_util::GetProtFeatFromGoodNucProtSet(entry);
+    prot->SetData().SetProt().SetName().front() = "maturase K";
 
-	CRef<CSeq_feat> cds = unit_test_util::GetCDSFromGoodNucProtSet(entry);
-	CRef<CSeq_feat> gene1 = unit_test_util::MakeGeneForFeature(cds);
-	gene1->SetData().SetGene().SetLocus("matK");
-	CRef<CSeq_entry> nuc = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet(entry);
-	AddFeat(gene1, nuc);
-	cds->SetXref().push_back(CRef<CSeqFeatXref>(new CSeqFeatXref()));
-	cds->SetXref().front()->SetData().Assign(gene1->GetData());
+    CRef<CSeq_feat> cds = unit_test_util::GetCDSFromGoodNucProtSet(entry);
+    CRef<CSeq_feat> gene1 = unit_test_util::MakeGeneForFeature(cds);
+    gene1->SetData().SetGene().SetLocus("matK");
+    CRef<CSeq_entry> nuc = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet(entry);
+    AddFeat(gene1, nuc);
+    cds->SetXref().push_back(CRef<CSeqFeatXref>(new CSeqFeatXref()));
+    cds->SetXref().front()->SetData().Assign(gene1->GetData());
 
-	CRef<CSeq_feat> gene2(new CSeq_feat());
-	gene2->Assign(*gene1);
-	gene2->SetData().SetGene().SetLocus("trnK");
-	gene2->SetData().SetGene().SetDesc("tRNA-Lys");
-	AddFeat(gene2, nuc);
-	CRef<CSeq_feat> intron(new CSeq_feat());
-	intron->Assign(*gene2);
-	intron->SetData().SetImp().SetKey("intron");
-	intron->SetXref().push_back(CRef<CSeqFeatXref>(new CSeqFeatXref()));
-	intron->SetXref().front()->SetData().Assign(gene2->GetData());
-	AddFeat(intron, nuc);
+    CRef<CSeq_feat> gene2(new CSeq_feat());
+    gene2->Assign(*gene1);
+    gene2->SetData().SetGene().SetLocus("trnK");
+    gene2->SetData().SetGene().SetDesc("tRNA-Lys");
+    AddFeat(gene2, nuc);
+    CRef<CSeq_feat> intron(new CSeq_feat());
+    intron->Assign(*gene2);
+    intron->SetData().SetImp().SetKey("intron");
+    intron->SetXref().push_back(CRef<CSeqFeatXref>(new CSeqFeatXref()));
+    intron->SetXref().front()->SetData().Assign(gene2->GetData());
+    AddFeat(intron, nuc);
 
-	AddTitle(entry, "Amomum chryseum tRNA-Lys (trnK) gene, intron; and maturase K (matK) gene, complete cds; chloroplast.");
+    AddTitle(entry, "Amomum chryseum tRNA-Lys (trnK) gene, intron; and maturase K (matK) gene, complete cds; chloroplast.");
 
-	CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+    CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
 
-	CRef<CScope> scope(new CScope(*object_manager));
-	CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+    CRef<CScope> scope(new CScope(*object_manager));
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
 
-	objects::CAutoDefWithTaxonomy autodef;
+    objects::CAutoDefWithTaxonomy autodef;
 
-	// add to autodef 
-	autodef.AddSources(seh);
-	autodef.SetKeepIntrons(true);
+    // add to autodef
+    autodef.AddSources(seh);
+    autodef.SetKeepIntrons(true);
 
-	CRef<CAutoDefModifierCombo> mod_combo;
-	mod_combo = autodef.FindBestModifierCombo();
+    CRef<CAutoDefModifierCombo> mod_combo;
+    mod_combo = autodef.FindBestModifierCombo();
 
 
-	CheckDeflineMatches(seh, autodef, mod_combo);
+    CheckDeflineMatches(seh, autodef, mod_combo);
 
 }
 
@@ -2573,7 +2570,7 @@ void CheckRegulatoryFeatures(const string& expected_title, bool keep_promoters, 
 
     objects::CAutoDefWithTaxonomy autodef;
 
-    // add to autodef 
+    // add to autodef
     autodef.AddSources(seh);
 
     CRef<CAutoDefModifierCombo> mod_combo = autodef.FindBestModifierCombo();
@@ -2601,7 +2598,7 @@ BOOST_AUTO_TEST_CASE(Test_GB_8547)
     unit_test_util::SetTaxname(entry, "Influenza A virus");
     unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_strain, "A/Florida/57/2019");
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_segment, "5");
- 
+
     AddTitle(entry, "Influenza A virus (A/Florida/57/2019) segment 5 sequence.");
 
     CheckDeflineMatches(entry);
@@ -2675,7 +2672,7 @@ void TestRepeatRegion(CRef<CSeq_entry> entry)
 
     objects::CAutoDefWithTaxonomy autodef;
 
-    // add to autodef 
+    // add to autodef
     autodef.AddSources(seh);
 
     CRef<CAutoDefModifierCombo> mod_combo = autodef.FindBestModifierCombo();

@@ -96,7 +96,7 @@ BOOST_AUTO_TEST_CASE(Test_RemoveSelectedText)
     options->SetStopDigits();
     options->SetIncludeStop(true);
     BOOST_CHECK_EQUAL(options->GetSelectedText(text), string("All the 6"));
-    
+
     string copy(text);
     options->RemoveSelectedText(copy);
     BOOST_CHECK_EQUAL(copy, string("Rain, RAIN, go away!  children want to play!"));
@@ -155,5 +155,4 @@ BOOST_AUTO_TEST_CASE(Test_FindInText)
     pos = 0; len = 0; start_search = 6;
     BOOST_CHECK(!marker->FindInText(text, pos, len, start_search, case_insensitive, whole_word));
     BOOST_CHECK(len == 0);
-    
 }

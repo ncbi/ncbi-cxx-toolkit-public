@@ -51,7 +51,7 @@ string CGBBlockField::GetVal(const CObject& object)
     }
 }
 
-        
+
 vector<string> CGBBlockField::GetVals(const CObject& object)
 {
     vector<string> rval;

@@ -98,7 +98,7 @@ namespace {
             bool bHasAllowedExtension = false;
             for( size_t ii = 0;
                  ii < sizeof(arrAllowedExtensions)/sizeof(arrAllowedExtensions[0]);
-                 ++ii ) 
+                 ++ii )
             {
                 if( NStr::EndsWith(dir_entry.GetName(), arrAllowedExtensions[ii]) ){
                     bHasAllowedExtension = true;
@@ -117,7 +117,7 @@ namespace {
             if( tokens.size() != 4u ) {
                 throw std::runtime_error("initialization failed trying to tokenize this file: " + file.GetName());
             }
-            
+
             const string & sFunction = tokens[0];
             const string & sTestName = tokens[1];
             const string & sStage    = tokens[2];
@@ -441,7 +441,7 @@ CRef<CSeq_entry> MakeEntryForDeltaConversion(vector<string> segs)
 
     CRef<CSeq_id> id(new CSeq_id());
     id->Assign(*(entry->GetSeq().GetId().front()));
-   
+
     CRef<CSeq_annot> annot(new CSeq_annot());
     entry->SetSeq().SetAnnot().push_back(annot);
     // first feature covers entire sequence
@@ -512,7 +512,7 @@ void s_IntervalsMatchGaps(const CSeq_loc& loc, const CSeq_inst& inst)
 }
 
 
-BOOST_AUTO_TEST_CASE(Test_ConvertRawToDeltaByNs) 
+BOOST_AUTO_TEST_CASE(Test_ConvertRawToDeltaByNs)
 {
     vector<string> segs;
     segs.push_back("AAAAAAAAAAAAAAAAAAAAAAAA");
@@ -534,7 +534,7 @@ BOOST_AUTO_TEST_CASE(Test_ConvertRawToDeltaByNs)
         } else {
             is_gap.push_back(false);
             lens.push_back((*it).length());
-        }        
+        }
     }
 
     CRef<CSeq_entry> entry = MakeEntryForDeltaConversion (segs);
@@ -593,7 +593,7 @@ BOOST_AUTO_TEST_CASE(Test_ConvertRawToDeltaByNs)
             BOOST_CHECK_EQUAL(gap.GetType(), CSeq_gap::eType_centromere);
             BOOST_CHECK_EQUAL(gap.IsSetLinkage(), false);
             BOOST_CHECK_EQUAL(gap.IsSetLinkage_evidence(), false);
-        }        
+        }
     }
 
 
@@ -698,7 +698,7 @@ BOOST_AUTO_TEST_CASE(TrimSeqData)
                 CRef<CSeq_inst> copy_inst(new CSeq_inst());
                 copy_inst->Assign(bsh.GetInst());
 
-                // Make changes to the inst copy 
+                // Make changes to the inst copy
                 BOOST_CHECK_NO_THROW(edit::TrimSeqData( bsh, copy_inst, sorted_cuts ));
 
                 // Update the input seqentry with the changes
@@ -768,7 +768,7 @@ BOOST_AUTO_TEST_CASE(TrimSeqGraph)
                     // Only certain types of graphs are supported.
                     // See C Toolkit function GetGraphsProc in api/sqnutil2.c
                     const CMappedGraph& graph = *graph_ci;
-                    if ( graph.IsSetTitle() && 
+                    if ( graph.IsSetTitle() &&
                          (NStr::CompareNocase( graph.GetTitle(), "Phrap Quality" ) == 0 ||
                           NStr::CompareNocase( graph.GetTitle(), "Phred Quality" ) == 0 ||
                           NStr::CompareNocase( graph.GetTitle(), "Gap4" ) == 0) )
@@ -789,7 +789,7 @@ BOOST_AUTO_TEST_CASE(TrimSeqGraph)
                 CRef<CSeq_inst> copy_inst(new CSeq_inst());
                 copy_inst->Assign(bsh.GetInst());
 
-                // Make changes to the inst copy 
+                // Make changes to the inst copy
                 BOOST_CHECK_NO_THROW(edit::TrimSeqData( bsh, copy_inst, sorted_cuts ));
 
                 // Update the input seqentry with the changes
@@ -814,7 +814,7 @@ BOOST_AUTO_TEST_CASE(TrimSeqGraph)
                     // Only certain types of graphs are supported.
                     // See C Toolkit function GetGraphsProc in api/sqnutil2.c
                     const CMappedGraph& graph = *graph_ci;
-                    if ( graph.IsSetTitle() && 
+                    if ( graph.IsSetTitle() &&
                          (NStr::CompareNocase( graph.GetTitle(), "Phrap Quality" ) == 0 ||
                           NStr::CompareNocase( graph.GetTitle(), "Phred Quality" ) == 0 ||
                           NStr::CompareNocase( graph.GetTitle(), "Gap4" ) == 0) )
@@ -835,7 +835,7 @@ BOOST_AUTO_TEST_CASE(TrimSeqGraph)
                 CRef<CSeq_inst> copy_inst(new CSeq_inst());
                 copy_inst->Assign(bsh.GetInst());
 
-                // Make changes to the inst copy 
+                // Make changes to the inst copy
                 BOOST_CHECK_NO_THROW(edit::TrimSeqData( bsh, copy_inst, sorted_cuts ));
 
                 // Update the input seqentry with the changes
@@ -902,12 +902,12 @@ BOOST_AUTO_TEST_CASE(TrimSeqAlign)
                 for (; align_ci; ++align_ci) {
                     // Only DENSEG type is supported
                     const CSeq_align& align = *align_ci;
-                    if ( align.CanGetSegs() && 
+                    if ( align.CanGetSegs() &&
                          align.GetSegs().Which() == CSeq_align::C_Segs::e_Denseg )
                     {
                         // Make sure mandatory fields are present in the denseg
                         const CDense_seg& denseg = align.GetSegs().GetDenseg();
-                        if (! (denseg.CanGetDim() && denseg.CanGetNumseg() && 
+                        if (! (denseg.CanGetDim() && denseg.CanGetNumseg() &&
                                denseg.CanGetIds() && denseg.CanGetStarts() &&
                                denseg.CanGetLens()) )
                         {
@@ -930,7 +930,7 @@ BOOST_AUTO_TEST_CASE(TrimSeqAlign)
                 CRef<CSeq_inst> copy_inst(new CSeq_inst());
                 copy_inst->Assign(bsh.GetInst());
 
-                // Make changes to the inst copy 
+                // Make changes to the inst copy
                 BOOST_CHECK_NO_THROW(edit::TrimSeqData( bsh, copy_inst, sorted_cuts ));
 
                 // Update the input seqentry with the changes
@@ -954,12 +954,12 @@ BOOST_AUTO_TEST_CASE(TrimSeqAlign)
                 for (; align_ci; ++align_ci) {
                     // Only DENSEG type is supported
                     const CSeq_align& align = *align_ci;
-                    if ( align.CanGetSegs() && 
+                    if ( align.CanGetSegs() &&
                          align.GetSegs().Which() == CSeq_align::C_Segs::e_Denseg )
                     {
                         // Make sure mandatory fields are present in the denseg
                         const CDense_seg& denseg = align.GetSegs().GetDenseg();
-                        if (! (denseg.CanGetDim() && denseg.CanGetNumseg() && 
+                        if (! (denseg.CanGetDim() && denseg.CanGetNumseg() &&
                                denseg.CanGetIds() && denseg.CanGetStarts() &&
                                denseg.CanGetLens()) )
                         {
@@ -982,7 +982,7 @@ BOOST_AUTO_TEST_CASE(TrimSeqAlign)
                 CRef<CSeq_inst> copy_inst(new CSeq_inst());
                 copy_inst->Assign(bsh.GetInst());
 
-                // Make changes to the inst copy 
+                // Make changes to the inst copy
                 BOOST_CHECK_NO_THROW(edit::TrimSeqData( bsh, copy_inst, sorted_cuts ));
 
                 // Update the input seqentry with the changes
@@ -1006,12 +1006,12 @@ BOOST_AUTO_TEST_CASE(TrimSeqAlign)
                 for (; align_ci; ++align_ci) {
                     // Only DENSEG type is supported
                     const CSeq_align& align = *align_ci;
-                    if ( align.CanGetSegs() && 
+                    if ( align.CanGetSegs() &&
                          align.GetSegs().Which() == CSeq_align::C_Segs::e_Denseg )
                     {
                         // Make sure mandatory fields are present in the denseg
                         const CDense_seg& denseg = align.GetSegs().GetDenseg();
-                        if (! (denseg.CanGetDim() && denseg.CanGetNumseg() && 
+                        if (! (denseg.CanGetDim() && denseg.CanGetNumseg() &&
                                denseg.CanGetIds() && denseg.CanGetStarts() &&
                                denseg.CanGetLens()) )
                         {
@@ -1034,7 +1034,7 @@ BOOST_AUTO_TEST_CASE(TrimSeqAlign)
                 CRef<CSeq_inst> copy_inst(new CSeq_inst());
                 copy_inst->Assign(bsh.GetInst());
 
-                // Make changes to the inst copy 
+                // Make changes to the inst copy
                 BOOST_CHECK_NO_THROW(edit::TrimSeqData( bsh, copy_inst, sorted_cuts ));
 
                 // Update the input seqentry with the changes
@@ -1120,7 +1120,7 @@ BOOST_AUTO_TEST_CASE(TrimSeqFeat_Featured_Deleted)
                         // renormalize the nuc-prot set
                         BOOST_CHECK_NO_THROW(edit::DeleteProteinAndRenormalizeNucProtSet(*feat_ci));
                     }
-                    else 
+                    else
                     if (bFeatureTrimmed) {
                         // Further modify the copy of the feature
 
@@ -1137,7 +1137,7 @@ BOOST_AUTO_TEST_CASE(TrimSeqFeat_Featured_Deleted)
                 CRef<CSeq_inst> copy_inst(new CSeq_inst());
                 copy_inst->Assign(bsh.GetInst());
 
-                // Make changes to the inst copy 
+                // Make changes to the inst copy
                 BOOST_CHECK_NO_THROW(edit::TrimSeqData( bsh, copy_inst, sorted_cuts ));
 
                 // Update the input seqentry with the changes
@@ -1202,7 +1202,7 @@ BOOST_AUTO_TEST_CASE(TrimSeqFeat_Featured_Trimmed)
                 CRef<CSeq_inst> copy_inst(new CSeq_inst());
                 copy_inst->Assign(bsh.GetInst());
 
-                // Make changes to the inst copy 
+                // Make changes to the inst copy
                 BOOST_CHECK_NO_THROW(edit::TrimSeqData( bsh, copy_inst, sorted_cuts ));
 
                 // Iterate over bioseq features
@@ -1232,13 +1232,13 @@ BOOST_AUTO_TEST_CASE(TrimSeqFeat_Featured_Trimmed)
                         // renormalize the nuc-prot set
                         //DeleteProteinAndRenormalizeNucProtSet(*feat_ci);
                     }
-                    else 
+                    else
                     if (bFeatureTrimmed) {
                         // Further modify the copy of the feature
 
                         // If this feat is a Cdregion, then RETRANSLATE the protein
                         // sequence AND adjust any protein feature
-                        if ( copy_feat->IsSetData() && 
+                        if ( copy_feat->IsSetData() &&
                              copy_feat->GetData().Which() == CSeqFeatData::e_Cdregion &&
                              copy_feat->IsSetProduct() )
                         {
@@ -1373,7 +1373,7 @@ BOOST_AUTO_TEST_CASE(TrimSequenceAndAnnotation)
 
 				BOOST_CHECK_NO_THROW(edit::TrimSequenceAndAnnotation(bsh, cuts, edit::eTrimToClosestEnd));
 			}
-            
+
             // ctg7180000000092 is found in test5 input
 			if (s_FindLocalId(bsh, "ctg7180000000092")) {
 				// Create the cuts from known vector contamination
@@ -1401,7 +1401,6 @@ BOOST_AUTO_TEST_CASE(TrimSequenceAndAnnotation)
         BOOST_CHECK( s_AreSeqEntriesEqualAndPrintIfNot(
              *entry_h.GetCompleteSeq_entry(),
              *expected_entry_h.GetCompleteSeq_entry()) );
-             
         BOOST_CHECK_NO_THROW( s_pScope->RemoveTopLevelSeqEntry(entry_h) );
         BOOST_CHECK_NO_THROW( s_pScope->RemoveTopLevelSeqEntry(expected_entry_h) );
     }
@@ -1500,7 +1499,7 @@ BOOST_AUTO_TEST_CASE(Test_Unverified)
     BOOST_CHECK_EQUAL(edit::IsUnverifiedMisassembled(entry->GetSeq()), false);
     unv = edit::FindUnverified(entry->GetSeq());
     BOOST_CHECK_EQUAL(unv.GetPointer(), new_unv.GetPointer());
-    
+
     new_unv->SetUser().AddUnverifiedMisassembled();
     BOOST_CHECK_EQUAL(edit::IsUnverifiedOrganism(entry->GetSeq()), false);
     BOOST_CHECK_EQUAL(edit::IsUnverifiedFeature(entry->GetSeq()), false);
@@ -1590,8 +1589,8 @@ BOOST_AUTO_TEST_CASE(Test_GetTargetedLocusName)
     CRef<CSeq_entry> nuc = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet(entry);
     unit_test_util::AddFeat(gene, nuc);
     CheckTargetedLocusEntry(entry, "XYZ");
-    
-    CRef<CSeq_feat> rna = unit_test_util::AddMiscFeature(entry);    
+
+    CRef<CSeq_feat> rna = unit_test_util::AddMiscFeature(entry);
     rna->SetData().SetRna().SetType(CRNA_ref::eType_rRNA);
     string remainder;
     rna->SetData().SetRna().SetRnaProductName("18S ribosomal RNA", remainder);
@@ -1650,7 +1649,7 @@ BOOST_AUTO_TEST_CASE(Test_BioseqSetDescriptorPropagateUp)
     // components should have source, molinfo, title
     ITERATE(CBioseq_set::TSeq_set, it, entry->GetSet().GetSeq_set()) {
         BOOST_CHECK_EQUAL((*it)->GetSeq().GetDescr().Get().size(), 3);
-    }    
+    }
 
 }
 

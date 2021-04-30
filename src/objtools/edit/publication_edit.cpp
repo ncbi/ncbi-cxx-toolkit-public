@@ -26,7 +26,7 @@
 * Author:  Igor Filippov, Andrea Asztalos
 *
 * File Description:
-*   
+*
 */
 
 #include <ncbi_pch.hpp>

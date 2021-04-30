@@ -55,8 +55,8 @@ public:
         eGBBlockFieldType_ExtraAccession,
         eGBBlockFieldType_Unknown };
 
-    CGBBlockField (EGBBlockFieldType field_type = eGBBlockFieldType_Keyword) 
-        : m_FieldType(field_type), 
+    CGBBlockField (EGBBlockFieldType field_type = eGBBlockFieldType_Keyword)
+        : m_FieldType(field_type),
           m_StringConstraint(NULL) { m_Subtype = CSeqdesc::e_Genbank; };
     virtual string GetVal(const CObject& object);
     virtual vector<string> GetVals(const CObject& object);

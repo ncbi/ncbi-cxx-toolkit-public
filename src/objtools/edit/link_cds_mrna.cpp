@@ -53,7 +53,7 @@ BEGIN_NCBI_SCOPE
 
 USING_SCOPE(objects);
 
-namespace 
+namespace
 {
 bool IsmRNA(const CSeq_feat::TData& feat_data)
 {
@@ -112,13 +112,13 @@ void CreateReference(CSeq_feat& dest, const CSeq_feat& src)
 
 
 void xLinkCDSmRNAbyLabelAndLocation(CSeq_annot::C_Data::TFtable& ftable)
-{ 
+{
     for (CSeq_annot::TData::TFtable::iterator feat_it = ftable.begin();
         ftable.end() != feat_it; ++feat_it)
     {
         CRef<CSeq_feat> feature = (*feat_it);
 
-        if (!feature->IsSetData()) 
+        if (!feature->IsSetData())
             continue;
 
         if (! (feature->GetData().IsCdregion() || IsmRNA(feature->GetData())))
@@ -146,7 +146,7 @@ void xLinkCDSmRNAbyLabelAndLocation(CSeq_annot::C_Data::TFtable& ftable)
                 feature::GetLabel(*current, &label, feature::fFGL_Content);
 
                 if (NStr::Compare(feat_label, label) != 0)
-                    continue; 
+                    continue;
 
                 CRef<CSeq_feat> cds, mrna;
                 if (feature->GetData().IsCdregion())
@@ -161,7 +161,7 @@ void xLinkCDSmRNAbyLabelAndLocation(CSeq_annot::C_Data::TFtable& ftable)
                 }
 
                 // is this the best?
-                // TODO: add choosing of the best mRNA*CDS combinations 
+                // TODO: add choosing of the best mRNA*CDS combinations
                 // instead of getting the first one
                 sequence::ECompare located = sequence::Compare(mrna->GetLocation(),
                     cds->GetLocation(), 0, sequence::fCompareOverlapping);
@@ -173,9 +173,9 @@ void xLinkCDSmRNAbyLabelAndLocation(CSeq_annot::C_Data::TFtable& ftable)
                     break;
                 default:
                     break;
-                }          
+                }
 
-            } 
+            }
         }  // inner loop locating counterpart
         if (best_fit.NotEmpty())
         {
@@ -188,7 +188,7 @@ void xLinkCDSmRNAbyLabelAndLocation(CSeq_annot::C_Data::TFtable& ftable)
                 //<< CSeqFeatData::SelectionName(element->GetData().Which())
                 << endl;
 #endif
-            break; 
+            break;
             // stop the inner loop
         }
     } // iterate over feature table
@@ -201,7 +201,7 @@ void CCDStomRNALinkBuilder::Operate(CSeq_entry& entry)
 }
 
 void CCDStomRNALinkBuilder::LinkCDSmRNAbyLabelAndLocation(CSeq_entry& entry)
-{ 
+{
     if (entry.IsSeq())
     {
         LinkCDSmRNAbyLabelAndLocation(entry.SetSeq());
@@ -233,7 +233,7 @@ void CCDStomRNALinkBuilder::LinkCDSmRNAbyLabelAndLocation(objects::CBioseq_set& 
 }
 
 void CCDStomRNALinkBuilder::LinkCDSmRNAbyLabelAndLocation(CBioseq& bioseq)
-{ 
+{
     if (!bioseq.IsSetAnnot())
         return;
 

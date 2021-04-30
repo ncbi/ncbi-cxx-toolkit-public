@@ -85,7 +85,7 @@ bool Make_Iupacna(const CSeq_data& data, string& decoded, TSeqPos len)
     return true;
 }
 
-   
+
 CRef<CDelta_seq> MakeGap(const CSeq_data& data, TSeqPos len, CDelta_ext& ext,  TSeqPos gap_start, TSeqPos gap_length)
 {
     string decoded;
@@ -103,7 +103,7 @@ CRef<CDelta_seq> MakeGap(const CSeq_data& data, TSeqPos len, CDelta_ext& ext,  T
     if (gap_start+gap_length < decoded.length())
     {
         ext.AddAndSplit(
-            CTempString(decoded, gap_start+gap_length, TSeqPos(decoded.length())-gap_start-gap_length), 
+            CTempString(decoded, gap_start+gap_length, TSeqPos(decoded.length())-gap_start-gap_length),
             CSeq_data::e_Iupacna, TSeqPos(decoded.length())-gap_start-gap_length, true, true);
     }
 
@@ -124,11 +124,11 @@ CRef<CDelta_seq> MakeGap(const CDelta_seq& delta, TSeqPos len, CDelta_ext& ext, 
     if (delta.IsLiteral() && delta.GetLiteral().IsSetSeq_data())
        return MakeGap(delta.GetLiteral().GetSeq_data(), len, ext, gap_start, gap_length);
     else
-    {        
+    {
         if (gap_start>0)
         {
             CloneLiteral(delta, ext, gap_start);
-        }       
+        }
         CDelta_seq& new_gap = ext.AddLiteral(gap_length);
         if (len>gap_start+gap_length)
             CloneLiteral(delta, ext, len-gap_start-gap_length);
@@ -156,7 +156,7 @@ CRef<CDelta_seq> MakeGap(CBioseq::TInst& inst, TSeqPos gap_start, TSeqPos gap_le
                 if (!delta->GetLiteral().IsSetLength())
                     return CRef<CDelta_seq>();
 
-                TSeqPos lit_len = delta->GetLiteral().GetLength(); 
+                TSeqPos lit_len = delta->GetLiteral().GetLength();
 
                 if (gap_start < lit_len)
                 {
@@ -168,7 +168,7 @@ CRef<CDelta_seq> MakeGap(CBioseq::TInst& inst, TSeqPos gap_start, TSeqPos gap_le
                         CRef<CDelta_seq> gap_seq = MakeGap(*delta, lit_len, new_ext, gap_start, gap_length);
                         if (gap_seq)
                         {
-                            // replace the current delta with created 
+                            // replace the current delta with created
                             it = ext.Set().erase(it);
                             ext.Set().insert(it, new_ext.Set().begin(), new_ext.Set().end());
                         }
@@ -186,7 +186,7 @@ CRef<CDelta_seq> MakeGap(CBioseq::TInst& inst, TSeqPos gap_start, TSeqPos gap_le
             }
         }
     }
-    else 
+    else
     if (inst.IsSetSeq_data())
     {
         // convert simple sequence into delta seq
@@ -197,7 +197,7 @@ CRef<CDelta_seq> MakeGap(CBioseq::TInst& inst, TSeqPos gap_start, TSeqPos gap_le
         CRef<CDelta_seq> delta = MakeGap(data, inst.GetLength(), ext, gap_start, gap_length);
 
         // finalize, if delta seq was not successfull
-        // revert to the original 
+        // revert to the original
         if (ext.Get().size() > 1) {
             inst.SetRepr(CSeq_inst::eRepr_delta);
             inst.ResetSeq_data();
@@ -215,37 +215,37 @@ CRef<CDelta_seq> MakeGap(CBioseq::TInst& inst, TSeqPos gap_start, TSeqPos gap_le
 
 CGapsEditor::CGapsEditor(CSeq_gap::EType gap_type, const TEvidenceSet& evidences,
     TSeqPos gapNmin, TSeqPos gap_Unknown_length) :
-    m_gap_type(gap_type), 
-    m_DefaultEvidence(evidences), 
-    m_gapNmin(gapNmin), 
+    m_gap_type(gap_type),
+    m_DefaultEvidence(evidences),
+    m_gapNmin(gapNmin),
     m_gap_Unknown_length(gap_Unknown_length)
 {
 }
 
 
-CGapsEditor::CGapsEditor(CSeq_gap::EType gap_type, 
+CGapsEditor::CGapsEditor(CSeq_gap::EType gap_type,
         const TEvidenceSet& defaultEvidence,
         const TCountToEvidenceMap& countToEvidenceMap,
-        TSeqPos gapNmin, 
+        TSeqPos gapNmin,
         TSeqPos gap_Unknown_length)
     :
-    m_gap_type(gap_type), 
-    m_DefaultEvidence(defaultEvidence), 
-    m_GapsizeToEvidenceMap(countToEvidenceMap), 
-    m_gapNmin(gapNmin), 
+    m_gap_type(gap_type),
+    m_DefaultEvidence(defaultEvidence),
+    m_GapsizeToEvidenceMap(countToEvidenceMap),
+    m_gapNmin(gapNmin),
     m_gap_Unknown_length(gap_Unknown_length)
 {
 }
-        
 
-CRef<CDelta_seq> 
+
+CRef<CDelta_seq>
 CGapsEditor::CreateGap(CBioseq& bioseq, TSeqPos gap_start, TSeqPos gap_length)
 {
     return CreateGap(bioseq, gap_start, gap_length, gap_length==m_gap_Unknown_length);
 }
 
 
-CRef<CDelta_seq> 
+CRef<CDelta_seq>
 CGapsEditor::CreateGap(CBioseq& bioseq, TSeqPos gap_start, TSeqPos nominal_length, bool length_unknown)
 {
     if (!bioseq.IsSetInst())
@@ -327,7 +327,7 @@ void CGapsEditor::ConvertNs2Gaps(CBioseq& bioseq)
 
     CSeq_inst& inst = bioseq.SetInst();
 
-    // since delta functions allows adding new literal to an end we create a copy of literal array 
+    // since delta functions allows adding new literal to an end we create a copy of literal array
     // to iterate over
 
     CDelta_ext::Tdata src_data = inst.GetExt().GetDelta().Get();
@@ -365,23 +365,23 @@ void CGapsEditor::x_SetGapParameters(CDelta_seq& lit)
 
     x_SetGapParameters(lit, length_unknown);
 }
-   
-void CGapsEditor::x_SetGapParameters(CDelta_seq& lit, bool length_unknown) 
+
+void CGapsEditor::x_SetGapParameters(CDelta_seq& lit, bool length_unknown)
 {
     CDelta_seq::TLiteral& gap = lit.SetLiteral();
-    if (length_unknown) {    
+    if (length_unknown) {
         gap.SetFuzz().SetLim(CInt_fuzz::eLim_unk);
     }
 
-    if (gap.IsSetSeq_data() && 
-        gap.GetSeq_data().IsGap() && 
+    if (gap.IsSetSeq_data() &&
+        gap.GetSeq_data().IsGap() &&
         gap.GetSeq_data().GetGap().GetLinkage_evidence().size() > 0)
         return;
 
     if (!m_DefaultEvidence.empty() || !m_GapsizeToEvidenceMap.empty()) {
         const auto len = gap.GetLength();
         const auto it = m_GapsizeToEvidenceMap.find(len);
-        const auto& evidenceSet = 
+        const auto& evidenceSet =
             (it != m_GapsizeToEvidenceMap.end()) ?
             it->second :
             m_DefaultEvidence;
