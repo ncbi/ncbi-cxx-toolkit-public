@@ -582,6 +582,8 @@ void CFlatFileConfig::AddArgumentDescriptions(CArgDescriptions& args)
                                  "         1 - hide protein_id and transcript_id\n"
                                  "         2 - hide GI number\n"
                                  "         4 - allow long locus lines\n"
+                                 "        64 - show SNP features\n"
+                                 "       128 - show CDD features\n"
                                  "      1024 - disable annot references\n"
                                  "      2048 - use SeqEntryIndexer\n"
                                  "     16384 - only Gene, RNA, and CDS features",
