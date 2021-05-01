@@ -379,7 +379,7 @@ CBioSourceKind& CBioSourceKind::operator=(const CBioSource& bsrc)
         default:
             break;
         }
-    } 
+    }
     if (bsrc.IsSetLineage()) {
         const string& lineage = bsrc.GetLineage();
         if (NStr::StartsWith(lineage, "Eukaryota"))
@@ -670,7 +670,7 @@ const CSeq_entry *ctx)
             if (subname.length() > 0) {
                 subname[0] = toupper(subname[0]);
             }
-            PostObjErr(eDiag_Warning, 
+            PostObjErr(eDiag_Warning,
                 subtype == CSubSource::eSubtype_tissue_type ? eErr_SEQ_DESCR_InvalidTissueType : eErr_SEQ_DESCR_BioSourceInconsistency,
                 "Virus has unexpected " + subname + " qualifier", obj, ctx);
         }
@@ -803,14 +803,14 @@ const CSeq_entry *ctx)
     }
 
     if (static_cast<bool>(count[CSubSource::eSubtype_fwd_primer_seq]) != static_cast<bool>(count[CSubSource::eSubtype_rev_primer_seq]) &&
-        !count[CSubSource::eSubtype_fwd_primer_name] && 
+        !count[CSubSource::eSubtype_fwd_primer_name] &&
         !count[CSubSource::eSubtype_rev_primer_name]) {
         // if there are forward primers then there should also be reverse primers, and vice versa,
         // but ignore this if there are primer names of either flavor
         PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadPCRPrimerSequence,
             "PCR primer does not have both sequences", obj, ctx);
     }
-    
+
     bool has_duplicate_primers = false;
     if (!pcr_set_list.AreSetsUnique()) {
         has_duplicate_primers = true;
@@ -995,7 +995,7 @@ void CValidError_imp::ValidatePCRReactionSet
 const CSerialObject& obj,
 const CSeq_entry *ctx)
 {
-    for (auto it : pcrset.Get()) 
+    for (auto it : pcrset.Get())
     {
         if (it->IsSetForward()) {
             for (auto pit : it->GetForward().Get())
@@ -1212,21 +1212,21 @@ const bool isViral)
         if (!CSubSource::IsChromosomeNameValid(sname, taxname)) {
             PostObjErr(eDiag_Error, eErr_SEQ_DESCR_BadPlasmidChromosomeLinkageName,
                 "Problematic plasmid/chromosome/linkage group name '" + sname + "'",
-                obj, ctx);        
+                obj, ctx);
         }
         break;
     case CSubSource::eSubtype_linkage_group:
         if (!CSubSource::IsLinkageGroupNameValid(sname, taxname)) {
             PostObjErr(eDiag_Error, eErr_SEQ_DESCR_BadPlasmidChromosomeLinkageName,
                 "Problematic plasmid/chromosome/linkage group name '" + sname + "'",
-                obj, ctx);        
+                obj, ctx);
         }
         break;
     case CSubSource::eSubtype_plasmid_name:
         if (!CSubSource::IsPlasmidNameValid(sname, taxname)) {
             PostObjErr(eDiag_Error, eErr_SEQ_DESCR_BadPlasmidChromosomeLinkageName,
                 "Problematic plasmid/chromosome/linkage group name '" + sname + "'",
-                obj, ctx);        
+                obj, ctx);
         }
         break;
     case CSubSource::eSubtype_segment:
@@ -1561,7 +1561,7 @@ const CSeq_entry *ctx)
                 PostObjErr(x_SalmonellaErrorLevel(), eErr_SEQ_DESCR_BadOrgMod,
                     "Salmonella organism name should contain the serovar value.",
                     obj, ctx);
-            }            
+            }
         }
     }
 }
@@ -1625,9 +1625,9 @@ static bool s_MatchOrgname(const string& taxname, const COrgName& orgname, strin
 
 
 void CValidError_imp::ValidateTaxNameOrgname
-(const string& taxname, 
- const COrgName& orgname, 
- const CSerialObject& obj, 
+(const string& taxname,
+ const COrgName& orgname,
+ const CSerialObject& obj,
  const CSeq_entry *ctx)
 {
     string mismatch;
@@ -1758,8 +1758,8 @@ const CSeq_entry *ctx)
                 break;
 
             case COrgMod::eSubtype_type_material:
-                if (!(*omd_itr)->IsSetSubname() || 
-                    !COrgMod::IsValidTypeMaterial((*omd_itr)->GetSubname()))  {
+                if (!(*omd_itr)->IsSetSubname() ||
+                    !COrgMod::IsValidTypeMaterial((*omd_itr)->GetSubname())) {
                     PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadTypeMaterial,
                             "Bad value for type_material", obj, ctx);
                 }
@@ -2264,8 +2264,8 @@ const CSeq_entry *ctx)
                     okay = false;
 #if 0
                     // look to see if there's a longer match in the list
-                    for (size_t k = 0; 
-                        k < sizeof (CValidError_imp::sm_SourceQualPrefixes) / sizeof (string); 
+                    for (size_t k = 0;
+                        k < sizeof (CValidError_imp::sm_SourceQualPrefixes) / sizeof (string);
                         k++) {
                         size_t pos = NStr::FindNoCase (str, CValidError_imp::sm_SourceQualPrefixes[k]);
                         if (pos != string::npos) {
@@ -2387,7 +2387,7 @@ void CValidError_imp::ValidateOrgRefs(CTaxValidationAndCleanup& tval)
     vector< CRef<COrg_ref> > org_rq_list = tval.GetTaxonomyLookupRequest();
 
     if (org_rq_list.size() > 0) {
-        
+
         size_t chunk_size = kDefaultChunkSize;
         size_t i = 0;
         while (i < org_rq_list.size()) {
@@ -2966,7 +2966,7 @@ static bool s_PCRReactionLess(
         } else if (s_PCRPrimerSetLess(p2.GetForward(), p1.GetForward())) {
             return false;
         }
-    } 
+    }
     if (!p1.IsSetReverse() && p2.IsSetReverse()) {
         return true;
     } else if (p1.IsSetReverse() && !p2.IsSetReverse()) {
@@ -2977,7 +2977,7 @@ static bool s_PCRReactionLess(
         } else if (s_PCRPrimerSetLess(p2.GetReverse(), p1.GetReverse())) {
             return false;
         }
-    } 
+    }
     return false;
 }
 

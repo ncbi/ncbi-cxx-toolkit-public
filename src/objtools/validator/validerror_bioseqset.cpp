@@ -26,7 +26,7 @@
  * Author:  Jonathan Kans, Clifford Clausen, Aaron Ucko......
  *
  * File Description:
- *   validation of bioseq_set 
+ *   validation of bioseq_set
  *   .......
  *
  */
@@ -74,7 +74,7 @@ void CValidError_bioseqset::ValidateBioseqSet(
     int protcnt = 0;
     int nuccnt  = 0;
     int segcnt  = 0;
-    
+
     // Validate Set Contents
     FOR_EACH_SEQENTRY_ON_SEQSET (se_list_it, seqset) {
         const CSeq_entry& se = **se_list_it;
@@ -105,30 +105,25 @@ void CValidError_bioseqset::ValidateBioseqSet(
     }
 
     switch ( seqset.GetClass() ) {
-	case CBioseq_set::eClass_not_set:
-        PostErr(eDiag_Warning, eErr_SEQ_PKG_BioseqSetClassNotSet, 
-			    "Bioseq_set class not set", seqset);
-		break;
+    case CBioseq_set::eClass_not_set:
+        PostErr(eDiag_Warning, eErr_SEQ_PKG_BioseqSetClassNotSet,
+                "Bioseq_set class not set", seqset);
+        break;
     case CBioseq_set::eClass_nuc_prot:
         ValidateNucProtSet(seqset, nuccnt, protcnt, segcnt);
         break;
-        
     case CBioseq_set::eClass_segset:
         ValidateSegSet(seqset, segcnt);
         break;
-        
     case CBioseq_set::eClass_parts:
         ValidatePartsSet(seqset);
         break;
-        
     case CBioseq_set::eClass_genbank:
         ValidateGenbankSet(seqset);
         break;
-        
     case CBioseq_set::eClass_pop_set:
         ValidatePopSet(seqset);
         break;
-        
     case CBioseq_set::eClass_mut_set:
     case CBioseq_set::eClass_phy_set:
     case CBioseq_set::eClass_eco_set:
@@ -136,25 +131,24 @@ void CValidError_bioseqset::ValidateBioseqSet(
     case CBioseq_set::eClass_small_genome_set:
         ValidatePhyMutEcoWgsSet(seqset);
         break;
-        
     case CBioseq_set::eClass_gen_prod_set:
         ValidateGenProdSet(seqset);
         break;
     case CBioseq_set::eClass_conset:
         if (!m_Imp.IsRefSeq()) {
-            PostErr (eDiag_Error, eErr_SEQ_PKG_ConSetProblem, 
+            PostErr (eDiag_Error, eErr_SEQ_PKG_ConSetProblem,
                      "Set class should not be conset", seqset);
         }
         break;
     /*
     case CBioseq_set::eClass_other:
-        PostErr(eDiag_Critical, eErr_SEQ_PKG_GenomicProductPackagingProblem, 
+        PostErr(eDiag_Critical, eErr_SEQ_PKG_GenomicProductPackagingProblem,
             "Genomic product set class incorrectly set to other", seqset);
         break;
     */
     default:
         if ( nuccnt == 0  &&  protcnt == 0 )  {
-            PostErr(eDiag_Warning, eErr_SEQ_PKG_EmptySet, 
+            PostErr(eDiag_Warning, eErr_SEQ_PKG_EmptySet,
                 "No Bioseqs in this set", seqset);
         }
         break;
@@ -164,7 +158,7 @@ void CValidError_bioseqset::ValidateBioseqSet(
     ValidateSetTitle(seqset);
     ValidateSetElements(seqset);
 
-    if (seqset.IsSetClass() 
+    if (seqset.IsSetClass()
         && (seqset.GetClass() == CBioseq_set::eClass_pop_set
             || seqset.GetClass() == CBioseq_set::eClass_mut_set
             || seqset.GetClass() == CBioseq_set::eClass_phy_set
@@ -174,7 +168,7 @@ void CValidError_bioseqset::ValidateBioseqSet(
         CheckForImproperlyNestedSets(seqset);
     }
 
-    if (seqset.IsSetClass() 
+    if (seqset.IsSetClass()
         && (seqset.GetClass() == CBioseq_set::eClass_genbank
             || seqset.GetClass() == CBioseq_set::eClass_pop_set
             || seqset.GetClass() == CBioseq_set::eClass_mut_set
@@ -211,7 +205,7 @@ bool CValidError_bioseqset::IsMrnaProductInGPS(const CBioseq& seq)
 {
     if ( m_Imp.IsGPS() ) {
         CFeat_CI mrna(
-            m_Scope->GetBioseqHandle(seq), 
+            m_Scope->GetBioseqHandle(seq),
             SAnnotSelector(CSeqFeatData::e_Rna)
             .SetByProduct());
         return (bool)mrna;
@@ -245,7 +239,7 @@ bool CValidError_bioseqset::IsCDSProductInGPS(const CBioseq& seq, const CBioseq_
 
 void CValidError_bioseqset::ValidateNucProtSet
 (const CBioseq_set& seqset,
- int nuccnt, 
+ int nuccnt,
  int protcnt,
  int segcnt)
 {
@@ -285,22 +279,22 @@ void CValidError_bioseqset::ValidateNucProtSet
 
             CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
             CBioseq_set_Handle gps = GetGenProdSetParent(bsh);
-			      if (seq.IsNa()) {
+            if (seq.IsNa()) {
                 if (gps  &&  !IsMrnaProductInGPS(seq) ) {
                     PostErr(eDiag_Warning,
                         eErr_SEQ_PKG_GenomicProductPackagingProblem,
                         "Nucleotide bioseq should be product of mRNA "
                         "feature on contig, but is not",
                         seq);
-				}
-				FOR_EACH_SEQID_ON_BIOSEQ (id_it, seq) {
-				    if ((*id_it)->IsOther() && (*id_it)->GetOther().IsSetAccession()) {
-				        const string& acc = (*id_it)->GetOther().GetAccession();
-				        if (NStr::StartsWith(acc, "NM_")) {
-				            is_nm = true;
-				        }
-				    }
-				}
+                }
+                FOR_EACH_SEQID_ON_BIOSEQ (id_it, seq) {
+                    if ((*id_it)->IsOther() && (*id_it)->GetOther().IsSetAccession()) {
+                        const string& acc = (*id_it)->GetOther().GetAccession();
+                        if (NStr::StartsWith(acc, "NM_")) {
+                            is_nm = true;
+                        }
+                    }
+                }
             } else if ( seq.IsAa() ) {
                 if (gps && !IsCDSProductInGPS(seq, *(gps.GetCompleteBioseq_set())) ) {
                     PostErr(eDiag_Warning,
@@ -360,7 +354,7 @@ void CValidError_bioseqset::ValidateNucProtSet
         const CBioseq_set& set = (*se_list_it)->GetSet();
         if ( set.GetClass() != CBioseq_set::eClass_segset ) {
 
-            const CEnumeratedTypeValues* tv = 
+            const CEnumeratedTypeValues* tv =
                 CBioseq_set::GetTypeInfo_enum_EClass();
             const string& set_class = tv->FindName(set.GetClass(), true);
 
@@ -426,11 +420,11 @@ void CValidError_bioseqset::CheckForInconsistentBiomols (const CBioseq_set& seqs
 {
     if (!seqset.IsSetClass()) {
         return;
-    }            
-    
+    }
+
     CTypeConstIterator<CMolInfo> miit(ConstBegin(seqset));
     const CMolInfo* mol_info = 0;
-    
+
     for (; miit; ++miit) {
         if (!miit->IsSetBiomol() || miit->GetBiomol() == CMolInfo::eBiomol_peptide) {
             continue;
@@ -468,7 +462,7 @@ void CValidError_bioseqset::ValidateSegSet(const CBioseq_set& seqset, int segcnt
     FOR_EACH_SEQENTRY_ON_SEQSET (se_list_it, seqset) {
         if ( (*se_list_it)->IsSeq() ) {
             const CSeq_inst& seq_inst = (*se_list_it)->GetSeq().GetInst();
-            
+
             if ( mol == CSeq_inst::eMol_not_set ||
                  mol == CSeq_inst::eMol_other ) {
                 mol = seq_inst.GetMol();
@@ -483,13 +477,13 @@ void CValidError_bioseqset::ValidateSegSet(const CBioseq_set& seqset, int segcnt
         } else if ( (*se_list_it)->IsSet() ) {
             const CBioseq_set& set = (*se_list_it)->GetSet();
 
-            if ( set.IsSetClass()  &&  
+            if ( set.IsSetClass()  &&
                  set.GetClass() != CBioseq_set::eClass_parts ) {
-                const CEnumeratedTypeValues* tv = 
+                const CEnumeratedTypeValues* tv =
                     CBioseq_set::GetTypeInfo_enum_EClass();
-                const string& set_class_str = 
+                const string& set_class_str =
                     tv->FindName(set.GetClass(), true);
-                
+
                 PostErr(eDiag_Critical, eErr_SEQ_PKG_SegSetNotParts,
                     "Segmented set contains wrong Bioseq-set, "
                     "its class is \"" + set_class_str + "\".", set);
@@ -497,7 +491,7 @@ void CValidError_bioseqset::ValidateSegSet(const CBioseq_set& seqset, int segcnt
             }
         } // else if
     } // iterate
-    
+
     CheckForInconsistentBiomols (seqset);
 }
 
@@ -526,9 +520,9 @@ void CValidError_bioseqset::ValidatePartsSet(const CBioseq_set& seqset)
             }
         } else if ( (*se_list_it)->IsSet() ) {
             const CBioseq_set& set = (*se_list_it)->GetSet();
-            const CEnumeratedTypeValues* tv = 
+            const CEnumeratedTypeValues* tv =
                 CBioseq_set::GetTypeInfo_enum_EClass();
-            const string& set_class_str = 
+            const string& set_class_str =
                 tv->FindName(set.GetClass(), true);
 
             PostErr(eDiag_Critical, eErr_SEQ_PKG_PartsSetHasSets,
@@ -674,7 +668,7 @@ void CValidError_bioseqset::SetShouldNotHaveMolInfo(const CBioseq_set& seqset)
                     class_name + " has MolInfo on set", seqset);
             return;
         }
-    }            
+    }
 }
 
 
@@ -682,10 +676,10 @@ void CValidError_bioseqset::ValidatePopSet(const CBioseq_set& seqset)
 {
     static const string sp = " sp. ";
 
-	  if (m_Imp.IsRefSeq()) {
-		  PostErr (eDiag_Critical, eErr_SEQ_PKG_RefSeqPopSet,
-				  "RefSeq record should not be a Pop-set", seqset);
-	  }
+    if (m_Imp.IsRefSeq()) {
+        PostErr (eDiag_Critical, eErr_SEQ_PKG_RefSeqPopSet,
+                "RefSeq record should not be a Pop-set", seqset);
+    }
 
     CTypeConstIterator<CBioseq> seqit(ConstBegin(seqset));
     string first_taxname;
@@ -712,18 +706,18 @@ void CValidError_bioseqset::ValidatePopSet(const CBioseq_set& seqset)
             is_first = false;
             continue;
         }
-        
+
         // Make sure all the taxnames in the set are the same.
         if ( NStr::CompareNocase(first_taxname, taxname) == 0 ) {
             continue;
         }
-        
+
         // drops severity if first mismatch is same up to sp.
         EDiagSev sev = eDiag_Error;
         SIZE_TYPE pos = NStr::Find(taxname, sp);
         if ( pos != NPOS ) {
             SIZE_TYPE len = pos + sp.length();
-            if ( NStr::strncasecmp(first_taxname.c_str(), 
+            if ( NStr::strncasecmp(first_taxname.c_str(),
                                    taxname.c_str(),
                                    len) == 0 ) {
                 sev = eDiag_Warning;
@@ -755,7 +749,7 @@ void CValidError_bioseqset::ValidateGenProdSet(
 {
     bool                id_no_good = false;
     CSeq_id::E_Choice   id_type = CSeq_id::e_not_set;
-    
+
     // genprodset should not have annotations directly on set
     if (seqset.IsSetAnnot()) {
         PostErr(eDiag_Critical,
@@ -765,11 +759,11 @@ void CValidError_bioseqset::ValidateGenProdSet(
 
     CBioseq_set::TSeq_set::const_iterator se_list_it =
         seqset.GetSeq_set().begin();
-    
+
     if ( !(**se_list_it).IsSeq() ) {
         return;
     }
-    
+
     const CBioseq& seq = (*se_list_it)->GetSeq();
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
 
@@ -783,26 +777,25 @@ void CValidError_bioseqset::ValidateGenProdSet(
                     try {
                         const CSeq_id& id = GetId(fi->GetProduct(), m_Scope);
                         id_type = id.Which();
-					} catch (CException ) {
+                    } catch (CException ) {
                         id_no_good = true;
-					} catch (std::exception ) {
+                    } catch (std::exception ) {
                         id_no_good = true;
                     }
-                    
+
                     // okay to have far RefSeq product
                     if ( id_no_good  ||  (id_type != CSeq_id::e_Other) ) {
                         string loc_label;
                         fi->GetProduct().GetLabel(&loc_label);
-                        
+
                         if (loc_label.empty()) {
                             loc_label = "?";
                         }
-                        
+
                         PostErr(eDiag_Warning,
                             eErr_SEQ_PKG_GenomicProductPackagingProblem,
                             "Product of mRNA feature (" + loc_label +
                             ") not packaged in genomic product set", seq);
-                        
                     }
                 } // if (cdna == 0)
             } else if (!sequence::IsPseudo(*(fi->GetSeq_feat()), *m_Scope)) {
@@ -812,7 +805,7 @@ void CValidError_bioseqset::ValidateGenProdSet(
                     "genomic product set", seq);
             }
         }
-    } // for 
+    } // for
 }
 
 

@@ -234,7 +234,7 @@ CConstRef<CValidError> CValidator::Validate
 
 
 CConstRef<CValidError> CValidator::Validate
-(const CSeq_feat& feat, 
+(const CSeq_feat& feat,
  CScope *scope,
  Uint4 options)
 {
@@ -248,14 +248,14 @@ CConstRef<CValidError> CValidator::Validate
 //LCOV_EXCL_START
 //not used by asnvalidate
 CConstRef<CValidError> CValidator::Validate
-(const CSeq_feat& feat, 
+(const CSeq_feat& feat,
  Uint4 options)
 {
     return Validate(feat, NULL, options);
 }
 //LCOV_EXCL_STOP
 CConstRef<CValidError> CValidator::Validate
-(const CBioSource& src, 
+(const CBioSource& src,
  CScope *scope,
  Uint4 options)
 {
@@ -268,7 +268,7 @@ CConstRef<CValidError> CValidator::Validate
 //LCOV_EXCL_START
 //not used by asnvalidate
 CConstRef<CValidError> CValidator::Validate
-(const CBioSource& src, 
+(const CBioSource& src,
  Uint4 options)
 {
     return Validate(src, NULL, options);
@@ -276,7 +276,7 @@ CConstRef<CValidError> CValidator::Validate
 //LCOV_EXCL_STOP
 
 CConstRef<CValidError> CValidator::Validate
-(const CPubdesc& pubdesc, 
+(const CPubdesc& pubdesc,
  CScope *scope,
  Uint4 options)
 {
@@ -289,7 +289,7 @@ CConstRef<CValidError> CValidator::Validate
 //LCOV_EXCL_START
 //not used by asnvalidate
 CConstRef<CValidError> CValidator::Validate
-(const CPubdesc& pubdesc, 
+(const CPubdesc& pubdesc,
  Uint4 options)
 {
     return Validate(pubdesc, NULL, options);
@@ -297,7 +297,7 @@ CConstRef<CValidError> CValidator::Validate
 //LCOV_EXCL_STOP
 
 CConstRef<CValidError> CValidator::Validate
-(const CSeqdesc& desc, 
+(const CSeqdesc& desc,
  const CSeq_entry& ctx,
  Uint4 options)
 {
@@ -579,7 +579,7 @@ bool IsNotDuplicateInterval(const CSeq_interval& int1, const CSeq_interval& int2
     if (IsSameBioseq(int1.GetId(), int2.GetId(), scope) &&
         x_SameStrand(int1, int2) &&
         int1.GetFrom() == int2.GetFrom() &&
-        int1.GetTo() == int2.GetTo()) {            
+        int1.GetTo() == int2.GetTo()) {
         return false;
     }
     return true;

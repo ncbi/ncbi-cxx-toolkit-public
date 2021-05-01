@@ -276,7 +276,7 @@ vector<TGoTermError> GetGoTermErrors(const CSeq_feat& feat)
 bool RemoveDuplicateGoTerms(CUser_object::TData& field_list)
 {
     bool rval = false;
-    
+
     set<CGoTermSortStruct > terms;
 
     auto it = field_list.begin();
@@ -317,9 +317,9 @@ bool RemoveDuplicateGoTerms(CSeq_feat& feat)
     for (auto it : user_object.SetData()) {
         // only remove duplicates from properly formmated fields with accepted type
         if (!it->GetData().IsFields()) {
-            // skip it 
+            // skip it
         } else if (!it->IsSetLabel() || !it->GetLabel().IsStr() || !it->IsSetData()) {
-            // skip it 
+            // skip it
         } else {
             string qualtype = it->GetLabel().GetStr();
             if (CGoTermSortStruct::IsLegalGoTermType(qualtype)) {

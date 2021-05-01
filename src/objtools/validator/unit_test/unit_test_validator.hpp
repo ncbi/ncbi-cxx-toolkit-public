@@ -135,7 +135,7 @@ public:
         expected_errors.pop_back(); \
                                                             }
 #define STANDARD_SETUP \
-	CNcbiEnvironment env; \
+    CNcbiEnvironment env; \
     CRef<CObjectManager> objmgr = CObjectManager::GetInstance(); \
     CScope scope(*objmgr); \
     scope.AddDefaults(); \
@@ -144,8 +144,8 @@ public:
     CValidator validator(*objmgr); \
     unsigned int options = CValidator::eVal_need_isojta \
                           | CValidator::eVal_far_fetch_mrna_products \
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version \
-	                      | CValidator::eVal_do_tax_lookup | CValidator::eVal_use_entrez; \
+                          | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version \
+                          | CValidator::eVal_do_tax_lookup | CValidator::eVal_use_entrez; \
     vector< CExpectedError *> expected_errors;
 
 #define STANDARD_SETUP_WITH_MOCK_TAXON(replies) \
@@ -158,8 +158,8 @@ public:
     CValidator validator(*objmgr, taxon); \
     unsigned int options = CValidator::eVal_need_isojta \
                           | CValidator::eVal_far_fetch_mrna_products \
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version \
-	                      | CValidator::eVal_do_tax_lookup | CValidator::eVal_use_entrez; \
+                          | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version \
+                          | CValidator::eVal_do_tax_lookup | CValidator::eVal_use_entrez; \
     vector< CExpectedError *> expected_errors;
 
 
@@ -172,8 +172,8 @@ public:
     CValidator validator(*objmgr); \
     unsigned int options = CValidator::eVal_need_isojta \
                           | CValidator::eVal_far_fetch_mrna_products \
-	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version \
-	                      | CValidator::eVal_use_entrez; \
+                          | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version \
+                          | CValidator::eVal_use_entrez; \
     vector< CExpectedError *> expected_errors;
 
 
@@ -181,7 +181,6 @@ void CheckErrors(const CValidError& eval,
                  vector< CExpectedError* >& expected_errors);
 
 
-				 
 END_SCOPE(objects)
 END_NCBI_SCOPE
 

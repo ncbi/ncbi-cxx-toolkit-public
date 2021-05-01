@@ -205,7 +205,7 @@ CSeqVector GetSequenceFromLoc
  CScope& scope,
  CBioseq_Handle::EVectorCoding coding)
 {
-    CConstRef<CSeqMap> map = 
+    CConstRef<CSeqMap> map =
         CSeqMap::CreateSeqMapForSeq_loc(loc, &scope);
     return CSeqVector(*map, scope, coding, eNa_strand_plus);
 }
@@ -415,7 +415,7 @@ CConstRef<CSeq_id> GetReportableSeqIdForAlignment(const CSeq_align& align, CScop
             return CConstRef<CSeq_id>(&id);
         }
         // failed to find resolvable ID, use bare ID
-        const CSeq_id& id = align.GetSeq_id(0); 
+        const CSeq_id& id = align.GetSeq_id(0);
         return CConstRef<CSeq_id>(&id);
     } catch (CException& ) {
     }
@@ -527,7 +527,7 @@ CBioseq_set_Handle GetSetParent (const CBioseq_set_Handle& set, CBioseq_set::TCl
         return parent.GetSet();
     } else {
         return GetSetParent (parent.GetSet(), set_class);
-    }    
+    }
 }
 
 
@@ -586,7 +586,7 @@ CBioseq_Handle GetNucBioseq (const CBioseq_set_Handle& bioseq_set)
     }
     return nuc;
 }
-       
+
 
 CBioseq_Handle GetNucBioseq (const CBioseq_Handle& bioseq)
 {
@@ -610,17 +610,17 @@ EAccessionFormatError ValidateAccessionString (const string& accession, bool req
         return eAccessionFormat_null;
     } else if (accession.length() >= 16) {
         return eAccessionFormat_too_long;
-    } else if (accession.length() < 3 
-               || ! isalpha (accession.c_str()[0]) 
+    } else if (accession.length() < 3
+               || ! isalpha (accession.c_str()[0])
                || ! isupper (accession.c_str()[0])) {
         return eAccessionFormat_no_start_letters;
     }
-    
+
     string str = accession;
     if (NStr::StartsWith (str, "NZ_")) {
         str = str.substr(3);
     }
-    
+
     const char *cp = str.c_str();
     int numAlpha = 0;
 
@@ -665,20 +665,20 @@ EAccessionFormatError ValidateAccessionString (const string& accession, bool req
 
 
     if (numUndersc == 0) {
-        if ((numAlpha == 1 && numDigits == 5) 
+        if ((numAlpha == 1 && numDigits == 5)
             || (numAlpha == 2 && numDigits == 6)
             || (numAlpha == 3 && numDigits == 5)
             || (numAlpha == 4 && numDigits == 8)
             || (numAlpha == 5 && numDigits == 7)) {
             return eAccessionFormat_valid;
-        } 
+        }
     } else {
         if (numAlpha != 2 || (numDigits != 6 && numDigits != 8 && numDigits != 9)) {
             return eAccessionFormat_wrong_number_of_digits;
         }
         char first_letter = accession.c_str()[0];
         char second_letter = accession.c_str()[1];
-        if (first_letter == 'N' || first_letter == 'X' || first_letter == 'Z') { 
+        if (first_letter == 'N' || first_letter == 'X' || first_letter == 'Z') {
             if (second_letter == 'M' || second_letter == 'C'
                 || second_letter == 'T' || second_letter == 'P'
                 || second_letter == 'G' || second_letter == 'R'
@@ -750,7 +750,7 @@ bool HasBadCharacter (const string& str)
 
 bool EndsWithBadCharacter (const string& str)
 {
-    if (NStr::EndsWith (str, "_") || NStr::EndsWith (str, ".") 
+    if (NStr::EndsWith (str, "_") || NStr::EndsWith (str, ".")
         || NStr::EndsWith (str, ",") || NStr::EndsWith (str, ":")
         || NStr::EndsWith (str, ";")) {
         return true;
@@ -864,7 +864,7 @@ string GetDateErrorDescription (int flags)
 }
 
 
-bool IsBioseqTSA (const CBioseq& seq, CScope* scope) 
+bool IsBioseqTSA (const CBioseq& seq, CScope* scope)
 {
     if (!scope) {
         return false;
@@ -1196,7 +1196,7 @@ bool s_PartialAtGapOrNs (
     if (!bsh) {
         return false;
     }
-    
+
     TSeqPos acceptor = temp.GetRange().GetFrom();
     TSeqPos donor = temp.GetRange().GetTo();
     TSeqPos start = acceptor;
@@ -1221,7 +1221,6 @@ bool s_PartialAtGapOrNs (
             return true;
         }
     } catch ( exception& ) {
-        
         return false;
     }
     if (only_gap) {
@@ -1243,7 +1242,6 @@ bool s_PartialAtGapOrNs (
     } else if ( (tag == sequence::eSeqlocPartial_Nostart)  &&  (start > 1) ) {
         try {
             CSeqVector::TResidue res = vec[start - 1];
-        
             if ( IsResidue(res)  &&  isalpha (res)) {
                 if ( res == 'N' ) {
                     result = true;
@@ -1254,7 +1252,7 @@ bool s_PartialAtGapOrNs (
         }
     }
 
-    return result;    
+    return result;
 }
 
 
@@ -1403,7 +1401,7 @@ bool& end_ambig)
 }
 
 
-void CheckBioseqEndsForNAndGap 
+void CheckBioseqEndsForNAndGap
 (const CBioseq_Handle& bsh,
  EBioseqEndIsType& begin_n,
  EBioseqEndIsType& begin_gap,
@@ -1434,7 +1432,7 @@ void CheckBioseqEndsForNAndGap
 
 bool IsLocFullLength (const CSeq_loc& loc, const CBioseq_Handle& bsh)
 {
-    if (loc.IsInt() 
+    if (loc.IsInt()
         && loc.GetInt().GetFrom() == 0
         && loc.GetInt().GetTo() == bsh.GetInst_Length() - 1) {
         return true;
@@ -1498,7 +1496,7 @@ bool s_IsSameSeqAnnot(const CSeq_feat_Handle& f1, const CSeq_feat_Handle& f2, bo
             if (d1->Which() != d2->Which()) {
                 diff_descriptions = true;
             } else {
-                if (d1->IsName() 
+                if (d1->IsName()
                     && NStr::EqualNocase(d1->GetName(), d2->GetName())) {
                     diff_descriptions = false;
                 } else if (d1->IsTitle()
@@ -1709,7 +1707,7 @@ typedef vector<CConstRef<CObject_id> > TFeatIdVec;
 static bool s_AreLinkedToDifferentFeats (const CSeq_feat_Handle& f1, const CSeq_feat_Handle& f2, CSeqFeatData::ESubtype s1, CSeqFeatData::ESubtype s2)
 {
     bool rval = false;
-    
+
     if (f1.GetData().GetSubtype() == s1 && f2.GetData().GetSubtype() == s1) {
         CScope& scope = f1.GetScope();
         const CSeq_loc& loc = f1.GetLocation();
@@ -1726,7 +1724,7 @@ static bool s_AreLinkedToDifferentFeats (const CSeq_feat_Handle& f1, const CSeq_
                     const CObject_id& feat_id = (*itx)->GetId().GetLocal();
                     vector<CSeq_feat_Handle> handles = tse.GetFeaturesWithId(CSeqFeatData::e_not_set, feat_id);
                     ITERATE( vector<CSeq_feat_Handle>, feat_it, handles ) {
-                        if (feat_it->IsSetData() 
+                        if (feat_it->IsSetData()
                             && feat_it->GetData().GetSubtype() == s2) {
                             mrna1.push_back(*feat_it);
                             CConstRef<CObject_id> f(&feat_id);
@@ -1741,7 +1739,7 @@ static bool s_AreLinkedToDifferentFeats (const CSeq_feat_Handle& f1, const CSeq_
                     const CObject_id& feat_id = (*itx)->GetId().GetLocal();
                     vector<CSeq_feat_Handle> handles = tse.GetFeaturesWithId(CSeqFeatData::e_not_set, feat_id);
                     ITERATE( vector<CSeq_feat_Handle>, feat_it, handles ) {
-                        if (feat_it->IsSetData() 
+                        if (feat_it->IsSetData()
                             && feat_it->GetData().GetSubtype() == s2) {
                             mrna2.push_back(*feat_it);
                             CConstRef<CObject_id> f(&feat_id);
@@ -1772,8 +1770,8 @@ static bool s_AreLinkedToDifferentFeats (const CSeq_feat_Handle& f1, const CSeq_
 
                     if (s_IsSameStrand(fh1.GetLocation(),
                                        fh2.GetLocation(),
-                                       fh1.GetScope()) 
-                      && (sequence::Compare(fh1.GetLocation(), 
+                                       fh1.GetScope())
+                      && (sequence::Compare(fh1.GetLocation(),
                                            fh2.GetLocation(),
                                            &(fh1.GetScope()),
                                            sequence::fCompareOverlapping) == sequence::eSame)) {
@@ -1820,8 +1818,8 @@ bool IsDicistronic(const CSeq_feat_Handle& f)
 }
 
 
-EDuplicateFeatureType 
-IsDuplicate 
+EDuplicateFeatureType
+IsDuplicate
 (const CSeq_feat_Handle& f1,
  const CSeq_feat_Handle& f2,
  bool check_partials,
@@ -1863,7 +1861,7 @@ IsDuplicate
     bool same_label = s_AreFeatureLabelsSame (f1, f2, case_sensitive);
 
     // compare dbxrefs
-    bool different_dbxrefs = (f1.IsSetDbxref() && f2.IsSetDbxref() && 
+    bool different_dbxrefs = (f1.IsSetDbxref() && f2.IsSetDbxref() &&
                         s_IsDifferentDbxrefs(f1.GetDbxref(), f2.GetDbxref()));
 
     if ( feat1_subtype == CSeqFeatData::eSubtype_region && different_dbxrefs) {
@@ -1871,7 +1869,7 @@ IsDuplicate
     }
 
     // check for frame difference
-    bool full_length_coding_regions_with_different_frames = 
+    bool full_length_coding_regions_with_different_frames =
                       s_AreFullLengthCodingRegionsWithDifferentFrames(f1, f2);
     if (!same_label && full_length_coding_regions_with_different_frames) {
         // do not report if both coding regions are full length, have different products,
@@ -1922,7 +1920,7 @@ IsDuplicate
         }
     }
 
-    return dup_type;        
+    return dup_type;
 }
 
 // specific-host functions
@@ -1930,14 +1928,14 @@ IsDuplicate
 bool IsCommonName (const CT3Data& data)
 {
     bool is_common = false;
-    
+
     if (data.IsSetStatus()) {
         ITERATE (CT3Reply::TData::TStatus, status_it, data.GetStatus()) {
-            if ((*status_it)->IsSetProperty() 
+            if ((*status_it)->IsSetProperty()
                 && NStr::Equal((*status_it)->GetProperty(), "old_name_class", NStr::eNocase)) {
                 if ((*status_it)->IsSetValue() && (*status_it)->GetValue().IsStr()) {
                     string value_str = (*status_it)->GetValue().GetStr();
-                    if (NStr::Equal(value_str, "common name", NStr::eCase) 
+                    if (NStr::Equal(value_str, "common name", NStr::eCase)
                         || NStr::Equal(value_str, "genbank common name", NStr::eCase)) {
                         is_common = true;
                         break;
@@ -2080,16 +2078,16 @@ string InterpretSpecificHostResult(const string& host, const CT3Reply& reply, co
             err_str = reply.GetError().GetMessage();
         }
         if(NStr::FindNoCase(err_str, "ambiguous") != string::npos) {
-            err_str = "Specific host value is ambiguous: " + 
+            err_str = "Specific host value is ambiguous: " +
                 (NStr::IsBlank(orig_host) ? host : orig_host);
         } else {
-            err_str = "Invalid value for specific host: " + 
+            err_str = "Invalid value for specific host: " +
                 (NStr::IsBlank(orig_host) ? host : orig_host);
         }
     } else if (reply.IsData()) {
         const auto& rdata = reply.GetData();
         if (HasMisSpellFlag(rdata)) {
-            err_str = "Specific host value is misspelled: " + 
+            err_str = "Specific host value is misspelled: " +
                 (NStr::IsBlank(orig_host) ? host : orig_host);
         } else if (rdata.IsSetOrg()) {
             const auto& org = rdata.GetOrg();
@@ -2099,15 +2097,15 @@ string InterpretSpecificHostResult(const string& host, const CT3Reply& reply, co
                 // not actionable
             } else if (FindMatchInOrgRef(host, org)) {
                 // replace with synonym
-                err_str = "Specific host value is alternate name: " + 
-                    orig_host + " should be " + 
+                err_str = "Specific host value is alternate name: " +
+                    orig_host + " should be " +
                     org.GetTaxname();
             } else {
-                err_str = "Specific host value is incorrectly capitalized: " + 
+                err_str = "Specific host value is incorrectly capitalized: " +
                     (NStr::IsBlank(orig_host) ? host : orig_host);
             }
         } else {
-            err_str = "Invalid value for specific host: " + 
+            err_str = "Invalid value for specific host: " +
                 (NStr::IsBlank(orig_host) ? host : orig_host);
         }
     }
@@ -2179,7 +2177,7 @@ string FixSpecificHost(const string& val)
     string hostfix = val;
     validator::CTaxValidationAndCleanup tval;
     tval.FixOneSpecificHost(hostfix);
-    
+
     return hostfix;
 }
 

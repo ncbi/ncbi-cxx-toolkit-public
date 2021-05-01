@@ -157,7 +157,7 @@ private:
     void x_ValidateSeqFeatExceptXref(const CSeq_feat& feat);
 
     // does feat have an xref to a feature other than the one specified by id with the same subtype
-    static bool HasNonReciprocalXref(const CSeq_feat& feat, 
+    static bool HasNonReciprocalXref(const CSeq_feat& feat,
                                      const CFeat_id& id, CSeqFeatData::ESubtype subtype,
                                      const CTSE_Handle& tse);
     void ValidateOneFeatXrefPair(const CSeq_feat& feat, const CSeq_feat& far_feat, const CSeqFeatXref& xref);

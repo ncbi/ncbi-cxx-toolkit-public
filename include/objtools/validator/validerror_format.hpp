@@ -76,7 +76,7 @@ enum ESubmitterFormatErrorGroup {
 };
 
 
-class NCBI_VALIDATOR_EXPORT CValidErrorFormat : public CObject 
+class NCBI_VALIDATOR_EXPORT CValidErrorFormat : public CObject
 {
 public:
 
@@ -104,7 +104,7 @@ public:
     static string GetDescriptorLabel(const CSeqdesc& ds, const CSeq_entry& ctx, CRef<CScope> scope, bool suppress_context);
     static string GetBioseqLabel (CBioseq_Handle bh);
     static string GetBioseqSetLabel(const CBioseq_set& st, CRef<CScope> scope, bool suppress_context);
-    static string GetObjectLabel(const CObject& obj, const CSeq_entry& ctx, CRef<CScope> scope, bool suppress_context); 
+    static string GetObjectLabel(const CObject& obj, const CSeq_entry& ctx, CRef<CScope> scope, bool suppress_context);
 
     // for suppressing error collection during runtime
     static void SetSuppressionRules(const CUser_object& user, CValidError& errors);

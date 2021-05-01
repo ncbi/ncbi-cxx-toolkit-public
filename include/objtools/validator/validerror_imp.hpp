@@ -121,7 +121,7 @@ class CValidError_descr;
 // CValidError_imp provides the entry point to the validation process.
 // It calls upon the various validation classes to perform validation of
 // each part.
-// The class holds all the data for the validation process. 
+// The class holds all the data for the validation process.
 class NCBI_VALIDATOR_EXPORT CValidError_imp
 {
 public:
@@ -161,10 +161,10 @@ public:
     void ValidateSubAffil(const CAffil::TStd& std, const CSerialObject& obj, const CSeq_entry *ctx);
     void ValidateAffil(const CAffil::TStd& std, const CSerialObject& obj, const CSeq_entry *ctx);
 
-    bool GetTSANStretchErrors(const CSeq_entry_Handle& se); 
+    bool GetTSANStretchErrors(const CSeq_entry_Handle& se);
     bool GetTSACDSOnMinusStrandErrors (const CSeq_entry_Handle& se);
     bool GetTSAConflictingBiomolTechErrors (const CSeq_entry_Handle& se);
-    bool GetTSANStretchErrors(const CBioseq& seq); 
+    bool GetTSANStretchErrors(const CBioseq& seq);
     bool GetTSACDSOnMinusStrandErrors (const CSeq_feat& f, const CBioseq& seq);
     bool GetTSAConflictingBiomolTechErrors (const CBioseq& seq);
 
@@ -228,7 +228,7 @@ public:
     void ValidateOrgName(const COrgName& orgname, const bool has_taxon, const CSerialObject& obj, const CSeq_entry *ctx);
     void ValidateOrgModVoucher(const COrgMod& orgmod, const CSerialObject& obj, const CSeq_entry *ctx);
     void ValidateBioSourceForSeq(const CBioSource& bsrc, const CSerialObject& obj, const CSeq_entry *ctx, const CBioseq_Handle& bsh);
- 
+
     void ValidateLatLonCountry(string countryname, string lat_lon, const CSerialObject& obj, const CSeq_entry *ctx);
 
     static bool IsSyntheticConstruct (const CBioSource& src);
@@ -246,7 +246,7 @@ public:
     void ValidateDbxref(TDbtags& xref_list, const CSerialObject& obj,
     bool biosource = false, const CSeq_entry *ctx = 0);
     void ValidateCitSub(const CCit_sub& cs, const CSerialObject& obj, const CSeq_entry *ctx = 0);
-    void ValidateTaxonomy(const CSeq_entry& se); 
+    void ValidateTaxonomy(const CSeq_entry& se);
     void ValidateOrgRefs(CTaxValidationAndCleanup& tval);
     void ValidateSpecificHost(CTaxValidationAndCleanup& tval);
     void ValidateStrain(CTaxValidationAndCleanup& tval);
@@ -256,7 +256,7 @@ public:
     void ValidateMultipleTaxIds(const CSeq_entry_Handle& seh);
     void ValidateCitations (const CSeq_entry_Handle& seh);
     bool x_IsFarFetchFailure (const CSeq_loc& loc);
-		    
+
     // getters
     inline CScope* GetScope(void) { return m_Scope; }
     inline CCacheImpl & GetCache(void) { return m_cache; }
@@ -409,7 +409,7 @@ private:
     // and be sure that it will be set to its old value when we're done
     class CScopeRestorer {
     public:
-        CScopeRestorer( CRef<CScope> &scope ) : 
+        CScopeRestorer( CRef<CScope> &scope ) :
           m_scopeToRestore(scope), m_scopeOriginalValue(scope) { }
 
         ~CScopeRestorer(void) { m_scopeToRestore = m_scopeOriginalValue; }
@@ -441,7 +441,7 @@ private:
     void ValidateAuthorList(const CAuth_list::C_Names& names, const CSerialObject& obj, const CSeq_entry *ctx = 0);
     void ValidateAuthorsInPubequiv (const CPub_equiv& pe, const CSerialObject& obj, const CSeq_entry *ctx = 0);
     void ValidatePubHasAuthor(const CPubdesc& pubdesc, const CSerialObject& obj, const CSeq_entry *ctx = 0);
-        
+
     bool HasName(const CAuth_list& authors);
     bool HasTitle(const CTitle& title);
     bool HasIsoJTA(const CTitle& title);
@@ -583,7 +583,7 @@ private:
 
     bool m_IsTbl2Asn;
 
-    // seq ids contained within the orignal seq entry. 
+    // seq ids contained within the orignal seq entry.
     // (used to check for far location)
     vector< CConstRef<CSeq_id> >    m_InitialSeqIds;
     // Bioseqs without source (should be considered only if m_NoSource is false)

@@ -202,11 +202,11 @@ void CCdregionValidator::x_ValidateTrans()
     problems.CalculateTranslationProblems(m_Feat,
                                     m_LocationBioseq,
                                     m_ProductBioseq,
-                                    m_Imp.IgnoreExceptions(),                                     
+                                    m_Imp.IgnoreExceptions(),
                                     m_Imp.IsFarFetchCDSproducts(),
                                     m_Imp.IsStandaloneAnnot(),
                                     m_Imp.IsStandaloneAnnot() ? false : m_Imp.GetTSE().IsSeq(),
-                                    m_Imp.IsGpipe(), 
+                                    m_Imp.IsGpipe(),
                                     m_Imp.IsGenomic(),
                                     m_Imp.IsRefSeq(),
                                     (is_nt||is_ng||is_nw),
@@ -248,7 +248,7 @@ int GetGcodeForInternalStopErrors(const CCdregion& cdr)
                 gc = (*it)->GetId();
             } else if ((*it)->IsName()) {
                 gc = GetGcodeForName((*it)->GetName());
-            } 
+            }
             if (gc != 0) break;
         }
     }
@@ -481,8 +481,8 @@ void CCdregionValidator::x_ReportTranslationProblems(const CCDSTranslationProble
         rna_editing = true;
     }
     if (problems.GetProtLen() != problems.GetTransLen() &&
-        (!problems.HasException() || 
-         (rna_editing && 
+        (!problems.HasException() ||
+         (rna_editing &&
          (problems.GetProtLen() < problems.GetTransLen() - 1 || problems.GetProtLen() > problems.GetTransLen())))) {
         string msg = "Given protein length [" + NStr::SizetToString(problems.GetProtLen()) +
             "] does not match ";
@@ -559,7 +559,7 @@ string CCdregionValidator::MapToNTCoords(TSeqPos pos)
     CSeq_loc tmp;
     tmp.SetPnt(pnt);
     CRef<CSeq_loc> loc = ProductToSource(m_Feat, tmp, 0, &m_Scope);
-    
+
     result = GetValidatorLocationLabel(*loc, m_Scope);
 
     return result;
@@ -571,9 +571,9 @@ void CCdregionValidator::x_ReportTranslationMismatches(const CCDSTranslationProb
     string nuclocstr;
 
     size_t num_mismatches = mismatches.size();
-    
+
     if (num_mismatches > 10) {
-        // report total number of mismatches and the details of the 
+        // report total number of mismatches and the details of the
         // first and last.
         nuclocstr = MapToNTCoords(mismatches.front().pos);
         string msg =
@@ -616,7 +616,7 @@ void CCdregionValidator::x_ReportTranslationMismatches(const CCDSTranslationProb
                 num_mismatches--;
             } else {
                 EDiagSev sev = eDiag_Error;
-                if (mismatches[i].prot_res == 'X' && 
+                if (mismatches[i].prot_res == 'X' &&
                     (mismatches[i].transl_res == 'B' || mismatches[i].transl_res == 'Z' || mismatches[i].transl_res == 'J')) {
                     sev = eDiag_Warning;
                 }
@@ -690,7 +690,7 @@ void CCdregionValidator::x_ValidateCodebreak()
         const CSeq_loc& cbr_loc = cbr.GetLoc();
         ECompare comp = Compare(cbr_loc, feat_loc, &m_Scope, fCompareOverlapping);
         if ( ((comp != eContained) && (comp != eSame)) || cbr_loc.IsNull() || cbr_loc.IsEmpty()) {
-            PostErr (eDiag_Critical, eErr_SEQ_FEAT_CDSrange, 
+            PostErr (eDiag_Critical, eErr_SEQ_FEAT_CDSrange,
                 "Code-break location not in coding region");
         } else if (m_Feat.IsSetProduct()) {
             if (cbr_loc.GetStop(eExtreme_Biological) == feat_loc.GetStop(eExtreme_Biological)) {
@@ -712,7 +712,7 @@ void CCdregionValidator::x_ValidateCodebreak()
         }
         if (cbr_loc.IsPartialStart(eExtreme_Biological) ||
             cbr_loc.IsPartialStop(eExtreme_Biological)) {
-            PostErr(eDiag_Error, eErr_SEQ_FEAT_TranslExceptIsPartial, 
+            PostErr(eDiag_Error, eErr_SEQ_FEAT_TranslExceptIsPartial,
                    "Translation exception locations should not be partial");
         }
         if ( prev_cbr != 0 ) {
@@ -883,7 +883,7 @@ bool CCdregionValidator::IsPlastid(int genome)
          genome == CBioSource::eGenome_apicoplast   ||
          genome == CBioSource::eGenome_leucoplast   ||
          genome == CBioSource::eGenome_proplastid   ||
-         genome == CBioSource::eGenome_chromatophore ) { 
+         genome == CBioSource::eGenome_chromatophore ) {
         return true;
     }
 
@@ -1027,7 +1027,7 @@ void CCdregionValidator::x_ValidateSeqFeatLoc()
                 if (!message.empty()) {
                     message += ", ";
                 }
-                message += NStr::NumericToString(prev_start + 1) 
+                message += NStr::NumericToString(prev_start + 1)
                     + "-" + NStr::NumericToString(prev_stop + 1);
             }
             prev_len = it.GetRange().GetLength();
@@ -1146,9 +1146,9 @@ bool CCdregionValidator::x_HasGoodParent()
     for (size_t i = 0; i < num_parent_types; i++) {
         CMappedFeat parent = feat_tree->GetParent(fh, parent_types[i]);
         if (parent) {
-            sequence::ECompare cmp = sequence::Compare(m_Feat.GetLocation(), 
-                                                       parent.GetLocation(), 
-                                                       &m_Scope, 
+            sequence::ECompare cmp = sequence::Compare(m_Feat.GetLocation(),
+                                                       parent.GetLocation(),
+                                                       &m_Scope,
                                                        sequence::fCompareOverlapping);
             if (cmp == sequence::eContained || cmp == sequence::eSame) {
                 return true;
@@ -1161,7 +1161,7 @@ bool CCdregionValidator::x_HasGoodParent()
 
 // VR-619
 // for an mRNA / CDS pair where both have far products
-// (which is only true for genomic RefSeqs with instantiated mRNA products), 
+// (which is only true for genomic RefSeqs with instantiated mRNA products),
 // please check that the pair found by CFeatTree corresponds to the nuc-prot pair in ID
 // (i.e.the CDS product is annotated on the mRNA product).
 void CCdregionValidator::x_ValidateFarProducts()
@@ -1523,7 +1523,6 @@ bool CCdregionValidator::x_IsProductMisplaced() const
         }
     }
 
-    
     bool found_match = false;
 
     CSeq_entry_Handle prod_nps =
@@ -1538,7 +1537,6 @@ bool CCdregionValidator::x_IsProductMisplaced() const
             return false;
         }
         CBioseq_Handle nuc = m_Scope.GetBioseqHandle(loc_i.GetSeq_id());
-        
         if (nuc) {
             if (s_BioseqHasRefSeqThatStartsWithPrefix(nuc, "NT_")) {
                 // we don't report this for NT records
@@ -1593,7 +1591,7 @@ vector<CCdregionValidator::TShortIntron> CCdregionValidator::x_GetShortIntrons(c
                 // definitely same bioseq, definitely report
                 x_AddToIntronList(shortlist, last_start, last_stop, this_start, this_stop);
             } else if (scope) {
-                // only report if definitely on same bioseq                
+                // only report if definitely on same bioseq
                 CBioseq_Handle last_bsh = scope->GetBioseqHandle(*last_id);
                 if (last_bsh) {
                     for (auto id_it : last_bsh.GetId()) {
@@ -1681,7 +1679,7 @@ void CCdregionValidator::x_ValidateProductId()
            return;
         }
     }
-    
+
     // non-pseudo CDS must have /product
     PostErr(eDiag_Error, eErr_SEQ_FEAT_MissingCDSproduct,
         "Expected CDS product absent");
@@ -1720,11 +1718,11 @@ void CCdregionValidator::x_ValidateConflict()
 
 
 void CCdregionValidator::x_ValidateCommonProduct()
-{    
+{
     if ( !m_Feat.IsSetProduct() ) {
         return;
     }
-    
+
     const CCdregion& cdr = m_Feat.GetData().GetCdregion();
     if ( cdr.CanGetOrf() ) {
         return;
@@ -1746,7 +1744,7 @@ void CCdregionValidator::x_ValidateCommonProduct()
     if ( sfp == 0 ) {
         return;
     }
-    
+
     if ( &m_Feat != sfp ) {
         // if genomic product set, with one cds on contig and one on cdna,
         // do not report.
@@ -1757,7 +1755,7 @@ void CCdregionValidator::x_ValidateCommonProduct()
                 return;
             }
         }
-        PostErr(eDiag_Critical, eErr_SEQ_FEAT_MultipleCDSproducts, 
+        PostErr(eDiag_Critical, eErr_SEQ_FEAT_MultipleCDSproducts,
             "Same product Bioseq from multiple CDS features");
     }
 }
@@ -1779,7 +1777,7 @@ void CCdregionValidator::x_ValidateProductPartials()
     if (!PartialsSame(m_Feat.GetLocation(), prot->GetLocation())) {
         PostErr(eDiag_Warning, eErr_SEQ_FEAT_PartialsInconsistentCDSProtein,
             "Coding region and protein feature partials conflict");
-    }  
+    }
 }
 
 
@@ -1798,7 +1796,7 @@ void CCdregionValidator::x_ValidateParentPartialness(const CSeq_loc& parent_loc,
     if (!m_LocationBioseq) {
         return;
     }
-    
+
     bool check_gaps = false;
     if (m_LocationBioseq.IsSetInst() && m_LocationBioseq.GetInst().IsSetRepr() &&
         m_LocationBioseq.GetInst().GetRepr() == CSeq_inst::eRepr_delta) {

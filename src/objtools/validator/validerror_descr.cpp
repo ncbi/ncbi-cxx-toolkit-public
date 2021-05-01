@@ -89,7 +89,7 @@ void CValidError_descr::ValidateSeqDescr(const CSeq_descr& descr, const CSeq_ent
             } else {
                 first_title = *dt;
             }
-            break;        
+            break;
 
         case CSeqdesc::e_Comment:
             break;

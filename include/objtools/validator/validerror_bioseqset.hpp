@@ -62,7 +62,7 @@ typedef CValidator::CCache CCache;
 
 
 // =============================================================================
-//                            Validation classes                          
+//                            Validation classes
 // =============================================================================
 class CValidError_desc;
 class CValidError_descr;

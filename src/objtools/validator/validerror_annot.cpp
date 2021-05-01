@@ -69,9 +69,8 @@ void CValidError_annot::ValidateSeqAnnot(const CSeq_annot_Handle& annot)
 {
     if ( annot.IsAlign() ) {
         if ( annot.Seq_annot_IsSetDesc() ) {
-    
+
             ITERATE( list< CRef< CAnnotdesc > >, iter, annot.Seq_annot_GetDesc().Get() ) {
-            
                 if ( (*iter)->IsUser() ) {
                     const CObject_id& oid = (*iter)->GetUser().GetType();
                     if ( oid.IsStr() ) {
@@ -99,9 +98,8 @@ void CValidError_annot::ValidateSeqAnnot(const CSeq_annot& annot)
 {
     if ( annot.IsAlign() ) {
         if ( annot.IsSetDesc() ) {
-    
+
             ITERATE( list< CRef< CAnnotdesc > >, iter, annot.GetDesc().Get() ) {
-            
                 if ( (*iter)->IsUser() ) {
                     const CObject_id& oid = (*iter)->GetUser().GetType();
                     if ( oid.IsStr() ) {
@@ -174,7 +172,7 @@ void CValidError_annot::ValidateSeqAnnotContext (const CSeq_annot& annot, const 
         FOR_EACH_SEQFEAT_ON_SEQANNOT(feat_it, annot) {
             string label = seq.GetId().front()->AsFastaString();
             ReportLocationGI0(**feat_it, label);
-            if (!(*feat_it)->IsSetLocation() || IsLocationUnindexed((*feat_it)->GetLocation())) {                
+            if (!(*feat_it)->IsSetLocation() || IsLocationUnindexed((*feat_it)->GetLocation())) {
                 m_Imp.PostErr(eDiag_Error, eErr_SEQ_FEAT_UnindexedFeature,
                     "Feature is not indexed on Bioseq " + label, **feat_it);
             } else {
@@ -354,7 +352,7 @@ void CValidError_annot::ReportLocationGI0(const CSeq_feat& f, const string& labe
     if (!f.IsSetLocation()) {
         return;
     }
-    
+
     unsigned int zero_gi = 0;
 
     for (CSeq_loc_CI lit(f.GetLocation()); lit; ++lit) {

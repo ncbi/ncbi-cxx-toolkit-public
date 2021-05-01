@@ -113,7 +113,6 @@ void CValidError_desc::ValidateSeqDesc
                 ++it;
             }
         }
-
             break;
 
         case CSeqdesc::e_Mol_type:
@@ -121,7 +120,7 @@ void CValidError_desc::ValidateSeqDesc
                 "MolType descriptor is obsolete", *m_Ctx, desc);
             break;
 
-        case CSeqdesc::e_Method:           
+        case CSeqdesc::e_Method:
             PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
                 "Method descriptor is obsolete", *m_Ctx, desc);
             break;
@@ -141,7 +140,7 @@ void CValidError_desc::ValidateSeqDesc
         case CSeqdesc::e_Source:
             m_Imp.ValidateBioSource (desc.GetSource(), desc, &ctx);
             break;
-        
+
         case CSeqdesc::e_Molinfo:
             ValidateMolInfo(desc.GetMolinfo(), desc);
             break;
@@ -150,9 +149,9 @@ void CValidError_desc::ValidateSeqDesc
             break;
         case CSeqdesc::e_Name:
             if (NStr::IsBlank (desc.GetName())) {
-                PostErr (eDiag_Error, eErr_SEQ_DESCR_MissingText, 
+                PostErr (eDiag_Error, eErr_SEQ_DESCR_MissingText,
                          "Name descriptor needs text", ctx, desc);
-			}
+            }
             break;
         case CSeqdesc::e_Title:
             ValidateTitle(desc.GetTitle(), desc, ctx);
@@ -170,10 +169,10 @@ void CValidError_desc::ValidateSeqDesc
         case CSeqdesc::e_Genbank:
             break;
         case CSeqdesc::e_Region:
-			if (NStr::IsBlank (desc.GetRegion())) {
-				PostErr (eDiag_Error, eErr_SEQ_DESCR_RegionMissingText, 
-						 "Region descriptor needs text", ctx, desc);
-			}
+            if (NStr::IsBlank (desc.GetRegion())) {
+                PostErr (eDiag_Error, eErr_SEQ_DESCR_RegionMissingText,
+                         "Region descriptor needs text", ctx, desc);
+            }
             break;
         case CSeqdesc::e_Sp:
             break;
@@ -222,14 +221,14 @@ void CValidError_desc::ValidateComment
             "REMARK instead.", *m_Ctx, desc);
     }
     if (NStr::IsBlank (comment)) {
-        PostErr (eDiag_Error, eErr_SEQ_DESCR_CommentMissingText, 
-                 "Comment descriptor needs text", *m_Ctx, desc);    
+        PostErr (eDiag_Error, eErr_SEQ_DESCR_CommentMissingText,
+                 "Comment descriptor needs text", *m_Ctx, desc);
     } else {
         if (NStr::Find (comment, "::") != string::npos) {
-            PostErr (eDiag_Info, eErr_SEQ_DESCR_FakeStructuredComment, 
-                     "Comment may be formatted to look like a structured comment.", *m_Ctx, desc);  
+            PostErr (eDiag_Info, eErr_SEQ_DESCR_FakeStructuredComment,
+                     "Comment may be formatted to look like a structured comment.", *m_Ctx, desc);
         }
-    }       
+    }
 }
 
 
@@ -322,7 +321,7 @@ EErrType s_GetErrTypeFromString(const string& msg)
 }
 
 
-bool CValidError_desc::ValidateStructuredComment 
+bool CValidError_desc::ValidateStructuredComment
 (const CUser_object& usr,
  const CSeqdesc& desc,
  const CComment_rule& rule,
@@ -383,7 +382,7 @@ static string s_OfficialPrefixList[] = {
     "HCVDataBaseData",
     "HIVDataBaseData",
     "HumanSTR",
-    "International Barcode of Life (iBOL)Data", 
+    "International Barcode of Life (iBOL)Data",
     "MIENS-Data",
     "MIGS-Data",
     "MIGS:3.0-Data",
@@ -410,8 +409,8 @@ static bool s_IsAllowedPrefix (
 )
 
 {
-    for ( size_t i = 0; 
-          i < sizeof(s_OfficialPrefixList) / sizeof(string); 
+    for ( size_t i = 0;
+          i < sizeof(s_OfficialPrefixList) / sizeof(string);
           ++i ) {
         if (NStr::EqualNocase (val, s_OfficialPrefixList[i])) {
             return true;
@@ -434,7 +433,7 @@ bool HasBadGenomeAssemblyName(const CUser_object& usr)
             if (NStr::StartsWith(val, "NCBI", NStr::eNocase) ||
                 NStr::StartsWith(val, "GenBank", NStr::eNocase)) {
                 return true;
-            }            
+            }
         }
     }
     return false;
@@ -453,7 +452,7 @@ bool CValidError_desc::ValidateStructuredComment
     }
     if (!usr.IsSetData() || usr.GetData().size() == 0) {
         if (report) {
-            PostErr (eDiag_Warning, eErr_SEQ_DESCR_StrucCommMissingUserObject, 
+            PostErr (eDiag_Warning, eErr_SEQ_DESCR_StrucCommMissingUserObject,
                      "Structured Comment user object descriptor is empty", *m_Ctx, desc);
         }
         is_valid = false;
@@ -461,7 +460,7 @@ bool CValidError_desc::ValidateStructuredComment
     string prefix = CComment_rule::GetStructuredCommentPrefix(usr);
     if (NStr::IsBlank(prefix)) {
         if (report) {
-            PostErr (eDiag_Info, eErr_SEQ_DESCR_StrucCommMissingPrefixOrSuffix, 
+            PostErr (eDiag_Info, eErr_SEQ_DESCR_StrucCommMissingPrefixOrSuffix,
                     "Structured Comment lacks prefix and/or suffix", *m_Ctx, desc);
             is_valid &= ValidateStructuredCommentGeneric(usr, desc, true);
         }
@@ -469,7 +468,7 @@ bool CValidError_desc::ValidateStructuredComment
     }
     if (report && !s_IsAllowedPrefix(prefix)) {
         string report_prefix = CComment_rule::GetStructuredCommentPrefix(usr, false);
-        PostErr (eDiag_Error, eErr_SEQ_DESCR_BadStrucCommInvalidPrefix, 
+        PostErr (eDiag_Error, eErr_SEQ_DESCR_BadStrucCommInvalidPrefix,
                  report_prefix + " is not a valid value for StructuredCommentPrefix", *m_Ctx, desc);
         is_valid = false;
     }
@@ -505,7 +504,7 @@ bool CValidError_desc::ValidateStructuredComment
             string sfx = report_sfx;
             CComment_rule::NormalizePrefix(sfx);
             if (report && ! s_IsAllowedPrefix (sfx)) {
-                PostErr (eDiag_Error, eErr_SEQ_DESCR_BadStrucCommInvalidSuffix, 
+                PostErr (eDiag_Error, eErr_SEQ_DESCR_BadStrucCommInvalidSuffix,
                     report_sfx + " is not a valid value for StructuredCommentSuffix", *m_Ctx, desc);
             }
         } catch (CException& ) {
@@ -515,7 +514,7 @@ bool CValidError_desc::ValidateStructuredComment
         // no prefix, in which case no rules
         // but it is still an error - should have prefix
         if (report) {
-            PostErr (eDiag_Warning, eErr_SEQ_DESCR_StrucCommMissingPrefixOrSuffix, 
+            PostErr (eDiag_Warning, eErr_SEQ_DESCR_StrucCommMissingPrefixOrSuffix,
                     "Structured Comment lacks prefix and/or suffix", *m_Ctx, desc);
             ValidateStructuredCommentGeneric(usr, desc, true);
         }
@@ -657,7 +656,7 @@ bool CValidError_desc::ValidateDblink
     }
     if (!usr.IsSetData() || usr.GetData().size() == 0) {
         if (report) {
-            PostErr (eDiag_Warning, eErr_SEQ_DESCR_DBLinkMissingUserObject, 
+            PostErr (eDiag_Warning, eErr_SEQ_DESCR_DBLinkMissingUserObject,
                      "DBLink user object descriptor is empty", *m_Ctx, desc);
         }
         return false;
@@ -754,14 +753,14 @@ void CValidError_desc::ValidateUser
                 }
                 if ( NStr::CompareNocase(obj_id.GetStr(), "Status") == 0 ) {
                     has_ref_track_status = true;
-					if ((*field)->IsSetData() && (*field)->GetData().IsStr()) {
-						if (CCommentItem::GetRefTrackStatus(usr) == CCommentItem::eRefTrackStatus_Unknown) {
-							    PostErr(eDiag_Error, eErr_SEQ_DESCR_RefGeneTrackingIllegalStatus, 
-									    "RefGeneTracking object has illegal Status '" 
-									    + (*field)->GetData().GetStr() + "'",
-									    *m_Ctx, desc);
-						}
-					}
+                    if ((*field)->IsSetData() && (*field)->GetData().IsStr()) {
+                        if (CCommentItem::GetRefTrackStatus(usr) == CCommentItem::eRefTrackStatus_Unknown) {
+                                PostErr(eDiag_Error, eErr_SEQ_DESCR_RefGeneTrackingIllegalStatus,
+                                        "RefGeneTracking object has illegal Status '"
+                                        + (*field)->GetData().GetStr() + "'",
+                                        *m_Ctx, desc);
+                        }
+                    }
                 }
             }
         }
@@ -796,7 +795,7 @@ void CValidError_desc::ValidateMolInfo
             bm = CMolInfo::eBiomol_unknown;
         else
             bm = minfo.GetBiomol();
- 
+
         if(bm == CMolInfo::eBiomol_unknown)
             p = "unknown";
         else if(bm == CMolInfo::eBiomol_genomic)

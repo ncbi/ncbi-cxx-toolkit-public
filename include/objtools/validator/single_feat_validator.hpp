@@ -304,7 +304,7 @@ protected:
 };
 
 
-class CMRNAValidator : public CRNAValidator 
+class CMRNAValidator : public CRNAValidator
 {
 public:
     CMRNAValidator(const CSeq_feat& feat, CScope& scope, CValidError_imp& imp);

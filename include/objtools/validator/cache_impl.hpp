@@ -116,10 +116,10 @@ bool CBioSourceKind::IsSourceOrganelle() const
 }
 
 /// Cache various information for one validation run.
-/// 
+///
 /// This is easy because the validator won't
 /// change the contents of what it's validating.
-/// 
+///
 /// Not thread-safe within one CCacheImpl, but it's
 /// fine for each thread to have its own CCacheImpl.
 class NCBI_VALIDATOR_EXPORT CValidator::CCacheImpl

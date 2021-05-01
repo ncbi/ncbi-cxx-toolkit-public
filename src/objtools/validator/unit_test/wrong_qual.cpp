@@ -53,9 +53,9 @@ USING_SCOPE(objects);
 using namespace validator;
 using namespace unit_test_util;
 
-static bool s_IsIllegal (string key) 
+static bool s_IsIllegal (string key)
 {
-    if (NStr::Equal(key, "allele") || NStr::Equal(key, "virion") 
+    if (NStr::Equal(key, "allele") || NStr::Equal(key, "virion")
         || NStr::Equal(key, "mutation")
         || NStr::Equal(key, "Import")) {
         return true;
@@ -65,11 +65,11 @@ static bool s_IsIllegal (string key)
 }
 
 
-static void s_TestOneWrongQual(const string qual, const string val, const string feat, 
+static void s_TestOneWrongQual(const string qual, const string val, const string feat,
                           CSeq_entry_Handle seh, CRef<CSeq_feat> misc_feat,
-                          CValidator& validator, unsigned int options, CScope *scope) 
+                          CValidator& validator, unsigned int options, CScope *scope)
 {
-    misc_feat->AddQualifier (qual, val);;
+    misc_feat->AddQualifier (qual, val);
     string msg = "Wrong qualifier ";
     msg.append(qual);
     msg.append(" for feature ");
@@ -82,11 +82,11 @@ static void s_TestOneWrongQual(const string qual, const string val, const string
     }
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "WrongQualOnImpFeat", msg));
     if (NStr::Equal(qual, "rpt_unit_range") && NStr::Equal(feat, "polyA_site")) {
-        expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "RptUnitRangeProblem", 
+        expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "RptUnitRangeProblem",
                                   "/rpt_unit_range is not within sequence length"));
     }
     if (NStr::Equal(qual, "old_locus_tag")) {
-        expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "OldLocusTagWithoutLocusTag", 
+        expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "OldLocusTagWithoutLocusTag",
                                   "old_locus_tag without inherited locus_tag"));
     }
     if (NStr::Equal(qual, "locus_tag")) {
@@ -4859,9 +4859,9 @@ BOOST_FIXTURE_TEST_CASE(Test_FEAT_WrongQualOnImpFeat, CGenBankFixture)
             seh = scope.AddTopLevelSeqEntry(*entry);
             last_key = s_KeyQualVal[i].key;
         }
-        s_TestOneWrongQual (s_KeyQualVal[i].qual, s_KeyQualVal[i].val, s_KeyQualVal[i].key, 
+        s_TestOneWrongQual (s_KeyQualVal[i].qual, s_KeyQualVal[i].val, s_KeyQualVal[i].key,
                                 seh, imp, validator, options, &scope);
     }
 
-}    
+}
 

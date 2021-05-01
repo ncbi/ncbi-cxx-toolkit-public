@@ -402,7 +402,7 @@ vector<CRef<CSeq_loc> > CCDSTranslationProblems::GetNonsenseIntrons(const CSeq_f
             ENa_strand strand = curr.GetStrand();
             if (strand == eNa_strand_minus) {
                 if (last_start - stop == 4) {
-                    if (x_IsThreeBaseNonsense(feat, curr.GetSeq_id(), cdr, stop + 1, last_start - 1, strand, &scope)) {         
+                    if (x_IsThreeBaseNonsense(feat, curr.GetSeq_id(), cdr, stop + 1, last_start - 1, strand, &scope)) {
                         CRef<CSeq_id> id(new CSeq_id());
                         id->Assign(curr.GetSeq_id());
                         CRef<CSeq_loc> intron_loc(new CSeq_loc(*id, stop + 1, last_start - 1, strand));
@@ -643,7 +643,7 @@ static bool x_LeuCUGstart
 }
 
 
-CCDSTranslationProblems::TTranslExceptProblems 
+CCDSTranslationProblems::TTranslExceptProblems
 CCDSTranslationProblems::x_GetTranslExceptProblems
 (const CSeq_feat& feat, CBioseq_Handle loc_handle, CScope* scope, bool is_refseq)
 {
@@ -891,7 +891,7 @@ bool CCDSTranslationProblems::x_Is5AtEndSpliceSiteOrGap(const CSeq_loc& loc, CSc
           } else {
               // it's ok, location endpoint is at the 5' end
           }
-    }   
+    }
     return true;
 }
 
@@ -1000,9 +1000,9 @@ size_t InterpretMrnaException(const string& except_text)
 }
 
 size_t GetMRNATranslationProblems
-(const CSeq_feat& feat, 
- size_t& mismatches, 
- bool ignore_exceptions, 
+(const CSeq_feat& feat,
+ size_t& mismatches,
+ bool ignore_exceptions,
  CBioseq_Handle nuc,
  CBioseq_Handle rna,
  bool far_fetch,

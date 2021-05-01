@@ -58,13 +58,13 @@ class CValidError_imp;
 //
 // Several qualifiers other than Org-ref.taxname may also contain scientific names.
 // It is possible that the scientific name is merely a portion of the string.
-// 
+//
 // In the case of specific host, we want to be able to identify names that are
-// mis-spelled or unrecognized. Unfortunately, common names are also 
+// mis-spelled or unrecognized. Unfortunately, common names are also
 // acceptable for specific host, and it can be difficult to detect whether a
 // value is a scientific name or a common name. The current method looks for
 // the string to contain at least two words, the first of which must be capitalized.
-// Unfortunately, this fails for "Rhesus monkey", "Atlantic white-sided dolphin", 
+// Unfortunately, this fails for "Rhesus monkey", "Atlantic white-sided dolphin",
 // and others, and fails to catch the obvious miscapitalization "homo sapiens".
 // See SQD-4325 for ongoing discussion.
 // For validation, these values are reported. For cleanup, we replace the
@@ -73,7 +73,7 @@ class CValidError_imp;
 // In the case of strain, scientific names should *not* be present in certain
 // situations. For validation, these values will be reported, once TM-725 is
 // resolved.
-// 
+//
 // Often the same value will occur many, many times in the same record, and we
 // would like to avoid redundant lookups.
 // Taxonomy requests should be separated into manageable chunks.
@@ -82,7 +82,7 @@ class CValidError_imp;
 //
 // Note that Org-refs can be found in both features and source descriptors.
 // It is necessary to record the parents of the Org-refs for which lookups are
-// made and for which lookups of qualifiers are made, in order to report 
+// made and for which lookups of qualifiers are made, in order to report
 // and/or clean them.
 //
 
@@ -298,7 +298,7 @@ protected:
 
 typedef map<string, CSpecificHostRequest> TSpecificHostRequests;
 
-// This class handles complete org-ref lookups, specific-host lookups, 
+// This class handles complete org-ref lookups, specific-host lookups,
 // and strain lookups.
 // These activities are bundled together in order to avoid doing a scan
 // of the record looking for source features and source descriptors
@@ -316,8 +316,8 @@ public:
     void ListTaxLookupErrors(const CT3Reply& reply, const COrg_ref& org, CBioSource::TGenome genome, bool is_insd_patent, bool is_wp, vector<TTaxError>& errs) const;
     void ReportTaxLookupErrors(const CTaxon3_reply& reply, CValidError_imp& imp, bool is_insd_patent) const;
     void ReportIncrementalTaxLookupErrors(const CTaxon3_reply& reply, CValidError_imp& imp, bool is_insd_patent, size_t offset) const;
-    bool AdjustOrgRefsWithTaxLookupReply(const CTaxon3_reply& reply, 
-                                         vector<CRef<COrg_ref> > org_refs, 
+    bool AdjustOrgRefsWithTaxLookupReply(const CTaxon3_reply& reply,
+                                         vector<CRef<COrg_ref> > org_refs,
                                          string& error_message,
                                          bool use_error_orgrefs = false) const;
 
@@ -330,7 +330,7 @@ public:
     void ReportSpecificHostErrors(CValidError_imp& imp);
     bool AdjustOrgRefsWithSpecificHostReply(vector<CRef<COrg_ref> > requests,
                                             const CTaxon3_reply& reply,
-                                            vector<CRef<COrg_ref> > org_refs, 
+                                            vector<CRef<COrg_ref> > org_refs,
                                             string& error_message);
     bool AdjustOrgRefsForSpecificHosts(vector<CRef<COrg_ref> > org_refs);
 

@@ -95,7 +95,7 @@ typedef CValidator::CCache CCache;
 
 
 // =============================================================================
-//                            Validation classes                          
+//                            Validation classes
 // =============================================================================
 class CValidError_desc;
 class CValidError_descr;
@@ -160,9 +160,9 @@ public:
 private:
     typedef multimap<string, const CSeq_feat*, PNocase> TStrFeatMap;
     typedef vector<CMappedFeat>                         TMappedFeatVec;
- 
+
     void x_SetupCommonFlags (CBioseq_Handle bsh);
-   
+
     void ValidateSeqLen(const CBioseq& seq);
     void ValidateSegRef(const CBioseq& seq);
     void ValidateDelta(const CBioseq& seq);
@@ -182,7 +182,7 @@ private:
     void ReportBadTSAGap(const CBioseq& seq);
     void ReportBadGenomeGap(const CBioseq& seq);
     void ValidateWGSMaster(CBioseq_Handle bsh);
-    
+
     void ValidateMultipleGeneOverlap (const CBioseq_Handle& bsh);
     void ValidateBadGeneOverlap(const CSeq_feat& feat);
     void x_ReportGeneOverlapError(const CSeq_feat& feat, const string& gene_label);

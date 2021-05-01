@@ -175,8 +175,8 @@ bool CValidError_feat::GetTSACDSOnMinusStrandErrors(const CSeq_feat& feat, const
         CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
         if ( bsh ) {
             CSeqdesc_CI di(bsh, CSeqdesc::e_Molinfo);
-            if (di 
-                && di->GetMolinfo().IsSetTech() 
+            if (di
+                && di->GetMolinfo().IsSetTech()
                 && di->GetMolinfo().GetTech() == CMolInfo::eTech_tsa
                 && di->GetMolinfo().IsSetBiomol()
                 && di->GetMolinfo().GetBiomol() == CMolInfo::eBiomol_transcribed_RNA) {
@@ -185,7 +185,7 @@ bool CValidError_feat::GetTSACDSOnMinusStrandErrors(const CSeq_feat& feat, const
                 rval = true;
             }
         }
-    }                
+    }
     return rval;
 }
 
@@ -228,7 +228,7 @@ void CValidError_feat::ValidateSeqFeatContext(const CSeq_feat& feat, const CBios
     }
 
     // check for CDSonMinusStrandTranscribedRNA
-    GetTSACDSOnMinusStrandErrors(feat, seq);               
+    GetTSACDSOnMinusStrandErrors(feat, seq);
 }
 
 
@@ -251,7 +251,7 @@ Return values are:
 -4: the original Accession number is too long (>16)
 */
 
-static int ValidateAccessionFormat (string accession) 
+static int ValidateAccessionFormat (string accession)
 {
     if (CSeq_id::IdentifyAccession(accession) == CSeq_id::eAcc_unknown) {
         return -1;
@@ -347,7 +347,7 @@ CValidError_feat::EInferenceValidCode CValidError_feat::ValidateInferenceAccessi
                         rsult = eInferenceValidCode_bad_accession_type;
                     }
                 }
-            } 
+            }
             if (s_IsSraPrefix (remainder) && s_IsAllDigitsOrPeriods(remainder.substr(3))) {
                 // SRA
             } else if (NStr::StartsWith(remainder, "MAP_") && s_IsAllDigitsOrPeriods(remainder.substr(4))) {
@@ -505,7 +505,7 @@ CValidError_feat::EInferenceValidCode CValidError_feat::ValidateInference(string
 //not used by asn_validate but may be needed by other applications
 bool CValidError_feat::DoesCDSHaveShortIntrons(const CSeq_feat& feat)
 {
-    if (!feat.IsSetData() || !feat.GetData().IsCdregion() 
+    if (!feat.IsSetData() || !feat.GetData().IsCdregion()
         || !feat.IsSetLocation()) {
         return false;
     }
@@ -529,7 +529,7 @@ bool CValidError_feat::DoesCDSHaveShortIntrons(const CSeq_feat& feat)
                 // definitely same bioseq, definitely report
                 found_short = true;
             } else if (m_Scope) {
-                // only report if definitely on same bioseq                
+                // only report if definitely on same bioseq
                 CBioseq_Handle last_bsh = m_Scope->GetBioseqHandle(*last_id);
                 if (last_bsh) {
                     for (auto id_it : last_bsh.GetId()) {
@@ -547,7 +547,7 @@ bool CValidError_feat::DoesCDSHaveShortIntrons(const CSeq_feat& feat)
         ++li;
     }
 
-    return found_short;        
+    return found_short;
 }
 
 
@@ -570,8 +570,8 @@ bool CValidError_feat::IsOverlappingGenePseudo(const CSeq_feat& feat, CScope *sc
 
 bool CValidError_feat::IsIntronShort(const CSeq_feat& feat)
 {
-    if (!feat.IsSetData() 
-        || feat.GetData().GetSubtype() != CSeqFeatData::eSubtype_intron 
+    if (!feat.IsSetData()
+        || feat.GetData().GetSubtype() != CSeqFeatData::eSubtype_intron
         || !feat.IsSetLocation()
         || feat.IsSetPseudo()
         || IsOverlappingGenePseudo(feat, m_Scope)) {
@@ -589,7 +589,7 @@ bool CValidError_feat::IsIntronShort(const CSeq_feat& feat)
     if (GetLength(loc, m_Scope) < 11) {
         bool partial_left = loc.IsPartialStart(eExtreme_Positional);
         bool partial_right = loc.IsPartialStop(eExtreme_Positional);
-        
+
         CBioseq_Handle bsh;
         if (partial_left && loc.GetStart(eExtreme_Positional) == 0) {
             // partial at beginning of sequence, ok
@@ -608,11 +608,11 @@ bool CValidError_feat::IsIntronShort(const CSeq_feat& feat)
 //LCOV_EXCL_STOP
 
 
-bool 
-FeaturePairIsTwoTypes 
+bool
+FeaturePairIsTwoTypes
 (const CSeq_feat& feat1,
  const CSeq_feat& feat2,
- CSeqFeatData::ESubtype subtype1, 
+ CSeqFeatData::ESubtype subtype1,
  CSeqFeatData::ESubtype subtype2)
 {
     if (!feat1.IsSetData() || !feat2.IsSetData()) {
@@ -631,7 +631,7 @@ bool GeneXrefConflicts(const CSeq_feat& feat, const CSeq_feat& gene)
 {
     FOR_EACH_SEQFEATXREF_ON_SEQFEAT (it, feat) {
         string label;
-        if ((*it)->IsSetData() && (*it)->GetData().IsGene() 
+        if ((*it)->IsSetData() && (*it)->GetData().IsGene()
              && !CSingleFeatValidator::s_GeneRefsAreEquivalent((*it)->GetData().GetGene(), gene.GetData().GetGene(), label)) {
             return true;
         }
@@ -765,7 +765,7 @@ void CValidError_feat::ValidateSeqFeatXref (const CSeqFeatXref& xref, const CSeq
         return;
     }
     if (!xref.IsSetId() && !xref.IsSetData()) {
-        PostErr (eDiag_Warning, eErr_SEQ_FEAT_SeqFeatXrefProblem, 
+        PostErr (eDiag_Warning, eErr_SEQ_FEAT_SeqFeatXrefProblem,
                  "SeqFeatXref with no id or data field", feat);
     } else if (xref.IsSetId()) {
         if (xref.GetId().IsLocal()) {
@@ -803,8 +803,8 @@ void CValidError_feat::ValidateSeqFeatXref (const CSeqFeatXref& xref, const CSeq
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_SeqFeatXrefFeatureMissing,
                 "Cross-referenced feature cannot be found",
                 feat);
-        }        
-    } 
+        }
+    }
     if (xref.IsSetData() && xref.GetData().IsGene() && feat.GetData().IsGene()) {
         PostErr (eDiag_Warning, eErr_SEQ_FEAT_UnnecessaryGeneXref,
                  "Gene feature has gene cross-reference",

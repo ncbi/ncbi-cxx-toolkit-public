@@ -154,7 +154,7 @@ string CValidErrorFormat::GetSubmitterFormatErrorGroupTitle(CValidErrItem::TErrI
             rval = CValidErrItem::ConvertErrCode(err_code);
             break;
     }
-    
+
     return rval;
 }
 
@@ -337,7 +337,7 @@ string CValidErrorFormat::x_FormatECNumberForSubmitterReport(const CValidErrItem
     // look for EC number in quals
     if (feat->IsSetQual()) {
         ITERATE(CSeq_feat::TQual, it, feat->GetQual()) {
-            if ((*it)->IsSetQual() && 
+            if ((*it)->IsSetQual() &&
                 NStr::EqualNocase((*it)->GetQual(), "EC_number") &&
                 (*it)->IsSetVal() &&
                 !NStr::IsBlank((*it)->GetVal())) {
@@ -385,7 +385,7 @@ string s_GetSpecificHostFromBioSource(const CBioSource& biosrc)
 {
     string rval;
 
-    if (biosrc.IsSetOrg() && 
+    if (biosrc.IsSetOrg() &&
         biosrc.GetOrg().IsSetOrgname() &&
         biosrc.GetOrg().GetOrgname().IsSetMod()) {
         ITERATE(COrgName::TMod, it, biosrc.GetOrg().GetOrgname().GetMod()) {
@@ -435,7 +435,7 @@ string s_GetInstCodeFromBioSource(const CBioSource& biosrc)
 {
     string rval;
 
-    if (biosrc.IsSetOrg() && 
+    if (biosrc.IsSetOrg() &&
         biosrc.GetOrg().IsSetOrgname() &&
         biosrc.GetOrg().GetOrgname().IsSetMod()) {
         ITERATE(COrgName::TMod, it, biosrc.GetOrg().GetOrgname().GetMod()) {
@@ -673,7 +673,7 @@ static string s_GetFeatureContentLabelExtras (const CSeq_feat& feat)
             }
         }
     }
-    
+
     // Put Seq-feat comment into label
     if (feat.IsSetComment()) {
         if (tlabel.empty()) {
@@ -694,10 +694,10 @@ static string s_GetCdregionContentLabel (const CSeq_feat& feat, CRef<CScope> sco
     if (!feat.GetData().IsCdregion()) {
         return content;
     }
-    
+
     const CGene_ref* gref = 0;
     const CProt_ref* pref = 0;
-    
+
     // Look for CProt_ref object to create a label from
     if (feat.IsSetXref()) {
         ITERATE ( CSeq_feat::TXref, it, feat.GetXref()) {
@@ -718,22 +718,22 @@ static string s_GetCdregionContentLabel (const CSeq_feat& feat, CRef<CScope> sco
             }
         }
     }
-    
+
     // Try and create a label from a CProt_ref in CSeqFeatXref in feature
     if (pref) {
         pref->GetLabel(&content);
         return content;
     }
-    
+
     // Try and create a label from a CProt_ref in the feat product and
-    // return if found 
+    // return if found
     if (feat.IsSetProduct()  &&  scope) {
         try {
-            const CSeq_id& id = GetId(feat.GetProduct(), scope);            
+            const CSeq_id& id = GetId(feat.GetProduct(), scope);
             CBioseq_Handle hnd = scope->GetBioseqHandle(id);
             if (hnd) {
                 const CBioseq& seq = *hnd.GetCompleteBioseq();
-            
+
                 // Now look for a CProt_ref feature in seq and
                 // if found call GetLabel() on the CProt_ref
                 CTypeConstIterator<CSeqFeatData> it = ConstBegin(seq);
@@ -746,7 +746,7 @@ static string s_GetCdregionContentLabel (const CSeq_feat& feat, CRef<CScope> sco
             }
         } catch (CObjmgrUtilException&) {}
     }
-    
+
     // Try and create a label from a CGene_ref in CSeqFeatXref in feature
     if (gref) {
         gref->GetLabel(&content);
@@ -1129,8 +1129,8 @@ const string kSuppressFieldLabel = "Suppress";
 
 bool s_IsSuppressField (const CUser_field& field)
 {
-    if (field.IsSetLabel() && 
-        field.GetLabel().IsStr() && 
+    if (field.IsSetLabel() &&
+        field.GetLabel().IsStr() &&
         NStr::EqualNocase(field.GetLabel().GetStr(), kSuppressFieldLabel)) {
         return true;
     } else {
@@ -1152,7 +1152,7 @@ void CValidErrorFormat::AddSuppression(CUser_object& user, unsigned int error_co
                             // do nothing, already there
                         } else {
                             (*it)->SetData().SetInts().push_back(old_val);
-                            (*it)->SetData().SetInts().push_back(error_code);                            
+                            (*it)->SetData().SetInts().push_back(error_code);
                         }
                         found = true;
                         break;
@@ -1162,7 +1162,7 @@ void CValidErrorFormat::AddSuppression(CUser_object& user, unsigned int error_co
                                 found = true;
                                 break;
                             }
-                        } 
+                        }
                         if (!found) {
                             (*it)->SetData().SetInts().push_back(error_code);
                             found = true;
@@ -1172,7 +1172,7 @@ void CValidErrorFormat::AddSuppression(CUser_object& user, unsigned int error_co
                 }
             }
         }
-    } 
+    }
     if (!found) {
         CRef<CUser_field> field(new CUser_field());
         field->SetLabel().SetStr(kSuppressFieldLabel);
@@ -1189,7 +1189,7 @@ void CValidErrorFormat::SetSuppressionRules(const CUser_object& user, CValidErro
     }
     ITERATE(CUser_object::TData, it, user.GetData()) {
         if ((*it)->IsSetData() && s_IsSuppressField(**it)) {
-            if ((*it)->GetData().IsInt()) {                
+            if ((*it)->GetData().IsInt()) {
                 errors.SuppressError((*it)->GetData().GetInt());
             } else if ((*it)->GetData().IsInts()) {
                 ITERATE(CUser_field::TData::TInts, ii, (*it)->GetData().GetInts()) {
@@ -1221,7 +1221,7 @@ void CValidErrorFormat::SetSuppressionRules(const CSeq_entry& se, CValidError& e
         const CBioseq_set& set = se.GetSet();
         if (set.IsSetDescr()) {
             ITERATE(CBioseq_set::TDescr::Tdata, it, set.GetDescr().Get()) {
-                if ((*it)->IsUser() && 
+                if ((*it)->IsUser() &&
                     (*it)->GetUser().GetObjectType() == CUser_object::eObjectType_ValidationSuppression) {
                     SetSuppressionRules((*it)->GetUser(), errors);
                 }
@@ -1256,7 +1256,7 @@ void CValidErrorFormat::SetSuppressionRules(const CBioseq& seq, CValidError& err
 {
     if (seq.IsSetDescr()) {
         ITERATE(CBioseq::TDescr::Tdata, it, seq.GetDescr().Get()) {
-            if ((*it)->IsUser() && 
+            if ((*it)->IsUser() &&
                 (*it)->GetUser().GetObjectType() == CUser_object::eObjectType_ValidationSuppression) {
                 SetSuppressionRules((*it)->GetUser(), errors);
             }

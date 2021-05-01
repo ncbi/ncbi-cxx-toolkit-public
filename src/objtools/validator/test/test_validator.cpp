@@ -104,7 +104,7 @@ private:
     CConstRef<CValidError> ProcessSeqAnnot(void);
     void ProcessReleaseFile(const CArgs& args);
     CRef<CSeq_entry> ReadSeqEntry(void);
-    SIZE_TYPE PrintValidError(CConstRef<CValidError> errors, 
+    SIZE_TYPE PrintValidError(CConstRef<CValidError> errors,
         const CArgs& args);
     SIZE_TYPE PrintBatchErrors(CConstRef<CValidError> errors,
         const CArgs& args);
@@ -187,7 +187,7 @@ int CTest_validatorApplication::Run(void)
     const CArgs& args = GetArgs();
     Setup(args);
 
-    // Open File 
+    // Open File
     m_In.reset(OpenFile(args));
 
     // Process file based on its content
@@ -205,7 +205,7 @@ int CTest_validatorApplication::Run(void)
         if ( args["s"]  &&  header != "Seq-submit" ) {
             NCBI_THROW(CException, eUnknown,
                 "Conflict: '-s' flag is specified but file is not Seq-submit");
-        } 
+        }
         if ( args["s"]  ||  header == "Seq-submit" ) {  // Seq-submit
             eval = ProcessSeqSubmit();
         } else if ( header == "Seq-entry" ) {           // Seq-entry
@@ -287,7 +287,7 @@ void CTest_validatorApplication::ProcessReleaseFile
 
     m_Continue = args["c"];
 
-    // Read the CBioseq_set, it will call the hook object each time we 
+    // Read the CBioseq_set, it will call the hook object each time we
     // encounter a Seq-entry
     *m_In >> *seqset;
 
@@ -427,7 +427,7 @@ CObjectIStream* CTest_validatorApplication::OpenFile
     // file name
     string fname = args["i"].AsString();
 
-    // file format 
+    // file format
     ESerialDataFormat format = eSerial_AsnText;
     if ( args["b"] ) {
         format = eSerial_AsnBinary;
@@ -438,7 +438,7 @@ CObjectIStream* CTest_validatorApplication::OpenFile
 
 
 SIZE_TYPE CTest_validatorApplication::PrintValidError
-(CConstRef<CValidError> errors, 
+(CConstRef<CValidError> errors,
  const CArgs& args)
 {
     EDiagSev show = static_cast<EDiagSev>(args["q"].AsInteger());
@@ -483,7 +483,7 @@ void CTest_validatorApplication::PrintValidErrItem
 (const CValidErrItem& item,
  CNcbiOstream& os)
 {
-    os << CValidErrItem::ConvertSeverity(item.GetSeverity()) << ":       " 
+    os << CValidErrItem::ConvertSeverity(item.GetSeverity()) << ":       "
        << item.GetErrGroup() << " "
        << item.GetErrCode() << endl << endl
        << "Message: " << item.GetMsg() << " " << item.GetObjDesc() << endl << endl;

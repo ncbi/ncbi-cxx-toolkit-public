@@ -78,7 +78,7 @@ void CValidError_imp::ValidatePubdesc
  const CSeq_entry *ctx)
 {
     if (!pubdesc.IsSetPub() || pubdesc.GetPub().Get().empty()) {
-        PostObjErr(eDiag_Fatal, eErr_SEQ_DESCR_NoPubFound, 
+        PostObjErr(eDiag_Fatal, eErr_SEQ_DESCR_NoPubFound,
                 "Empty publication descriptor", obj, ctx);
         return;
     }
@@ -117,26 +117,26 @@ void CValidError_imp::ValidatePubdesc
                 uid = pub.GetPmid();
             }
             break;
-            
+
         default:
             break;
         }
     }
 
     if ( conflicting_pmids ) {
-        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_CollidingPublications, 
+        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_CollidingPublications,
                 "Multiple conflicting pmids in a single publication", obj, ctx);
     }
     if ( redundant_pmids ) {
-        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_CollidingPublications, 
+        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_CollidingPublications,
                 "Multiple redundant pmids in a single publication", obj, ctx);
     }
     if ( conflicting_muids ) {
-        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_CollidingPublications, 
+        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_CollidingPublications,
                 "Multiple conflicting muids in a single publication", obj, ctx);
     }
     if ( redundant_muids ) {
-        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_CollidingPublications, 
+        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_CollidingPublications,
                 "Multiple redundant muids in a single publication", obj, ctx);
     }
 
@@ -154,7 +154,7 @@ void CValidError_imp::ValidatePubdesc
             break;
 
         case CPub::e_Medline:
-            PostObjErr(eDiag_Error, eErr_GENERIC_MedlineEntryPub, 
+            PostObjErr(eDiag_Error, eErr_GENERIC_MedlineEntryPub,
                 "Publication is medline entry", obj, ctx);
             break;
 
@@ -171,7 +171,7 @@ void CValidError_imp::ValidatePubdesc
             }
             break;
         */
-            
+
         case CPub::e_Article:
             ValidatePubArticle(pub.GetArticle(), uid, obj, ctx);
             if (pubdesc.IsSetComment() && !NStr::IsBlank(pubdesc.GetComment())
@@ -180,7 +180,7 @@ void CValidError_imp::ValidatePubdesc
                 && pub.GetArticle().GetFrom().GetJournal().GetImp().IsSetPubstatus()) {
                 CImprint::TPubstatus pubstatus = pub.GetArticle().GetFrom().GetJournal().GetImp().GetPubstatus();
                 const string& comment = pubdesc.GetComment();
-                if ((pubstatus == ePubStatus_epublish 
+                if ((pubstatus == ePubStatus_epublish
                      || pubstatus == ePubStatus_ppublish
                      || pubstatus == ePubStatus_aheadofprint)
                     && (NStr::Find(comment, "Publication Status") != string::npos
@@ -210,10 +210,10 @@ void CValidError_imp::ValidatePubdesc
 
 static bool s_CitGenIsJustBackBoneIDNumber (const CCit_gen& gen)
 {
-    if (gen.IsSetCit() 
-        && NStr::StartsWith (gen.GetCit(), "BackBone id_pub = ") 
-        && !gen.IsSetJournal() 
-        && !gen.IsSetDate() 
+    if (gen.IsSetCit()
+        && NStr::StartsWith (gen.GetCit(), "BackBone id_pub = ")
+        && !gen.IsSetJournal()
+        && !gen.IsSetDate()
         && !gen.IsSetSerial_number()) {
         return true;
     } else {
@@ -241,17 +241,17 @@ void CValidError_imp::ValidatePubGen
             || NStr::StartsWith (cit, "Published Only in DataBase", NStr::eNocase)
             || NStr::StartsWith (cit, "(er) ", NStr::eNocase)) {
             is_unpub = true;
-        } else {            
+        } else {
             PostObjErr(eDiag_Error, eErr_GENERIC_MissingPubRequirement,
                 "Unpublished citation text invalid", obj, ctx);
         }
 
         if (NStr::FindCase (cit, "Title=") != string::npos) {
-            PostObjErr(eDiag_Error, eErr_GENERIC_StructuredCitGenCit, 
+            PostObjErr(eDiag_Error, eErr_GENERIC_StructuredCitGenCit,
                     "Unpublished citation has embedded Title", obj, ctx);
         }
         if (NStr::FindCase (cit, "Journal=") != string::npos) {
-            PostObjErr(eDiag_Error, eErr_GENERIC_StructuredCitGenCit, 
+            PostObjErr(eDiag_Error, eErr_GENERIC_StructuredCitGenCit,
                     "Unpublished citation has embedded Journal", obj, ctx);
         }
 
@@ -306,8 +306,8 @@ bool IsElectronicJournal(const CCit_jour& journal)
 
 static bool IsInpress(const CCit_jour& jour)
 {
-    if (jour.IsSetImp() && 
-        jour.GetImp().IsSetPrepub() && 
+    if (jour.IsSetImp() &&
+        jour.GetImp().IsSetPrepub() &&
         jour.GetImp().GetPrepub() == CImprint::ePrepub_in_press) {
         return true;
     } else {
@@ -322,11 +322,11 @@ void CValidError_imp::ValidatePubArticle
  const CSerialObject& obj,
  const CSeq_entry *ctx)
 {
-    if ( !art.IsSetTitle()  ||  !HasTitle(art.GetTitle()) ) { 
+    if ( !art.IsSetTitle()  ||  !HasTitle(art.GetTitle()) ) {
         PostObjErr(eDiag_Error, eErr_GENERIC_MissingPubRequirement,
             "Publication has no title", obj, ctx);
     }
-        
+
     if (art.GetFrom().IsJournal()) {
         const CCit_jour& jour = art.GetFrom().GetJournal();
 
@@ -464,7 +464,7 @@ bool s_GetDigits(const string& pages, string& digits)
 
     digits.erase();
 
-    // skip alpha at the begining 
+    // skip alpha at the begining
     while (pos < len  &&  !isdigit((unsigned char) pages[pos])) {
         ++pos;
     }
@@ -500,7 +500,7 @@ void CValidError_imp::x_ValidatePages
     }
 
     EDiagSev sev = eDiag_Warning;
-    
+
     string start, stop;
     if (!NStr::SplitInTwo(pages, "-", start, stop) || start.empty() || stop.empty()) {
         if (!isdigit(pages.c_str()[0])) {
@@ -656,19 +656,16 @@ bool CValidError_imp::HasName(const CAuth_list& authors)
                     }
                 }
                 break;
-                
             case CAuth_list::TNames::e_Ml:
                 if ( ! IsBlankStringList(names.GetMl()) ) {
                     return true;
                 }
                 break;
-                
             case CAuth_list::TNames::e_Str:
                 if ( ! IsBlankStringList(names.GetStr()) ) {
                     return true;
                 }
                 break;
-                
             default:
                 break;
         }
@@ -688,7 +685,7 @@ void CValidError_imp::ValidatePubHasAuthor
         switch (pub.Which() ) {
             case CPub::e_Gen:
                 // don't check if just serial number
-                if (!pub.GetGen().IsSetCit() 
+                if (!pub.GetGen().IsSetCit()
                     && !pub.GetGen().IsSetJournal()
                     && !pub.GetGen().IsSetDate()
                     && pub.GetGen().IsSetSerial_number()
@@ -698,7 +695,7 @@ void CValidError_imp::ValidatePubHasAuthor
                     // just BackBoneID, skip
                 } else {
                     has_name = false;
-                    if ( pub.GetGen().IsSetAuthors() 
+                    if ( pub.GetGen().IsSetAuthors()
                          && HasName(pub.GetGen().GetAuthors())) {
                          has_name = true;
                     }
@@ -711,7 +708,7 @@ void CValidError_imp::ValidatePubHasAuthor
                 break;
             case CPub::e_Article:
                 has_name = false;
-                if ( pub.GetArticle().IsSetAuthors() 
+                if ( pub.GetArticle().IsSetAuthors()
                     && HasName(pub.GetArticle().GetAuthors())) {
                      has_name = true;
                 }
@@ -724,12 +721,11 @@ void CValidError_imp::ValidatePubHasAuthor
             default:
                 break;
         }
-        
-    }    
+    }
 }
 
 
-void CValidError_imp::ValidateAuthorList 
+void CValidError_imp::ValidateAuthorList
 (const CAuth_list::C_Names& names,
  const CSerialObject& obj,
  const CSeq_entry *ctx)
@@ -762,7 +758,7 @@ void CValidError_imp::ValidateAuthorList
                     NStr::TruncateSpacesInPlace (initials);
                 }
                 if ( (NStr::CompareNocase(last, "et al") == 0)  ||
-                     (NStr::CompareNocase(last, "et") == 0  
+                     (NStr::CompareNocase(last, "et") == 0
                       &&  NStr::CompareNocase(initials, "al") == 0
                       &&  (!nstd.IsSetFirst() || nstd.GetFirst().empty()))) {
                     CAuth_list::C_Names::TStd::const_iterator temp = name;
@@ -788,7 +784,7 @@ void CValidError_imp::ValidateAuthorList
                         }
                     }
                     if (!found) {
-                        PostObjErr (eDiag_Warning, eErr_SEQ_FEAT_BadAuthorSuffix, 
+                        PostObjErr (eDiag_Warning, eErr_SEQ_FEAT_BadAuthorSuffix,
                                  "Bad author suffix " + suffix,
                                  obj, ctx);
                     }
@@ -806,7 +802,7 @@ void CValidError_imp::ValidateAuthorList
                         }
                     }
                     if (found) {
-                        PostObjErr (eDiag_Warning, eErr_GENERIC_PublicationInconsistency, 
+                        PostObjErr (eDiag_Warning, eErr_GENERIC_PublicationInconsistency,
                                  "Duplicate consortium '" + consortium + "'", obj, ctx);
                     } else {
                         consortium_list.push_back(consortium);
@@ -817,23 +813,23 @@ void CValidError_imp::ValidateAuthorList
     } else if (names.IsMl()) {
         ITERATE ( list< string >, str, names.GetMl()) {
             if (CValidator::BadCharsInAuthorName(*str, true, true, false)) {
-                PostObjErr (eDiag_Warning, eErr_SEQ_FEAT_BadCharInAuthorName, 
+                PostObjErr (eDiag_Warning, eErr_SEQ_FEAT_BadCharInAuthorName,
                             "Bad characters in author " + *str, obj, ctx);
             }
-        }           
+        }
     } else if (names.IsStr()) {
 
         ITERATE ( list< string >, str, names.GetStr()) {
             if (CValidator::BadCharsInAuthorName(*str, true, true, false)) {
-                PostObjErr (eDiag_Warning, eErr_SEQ_FEAT_BadCharInAuthorName, 
+                PostObjErr (eDiag_Warning, eErr_SEQ_FEAT_BadCharInAuthorName,
                             "Bad characters in author " + *str, obj, ctx);
             }
-        }           
+        }
     }
 }
 
 
-void CValidError_imp::ValidateAuthorsInPubequiv 
+void CValidError_imp::ValidateAuthorsInPubequiv
 (const CPub_equiv& pe,
  const CSerialObject& obj,
  const CSeq_entry* ctx)
@@ -1017,7 +1013,7 @@ void CValidError_imp::ValidateSubAffil
 
 bool CValidError_imp::x_DowngradeForMissingAffil(const CCit_sub& cs)
 {
-    if (IsRefSeq() || s_IsRefSeqInSep(GetTSE(), *m_Scope)  ||  
+    if (IsRefSeq() || s_IsRefSeqInSep(GetTSE(), *m_Scope)  ||
         IsHtg()  || IsPDB()) {
         return true;
     }
@@ -1090,7 +1086,6 @@ void CValidError_imp::ValidateCitSub
             default:
                 break;
             }
-            
         }
     }
 
@@ -1121,7 +1116,7 @@ void CValidError_imp::ValidateCitSub
 }
 
 
-static bool s_IsNoncuratedRefSeq (const CBioseq& seq) 
+static bool s_IsNoncuratedRefSeq (const CBioseq& seq)
 {
     FOR_EACH_SEQID_ON_BIOSEQ (id_it, seq) {
         if ((*id_it)->IsOther()) {
@@ -1192,7 +1187,7 @@ void CValidError_imp::AddBioseqWithNoPub(const CBioseq& seq)
 }
 
 
-static bool s_IsGpipe (const CBioseq& seq) 
+static bool s_IsGpipe (const CBioseq& seq)
 {
     bool is_gpipe = false;
 
@@ -1257,7 +1252,7 @@ void CValidError_imp::ReportMissingPubs(const CSeq_entry& se, const CCit_sub* cs
             if (b_it)
             {
                 CConstRef<CBioseq> bioseq = b_it->GetCompleteBioseq();
-                if (   !s_IsNoncuratedRefSeq(*bioseq)  
+                if (   !s_IsNoncuratedRefSeq(*bioseq)
                     && !s_IsGpipe(*bioseq)
                     && !s_IsWgs_Contig(*bioseq)
                     && !s_IsTSA_Contig(*bioseq) ) {
@@ -1265,17 +1260,17 @@ void CValidError_imp::ReportMissingPubs(const CSeq_entry& se, const CCit_sub* cs
                         if (s_CuratedRefSeqLowerToWarning(*bioseq)) {
                             sev = eDiag_Warning;
                         }
-                        PostErr(sev, eErr_SEQ_DESCR_NoPubFound, 
+                        PostErr(sev, eErr_SEQ_DESCR_NoPubFound,
                             "No publications anywhere on this entire record.", se);
                 }
             }
-        } 
+        }
     }
     if ( m_NoCitSubPubs && !cs && !IsSeqSubmitParent() ) {
         CBioseq_CI b_it(m_Scope->GetSeq_entryHandle(se));
         if (b_it) {
             CConstRef<CBioseq> bioseq = b_it->GetCompleteBioseq();
-            if (CValidError_bioseq::IsWGSMaster(*bioseq, *m_Scope) || 
+            if (CValidError_bioseq::IsWGSMaster(*bioseq, *m_Scope) ||
                 (!IsRefSeq() &&
                  !CValidError_bioseq::IsWGSAccession(*bioseq) &&
                  !CValidError_bioseq::IsTSAAccession(*bioseq))) {

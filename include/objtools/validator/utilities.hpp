@@ -41,7 +41,7 @@
 //#include <objects/taxon3/T3Data.hpp>
 //#include <objects/taxon3/Taxon3_reply.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
-#include <objects/biblio/Id_pat.hpp> 
+#include <objects/biblio/Id_pat.hpp>
 #include <objects/biblio/Auth_list.hpp>
 #include <objmgr/seq_vector.hpp>
 
@@ -156,7 +156,7 @@ typedef enum {
 } EBioseqEndIsType;
 
 
-void NCBI_VALIDATOR_EXPORT CheckBioseqEndsForNAndGap 
+void NCBI_VALIDATOR_EXPORT CheckBioseqEndsForNAndGap
 (const CBioseq_Handle& bsh,
  EBioseqEndIsType& begin_n,
  EBioseqEndIsType& begin_gap,
@@ -178,7 +178,7 @@ bool& end_ambig);
 
 
 
-/// Indicates whether feature is a dicistronic gene 
+/// Indicates whether feature is a dicistronic gene
 /// @param f Seq-feat-Handle [in]
 /// @return Boolean
 bool NCBI_VALIDATOR_EXPORT IsDicistronicGene (const CSeq_feat_Handle& f);
@@ -198,7 +198,7 @@ typedef const CSeq_feat::TDbxref TDbtags;
 /// @param f1 Seq-feat-Handle [in]
 /// @param f2 Seq-feat-Handle [in]
 /// @return EDuplicateFeatureType return value indicates how features are duplicates
-EDuplicateFeatureType NCBI_VALIDATOR_EXPORT IsDuplicate 
+EDuplicateFeatureType NCBI_VALIDATOR_EXPORT IsDuplicate
     (const CSeq_feat_Handle& f1,
      const CSeq_feat_Handle& f2,
      bool check_partials = false,

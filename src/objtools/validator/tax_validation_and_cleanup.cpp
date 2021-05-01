@@ -133,13 +133,12 @@ void CQualifierRequest::PostErrors(CValidError_imp& imp)
 
 
 CSpecificHostRequest::CSpecificHostRequest(const string& host, const COrg_ref& org, bool for_fix) :
-    CQualifierRequest(), 
-    m_Host(host), 
-    m_Response(eUnrecognized), 
-    m_HostLineage(kEmptyStr), 
+    CQualifierRequest(),
+    m_Host(host),
+    m_Response(eUnrecognized),
+    m_HostLineage(kEmptyStr),
     m_OrgLineage(kEmptyStr)
 {
-    
     string host_check = SpecificHostValueToCheck(host);
     if (NStr::IsBlank(host_check)) {
         m_Response = eNormal;
@@ -210,7 +209,7 @@ void CSpecificHostRequest::ListErrors(vector<TTaxError>& errs) const
             break;
         case eUnrecognized:
             errs.push_back(TTaxError{ eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, m_Error });
-            break;        
+            break;
         case eAlternateName:
             errs.push_back(TTaxError{ eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, m_Error });
             break;
@@ -263,7 +262,7 @@ bool CStrainRequest::x_IgnoreStrain(const string& str)
 
 
 CStrainRequest::CStrainRequest(const string& strain, const COrg_ref& org) : CQualifierRequest(), m_Strain(strain)
-{ 
+{
     if (org.IsSetTaxname()) {
         m_Taxname = org.GetTaxname();
     } else {
@@ -743,21 +742,21 @@ void CTaxValidationAndCleanup::x_InterpretTaxonomyError(const CT3Error& error, c
 {
     const string err_str = error.IsSetMessage() ? error.GetMessage() : "?";
 
-	if (NStr::Equal(err_str, "Organism not found")) {
-		string msg = "Organism not found in taxonomy database";
-		if (error.IsSetOrg() && error.GetOrg().IsSetTaxname() &&
-			!NStr::Equal(error.GetOrg().GetTaxname(), "Not valid") &&
-			(!org.IsSetTaxname() ||
-				!NStr::Equal(org.GetTaxname(), error.GetOrg().GetTaxname()))) {
-			msg += " (suggested:" + error.GetOrg().GetTaxname() + ")";
-		}
-		errs.push_back(TTaxError{ eDiag_Warning, eErr_SEQ_DESCR_OrganismNotFound, msg });
-	} else if (NStr::StartsWith(err_str, "Organism not found. Possible matches")) {
-		errs.push_back(TTaxError{ eDiag_Warning, eErr_SEQ_DESCR_OrganismNotFound, err_str });
+    if (NStr::Equal(err_str, "Organism not found")) {
+        string msg = "Organism not found in taxonomy database";
+        if (error.IsSetOrg() && error.GetOrg().IsSetTaxname() &&
+            !NStr::Equal(error.GetOrg().GetTaxname(), "Not valid") &&
+            (!org.IsSetTaxname() ||
+                !NStr::Equal(org.GetTaxname(), error.GetOrg().GetTaxname()))) {
+            msg += " (suggested:" + error.GetOrg().GetTaxname() + ")";
+        }
+        errs.push_back(TTaxError{ eDiag_Warning, eErr_SEQ_DESCR_OrganismNotFound, msg });
+    } else if (NStr::StartsWith(err_str, "Organism not found. Possible matches")) {
+        errs.push_back(TTaxError{ eDiag_Warning, eErr_SEQ_DESCR_OrganismNotFound, err_str });
     } else if (NStr::Equal(err_str, kInvalidReplyMsg)) {
         errs.push_back(TTaxError{ eDiag_Error, eErr_SEQ_DESCR_TaxonomyLookupProblem, err_str });
     } else if (NStr::Find(err_str, "ambiguous name") != NPOS) {
-        errs.push_back(TTaxError{ eDiag_Warning, eErr_SEQ_DESCR_TaxonomyAmbiguousName, 
+        errs.push_back(TTaxError{ eDiag_Warning, eErr_SEQ_DESCR_TaxonomyAmbiguousName,
             "Taxonomy lookup failed with message '" + err_str + "'"});
     } else {
         errs.push_back(TTaxError{ eDiag_Warning, type,
@@ -823,8 +822,8 @@ void CTaxValidationAndCleanup::ListTaxLookupErrors
 }
 
 void CTaxValidationAndCleanup::ReportTaxLookupErrors
-(const CTaxon3_reply& reply, 
- CValidError_imp& imp, 
+(const CTaxon3_reply& reply,
+ CValidError_imp& imp,
  bool is_insd_patent) const
 {
     CTaxon3_reply::TReply::const_iterator reply_it = reply.GetReply().begin();
@@ -935,8 +934,8 @@ void CTaxValidationAndCleanup::ReportIncrementalTaxLookupErrors
 //LCOV_EXCL_START
 //used by Genome Workbench
 bool CTaxValidationAndCleanup::AdjustOrgRefsWithTaxLookupReply
-( const CTaxon3_reply& reply, 
- vector<CRef<COrg_ref> > org_refs, 
+( const CTaxon3_reply& reply,
+ vector<CRef<COrg_ref> > org_refs,
  string& error_message,
  bool use_error_orgrefs) const
 {
@@ -945,7 +944,7 @@ bool CTaxValidationAndCleanup::AdjustOrgRefsWithTaxLookupReply
     vector<CRef<COrg_ref> >::iterator org_it = org_refs.begin();
     while (reply_it != reply.GetReply().end() && org_it != org_refs.end()) {
         CRef<COrg_ref> cpy(NULL);
-        if ((*reply_it)->IsData() && 
+        if ((*reply_it)->IsData() &&
             (*reply_it)->GetData().IsSetOrg()) {
             cpy.Reset(new COrg_ref());
             cpy->Assign((*reply_it)->GetData().GetOrg());
@@ -1057,9 +1056,9 @@ void CTaxValidationAndCleanup::ReportSpecificHostErrors(const CTaxon3_reply& rep
 //LCOV_EXCL_START
 //only used by cleanup
 bool CTaxValidationAndCleanup::AdjustOrgRefsWithSpecificHostReply
-(vector<CRef<COrg_ref> > requests, 
+(vector<CRef<COrg_ref> > requests,
  const CTaxon3_reply& reply,
- vector<CRef<COrg_ref> > org_refs, 
+ vector<CRef<COrg_ref> > org_refs,
  string& error_message)
 {
     if (!m_HostMapForFix.IsUpdateComplete()) {
@@ -1218,7 +1217,7 @@ bool CTaxValidationAndCleanup::DoTaxonomyUpdate(CSeq_entry_Handle seh, bool with
     Init(*(seh.GetCompleteSeq_entry()));
 
     vector<CRef<COrg_ref> > original_orgs = GetTaxonomyLookupRequest();
-    if (original_orgs.empty()) 
+    if (original_orgs.empty())
     {
         return false;
     }
@@ -1242,12 +1241,12 @@ bool CTaxValidationAndCleanup::DoTaxonomyUpdate(CSeq_entry_Handle seh, bool with
         CRef<CTaxon3_reply> tmp_lookup_reply = taxon3.SendOrgRefList(tmp_original_orgs);
         string error_message;
         AdjustOrgRefsWithTaxLookupReply(*tmp_lookup_reply, tmp_edited_orgs, error_message);
-        if (!NStr::IsBlank(error_message)) 
+        if (!NStr::IsBlank(error_message))
         {
             // post error message
             ERR_POST(Error << error_message);
             return false;
-        }      
+        }
         edited_orgs.insert(edited_orgs.end(), tmp_edited_orgs.begin(), tmp_edited_orgs.end());
         i += len;
     }
@@ -1324,7 +1323,7 @@ void CTaxValidationAndCleanup::FixOneSpecificHost(string& val)
     vector< CRef<COrg_ref> > edited;
     edited.push_back(CRef<COrg_ref>(new COrg_ref()));
     edited.front()->SetOrgname().SetMod().push_back(CRef<COrgMod>(new COrgMod(COrgMod::eSubtype_nat_host, val)));
-    
+
     CTaxon3 taxon3;
     taxon3.Init();
     CRef<CTaxon3_reply> tmp_spec_host_reply = taxon3.SendOrgRefList(spec_host_rq);

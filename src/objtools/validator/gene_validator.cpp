@@ -107,7 +107,7 @@ void CGeneValidator::Validate()
                 "There is a gene feature where all fields are empty");
     }
     if ( gene.IsSetLocus() && m_Feat.IsSetComment() && NStr::EqualCase (m_Feat.GetComment(), gene.GetLocus())) {
-        PostErr (eDiag_Warning, eErr_SEQ_FEAT_RedundantFields, 
+        PostErr (eDiag_Warning, eErr_SEQ_FEAT_RedundantFields,
                  "Comment has same value as gene locus");
     }
 
@@ -117,7 +117,7 @@ void CGeneValidator::Validate()
         for (auto it : locus_tag) {
             if ( isspace((unsigned char)(it)) != 0 ) {
                 PostErr(eDiag_Warning, eErr_SEQ_FEAT_LocusTagHasSpace,
-                        "Gene locus_tag '" + gene.GetLocus_tag() + 
+                        "Gene locus_tag '" + gene.GetLocus_tag() +
                         "' should be a single word without any spaces");
                 break;
             }
@@ -129,7 +129,7 @@ void CGeneValidator::Validate()
                     "Gene locus and locus_tag '" + gene.GetLocus() + "' match");
         }
         if (m_Feat.IsSetComment() && NStr::EqualCase (m_Feat.GetComment(), locus_tag)) {
-            PostErr (eDiag_Warning, eErr_SEQ_FEAT_RedundantFields, 
+            PostErr (eDiag_Warning, eErr_SEQ_FEAT_RedundantFields,
                          "Comment has same value as gene locus_tag");
         }
         if (m_Feat.IsSetQual()) {
@@ -147,10 +147,10 @@ void CGeneValidator::Validate()
                     }
                 }
             }
-        }                        
-    } else if (m_Imp.DoesAnyGeneHaveLocusTag() && 
+        }
+    } else if (m_Imp.DoesAnyGeneHaveLocusTag() &&
                !s_IsLocDirSub(m_Feat.GetLocation(), m_Imp.GetTSE_Handle(), m_Imp.GetCache(), &m_Scope)) {
-        PostErr (eDiag_Warning, eErr_SEQ_FEAT_MissingGeneLocusTag, 
+        PostErr (eDiag_Warning, eErr_SEQ_FEAT_MissingGeneLocusTag,
                  "Missing gene locus tag");
     }
 
@@ -161,7 +161,7 @@ void CGeneValidator::Validate()
     if (m_Imp.IsRefSeq() && gene.IsSetSyn()) {
         for (auto it : gene.GetSyn()) {
             if (sc_BadGeneSyn.find (it.c_str()) != sc_BadGeneSyn.end()) {
-                PostErr (m_Imp.IsGpipe() ? eDiag_Info : eDiag_Warning, eErr_SEQ_FEAT_UndesiredGeneSynonym, 
+                PostErr (m_Imp.IsGpipe() ? eDiag_Info : eDiag_Warning, eErr_SEQ_FEAT_UndesiredGeneSynonym,
                          "Uninformative gene synonym '" + it + "'");
             }
             if (gene.IsSetLocus() && !NStr::IsBlank(gene.GetLocus())
@@ -172,7 +172,7 @@ void CGeneValidator::Validate()
         }
     }
 
-    if (gene.IsSetLocus() && gene.IsSetDesc() 
+    if (gene.IsSetLocus() && gene.IsSetDesc()
         && NStr::EqualCase (gene.GetLocus(), gene.GetDesc())
         && !m_Imp.IsGpipe()) {
         PostErr (eDiag_Warning, eErr_SEQ_FEAT_UndesiredGeneSynonym,
@@ -190,17 +190,17 @@ void CGeneValidator::Validate()
 
     // check for SGML
     if (gene.IsSetLocus() && ContainsSgml(gene.GetLocus())) {
-        PostErr (eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
+        PostErr (eDiag_Warning, eErr_GENERIC_SgmlPresentInText,
                 "gene locus " + gene.GetLocus() + " has SGML");
     }
     if (gene.IsSetLocus_tag() && ContainsSgml(gene.GetLocus_tag())) {
-        PostErr (eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
+        PostErr (eDiag_Warning, eErr_GENERIC_SgmlPresentInText,
                 "gene locus_tag " + gene.GetLocus_tag() + " has SGML");
     }
     if (gene.IsSetDesc()) {
         string desc = gene.GetDesc();
         if (ContainsSgml(desc)) {
-                PostErr (eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
+                PostErr (eDiag_Warning, eErr_GENERIC_SgmlPresentInText,
                         "gene description " + gene.GetDesc() + " has SGML");
         }
     }
@@ -231,7 +231,7 @@ void CGeneValidator::x_ValidateExceptText(const string& text)
 
 void CGeneValidator::x_ValidateOperon()
 {
-    CConstRef<CSeq_feat> operon = 
+    CConstRef<CSeq_feat> operon =
         GetOverlappingOperon(m_Feat.GetLocation(), m_Scope);
     if ( !operon  ||  !operon->IsSetQual() ) {
         return;
@@ -242,7 +242,7 @@ void CGeneValidator::x_ValidateOperon()
     if ( label.empty() ) {
         return;
     }
-    
+
     for (auto qual_iter : operon->GetQual()) {
         const CGb_qual& qual = *qual_iter;
         if( qual.CanGetQual()  &&  qual.CanGetVal() ) {
@@ -351,7 +351,7 @@ static bool s_LocIntervalsSpanOrigin (const CSeq_loc& loc, CBioseq_Handle bsh)
         ++si;
         if (!si || si.GetRange().GetFrom() != 0) {
             return false;
-        }        
+        }
         ++si;
     }
     if (si) {
@@ -385,7 +385,7 @@ void CGeneValidator::x_ValidateMultiIntervalGene()
         if ( !IsOneBioseq(loc, &m_Scope) ) {
             return;
         } else if ( m_LocationBioseq.GetInst().GetTopology() == CSeq_inst::eTopology_circular
-                && s_LocIntervalsSpanOrigin (loc, m_LocationBioseq)) {            
+                && s_LocIntervalsSpanOrigin (loc, m_LocationBioseq)) {
             // spans origin
             return;
         } else if (m_Imp.IsSmallGenomeSet()) {

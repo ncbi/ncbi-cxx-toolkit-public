@@ -126,7 +126,7 @@ private:
 
     typedef map<const CSeq_feat*, CConstRef<CSeq_feat> > TFeatGeneMap;
     TFeatGeneMap            m_FeatGeneMap;
-    
+
     typedef map<CBioseq_Handle, CRef<feature::CFeatTree> > TSeqTreeMap;
     TSeqTreeMap m_SeqTreeMap;
 

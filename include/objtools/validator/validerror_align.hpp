@@ -100,12 +100,12 @@ private:
     template <typename T>
     bool x_ValidateDim(T& obj, const CSeq_align& align, size_t part = 0);
 
-    // Check if the  strand is consistent in SeqAlignment of global 
+    // Check if the  strand is consistent in SeqAlignment of global
     // or partial type
     void x_ValidateStrand(const TDenseg& denseg, const CSeq_align& align);
     void x_ValidateStrand(const TStd& std_segs, const CSeq_align& align);
 
-    // Check if an alignment is FASTA-like. 
+    // Check if an alignment is FASTA-like.
     // Alignment is FASTA-like if all gaps are at the end with dimensions > 2.
     void x_ValidateFastaLike(const TDenseg& denseg, const CSeq_align& align);
 
@@ -120,7 +120,7 @@ private:
     void x_ValidateSeqId(const CSeq_align& align);
     void x_GetIds(const CSeq_align& align, vector< CRef< CSeq_id > >& ids);
 
-    // Check segment length, start and end point in Dense_seg, Dense_diag 
+    // Check segment length, start and end point in Dense_seg, Dense_diag
     // and Std_seg
     void x_ReportAlignErr(const CSeq_align& align, const CSeq_id& id, const CSeq_id& id_context,
         size_t segment, size_t pos,

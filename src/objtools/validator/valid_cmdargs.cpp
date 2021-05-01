@@ -39,7 +39,7 @@ BEGIN_SCOPE(objects)
 BEGIN_SCOPE(validator)
 
 void CValidatorArgUtil::SetupArgDescriptions(CArgDescriptions* argdescr)
-{    
+{
     argdescr->AddFlag("A", "Validate Alignments");
     argdescr->AddFlag("J", "Require ISO-JTA");
     argdescr->AddFlag("Z", "Remote CDS Product Fetch");
@@ -59,12 +59,12 @@ void CValidatorArgUtil::SetupArgDescriptions(CArgDescriptions* argdescr)
     argdescr->AddFlag("q", "Taxonomy Lookup");
     argdescr->AddFlag("suppress_context", "Suppress context when reporting");
     argdescr->AddFlag("splice_as_error", "Report splice problems as errors");
-    argdescr->AddDefaultKey("N", "LatLonStrictness", "Flags for lat-lon tests (1 Test State/Province, 2 Ignore Water Exception)", CArgDescriptions::eInteger, "0"); 
+    argdescr->AddDefaultKey("N", "LatLonStrictness", "Flags for lat-lon tests (1 Test State/Province, 2 Ignore Water Exception)", CArgDescriptions::eInteger, "0");
     argdescr->AddFlag("B", "Do Barcode Validation");
     argdescr->AddFlag("refseq", "Use RefSeq Conventions");
-	argdescr->AddFlag("collect_locus_tags", "Collect locus tags for formatted reports");
-	argdescr->AddFlag("golden_file", "Suppress context part of message");
-	argdescr->AddFlag("vdjc", "Compare CDS against VDJC segments");
+    argdescr->AddFlag("collect_locus_tags", "Collect locus tags for formatted reports");
+    argdescr->AddFlag("golden_file", "Suppress context part of message");
+    argdescr->AddFlag("vdjc", "Compare CDS against VDJC segments");
 }
 
 
@@ -154,17 +154,17 @@ int CValidatorArgUtil::ArgsToValidatorOptions(const CArgs& args)
         options |= CValidator::eVal_far_fetch_mrna_products;
     }
 
-	if (args["collect_locus_tags"]) {
-		options |= CValidator::eVal_collect_locus_tags;
-	}
+    if (args["collect_locus_tags"]) {
+        options |= CValidator::eVal_collect_locus_tags;
+    }
 
-	if (args["golden_file"]) {
-		options |= CValidator::eVal_generate_golden_file;
-	}
+    if (args["golden_file"]) {
+        options |= CValidator::eVal_generate_golden_file;
+    }
 
-	if (args["vdjc"]) {
-		options |= CValidator::eVal_compare_vdjc_to_cds;
-	}
+    if (args["vdjc"]) {
+        options |= CValidator::eVal_compare_vdjc_to_cds;
+    }
 
     return options;
 }

@@ -51,16 +51,16 @@ using namespace sequence;
 
 void CSpliceProblems::ValidateDonorAcceptorPair
 (ENa_strand strand,
- TSeqPos stop, 
- const CSeqVector& vec_donor, 
- TSeqPos seq_len_donor, 
- TSeqPos start, 
- const CSeqVector& vec_acceptor, 
+ TSeqPos stop,
+ const CSeqVector& vec_donor,
+ TSeqPos seq_len_donor,
+ TSeqPos start,
+ const CSeqVector& vec_acceptor,
  TSeqPos seq_len_acceptor)
 {
     char donor[2];
     char acceptor[2];
-    
+
     ESpliceSiteRead good_donor = ReadDonorSpliceSite(strand, stop, vec_donor, seq_len_donor, donor);
     ESpliceSiteRead good_acceptor = ReadAcceptorSpliceSite(strand, start, vec_acceptor, seq_len_acceptor, acceptor);
     bool donor_ok = (good_donor == eSpliceSiteRead_OK  || good_donor == eSpliceSiteRead_WrongNT);
@@ -234,7 +234,7 @@ bool CSpliceProblems::SpliceSitesHaveErrors()
     for (auto it = m_DonorProblems.begin(); it != m_DonorProblems.end() && !has_errors; it++) {
         if (it->first == eSpliceSiteRead_BadSeq || it->first == eSpliceSiteRead_Gap ||
             it->first == eSpliceSiteRead_WrongNT) {
-            has_errors = true;            
+            has_errors = true;
         }
     }
     // acceptors
@@ -441,7 +441,6 @@ void CSpliceProblems::ValidateSpliceExon(const CSeq_feat& feat, const CBioseq_Ha
     } catch (std::exception ) {
         ;// could get errors from CSeqVector
     }
-    
 }
 
 void CSpliceProblems::ValidateSpliceMrna(const CSeq_feat& feat, const CBioseq_Handle& bsh, ENa_strand strand)
@@ -461,11 +460,11 @@ void CSpliceProblems::ValidateSpliceMrna(const CSeq_feat& feat, const CBioseq_Ha
         // If there is no UTR information, then the mRNA location should agree with its CDS location,
         // but the mRNA should be marked partial at its 5' and 3' ends
         // Do not check splice site (either donor or acceptor) if CDS location's start / stop is complete.
-        if (!cds->GetLocation().IsPartialStart(eExtreme_Biological) 
+        if (!cds->GetLocation().IsPartialStart(eExtreme_Biological)
             && cds->GetLocation().GetStart(eExtreme_Biological) == feat.GetLocation().GetStart(eExtreme_Biological)) {
             ignore_mrna_partial5 = true;
         }
-        if (!cds->GetLocation().IsPartialStop(eExtreme_Biological) 
+        if (!cds->GetLocation().IsPartialStop(eExtreme_Biological)
             && cds->GetLocation().GetStop(eExtreme_Biological) == feat.GetLocation().GetStop(eExtreme_Biological)) {
             ignore_mrna_partial3 = true;
         }
@@ -526,7 +525,7 @@ void CSpliceProblems::ValidateSpliceMrna(const CSeq_feat& feat, const CBioseq_Ha
         }
     }
 
-    // Validate donor site of 3'most feature 
+    // Validate donor site of 3'most feature
     if(head) {
         const CSeq_loc& part = head.GetEmbeddingSeq_loc();
         CSeq_loc::TRange range = head.GetRange();
@@ -601,7 +600,7 @@ void CSpliceProblems::ValidateSpliceCdregion(const CSeq_feat& feat, const CBiose
                         stop = range_head.GetTo();
                     }
                     ValidateDonorAcceptorPair(strand,
-                                               stop, vec_head, bsh_head.GetInst_Length(), 
+                                               stop, vec_head, bsh_head.GetInst_Length(),
                                                start, vec_tail, bsh_tail.GetInst_Length());
                 } catch (CSeqVectorException&) {
                 }
@@ -609,7 +608,7 @@ void CSpliceProblems::ValidateSpliceCdregion(const CSeq_feat& feat, const CBiose
         }
     }
 
-    // Validate donor site of 3'most feature 
+    // Validate donor site of 3'most feature
     if(head) {
         const CSeq_loc& part = head.GetEmbeddingSeq_loc();
         CSeq_loc::TRange range = head.GetRange();
@@ -710,11 +709,11 @@ bool CheckSpliceSite(const string& signature, ENa_strand strand, TConstSpliceSit
         { kSpliceSiteGT, eNa_strand_plus, ConsistentWithG, ConsistentWithT },
         //    >> ...AC >>, reverse complement
         { kSpliceSiteGT, eNa_strand_minus, ConsistentWithA, ConsistentWithC },
-        // 5' << ...AG << 
+        // 5' << ...AG <<
         { kSpliceSiteAG, eNa_strand_plus, ConsistentWithA, ConsistentWithG },
         //    >> CT...>>, reverse complement
         { kSpliceSiteAG, eNa_strand_minus, ConsistentWithC, ConsistentWithT },
-        // 5' << GC... << 
+        // 5' << GC... <<
         { kSpliceSiteGC, eNa_strand_plus, s_EqualsG, s_EqualsC },
         //    >> ...GC >>, reverse complement
         { kSpliceSiteGC, eNa_strand_minus, s_EqualsG, s_EqualsC }
