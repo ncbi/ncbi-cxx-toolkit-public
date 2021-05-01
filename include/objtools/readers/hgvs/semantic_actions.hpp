@@ -16,11 +16,11 @@ void TagAsMosaic(CRef<CSequenceVariant> seq_var);
 
 void AssignSequenceVariant(CRef<CSequenceVariant> variant, CRef<CVariantExpression>& result);
 
-void AssignMissense(CRef<CAaSite> initial, 
-                    const CProteinSub::TFinal& final, 
+void AssignMissense(CRef<CAaSite> initial,
+                    const CProteinSub::TFinal& final,
                     CRef<CSimpleVariant>& result);
 
-void AssignSilent(CRef<CAaLocation> loc, 
+void AssignSilent(CRef<CAaLocation> loc,
                   CRef<CSimpleVariant>& result);
 
 void AssignNonsense(CRef<CAaSite> initial, CRef<CSimpleVariant>& result);
@@ -35,9 +35,9 @@ void AssignNtermExtension(CRef<CAaSite> initial_start_site, CRef<CCount> new_sta
 
 void AssignNtermExtension(CRef<CAaSite> initial_start_site, const string& new_aa, CRef<CCount> new_start_site, CRef<CSimpleVariant>& result);
 
-void AssignCtermExtension(const string& initial_stop_site, const string& aa, CRef<CCount> new_stop_site, CRef<CSimpleVariant>& result); 
+void AssignCtermExtension(const string& initial_stop_site, const string& aa, CRef<CCount> new_stop_site, CRef<CSimpleVariant>& result);
 
-void AssignAaIntervalLocation(CRef<CAaInterval> aa_interval, CRef<CAaLocation>& result); 
+void AssignAaIntervalLocation(CRef<CAaInterval> aa_interval, CRef<CAaLocation>& result);
 
 void AssignAaSiteLocation(CRef<CAaSite> aa_site, CRef<CAaLocation>& result);
 
@@ -57,8 +57,8 @@ void AssignMaxCount(const string& max_count, CRef<CCount>& result);
 
 void AssignAaSSR(CRef<CAaLocation> aa_loc, CRef<CCount> count, CRef<CSimpleVariant>& result);
 
-void AssignAaInsertion(CRef<CAaInterval> aa_interval, 
-                       const CInsertion::TSeqinfo::TRaw_seq& raw_seq, 
+void AssignAaInsertion(CRef<CAaInterval> aa_interval,
+                       const CInsertion::TSeqinfo::TRaw_seq& raw_seq,
                        CRef<CSimpleVariant>& result);
 
 void AssignAaInsertionSize(CRef<CAaInterval> aa_interval, CRef<CCount> seq_size, CRef<CSimpleVariant>& result);
@@ -67,7 +67,7 @@ void AssignFrameshift(CRef<CAaSite> aa_site, CRef<CSimpleVariant>& result);
 
 void AssignAaDelins(CRef<CAaLocation> aa_loc, const string& raw_seq, CRef<CSimpleVariant>& result);
 
-void AssignAaDelinsSize(CRef<CAaLocation> aa_loc, CRef<CCount> seq_size, CRef<CSimpleVariant>& result); 
+void AssignAaDelinsSize(CRef<CAaLocation> aa_loc, CRef<CCount> seq_size, CRef<CSimpleVariant>& result);
 
 void AssignFuzzyLocalVariation(CRef<CSimpleVariant> input, CRef<CSimpleVariant>& result);
 
@@ -120,7 +120,7 @@ void AssignNtDeletion(CRef<CNtLocation> nt_loc, const CDeletion::TRaw_seq& raw_s
 void AssignNtDelins(CRef<CNtLocation> nt_loc, const CInsertion::TSeqinfo::TRaw_seq& inserted_seq, CRef<CSimpleVariant>& result);
 
 void AssignNtDelins(CRef<CNtLocation> nt_loc,
-                    const CDeletion::TRaw_seq& deleted_seq, 
+                    const CDeletion::TRaw_seq& deleted_seq,
                     const CInsertion::TSeqinfo::TRaw_seq& inserted_seq,
                     CRef<CSimpleVariant>& result);
 
@@ -128,7 +128,7 @@ void AssignNtDup(CRef<CNtLocation> nt_loc, CRef<CSimpleVariant>& result);
 
 void AssignNtDup(CRef<CNtLocation> nt_loc, const CDuplication::TRaw_seq& raw_seq, CRef<CSimpleVariant>& result);
 
-void AssignNtSub(CRef<CNtLocation> nt_loc, 
+void AssignNtSub(CRef<CNtLocation> nt_loc,
                  const CNaSub::TInitial& initial_nt,
                  const CNaSub::TFinal& final_nt,
                  CRef<CSimpleVariant>& result);

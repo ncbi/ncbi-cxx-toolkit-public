@@ -55,17 +55,17 @@ public:
     };
 
 public:
-    CMicroArrayReader( 
+    CMicroArrayReader(
         int =fDefaults,
         CReaderListener* = nullptr );
-        
+
     virtual ~CMicroArrayReader();
-    
+
     virtual CRef<CSeq_annot>
     ReadSeqAnnot(
         ILineReader&,
         ILineErrorListener* = nullptr );
-                
+
 protected:
     virtual CRef<CSeq_annot> xCreateSeqAnnot();
 
@@ -79,7 +79,7 @@ protected:
 
     virtual bool xProcessTrackLine(
         const string&);
-        
+
     bool xProcessFeature(
         const string&,
         CSeq_annot&);
@@ -87,7 +87,7 @@ protected:
     void xSetFeatureLocation(
         CRef<CSeq_feat>&,
         const vector<string>& );
-        
+
     void xSetFeatureDisplayData(
         CRef<CSeq_feat>&,
         const vector<string>& );

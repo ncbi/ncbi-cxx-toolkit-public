@@ -44,7 +44,7 @@ class CAlnErrorReporter;
 class CSeqIdValidate
 //  ----------------------------------------------------------------------------
 {
-public: 
+public:
     virtual ~CSeqIdValidate(void) = default;
 
 
@@ -52,8 +52,8 @@ public:
             int lineNum,
             CAlnErrorReporter* pErrorReporter);
 
-    virtual void operator()(const list<CRef<CSeq_id>>& seqIds, 
-            int lineNum, 
+    virtual void operator()(const list<CRef<CSeq_id>>& seqIds,
+            int lineNum,
             CAlnErrorReporter* pErrorReporter);
 };
 
@@ -76,18 +76,18 @@ public:
         eOther
     };
 
-    using FReportError = 
-        function<void(EDiagSev severity, 
-                      int lineNum, 
-                      const string& idString, 
-                      EErrCode errCode, 
+    using FReportError =
+        function<void(EDiagSev severity,
+                      int lineNum,
+                      const string& idString,
+                      EErrCode errCode,
                       const string& msg)>;
 
     using TIds = list<CRef<CSeq_id>>;
 
     virtual void operator()(
-            const TIds& ids, 
-            int lineNum, 
+            const TIds& ids,
+            int lineNum,
             FReportError fReportError);
 
     void SetMaxLocalIDLength(size_t length);
@@ -103,7 +103,7 @@ protected:
     virtual bool IsValidLocalString(const CTempString& idString) const;
 
     void CheckForExcessiveNucData(
-            const CSeq_id& id, 
+            const CSeq_id& id,
             int lineNum,
             FReportError fReportError) const;
 
@@ -112,7 +112,7 @@ protected:
 
     void CheckForExcessiveProtData(
             const CSeq_id& id,
-            int lineNum, 
+            int lineNum,
             FReportError fReportError) const;
 
     static size_t CountPossibleAminoAcids(

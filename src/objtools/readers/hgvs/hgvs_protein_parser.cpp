@@ -19,15 +19,15 @@ void IsMet1(const CRef<CAaSite>& aa_site, boost::spirit::unused_type context, bo
     if (aa_site->IsSetAa() &&
         aa_site->IsSetIndex() &&
         (aa_site->GetIndex() == 1 &&
-         (NStr::Equal(aa_site->GetAa(), "Met") 
-          || NStr::Equal(aa_site->GetAa(), "M")))) 
+         (NStr::Equal(aa_site->GetAa(), "Met")
+          || NStr::Equal(aa_site->GetAa(), "M"))))
        {
-           match = true;   
+           match = true;
        }
 }
 
 
-SHgvsProteinGrammar::SHgvsProteinGrammar(const SHgvsLexer& tok) : 
+SHgvsProteinGrammar::SHgvsProteinGrammar(const SHgvsLexer& tok) :
     SHgvsProteinGrammar::base_type(simple_protein_variant)
 {
     simple_protein_variant = protein_confirmed_simple_variation | protein_fuzzy_simple_variation;
@@ -41,15 +41,15 @@ SHgvsProteinGrammar::SHgvsProteinGrammar(const SHgvsLexer& tok) :
                                          nonsense |
                                          unknown_sub |
                                          silent |
-                                         aa_dup  |
+                                         aa_dup |
                                          aa_delins |
-                                         aa_del 	|
-                                         aa_ins  |
+                                         aa_del |
+                                         aa_ins |
                                          aa_ssr;
-							
+
     missense = (aa3_site >> tok.aa3) ACTION2(AssignMissense) |
                (aa1_site >> aa1) ACTION2(AssignMissense);
-    
+
     nonsense = (aa_site >> tok.stop) ACTION1(AssignNonsense);
 
     unknown_sub = (aa_site >> tok.unknown_val) ACTION1(AssignUnknownSub);
@@ -73,7 +73,7 @@ SHgvsProteinGrammar::SHgvsProteinGrammar(const SHgvsLexer& tok) :
     aa_ins =  (aa3_interval >> tok.ins >>  aa3_seq) ACTION2(AssignAaInsertion) |
               (aa1_interval >> tok.ins >> aa1_seq) ACTION2(AssignAaInsertion) |
               (aa_interval >> tok.ins >> seq_size) ACTION2(AssignAaInsertionSize);
-              // Need to be able to insert a "remote" sequence			 
+              // Need to be able to insert a "remote" sequence
 
     aa_ssr = (aa_loc >> aa_repeat) ACTION2(AssignAaSSR);
 
@@ -96,22 +96,22 @@ SHgvsProteinGrammar::SHgvsProteinGrammar(const SHgvsLexer& tok) :
 
     frameshift_nonstandard  = (aa1_site >> aa1 >> tok.fs) ACTION1(AssignFrameshift) |
                               (aa3_site >> tok.aa3 >> tok.fs) ACTION1(AssignFrameshift);
-                              
-    frameshift_short_form = (aa_site >> tok.fs) ACTION1(AssignFrameshift); 
+
+    frameshift_short_form = (aa_site >> tok.fs) ACTION1(AssignFrameshift);
 
     protein_extension = cterm_extension | nterm_extension;
 
-    cterm_extension = (tok.stop >> tok.pos_int >> (aa1 | tok.aa3) >> tok.ext >> tok.stop >> end_codon_shift) 
+    cterm_extension = (tok.stop >> tok.pos_int >> (aa1 | tok.aa3) >> tok.ext >> tok.stop >> end_codon_shift)
                       ACTION3(AssignCtermExtension);
 
-    nterm_extension = (aa_site [IsMet1] >> tok.ext >> "-" >> end_codon_shift) 
+    nterm_extension = (aa_site [IsMet1] >> tok.ext >> "-" >> end_codon_shift)
                       ACTION2(AssignNtermExtension) |
-                      (aa3_site [IsMet1] >> tok.aa3 >> tok.ext >> "-" >> end_codon_shift) 
+                      (aa3_site [IsMet1] >> tok.aa3 >> tok.ext >> "-" >> end_codon_shift)
                       ACTION3(AssignNtermExtension) |
-                      (aa1_site [IsMet1] >> aa1 >> tok.ext >> "-" >> end_codon_shift) 
+                      (aa1_site [IsMet1] >> aa1 >> tok.ext >> "-" >> end_codon_shift)
                       ACTION3(AssignNtermExtension);
-         
-    end_codon_shift = tok.pos_int ACTION1(AssignCount) | 
+
+    end_codon_shift = tok.pos_int ACTION1(AssignCount) |
                       tok.fuzzy_pos_int ACTION1(AssignFuzzyCount);
 
     seq_size = tok.pos_int ACTION1(AssignCount);
@@ -131,7 +131,7 @@ SHgvsProteinGrammar::SHgvsProteinGrammar(const SHgvsLexer& tok) :
 
     aa3_seq = +(tok.aa3) [_val += _1];
 
-    aa1_loc = aa1_interval ACTION1(AssignAaIntervalLocation) | 
+    aa1_loc = aa1_interval ACTION1(AssignAaIntervalLocation) |
               aa1_site ACTION1(AssignAaSiteLocation);
 
     aa1_interval = (aa1_site >> "_" >> aa1_site) ACTION2(AssignAaInterval);
@@ -143,7 +143,7 @@ SHgvsProteinGrammar::SHgvsProteinGrammar(const SHgvsLexer& tok) :
     aa1 = tok.ACGT | tok.definite_aa1;
 
     nn_int = tok.zero [_val = "0"] |
-             tok.pos_int [_val = _1]; 
+             tok.pos_int [_val = _1];
 }
 
 END_NCBI_SCOPE

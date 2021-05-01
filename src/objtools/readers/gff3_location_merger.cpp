@@ -182,7 +182,7 @@ CGff3LocationMerger::GetLocation(
 //  ============================================================================
 {
     auto it = mMapIdToLocations.find(id);
-    if (it == mMapIdToLocations.end()) { 
+    if (it == mMapIdToLocations.end()) {
         pSeqLoc->Reset();
         return;
     }

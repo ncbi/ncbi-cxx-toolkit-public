@@ -483,14 +483,13 @@ void CAgpValidateReader::OnScaffoldEnd()
 /*
     if (m_prev_orientation=='-' &&
         m_prev_component_beg==1) {
-        auto errCode = m_AgpErr->m_strict ? 
+        auto errCode = m_AgpErr->m_strict ?
             CAgpErrEx::E_SingletonCompBeginsAt1AndMinusOri :
             CAgpErrEx::W_SingletonCompBeginsAt1AndMinusOri;
         m_AgpErr->Msg(errCode, CAgpErr::fAtPrevLine);
     }
 */
 
-   
     const bool not_plus = m_prev_orientation && m_prev_orientation!='+';
     if (m_prev_component_beg==1 && not_plus) {
         m_AgpErr->Msg(CAgpErrEx::W_SingleOriNotPlus, CAgpErr::fAtPrevLine);
@@ -887,7 +886,7 @@ void CAgpValidateReader::x_PrintTotals(CNcbiOstream& out, bool use_xml) // witho
   }
 
   if (!m_AgpErr->m_strict && m_unplaced) {
-      const int singleton_ori_not_plus_count = 
+      const int singleton_ori_not_plus_count =
           m_AgpErr->GetCount(CAgpErrEx::W_SingleOriNotPlus);
       e_count += singleton_ori_not_plus_count;
       w_count -= singleton_ori_not_plus_count;

@@ -42,11 +42,11 @@ class ILineErrorListener;
 /////////////////////////////////////////////////////////////////////
 /// SShowStopper
 ///
-/// Throw SShowStopper to 
+/// Throw SShowStopper to
 /// 1) log a fatal error to the error listener
-/// specified when calling the CAlnReader::Read() methods 
+/// specified when calling the CAlnReader::Read() methods
 /// AND
-/// 2) to immediately exit the Read() method WITHOUT generating an 
+/// 2) to immediately exit the Read() method WITHOUT generating an
 /// alignment.
 ////////////////////////////////////////////////////////////////////
 //  ============================================================================
@@ -75,12 +75,12 @@ public:
 //////////////////////////////////////////////////////////////////////////////
 /// CAlnErrorReporter
 ///
-/// Use CAlnErrorReporter to log messages to the error listener passed 
+/// Use CAlnErrorReporter to log messages to the error listener passed
 /// to the CAlnReader::Read() methods.
-/// CAlnErrorReporter simply logs messages and provides no other guarantee 
+/// CAlnErrorReporter simply logs messages and provides no other guarantee
 /// on the behavior of the code.
 /// In particular, CAlnErrorReporter makes no guarantee that invoking Fatal()
-/// will cause a read to terminate before an alignment is generated. 
+/// will cause a read to terminate before an alignment is generated.
 /// That behavior is dependent on the underlying error-listener implementation.
 //////////////////////////////////////////////////////////////////////////////
 //  ============================================================================

@@ -71,7 +71,7 @@ void CBadResiduesException::SBadResiduePositions::AddBadIndexMap(const TBadIndex
             continue;
         }
 
-        vector<TSeqPos> & dest_seqpos_vec = 
+        vector<TSeqPos> & dest_seqpos_vec =
             m_BadIndexMap[lineNum];
         copy( src_seqpos_vec.begin(), src_seqpos_vec.end(),
               back_inserter(dest_seqpos_vec) );
@@ -89,7 +89,7 @@ void CBadResiduesException::SBadResiduePositions::ConvertBadIndexesToString(
         const vector<TSeqPos> & badIndexesOnLine = index_map_iter->second;
 
         // assert that badIndexes is sorted in ascending order on every line
-        _ASSERT(adjacent_find(badIndexesOnLine.begin(), badIndexesOnLine.end(), 
+        _ASSERT(adjacent_find(badIndexesOnLine.begin(), badIndexesOnLine.end(),
             std::greater<int>()) == badIndexesOnLine.end() );
 
         typedef pair<TSeqPos, TSeqPos> TRange;
@@ -112,12 +112,12 @@ void CBadResiduesException::SBadResiduePositions::ConvertBadIndexesToString(
                 // extend previous range
                 ++rangesFound.back().second;
                 continue;
-            } 
-            
+            }
+
             if( iRangesFound >= maxRanges ) {
                 break;
             }
-            
+
             // create new range
             rangesFound.push_back(TRange(idx, idx));
             ++iRangesFound;
@@ -128,9 +128,9 @@ void CBadResiduesException::SBadResiduePositions::ConvertBadIndexesToString(
         line_prefix = ", ";
 
         const char *pos_prefix = "";
-        for( unsigned int rng_idx = 0; 
-            ( rng_idx < rangesFound.size() ); 
-            ++rng_idx ) 
+        for( unsigned int rng_idx = 0;
+            ( rng_idx < rangesFound.size() );
+            ++rng_idx )
         {
             out << pos_prefix;
             const TRange &range = rangesFound[rng_idx];

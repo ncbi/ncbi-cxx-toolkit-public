@@ -133,17 +133,16 @@ CAlnScannerSequin::xImportAlignmentData(
             auto idComparison =
                 xGetExistingSeqIdInfo(seqId, existingInfo);
             if (idComparison != ESeqIdComparison::eDifferentChars) {
-                string description; 
+                string description;
                 if (idComparison == ESeqIdComparison::eIdentical) {
                 description = ErrorPrintf(
-                    "Duplicate sequence ID \"%s\", first seen on line %d", 
+                    "Duplicate sequence ID \"%s\", first seen on line %d",
                     seqId.c_str(), existingInfo.mNumLine);
                 }
                 else { // ESeqIdComparison::eDifferByCase
                     description = ErrorPrintf(
                         "Conflicting IDs: \"%s\" differs only in case from \"%s\" on line %d.",
                         seqId.c_str(), existingInfo.mData.c_str(), existingInfo.mNumLine);
-                
                 }
                 throw SShowStopper(
                     lineCount,

@@ -36,18 +36,18 @@
 #include <objtools/logging/message.hpp>
 
 BEGIN_NCBI_SCOPE
-BEGIN_SCOPE(objects) 
+BEGIN_SCOPE(objects)
 
 //  ============================================================================
-class NCBI_XOBJUTIL_EXPORT CReaderMessage: 
-    public CObjtoolsMessage 
+class NCBI_XOBJUTIL_EXPORT CReaderMessage:
+    public CObjtoolsMessage
 //  ============================================================================
 {
 public:
     CReaderMessage(
         EDiagSev severity, int lineNumber, const string& message)
         :
-        CObjtoolsMessage(message, severity), m_LineNumber(lineNumber) 
+        CObjtoolsMessage(message, severity), m_LineNumber(lineNumber)
     {};
 
     virtual CReaderMessage *Clone() const override;
@@ -58,8 +58,8 @@ public:
     virtual EDiagSev Severity() const { return GetSeverity(); };
     virtual int LineNumber() const { return m_LineNumber; };
 
-    void SetLineNumber(int lineNumber) { 
-        if (m_LineNumber == 0) m_LineNumber = lineNumber; 
+    void SetLineNumber(int lineNumber) {
+        if (m_LineNumber == 0) m_LineNumber = lineNumber;
     };
 
 protected:

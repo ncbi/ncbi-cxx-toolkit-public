@@ -78,7 +78,7 @@ string sAlnErrorToString(const CAlnError & error)
 
 CAlnError::CAlnError(int category, int line_num, string id, string message)
 {
-    switch (category) 
+    switch (category)
     {
     case -1:
         m_Category = eAlnErr_Unknown;
@@ -122,7 +122,7 @@ class CDefaultIdErrorReporter
 {
 public:
     CDefaultIdErrorReporter(CAlnErrorReporter* pErrorReporter)
-        : m_pErrorReporter(pErrorReporter) 
+        : m_pErrorReporter(pErrorReporter)
         { _ASSERT(m_pErrorReporter != nullptr); }
 
 
@@ -133,11 +133,11 @@ public:
             const string& msg)
     {
         m_pErrorReporter->Report(
-            lineNum, 
-            severity, 
+            lineNum,
+            severity,
             eReader_Alignment,
-            eAlnSubcode_IllegalSequenceId, 
-            msg, 
+            eAlnSubcode_IllegalSequenceId,
+            msg,
             idString);
     }
 
@@ -146,12 +146,12 @@ private:
 };
 
 
-class CDefaultIdValidate 
+class CDefaultIdValidate
 {
 public:
     using TIds = list<CRef<CSeq_id>>;
 
-    void operator()(const TIds& ids, 
+    void operator()(const TIds& ids,
                     int lineNum,
                     CAlnErrorReporter* pErrorReporter);
 private:
@@ -160,7 +160,7 @@ private:
 
 
 void CDefaultIdValidate::operator()(
-        const TIds& ids, 
+        const TIds& ids,
         int lineNum,
         CAlnErrorReporter* pErrorReporter)
 {
@@ -168,10 +168,10 @@ void CDefaultIdValidate::operator()(
 }
 
 
-CAlnReader::CAlnReader(CNcbiIstream& is, FValidateIds fValidateIds) : 
+CAlnReader::CAlnReader(CNcbiIstream& is, FValidateIds fValidateIds) :
     m_fValidateIds(fValidateIds),
     m_AlignFormat(EAlignFormat::UNKNOWN),
-    m_IS(is), m_ReadDone(false), m_ReadSucceeded(false), 
+    m_IS(is), m_ReadDone(false), m_ReadSucceeded(false),
     m_UseNexusInfo(true)
 {
     m_Errors.clear();
@@ -189,7 +189,7 @@ static CAlnReader::FValidateIds s_GetMultiIdValidate(CAlnReader::FIdValidate fSi
         return CDefaultIdValidate();
     }
 
-    return [fSingleIdValidate](const list<CRef<CSeq_id>>& ids, 
+    return [fSingleIdValidate](const list<CRef<CSeq_id>>& ids,
         int lineNum,
         CAlnErrorReporter* errorReporter) {
         for (const auto& pId : ids) {
@@ -199,8 +199,8 @@ static CAlnReader::FValidateIds s_GetMultiIdValidate(CAlnReader::FIdValidate fSi
 }
 
 
-CAlnReader::CAlnReader(CNcbiIstream& is, FIdValidate fSingleIdValidate) : 
-    CAlnReader(is, s_GetMultiIdValidate(fSingleIdValidate)) 
+CAlnReader::CAlnReader(CNcbiIstream& is, FIdValidate fSingleIdValidate) :
+    CAlnReader(is, s_GetMultiIdValidate(fSingleIdValidate))
 {}
 
 
@@ -215,7 +215,7 @@ string CAlnReader::GetAlphabetLetters(
         {EAlphabet::eAlpha_Nucleotide,      // non negotiable due to existing code
             "ABCDGHKMNRSTUVWXYabcdghkmnrstuvwxy"},
 
-        {EAlphabet::eAlpha_Protein,         // non negotiable due to existing code 
+        {EAlphabet::eAlpha_Protein,         // non negotiable due to existing code
             "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz*"},
 
         {EAlphabet::eAlpha_Dna,             // all ambiguity characters but not U
@@ -224,16 +224,16 @@ string CAlnReader::GetAlphabetLetters(
         {EAlphabet::eAlpha_Rna,             // all ambiguity characters but not T
             "ABCDGHKMNRSTVWXYabcdghkmnrstvwxy"},
 
-        {EAlphabet::eAlpha_Dna_no_ambiguity, 
+        {EAlphabet::eAlpha_Dna_no_ambiguity,
             "ACGTNacgtn"},                  // DNA + N for unknown
 
-        {EAlphabet::eAlpha_Rna_no_ambiguity, 
+        {EAlphabet::eAlpha_Rna_no_ambiguity,
             "ACGUNacgun"},                  // RNA + N for unknown
     };
     return alphaMap[alphaId];
 };
 
-    
+
 void CAlnReader::SetFastaGap(EAlphabet alpha)
 {
     SetAlphabet(alpha);
@@ -317,7 +317,7 @@ void CAlnReader::Read(
 }
 
 void CAlnReader::Read(
-    bool guess, 
+    bool guess,
     bool generate_local_ids,
     ncbi::objects::ILineErrorListener* pErrorListener)
 {
@@ -351,7 +351,7 @@ void CAlnReader::x_ParseAndValidateSeqIds(const SLineInfo& seqIdInfo,
         parseFlags |= CSeq_id::fParse_RawText;
     }
 
-    
+
     try {
         CSeq_id::ParseIDs(ids, idString, parseFlags);
     }
@@ -418,8 +418,8 @@ void CAlnReader::x_VerifyAlignmentInfo(
                     "Expected %d deflines but finding %d. ",
                      m_Ids.size(),
                      numDeflines);
-            description += 
-                "If deflines are used, each sequence must have a corresponding defline. "  
+            description +=
+                "If deflines are used, each sequence must have a corresponding defline. "
                 "Note that deflines are optional.",
             theErrorReporter->Error(
                     -1,
@@ -487,21 +487,21 @@ CRef<CSeq_id> CAlnReader::GenerateID(const string& fasta_defline,
     TFastaFlags fasta_flags)
 {
     _ASSERT(index < m_Dim);
-    _ASSERT(!m_Ids[index].empty());    
+    _ASSERT(!m_Ids[index].empty());
 
     return FindBestChoice(m_Ids[index], CSeq_id::BestRank);
-}    
+}
 
 
-void CAlnReader::x_AssignDensegIds(const TFastaFlags fasta_flags, 
-        CDense_seg& denseg) 
+void CAlnReader::x_AssignDensegIds(const TFastaFlags fasta_flags,
+        CDense_seg& denseg)
 {
     CDense_seg::TIds& ids = denseg.SetIds();
     ids.resize(m_Dim);
     m_Ids.resize(m_Dim);
 
     for (auto i=0; i<m_Dim; ++i) {
-        // Reconstruct original defline string from results 
+        // Reconstruct original defline string from results
         // returned by C code.
         string fasta_defline = m_IdStrings[i];
         if (i < m_DeflineInfo.size() && !m_DeflineInfo[i].mData.empty()) {
@@ -536,7 +536,7 @@ void CAlnReader::x_AssignDensegIds(const TFastaFlags fasta_flags,
 
         CDense_seg& ds = m_Aln->SetSegs().SetDenseg();
         ds.SetDim(m_Dim);
-        
+
         CDense_seg::TStarts&  starts  = ds.SetStarts();
         //CDense_seg::TStrands& strands = ds.SetStrands();
         CDense_seg::TLens&    lens    = ds.SetLens();
@@ -564,7 +564,7 @@ void CAlnReader::x_AssignDensegIds(const TFastaFlags fasta_flags,
         TSeqPos prev_aln_pos = 0, prev_len = 0;
         bool new_seg = true;
         TNumseg numseg = 0;
-        
+
         for (TSeqPos aln_pos = 0; aln_pos < aln_stop; aln_pos++) {
             for (TNumrow row_i = 0; row_i < m_Dim; row_i++) {
                 if (aln_pos >= m_Seqs[row_i].length()) {
@@ -586,7 +586,7 @@ void CAlnReader::x_AssignDensegIds(const TFastaFlags fasta_flags,
                         m_SeqVec[row_i][m_SeqLen[row_i]++] = residue[0];
 
                     } else {
-      
+
                         if ( !is_gap[row_i] ) {
                             is_gap[row_i] = true;
                             new_seg = true;
@@ -634,7 +634,7 @@ void CAlnReader::x_AssignDensegIds(const TFastaFlags fasta_flags,
 
 #if _DEBUG
         m_Aln->Validate(true);
-#endif    
+#endif
         return m_Aln;
     }
 
@@ -654,16 +654,16 @@ CSeq_inst::EMol
 CAlnReader::x_GetSequenceMolType(
     const string& alphabet,
     const string& seqData,
-    const string& seqId, // used in error message 
+    const string& seqId, // used in error message
     ILineErrorListener* pErrorListener
     )
 {
     const auto& missingChars = GetMissing();
     string seqChars = seqData;
-    if (!missingChars.empty()) {        
+    if (!missingChars.empty()) {
         seqChars.erase(
-                remove_if(seqChars.begin(), seqChars.end(), 
-                [&](char c) { return missingChars.find(c) != string::npos;}), 
+                remove_if(seqChars.begin(), seqChars.end(),
+                [&](char c) { return missingChars.find(c) != string::npos;}),
                 seqChars.end());
     }
 
@@ -678,14 +678,14 @@ CAlnReader::x_GetSequenceMolType(
         alphabet.size() >= 2*26) {
         return CSeq_inst::eMol_aa;
     }
-    
+
     auto posFirstT = seqChars.find_first_of("Tt");
     auto posFirstU = seqChars.find_first_of("Uu");
     if (posFirstT != string::npos  &&  posFirstU != string::npos) {
         string msg = "Invalid Mol Type: "
                      "U and T cannot appear in the same nucleotide sequence. "
                      "Reinterpreting as protein.";
-        sReportError(pErrorListener, 
+        sReportError(pErrorListener,
                      eDiag_Error,
                      eReader_Alignment,
                      eAlnSubcode_InconsistentMolType,
@@ -780,7 +780,7 @@ CRef<CSeq_entry> CAlnReader::GetSeqEntry(const TFastaFlags fasta_flags,
         }
         else {
             for (auto& pSeqEntry : seq_set) {
-                x_AddTitle(m_DeflineInfo[i++].mData, 
+                x_AddTitle(m_DeflineInfo[i++].mData,
                         pSeqEntry->SetSeq());
             }
         }
@@ -796,15 +796,15 @@ static void s_AppendMods(
     )
 {
     for (const auto& mod : mods) {
-        title.append(" [" 
+        title.append(" ["
             + mod.GetName()
-            + "=" 
+            + "="
             + mod.GetValue()
             + "]");
     }
 }
 
-void CAlnReader::x_AddMods(const SLineInfo& defline_info, 
+void CAlnReader::x_AddMods(const SLineInfo& defline_info,
         CBioseq& bioseq,
         ILineErrorListener* pErrorListener)
 {
@@ -817,9 +817,9 @@ void CAlnReader::x_AddMods(const SLineInfo& defline_info,
     _ASSERT(pFirstID != nullptr);
     const auto idString = pFirstID->AsFastaString();
 
-    CDefaultModErrorReporter 
+    CDefaultModErrorReporter
         errorReporter(idString, defline_info.mNumLine, pErrorListener);
-        
+
     CModHandler::TModList mod_list;
     string remainder;
 
@@ -827,7 +827,7 @@ void CAlnReader::x_AddMods(const SLineInfo& defline_info,
     CTitleParser::Apply(defline, mod_list, remainder);
     if (mod_list.empty() && NStr::IsBlank(remainder)) {
         return;
-    } 
+    }
 
     CModHandler mod_handler;
     CModHandler::TModList rejected_mods;
@@ -849,7 +849,7 @@ void CAlnReader::x_AddMods(const SLineInfo& defline_info,
 }
 
 
-void CAlnReader::x_AddTitle(const string& title, CBioseq& bioseq) 
+void CAlnReader::x_AddTitle(const string& title, CBioseq& bioseq)
 {
     if (NStr::IsBlank(title)) {
         return;
@@ -860,25 +860,25 @@ void CAlnReader::x_AddTitle(const string& title, CBioseq& bioseq)
 }
 
 
-void CAlnReader::ParseDefline(const string& defline, 
+void CAlnReader::ParseDefline(const string& defline,
     const SDeflineParseInfo& info,
-    const TIgnoredProblems& ignoredErrors, 
-    list<CRef<CSeq_id>>& ids, 
-    bool& hasRange, 
+    const TIgnoredProblems& ignoredErrors,
+    list<CRef<CSeq_id>>& ids,
+    bool& hasRange,
     TSeqPos& rangeStart,
     TSeqPos& rangeEnd,
     TSeqTitles& seqTitles,
     ILineErrorListener* pMessageListener)
 {
     CFastaDeflineReader::ParseDefline(
-        defline, 
+        defline,
         info,
-        ignoredErrors, 
-        ids, 
-        hasRange, 
-        rangeStart, 
+        ignoredErrors,
+        ids,
+        hasRange,
+        rangeStart,
         rangeEnd,
-        seqTitles, 
+        seqTitles,
         pMessageListener);
 }
 

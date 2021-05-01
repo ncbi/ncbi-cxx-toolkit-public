@@ -38,7 +38,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-// static 
+// static
 CLineError* CLineError::Create(
         EProblem eProblem,
         EDiagSev eSeverity,
@@ -64,7 +64,7 @@ CLineError* CLineError::Create(
             vecOfOtherLines);
 }
 
-void 
+void
 CLineError::Throw(void) const {
     // this triggers a deprecated-call warning, which should disappear
     // once the constructors become protected instead of deprecated.
@@ -81,15 +81,15 @@ CLineError::CLineError(
     const std::string & strQualifierValue,
     const std::string & strErrorMessage,
     const TVecOfLines & vecOfOtherLines )
-    : m_eProblem(eProblem), m_eSeverity( eSeverity ), m_strSeqId(strSeqId), m_uLine( uLine ), 
-    m_strFeatureName(strFeatureName), m_strQualifierName(strQualifierName), 
+    : m_eProblem(eProblem), m_eSeverity( eSeverity ), m_strSeqId(strSeqId), m_uLine( uLine ),
+    m_strFeatureName(strFeatureName), m_strQualifierName(strQualifierName),
     m_strQualifierValue(strQualifierValue), m_strErrorMessage(strErrorMessage),
     m_vecOfOtherLines(vecOfOtherLines)
 { }
 
 CLineError::CLineError(const CLineError & rhs ) :
-m_eProblem(rhs.m_eProblem), m_eSeverity(rhs.m_eSeverity ), m_strSeqId(rhs.m_strSeqId), m_uLine(rhs.m_uLine ), 
-    m_strFeatureName(rhs.m_strFeatureName), m_strQualifierName(rhs.m_strQualifierName), 
+m_eProblem(rhs.m_eProblem), m_eSeverity(rhs.m_eSeverity ), m_strSeqId(rhs.m_strSeqId), m_uLine(rhs.m_uLine ),
+    m_strFeatureName(rhs.m_strFeatureName), m_strQualifierName(rhs.m_strQualifierName),
     m_strQualifierValue(rhs.m_strQualifierValue), m_strErrorMessage(rhs.m_strErrorMessage),
     m_vecOfOtherLines(rhs.m_vecOfOtherLines)
 { }
@@ -130,7 +130,7 @@ CLineErrorEx* CLineErrorEx::Create(
 }
 
 
-void 
+void
 CLineErrorEx::Throw(void) const {
     // this triggers a deprecated-call warning, which should disappear
     // once the constructors become protected instead of deprecated.
@@ -150,21 +150,21 @@ CLineErrorEx::CLineErrorEx(
     const std::string & strQualifierName,
     const std::string & strQualifierValue,
     const TVecOfLines & vecOfOtherLines )
-    : m_eProblem(eProblem), m_eSeverity( eSeverity ), 
+    : m_eProblem(eProblem), m_eSeverity( eSeverity ),
       m_Code(code), m_Subcode(subcode),
-    m_strSeqId(strSeqId), m_uLine( uLine ), 
-    m_strFeatureName(strFeatureName), m_strQualifierName(strQualifierName), 
-    m_strQualifierValue(strQualifierValue), 
+    m_strSeqId(strSeqId), m_uLine( uLine ),
+    m_strFeatureName(strFeatureName), m_strQualifierName(strQualifierName),
+    m_strQualifierValue(strQualifierValue),
     m_strErrorMessage(strErrorMessage),
     m_vecOfOtherLines(vecOfOtherLines)
 { }
 
 
 CLineErrorEx::CLineErrorEx(const CLineErrorEx & rhs ) :
-    CLineErrorEx(rhs.m_eProblem, 
-                 rhs.m_eSeverity, 
-                 rhs.m_Code, 
-                 rhs.m_Subcode, 
+    CLineErrorEx(rhs.m_eProblem,
+                 rhs.m_eSeverity,
+                 rhs.m_Code,
+                 rhs.m_Subcode,
                  rhs.m_strSeqId,
                  rhs.m_uLine,
                  rhs.m_strErrorMessage,
@@ -175,8 +175,8 @@ CLineErrorEx::CLineErrorEx(const CLineErrorEx & rhs ) :
 {}
 
 /*
-m_eProblem(rhs.m_eProblem), m_eSeverity(rhs.m_eSeverity ), m_strSeqId(rhs.m_strSeqId), m_uLine(rhs.m_uLine ), 
-    m_strFeatureName(rhs.m_strFeatureName), m_strQualifierName(rhs.m_strQualifierName), 
+m_eProblem(rhs.m_eProblem), m_eSeverity(rhs.m_eSeverity ), m_strSeqId(rhs.m_strSeqId), m_uLine(rhs.m_uLine ),
+    m_strFeatureName(rhs.m_strFeatureName), m_strQualifierName(rhs.m_strQualifierName),
     m_strQualifierValue(rhs.m_strQualifierValue), m_strErrorMessage(rhs.m_strErrorMessage),
     m_vecOfOtherLines(rhs.m_vecOfOtherLines)
 { }
@@ -217,7 +217,7 @@ ILineError *CObjReaderLineException::Clone(void) const
     return new CObjReaderLineException(*this);
 }
 
-void 
+void
 CObjReaderLineException::Throw(void) const {
     // this triggers a deprecated-call warning, which should disappear
     // once the constructors become protected instead of deprecated.
@@ -237,9 +237,9 @@ CObjReaderLineException::CObjReaderLineException(
     const TVecOfLines & vecOfOtherLines
     )
     : CObjReaderParseException( DIAG_COMPILE_INFO, 0, static_cast<CObjReaderParseException::EErrCode>(CException::eInvalid), strMessage, uLine,
-    eDiag_Info ), 
+    eDiag_Info ),
     m_eProblem(eProblem), m_strSeqId(strSeqId), m_uLineNumber(uLine),
-    m_strFeatureName(strFeatureName), m_strQualifierName(strQualifierName), 
+    m_strFeatureName(strFeatureName), m_strQualifierName(strQualifierName),
     m_strQualifierValue(strQualifierValue), m_strErrorMessage(strMessage),
     m_vecOfOtherLines(vecOfOtherLines)
 {
@@ -248,8 +248,8 @@ CObjReaderLineException::CObjReaderLineException(
 }
 
 CObjReaderLineException::CObjReaderLineException(const CObjReaderLineException & rhs ) :
-CObjReaderParseException( rhs ), 
-    m_eProblem(rhs.Problem()), m_strSeqId(rhs.SeqId()), m_uLineNumber(rhs.Line()), 
+CObjReaderParseException( rhs ),
+    m_eProblem(rhs.Problem()), m_strSeqId(rhs.SeqId()), m_uLineNumber(rhs.Line()),
     m_strFeatureName(rhs.FeatureName()), m_strQualifierName(rhs.QualifierName()),
     m_strQualifierValue(rhs.QualifierValue()), m_strErrorMessage(rhs.ErrorMessage()),
     m_vecOfOtherLines(rhs.m_vecOfOtherLines)

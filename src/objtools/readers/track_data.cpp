@@ -86,14 +86,14 @@ bool CTrackData::ParseLine(
 }
 
 //  ----------------------------------------------------------------------------
-int CTrackData::Offset() const 
+int CTrackData::Offset() const
 //  ----------------------------------------------------------------------------
-{ 
+{
     string offset = ValueOf("offset");
     if (offset.empty()) {
         return 0;
     }
-    return NStr::StringToInt(offset); 
+    return NStr::StringToInt(offset);
 };
 
 //  ----------------------------------------------------------------------------
@@ -117,7 +117,7 @@ CTrackData::WriteToAnnot(
     CAnnot_descr& desc = annot.SetDesc();
     CRef<CUser_object> pTrackdata(new CUser_object());
     pTrackdata->SetType().SetStr("Track Data");
-   
+
     if (!Description().empty()) {
         annot.SetTitleDesc(Description());
     }

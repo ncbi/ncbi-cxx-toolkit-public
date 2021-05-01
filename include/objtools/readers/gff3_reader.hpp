@@ -114,7 +114,7 @@ protected:
         const TReaderData&,
         CSeq_annot&);
 
-    virtual CGff3ReadRecord* x_CreateRecord() { return new CGff3ReadRecord(); };    
+    virtual CGff3ReadRecord* x_CreateRecord() { return new CGff3ReadRecord(); };
 
     virtual bool xInitializeFeature(
         const CGff2Record&,
@@ -216,7 +216,7 @@ protected:
         const string&,
         CSeq_annot&,
         ILineErrorListener*);
-      
+
     virtual bool xParseAlignment(
         const string& strLine);
 

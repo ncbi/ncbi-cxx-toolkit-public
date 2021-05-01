@@ -51,20 +51,20 @@ public:
     virtual ~ILineErrorListener() {}
 
     // IListener::Post() implementation
-    NCBI_STD_DEPRECATED("This method is no longer functional and will be removed in SC-25.") 
+    NCBI_STD_DEPRECATED("This method is no longer functional and will be removed in SC-25.")
     virtual void Post(const IMessage& /*message*/)
     {
         // Remove in SC-25
         return;
     }
 
-    NCBI_STD_DEPRECATED("This method is redundant and will be removed in SC-25.") 
-    virtual void Push(const IObjtoolsMessage& message) 
+    NCBI_STD_DEPRECATED("This method is redundant and will be removed in SC-25.")
+    virtual void Push(const IObjtoolsMessage& message)
     {
         // Remove in SC-25
         PutMessage(message);
     }
-    /// Store error in the container, and 
+    /// Store error in the container, and
     /// return true if error was stored fine, and
     /// return false if the caller should terminate all further processing.
     ///
@@ -72,13 +72,13 @@ public:
     PutError(
         const ILineError& ) = 0;
 
-    virtual bool 
+    virtual bool
     PutMessage(const IObjtoolsMessage& message) {
         const ILineError* le = dynamic_cast<const ILineError*>(&message);
         if (!le) return true;
         return PutError(*le);
     }
-    
+
     // IListener::Get() implementation
     virtual const ILineError& Get(size_t index) const
     { return this->GetError(index); }
@@ -134,30 +134,29 @@ class NCBI_XOBJREAD_EXPORT CMessageListenerBase : public objects::IMessageListen
 public:
     CMessageListenerBase() : m_pProgressOstrm(0) {};
     virtual ~CMessageListenerBase() {};
-    
+
 public:
     size_t
     Count() const { return m_Errors.size(); };
-    
+
     virtual size_t
     LevelCount(
         EDiagSev eSev ) {
-        
         size_t uCount( 0 );
         for ( size_t u=0; u < Count(); ++u ) {
             if ( m_Errors[u]->GetSeverity() == eSev ) ++uCount;
         }
         return uCount;
     };
-    
+
     void
     ClearAll() { m_Errors.clear(); };
-    
+
     const ILineError&
     GetError(
-        size_t uPos ) const { 
+        size_t uPos ) const {
             return *dynamic_cast<ILineError*>(m_Errors[ uPos ].get()); }
-    
+
     virtual void Dump()
     {
         if (m_pProgressOstrm)
@@ -209,7 +208,7 @@ public:
     /// @param eNcbiOwnership
     ///   Indicates whether this CMessageListenerBase should own
     ///   pProgressOstrm.
-    virtual void 
+    virtual void
     SetProgressOstream(
         CNcbiOstream * pProgressOstrm,
         ENcbiOwnership eNcbiOwnership = eNoOwnership )
@@ -273,14 +272,14 @@ public:
         StoreMessage(message);
         return true;
     }
-    
+
     bool
     PutError(
-        const ILineError& err ) 
+        const ILineError& err )
     {
         return PutMessage(err);
     };
-};        
+};
 
 //  ============================================================================
 class CMessageListenerStrict:
@@ -292,8 +291,8 @@ class CMessageListenerStrict:
 public:
     CMessageListenerStrict() {};
     ~CMessageListenerStrict() {};
-    
-    bool 
+
+    bool
     PutMessage(
         const IObjtoolsMessage& message)
     {
@@ -303,11 +302,11 @@ public:
 
     bool
     PutError(
-        const ILineError& err ) 
+        const ILineError& err )
     {
         return PutMessage(err);
     };
-};        
+};
 
 //  ===========================================================================
 class CMessageListenerCount:
@@ -320,7 +319,7 @@ public:
     CMessageListenerCount(
         size_t uMaxCount ): m_uMaxCount( uMaxCount ) {};
     ~CMessageListenerCount() {};
-   
+
     bool PutMessage(
         const IObjtoolsMessage& message)
     {
@@ -331,10 +330,10 @@ public:
 
     bool
     PutError(
-        const ILineError& err ) 
+        const ILineError& err )
     {
         return PutMessage(err);
-    };    
+    };
 protected:
     size_t m_uMaxCount;
 };
@@ -350,10 +349,10 @@ public:
     CMessageListenerLevel(
         int iLevel ): m_iAcceptLevel( iLevel ) {};
     ~CMessageListenerLevel() {};
-   
-    bool 
+
+    bool
     PutMessage(
-        const IObjtoolsMessage& message) 
+        const IObjtoolsMessage& message)
     {
         StoreMessage(message);
         return (message.GetSeverity() <= m_iAcceptLevel);
@@ -361,10 +360,10 @@ public:
 
     bool
     PutError(
-        const ILineError& err ) 
+        const ILineError& err )
     {
         return PutMessage(err);
-    };    
+    };
     protected:
         int m_iAcceptLevel;
     };
@@ -401,7 +400,7 @@ private:
 //  ===========================================================================
 class NCBI_XOBJREAD_EXPORT CGPipeMessageListener :
 //  ===========================================================================
-    public CMessageListenerBase 
+    public CMessageListenerBase
 {
 public:
     CGPipeMessageListener(bool ignoreBadModValue=false);

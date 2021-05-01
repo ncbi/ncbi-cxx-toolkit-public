@@ -105,7 +105,7 @@ namespace {
             if( vecFileNamePieces.size() > 2 ) {
                 iFileNumber = NStr::StringToUInt(vecFileNamePieces[2]);
             }
-            
+
             STestInfo & test_info_to_load =
                 (*m_pTestNameToInfoMap)[vecFileNamePieces[0]];
 
@@ -120,7 +120,7 @@ namespace {
                 // handle expected seq-entry file
                 // (Note that the files could come in in any order)
 
-                vector<CFile> & vecExpectedSeqEntryFiles = 
+                vector<CFile> & vecExpectedSeqEntryFiles =
                     test_info_to_load.m_vecExpectedSeqEntryFiles;
 
                 if( vecExpectedSeqEntryFiles.size() <= iFileNumber ) {
@@ -168,7 +168,7 @@ namespace {
                     BOOST_CHECK(0 == (fFlags & CAgpToSeqEntry::fSetSeqGap));
                     fFlags |= CAgpToSeqEntry::fSetSeqGap;
                 } else {
-                    BOOST_ERROR("Unknown line in flags file (" 
+                    BOOST_ERROR("Unknown line in flags file ("
                         << testInfo.m_FlagFile.GetPath() << "): " << sLine);
                 }
             }
@@ -189,7 +189,7 @@ namespace {
             // bad.
             BOOST_CHECK_EQUAL( iErrCode, 0 );
 
-            const string sErrorMsgs = 
+            const string sErrorMsgs =
                 agpToSeqEntry.GetErrorHandler()->GetErrorMessage();
             if( ! sErrorMsgs.empty() ) {
                 cout << "AGP errors/warnings: " << endl;
@@ -215,7 +215,7 @@ namespace {
             CRef<CSeq_entry> pExpectedSeqEntry;
             if( idx < uNumExpected )
             {
-                CNcbiIfstream expected_seq_entry_file( 
+                CNcbiIfstream expected_seq_entry_file(
                     testInfo.m_vecExpectedSeqEntryFiles[idx].GetPath().c_str() );
                 pExpectedSeqEntry.Reset( new CSeq_entry );
                 BOOST_CHECK_NO_THROW(expected_seq_entry_file >> MSerial_AsnText >> *pExpectedSeqEntry);
@@ -223,10 +223,10 @@ namespace {
 
             // check if same (or if none was expected here)
             if( pExpectedSeqEntry.IsNull() ||
-                ! pResultingSeqEntry->Equals(*pExpectedSeqEntry) ) 
+                ! pResultingSeqEntry->Equals(*pExpectedSeqEntry) )
             {
-                BOOST_ERROR("For test " << sTestName 
-                    << " on index " << idx 
+                BOOST_ERROR("For test " << sTestName
+                    << " on index " << idx
                     << ", the resulting seq-entry does not match "
                     "what was expected");
                 cerr << "##### Resulting Seq-entry: " << endl;
@@ -244,7 +244,7 @@ NCBITEST_INIT_CMDLINE(arg_descrs)
         "agp_seq_entry_test_cases" );
 }
 
-// This test case will automatically walk the test data directory to 
+// This test case will automatically walk the test data directory to
 // find all the tests to do.  It is pretty much file-driven, so it
 // should be quite easy to add new tests as necessary.
 BOOST_AUTO_TEST_CASE(RunTests)
@@ -259,7 +259,7 @@ BOOST_AUTO_TEST_CASE(RunTests)
 
     CDir test_cases_dir( args["test-dir"].AsDirectory() );
 
-    BOOST_REQUIRE_MESSAGE( test_cases_dir.IsDir(), 
+    BOOST_REQUIRE_MESSAGE( test_cases_dir.IsDir(),
         "Cannot find dir: " << test_cases_dir.GetPath() );
 
     cout << endl;
@@ -276,18 +276,18 @@ BOOST_AUTO_TEST_CASE(RunTests)
     cout << endl;
     cout << "#################### BASIC SANITY CHECKING OF TESTS" << endl;
     cout << endl;
-    
+
     // validate every STestInfo
     ITERATE(TTestNameToInfoMap, name_to_info_it, testNameToInfoMap) {
         const string & sName = name_to_info_it->first;
         const STestInfo & testInfo = name_to_info_it->second;
-        
+
         cout << "Verifying: " << sName << endl;
 
         BOOST_REQUIRE_MESSAGE( testInfo.m_AGPFile.Exists(),
             "AGP file does not exist: " << testInfo.m_AGPFile.GetPath() );
         for( size_t idx = 0; idx < testInfo.m_vecExpectedSeqEntryFiles.size(); ++idx ) {
-            BOOST_REQUIRE_MESSAGE( 
+            BOOST_REQUIRE_MESSAGE(
                 testInfo.m_vecExpectedSeqEntryFiles[idx].Exists(),
                 "Seq-entry file with index " << idx << " does not exist");
         }
@@ -305,7 +305,7 @@ BOOST_AUTO_TEST_CASE(RunTests)
     ITERATE(TTestNameToInfoMap, name_to_info_it, testNameToInfoMap) {
         const string & sName = name_to_info_it->first;
         const STestInfo & testInfo = name_to_info_it->second;
-        
+
         cout << "Running test: " << sName << endl;
 
         BOOST_CHECK_NO_THROW(s_RunTest(sName, testInfo));

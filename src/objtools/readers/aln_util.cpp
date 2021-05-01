@@ -43,7 +43,7 @@ BEGIN_SCOPE(objects);
 
 
 //  --------------------------------------------------------------------------
-void 
+void
 AlnUtil::CheckId(const string& seqId,
         const vector<SLineInfo>& orderedIds,
         int idCount,
@@ -119,7 +119,7 @@ AlnUtil::CheckId(const string& seqId,
             "Conflicting IDs: \"%s\" differs only in case from \"%s\", which has already appeared in this block, on line %d.", seqId.c_str(), it->mData.c_str(), it->mNumLine);
         }
     }
-    else 
+    else
     if (idPos == idCount) { //
         description = ErrorPrintf(
             "Inconsistent ID case: \"%s\" differs in case from \"%s\" used to identify this sequence in the first block.",

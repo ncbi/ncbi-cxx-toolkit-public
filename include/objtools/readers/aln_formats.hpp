@@ -26,7 +26,7 @@
  *
  * ===========================================================================
  *
- * Authors:  
+ * Authors:
  *
  * File Description:  C++ wrappers for alignment file reading
  *

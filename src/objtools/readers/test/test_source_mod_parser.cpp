@@ -89,10 +89,10 @@ void CSourceModParserTestApp::Init(void)
         ("org", "Organism", "Organism name to use by default",
          CArgDescriptions::eString, "");
 
-    arg_desc->AddOptionalKey("tbsq", "TitleBioseq", 
+    arg_desc->AddOptionalKey("tbsq", "TitleBioseq",
         "If you specify this input file, which should contain a CBioseq in "
             "text ASN.1 format, then the program will output that bioseq with its"
-            "title processed like in FASTA and turned into features, etc.", 
+            "title processed like in FASTA and turned into features, etc.",
         CArgDescriptions::eInputFile );
 
     SetupArgDescriptions(arg_desc.release());
@@ -150,18 +150,18 @@ int CSourceModParserTestApp::Run(void)
         tbl_filter.SetActionForFeat("Source", ITableFilter::eAction_Disallowed );
 
         CMessageListenerLenient err_container;
-        CFeature_table_reader::ReadSequinFeatureTables( args["feattbl"].AsInputFile(), *entry, 
-            CFeature_table_reader::fReportBadKey, 
+        CFeature_table_reader::ReadSequinFeatureTables( args["feattbl"].AsInputFile(), *entry,
+            CFeature_table_reader::fReportBadKey,
             &err_container, &tbl_filter );
 
         // print out result
-        s_Visit(*entry, oos /*, args["org"].AsString() */ ); 
+        s_Visit(*entry, oos /*, args["org"].AsString() */ );
 
         // print out any errors found:
         size_t idx = 0;
         for( ; idx < err_container.Count(); ++idx ) {
             const ILineError &err = err_container.GetError(idx);
-            cerr << "Error in seq-id " << err.SeqId() << " on line " << err.Line() << " of severity " << err.SeverityStr() << ": \"" 
+            cerr << "Error in seq-id " << err.SeqId() << " on line " << err.Line() << " of severity " << err.SeverityStr() << ": \""
                 << err.Message() << "\"" << endl;
         }
     }
@@ -188,8 +188,8 @@ int CSourceModParserTestApp::Run(void)
 
         TBshVec::iterator bsh_vec_iter = bsh_vec.begin();
         for( ; bsh_vec_iter != bsh_vec.end(); ++bsh_vec_iter ) {
-            CSourceModParserWrapper::ExtractTitleAndApplyAllMods( 
-                *bsh_vec_iter, 
+            CSourceModParserWrapper::ExtractTitleAndApplyAllMods(
+                *bsh_vec_iter,
                 args["org"].AsString() );
             oos << *bsh_vec_iter->GetCompleteBioseq();
         }

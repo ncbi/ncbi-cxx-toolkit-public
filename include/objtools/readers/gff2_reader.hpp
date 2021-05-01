@@ -78,30 +78,30 @@ public:
         CReaderListener* pListener = nullptr);
 
     virtual ~CGff2Reader();
-    
+
     //
     //  object interface:
     //
 public:
-    unsigned int 
+    unsigned int
     ObjectType() const { return OT_SEQENTRY; };
-    
+
     CRef< CSeq_entry >
     ReadSeqEntry(
         ILineReader&,
         ILineErrorListener* =nullptr);
-        
+
     virtual CRef< CSerialObject >
     ReadObject(
         ILineReader&,
         ILineErrorListener* =nullptr);
-                
+
     virtual void
     ReadSeqAnnots(
         TAnnotList&,
         CNcbiIstream&,
         ILineErrorListener* =nullptr);
-                        
+
     virtual void
     ReadSeqAnnots(
         TAnnotList&,
@@ -114,12 +114,12 @@ public:
     //
     // class interface:
     //
-    static bool 
+    static bool
     IsAlignmentData(
         const string&);
 
     //
-    //  new stuff: 
+    //  new stuff:
     //
     virtual void xGetData(
         ILineReader&,
@@ -129,12 +129,12 @@ public:
 
     virtual bool xParseStructuredComment(
         const string&);
-    
+
     virtual bool xParseFeature(
         const string&,
         CSeq_annot&,
         ILineErrorListener*);
-      
+
     virtual bool xIsCurrentDataType(
         const string&);
 
@@ -146,7 +146,7 @@ public:
         const string& = "");
 
     virtual bool x_ParseAlignmentGff(
-        const string& strLine, 
+        const string& strLine,
         list<string>& id_list,
         map<string, list<CRef<CSeq_align>>>& alignments);
 
@@ -170,10 +170,10 @@ public:
     void x_InitializeScoreSums(const TScoreValueMap score_values,
         map<string, TSeqPos>& summed_scores) const;
 
-    void x_ProcessAlignmentScores(const CSeq_align& alignment, 
+    void x_ProcessAlignmentScores(const CSeq_align& alignment,
         map<string, TSeqPos>& summed_scores,
         TScoreValueMap& common_scores) const;
-     
+
     void x_ProcessAlignmentsGff(
         const list<string>& id_list,
         const map<string, list<CRef<CSeq_align>>>& alignments,
@@ -192,7 +192,7 @@ public:
     virtual bool xAddFeatureToAnnot(
         CRef< CSeq_feat >,
         CSeq_annot& );
-                            
+
     bool xFeatureSetQualifier(
         const string&,
         const string&,
@@ -201,7 +201,7 @@ public:
     virtual bool x_ProcessQualifierSpecialCase(
         CGff2Record::TAttrCit,
         CRef< CSeq_feat > );
-  
+
     bool x_GetFeatureById(
         const string&,
         CRef< CSeq_feat >& );
@@ -211,7 +211,7 @@ public:
         CRef<CSeq_align> );
 
     bool xSetDensegStarts(
-        const vector<string>& gapParts, 
+        const vector<string>& gapParts,
         ENa_strand identStrand,
         ENa_strand targetStrand,
         const TSeqPos targetStart,
@@ -235,17 +235,17 @@ public:
     virtual bool xGenerateParentChildXrefs(
         CSeq_annot&);
 
-    bool xUpdateSplicedAlignment(const CGff2Record& gff, 
+    bool xUpdateSplicedAlignment(const CGff2Record& gff,
                                  CRef<CSeq_align> pAlign) const;
 
-    bool xUpdateSplicedSegment(const CGff2Record& gff, 
+    bool xUpdateSplicedSegment(const CGff2Record& gff,
                                CSpliced_seg& segment) const;
 
     bool xSetSplicedExon(
         const CGff2Record& gff,
         CRef<CSpliced_exon> pExon) const;
 
-    bool xGetTargetParts(const CGff2Record& gff, 
+    bool xGetTargetParts(const CGff2Record& gff,
                          vector<string>& targetParts) const;
 
     bool xAlignmentSetSegment(

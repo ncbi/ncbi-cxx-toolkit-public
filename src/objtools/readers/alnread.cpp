@@ -74,7 +74,7 @@ GetScannerForFormat(
 
 
 //  ----------------------------------------------------------------------------
-bool 
+bool
 ReadAlignmentFile(
     istream& istr,
     bool gen_local_ids,

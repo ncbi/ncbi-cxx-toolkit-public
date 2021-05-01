@@ -15,7 +15,7 @@ struct SHgvsLexer : lex::lexer<TLexer>
 
     SHgvsLexer();
 
-    typedef lex::token_def<lex::omit> TSimpleToken;       // This token type only has an identifier 
+    typedef lex::token_def<lex::omit> TSimpleToken;       // This token type only has an identifier
     typedef lex::token_def<std::string> TAttributedToken; // This token also includes attribute
 
     TSimpleToken dup;

@@ -76,7 +76,7 @@ string CGff3Reader::xMakeRecordId(
     string id, parentId;
     record.GetAttribute("ID", id);
     record.GetAttribute("Parent", parentId);
-    
+
     auto recordType = record.Type();
     NStr::ToLower(recordType);
     if (recordType == "cds") {
@@ -125,7 +125,7 @@ bool CGff3ReadRecord::AssignFromGff(
         m_strType = "transcript";
         m_Attributes["pseudo"] = "true";
         return true;
-    }        
+    }
     if (m_strType == "pseudogenic_tRNA") {
         m_strType = "tRNA";
         m_Attributes["pseudo"] = "true";
@@ -221,12 +221,12 @@ CGff3Reader::~CGff3Reader()
 {
 }
 
-//  ----------------------------------------------------------------------------                
+//  ----------------------------------------------------------------------------
 CRef<CSeq_annot>
 CGff3Reader::ReadSeqAnnot(
     ILineReader& lr,
-    ILineErrorListener* pEC ) 
-//  ----------------------------------------------------------------------------                
+    ILineErrorListener* pEC )
+//  ----------------------------------------------------------------------------
 {
     mCurrentFeatureCount = 0;
     mParsingAlignment = false;
@@ -243,12 +243,12 @@ CGff3Reader::ReadSeqAnnot(
 void
 CGff3Reader::xProcessData(
     const TReaderData& readerData,
-    CSeq_annot& annot) 
+    CSeq_annot& annot)
 //  ----------------------------------------------------------------------------
 {
     for (const auto& lineData: readerData) {
         const auto& line = lineData.mData;
-        if (xParseStructuredComment(line)  &&  
+        if (xParseStructuredComment(line)  &&
                 !NStr::StartsWith(line, "##sequence-region") ) {
             continue;
         }
@@ -263,7 +263,7 @@ CGff3Reader::xProcessData(
 
 //  ----------------------------------------------------------------------------
 void CGff3Reader::xProcessAlignmentData(
-    CSeq_annot& annot) 
+    CSeq_annot& annot)
 //  ----------------------------------------------------------------------------
 {
     for (const string& id : mAlignmentData.mIds) {
@@ -301,14 +301,14 @@ CGff3Reader::xParseFeature(
     shared_ptr<CGff3ReadRecord> pRecord(x_CreateRecord());
     try {
         if (!pRecord->AssignFromGff(line)) {
-			return false;
-		}
+            return false;
+        }
     }
     catch(CObjReaderLineException& err) {
         ProcessError(err, pEC);
         return false;
     }
-    
+
     //make sure we are interested:
     if (xIsIgnoredFeatureType(pRecord->Type())) {
         return true;
@@ -354,7 +354,7 @@ bool CGff3Reader::xParseAlignment(
     if ( !pRecord->AssignFromGff(strLine) ) {
         return false;
     }
-    
+
     string id;
     if ( !pRecord->GetAttribute("ID", id) ) {
         id = pRecord->Id();
@@ -439,7 +439,7 @@ void CGff3Reader::xVerifyExonLocation(
     const CSeq_interval& containingInt = cit->second.GetObject();
     const CRef<CSeq_loc> pContainedLoc = exon.GetSeqLoc(m_iFlags, mSeqIdResolve);
     const CSeq_interval& containedInt = pContainedLoc->GetInt();
-    if (containedInt.GetFrom() < containingInt.GetFrom()  ||  
+    if (containedInt.GetFrom() < containingInt.GetFrom()  ||
             containedInt.GetTo() > containingInt.GetTo()) {
         string message = "Bad data line: ";
         message += exon.Type();
@@ -462,9 +462,9 @@ bool CGff3Reader::xUpdateAnnotExon(
 {
     list<string> parents;
     if (record.GetAttribute("Parent", parents)) {
-        for (list<string>::const_iterator it = parents.begin(); it != parents.end(); 
+        for (list<string>::const_iterator it = parents.begin(); it != parents.end();
                 ++it) {
-            const string& parentId = *it; 
+            const string& parentId = *it;
             CRef<CSeq_feat> pParent;
             if (!x_GetFeatureById(parentId, pParent)) {
                 xAddPendingExon(parentId, record);
@@ -477,7 +477,7 @@ bool CGff3Reader::xUpdateAnnotExon(
                 if  (!xInitializeFeature(record, pFeature)) {
                     return false;
                 }
-                return xAddFeatureToAnnot(pFeature, annot);            
+                return xAddFeatureToAnnot(pFeature, annot);
             }
             IdToFeatureMap::iterator fit = m_MapIdToFeature.find(parentId);
             if (fit != m_MapIdToFeature.end()) {
@@ -504,9 +504,9 @@ bool CGff3Reader::xJoinLocationIntoRna(
     if (!record.GetAttribute("Parent", parents)) {
         return true;
     }
-    for (list<string>::const_iterator it = parents.begin(); it != parents.end(); 
+    for (list<string>::const_iterator it = parents.begin(); it != parents.end();
             ++it) {
-        const string& parentId = *it; 
+        const string& parentId = *it;
         CRef<CSeq_feat> pParent;
         if (!x_GetFeatureById(parentId, pParent)) {
             // Danger:
@@ -594,7 +594,7 @@ bool CGff3Reader::xFeatureSetXrefGrandParent(
         CRef<CFeat_id> pGrandParentId(new CFeat_id);
         pGrandParentId->Assign(pGrandParent->GetId());
         CRef<CSeqFeatXref> pGrandParentXref(new CSeqFeatXref);
-        pGrandParentXref->SetId(*pGrandParentId);  
+        pGrandParentXref->SetId(*pGrandParentId);
         pFeature->SetXref().push_back(pGrandParentXref);
 
         //xref grandparent->grandchild
@@ -623,7 +623,7 @@ bool CGff3Reader::xFeatureSetXrefParent(
     CRef<CFeat_id> pParentId(new CFeat_id);
     pParentId->Assign(pParent->GetId());
     CRef<CSeqFeatXref> pParentXref(new CSeqFeatXref);
-    pParentXref->SetId(*pParentId);  
+    pParentXref->SetId(*pParentId);
     pChild->SetXref().push_back(pParentXref);
 
     //xref parent->child
@@ -697,8 +697,8 @@ bool CGff3Reader::xUpdateAnnotGeneric(
             throw error;
         }
 
-        CRef<CCode_break> pCodeBreak(new CCode_break); 
-        CSeq_interval& cbLoc = pCodeBreak->SetLoc().SetInt();        
+        CRef<CCode_break> pCodeBreak(new CCode_break);
+        CSeq_interval& cbLoc = pCodeBreak->SetLoc().SetInt();
         CRef< CSeq_id > pId = mSeqIdResolve(record.Id(), m_iFlags, true);
         cbLoc.SetId(*pId);
         cbLoc.SetFrom(static_cast<TSeqPos>(record.SeqStart()));
@@ -724,7 +724,7 @@ bool CGff3Reader::xUpdateAnnotGeneric(
     if ( record.GetAttribute("ID", strId)) {
         m_MapIdToFeature[strId] = pFeature;
     }
-    if (pFeature->GetData().IsRna()  ||  
+    if (pFeature->GetData().IsRna()  ||
             pFeature->GetData().GetSubtype() == CSeqFeatData::eSubtype_misc_RNA) {
         CRef<CSeq_interval> rnaLoc(new CSeq_interval);
         rnaLoc->Assign(pFeature->GetLocation().GetInt());
@@ -766,7 +766,7 @@ bool CGff3Reader::xUpdateAnnotMrna(
         }
     }
 
-    string strId;   
+    string strId;
     if ( record.GetAttribute("ID", strId)) {
         m_MapIdToFeature[strId] = pFeature;
     }
@@ -911,7 +911,7 @@ bool CGff3Reader::xIsIgnoredFeatureType(
         "start_codon", // also part of a cds feature
         "stop_codon", // in GFF3, also part of a cds feature
     };
-    DEFINE_STATIC_ARRAY_MAP(STRINGARRAY, ignoredTypesAlways, ignoredTypesAlways_);    
+    DEFINE_STATIC_ARRAY_MAP(STRINGARRAY, ignoredTypesAlways, ignoredTypesAlways_);
     STRINGARRAY::const_iterator cit = ignoredTypesAlways.find(ftype);
     if (cit != ignoredTypesAlways.end()) {
         return true;
@@ -944,7 +944,7 @@ bool CGff3Reader::xIsIgnoredFeatureType(
         "vault_RNA",
         "Y_RNA"
     };
-    DEFINE_STATIC_ARRAY_MAP(STRINGARRAY, specialTypesGenbank, specialTypesGenbank_);    
+    DEFINE_STATIC_ARRAY_MAP(STRINGARRAY, specialTypesGenbank, specialTypesGenbank_);
 
     static const char* const ignoredTypesGenbank_[] = {
         "apicoplast_chromosome",
@@ -978,7 +978,7 @@ bool CGff3Reader::xIsIgnoredFeatureType(
         "translated_nucleotide_match",
         "ultracontig",
     };
-    DEFINE_STATIC_ARRAY_MAP(STRINGARRAY, ignoredTypesGenbank, ignoredTypesGenbank_);    
+    DEFINE_STATIC_ARRAY_MAP(STRINGARRAY, ignoredTypesGenbank, ignoredTypesGenbank_);
 
     cit = specialTypesGenbank.find(ftype);
     if (cit != specialTypesGenbank.end()) {
@@ -1069,7 +1069,7 @@ void CGff3Reader::xPostProcessAnnot(
             continue;
         }
         CRef<CSeq_loc> pNewLoc(new CSeq_loc);
-        CCdregion::EFrame frame;  
+        CCdregion::EFrame frame;
         mpLocations->MergeLocation(pNewLoc, frame, itLocation.second);
         CRef<CSeq_feat> pFeature = itFeature->second;
         pFeature->SetLocation(*pNewLoc);

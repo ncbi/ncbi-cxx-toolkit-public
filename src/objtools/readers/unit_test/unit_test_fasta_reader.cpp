@@ -122,7 +122,7 @@ struct SConfigInfo
 };
 
 
-static void s_ReadConfig(CNcbiIfstream& ifstr, SConfigInfo& config) 
+static void s_ReadConfig(CNcbiIfstream& ifstr, SConfigInfo& config)
 {
     for (string line; getline(ifstr, line);) {
         NStr::TruncateSpaces(line);
@@ -139,7 +139,7 @@ static void s_ReadConfig(CNcbiIfstream& ifstr, SConfigInfo& config)
         }
 
         if (tokens.front() == "EXCLUDED_MODS") {
-            copy(next(begin(tokens)), end(tokens), 
+            copy(next(begin(tokens)), end(tokens),
                     back_inserter(config.excluded_mods));
             continue;
         }
@@ -198,7 +198,7 @@ public:
         BOOST_REQUIRE(!tsTestName.empty());
         CTempString tsFileType = vecFileNamePieces[1];
         BOOST_REQUIRE(!tsFileType.empty());
-            
+
         STestInfo & test_info_to_load = m_TestNameToInfoMap[tsTestName];
 
         // figure out what type of file we have and set appropriately
@@ -210,15 +210,15 @@ public:
         if (tsFileType == mExtInput) {
             BOOST_REQUIRE( test_info_to_load.mInFile.GetPath().empty() );
             test_info_to_load.mInFile = file;
-        } 
+        }
         else if (tsFileType == mExtOutput) {
             BOOST_REQUIRE( test_info_to_load.mOutFile.GetPath().empty() );
             test_info_to_load.mOutFile = file;
-        } 
+        }
         else if (tsFileType == mExtErrors) {
             BOOST_REQUIRE( test_info_to_load.mErrorFile.GetPath().empty() );
             test_info_to_load.mErrorFile = file;
-        } 
+        }
 
         else {
             BOOST_FAIL("Unknown file type " << sFileName << ".");
@@ -238,7 +238,7 @@ static bool
 sReadInputAndGenerateAsn(
         const string& fasta_file,
         const string& config_file,
-        CRef<CSeq_entry>& pSeqEntry, 
+        CRef<CSeq_entry>& pSeqEntry,
         CMessageListenerBase*  pMessageListener)
 {
     CNcbiIfstream ifstr(fasta_file.c_str());
@@ -262,10 +262,10 @@ sReadInputAndGenerateAsn(
             fasta_reader.SetExcludedMods(config_info.excluded_mods);
         }
         if (config_info.entry_type == SConfigInfo::EEntryType::eBioseq) {
-            pSeqEntry = fasta_reader.ReadOneSeq(pMessageListener); 
+            pSeqEntry = fasta_reader.ReadOneSeq(pMessageListener);
         }
         else {
-            pSeqEntry = fasta_reader.ReadSet(100, pMessageListener); 
+            pSeqEntry = fasta_reader.ReadSet(100, pMessageListener);
         }
     }
     catch (...) {
@@ -277,7 +277,7 @@ sReadInputAndGenerateAsn(
 }
 
 void sUpdateCase(CDir& test_cases_dir, const string& test_name)
-{   
+{
     string cfg    = CDir::ConcatPath( test_cases_dir.GetPath(), test_name + "." + extConfig);
     string input  = CDir::ConcatPath( test_cases_dir.GetPath(), test_name + "." + extInput);
     string output = CDir::ConcatPath( test_cases_dir.GetPath(), test_name + "." + extOutput);
@@ -294,7 +294,7 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
     unique_ptr<CMessageListenerBase> pMessageListener(new CMessageListenerLenient());
     CRef<CSeq_entry> pSeqEntry;
 
-    if (!sReadInputAndGenerateAsn(input, cfg, 
+    if (!sReadInputAndGenerateAsn(input, cfg,
                 pSeqEntry, pMessageListener.get())) {
 
         BOOST_FAIL("Error: " << input << " failed during conversion.");
@@ -338,7 +338,7 @@ void sUpdateAll(CDir& test_cases_dir) {
 
 void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
 {
-    cerr << "Testing " << 
+    cerr << "Testing " <<
         testInfo.mConfigFile.GetName() << " and " <<
         testInfo.mInFile.GetName() << " against " <<
         testInfo.mOutFile.GetName() << " and " <<
@@ -425,7 +425,7 @@ BOOST_AUTO_TEST_CASE(RunTests)
     const CArgs& args = CNcbiApplication::Instance()->GetArgs();
 
     CDir test_cases_dir( args["test-dir"].AsDirectory() );
-    BOOST_REQUIRE_MESSAGE( test_cases_dir.IsDir(), 
+    BOOST_REQUIRE_MESSAGE( test_cases_dir.IsDir(),
         "Cannot find dir: " << test_cases_dir.GetPath() );
     bool update_all = args["update-all"].AsBoolean();
     if (update_all) {
@@ -465,7 +465,7 @@ BOOST_AUTO_TEST_CASE(RunTests)
     ITERATE(TTestNameToInfoMap, name_to_info_it, testNameToInfoMap) {
         const string & sName = name_to_info_it->first;
         const STestInfo & testInfo = name_to_info_it->second;
-        
+
         cout << "Running test: " << sName << endl;
 
         BOOST_CHECK_NO_THROW(sRunTest(sName, testInfo, args["keep-diffs"]));

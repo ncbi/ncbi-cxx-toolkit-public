@@ -65,7 +65,7 @@ const string dirTestFiles("5colftblreader_test_cases");
 
 
 void sUpdateCase(CDir& test_cases_dir, const string& test_name)
-{   
+{
     string input = CDir::ConcatPath( test_cases_dir.GetPath(), test_name + "." + extInput);
     string output = CDir::ConcatPath( test_cases_dir.GetPath(), test_name + "." + extOutput);
     string errors = CDir::ConcatPath( test_cases_dir.GetPath(), test_name + "." + extErrors);
@@ -80,7 +80,7 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
     CFeature_table_reader reader;
 
     list<CRef<CSeq_annot>> annots;
-    try { 
+    try {
         while(!pLineReader->AtEOF()) {
             CRef<CSeq_annot> pAnnot = reader.ReadSeqAnnot(*pLineReader, &logger);
             annots.push_back(pAnnot);
@@ -100,7 +100,7 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
         ofstr.flush();
     }
     ofstr.close();
-    
+
     cerr << "    Produced new ASN1 file " << output << "." << endl;
 
     cerr << " ... Done." << endl;
@@ -143,8 +143,8 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
 
     string resultName = CDirEntry::GetTmpName();
     CNcbiOfstream ofstr(resultName.c_str());
-   
-    try { 
+
+    try {
         while(!pLineReader->AtEOF()) {
             CRef<CSeq_annot> pAnnot = reader.ReadSeqAnnot(*pLineReader, &logger);
             ofstr << MSerial_AsnText << *pAnnot;
@@ -215,7 +215,7 @@ BOOST_AUTO_TEST_CASE(RunTests)
     const CArgs& args = CNcbiApplication::Instance()->GetArgs();
 
     CDir test_cases_dir( args["test-dir"].AsDirectory() );
-    BOOST_REQUIRE_MESSAGE( test_cases_dir.IsDir(), 
+    BOOST_REQUIRE_MESSAGE( test_cases_dir.IsDir(),
         "Cannot find dir: " << test_cases_dir.GetPath() );
 
     bool update_all = args["update-all"].AsBoolean();
@@ -229,7 +229,7 @@ BOOST_AUTO_TEST_CASE(RunTests)
         sUpdateCase(test_cases_dir, update_case);
         return;
     }
-   
+
     const vector<string> kEmptyStringVec;
     TTestNameToInfoMap testNameToInfoMap;
     CTestNameToInfoMapLoader testInfoLoader(
@@ -255,7 +255,7 @@ BOOST_AUTO_TEST_CASE(RunTests)
     ITERATE(TTestNameToInfoMap, name_to_info_it, testNameToInfoMap) {
         const string & sName = name_to_info_it->first;
         const STestInfo & testInfo = name_to_info_it->second;
-        
+
         cout << "Running test: " << sName << endl;
 
         BOOST_CHECK_NO_THROW(sRunTest(sName, testInfo, args["keep-diffs"]));

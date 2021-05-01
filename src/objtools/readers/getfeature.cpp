@@ -42,23 +42,22 @@ CGetFeature::CGetFeature(string feat_file, string index_file){
     m_FeatFileIndex  = new CNcbiIfstream(index_file.c_str(), IOS_BASE::binary);
     m_5FeatInfo = NULL;
     m_3FeatInfo = NULL;
-  
 }
 
 
 vector<SFeatInfo*>& CGetFeature::GetFeatInfo(const string& id_str,
-                                                 const CRange<TSeqPos>& seq_range, 
-                                                 SFeatInfo*& feat5, 
+                                                 const CRange<TSeqPos>& seq_range,
+                                                 SFeatInfo*& feat5,
                                                  SFeatInfo*& feat3,
                                                  int max_feature ){
     x_Clear();
     m_5FeatInfo = NULL;
-    m_3FeatInfo = NULL;   
+    m_3FeatInfo = NULL;
     if(m_FeatFileIndex && m_FeatFile && *m_FeatFileIndex && *m_FeatFile){
-        unsigned int offset = 0;    
+        unsigned int offset = 0;
         map<string, unsigned int>::const_iterator iter = m_OffsetMap.find(id_str);
         if ( iter != m_OffsetMap.end() ){
-            offset  = iter->second; 
+            offset  = iter->second;
         } else{
             m_FeatFileIndex->seekg(0);
             while(!m_FeatFileIndex->eof()){
@@ -68,8 +67,8 @@ vector<SFeatInfo*>& CGetFeature::GetFeatInfo(const string& id_str,
                     m_FeatFileIndex->clear();
                     break;
                 }
-                
-                if(offset_info.id == id_str){                   
+
+                if(offset_info.id == id_str){
                     offset = offset_info.offset;
                     m_OffsetMap.insert(map<string, unsigned int>::value_type(offset_info.id, offset_info.offset));
                     m_FeatFileIndex->clear();
@@ -78,26 +77,26 @@ vector<SFeatInfo*>& CGetFeature::GetFeatInfo(const string& id_str,
             }
             m_FeatFileIndex->clear();
         }
-        
-        m_FeatFile->seekg(offset); 
+
+        m_FeatFile->seekg(offset);
         int count = 0;
         //now look to retrieve feature info
-        while(!m_FeatFile->eof() && count < max_feature){   
+        while(!m_FeatFile->eof() && count < max_feature){
             SFeatInfo* feat_info = new SFeatInfo;
             m_FeatFile->read((char*)feat_info, sizeof(SFeatInfo));
             if(*m_FeatFile){
-                
+
                 if(id_str != feat_info->id) { //next id already
                     delete feat_info;
                     m_FeatFile->clear();
                     break;
                 }
-                
+
                 if(seq_range.IntersectingWith(feat_info->range)){
                     m_FeatInfoList.push_back(feat_info);
                     count ++;
                 } else {
-                    //track the flank features that are 5' and 3' of the range      
+                    //track the flank features that are 5' and 3' of the range
                     if(feat_info->range < seq_range ){
                         if(m_5FeatInfo){
                             delete m_5FeatInfo;
@@ -105,7 +104,6 @@ vector<SFeatInfo*>& CGetFeature::GetFeatInfo(const string& id_str,
                         } else { //first one
                             m_5FeatInfo = feat_info;
                         }
-                        
                     } else {
                         m_3FeatInfo = feat_info;
                         break; //already past the range as range was sorted
@@ -116,15 +114,15 @@ vector<SFeatInfo*>& CGetFeature::GetFeatInfo(const string& id_str,
                 delete feat_info;
                 m_FeatFile->clear();
                 break;
-            }              
-        } 
+            }
+        }
         m_FeatFile->clear(); //reset
-    } 
+    }
 
     if(m_5FeatInfo){
         feat5 = m_5FeatInfo;
     }
-    
+
     if(m_3FeatInfo){
         feat3 = m_3FeatInfo;
     }
@@ -154,7 +152,6 @@ void CGetFeature::x_Clear(){
     if(m_3FeatInfo){
         delete m_3FeatInfo;
     }
-    
 }
 
 END_SCOPE(objects)

@@ -151,7 +151,7 @@ namespace {
         // single-threaded, so don't worry about locks
         static CRef<CDate> s_pTodaysDate;
         if( ! s_pTodaysDate ) {
-            s_pTodaysDate.Reset( 
+            s_pTodaysDate.Reset(
                 new CDate(CTime(CTime::eCurrent),
                 CDate::ePrecision_day) );
         }
@@ -194,29 +194,29 @@ namespace {
 
         // check for unexpected errors
         const TErrInfoVec & resultingErrInfoVec = pErrorCollector->GetErrInfoVec();
-        const size_t highest_err_idx = 
+        const size_t highest_err_idx =
             max(expectedErrInfoVec.size(),
             resultingErrInfoVec.size());
         for( size_t err_idx = 0; err_idx < highest_err_idx; ++err_idx ) {
-            const TErrInfo * pExpectedErrInfo = 
-                ( (err_idx < expectedErrInfoVec.size()) ? 
+            const TErrInfo * pExpectedErrInfo =
+                ( (err_idx < expectedErrInfoVec.size()) ?
                 &expectedErrInfoVec[err_idx] :
                 NULL );
-            const TErrInfo * pResultingErrInfo = 
-                ( (err_idx < resultingErrInfoVec.size()) ? 
+            const TErrInfo * pResultingErrInfo =
+                ( (err_idx < resultingErrInfoVec.size()) ?
                 &resultingErrInfoVec[err_idx] :
                 NULL );
             // skip this iteration if they match
             if( pExpectedErrInfo && pResultingErrInfo &&
                 pExpectedErrInfo->first == pResultingErrInfo->first &&
                 s_NormalizeErrorString(pResultingErrInfo->second) ==
-                s_NormalizeErrorString(pExpectedErrInfo->second) ) 
+                s_NormalizeErrorString(pExpectedErrInfo->second) )
             {
                 continue;
             }
 
             // otherwise, print out what we have
-            BOOST_ERROR("At index " << err_idx << ", expected error was: " 
+            BOOST_ERROR("At index " << err_idx << ", expected error was: "
                 << s_ErrInfoToStr(pExpectedErrInfo) << ", but got: "
                 << s_ErrInfoToStr(pResultingErrInfo) );
         }
@@ -263,7 +263,7 @@ namespace {
 
         const CSerialObject * m_pObject;
     };
-    ostream & operator<<(ostream & ostrm, 
+    ostream & operator<<(ostream & ostrm,
         const SSerialObjectPtrToAsnText & stream_op )
     {
         if( stream_op.m_pObject ) {
@@ -278,7 +278,7 @@ namespace {
 NCBITEST_INIT_CMDLINE(descrs)
 {
     descrs->AddDefaultKey(
-        "test-cases-dir", 
+        "test-cases-dir",
         "DIRECTORY",
         "Use this to change the directory where test cases are sought.",
         CArgDescriptions::eDirectory,
@@ -297,11 +297,11 @@ BOOST_AUTO_TEST_CASE(MasterTest)
     public:
         virtual void RunTest(
             const string & sTestName,
-            const TMapSuffixToFile & mapSuffixToFile ) 
+            const TMapSuffixToFile & mapSuffixToFile )
         {
             BOOST_TEST_MESSAGE("Starting test: " << sTestName);
 
-            CRef<CBioseq> pTemplateBioseq = 
+            CRef<CBioseq> pTemplateBioseq =
                 s_Asn1TextFileToClass<CBioseq>(mapSuffixToFile.find("template.asn")->second);
 
             TMapSuffixToFile::const_iterator submit_block_find_iter =
@@ -335,7 +335,7 @@ BOOST_AUTO_TEST_CASE(MasterTest)
                 mapSuffixToFile.find("expected_errors.txt");
             TErrInfoVec errInfoVec;
             if( expected_errors_find_iter != mapSuffixToFile.end() ) {
-                CNcbiIfstream exp_errs_istrm( 
+                CNcbiIfstream exp_errs_istrm(
                     expected_errors_find_iter->second.GetPath().c_str() );
                 // each line is the error type then tab, then error message
                 string sLine;
@@ -359,12 +359,12 @@ BOOST_AUTO_TEST_CASE(MasterTest)
             CRef<CBioseq_set> pExpectedBioseqSetAnswer;
             BOOST_CHECK_NO_THROW(
                 pExpectedBioseqSetAnswer =
-                    s_Asn1TextFileToClass<CBioseq_set>( 
+                    s_Asn1TextFileToClass<CBioseq_set>(
                         mapSuffixToFile.find("expected_bioseq_set.asn")->second ) );
             if( pExpectedBioseqSetAnswer ) {
                 s_UpdateCreateAndUpdateDate(*pExpectedBioseqSetAnswer);
             } else {
-                BOOST_ERROR( "could not parse this file: " 
+                BOOST_ERROR( "could not parse this file: "
                     << mapSuffixToFile.find("expected_bioseq_set.asn")->second.GetPath() );
             }
 
@@ -380,20 +380,20 @@ BOOST_AUTO_TEST_CASE(MasterTest)
             CRef<CBioseq_set> pBioseqSetAnswer;
             if( pAnswer ) {
                 if( pAnswer->GetThisTypeInfo() == CBioseq_set::GetTypeInfo() ) {
-                    pBioseqSetAnswer.Reset( 
+                    pBioseqSetAnswer.Reset(
                         dynamic_cast<CBioseq_set*>(pAnswer.GetPointer()) );
                 } else if( pAnswer->GetThisTypeInfo() == CSeq_submit::GetTypeInfo() ) {
                     CRef<CSeq_submit> pSeqSubmit(
                         dynamic_cast<CSeq_submit*>(pAnswer.GetPointer()) );
                     if( pSeqSubmit->IsEntrys() ) {
-                        BOOST_CHECK_NO_THROW( 
-                            pBioseqSetAnswer.Reset( 
+                        BOOST_CHECK_NO_THROW(
+                            pBioseqSetAnswer.Reset(
                             dynamic_cast<CBioseq_set*>(
                             &pSeqSubmit->SetData().SetEntrys().front()->SetSet() ) ) );
                     }
                 } else {
                     BOOST_ERROR( "Cannot figure out type of s_RunTests response" );
-                    NCBITEST_CHECK_MESSAGE( false, "Best guess for type: " 
+                    NCBITEST_CHECK_MESSAGE( false, "Best guess for type: "
                         << pAnswer->GetThisTypeInfo()->GetName() );
                 }
             }
@@ -404,7 +404,7 @@ BOOST_AUTO_TEST_CASE(MasterTest)
 
             if( ! pBioseqSetAnswer ||
                 ! pExpectedBioseqSetAnswer ||
-                ! pBioseqSetAnswer->Equals(*pExpectedBioseqSetAnswer) ) 
+                ! pBioseqSetAnswer->Equals(*pExpectedBioseqSetAnswer) )
             {
                 BOOST_ERROR("Result does not match expected.  Expected: " << Endl()
                     << SSerialObjectPtrToAsnText(pExpectedBioseqSetAnswer) << Endl()
@@ -429,14 +429,14 @@ BOOST_AUTO_TEST_CASE(MasterTest)
     optionalSuffixes.insert("flags.txt");
     optionalSuffixes.insert("expected_errors.txt");
 
-    TraverseAndRunTestCases( 
+    TraverseAndRunTestCases(
         &testRunner,
         args["test-cases-dir"].AsDirectory(),
         requiredSuffixes,
         optionalSuffixes );
 }
 
-// Do a very basic smoke test of every combination of 
+// Do a very basic smoke test of every combination of
 // OutputBioseqs flags and other important factors
 // and just see if it generates something
 // that can be parsed
@@ -448,8 +448,8 @@ BOOST_AUTO_TEST_CASE(OutputBioseqsFlagTest)
     CRef<CBioseq> pTemplateBioseq( SerialClone(unit_test_util::BuildGoodSeq()->GetSeq()) );
     CRef<CSubmit_block> pSubmitBlock( new CSubmit_block );
     {{
-        string sSubmitBlockFileName = 
-            CDirEntry::ConcatPath( 
+        string sSubmitBlockFileName =
+            CDirEntry::ConcatPath(
                 args["test-cases-dir"].AsString(), "basic_test_with_submit_block_ignored.submit_block.asn");
         CNcbiIfstream submit_block_strm( sSubmitBlockFileName.c_str() );
         submit_block_strm >> MSerial_AsnText >> *pSubmitBlock;
@@ -479,7 +479,7 @@ BOOST_AUTO_TEST_CASE(OutputBioseqsFlagTest)
     // integer up to, but not including, fOutputBioseqsFlags_LAST_PLUS_ONE)
     for( CAgpConverter::TOutputBioseqsFlags fOutputBioseqsFlags = 0;
         fOutputBioseqsFlags < CAgpConverter::fOutputBioseqsFlags_LAST_PLUS_ONE;
-        ++fOutputBioseqsFlags ) 
+        ++fOutputBioseqsFlags )
     {
         ITERATE_BOTH_BOOL_VALUES(bUseSubmitBlock) {
 
@@ -497,7 +497,7 @@ BOOST_AUTO_TEST_CASE(OutputBioseqsFlagTest)
                 vector<string> refPossibleAGPFiles;
                 ITERATE(vector<string>, file_base_it, refPossibleAGPFileBases ) {
                     refPossibleAGPFiles.push_back(
-                        CDirEntry::ConcatPath( 
+                        CDirEntry::ConcatPath(
                         args["test-cases-dir"].AsString(), *file_base_it ) );
                 }
 
@@ -512,9 +512,9 @@ BOOST_AUTO_TEST_CASE(OutputBioseqsFlagTest)
                     cout << "Testing with these settings:" << endl;
                     cout << "\tflags: " << fOutputBioseqsFlags << endl;
                     cout << "\tSubmit-block: " << NStr::BoolToString(bUseSubmitBlock) << endl;
-                    cout << "\tbMultipleBioseqsPerAGPFile: " 
+                    cout << "\tbMultipleBioseqsPerAGPFile: "
                         << NStr::BoolToString(bMultipleBioseqsPerAGPFile) << endl;
-                    cout << "\tbMultipleAGPFiles: " << 
+                    cout << "\tbMultipleAGPFiles: " <<
                         NStr::BoolToString(bMultipleAGPFiles) << endl;
 
                     // run a test
@@ -525,7 +525,7 @@ BOOST_AUTO_TEST_CASE(OutputBioseqsFlagTest)
                         fOutputBioseqsFlags );
 
                     if( s_InVerboseMode() ) {
-                        cerr << "agpConverter.OutputBioseqs output: " 
+                        cerr << "agpConverter.OutputBioseqs output: "
                             << obj_strm.str() << endl;
                     }
 

@@ -63,7 +63,7 @@ CAutoSqlCustomField::Dump(
     ostream& ostr)
 //  ============================================================================
 {
-    ostr << "    column=\"" << mColIndex << "\"" 
+    ostr << "    column=\"" << mColIndex << "\""
             << "    name=\"" << mName << "\""
             << "    format=\"" << mFormat << "\""
             << "    description=\"" << mDescription << "\"\n";
@@ -90,7 +90,7 @@ CAutoSqlCustomField::CAutoSqlCustomField(
     }
     else {
         mHandler = CAutoSqlCustomField::AddString;
-    } 
+    }
 }
 
 //  ============================================================================
@@ -111,7 +111,7 @@ bool CAutoSqlCustomField::AddDouble(
         CReaderMessage warning(
             eDiag_Warning,
             lineNo,
-            string("BED: Unable to convert \"") + key + "\" value \"" + value + 
+            string("BED: Unable to convert \"") + key + "\" value \"" + value +
                 "\" to float. Defaulting to 0.0");
         messageHandler.Report(warning);
     }
@@ -138,7 +138,7 @@ bool CAutoSqlCustomField::AddInt(
         CReaderMessage warning(
             eDiag_Warning,
             lineNo,
-            string("BED: Unable to convert \"") + key + "\" value \"" + value + 
+            string("BED: Unable to convert \"") + key + "\" value \"" + value +
                 "\" to int. Defaulting to 0");
         messageHandler.Report(warning);
     }
@@ -161,15 +161,15 @@ bool CAutoSqlCustomField::AddIntArray(
     vector<int> realInts;
     try {
         std::transform(
-            intStrs.begin(), intStrs.end(), 
-            std::back_inserter(realInts), 
+            intStrs.begin(), intStrs.end(),
+            std::back_inserter(realInts),
             [] (const string& str) -> int { return NStr::StringToInt(str);} );
     }
     catch(CStringException&) {
         CReaderMessage warning(
             eDiag_Warning,
             lineNo,
-            string("BED: Unable to convert \"") + key + "\" value \"" + value + 
+            string("BED: Unable to convert \"") + key + "\" value \"" + value +
                 "\" to int list. Defaulting to empty list");
         messageHandler.Report(warning);
         realInts.clear();
@@ -265,7 +265,7 @@ CAutoSqlCustomField::xHandleSpecialCaseRgb(
             CReaderMessage warning(
                 eDiag_Warning,
                 columnData.LineNo(),
-                string("BED: Unable to convert \"") + mName + "\" value \"" + 
+                string("BED: Unable to convert \"") + mName + "\" value \"" +
                     valueStr +  "\" to int. Defaulting to 0");
             messageHandler.Report(warning);
         }
@@ -278,14 +278,14 @@ CAutoSqlCustomField::xHandleSpecialCaseRgb(
     int rgbInt(0);
     if (rgb.size() == 3) {
         try {
-            rgbInt = 256*256*NStr::StringToInt(rgb[0]) + 
+            rgbInt = 256*256*NStr::StringToInt(rgb[0]) +
                 256*NStr::StringToInt(rgb[1]) + NStr::StringToInt(rgb[2]);
         }
         catch (CStringException&) {
             CReaderMessage warning(
                 eDiag_Warning,
                 columnData.LineNo(),
-                string("BED: Unable to convert \"") + mName + "\" value \"" + 
+                string("BED: Unable to convert \"") + mName + "\" value \"" +
                     valueStr +  "\" to int. Defaulting to 0");
             messageHandler.Report(warning);
         }

@@ -110,7 +110,7 @@ bool CGvfReadRecord::xAssignAttributesFromGff(
 {
     vector< string > attributes;
     xSplitGffAttributes(strRawAttributes, attributes);
-	for ( size_t u=0; u < attributes.size(); ++u ) {
+    for ( size_t u=0; u < attributes.size(); ++u ) {
         string strKey;
         string strValue;
         if ( ! NStr::SplitInTwo( attributes[u], "=", strKey, strValue ) ) {
@@ -121,9 +121,9 @@ bool CGvfReadRecord::xAssignAttributesFromGff(
         strKey = x_NormalizedAttributeKey( strKey );
         strValue = xNormalizedAttributeValue( strValue );
 
-		if ( strKey.empty() && strValue.empty() ) {
+        if ( strKey.empty() && strValue.empty() ) {
             // Probably due to trailing "; ". Sequence Ontology generates such
-            // things. 
+            // things.
             continue;
         }
 
@@ -135,7 +135,7 @@ bool CGvfReadRecord::xAssignAttributesFromGff(
                 continue;
             }
         }
-        m_Attributes[ strKey ] = strValue;        
+        m_Attributes[ strKey ] = strValue;
     }
     return true;
 }
@@ -164,12 +164,12 @@ CGvfReader::~CGvfReader()
 {
 }
 
-//  ----------------------------------------------------------------------------                
+//  ----------------------------------------------------------------------------
 CRef<CSeq_annot>
 CGvfReader::ReadSeqAnnot(
     ILineReader& lineReader,
-    ILineErrorListener* pEC ) 
-//  ----------------------------------------------------------------------------                
+    ILineErrorListener* pEC )
+//  ----------------------------------------------------------------------------
 {
     return CReaderBase::ReadSeqAnnot(lineReader, pEC);
 }
@@ -188,7 +188,7 @@ CGvfReader::xGetData(
 void
 CGvfReader::xProcessData(
     const TReaderData& readerData,
-    CSeq_annot& annot) 
+    CSeq_annot& annot)
 //  ----------------------------------------------------------------------------
 {
     for (const auto& lineData: readerData) {
@@ -249,7 +249,7 @@ CRef<CSeq_annot> CGvfReader::x_GetAnnotById(
             // internal error
             return CRef<CSeq_annot>();
         }
-    
+
         CRef< CAnnot_id > pId = *( annot.GetId().begin() );
         if ( ! pId->IsLocal() ) {
             // internal error
@@ -332,7 +332,7 @@ bool CGvfReader::xFeatureSetLocation(
 
 //  ----------------------------------------------------------------------------
 bool CGvfReader::xSetLocation(
-        const CGff2Record& record, 
+        const CGff2Record& record,
         CSeq_loc& location)
 //  ----------------------------------------------------------------------------
 {
@@ -381,7 +381,7 @@ bool CGvfReader::xSetLocationInterval(
                 lower = upper = NStr::StringToUInt( range_borders.front() );
                 location.SetInt().SetFuzz_from().SetLim( CInt_fuzz::eLim_gt );
             }
-            else if ( range_borders.front() == "." ) { 
+            else if ( range_borders.front() == "." ) {
                 lower = upper = NStr::StringToUInt( range_borders.back() );
                 location.SetInt().SetFuzz_from().SetLim( CInt_fuzz::eLim_lt );
             }
@@ -390,7 +390,7 @@ bool CGvfReader::xSetLocationInterval(
                 upper = NStr::StringToUInt( range_borders.back() );
                 location.SetInt().SetFuzz_from().SetRange().SetMin( lower-1 );
                 location.SetInt().SetFuzz_from().SetRange().SetMax( upper-1 );
-            }        
+            }
         }
         catch ( std::exception& ) {
             CReaderMessage error(
@@ -418,7 +418,7 @@ bool CGvfReader::xSetLocationInterval(
                 lower = upper = NStr::StringToUInt( range_borders.front() );
                 location.SetInt().SetFuzz_to().SetLim( CInt_fuzz::eLim_gt );
             }
-            else if ( range_borders.front() == "." ) { 
+            else if ( range_borders.front() == "." ) {
                 lower = upper = NStr::StringToUInt( range_borders.back() );
                 location.SetInt().SetFuzz_to().SetLim( CInt_fuzz::eLim_lt );
             }
@@ -427,7 +427,7 @@ bool CGvfReader::xSetLocationInterval(
                 upper = NStr::StringToUInt( range_borders.back() );
                 location.SetInt().SetFuzz_to().SetRange().SetMin( lower-1 );
                 location.SetInt().SetFuzz_to().SetRange().SetMax( upper-1 );
-            }        
+            }
         }
         catch (std::exception&) {
             CReaderMessage error(
@@ -493,7 +493,7 @@ bool CGvfReader::xSetLocationPoint(
             lower = upper = NStr::StringToUInt(bounds.front());
             location.SetPnt().SetFuzz().SetLim(CInt_fuzz::eLim_gt);
         }
-        else if (bounds.front() == ".") { 
+        else if (bounds.front() == ".") {
             lower = upper = NStr::StringToUInt(bounds.back());
             location.SetPnt().SetFuzz().SetLim( CInt_fuzz::eLim_lt );
         }
@@ -502,7 +502,7 @@ bool CGvfReader::xSetLocationPoint(
             upper = NStr::StringToUInt(bounds.back());
             location.SetPnt().SetFuzz().SetRange().SetMin(lower-1);
             location.SetPnt().SetFuzz().SetRange().SetMax(upper-1);
-        }        
+        }
     }
     catch (std::exception&) {
         CReaderMessage error(
@@ -549,7 +549,7 @@ bool CGvfReader::xFeatureSetLocationInterval(
                 lower = upper = NStr::StringToUInt( range_borders.front() );
                 pLocation->SetInt().SetFuzz_from().SetLim( CInt_fuzz::eLim_gt );
             }
-            else if ( range_borders.front() == "." ) { 
+            else if ( range_borders.front() == "." ) {
                 lower = upper = NStr::StringToUInt( range_borders.back() );
                 pLocation->SetInt().SetFuzz_from().SetLim( CInt_fuzz::eLim_lt );
             }
@@ -558,7 +558,7 @@ bool CGvfReader::xFeatureSetLocationInterval(
                 upper = NStr::StringToUInt( range_borders.back() );
                 pLocation->SetInt().SetFuzz_from().SetRange().SetMin( lower-1 );
                 pLocation->SetInt().SetFuzz_from().SetRange().SetMax( upper-1 );
-            }        
+            }
         }
         catch ( std::exception& ) {
             CReaderMessage error(
@@ -586,7 +586,7 @@ bool CGvfReader::xFeatureSetLocationInterval(
                 lower = upper = NStr::StringToUInt( range_borders.front() );
                 pLocation->SetInt().SetFuzz_to().SetLim( CInt_fuzz::eLim_gt );
             }
-            else if ( range_borders.front() == "." ) { 
+            else if ( range_borders.front() == "." ) {
                 lower = upper = NStr::StringToUInt( range_borders.back() );
                 pLocation->SetInt().SetFuzz_to().SetLim( CInt_fuzz::eLim_lt );
             }
@@ -595,7 +595,7 @@ bool CGvfReader::xFeatureSetLocationInterval(
                 upper = NStr::StringToUInt( range_borders.back() );
                 pLocation->SetInt().SetFuzz_to().SetRange().SetMin( lower-1 );
                 pLocation->SetInt().SetFuzz_to().SetRange().SetMax( upper-1 );
-            }        
+            }
         }
         catch (std::exception&) {
             CReaderMessage error(
@@ -663,7 +663,7 @@ bool CGvfReader::xFeatureSetLocationPoint(
             lower = upper = NStr::StringToUInt(bounds.front());
             pLocation->SetPnt().SetFuzz().SetLim(CInt_fuzz::eLim_gt);
         }
-        else if (bounds.front() == ".") { 
+        else if (bounds.front() == ".") {
             lower = upper = NStr::StringToUInt(bounds.back());
             pLocation->SetPnt().SetFuzz().SetLim( CInt_fuzz::eLim_lt );
         }
@@ -672,7 +672,7 @@ bool CGvfReader::xFeatureSetLocationPoint(
             upper = NStr::StringToUInt(bounds.back());
             pLocation->SetPnt().SetFuzz().SetRange().SetMin(lower-1);
             pLocation->SetPnt().SetFuzz().SetRange().SetMax(upper-1);
-        }        
+        }
     }
     catch (std::exception&) {
         CReaderMessage error(
@@ -722,23 +722,23 @@ bool CGvfReader::xFeatureSetVariation(
             return false;
         }
     }
-    else if (strType == "insertion" || 
+    else if (strType == "insertion" ||
              strType == "alu_insertion" ||
-             strType == "line1_insertion" || 
+             strType == "line1_insertion" ||
              strType == "sva_insertion" ||
              strType == "mobile_element_insertion" ||
-             strType == "mobile_sequence_insertion" || 
+             strType == "mobile_sequence_insertion" ||
              strType == "novel_sequence_insertion") {
         if (!xVariationMakeInsertions( record, *pVariation )) {
             return false;
         }
     }
-    else if (strType == "deletion" || 
-             strType == "alu_deletion" || 
+    else if (strType == "deletion" ||
+             strType == "alu_deletion" ||
              strType == "line1_deletion" ||
-             strType == "sva_deletion" || 
+             strType == "sva_deletion" ||
              strType == "herv_deletion" ||
-             (strType == "mobile_element_deletion" && 
+             (strType == "mobile_element_deletion" &&
               xIsDbvarCall(nameAttr))) {
         if (!xVariationMakeDeletions( record, *pVariation )) {
             return false;
@@ -771,7 +771,7 @@ bool CGvfReader::xFeatureSetVariation(
     else if (strType == "complex" ||
              strType == "complex_substitution" ||
              strType == "complex_chromosomal_rearrangement" ||
-             strType == "complex_sequence_alteration") { 
+             strType == "complex_sequence_alteration") {
         if (!xVariationMakeComplex( record, *pVariation )){
             return false;
         }
@@ -794,7 +794,7 @@ bool CGvfReader::xFeatureSetVariation(
     }
     return false;
 }
-  
+
 //  ----------------------------------------------------------------------------
 bool CGvfReader::xParseStructuredComment(
     const string& strLine)
@@ -837,10 +837,10 @@ bool CGvfReader::xVariationSetInsertions(
         NStr::Split( strAlleles, ",", alleles, 0 );
         alleles.sort();
         alleles.unique();
-        for ( list<string>::const_iterator cit = alleles.begin(); 
+        for ( list<string>::const_iterator cit = alleles.begin();
             cit != alleles.end(); ++cit )
         {
-            string allele(*cit); 
+            string allele(*cit);
             if (allele == "-") {
                 pReference->SetVariant_prop().SetAllele_state(
                     (alleles.size() == 1) ?
@@ -871,9 +871,9 @@ bool CGvfReader::xVariationSetInsertions(
             pDelta->SetAction(CDelta_item::eAction_ins_before);
             pAllele->SetData().SetInstance().SetDelta().push_back(pDelta);
             pAllele->SetData().SetInstance().SetType(CVariation_inst::eType_ins);
-            pAllele->SetData().SetInstance().SetObservation( 
+            pAllele->SetData().SetInstance().SetObservation(
                 CVariation_inst::eObservation_variant );
-            
+
             variation.SetData().SetSet().SetVariations().push_back(
                pAllele );
         }
@@ -903,18 +903,18 @@ bool CGvfReader::xVariationMakeCNV(
 
     string strType = record.Type();
     NStr::ToLower( strType );
-    if ( strType == "cnv" || 
+    if ( strType == "cnv" ||
         strType == "copy_number_variation" ) {
         variation.SetCNV();
         return true;
     }
-    if ( strType == "gain" || 
+    if ( strType == "gain" ||
          strType == "copy_number_gain" ||
          strType == "duplication" ) {
         variation.SetGain();
         return true;
     }
-    if ( strType == "loss" || 
+    if ( strType == "loss" ||
          strType == "copy_number_loss" ||
          (strType == "mobile_element_deletion" && !xIsDbvarCall(nameAttr)) ) {
         variation.SetLoss();
@@ -922,7 +922,7 @@ bool CGvfReader::xVariationMakeCNV(
     }
     if ( strType == "loss_of_heterozygosity" ) {
         variation.SetLoss();
-        CRef<CVariation_ref::C_E_Consequence> pConsequence( 
+        CRef<CVariation_ref::C_E_Consequence> pConsequence(
             new CVariation_ref::C_E_Consequence );
         pConsequence->SetLoss_of_heterozygosity();
         variation.SetConsequence().push_back( pConsequence );
@@ -943,7 +943,7 @@ bool CGvfReader::xVariationSetCommon(
         CVariation_ref& variation)
 //  ----------------------------------------------------------------------------
 {
-    variation.SetData().SetSet().SetType( 
+    variation.SetData().SetSet().SetType(
         CVariation_ref::C_Data::C_Set::eData_set_type_package );
 
     if ( ! xVariationSetId( record, variation ) ) {
@@ -1146,12 +1146,12 @@ bool CGvfReader::xVariationSetProperties(
 //  ---------------------------------------------------------------------------
 {
     typedef map<string, CVariantProperties::EAllele_state>::const_iterator ALLIT;
-    
+
     string strGenotype;
     if ( record.GetAttribute( "Genotype", strGenotype ) ) {
         ALLIT it = s_AlleleStateMap().find( strGenotype );
         if ( it != s_AlleleStateMap().end() ) {
-            variation.SetVariant_prop().SetAllele_state( it->second ); 
+            variation.SetVariant_prop().SetAllele_state( it->second );
         }
         else {
             variation.SetVariant_prop().SetAllele_state(
@@ -1202,10 +1202,10 @@ bool CGvfReader::xVariationSetDeletions(
     NStr::Split( strAlleles, ",", alleles, 0 );
     alleles.sort();
     alleles.unique();
-    for ( list<string>::const_iterator cit = alleles.begin(); 
+    for ( list<string>::const_iterator cit = alleles.begin();
         cit != alleles.end(); ++cit )
     {
-        string allele(*cit); 
+        string allele(*cit);
         if (allele == strReference) {
             pReference->SetVariant_prop().SetAllele_state(
                 (alleles.size() == 1) ?
@@ -1227,9 +1227,9 @@ bool CGvfReader::xVariationSetDeletions(
         pAllele->SetData().SetInstance().SetDelta().push_back(pDelta);
 
         pAllele->SetData().SetInstance().SetType(CVariation_inst::eType_del);
-        pAllele->SetData().SetInstance().SetObservation( 
+        pAllele->SetData().SetInstance().SetObservation(
             CVariation_inst::eObservation_variant );
-            
+
         variation.SetData().SetSet().SetVariations().push_back(
             pAllele );
     }
@@ -1265,10 +1265,10 @@ bool CGvfReader::xVariationSetSnvs(
         NStr::Split( strAlleles, ",", alleles, 0 );
         alleles.sort();
         alleles.unique();
-        for ( list<string>::const_iterator cit = alleles.begin(); 
+        for ( list<string>::const_iterator cit = alleles.begin();
             cit != alleles.end(); ++cit )
         {
-            string allele(*cit); 
+            string allele(*cit);
             CRef<CVariation_ref> pAllele(new CVariation_ref);
             if (allele == strReference) {
                 pReference->SetVariant_prop().SetAllele_state(
@@ -1291,9 +1291,9 @@ bool CGvfReader::xVariationSetSnvs(
             vector<string> replaces;
             replaces.push_back(*cit);
             pAllele->SetSNV(replaces, CVariation_ref::eSeqType_na);
-            pAllele->SetData().SetInstance().SetObservation( 
+            pAllele->SetData().SetInstance().SetObservation(
                 CVariation_inst::eObservation_variant);
-            pAllele->SetData().SetInstance().SetType( 
+            pAllele->SetData().SetInstance().SetType(
                 CVariation_inst::eType_snv );
             variation.SetData().SetSet().SetVariations().push_back(
                pAllele );
@@ -1321,8 +1321,8 @@ bool CGvfReader::xFeatureSetExt(
     if ( record.IsSetScore() ) {
         ext.AddField( "score", record.Score() );
     }
-    for ( CGff2Record::TAttrCit cit = record.Attributes().begin(); 
-        cit != record.Attributes().end(); ++cit ) 
+    for ( CGff2Record::TAttrCit cit = record.Attributes().begin();
+        cit != record.Attributes().end(); ++cit )
     {
 
         if ( cit->first == "Start_range" ) {
@@ -1347,40 +1347,40 @@ bool CGvfReader::xFeatureSetExt(
         if ( cit->first == "ID" ) {
             ext.AddField( "id", strAttribute );
             continue;
-        }    
+        }
         if ( cit->first == "Parent" ) {
             ext.AddField( "parent", strAttribute );
             continue;
-        }    
+        }
         if ( cit->first == "Variant_reads" ) {
             ext.AddField( "variant-reads", strAttribute ); // for lack of better idea
             continue;
-        }    
+        }
         if ( cit->first == "Variant_effect" ) {
             ext.AddField( "variant-effect", strAttribute ); // for lack of better idea
             continue;
-        }    
+        }
         if ( cit->first == "Total_reads" ) {
             ext.AddField( "total-reads", strAttribute );
             continue;
-        }    
+        }
         if ( cit->first == "Variant_copy_number" ) {
             ext.AddField( "variant-copy-number", strAttribute );
             continue;
-        }    
+        }
         if ( cit->first == "Reference_copy_number" ) {
             ext.AddField( "reference-copy-number", strAttribute );
             continue;
-        }    
+        }
         if ( cit->first == "Phased" ) {
             ext.AddField( "phased", strAttribute );
             continue;
-        }  
+        }
         if ( cit->first == "Name" ) {
             ext.AddField( "name", strAttribute );
             continue;
-        }  
-        ext.AddField( string("custom-") + cit->first, strAttribute );  
+        }
+        ext.AddField( string("custom-") + cit->first, strAttribute );
     }
     return true;
 }

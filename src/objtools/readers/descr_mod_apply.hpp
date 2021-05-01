@@ -26,7 +26,7 @@
  * Authors:  Justin Foley
  *
  */
-    
+
 #ifndef _DESCR_MOD_APPLY_HPP_
 #define _DESCR_MOD_APPLY_HPP_
 
@@ -39,8 +39,8 @@ BEGIN_SCOPE(objects)
 // LCOV_EXCL_START
 class CDescrCache;
 // LCOV_EXCL_STOP
-    
-class CDescrModApply 
+
+class CDescrModApply
 {
 public:
     using TSkippedMods = CModAdder::TSkippedMods;

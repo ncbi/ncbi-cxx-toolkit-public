@@ -34,7 +34,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-class NCBI_XOBJREAD_EXPORT CModReaderException : 
+class NCBI_XOBJREAD_EXPORT CModReaderException :
     public CException
 {
 public:

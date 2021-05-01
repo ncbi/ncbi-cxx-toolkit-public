@@ -5,7 +5,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-CRef<CSeq_loc> s_CreateSeqloc(const CSeq_id& seq_id) 
+CRef<CSeq_loc> s_CreateSeqloc(const CSeq_id& seq_id)
 {
     auto seq_loc = Ref(new CSeq_loc());
     seq_loc->SetWhole().Assign(seq_id);
@@ -21,16 +21,16 @@ CRef<CSeq_feat> g_CreateSpecialSeqfeat(const ESpecialVariant variant, const CSeq
 
     switch (variant)  {
         default:
-            NCBI_THROW(CVariationIrepException, 
-                       eUnknownVariation, 
+            NCBI_THROW(CVariationIrepException,
+                       eUnknownVariation,
                        "Unknown variation type");
         case eSpecialVariant_splice_expected:
         case eSpecialVariant_splice_possible:
         {
             string message = "Predicted RNA splice expressions are not currently supported.";
             message += " Please report to variation-services@ncbi.nlm.nih.gov";
-            NCBI_THROW(CVariationIrepException, 
-                       eUnsupported, 
+            NCBI_THROW(CVariationIrepException,
+                       eUnsupported,
                        message);
         }
         case eSpecialVariant_unknown:

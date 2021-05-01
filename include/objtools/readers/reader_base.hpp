@@ -129,49 +129,49 @@ public:
     /// @param istr
     ///   input stream to read from.
     /// @param pErrors
-    ///   pointer to optional error container object. 
+    ///   pointer to optional error container object.
     ///
     virtual CRef< CSerialObject >
     ReadObject(
         CNcbiIstream& istr,
         ILineErrorListener* pErrors=0 );
-                
+
     /// Read an object from a given line reader, render it as the most
     /// appropriate Genbank object. This will be Seq-annot by default
     /// but may be something else (Bioseq, Seq-entry, ...) in derived
     /// classes.
-    /// This is the only function that does not come with a default 
+    /// This is the only function that does not come with a default
     /// implementation. That is, an implementation must be provided in the
     /// derived class.
     /// @param lr
     ///   line reader to read from.
     /// @param pErrors
-    ///   pointer to optional error container object. 
+    ///   pointer to optional error container object.
     ///
     virtual CRef< CSerialObject >
     ReadObject(
         ILineReader& lr,
         ILineErrorListener* pErrors=0 );
-    
+
     /// Read an object from a given input stream, render it as a single
     /// Seq-annot. Return empty Seq-annot otherwise.
     /// @param istr
     ///   input stream to read from.
     /// @param pErrors
-    ///   pointer to optional error container object. 
-    ///  
+    ///   pointer to optional error container object.
+    ///
     virtual CRef< CSeq_annot >
     ReadSeqAnnot(
         CNcbiIstream& istr,
         ILineErrorListener* pErrors=0 );
-                
+
     /// Read an object from a given line reader, render it as a single
     /// Seq-annot, if possible. Return empty Seq-annot otherwise.
     /// @param lr
     ///   line reader to read from.
     /// @param pErrors
-    ///   pointer to optional error container object. 
-    ///  
+    ///   pointer to optional error container object.
+    ///
     virtual CRef< CSeq_annot >
     ReadSeqAnnot(
         ILineReader& lr,
@@ -184,14 +184,14 @@ public:
     /// @param istr
     ///   input stream to read from.
     /// @param pErrors
-    ///   pointer to optional error container object. 
-    ///  
+    ///   pointer to optional error container object.
+    ///
     virtual void
     ReadSeqAnnots(
         TAnnots& annots,
         CNcbiIstream& istr,
         ILineErrorListener* pErrors=0 );
-                        
+
     /// Read all objects from given insput stream, returning them as a vector of
     /// Seq-annots.
     /// @param annots
@@ -199,38 +199,38 @@ public:
     /// @param lr
     ///   line reader to read from.
     /// @param pErrors
-    ///   pointer to optional error container object. 
-    ///  
+    ///   pointer to optional error container object.
+    ///
     virtual void
     ReadSeqAnnots(
         TAnnots& annots,
         ILineReader& lr,
         ILineErrorListener* pErrors=0 );
-                        
+
     /// Read an object from a given input stream, render it as a single
     /// Seq-entry, if possible. Return empty Seq-entry otherwise.
     /// @param istr
     ///   input stream to read from.
     /// @param pErrors
-    ///   pointer to optional error container object. 
-    ///                
+    ///   pointer to optional error container object.
+    ///
     virtual CRef< CSeq_entry >
     ReadSeqEntry(
         CNcbiIstream& istr,
         ILineErrorListener* pErrors=0 );
-                
+
     /// Read an object from a given line reader, render it as a single
     /// Seq-entry, if possible. Return empty Seq-entry otherwise.
     /// @param lr
     ///   line reader to read from.
     /// @param pErrors
-    ///   pointer to optional error container object. 
-    ///                
+    ///   pointer to optional error container object.
+    ///
     virtual CRef< CSeq_entry >
     ReadSeqEntry(
         ILineReader& lr,
         ILineErrorListener* pErrors=0 );
-       
+
     void
     SetProgressReportInterval(
         unsigned int intv );
@@ -284,17 +284,17 @@ protected:
 
     virtual void xAssignTrackData(
         CSeq_annot& );
-                
+
     virtual bool xParseBrowserLine(
         const string&,
         CSeq_annot&);
-        
+
     virtual bool xParseTrackLine(
         const string&);
-        
+
     virtual bool xParseBrowserLine(
         const string&);
-        
+
     virtual void xSetBrowserRegion(
         const string&,
         CAnnot_descr&);
@@ -305,7 +305,7 @@ protected:
     virtual void xAddConversionInfo(
         CSeq_annot&,
         ILineErrorListener*);
-                    
+
     bool xParseComment(
         const CTempString&,
         CRef<CSeq_annot>&);
@@ -325,22 +325,22 @@ protected:
     ProcessError(
         CObjReaderLineException&,
         ILineErrorListener* );
-        
+
     void
     ProcessError(
         CLineError&,
         ILineErrorListener* );
-        
+
     void
     ProcessWarning(
         CObjReaderLineException&,
         ILineErrorListener* );
-        
+
     void
     ProcessWarning(
         CLineError&,
         ILineErrorListener* );
-        
+
     void
     xProcessReaderMessage(
         CReaderMessage&,

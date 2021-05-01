@@ -28,7 +28,7 @@
  * Authors: Frank Ludwig
  *
  */
-#include <ncbi_pch.hpp> 
+#include <ncbi_pch.hpp>
 #include <objtools/readers/aln_error_reporter.hpp>
 #include <objtools/readers/line_error.hpp>
 #include <objtools/readers/message_listener.hpp>

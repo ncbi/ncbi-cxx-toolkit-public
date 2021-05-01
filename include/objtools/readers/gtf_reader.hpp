@@ -130,7 +130,7 @@ public:
     ~CGtfReadRecord() {};
 
     const CGtfAttributes&
-    GtfAttributes() const 
+    GtfAttributes() const
     {
         return mAttributes;
     };
@@ -227,7 +227,7 @@ protected:
     bool xCreateParentGene(
         const CGtfReadRecord&,
         CSeq_annot&);
-        
+
     bool xFeatureSetQualifiersGene(
         const CGtfReadRecord& record,
         CSeq_feat&);
@@ -243,11 +243,11 @@ protected:
     bool xCreateParentCds(
         const CGtfReadRecord&,
         CSeq_annot&);
-        
+
     bool xCreateParentMrna(
         const CGtfReadRecord&,
         CSeq_annot&);
-        
+
     bool xFeatureSetDataGene(
         const CGtfReadRecord&,
         CSeq_feat&);

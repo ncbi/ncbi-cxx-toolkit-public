@@ -957,7 +957,7 @@ void CPhrap_Contig::ReadReadLocation(CNcbiIstream& in, TSeqs& seqs)
             seq = CRef<CPhrap_Seq>(read.GetPointer());
         }
     }
-    read->AddReadLoc(start, complemented); 
+    read->AddReadLoc(start, complemented);
 }
 
 

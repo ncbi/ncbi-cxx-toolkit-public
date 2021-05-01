@@ -38,8 +38,8 @@ CSeq_id_Handle CIdResolver::GetAccessionVersion(const string& identifier) const
 
     try {
         auto temp_idh = CSeq_id_Handle::GetHandle(identifier);
-        idh = sequence::GetId(temp_idh, 
-                              m_Scope, 
+        idh = sequence::GetId(temp_idh,
+                              m_Scope,
                               sequence::eGetId_ForceAcc | sequence::eGetId_ThrowOnError);
     }
     catch (...) {}
@@ -55,13 +55,13 @@ CSeq_id_Handle CIdResolver::GetAccessionVersion(const string& identifier) const
 
 
 bool CIdResolver::x_TryProcessGenomicLRG(const string& identifier, CSeq_id_Handle& idh) const
-{ 
+{
     if (NStr::IsBlank(identifier)) {
         return false;
     }
 
     if (!x_LooksLikeLRG(identifier)) {
-        return false; // LCOV_EXCL_LINE - Don't expect this to occur. 
+        return false; // LCOV_EXCL_LINE - Don't expect this to occur.
     }
 
     CRef<CSeq_id> lrg_seqid;
@@ -75,12 +75,12 @@ bool CIdResolver::x_TryProcessGenomicLRG(const string& identifier, CSeq_id_Handl
     }
 // LCOV_EXCL_STOP
 
-    idh = sequence::GetId(*lrg_seqid, 
-                          m_Scope, 
+    idh = sequence::GetId(*lrg_seqid,
+                          m_Scope,
                           sequence::eGetId_ForceAcc | sequence::eGetId_ThrowOnError);
 
     return true;
-}  
+}
 
 
 
@@ -93,8 +93,8 @@ bool CIdResolver::x_TryProcessLRG(const string& identifier, CSeq_id_Handle& idh)
 
     CSeq_id_Handle genome_idh;
 
-    // The following routine calls CRegexp::IsMatch, which 
-    // resets all results from previous GetMatch() calls. 
+    // The following routine calls CRegexp::IsMatch, which
+    // resets all results from previous GetMatch() calls.
     // This is why we fetch the lrg_product_id above.
     if (!x_TryProcessGenomicLRG(genome_id, genome_idh)) {
         return false;
@@ -105,7 +105,7 @@ bool CIdResolver::x_TryProcessLRG(const string& identifier, CSeq_id_Handle& idh)
       return true;
     }
 
-    
+
     SAnnotSelector selector;
     selector.SetResolveTSE();
     selector.IncludeFeatType(CSeqFeatData::e_Gene);
@@ -123,27 +123,27 @@ bool CIdResolver::x_TryProcessLRG(const string& identifier, CSeq_id_Handle& idh)
     }
 
 
-    for (CFeat_CI ci(bsh,selector); ci; ++ci) { 
+    for (CFeat_CI ci(bsh,selector); ci; ++ci) {
         const auto& mapped_feat = *ci;
         if (!mapped_feat.IsSetDbxref()) {
-            continue; // LCOV_EXCL_LINE 
-        }    
+            continue; // LCOV_EXCL_LINE
+        }
         ITERATE(CSeq_feat::TDbxref, it, mapped_feat.GetDbxref()) {
             const auto& dbtag = **it;
             if (NStr::Equal(dbtag.GetDb(), "LRG") &&
                 dbtag.GetTag().IsStr() &&
                 NStr::Equal(dbtag.GetTag().GetStr(), lrg_product_id) &&
-                mapped_feat.IsSetProduct() && 
-                mapped_feat.GetProduct().GetId()) 
+                mapped_feat.IsSetProduct() &&
+                mapped_feat.GetProduct().GetId())
             {
                 try {
                     idh = sequence::GetId(*mapped_feat.GetProduct().GetId(),
                                            m_Scope,
                                            sequence::eGetId_ForceAcc);
-                   return true;          
-                } 
+                   return true;
+                }
 // LCOV_EXCL_START - could not find test case to trigger the exception
-                catch (...) 
+                catch (...)
                 {
                     break;
                 }
@@ -173,14 +173,13 @@ CSeq_id_Handle CIdResolver::x_ProcessCCDS(const string& identifier)
     const size_t start_offs = 0;
     const size_t count = 5;
     m_E2Client->Query(query_string, "protein", gi, start_offs, count);
-  
 
     if (gi.size() != 1) {
         // Throw an exception
-    } 
+    }
 
 
-    for(int i=0; i<gi.size(); ++i) {   
+    for(int i=0; i<gi.size(); ++i) {
         auto gih = CSeq_id_Handle::GetHandle(gi[i]);
 
         auto idh = sequence::GetId(gih,
@@ -203,7 +202,7 @@ bool CIdResolver::x_LooksLikeCCDS(const string& identifier) const
 {
     return  m_CCDSregex->IsMatch(identifier);
 }
-// LCOV_EXCL_STOP 
+// LCOV_EXCL_STOP
 
 
 END_SCOPE(objects)

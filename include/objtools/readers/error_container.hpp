@@ -48,7 +48,7 @@ class NCBI_DEPRECATED IErrorContainer        : public ILineErrorListener      { 
 class NCBI_DEPRECATED CErrorContainerBase    : public CMessageListenerBase    { };
 class NCBI_DEPRECATED CErrorContainerLenient : public CMessageListenerLenient { };
 class NCBI_DEPRECATED CErrorContainerStrict  : public CMessageListenerStrict  { };
-class NCBI_DEPRECATED CErrorContainerCount   : public CMessageListenerCount   { 
+class NCBI_DEPRECATED CErrorContainerCount   : public CMessageListenerCount   {
 public:
     CErrorContainerCount(size_t uMaxCount) :
         CMessageListenerCount(uMaxCount) { }

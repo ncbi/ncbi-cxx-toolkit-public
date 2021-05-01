@@ -231,17 +231,12 @@ protected:
                                            const string& mol);
 
     virtual void            x_PlaceSeq(CBioseq& seq);
-    
     virtual bool            x_IsLineUcscMetaInformation(const TStr&);
-
     virtual bool            x_SplitKeyValuePair( const string&, string&, string& );
-    
     virtual void            x_SetProducts( CRef<CSeq_entry>& );
-    
     virtual void            x_CreateGeneFeatures( CRef<CSeq_entry>& );
-    
-    virtual void            x_RemapGeneRefs( CRef<CSeq_entry>&, TGeneRefs& ); 
-    
+    virtual void            x_RemapGeneRefs( CRef<CSeq_entry>&, TGeneRefs& );
+
 protected:
     CRef<CSeq_entry> m_TSE;
     TSeqNameCache    m_SeqNameCache;

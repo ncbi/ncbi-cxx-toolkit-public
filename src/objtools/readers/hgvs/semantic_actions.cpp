@@ -5,7 +5,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 template <typename T>
-CRef<T> MakeResult(CRef<T> result) 
+CRef<T> MakeResult(CRef<T> result)
 {
     return Ref(new T());
 }
@@ -13,7 +13,7 @@ CRef<T> MakeResult(CRef<T> result)
 template<class T>
 CRef<T> CreateResultIfNull(CRef<T> result)
 {
-    return result.IsNull() ? Ref(new T()) : result;    
+    return result.IsNull() ? Ref(new T()) : result;
 }
 
 void TagAsChimera(CRef<CSequenceVariant> seq_var)
@@ -40,8 +40,8 @@ void AssignSequenceVariant(CRef<CSequenceVariant> variant, CRef<CVariantExpressi
 }
 
 
-void AssignMissense(CRef<CAaSite> initial, 
-                    const CProteinSub::TFinal& final, 
+void AssignMissense(CRef<CAaSite> initial,
+                    const CProteinSub::TFinal& final,
                     CRef<CSimpleVariant>& result)
 {
     result = CreateResultIfNull(result);
@@ -53,7 +53,7 @@ void AssignMissense(CRef<CAaSite> initial,
 }
 
 
-void AssignSilent(CRef<CAaLocation> loc, 
+void AssignSilent(CRef<CAaLocation> loc,
                   CRef<CSimpleVariant>& result)
 {
     result = CreateResultIfNull(result);
@@ -63,31 +63,31 @@ void AssignSilent(CRef<CAaLocation> loc,
 
 void AssignNonsense(CRef<CAaSite> initial, CRef<CSimpleVariant>& result)
 {
-	result = CreateResultIfNull(result);
+    result = CreateResultIfNull(result);
 
     result->SetType().SetProt_sub().SetType(CProteinSub::eType_nonsense);
-	result->SetType().SetProt_sub().SetInitial(*initial);
+    result->SetType().SetProt_sub().SetInitial(*initial);
 }
 
 
 void AssignUnknownSub(CRef<CAaSite> initial, CRef<CSimpleVariant>& result)
 {
-	result = CreateResultIfNull(result);
+    result = CreateResultIfNull(result);
 
     result->SetType().SetProt_sub().SetType(CProteinSub::eType_unknown);
-	result->SetType().SetProt_sub().SetInitial(*initial);
+    result->SetType().SetProt_sub().SetInitial(*initial);
 }
 
 
 void AssignAaDup(CRef<CAaLocation> aa_loc, CRef<CSimpleVariant>& result)
 {
     result = CreateResultIfNull(result);
-    result->SetType().SetDup().SetLoc().SetAaloc(*aa_loc);    
+    result->SetType().SetDup().SetLoc().SetAaloc(*aa_loc);
 }
 
 
 void AssignAaDel(CRef<CAaLocation> aa_loc, CRef<CSimpleVariant>& result)
-{   
+{
     result = CreateResultIfNull(result);
     result->SetType().SetDel().SetLoc().SetAaloc(*aa_loc);
 }
@@ -103,14 +103,14 @@ void AssignNtermExtension(CRef<CAaSite> initial_start_site, CRef<CCount> new_sta
 void AssignNtermExtension(CRef<CAaSite> initial_start_site, const string& new_aa, CRef<CCount> new_start_site, CRef<CSimpleVariant>& result)
 {
     AssignNtermExtension(initial_start_site, new_start_site, result);
-    result->SetType().SetProt_ext().SetNterm_ext().SetNewAa(new_aa);    
-} 
+    result->SetType().SetProt_ext().SetNterm_ext().SetNewAa(new_aa);
+}
 
 
-void AssignCtermExtension(const string& reference_stop, const string& aa, CRef<CCount> length, CRef<CSimpleVariant>& result) 
+void AssignCtermExtension(const string& reference_stop, const string& aa, CRef<CCount> length, CRef<CSimpleVariant>& result)
 {
 
-    const auto index = NStr::StringToNumeric<TSeqPos>(reference_stop);    
+    const auto index = NStr::StringToNumeric<TSeqPos>(reference_stop);
     result = CreateResultIfNull(result);
 
     auto& cterm_ext = result->SetType().SetProt_ext().SetCterm_ext();
@@ -120,7 +120,7 @@ void AssignCtermExtension(const string& reference_stop, const string& aa, CRef<C
 }
 
 
-void AssignAaIntervalLocation(CRef<CAaInterval> aa_interval, CRef<CAaLocation>& result) 
+void AssignAaIntervalLocation(CRef<CAaInterval> aa_interval, CRef<CAaLocation>& result)
 {
     result = CreateResultIfNull(result);
     result->SetInt(*aa_interval);
@@ -142,7 +142,7 @@ void AssignAaInterval(CRef<CAaSite> start, CRef<CAaSite>& stop, CRef<CAaInterval
 }
 
 
-void AssignAaSite(const string& aa, const string& pos, CRef<CAaSite>& result) 
+void AssignAaSite(const string& aa, const string& pos, CRef<CAaSite>& result)
 {
     result = CreateResultIfNull(result);
     auto index = NStr::StringToNumeric<CAaSite::TIndex>(pos);
@@ -153,7 +153,7 @@ void AssignAaSite(const string& aa, const string& pos, CRef<CAaSite>& result)
 }
 
 
-void AssignCount(const string& count, CRef<CCount>& result) 
+void AssignCount(const string& count, CRef<CCount>& result)
 {
     result = CreateResultIfNull(result);
 
@@ -181,15 +181,15 @@ void AssignCountRange(const string& start, const string& stop, CRef<CCount>& res
     result = CreateResultIfNull(result);
     if ( start == "?" ) {
         result->SetRange().SetStart().SetUnknown(); // LCOV_EXCL_LINE - No ASN.1 representation
-    } 
+    }
     else {
         const auto start_val = NStr::StringToNumeric<CCount::TVal>(start);
         result->SetRange().SetStart().SetVal(start_val);
     }
 
     if ( stop == "?" ) {
-        result->SetRange().SetStop().SetUnknown(); 
-    } 
+        result->SetRange().SetStop().SetUnknown();
+    }
     else {
         const auto stop_val = NStr::StringToNumeric<CCount::TVal>(stop);
         result->SetRange().SetStop().SetVal(stop_val);
@@ -204,12 +204,12 @@ void AssignAaSSR(CRef<CAaLocation> aa_loc, CRef<CCount> count, CRef<CSimpleVaria
     auto& ssr = result->SetType().SetRepeat();
 
     ssr.SetLoc().SetAaloc(*aa_loc);
-	ssr.SetCount(*count);
+    ssr.SetCount(*count);
 }
 
 
-void AssignAaInsertion(CRef<CAaInterval> aa_interval, 
-                       const CInsertion::TSeqinfo::TRaw_seq& raw_seq, 
+void AssignAaInsertion(CRef<CAaInterval> aa_interval,
+                       const CInsertion::TSeqinfo::TRaw_seq& raw_seq,
                        CRef<CSimpleVariant>& result)
 {
     result = CreateResultIfNull(result);
@@ -223,22 +223,22 @@ void AssignAaInsertionSize(CRef<CAaInterval> aa_interval, CRef<CCount> seq_size,
     result = CreateResultIfNull(result);
 
     auto& insertion = result->SetType().SetIns();
-    
-   	insertion.SetInt().SetAaint(*aa_interval);
+
+    insertion.SetInt().SetAaint(*aa_interval);
     insertion.SetSeqinfo().SetCount(*seq_size);
 }
 
 
 void AssignFrameshift(CRef<CAaSite> aa_site, CRef<CSimpleVariant>& result)
 {
-	result = CreateResultIfNull(result);
-	result->SetType().SetFrameshift().SetAasite(*aa_site);
+    result = CreateResultIfNull(result);
+    result->SetType().SetFrameshift().SetAasite(*aa_site);
 }
 
 
-void AssignAaDelins(CRef<CAaLocation> aa_loc, 
-                    const CInsertion::TSeqinfo::TRaw_seq& raw_seq, 
-                    CRef<CSimpleVariant>& result) 
+void AssignAaDelins(CRef<CAaLocation> aa_loc,
+                    const CInsertion::TSeqinfo::TRaw_seq& raw_seq,
+                    CRef<CSimpleVariant>& result)
 {
     result = CreateResultIfNull(result);
 
@@ -249,12 +249,11 @@ void AssignAaDelins(CRef<CAaLocation> aa_loc,
 }
 
 
-void AssignAaDelinsSize(CRef<CAaLocation> aa_loc, CRef<CCount> seq_size, CRef<CSimpleVariant>& result) 
+void AssignAaDelinsSize(CRef<CAaLocation> aa_loc, CRef<CCount> seq_size, CRef<CSimpleVariant>& result)
 {
     result = CreateResultIfNull(result);
 
     auto& delins = result->SetType().SetDelins();
- 
     delins.SetLoc().SetAaloc(*aa_loc);
     delins.SetInserted_seq_info().SetCount(*seq_size);
 }
@@ -324,7 +323,7 @@ void AssignFuzzyNtSite(CRef<CNtSite> center_site, CRef<CNtSite>& result)
 
 void AssignFuzzySimpleNtSite(const string& site_index, CRef<CNtSite>& result)
 {
-    auto center_site = site_index; 
+    auto center_site = site_index;
 
     NStr::ReplaceInPlace(center_site, "(", "");
     NStr::ReplaceInPlace(center_site, ")", "");
@@ -341,7 +340,7 @@ void AssignIntronSite(const string& base, const string& offset, CRef<CNtSite>& r
     if (base == "?") {
         result->SetBase().SetUnknown(); // LCOV_EXCL_LINE - Does not parse
     }
-    else { 
+    else {
         const auto base_val = NStr::StringToNumeric<CNtSite::TBase::TVal>(base);
         result->SetBase().SetVal(base_val);
     }
@@ -349,7 +348,7 @@ void AssignIntronSite(const string& base, const string& offset, CRef<CNtSite>& r
     if (offset == "+?") {
         result->SetOffset().SetPlus_unknown();
         return;
-    }  
+    }
 
     if (offset == "-?") {
         result->SetOffset().SetMinus_unknown();
@@ -360,8 +359,8 @@ void AssignIntronSite(const string& base, const string& offset, CRef<CNtSite>& r
     if (base.front() == '(' && offset.back() == ')') {
         result->SetFuzzy(); // LCOV_EXCL_LINE - not represented in ASN.1 Generates the same representation as x+(y)
     }
-    else if (offset.size() >= 2 && 
-             offset[1] == '(' 
+    else if (offset.size() >= 2 &&
+             offset[1] == '('
              && offset.back() == ')') {
         result->SetFuzzy_offset();
     }
@@ -404,13 +403,13 @@ void AssignNtInterval(CRef<CNtLocation> start, CRef<CNtLocation> stop, CRef<CNtL
 {
     result = CreateResultIfNull(result);
     if (start->IsSite()) {
-        result->SetInt().SetStart().SetSite(start->SetSite()); 
-    } 
+        result->SetInt().SetStart().SetSite(start->SetSite());
+    }
     else if (start->IsRange()) {
         result->SetInt().SetStart().SetRange(start->SetRange());
     }
     if (stop->IsSite()) {
-        result->SetInt().SetStop().SetSite(stop->SetSite()); 
+        result->SetInt().SetStop().SetSite(stop->SetSite());
     }
     else if (stop->IsRange()) {
         result->SetInt().SetStop().SetRange(stop->SetRange());
@@ -426,16 +425,16 @@ void s_SetSequenceInfo(CRef<CNtLocation>& nt_loc, const string& identifier, cons
         nt_loc->SetSite().SetSeqid(seq_id);
         nt_loc->SetSite().SetSeqtype(seq_type);
         nt_loc->SetSite().SetStrand_minus(is_minus_strand);
-    } 
+    }
     else if (nt_loc->IsRange()) {
         auto start_loc = Ref(new CNtLocation());
         start_loc->SetSite(nt_loc->SetRange().SetStart());
         s_SetSequenceInfo(start_loc, identifier, seq_type);
-         
+
         auto stop_loc = Ref(new CNtLocation());
         stop_loc->SetSite(nt_loc->SetRange().SetStop());
         s_SetSequenceInfo(stop_loc, identifier, seq_type);
-    } 
+    }
     else if (nt_loc->IsInt()) {
         auto start_loc = Ref(new CNtLocation());
         if (nt_loc->GetInt().GetStart().IsSite()) {
@@ -460,7 +459,7 @@ void s_SetSequenceInfo(CRef<CNtLocation>& nt_loc, const string& identifier, cons
 }
 
 
-EVariantSeqType s_GetSeqType(const string& type_string) 
+EVariantSeqType s_GetSeqType(const string& type_string)
 {
     if (type_string == "g.") {
         return eVariantSeqType_g;
@@ -471,7 +470,7 @@ EVariantSeqType s_GetSeqType(const string& type_string)
     }
 
     if (type_string == "p.") { // LCOV_EXCL_START - currently, this function is only used on genomic sequences
-        return eVariantSeqType_p; 
+        return eVariantSeqType_p;
     } // LCOV_EXCL_STOP
 
     if (type_string == "r.") {
@@ -490,7 +489,7 @@ EVariantSeqType s_GetSeqType(const string& type_string)
 }
 
 
-void AssignNtRemoteLocation(const string& identifier, const string& type_string, CRef<CNtLocation>& nt_loc, CRef<CNtLocation>& result) 
+void AssignNtRemoteLocation(const string& identifier, const string& type_string, CRef<CNtLocation>& nt_loc, CRef<CNtLocation>& result)
 {
     result = Ref(nt_loc.GetPointer());
     const string seq_id = identifier.substr(0,identifier.size()-1);
@@ -524,7 +523,7 @@ void AssignNtInv(CRef<CNtLocation> nt_loc, const CInversion::TRaw_seq& raw_seq, 
 {
     result = CreateResultIfNull(result);
     result->SetType().SetInv().SetNtint(nt_loc->SetInt());
-        
+
     if (raw_seq.empty()) {
         return;
     }
@@ -559,7 +558,7 @@ void AssignNtInsertion(CRef<CNtLocation> nt_loc, const CInsertion::TSeqinfo::TRa
 {
     result = CreateResultIfNull(result);
     result->SetType().SetIns().SetInt().SetNtint(nt_loc->SetInt());
-   
+
     if (raw_seq.empty()) {
         return;
     }
@@ -596,10 +595,10 @@ void AssignNtDelins(CRef<CNtLocation> nt_loc, const CInsertion::TSeqinfo::TRaw_s
 }
 
 
-void AssignNtDelins(CRef<CNtLocation> nt_loc, 
-                    const CDeletion::TRaw_seq& deleted_seq, 
+void AssignNtDelins(CRef<CNtLocation> nt_loc,
+                    const CDeletion::TRaw_seq& deleted_seq,
                     const CInsertion::TSeqinfo::TRaw_seq& inserted_seq,
-                    CRef<CSimpleVariant>& result) 
+                    CRef<CSimpleVariant>& result)
 {
     AssignNtDelins(nt_loc, inserted_seq, result);
 
@@ -628,7 +627,7 @@ void AssignNtDup(CRef<CNtLocation> nt_loc, const CDuplication::TRaw_seq& raw_seq
 }
 
 
-void AssignNtSub(CRef<CNtLocation> nt_loc, 
+void AssignNtSub(CRef<CNtLocation> nt_loc,
                  const CNaSub::TInitial& initial_nt,
                  const CNaSub::TFinal& final_nt,
                  CRef<CSimpleVariant>& result)
@@ -644,7 +643,7 @@ void AssignNtIdentity(CRef<CNtLocation> nt_loc,
                       const CNaIdentity::TNucleotide& nucleotide,
                       CRef<CSimpleVariant>& result)
 {
-    result = CreateResultIfNull(result); 
+    result = CreateResultIfNull(result);
     result->SetType().SetNa_identity().SetLoc(*nt_loc);
     result->SetType().SetNa_identity().SetNucleotide(nucleotide);
 }

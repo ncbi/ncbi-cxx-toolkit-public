@@ -74,7 +74,7 @@ void CSourceModParserWrapper::ExtractTitleAndApplyAllMods(CBioseq_Handle& bsh, C
     }
 }
 
-// static 
+// static
 void CSourceModParserWrapper::x_ApplyAllMods(
     CSourceModParser &smp, CBioseq_Handle& bsh, CTempString organism)
 {

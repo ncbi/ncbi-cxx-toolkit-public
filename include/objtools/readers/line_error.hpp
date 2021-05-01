@@ -53,7 +53,7 @@ public:
     // If you add to here, make sure to add to ProblemStr()
     enum EProblem {
         // useful when you have a problem variable, but haven't found a problem yet
-        eProblem_Unset = 1, 
+        eProblem_Unset = 1,
 
         eProblem_UnrecognizedFeatureName,
         eProblem_UnrecognizedQualifierName,
@@ -101,7 +101,7 @@ public:
         // not a problem, actually, but used as
         // the default if PutProgress is
         // not overridden.
-        eProblem_ProgressInfo, 
+        eProblem_ProgressInfo,
 
         eProblem_GeneralParsingError
     };
@@ -131,7 +131,7 @@ public:
 
     virtual const std::string &
     FeatureName(void) const = 0;
-    
+
     virtual const std::string &
     QualifierName(void) const = 0;
 
@@ -173,7 +173,7 @@ public:
     virtual const std::string&
     ErrorMessage(void) const {
         static string empty("");
-        return empty; 
+        return empty;
     }
 
     virtual std::string
@@ -253,7 +253,7 @@ public:
             return "Feature had invalid length, but this was automatically corrected.";
         case eProblem_IgnoredResidue:
             return "An invalid residue has been ignored";
-        case eProblem_InvalidQualifier: 
+        case eProblem_InvalidQualifier:
             return "Invalid qualifier for feature";
 
         case eProblem_BadInfoLine:
@@ -270,7 +270,7 @@ public:
         }
     }
 
-    virtual void Write( 
+    virtual void Write(
         CNcbiOstream& out ) const
     {
 
@@ -402,7 +402,7 @@ public:
     /// copy constructor is protected so please use this function to
     /// throw the object.
     NCBI_NORETURN void Throw(void) const;
-       
+
     void PatchLineNumber(
         unsigned int uLine) { m_uLine = uLine; };
 
@@ -416,13 +416,13 @@ public:
     void AddOtherLine(unsigned int uOtherLine) {
         m_vecOfOtherLines.push_back(uOtherLine);
     }
- 
+
     EProblem
     Problem(void) const { return m_eProblem; }
 
     virtual EDiagSev
     Severity(void) const { return m_eSeverity; }
-    
+
     const std::string &
     SeqId(void) const { return m_strSeqId; }
 
@@ -434,13 +434,13 @@ public:
 
     const std::string &
     FeatureName(void) const { return m_strFeatureName; }
-    
+
     const std::string &
     QualifierName(void) const { return m_strQualifierName; }
 
     const std::string &
     QualifierValue(void) const { return m_strQualifierValue; }
-        
+
     virtual std::string
     ProblemStr(void) const
     {
@@ -497,7 +497,7 @@ public:
     static CLineErrorEx* Create(
         EProblem eProblem,
         EDiagSev eSeverity,
-        int code, 
+        int code,
         int subcode,
         const std::string& strSeqId,
         unsigned int uLine,
@@ -515,7 +515,7 @@ public:
     /// copy constructor is protected so please use this function to
     /// throw the object.
     NCBI_NORETURN void Throw(void) const;
-       
+
     void PatchLineNumber(
         unsigned int uLine) { m_uLine = uLine; };
 
@@ -524,13 +524,13 @@ public:
     void AddOtherLine(unsigned int uOtherLine) {
         m_vecOfOtherLines.push_back(uOtherLine);
     }
- 
+
     EProblem
     Problem(void) const override { return m_eProblem; }
 
     virtual EDiagSev
     Severity(void) const override { return m_eSeverity; }
-    
+
     const std::string &
     SeqId(void) const override { return m_strSeqId; }
 
@@ -542,13 +542,13 @@ public:
 
     const std::string &
     FeatureName(void) const override { return m_strFeatureName; }
-    
+
     const std::string &
     QualifierName(void) const override { return m_strQualifierName; }
 
     const std::string &
     QualifierValue(void) const override { return m_strQualifierValue; }
-        
+
     virtual std::string
     ProblemStr(void) const override
     {
@@ -561,9 +561,9 @@ public:
 
     const std::string &ErrorMessage(void) const override { return m_strErrorMessage; }
 
-    virtual string Message(void) const override 
+    virtual string Message(void) const override
     {
-        return (m_strErrorMessage.empty() ? 
+        return (m_strErrorMessage.empty() ?
                 ILineError::Message() :
                 m_strErrorMessage);
     }
@@ -638,16 +638,16 @@ public:
     /// Use instead of copy constructor, which is protected.
     virtual ILineError *Clone(void) const;
 
-    // Copy constructor is protected, so please use 
+    // Copy constructor is protected, so please use
     /// this function to throw this object.
     NCBI_NORETURN void Throw(void) const;
 
     ~CObjReaderLineException(void) noexcept { }
 
-    TErrCode GetErrCode(void) const 
-    { 
+    TErrCode GetErrCode(void) const
+    {
         return (TErrCode) this->x_GetErrCode();
-    } 
+    }
 
     EProblem Problem(void) const { return m_eProblem; }
     const std::string &SeqId(void) const { return m_strSeqId; }
@@ -663,13 +663,13 @@ public:
     std::string ProblemStr() const;
 
     std::string Message() const { return ( GetMsg().empty() ? ILineError::Message() : GetMsg()); }
-    
+
     //
     //  Cludge alert: The line number may not be known at the time the exception
     //  is generated. In that case, the exception will be fixed up before being
     //  rethrown.
     //
-    void 
+    void
     SetLineNumber(
         unsigned int uLineNumber ) { m_uLineNumber = uLineNumber; }
 
@@ -708,7 +708,7 @@ protected:
     CObjReaderLineException(const CObjReaderLineException & rhs );
 };
 
-    
+
 END_SCOPE(objects)
 
 END_NCBI_SCOPE

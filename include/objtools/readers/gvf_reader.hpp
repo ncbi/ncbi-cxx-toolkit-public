@@ -53,7 +53,7 @@ class CGvfReadRecord
 public:
     CGvfReadRecord(
         unsigned int lineNumber,
-        ILineErrorListener* pEC = 0): 
+        ILineErrorListener* pEC = 0):
         mLineNumber(lineNumber),
         mpMessageListener(pEC)
     {};
@@ -103,12 +103,12 @@ protected:
 
     virtual bool xParseStructuredComment(
         const string&);
-                                
+
     bool xParseFeature(
         const string&,
         CSeq_annot&,
         ILineErrorListener*);
-      
+
     virtual void xPostProcessAnnot(
         CSeq_annot&);
 
@@ -124,11 +124,11 @@ protected:
     bool xFeatureSetLocation(
         const CGff2Record&,
         CSeq_feat&);
-    
+
     bool xFeatureSetLocationInterval(
         const CGff2Record&,
         CSeq_feat&);
-    
+
     bool xFeatureSetLocationPoint(
         const CGff2Record&,
         CSeq_feat&);
@@ -136,7 +136,7 @@ protected:
     bool xSetLocation(
         const CGff2Record&,
         CSeq_loc&);
-    
+
     bool xSetLocationInterval(
         const CGff2Record&,
         CSeq_loc&);
@@ -144,7 +144,7 @@ protected:
     bool xSetLocationPoint(
         const CGff2Record&,
         CSeq_loc&);
-    
+
     bool xFeatureSetVariation(
         const CGvfReadRecord&,
         CSeq_feat&);
@@ -226,15 +226,15 @@ protected:
         const CGvfReadRecord&,
         CVariation_ref&);
 
-    virtual CGff3ReadRecord* x_CreateRecord() { return new CGvfReadRecord(m_uLineNumber); };   
+    virtual CGff3ReadRecord* x_CreateRecord() { return new CGvfReadRecord(m_uLineNumber); };
 
     bool xIsDbvarCall(
         const string& nameAttr) const;
 
     bool xGetNameAttribute(
-        const CGvfReadRecord& record, 
+        const CGvfReadRecord& record,
         string& name) const;
- 
+
 protected:
     CRef< CAnnotdesc > m_Pragmas;
 };

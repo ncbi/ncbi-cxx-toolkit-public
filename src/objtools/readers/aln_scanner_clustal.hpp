@@ -51,7 +51,7 @@ private:
         CSequenceInfo&,
         CLineInput&) override;
 
-    static bool 
+    static bool
     sIsConservationLine(
         const string& line);
 

@@ -42,9 +42,9 @@ struct SHgvsNucleicAcidGrammar : boost::spirit::qi::grammar<TParseIterator, CRef
     TRule<CNtSite> simple_coding_site;
     TRule<CNtSite> pretranslation_site;
     TRule<CNtSite> posttranslation_site;
-    TRule<CNtSite> intron_site; 
+    TRule<CNtSite> intron_site;
     TRule<CNtSite> simple_site;
-    TTerminal intron_offset; 
+    TTerminal intron_offset;
     TTerminal offset_length;
     TTerminal nucleotide_seq;
     TTerminal nucleotide;

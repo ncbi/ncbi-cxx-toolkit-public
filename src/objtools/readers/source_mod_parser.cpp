@@ -288,7 +288,7 @@ namespace
             skip_enum_names,
             extra_smod_to_enum_names );
     }
-                                                 
+
     CSafeStatic<TSModSubSrcSubtype> kSModSubSrcSubtypeMap(
         s_InitSModSubSrcSubtypeMap, nullptr);
 
@@ -442,7 +442,7 @@ CSafeStaticRef<CSeq_descr> fake_descr;
 template<class _T>
 inline
 CAutoInitDesc<_T>::CAutoInitDesc(CSeq_descr& descr, CSeqdesc::E_Choice which) :
-  CAutoAddDesc(descr, which), 
+  CAutoAddDesc(descr, which),
   m_ptr(0)
 {
 }
@@ -450,7 +450,7 @@ CAutoInitDesc<_T>::CAutoInitDesc(CSeq_descr& descr, CSeqdesc::E_Choice which) :
 template<class _T>
 inline
 CAutoInitDesc<_T>::CAutoInitDesc(CBioseq& bioseq, CSeqdesc::E_Choice which) :
-  CAutoAddDesc(*fake_descr, which), 
+  CAutoAddDesc(*fake_descr, which),
    m_ptr(0),
    m_bioseq(&bioseq)
 {
@@ -460,7 +460,7 @@ CAutoInitDesc<_T>::CAutoInitDesc(CBioseq& bioseq, CSeqdesc::E_Choice which) :
 template<class _T>
 inline
 CAutoInitDesc<_T>::CAutoInitDesc(CBioseq_set& bioset, CSeqdesc::E_Choice which) :
-  CAutoAddDesc(*fake_descr, which), 
+  CAutoAddDesc(*fake_descr, which),
   m_ptr(0),
   m_bioset(&bioset)
 
@@ -524,7 +524,7 @@ void CAutoInitDesc<CGB_block>::_getfromdesc()
 }
 
 
-string CSourceModParser::ParseTitle(const CTempString& title, 
+string CSourceModParser::ParseTitle(const CTempString& title,
     CConstRef<CSeq_id> seqid,
     size_t iMaxModsToParse )
 {
@@ -536,14 +536,14 @@ string CSourceModParser::ParseTitle(const CTempString& title,
 
     mod.seqid = seqid;
 
-    size_t iModsFoundSoFar = 0;    
+    size_t iModsFoundSoFar = 0;
     for (; (pos < title.size()) && (iModsFoundSoFar < iMaxModsToParse);
         ++iModsFoundSoFar )
     {
         size_t lb_pos, end_pos, eq_pos;
         lb_pos = pos;
         if (x_FindBrackets(title, lb_pos, end_pos, eq_pos))
-        {            
+        {
             CTempString skipped = NStr::TruncateSpaces_Unsafe(title.substr(pos, lb_pos - pos));
 
             if (eq_pos < end_pos) {
@@ -587,7 +587,7 @@ void CSourceModParser::ApplyAllMods(CBioseq& seq, CTempString organism, CConstRe
             location = loc;
         }
 
-        if (location) 
+        if (location)
         {
             CAutoInitRef<CSeq_annot> ftable;
             bool                     had_ftable = false;
@@ -703,7 +703,7 @@ void CSourceModParser::ApplyAllMods(CBioseq& seq, CTempString organism, CConstRe
 
     TMods unusedMods = GetMods(fUnusedMods);
     for (TMods::const_iterator unused = unusedMods.begin(); unused != unusedMods.end(); ++unused) {
-        x_HandleUnkModValue(*unused); 
+        x_HandleUnkModValue(*unused);
     }
 };
 
@@ -716,7 +716,7 @@ struct SMolTypeInfo {
     };
 
     SMolTypeInfo(
-        EShown eShown, 
+        EShown eShown,
         CMolInfo::TBiomol eBiomol,
         CSeq_inst::EMol eMol ) :
         m_eBiomol(eBiomol), m_eMol(eMol), m_eShown(eShown)
@@ -724,27 +724,27 @@ struct SMolTypeInfo {
 
     CMolInfo::TBiomol m_eBiomol;
     CSeq_inst::EMol   m_eMol;
-    EShown m_eShown; 
+    EShown m_eShown;
 };
 typedef SStaticPair<const char*, SMolTypeInfo> TBiomolMapEntry;
 static const TBiomolMapEntry sc_BiomolArray[] = {
     // careful with the sort: remember that the key is canonicalized first
-    {"cRNA",                  SMolTypeInfo(SMolTypeInfo::eShown_Yes, CMolInfo::eBiomol_cRNA,            CSeq_inst::eMol_rna) },   
-    {"DNA",                   SMolTypeInfo(SMolTypeInfo::eShown_No,  CMolInfo::eBiomol_genomic,         CSeq_inst::eMol_dna) },   
-    {"Genomic",               SMolTypeInfo(SMolTypeInfo::eShown_No,  CMolInfo::eBiomol_genomic,         CSeq_inst::eMol_dna) },   
-    {"Genomic DNA",           SMolTypeInfo(SMolTypeInfo::eShown_Yes, CMolInfo::eBiomol_genomic,         CSeq_inst::eMol_dna) },   
-    {"Genomic RNA",           SMolTypeInfo(SMolTypeInfo::eShown_Yes, CMolInfo::eBiomol_genomic,         CSeq_inst::eMol_rna) },   
-    {"mRNA",                  SMolTypeInfo(SMolTypeInfo::eShown_Yes, CMolInfo::eBiomol_mRNA,            CSeq_inst::eMol_rna) },   
+    {"cRNA",                  SMolTypeInfo(SMolTypeInfo::eShown_Yes, CMolInfo::eBiomol_cRNA,            CSeq_inst::eMol_rna) },
+    {"DNA",                   SMolTypeInfo(SMolTypeInfo::eShown_No,  CMolInfo::eBiomol_genomic,         CSeq_inst::eMol_dna) },
+    {"Genomic",               SMolTypeInfo(SMolTypeInfo::eShown_No,  CMolInfo::eBiomol_genomic,         CSeq_inst::eMol_dna) },
+    {"Genomic DNA",           SMolTypeInfo(SMolTypeInfo::eShown_Yes, CMolInfo::eBiomol_genomic,         CSeq_inst::eMol_dna) },
+    {"Genomic RNA",           SMolTypeInfo(SMolTypeInfo::eShown_Yes, CMolInfo::eBiomol_genomic,         CSeq_inst::eMol_rna) },
+    {"mRNA",                  SMolTypeInfo(SMolTypeInfo::eShown_Yes, CMolInfo::eBiomol_mRNA,            CSeq_inst::eMol_rna) },
     {"ncRNA",                 SMolTypeInfo(SMolTypeInfo::eShown_No,  CMolInfo::eBiomol_ncRNA,           CSeq_inst::eMol_rna) },
-    {"non-coding RNA",        SMolTypeInfo(SMolTypeInfo::eShown_Yes, CMolInfo::eBiomol_ncRNA,           CSeq_inst::eMol_rna) },   
-    {"Other-Genetic",         SMolTypeInfo(SMolTypeInfo::eShown_Yes, CMolInfo::eBiomol_other_genetic,   CSeq_inst::eMol_other) }, 
-    {"Precursor RNA",         SMolTypeInfo(SMolTypeInfo::eShown_Yes, CMolInfo::eBiomol_pre_RNA,         CSeq_inst::eMol_rna) },   
-    {"Ribosomal RNA",         SMolTypeInfo(SMolTypeInfo::eShown_Yes, CMolInfo::eBiomol_rRNA,            CSeq_inst::eMol_rna) },   
-    {"rRNA",                  SMolTypeInfo(SMolTypeInfo::eShown_No,  CMolInfo::eBiomol_rRNA,            CSeq_inst::eMol_rna) },   
-    {"Transcribed RNA",       SMolTypeInfo(SMolTypeInfo::eShown_Yes, CMolInfo::eBiomol_transcribed_RNA, CSeq_inst::eMol_rna) },   
-    {"Transfer-messenger RNA", SMolTypeInfo(SMolTypeInfo::eShown_Yes, CMolInfo::eBiomol_tmRNA,           CSeq_inst::eMol_rna) },   
-    {"Transfer RNA",          SMolTypeInfo(SMolTypeInfo::eShown_Yes, CMolInfo::eBiomol_tRNA,            CSeq_inst::eMol_rna) },   
-    {"tRNA",                  SMolTypeInfo(SMolTypeInfo::eShown_No,  CMolInfo::eBiomol_tRNA,            CSeq_inst::eMol_rna) },   
+    {"non-coding RNA",        SMolTypeInfo(SMolTypeInfo::eShown_Yes, CMolInfo::eBiomol_ncRNA,           CSeq_inst::eMol_rna) },
+    {"Other-Genetic",         SMolTypeInfo(SMolTypeInfo::eShown_Yes, CMolInfo::eBiomol_other_genetic,   CSeq_inst::eMol_other) },
+    {"Precursor RNA",         SMolTypeInfo(SMolTypeInfo::eShown_Yes, CMolInfo::eBiomol_pre_RNA,         CSeq_inst::eMol_rna) },
+    {"Ribosomal RNA",         SMolTypeInfo(SMolTypeInfo::eShown_Yes, CMolInfo::eBiomol_rRNA,            CSeq_inst::eMol_rna) },
+    {"rRNA",                  SMolTypeInfo(SMolTypeInfo::eShown_No,  CMolInfo::eBiomol_rRNA,            CSeq_inst::eMol_rna) },
+    {"Transcribed RNA",       SMolTypeInfo(SMolTypeInfo::eShown_Yes, CMolInfo::eBiomol_transcribed_RNA, CSeq_inst::eMol_rna) },
+    {"Transfer-messenger RNA", SMolTypeInfo(SMolTypeInfo::eShown_Yes, CMolInfo::eBiomol_tmRNA,           CSeq_inst::eMol_rna) },
+    {"Transfer RNA",          SMolTypeInfo(SMolTypeInfo::eShown_Yes, CMolInfo::eBiomol_tRNA,            CSeq_inst::eMol_rna) },
+    {"tRNA",                  SMolTypeInfo(SMolTypeInfo::eShown_No,  CMolInfo::eBiomol_tRNA,            CSeq_inst::eMol_rna) },
 };
 typedef CStaticPairArrayMap<const char*, SMolTypeInfo,
                         CSourceModParser::PKeyCompare>  TBiomolMap;
@@ -837,7 +837,7 @@ static void s_AddPrimers(const pair<string, string>& primer_info, CPCRPrimerSet&
         auto primer = Ref(new CPCRPrimer());
 
         if (i<num_names && !NStr::IsBlank(names[i])) {
-            primer->SetName().Set(names[i]); 
+            primer->SetName().Set(names[i]);
         }
         if (i<num_seqs && !NStr::IsBlank(seqs[i])) {
             primer->SetSeq().Set(seqs[i]);
@@ -891,13 +891,13 @@ void CSourceModParser::x_AddPCRPrimers(CAutoInitRef<CPCRReactionSet>& pcr_reacti
 
     pNameMod = FindMod(s_Mod_fwd_primer_name, s_Mod_fwd_pcr_primer_name);
     pSeqMod = FindMod(s_Mod_fwd_primer_seq, s_Mod_fwd_pcr_primer_seq);
-    vector<TNameSeqPair> fwd_primer_info; 
+    vector<TNameSeqPair> fwd_primer_info;
     s_GetPrimerInfo(pNameMod, pSeqMod, fwd_primer_info);
 
 
     pNameMod = FindMod(s_Mod_rev_primer_name, s_Mod_rev_pcr_primer_name);
     pSeqMod = FindMod(s_Mod_rev_primer_seq, s_Mod_rev_pcr_primer_seq);
-    vector<TNameSeqPair> rev_primer_info; 
+    vector<TNameSeqPair> rev_primer_info;
     s_GetPrimerInfo(pNameMod, pSeqMod, rev_primer_info);
 
     if (fwd_primer_info.empty() &&
@@ -909,15 +909,14 @@ void CSourceModParser::x_AddPCRPrimers(CAutoInitRef<CPCRReactionSet>& pcr_reacti
     auto num_rev_primer_info = rev_primer_info.size();
 
     if (num_fwd_primer_info == num_rev_primer_info) {
-    
         for (auto i=0; i<num_fwd_primer_info; ++i) {
             CRef<CPCRReaction> pcr_reaction(new CPCRReaction());
             s_AddPrimers(fwd_primer_info[i], pcr_reaction->SetForward());
             s_AddPrimers(rev_primer_info[i], pcr_reaction->SetReverse());
             pcr_reaction_set->Set().push_back(pcr_reaction);
         }
-    } 
-    else 
+    }
+    else
     if (num_fwd_primer_info > num_rev_primer_info) {
         auto diff = num_fwd_primer_info - num_rev_primer_info;
         for (int i=0; i<diff; ++i) {
@@ -933,7 +932,7 @@ void CSourceModParser::x_AddPCRPrimers(CAutoInitRef<CPCRReactionSet>& pcr_reacti
             pcr_reaction_set->Set().push_back(pcr_reaction);
         }
     }
-    else 
+    else
     if (num_fwd_primer_info < num_rev_primer_info) {
         for (int i=0; i<num_fwd_primer_info; ++i) {
             CRef<CPCRReaction> pcr_reaction(new CPCRReaction());
@@ -947,7 +946,7 @@ void CSourceModParser::x_AddPCRPrimers(CAutoInitRef<CPCRReactionSet>& pcr_reacti
             s_AddPrimers(rev_primer_info[i], pcr_reaction->SetReverse());
             pcr_reaction_set->Set().push_back(pcr_reaction);
         }
-    } 
+    }
 }
 
 
@@ -1078,13 +1077,13 @@ void CSourceModParser::x_ApplyMods(CAutoInitDesc<CBioSource>& bsrc,
                         pcr_reaction_set->Set());
             }
         }
-     }}   
+     }}
 
 
     // db_xref
     TModsRange db_xref_mods_range = FindAllMods( s_Mod_db_xref, s_Mod_dbxref );
-    for( TModsCI db_xref_iter = db_xref_mods_range.first; 
-            db_xref_iter != db_xref_mods_range.second; 
+    for( TModsCI db_xref_iter = db_xref_mods_range.first;
+            db_xref_iter != db_xref_mods_range.second;
             ++db_xref_iter ) {
         CRef< CDbtag > new_db( new CDbtag );
 
@@ -1101,7 +1100,7 @@ void CSourceModParser::x_ApplyMods(CAutoInitDesc<CBioSource>& bsrc,
             db_xref_str.Copy(new_db->SetDb(), 0, colon_location);
             db_xref_str.Copy(object_id->SetStr(), colon_location + 1, CTempString::npos);
         }
-        
+
         new_db->SetTag( *object_id );
 
         bsrc->SetOrg().SetDb().push_back( new_db );
@@ -1111,12 +1110,12 @@ void CSourceModParser::x_ApplyMods(CAutoInitDesc<CBioSource>& bsrc,
     if ((mod = FindMod(s_Mod_division, s_Mod_div)) != NULL) {
         bsrc->SetOrg().SetOrgname().SetDiv( mod->value );
     }
-    
+
     // lineage
     if ((mod = FindMod(s_Mod_lineage)) != NULL) {
         bsrc->SetOrg().SetOrgname().SetLineage( mod->value );
     }
-    
+
     // gcode
     if ((mod = FindMod(s_Mod_gcode)) != NULL) {
         bsrc->SetOrg().SetOrgname().SetGcode( NStr::StringToInt(mod->value, NStr::fConvErr_NoThrow) );
@@ -1158,7 +1157,7 @@ void CSourceModParser::x_ApplyMods(CAutoInitDesc<CBioSource>& bsrc,
     if ((mod = FindMod(s_Mod_taxid)) != NULL) {
         bsrc->SetOrg().SetTaxId( NStr::StringToNumeric<TTaxId>(mod->value, NStr::fConvErr_NoThrow) );
     }
-    else 
+    else
     if (reset_taxid && bsrc->IsSetOrgname() && bsrc->GetOrg().GetTaxId() != ZERO_TAX_ID) {
        bsrc->SetOrg().SetTaxId(ZERO_TAX_ID);
     }
@@ -1265,7 +1264,7 @@ void CSourceModParser::x_ApplyMods(CAutoInitRef<CGene_ref>& gene)
     if ((mod = FindMod(s_Mod_gene_syn, s_Mod_gene_synonym)) != NULL) {
         gene->SetSyn().push_back( mod->value );
     }
-    
+
     // locus_tag
     if ((mod = FindMod(s_Mod_locus_tag)) != NULL) {
         gene->SetLocus_tag( mod->value );
@@ -1286,8 +1285,8 @@ void CSourceModParser::x_ApplyMods(CAutoInitRef<CProt_ref>& prot)
     if ((mod = FindMod(s_Mod_prot_desc, s_Mod_protein_desc)) != NULL) {
         prot->SetDesc( mod->value );
     }
-    
-    // EC_number 
+
+    // EC_number
     if ((mod = FindMod(s_Mod_EC_number)) != NULL) {
         prot->SetEc().push_back( mod->value );
     }
@@ -1369,7 +1368,7 @@ void CSourceModParser::x_ApplyMods(CAutoInitRef<CSeq_hist>& hist)
 // We're not using this because it would introduce a whole new
 // dependency just for a single keyword.
 //
-//void CSourceModParser::x_ApplyMods(CAutoInitRef<CSubmit_block>& sb) { 
+//void CSourceModParser::x_ApplyMods(CAutoInitRef<CSubmit_block>& sb) {
 //
 //    // hup
 //    if ((mod = FindMod("hup")) != NULL) {
@@ -1439,7 +1438,7 @@ void CSourceModParser::x_ApplyTPAMods(CAutoInitRef<CUser_object>& tpa)
 }
 
 
-static CRef<CSeqdesc> s_SetDBLinkDesc(CBioseq& bioseq) 
+static CRef<CSeqdesc> s_SetDBLinkDesc(CBioseq& bioseq)
 {
     CConstRef<CBioseq_set> pParentSet = bioseq.GetParentSet();
     CSeq_descr& descriptors = (pParentSet &&
@@ -1462,7 +1461,7 @@ static CRef<CSeqdesc> s_SetDBLinkDesc(CBioseq& bioseq)
 }
 
 
-static void s_SetDBLinkFieldVals(const string& label, 
+static void s_SetDBLinkFieldVals(const string& label,
                                 const list<CTempString>& vals,
                                 CSeqdesc& dblink_desc)
 {
@@ -1500,7 +1499,7 @@ static void s_SetDBLinkFieldVals(const string& label,
 static void s_SetDBLinkField(const string& label,
                              const string& vals,
                              CRef<CSeqdesc>& pDBLinkDesc,
-                             CBioseq& bioseq) 
+                             CBioseq& bioseq)
 {
     list<CTempString> value_list;
     NStr::Split(vals, ",", value_list, NStr::fSplit_MergeDelimiters);
@@ -1522,7 +1521,7 @@ static void s_SetDBLinkField(const string& label,
 }
 
 
-void CSourceModParser::x_ApplyDBLinkMods(CBioseq& bioseq) 
+void CSourceModParser::x_ApplyDBLinkMods(CBioseq& bioseq)
 {
     CRef<CSeqdesc> pDBLinkDesc;
     const SMod* mod = NULL;
@@ -1564,7 +1563,7 @@ CSourceModParser::x_ApplyGenomeProjectsDBMods(CAutoInitRef<CUser_object>& gpdb)
                 subfield->SetLabel().SetStr("ParentID");
                 subfield->SetData().SetInt(0);
                 field->SetData().SetFields().push_back(subfield);
-                data.push_back(field);                
+                data.push_back(field);
             }
         }
 
@@ -1597,21 +1596,21 @@ void CSourceModParser::ApplyPubMods(CBioseq& seq)
     s_ApplyPubMods(seq, FindAllMods(s_Mod_PMID));
 }
 
-CSourceModParser::CBadModError::CBadModError( 
-    const SMod & badMod, 
+CSourceModParser::CBadModError::CBadModError(
+    const SMod & badMod,
     const string & sAllowedValues )
     : runtime_error(x_CalculateErrorString(badMod, sAllowedValues)),
-            m_BadMod(badMod), m_sAllowedValues(sAllowedValues) 
-{ 
+            m_BadMod(badMod), m_sAllowedValues(sAllowedValues)
+{
     // no further work required
 }
 
 string CSourceModParser::CBadModError::x_CalculateErrorString(
-            const SMod & badMod, 
+            const SMod & badMod,
             const string & sAllowedValues )
 {
     stringstream str_strm;
-    str_strm << "Bad modifier value at seqid '" 
+    str_strm << "Bad modifier value at seqid '"
         << ( badMod.seqid ? badMod.seqid->AsFastaString() : "UNKNOWN")
         << "'. '" << badMod.key << "' cannot have value '" << badMod.value
         << "'.  Accepted values are [" << sAllowedValues << "]";
@@ -1628,7 +1627,7 @@ string CSourceModParser::CUnkModError::x_CalculateErrorString(
     const SMod& unkMod)
 {
     stringstream str_strm;
-    str_strm << "Bad modifier key at seqid '" 
+    str_strm << "Bad modifier key at seqid '"
         << ( unkMod.seqid ? unkMod.seqid->AsFastaString() : "UNKNOWN")
         << "'. '" << unkMod.key << "' is not a recognized modifier key";
     return str_strm.str();
@@ -1743,8 +1742,8 @@ void CSourceModParser::GetLabel(string* s, TWhichMods which) const
     }
 }
 
-// static 
-const set<string> & 
+// static
+const set<string> &
 CSourceModParser::GetModAllowedValues(const string &mod)
 {
     // since this has a lock, do NOT grab any other locks
@@ -1810,11 +1809,11 @@ CSourceModParser::GetModAllowedValues(const string &mod)
     return set_valid_values;
 }
 
-// static 
-const string & 
+// static
+const string &
 CSourceModParser::GetModAllowedValuesAsOneString(const string &mod)
 {
-    // do not grab any other locks while in here (except the lock in 
+    // do not grab any other locks while in here (except the lock in
     // GetModAllowedValues)
     static CMutex mutex;
     CMutexGuard guard(mutex);
@@ -1830,7 +1829,7 @@ CSourceModParser::GetModAllowedValuesAsOneString(const string &mod)
     }
 
     // not loaded, so we need to calculate it
-    string & sAllValuesAsOneString = 
+    string & sAllValuesAsOneString =
         mapModNameToStringOfAllAllowedValues[mod];
     const set<string> & setAllowedValues = GetModAllowedValues(mod);
     ITERATE( set<string>, value_it, setAllowedValues ) {

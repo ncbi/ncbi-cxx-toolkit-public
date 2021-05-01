@@ -43,7 +43,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ----------------------------------------------------------------------------
-CPslData::CPslData( 
+CPslData::CPslData(
     CReaderMessageHandler* pEL):
     mpEL(pEL)
 //  ----------------------------------------------------------------------------
@@ -74,7 +74,7 @@ CPslData::xReset()
 void
 CPslData::Initialize(
     const CPslReader::TReaderLine& readerLine)
-// 
+//
 //  https://genome.ucsc.edu/FAQ/FAQformat.html#format2
 //  ----------------------------------------------------------------------------
 {
@@ -86,7 +86,7 @@ CPslData::Initialize(
         auto columnCount = columns.size();
         if (columnCount != PSL_COLUMN_COUNT  &&  columnCount != PSL_COLUMN_COUNT+1) {
         throw CReaderMessage(
-            eDiag_Error, 
+            eDiag_Error,
             readerLine.mLine,
             "PSL Error: Record has invalid column count.");
         }
@@ -104,7 +104,7 @@ CPslData::Initialize(
     mBaseInsertQ = NStr::StringToInt(columns[mFirstDataColumn + 5]);
     mNumInsertT = NStr::StringToInt(columns[mFirstDataColumn + 6]);
     mBaseInsertT = NStr::StringToInt(columns[mFirstDataColumn + 7]);
-    
+
     string strand = columns[mFirstDataColumn + 8];
     mStrandT = (strand == "-" ? eNa_strand_minus : eNa_strand_plus);
 
@@ -117,7 +117,7 @@ CPslData::Initialize(
     mSizeT = NStr::StringToInt(columns[mFirstDataColumn + 14]);
     mStartT = NStr::StringToInt(columns[mFirstDataColumn + 15]);
     mEndT = NStr::StringToInt(columns[mFirstDataColumn + 16]);
-    
+
     mBlockCount = NStr::StringToInt(columns[mFirstDataColumn + 17]);
     mBlockSizes.reserve(mBlockCount);
     mBlockStartsQ.reserve(mBlockCount);
@@ -143,22 +143,22 @@ CPslData::Initialize(
     // some basic validation:
     if (mBlockCount != mBlockSizes.size()) {
         throw CReaderMessage(
-            eDiag_Error, 
+            eDiag_Error,
             readerLine.mLine,
             "PSL Error: Number of blockSizes does not match blockCount.");
     }
     if (mBlockCount != mBlockStartsQ.size()) {
         throw CReaderMessage(
-            eDiag_Error, 
+            eDiag_Error,
             readerLine.mLine,
             "PSL Error: Number of blockStartsQ does not match blockCount.");
     }
     if (mBlockCount != mBlockStartsT.size()) {
         throw CReaderMessage(
-            eDiag_Error, 
+            eDiag_Error,
             readerLine.mLine,
             "PSL Error: Number of blockStartsT does not match blockCount.");
-    } 
+    }
 }
 
 //  ----------------------------------------------------------------------------
@@ -190,11 +190,11 @@ CPslData::Dump(
     ostr << "tEnd           : " << mEndT << endl;
     ostr << "blockCount     : " << mBlockCount << endl;
     if (mBlockCount) {
-        string blockSizes = 
+        string blockSizes =
             NStr::JoinNumeric(mBlockSizes.begin(), mBlockSizes.end(), ",");
-        string blockStartsQ = 
+        string blockStartsQ =
             NStr::JoinNumeric(mBlockStartsQ.begin(), mBlockStartsQ.end(), ",");
-        string blockStartsT = 
+        string blockStartsT =
             NStr::JoinNumeric(mBlockStartsT.begin(), mBlockStartsT.end(), ",");
 
         ostr << "blockSizes     : " << blockSizes << endl;
@@ -220,7 +220,7 @@ CPslData::ExportToSeqAlign(
     auto& ids = denseSeg.SetIds();
     ids.push_back(idResolver(mNameQ, 0, true));
     ids.push_back(idResolver(mNameT, 0, true));
-    
+
     vector<SAlignSegment> segments;
     xConvertBlocksToSegments(segments);
     for (const auto& segment: segments) {
@@ -263,8 +263,8 @@ CPslData::xConvertBlocksToSegments(
         return;
     }
     segments.push_back(SAlignSegment{
-        mBlockSizes[0], 
-        mBlockStartsQ[0], mBlockStartsT[0], 
+        mBlockSizes[0],
+        mBlockStartsQ[0], mBlockStartsT[0],
         eNa_strand_plus, mStrandT});
     int currentPosQ = mBlockStartsQ[0] + mBlockSizes[0];
     int currentPosT = mBlockStartsT[0] + mBlockSizes[0];

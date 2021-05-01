@@ -68,15 +68,15 @@ USING_SCOPE(objects);
 
 namespace {
 
-    class CIgnoreBelowWarningMessageListener : 
+    class CIgnoreBelowWarningMessageListener :
         public CMessageListenerBase
-    {   
+    {
     public:
         CIgnoreBelowWarningMessageListener() {};
         ~CIgnoreBelowWarningMessageListener() {};
 
         bool PutError(
-            const ILineError& err ) 
+            const ILineError& err )
         {
             switch( err.Severity() ) {
             case eDiag_Info:
@@ -139,15 +139,15 @@ namespace {
 
     ostream & operator <<( ostream & ostrm, const SOneWarningsInfo & info )
     {
-        ostrm << "(problem: " << ILineError::ProblemStr(info.m_eType) 
-              << ", feature: " << info.m_sFeatureName 
+        ostrm << "(problem: " << ILineError::ProblemStr(info.m_eType)
+              << ", feature: " << info.m_sFeatureName
               << ", line num: " << info.m_iLineNumExpected << ")";
         return ostrm;
     }
 
     // represents information about one test of the CFastaReader warning system
     struct SWarningTest {
-    
+
         string                m_sName; // easier than array index for humans to understand
         // In m_warnings_expected, the list of warnings ends with a problem of value 0
         // (although that's really enum eProblem_UnrecognizedFeatureName, that problem
@@ -157,21 +157,21 @@ namespace {
         string                m_sInputFASTA;
     };
 
-    const static CFastaReader::TFlags kDefaultFastaReaderFlags = 
-        CFastaReader::fAssumeNuc | 
+    const static CFastaReader::TFlags kDefaultFastaReaderFlags =
+        CFastaReader::fAssumeNuc |
         CFastaReader::fForceType;
 
 
     const static CFastaReader::TFlags kProtFastaReaderFlags =
         CFastaReader::fAssumeProt |
         CFastaReader::fForceType |
-        CFastaReader::fDisableNoResidues; 
+        CFastaReader::fDisableNoResidues;
 
 
     // list of FASTA warning tests
     const SWarningTest fasta_warning_test_arr[] = {
 
-        { 
+        {
             "test case of no warnings",
 
             { },
@@ -321,7 +321,7 @@ namespace {
     {
         unique_ptr<CObjectIStream> pObjIStrm(
             CObjectIStream::CreateFromBuffer(
-            eSerial_AsnText, 
+            eSerial_AsnText,
             sTextASN.data(), sTextASN.length() ) );
         pObjIStrm->Read( &*pObj,
             pObj->GetThisTypeInfo() );
@@ -338,11 +338,11 @@ namespace {
 
 BOOST_AUTO_TEST_CASE(TestSetMaxIDLength)
 {
-    const string kData = 
+    const string kData =
         ">lcl|ThisIdHasMoreThan50Characters000000000000000000000000000000\n"
         "ACTACGTACGTACGTACGTACGTACGTACTACGTACGTACGTACGT\n";
-    const static CFastaReader::TFlags kFlags = 
-        CFastaReader::fAssumeNuc | 
+    const static CFastaReader::TFlags kFlags =
+        CFastaReader::fAssumeNuc |
         CFastaReader::fForceType |
         CFastaReader::fValidate;
 
@@ -355,13 +355,13 @@ BOOST_AUTO_TEST_CASE(TestSetMaxIDLength)
 
 BOOST_AUTO_TEST_CASE(TestBadResidues)
 {
-    const string kData = 
+    const string kData =
         ">Seq1\n"
         "AC/TACGTACGTACGTACGTACGTACGTAC/TACGTACGTACGTACGT\n"
         "AC/TACGTACGTACGTUCGTACGTACGTACGTACGTACGTACGTACGT\n"
         "AC/TACGTACGTACGTACGTACGTAC/TACGTACGTACGTACGTACGT\n";
-    const static CFastaReader::TFlags kFlags = 
-        CFastaReader::fAssumeNuc | 
+    const static CFastaReader::TFlags kFlags =
+        CFastaReader::fAssumeNuc |
         CFastaReader::fForceType |
         CFastaReader::fValidate;
 
@@ -415,8 +415,8 @@ BOOST_AUTO_TEST_CASE(TestBadResidues)
 BOOST_AUTO_TEST_CASE(TestWarnings)
 {
 
-    for( size_t warn_test_idx = 0; 
-        warn_test_idx < ArraySize(fasta_warning_test_arr); 
+    for( size_t warn_test_idx = 0;
+        warn_test_idx < ArraySize(fasta_warning_test_arr);
         ++warn_test_idx )
     {
         const SWarningTest & warning_test = fasta_warning_test_arr[warn_test_idx];
@@ -425,7 +425,7 @@ BOOST_AUTO_TEST_CASE(TestWarnings)
         cout << "Running test case '" << warning_test.m_sName << "'" << endl;
 
         // this will hold warnings found
-        CRef<CIgnoreBelowWarningMessageListener> pMessageListener( 
+        CRef<CIgnoreBelowWarningMessageListener> pMessageListener(
             new CIgnoreBelowWarningMessageListener );
 
         // create fasta reader
@@ -449,12 +449,12 @@ BOOST_AUTO_TEST_CASE(TestWarnings)
 
         // load the warnings that are expected
         set<SOneWarningsInfo> setExpectedWarnings;
-        ITERATE_0_IDX(warning_check_idx, 
-                ArraySize(warning_test.m_warnings_expected) ) 
+        ITERATE_0_IDX(warning_check_idx,
+                ArraySize(warning_test.m_warnings_expected) )
         {
-            const SOneWarningsInfo & one_warning_info = 
+            const SOneWarningsInfo & one_warning_info =
                 warning_test.m_warnings_expected[warning_check_idx];
-            const ILineError::EProblem eExpectedType = 
+            const ILineError::EProblem eExpectedType =
                 one_warning_info.m_eType;
 
             if (eExpectedType == ILineError::eProblem_Unset) {
@@ -490,7 +490,7 @@ namespace {
     {
         CRef<CBioseq> pRetvalBioseq;
         string sErrCodeThatOccurred;
-        CRef<CIgnoreBelowWarningMessageListener> pMessageListener( 
+        CRef<CIgnoreBelowWarningMessageListener> pMessageListener(
             new CIgnoreBelowWarningMessageListener );
 
         try {
@@ -527,7 +527,7 @@ namespace {
     /*
         // check warnings
         BOOST_CHECK_EQUAL_COLLECTIONS(
-            pExpectedWarningTypes.begin(), 
+            pExpectedWarningTypes.begin(),
             pExpectedWarningTypes.end(),
             pWarningTypes.begin(),
             pWarningTypes.end() );
@@ -600,13 +600,13 @@ namespace {
         CConstRef<CSeq_literal> pGapLiteral;
         if( pDeltaData ) {
             ITERATE(CDelta_ext::Tdata, delta_it, *pDeltaData) {
-                const CSeq_literal & seq_literal = 
+                const CSeq_literal & seq_literal =
                     (*delta_it)->GetLiteral();
-                if( ! seq_literal.IsSetSeq_data() || 
-                    FIELD_IS_SET_AND_IS(seq_literal, Seq_data, Gap) ) 
+                if( ! seq_literal.IsSetSeq_data() ||
+                    FIELD_IS_SET_AND_IS(seq_literal, Seq_data, Gap) )
                 {
                     // it's a gap
-                    BOOST_REQUIRE_MESSAGE( ! pGapLiteral, 
+                    BOOST_REQUIRE_MESSAGE( ! pGapLiteral,
                         "There should be only one gap" );
                     pGapLiteral.Reset( & seq_literal );
                 }
@@ -646,10 +646,10 @@ namespace {
             pLinkEvidsExpected.Reset();
         }
         if( pLinkEvidsExpected ) {
-            NCBITEST_CHECK_EQUAL( pSeqGap->GetLinkage(), 
+            NCBITEST_CHECK_EQUAL( pSeqGap->GetLinkage(),
                 CSeq_gap::eLinkage_linked );
         } else {
-            NCBITEST_CHECK( ! pSeqGap || 
+            NCBITEST_CHECK( ! pSeqGap ||
                 ! FIELD_EQUALS(*pSeqGap, Linkage, CSeq_gap::eLinkage_linked) );
         }
         const CSeq_gap::TLinkage_evidence * pLinkEvidObjs = NULL;
@@ -660,17 +660,17 @@ namespace {
             if( pLinkEvidObjs ) {
                 ITERATE(CSeq_gap::TLinkage_evidence, evid_obj_it, *pLinkEvidObjs) {
                     BOOST_CHECK_NO_THROW(
-                        vecLinkEvids.push_back( 
+                        vecLinkEvids.push_back(
                             static_cast<CLinkage_evidence::EType>(
                                 (*evid_obj_it)->GetType() ) ) );
                 }
             }
             BOOST_CHECK_EQUAL_COLLECTIONS(
-                pLinkEvidsExpected->GetData().begin(), 
+                pLinkEvidsExpected->GetData().begin(),
                 pLinkEvidsExpected->GetData().end(),
                 vecLinkEvids.begin(), vecLinkEvids.end());
         } else {
-            NCBITEST_CHECK( ! pLinkEvidObjs || 
+            NCBITEST_CHECK( ! pLinkEvidObjs ||
                 pLinkEvidObjs->empty() );
         }
     }
@@ -678,7 +678,7 @@ namespace {
 
 
 // Put in a bunch here for the ParseIDs
-BOOST_AUTO_TEST_CASE(TestDefLineParser) 
+BOOST_AUTO_TEST_CASE(TestDefLineParser)
 {
     CFastaReader::SDefLineParseInfo parseInfo;
     parseInfo.maxIdLength = 40;
@@ -694,9 +694,9 @@ BOOST_AUTO_TEST_CASE(TestDefLineParser)
 
     // Check that lcl|... is handled correctly
     {
-        static const string kFastaDefLine = 
+        static const string kFastaDefLine =
             ">lcl|ID1 Title\n";
-        CFastaReader::ParseDefLine(kFastaDefLine, 
+        CFastaReader::ParseDefLine(kFastaDefLine,
                                    parseInfo,
                                    noIgnoredErrors,
                                    ids,
@@ -704,7 +704,7 @@ BOOST_AUTO_TEST_CASE(TestDefLineParser)
                                    rangeStart,
                                    rangeEnd,
                                    seqTitles,
-                                   nullptr); 
+                                   nullptr);
 
         BOOST_CHECK ( ids.size() == 1 );
         const CRef<CSeq_id>& localId = ids.front();
@@ -717,9 +717,9 @@ BOOST_AUTO_TEST_CASE(TestDefLineParser)
 
     // Check that Genbank accessions are read correctly
     {
-        static const string kFastaDefLine = 
+        static const string kFastaDefLine =
             ">gb|M73307";
-        CFastaReader::ParseDefLine(kFastaDefLine, 
+        CFastaReader::ParseDefLine(kFastaDefLine,
                                    parseInfo,
                                    noIgnoredErrors,
                                    ids,
@@ -727,7 +727,7 @@ BOOST_AUTO_TEST_CASE(TestDefLineParser)
                                    rangeStart,
                                    rangeEnd,
                                    seqTitles,
-                                   nullptr); 
+                                   nullptr);
 
         BOOST_CHECK( ids.size() == 1 );
         BOOST_CHECK( !hasRange );
@@ -744,7 +744,7 @@ BOOST_AUTO_TEST_CASE(TestDefLineParser)
         static const string kFastaDefLine =
             ">contig1AGCTTTTCATTCTGCTGCAATGGG";
 
-        CFastaReader::ParseDefLine(kFastaDefLine, 
+        CFastaReader::ParseDefLine(kFastaDefLine,
                                    parseInfo,
                                    noIgnoredErrors,
                                    ids,
@@ -752,7 +752,7 @@ BOOST_AUTO_TEST_CASE(TestDefLineParser)
                                    rangeStart,
                                    rangeEnd,
                                    seqTitles,
-                                   nullptr); 
+                                   nullptr);
 
         BOOST_CHECK( ids.size() == 1 );
         BOOST_CHECK( !hasRange );
@@ -768,7 +768,7 @@ BOOST_AUTO_TEST_CASE(TestDefLineParser)
             ">contig1AGCTTTTCATTCTGCTGCAATGGG";
 
 
-        CFastaReader::ParseDefLine(kFastaDefLine, 
+        CFastaReader::ParseDefLine(kFastaDefLine,
                                    parseInfo,
                                    noIgnoredErrors,
                                    ids,
@@ -776,7 +776,7 @@ BOOST_AUTO_TEST_CASE(TestDefLineParser)
                                    rangeStart,
                                    rangeEnd,
                                    seqTitles,
-                                   nullptr); 
+                                   nullptr);
 
         BOOST_CHECK( ids.size() == 1 );
         BOOST_CHECK( !hasRange );
@@ -788,12 +788,12 @@ BOOST_AUTO_TEST_CASE(TestDefLineParser)
 
 /*
     {
-        static const string kFastaDefLine = 
+        static const string kFastaDefLine =
         ">contig1AGCTTTTCATTCTGCTGCAATGGGGGGGGGGGGGGGGGGGGGGG";
 
         auto pMessageListener = Ref(new CMessageListenerLenient());
-         
-        CFastaReader::ParseDefLine(kFastaDefLine, 
+
+        CFastaReader::ParseDefLine(kFastaDefLine,
                                    parseInfo,
                                    noIgnoredErrors,
                                    ids,
@@ -801,7 +801,7 @@ BOOST_AUTO_TEST_CASE(TestDefLineParser)
                                    rangeStart,
                                    rangeEnd,
                                    seqTitles,
-                                   pMessageListener.GetPointer()); 
+                                   pMessageListener.GetPointer());
 
 
         BOOST_CHECK( ids.empty() );
@@ -815,7 +815,7 @@ BOOST_AUTO_TEST_CASE(TestDefLineParser)
 
 }
 
-BOOST_AUTO_TEST_CASE(TestNoParseIDs) 
+BOOST_AUTO_TEST_CASE(TestNoParseIDs)
 {
     CFastaReader::SDefLineParseInfo parseInfo;
     parseInfo.maxIdLength = 40;
@@ -830,9 +830,9 @@ BOOST_AUTO_TEST_CASE(TestNoParseIDs)
     CFastaReader::TSeqTitles seqTitles;
 
     {
-        static const string kFastaDefLine = 
+        static const string kFastaDefLine =
             ">seq\n";
-        CFastaReader::ParseDefLine(kFastaDefLine, 
+        CFastaReader::ParseDefLine(kFastaDefLine,
                                    parseInfo,
                                    noIgnoredErrors,
                                    ids,
@@ -840,7 +840,7 @@ BOOST_AUTO_TEST_CASE(TestNoParseIDs)
                                    rangeStart,
                                    rangeEnd,
                                    seqTitles,
-                                   nullptr); 
+                                   nullptr);
 
         BOOST_CHECK ( ids.size() == 0 );
         BOOST_CHECK (seqTitles.size() == 1);
@@ -853,7 +853,7 @@ BOOST_AUTO_TEST_CASE(TestNoParseIDs)
 
 BOOST_AUTO_TEST_CASE(TestTitleRemovedIfEmpty)
 {
-    static const string kFastaWhereAllModsRemoved = 
+    static const string kFastaWhereAllModsRemoved =
         ">Seq1 [topology=circular]\n"
         "ACGTACGTACGTACGTACGTACGTACGTACGTACGT\n";
     CRef<CBioseq> pBioseq = s_ParseFasta( kFastaWhereAllModsRemoved,
@@ -868,7 +868,7 @@ BOOST_AUTO_TEST_CASE(TestTitleRemovedIfEmpty)
 
 BOOST_AUTO_TEST_CASE(TestProteinSeqGapChar)
 {
-    static const string kFastaWithProtGap = 
+    static const string kFastaWithProtGap =
         ">Dobi [organism=Canis familiaris] [breed=Doberman pinscher]\n"
         "MMMTGCMTGGGTMMMMGTMGTMGMMGMGMMGGCTTTTMGCCCMGMMGTMMTMCCCMTGTTTTCMGCMTTM\n"
         "GGMMMMMGGGCTGTTG\n"
@@ -879,14 +879,14 @@ BOOST_AUTO_TEST_CASE(TestProteinSeqGapChar)
         "MMMMMTMMMMGCMTTMGTMGMMMTTTGTMCMGMMCTGGMMMMGGMMGGMMMMMTTTCMMMMMTTGGGCCT\n";
 
     CFastaReader::TFlags fFastaReaderFlags =
-        CFastaReader::fAddMods | 
+        CFastaReader::fAddMods |
         CFastaReader::fAssumeProt |
         CFastaReader::fUseIupacaa;
 
     // test with and without nosplit
     ITERATE_BOTH_BOOL_VALUES(bSetNoSplit) {
         cout << "Trying with" << (bSetNoSplit ? "" : "out") << " CFastaReader::fNoSplit" << endl;
-        BOOST_CHECK(s_ParseFasta( kFastaWithProtGap, 
+        BOOST_CHECK(s_ParseFasta( kFastaWithProtGap,
             fFastaReaderFlags | (bSetNoSplit ? CFastaReader::fNoSplit : 0)));
     }
 }
@@ -899,7 +899,7 @@ BOOST_AUTO_TEST_CASE(TestProteinSeqGapChar)
 BOOST_AUTO_TEST_CASE(TestGeneAndProtein)
 {
     {{
-        static const string kFastaNuc = 
+        static const string kFastaNuc =
             ">Seq1 [gene=some_gene] [protein=foo]\n"
             "ACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTAC\n";
 
@@ -911,7 +911,7 @@ BOOST_AUTO_TEST_CASE(TestGeneAndProtein)
 
         CRef<CBioseq> pBioseq = s_ParseFasta(
             kFastaNuc, CFastaReader::fAddMods,
-            kEmptyStr, expectedWarningsVec, 
+            kEmptyStr, expectedWarningsVec,
             CRef<CSourceModParser::CModFilter>(),
             expected_unused_mods );
         BOOST_REQUIRE(pBioseq);
@@ -921,7 +921,7 @@ BOOST_AUTO_TEST_CASE(TestGeneAndProtein)
         CTypeConstIterator<CSeqFeatData> seqfeatdat_ci(Begin(*pBioseq));
         for( ; seqfeatdat_ci; ++seqfeatdat_ci ) {
             BOOST_REQUIRE( ! seqfeatdat_ci->IsProt() );
-            if( FIELD_IS_AND_IS_SET(*seqfeatdat_ci, Gene, Locus) && 
+            if( FIELD_IS_AND_IS_SET(*seqfeatdat_ci, Gene, Locus) &&
                 seqfeatdat_ci->GetGene().GetLocus() == "some_gene" )
             {
                 bFoundGene = true;
@@ -944,7 +944,7 @@ BOOST_AUTO_TEST_CASE(TestGeneAndProtein)
 
         CRef<CBioseq> pBioseq = s_ParseFasta(
             kFastaProt, CFastaReader::fAddMods,
-            kEmptyStr, expectedWarningsVec, 
+            kEmptyStr, expectedWarningsVec,
             CRef<CSourceModParser::CModFilter>(),
             expected_unused_mods );
         BOOST_REQUIRE(pBioseq);
@@ -965,17 +965,17 @@ BOOST_AUTO_TEST_CASE(TestGeneAndProtein)
 
 BOOST_AUTO_TEST_CASE(TestGapMods)
 {
-    const string kPreGapNucs = 
+    const string kPreGapNucs =
         "GATTACAACGTGATTACAACGTGATTACAACGTGATTACAACGTGATTACAACGTGATTACA";
     const string kPostGapNucs[2] = {
         "TCGACCCACGCGTCCGGAGAAGTTTTTCACCTACTGGAACCCGCCTAGGGTACGGGAAAC",
         "AGGTGCCCTCCAAAACGAGAGCGCGAACTGCAGCCTACGTCCCACTGCAGCTCAGGAGCA"
     };
 
-    const string kLinesBeforeGap = 
+    const string kLinesBeforeGap =
         ">Seq1\n" +
         kPreGapNucs + "\n";
-    const string kLinesAfterGap = 
+    const string kLinesAfterGap =
         kPostGapNucs[0] + "\n" +
         kPostGapNucs[1] + "\n";
 
@@ -985,7 +985,7 @@ BOOST_AUTO_TEST_CASE(TestGapMods)
     // arbitrary gap length to use when the length doesn't matter
     const TSeqPos kArbGapLen = 42;
 
-    const CFastaReader::TFlags kDefaultFastaFlags = 
+    const CFastaReader::TFlags kDefaultFastaFlags =
         CFastaReader::fParseGaps;
 
     // test that numbers other than kUnknownGapLen will work
@@ -995,30 +995,30 @@ BOOST_AUTO_TEST_CASE(TestGapMods)
         const int arrGapLensToTry[] = {-250, -8, 0, 1, 20, 84, 100, 158, 2093};
         ITERATE_0_IDX(gapLenIdx, ArraySize(arrGapLensToTry) ) {
             const int iGapLen = arrGapLensToTry[gapLenIdx];
-            const string sDataToRead = kLinesBeforeGap + ">?" + 
-                ( bIsUnknown ? "unk" : "") + 
+            const string sDataToRead = kLinesBeforeGap + ">?" +
+                ( bIsUnknown ? "unk" : "") +
                 NStr::NumericToString(iGapLen) + "\n" + kLinesAfterGap;
 
-            cerr << "Testing with " << (bIsUnknown ? "unknown" : "known") 
+            cerr << "Testing with " << (bIsUnknown ? "unknown" : "known")
                  << " gap size of " << iGapLen << endl;
 
             // non-positive gap sizes should create a warning
             TWarnVec expectedWarningsVec;
 
             if( iGapLen <= 0 ) {
-                expectedWarningsVec.push_back( 
+                expectedWarningsVec.push_back(
                     ILineError::eProblem_NonPositiveLength );
             }
 
             if( iGapLen < 0 ) {
                 // in this case, the negative length is
-                // interpreted as a 
-                expectedWarningsVec.push_back( 
+                // interpreted as a
+                expectedWarningsVec.push_back(
                     ILineError::eProblem_ParsingModifiers );
             }
 
             CRef<CBioseq> pBioseq = s_ParseFasta(
-                sDataToRead, kDefaultFastaFlags, 
+                sDataToRead, kDefaultFastaFlags,
                 kEmptyStr, expectedWarningsVec );
 
             // non-positive gap sizes should create a format error
@@ -1061,11 +1061,11 @@ BOOST_AUTO_TEST_CASE(TestGapMods)
 
             // print what we're doing here
             cerr << "Testing gap-type " << pchGapType << "("
-                 << (bPutLinkEvidInInput ? "with" : "without" ) 
+                 << (bPutLinkEvidInInput ? "with" : "without" )
                  << " a linkage-evidence)" << endl;
 
             TWarnVec expectedWarningsVec;
-            if( bPutLinkEvidInInput ) 
+            if( bPutLinkEvidInInput )
             {
                 if( gapTypeInfo.m_eLinkEvid == CSeq_gap::eLinkEvid_Forbidden ) {
                     expectedWarningsVec.push_back(
@@ -1075,7 +1075,7 @@ BOOST_AUTO_TEST_CASE(TestGapMods)
                         ILineError::eProblem_ExtraModifierFound);
                 }
             } else {
-                if(gapTypeInfo.m_eLinkEvid == CSeq_gap::eLinkEvid_Required ) 
+                if(gapTypeInfo.m_eLinkEvid == CSeq_gap::eLinkEvid_Required )
                 {
                     expectedWarningsVec.push_back(
                         ILineError::eProblem_ExpectedModifierMissing);
@@ -1088,7 +1088,7 @@ BOOST_AUTO_TEST_CASE(TestGapMods)
                     kDefaultFastaFlags,
                     kEmptyStr,
                     expectedWarningsVec);
-              
+
             // add checking function
             s_CheckOnlyBioseqGap(
                 pBioseq,
@@ -1096,7 +1096,7 @@ BOOST_AUTO_TEST_CASE(TestGapMods)
                 s_RefStd(kArbGapLen),
                 s_RefStd(CInt_fuzz::eLim_unk),
                 s_RefStd(gapTypeInfo.m_eType),
-                s_RefOrNull(gapTypeInfo.m_eLinkEvid != CSeq_gap::eLinkEvid_Forbidden,                 
+                s_RefOrNull(gapTypeInfo.m_eLinkEvid != CSeq_gap::eLinkEvid_Forbidden,
                     s_VecOfOne(
                         gapTypeInfo.m_eLinkEvid == CSeq_gap::eLinkEvid_Required &&
                             bPutLinkEvidInInput ?
@@ -1136,7 +1136,7 @@ BOOST_AUTO_TEST_CASE(TestGapMods)
                 ILineError::eProblem_ModifierFoundButNoneExpected);
             break;
         default:
-            BOOST_FAIL("Unknown CSeq_gap::ELinkEvid: " 
+            BOOST_FAIL("Unknown CSeq_gap::ELinkEvid: "
                 << static_cast<int>(gapTypeInfo.m_eLinkEvid) );
             break;
         }
@@ -1156,7 +1156,7 @@ BOOST_AUTO_TEST_CASE(TestGapMods)
             s_RefStd(CInt_fuzz::eLim_unk),
             s_RefStd(gapTypeInfo.m_eType),
             s_RefOrNull(
-                gapTypeInfo.m_eLinkEvid != CSeq_gap::eLinkEvid_Forbidden, 
+                gapTypeInfo.m_eLinkEvid != CSeq_gap::eLinkEvid_Forbidden,
                 s_VecOfOne(CLinkage_evidence::eType_unspecified)) );
     }
 
@@ -1168,7 +1168,7 @@ BOOST_AUTO_TEST_CASE(TestGapMods)
         }
         arrBadGapMods[] = {
             // bogus mod key
-            { " [foo=baz]", 
+            { " [foo=baz]",
               { ILineError::eProblem_UnrecognizedQualifierName,
               ILineError::eProblem_Unset } },
             // bogus gap type
@@ -1203,8 +1203,8 @@ BOOST_AUTO_TEST_CASE(TestGapMods)
             TWarnVec expectedWarningsVec;
             expectedWarningsVec.push_back(
                 arrBadGapMods[ii].problem_arr[0] );
-            if( arrBadGapMods[ii].problem_arr[1] != 
-                ILineError::eProblem_Unset ) 
+            if( arrBadGapMods[ii].problem_arr[1] !=
+                ILineError::eProblem_Unset )
             {
                 expectedWarningsVec.push_back(
                     arrBadGapMods[ii].problem_arr[1] );
@@ -1242,14 +1242,14 @@ BOOST_AUTO_TEST_CASE(TestGapMods)
         sort( vecExpectedLinkEvids.begin(), vecExpectedLinkEvids.end() );
 
         ITERATE_0_IDX(linkEvidIdx, ArraySize(arrLinkageEvidences) ) {
-            const char * pchLinkageEvidences = 
+            const char * pchLinkageEvidences =
                 arrLinkageEvidences[linkEvidIdx];
 
             cerr << "Trying: " << pchLinkageEvidences << endl;
 
             const string sDataToRead = kLinesBeforeGap +
                 ">?" + NStr::NumericToString(kArbGapLen) +
-                " [gap-type=between scaffolds] " + pchLinkageEvidences + "\n" + 
+                " [gap-type=between scaffolds] " + pchLinkageEvidences + "\n" +
                 kLinesAfterGap;
 
             CRef<CBioseq> pBioseq =
@@ -1272,7 +1272,7 @@ BOOST_AUTO_TEST_CASE(TestGapMods)
     {
         const string sDataToRead = kLinesBeforeGap +
             ">?" + NStr::NumericToString(kArbGapLen) +
-            " [  GAP tYpe  =   Between_Scaffolds  ] [ linkage_evidence  = Align xgenus   ]\n" + 
+            " [  GAP tYpe  =   Between_Scaffolds  ] [ linkage_evidence  = Align xgenus   ]\n" +
             kLinesAfterGap;
 
         CRef<CBioseq> pBioseq =
@@ -1284,7 +1284,7 @@ BOOST_AUTO_TEST_CASE(TestGapMods)
 
         vector<CLinkage_evidence::EType> vecExpectedLinkEvids(
             1, CLinkage_evidence::eType_align_xgenus);
-        
+
         s_CheckOnlyBioseqGap(
             pBioseq,
             s_RefStd(kNumDeltasExpected),
@@ -1298,20 +1298,20 @@ BOOST_AUTO_TEST_CASE(TestGapMods)
 BOOST_AUTO_TEST_CASE(TestNonDeltaGaps)
 {
     const string kDefline = ">Seq1";
-    const string kNucsBeforeGap = 
+    const string kNucsBeforeGap =
         "GATTACAACGTGATTACAACGTGATTACAAC";
-    // arbitrary kArbGapSize, but used prime to make accidentally correct 
-    // results less likely 
+    // arbitrary kArbGapSize, but used prime to make accidentally correct
+    // results less likely
     const TSeqPos kArbGapSize = 17;
     const string kNucsAfterGap = "GTGATTACAACGTGATTACAACGTGATTACA";
 
-    const string kExpectedBasesIfKnown = kNucsBeforeGap + 
+    const string kExpectedBasesIfKnown = kNucsBeforeGap +
         string(kArbGapSize, 'N') +
         kNucsAfterGap;
-    const string kExpectedBasesIfUnknown = kNucsBeforeGap + 
+    const string kExpectedBasesIfUnknown = kNucsBeforeGap +
         string(kArbGapSize, 'N') +
         kNucsAfterGap;
-    // test if the fParseGaps flag is NOT set, which would result in 
+    // test if the fParseGaps flag is NOT set, which would result in
     // one big sequence (no deltas).
 
     // all these different representations should result in a gap
@@ -1321,9 +1321,9 @@ BOOST_AUTO_TEST_CASE(TestNonDeltaGaps)
         string(kArbGapSize, '-'),
         "\n>?" + NStr::NumericToString(kArbGapSize) + "\n",
         "\n>?unk" + NStr::NumericToString(kArbGapSize) + "\n",
-        "\n>?unk" + NStr::NumericToString(kArbGapSize) + 
+        "\n>?unk" + NStr::NumericToString(kArbGapSize) +
             " [gap-type=unknown]  [linkage-evidence=unspecified]\n",
-        "\n>?unk" + NStr::NumericToString(kArbGapSize) + 
+        "\n>?unk" + NStr::NumericToString(kArbGapSize) +
             " [gap-type=repeat within scaffold]  [linkage-evidence=pcr]\n"
     };
     ITERATE_0_IDX( gap_str_idx, ArraySize(arrGapStrings) ) {
@@ -1335,15 +1335,15 @@ BOOST_AUTO_TEST_CASE(TestNonDeltaGaps)
         // if there are substantive mods on the gaps, a warning
         // is expected
         TWarnVec expectedWarnings;
-        if( sDataToRead.find('[') != string::npos && 
-            sDataToRead.find("unknown") == string::npos ) 
+        if( sDataToRead.find('[') != string::npos &&
+            sDataToRead.find("unknown") == string::npos )
         {
             expectedWarnings.push_back(
                 ILineError::eProblem_ModifierFoundButNoneExpected);
         }
 
         CRef<CBioseq> pBioseq =
-            s_ParseFasta(sDataToRead, 0, 
+            s_ParseFasta(sDataToRead, 0,
                 kEmptyStr, expectedWarnings);
 
         BOOST_REQUIRE( pBioseq );
@@ -1485,20 +1485,20 @@ BOOST_AUTO_TEST_CASE(TestLetterGaps)
 
     CAutoInitRef<CDelta_ext> pExpectedDeltaExt;
     s_LoadObjectRefFromTextASN(pExpectedDeltaExt, kExpectedDeltaExt);
-    
+
     TWarnVec expectedWarningsVec;
 
     CRef<CBioseq> pBioseq =
-        s_ParseFasta(kFasta, 
+        s_ParseFasta(kFasta,
         CFastaReader::fParseGaps |
         CFastaReader::fLetterGaps |
         CFastaReader::fAssumeNuc,
-        kEmptyStr, 
+        kEmptyStr,
         expectedWarningsVec );
 
-    CConstRef<CDelta_ext> pResultingDeltaExt( 
+    CConstRef<CDelta_ext> pResultingDeltaExt(
         & pBioseq->GetInst().GetExt().GetDelta() );
-    if( ! pResultingDeltaExt->Equals( 
+    if( ! pResultingDeltaExt->Equals(
         *pExpectedDeltaExt ) )
     {
         BOOST_ERROR("Delta-ext differs from expected.");
@@ -1523,7 +1523,7 @@ BOOST_AUTO_TEST_CASE(TestHyphensIgnoreAndWarn)
     }
 
     CRef<CBioseq> pBioseq =
-        s_ParseFasta(kFasta, 
+        s_ParseFasta(kFasta,
         CFastaReader::fHyphensIgnoreAndWarn,
         kEmptyStr,
         expectedWarnings );
@@ -1596,7 +1596,7 @@ BOOST_AUTO_TEST_CASE(TestIgnoringSpacesAfterGreaterThanInDefline)
     const string kSeq = "ACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTA";
 
     ITERATE_0_IDX(num_spaces, 3) {
-        const string sDefline = 
+        const string sDefline =
             ">" + string(num_spaces, ' ') + kLocalId;
 
         cout << "Trying with defline '" << sDefline << "'" << endl;
@@ -1606,12 +1606,12 @@ BOOST_AUTO_TEST_CASE(TestIgnoringSpacesAfterGreaterThanInDefline)
             kSeq + "\n";
 
         CRef<CBioseq> pBioseq =
-            s_ParseFasta(sFastaToParse, 
+            s_ParseFasta(sFastaToParse,
             kDefaultFastaReaderFlags );
 
         BOOST_CHECK( pBioseq );
 
-        NCBITEST_CHECK_EQUAL( 
+        NCBITEST_CHECK_EQUAL(
             pBioseq->GetFirstId()->GetLocal().GetStr(),
             kLocalId );
 
@@ -1622,7 +1622,7 @@ BOOST_AUTO_TEST_CASE(TestIgnoringSpacesAfterGreaterThanInDefline)
     }
 }
 
-BOOST_AUTO_TEST_CASE(RW1125_RW1245) 
+BOOST_AUTO_TEST_CASE(RW1125_RW1245)
 {
     auto pMessageListener = Ref(new CMessageListenerLenient());
     const string idString = "lcl||SeqID";
@@ -1645,7 +1645,7 @@ BOOST_AUTO_TEST_CASE(RW1125_RW1245)
     const auto& error = pMessageListener->GetError(0);
     BOOST_CHECK_EQUAL(error.SeqId(), idString);
 
-    BOOST_CHECK_EQUAL(error.ErrorMessage(), 
+    BOOST_CHECK_EQUAL(error.ErrorMessage(),
             "Could not construct seq-id from '" + idString + "'");
 }
 
@@ -1674,14 +1674,14 @@ BOOST_AUTO_TEST_CASE(TestModFilter)
             expected_unused_mods.insert( "taxid" );
         }
 
-        CRef<CBioseq> pBioseq = 
+        CRef<CBioseq> pBioseq =
             s_ParseFasta( kData,
             CFastaReader::fAddMods,
             kEmptyStr,
             expectedWarningsVec,
             ( bUseFilter ? pModFilter : CRef<CSourceModParser::CModFilter>() ),
             expected_unused_mods );
-        
+
         cout << s_ObjectToTextASN(*pBioseq) << endl;
 
         // check if pBioseq has an org
@@ -1739,17 +1739,17 @@ BOOST_AUTO_TEST_CASE(TestModFilter)
 //
 //    ITERATE_BOTH_BOOL_VALUES(bSetCompletelyUnknownGapLen) {
 //        CRef<CBioseq> pBioseq =
-//            s_ParseFasta(kFasta, 
+//            s_ParseFasta(kFasta,
 //            CFastaReader::fParseGaps | CFastaReader::fAssumeNuc,
 //            kEmptyStr,
 //            TWarnVec(),
 //            ( bSetCompletelyUnknownGapLen ? 100 : 0 ) );
 //
-//        const CDelta_ext::Tdata & delta_seqs = 
+//        const CDelta_ext::Tdata & delta_seqs =
 //            pBioseq->GetInst().GetExt().GetDelta().Get();
 //        CDelta_ext::Tdata::const_iterator delta_seq_it = delta_seqs.begin();
 //
-//        NCBITEST_CHECK( 
+//        NCBITEST_CHECK(
 //            FIELD_IS_AND_IS_SET( **delta_seq_it, Literal, Seq_data ) );
 //
 //        ++delta_seq_it;
@@ -1758,12 +1758,12 @@ BOOST_AUTO_TEST_CASE(TestModFilter)
 //            NCBITEST_CHECK(
 //                (*delta_seq_it)->Equals(*pRegularUnknownGap) );
 //        } else {
-//            NCBITEST_CHECK( 
+//            NCBITEST_CHECK(
 //                (*delta_seq_it)->Equals(*pCompletelyUnknownGap) );
 //        }
 //
 //        ++delta_seq_it;
-//        NCBITEST_CHECK( 
+//        NCBITEST_CHECK(
 //            FIELD_IS_AND_IS_SET( **delta_seq_it, Literal, Seq_data ) );
 //
 //        ++delta_seq_it;
@@ -1772,7 +1772,7 @@ BOOST_AUTO_TEST_CASE(TestModFilter)
 //            (*delta_seq_it)->Equals(*pRegularGap) );
 //
 //        ++delta_seq_it;
-//        NCBITEST_CHECK( 
+//        NCBITEST_CHECK(
 //            FIELD_IS_AND_IS_SET( **delta_seq_it, Literal, Seq_data ) );
 //
 //        ++delta_seq_it;
@@ -1781,7 +1781,7 @@ BOOST_AUTO_TEST_CASE(TestModFilter)
 //                (*delta_seq_it)->Equals(*pRegularUnknownGap) );
 //
 //        ++delta_seq_it;
-//        NCBITEST_CHECK( 
+//        NCBITEST_CHECK(
 //            FIELD_IS_AND_IS_SET( **delta_seq_it, Literal, Seq_data ) );
 //    }
 //}

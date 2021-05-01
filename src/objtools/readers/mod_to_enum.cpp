@@ -26,7 +26,7 @@
  * Authors:  Justin Foley
  *
  */
-    
+
 #include <ncbi_pch.hpp>
 #include "mod_to_enum.hpp"
 #include <serial/enumvalues.hpp>
@@ -56,7 +56,7 @@ string g_GetNormalizedModVal(const string& unnormalized)
 
     normalized.erase(remove_if(normalized.begin(),
                                normalized.end(),
-                               [](char c) { 
+                               [](char c) {
                                 return (c=='-' ||
                                         c=='_' ||
                                         c==':' ||
@@ -68,7 +68,7 @@ string g_GetNormalizedModVal(const string& unnormalized)
 }
 
 
-static string s_NoNormalization(const string& mod_string) 
+static string s_NoNormalization(const string& mod_string)
 { return mod_string; };
 
 
@@ -87,11 +87,10 @@ static TStringToEnumMap<TEnum> s_InitModStringToEnumMap(
               inserter(normalized_skip_set, normalized_skip_set.end()),
               fNormalizeString);
 
-    
     TStringToEnumMap<TEnum> smod_enum_map;
     for (const auto& name_val : etv.GetValues()) {
         const auto&  mod_string = fNormalizeString(name_val.first);
-        if (normalized_skip_set.find(mod_string) == normalized_skip_set.end()) 
+        if (normalized_skip_set.find(mod_string) == normalized_skip_set.end())
         {
             const TEnum& enum_val = static_cast<TEnum>(name_val.second);
             smod_enum_map.emplace(mod_string, enum_val);
@@ -112,8 +111,8 @@ g_InitModNameOrgSubtypeMap(void)
 {
     static const TModNameSet kDeprecatedOrgSubtypes{
             "dosage", "old-lineage", "old-name"};
-    static const TStringToEnumMap<COrgMod::ESubtype> 
-        extra_smod_to_enum_names 
+    static const TStringToEnumMap<COrgMod::ESubtype>
+        extra_smod_to_enum_names
         {{ "subspecies", COrgMod::eSubtype_sub_species},
          {"host",COrgMod::eSubtype_nat_host},
          {"specific-host", COrgMod::eSubtype_nat_host}};
@@ -139,13 +138,13 @@ g_InitModNameSubSrcSubtypeMap(void)
         "plastid-name",
         "insertion-seq-name",
     };
-    static const TStringToEnumMap<CSubSource::ESubtype> 
-        extra_smod_to_enum_names 
+    static const TStringToEnumMap<CSubSource::ESubtype>
+        extra_smod_to_enum_names
         {{ "sub-clone", CSubSource::eSubtype_subclone },
         { "lat-long",   CSubSource::eSubtype_lat_lon  },
         { "latitude-longitude", CSubSource::eSubtype_lat_lon },
         {  "note",  CSubSource::eSubtype_other  },
-        {  "notes", CSubSource::eSubtype_other  }};  
+        {  "notes", CSubSource::eSubtype_other  }};
     return s_InitModStringToEnumMap(
             *CSubSource::GetTypeInfo_enum_ESubtype(),
             skip_enum_names,
@@ -157,8 +156,8 @@ TStringToEnumMap<CBioSource::EGenome>
 g_InitModNameGenomeMap(void)
 {
    static const TModNameSet skip_enum_names;
-   static const TStringToEnumMap<CBioSource::EGenome> 
-       extra_smod_to_enum_names 
+   static const TStringToEnumMap<CBioSource::EGenome>
+       extra_smod_to_enum_names
        {{ "mitochondrial", CBioSource::eGenome_mitochondrion },
         { "provirus", CBioSource::eGenome_proviral},
         { "extrachromosomal", CBioSource::eGenome_extrachrom},
@@ -177,7 +176,7 @@ g_InitModNameOriginMap(void)
 {
     static const TModNameSet skip_enum_names;
     static const TStringToEnumMap<CBioSource::EOrigin>
-        extra_smod_to_enum_names 
+        extra_smod_to_enum_names
         {{ "natural mutant", CBioSource::eOrigin_natmut},
          { "mutant", CBioSource::eOrigin_mut}};
 
@@ -189,32 +188,32 @@ g_InitModNameOriginMap(void)
 }
 
 
-const 
-TStringToEnumMap<CMolInfo::TBiomol> 
+const
+TStringToEnumMap<CMolInfo::TBiomol>
 g_BiomolStringToEnum
-= { {"crna",                    CMolInfo::eBiomol_cRNA },   
-    {"dna",                     CMolInfo::eBiomol_genomic},   
-    {"genomic",                 CMolInfo::eBiomol_genomic},   
-    {"genomicdna",              CMolInfo::eBiomol_genomic},   
-    {"genomicrna",              CMolInfo::eBiomol_genomic},   
-    {"mrna",                    CMolInfo::eBiomol_mRNA},   
+= { {"crna",                    CMolInfo::eBiomol_cRNA },
+    {"dna",                     CMolInfo::eBiomol_genomic},
+    {"genomic",                 CMolInfo::eBiomol_genomic},
+    {"genomicdna",              CMolInfo::eBiomol_genomic},
+    {"genomicrna",              CMolInfo::eBiomol_genomic},
+    {"mrna",                    CMolInfo::eBiomol_mRNA},
     {"ncrna",                   CMolInfo::eBiomol_ncRNA},
-    {"noncodingrna",            CMolInfo::eBiomol_ncRNA},   
-    {"othergenetic",            CMolInfo::eBiomol_other_genetic}, 
-    {"precursorrna",            CMolInfo::eBiomol_pre_RNA},   
-    {"ribosomalrna",            CMolInfo::eBiomol_rRNA},   
-    {"rrna",                    CMolInfo::eBiomol_rRNA},   
-    {"transcribedrna",          CMolInfo::eBiomol_transcribed_RNA},   
-    {"transfermessengerrna",    CMolInfo::eBiomol_tmRNA},   
-    {"tmrna",                   CMolInfo::eBiomol_tmRNA},   
-    {"transferrna",             CMolInfo::eBiomol_tRNA},   
-    {"trna",                    CMolInfo::eBiomol_tRNA},   
+    {"noncodingrna",            CMolInfo::eBiomol_ncRNA},
+    {"othergenetic",            CMolInfo::eBiomol_other_genetic},
+    {"precursorrna",            CMolInfo::eBiomol_pre_RNA},
+    {"ribosomalrna",            CMolInfo::eBiomol_rRNA},
+    {"rrna",                    CMolInfo::eBiomol_rRNA},
+    {"transcribedrna",          CMolInfo::eBiomol_transcribed_RNA},
+    {"transfermessengerrna",    CMolInfo::eBiomol_tmRNA},
+    {"tmrna",                   CMolInfo::eBiomol_tmRNA},
+    {"transferrna",             CMolInfo::eBiomol_tRNA},
+    {"trna",                    CMolInfo::eBiomol_tRNA},
 };
 
 
-const 
-unordered_map<CMolInfo::TBiomol, CSeq_inst::EMol> 
-g_BiomolEnumToMolEnum = { 
+const
+unordered_map<CMolInfo::TBiomol, CSeq_inst::EMol>
+g_BiomolEnumToMolEnum = {
     { CMolInfo::eBiomol_genomic, CSeq_inst::eMol_dna},
     { CMolInfo::eBiomol_pre_RNA,  CSeq_inst::eMol_rna},
     { CMolInfo::eBiomol_mRNA,  CSeq_inst::eMol_rna },

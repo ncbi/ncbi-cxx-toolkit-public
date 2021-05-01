@@ -112,7 +112,7 @@ public:
         BOOST_REQUIRE(!tsTestName.empty());
         CTempString tsFileType = vecFileNamePieces[1];
         BOOST_REQUIRE(!tsFileType.empty());
-            
+
         STestInfo & test_info_to_load = m_TestNameToInfoMap[tsTestName];
 
         // figure out what type of file we have and set appropriately
@@ -123,15 +123,15 @@ public:
         else if (tsFileType == mExtInput) {
             BOOST_REQUIRE( test_info_to_load.mInFile.GetPath().empty() );
             test_info_to_load.mInFile = file;
-        } 
+        }
         else if (tsFileType == mExtOutput) {
             BOOST_REQUIRE( test_info_to_load.mOutFile.GetPath().empty() );
             test_info_to_load.mOutFile = file;
-        } 
+        }
         else if (tsFileType == mExtErrors) {
             BOOST_REQUIRE( test_info_to_load.mErrorFile.GetPath().empty() );
             test_info_to_load.mErrorFile = file;
-        } 
+        }
 
         else {
             BOOST_FAIL("Unknown file type " << sFileName << ".");
@@ -169,7 +169,7 @@ struct SModInfo {
 };
 
 
-static void sGetModInfo(const string& line, SModInfo& mod_info) 
+static void sGetModInfo(const string& line, SModInfo& mod_info)
 {
     if (NStr::IsBlank(line)) {
         return;
@@ -191,7 +191,7 @@ static void sGetModInfo(const string& line, SModInfo& mod_info)
 
 
 void sUpdateCase(CDir& test_cases_dir, const string& test_name)
-{   
+{
     string input  = CDir::ConcatPath( test_cases_dir.GetPath(), test_name + "." + extInput);
     string tmplt = CDir::ConcatPath(test_cases_dir.GetPath(), test_name + "." + extTemplate);
     string output = CDir::ConcatPath( test_cases_dir.GetPath(), test_name + "." + extOutput);
@@ -207,13 +207,13 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
     tmpltstr >> MSerial_AsnText >> pSeqEntry;
     pSeqEntry->Parentize();
 
-    auto& bioseq = pSeqEntry->IsSeq() ? 
+    auto& bioseq = pSeqEntry->IsSeq() ?
                    pSeqEntry->SetSeq() :
                    const_cast<CBioseq&>(pSeqEntry->SetSet().GetNucFromNucProtSet());
 
     unique_ptr<CObjtoolsListener> pMessageListener(new CObjtoolsListener());
 
-    auto fReportError = [&] (const CModData& modData, const string& msg, EDiagSev sev, int subcode) 
+    auto fReportError = [&] (const CModData& modData, const string& msg, EDiagSev sev, int subcode)
     {
         if (NStr::IsBlank(msg)) {
             return;
@@ -222,7 +222,7 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
                 CObjtoolsMessage(msg, sev));
     };
     CModHandler mod_handler;
-    
+
     CModAdder::TSkippedMods skipped_mods;
     CModHandler::TModList rejected_mods;
 
@@ -297,7 +297,7 @@ void sUpdateAll(CDir& test_cases_dir) {
 
 void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
 {
-    cerr << "Testing " << testInfo.mInFile.GetName() << " and " << 
+    cerr << "Testing " << testInfo.mInFile.GetName() << " and " <<
         testInfo.mTemplateFile.GetName() << " against " <<
         testInfo.mOutFile.GetName() << " and " <<
         testInfo.mErrorFile.GetName() << endl;
@@ -312,12 +312,12 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
     tmpltstr >> MSerial_AsnText >> pSeqEntry;
     pSeqEntry->Parentize();
 
-    auto& bioseq = pSeqEntry->IsSeq() ? 
+    auto& bioseq = pSeqEntry->IsSeq() ?
                    pSeqEntry->SetSeq() :
                    const_cast<CBioseq&>(pSeqEntry->SetSet().GetNucFromNucProtSet());
 
     unique_ptr<CObjtoolsListener> pMessageListener(new CObjtoolsListener());
-    auto fReportError = [&] (const CModData& modData, const string& msg, EDiagSev sev, int subcode) 
+    auto fReportError = [&] (const CModData& modData, const string& msg, EDiagSev sev, int subcode)
     {
         if (NStr::IsBlank(msg)) {
             return;
@@ -434,7 +434,7 @@ BOOST_AUTO_TEST_CASE(RunTests)
     const CArgs& args = CNcbiApplication::Instance()->GetArgs();
 
     CDir test_cases_dir( args["test-dir"].AsDirectory() );
-    BOOST_REQUIRE_MESSAGE( test_cases_dir.IsDir(), 
+    BOOST_REQUIRE_MESSAGE( test_cases_dir.IsDir(),
         "Cannot find dir: " << test_cases_dir.GetPath() );
     bool update_all = args["update-all"].AsBoolean();
     if (update_all) {
@@ -472,7 +472,7 @@ BOOST_AUTO_TEST_CASE(RunTests)
     ITERATE(TTestNameToInfoMap, name_to_info_it, testNameToInfoMap) {
         const string & sName = name_to_info_it->first;
         const STestInfo & testInfo = name_to_info_it->second;
-        
+
         cout << "Running test: " << sName << endl;
 
         BOOST_CHECK_NO_THROW(sRunTest(sName, testInfo, args["keep-diffs"]));

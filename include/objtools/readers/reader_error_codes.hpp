@@ -48,7 +48,7 @@ enum EReaderCode
 
 NCBI_XOBJREAD_EXPORT const NCBI_NS_NCBI::CEnumeratedTypeValues* ENUM_METHOD_NAME(EReaderCode)(void);
 
-enum EModSubcode 
+enum EModSubcode
 {
     eModSubcode_Undefined,
     eModSubcode_Unrecognized,

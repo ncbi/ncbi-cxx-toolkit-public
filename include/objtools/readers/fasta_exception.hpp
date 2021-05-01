@@ -59,16 +59,16 @@ public:
 
         SBadResiduePositions(void) { }
 
-        SBadResiduePositions( 
+        SBadResiduePositions(
             CConstRef<CSeq_id> seqId,
             const TBadIndexMap & badIndexMap )
             : m_SeqId(seqId), m_BadIndexMap(badIndexMap) { }
 
         // convenience ctor for when all bad indexes are on the same line
-        SBadResiduePositions( 
+        SBadResiduePositions(
             CConstRef<CSeq_id> seqId,
             const vector<TSeqPos> & badIndexesOnLine,
-            int lineNum ) 
+            int lineNum )
             : m_SeqId(seqId)
         {
             if( ! badIndexesOnLine.empty() ) {
@@ -94,7 +94,7 @@ public:
     CBadResiduesException(const CDiagCompileInfo& info,
         const CException* prev_exception,
         EErrCode err_code, const string& message,
-        const SBadResiduePositions& badResiduePositions, 
+        const SBadResiduePositions& badResiduePositions,
         EDiagSev severity = eDiag_Error) THROWS_NONE
         : CObjReaderException(info, prev_exception,
         (CObjReaderException::EErrCode) CException::eInvalid,

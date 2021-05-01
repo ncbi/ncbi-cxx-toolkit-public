@@ -35,25 +35,25 @@
 
 #include <objtools/readers/featuredump.hpp>
 
-BEGIN_NCBI_SCOPE 
+BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-  
+
 class NCBI_XOBJREAD_EXPORT CGetFeature {
 public:
     typedef vector<SFeatInfo*> Tfeatinfo;
-    //feat_file contains feature info, index_file contains byte offset for 
+    //feat_file contains feature info, index_file contains byte offset for
     //seqids in feat_file
     CGetFeature(string feat_file, string index_file);
-   
+
     ~CGetFeature();
     //return features with the specified range and the closest 5' and 3' features
     Tfeatinfo& GetFeatInfo(const string& id_str,
-                           const CRange<TSeqPos>& seq_range, 
-                           SFeatInfo*& feat5, 
+                           const CRange<TSeqPos>& seq_range,
+                           SFeatInfo*& feat5,
                            SFeatInfo*& feat3,
                            int max_feature = 3);
-    
+
 private:
     CNcbiIfstream* m_FeatFile;
     CNcbiIfstream* m_FeatFileIndex;

@@ -4,15 +4,15 @@
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objtools/readers/hgvs/irep_to_seqfeat_errors.hpp>
 
-// Many of these exceptions will not be triggered by the test set. 
+// Many of these exceptions will not be triggered by the test set.
 // Exclude from code-coverage analysis.
-// LCOV_EXCL_START 
+// LCOV_EXCL_START
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-const char* CVariationIrepException::GetErrCodeString(void) const 
+const char* CVariationIrepException::GetErrCodeString(void) const
 {
     switch( GetErrCode() ) {
         case eInvalidLocation:  return "eInvalidLocation";
@@ -30,7 +30,7 @@ const char* CVariationIrepException::GetErrCodeString(void) const
 }
 
 
-const char* CVariationValidateException::GetErrCodeString(void) const 
+const char* CVariationValidateException::GetErrCodeString(void) const
 {
     switch( GetErrCode() ) {
     case eIDResolveError: return "eIDResolveError";

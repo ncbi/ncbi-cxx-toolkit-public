@@ -10,7 +10,7 @@ using boost::phoenix::bind;
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
-SHgvsVariantGrammar::SHgvsVariantGrammar(const SHgvsLexer& tok) : 
+SHgvsVariantGrammar::SHgvsVariantGrammar(const SHgvsLexer& tok) :
     simple_protein_variant(tok),
     simple_na_variant(tok),
     special_variant(tok),
@@ -18,7 +18,7 @@ SHgvsVariantGrammar::SHgvsVariantGrammar(const SHgvsLexer& tok) :
 {
     variant_expression = protein_expression | na_expression;
 
-    protein_expression = tok.identifier ACTION1(AssignRefSeqIdentifier) 
+    protein_expression = tok.identifier ACTION1(AssignRefSeqIdentifier)
                          >> protein_seq_variants ACTION1(AssignSequenceVariant);
 
     protein_seq_variants = protein_simple_seq_variant | protein_mosaic | protein_chimera;
@@ -42,15 +42,15 @@ SHgvsVariantGrammar::SHgvsVariantGrammar(const SHgvsLexer& tok) :
 
     na_seq_variants = na_simple_seq_variant | na_chimera | na_mosaic;
 
-    na_simple_seq_variant = tok.na_tag ACTION1(AssignSequenceType) >>  
+    na_simple_seq_variant = tok.na_tag ACTION1(AssignSequenceType) >>
                             na_variant ACTION1(AssignSingleVariation);
 
-    na_mosaic = ( (tok.na_tag ACTION1(AssignSequenceType) >>  
-                ( "[" >> (na_variant >> tok.slash) ACTION1(AssignSingleVariation) 
+    na_mosaic = ( (tok.na_tag ACTION1(AssignSequenceType) >>
+                ( "[" >> (na_variant >> tok.slash) ACTION1(AssignSingleVariation)
                 >> na_variant ACTION1(AssignSingleVariation) >> "]" ) ) ) ACTION0(TagAsMosaic);
 
-    na_chimera = ( (tok.na_tag ACTION1(AssignSequenceType) >>  
-                 ( "[" >> (na_variant >> tok.double_slash) ACTION1(AssignSingleVariation) 
+    na_chimera = ( (tok.na_tag ACTION1(AssignSequenceType) >>
+                 ( "[" >> (na_variant >> tok.double_slash) ACTION1(AssignSingleVariation)
                  >> na_variant ACTION1(AssignSingleVariation) >> "]" ) ) ) ACTION0(TagAsChimera);
 
     na_variant = simple_na_variant ACTION1(AssignSimpleVariant) |
@@ -75,7 +75,7 @@ bool CHgvsParser::Apply(const string& hgvs_expression, CRef<CVariantExpression>&
 
     bool parse_success = boost::spirit::qi::parse(lex_first, lex_last, m_Grammar, variant_irep);
 
-    if (parse_success && 
+    if (parse_success &&
         lex_first == lex_last) { // Successful parse
         variant_irep->SetInput_expr(hgvs_expression);
         return true;

@@ -43,13 +43,13 @@ class CTeamCityMessageListener:
 public:
     CTeamCityMessageListener(
         const string& fileName) { mOstr = ofstream(fileName); };
-    
+
     ~CTeamCityMessageListener() { mOstr.close(); };
 
     bool PutMessage(
         const IObjtoolsMessage& message) override
     {
-        const CReaderMessage* pReaderMessage = 
+        const CReaderMessage* pReaderMessage =
             dynamic_cast<const CReaderMessage*>(&message);
         mLevelCounts[pReaderMessage->Severity()]++;
         if (!pReaderMessage) {
@@ -72,7 +72,7 @@ protected:
         {eDiag_Info, 0}, {eDiag_Warning, 0}, {eDiag_Error, 0}, {eDiag_Critical, 0},
         {eDiag_Fatal, 0}, {eDiag_Trace, 0}};
 };
-    
+
 END_SCOPE(objects);
 END_NCBI_SCOPE;
 

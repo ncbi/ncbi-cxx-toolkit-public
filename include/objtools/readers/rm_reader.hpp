@@ -263,7 +263,7 @@ public:
     /// This function is provided with a default implementation,
     /// using GetLocation(). The latter may be able to take advantage of
     /// a copy-less Seq-loc that is already a member of the object, if
-    /// that is the native representation. 
+    /// that is the native representation.
     ///
     /// The default implementation copies the result of GetLocation(void)
     /// into the result. Subclasses may override with a more direct
@@ -492,10 +492,10 @@ public:
         /// will be available in user objects, under
         /// seq-feat.ext."RepeatMasker".
         ///
-        /// Not recommended. 
+        /// Not recommended.
         ///
         fAllowNonstandardQualifiers   = 1 << 2,
- 
+
         /// Selected attributes beyond what is stored in GenBank
         /// standard qualifiers will be included as comments.
         /// Such comments are rendered via a /note
@@ -570,7 +570,7 @@ public:
         /// of nomenclature and redundancy removal.
         fStandardize                = fStandardizeNomenclature | \
                                       fRemoveRedundancy,
-        
+
         /// Store all statistics.
         ///
         fIncludeStatistics          = fIncludeCoreStatistics |
@@ -599,7 +599,7 @@ public:
         ///
         /// Essential attributes do NOT include
         /// rpt_id or attributes from any RepeatMasker library file.
-        /// 
+        ///
         /// This may be less information than fIncludeAll.
         /// For example, repeat IDs are not significant, beyond
         /// their capacity to link parts of a split repeat together.
@@ -731,7 +731,7 @@ public:
 protected:
     virtual bool IsHeaderLine(const string& line);
     virtual bool IsIgnoredLine(const string& line);
-    
+
     virtual bool ParseRecord(const string& record, SRepeatRegion& mask_data);
     virtual bool VerifyData(const SRepeatRegion& mask_data);
 
@@ -810,7 +810,7 @@ END_NCBI_SCOPE
     of RepeatMasker output are summarized by stating, "if it's
     indistinguishable from a native RepeatMasker file by BioPerl,
     it's good enough."
-    
+
     The order of features does not need to be preserved.
     The attribute of being overlapped by a higher-scoring hit,
     as represented by the asterisk in the last column of RepeatMasker

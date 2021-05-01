@@ -13,7 +13,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-class CPostProcessUtils 
+class CPostProcessUtils
 {
 public:
     CRef<CSeq_literal> GetLiteralAtLoc(const CSeq_loc& loc, CScope& scope) const;
@@ -22,7 +22,7 @@ public:
 };
 
 
-class CNormalizeVariant 
+class CNormalizeVariant
 {
 public:
     CNormalizeVariant(CScope& scope) : m_Scope(scope) {}
@@ -44,11 +44,11 @@ class CValidateVariant
 public:
     CValidateVariant(CScope& scope) : m_Scope(scope) {}
 
-    void ValidateIdentityInst(const CVariation_inst& identity_inst, 
+    void ValidateIdentityInst(const CVariation_inst& identity_inst,
                               const CSeq_loc& location,
                               bool IsCDS=false);
 
-    void ValidateMicrosatelliteInst(const CVariation_inst& identity_inst, 
+    void ValidateMicrosatelliteInst(const CVariation_inst& identity_inst,
                               const CSeq_loc& location,
                               bool IsCDS=false);
 

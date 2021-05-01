@@ -60,7 +60,7 @@ public:
     };
 
     /// Returns how we should treat the given feature name
-    virtual EAction GetFeatAction( 
+    virtual EAction GetFeatAction(
         const string &feature_name ) const = 0;
 private:
     /// forbid copy
@@ -93,7 +93,7 @@ public:
     /// Indicate how a given feature should be handled.
     EAction GetFeatAction( const string &feature_name ) const
     {
-        TFeatActionMap::const_iterator find_feature_action = 
+        TFeatActionMap::const_iterator find_feature_action =
             m_FeatActionMap.find(feature_name);
 
         if( find_feature_action != m_FeatActionMap.end() )
@@ -111,7 +111,7 @@ private:
     // maps feature names to how they should be handled
     TFeatActionMap m_FeatActionMap;
 };
-             
+
 END_objects_SCOPE
 
 END_NCBI_SCOPE

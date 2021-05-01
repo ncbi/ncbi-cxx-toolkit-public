@@ -85,7 +85,7 @@ public:
 
         CFile file(dirEntry);
         string name = file.GetName();
-        if (NStr::EndsWith(name, ".txt")  ||  NStr::EndsWith(name, ".new")  
+        if (NStr::EndsWith(name, ".txt")  ||  NStr::EndsWith(name, ".new")
                 ||NStr::StartsWith(name, ".")) {
             return;
         }
@@ -100,7 +100,7 @@ public:
         BOOST_REQUIRE(!tsTestName.empty());
         CTempString tsFileType = vecFileNamePieces[1];
         BOOST_REQUIRE(!tsFileType.empty());
-            
+
         STestInfo & test_info_to_load =
             (*m_pTestNameToInfoMap)[vecFileNamePieces[0]];
 
@@ -108,15 +108,15 @@ public:
         if (tsFileType == mExtInput) {
             BOOST_REQUIRE( test_info_to_load.mInFile.GetPath().empty() );
             test_info_to_load.mInFile = file;
-        } 
+        }
         else if (tsFileType == mExtOutput) {
             BOOST_REQUIRE( test_info_to_load.mOutFile.GetPath().empty() );
             test_info_to_load.mOutFile = file;
-        } 
+        }
         else if (tsFileType == mExtErrors) {
             BOOST_REQUIRE( test_info_to_load.mErrorFile.GetPath().empty() );
             test_info_to_load.mErrorFile = file;
-        } 
+        }
 
         else {
             BOOST_FAIL("Unknown file type " << sFileName << ".");
@@ -132,7 +132,7 @@ private:
 };
 
 void sUpdateCase(CDir& test_cases_dir, const string& test_name)
-{   
+{
     string input = CDir::ConcatPath( test_cases_dir.GetPath(), test_name + "." + extInput);
     string output = CDir::ConcatPath( test_cases_dir.GetPath(), test_name + "." + extOutput);
     string errors = CDir::ConcatPath( test_cases_dir.GetPath(), test_name + "." + extErrors);
@@ -154,7 +154,7 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
     }
     catch (std::exception&) {
         // succeeding by failing in the expected manner.
-        //  should we fail for the wrong reason, or fail to fail then the captured 
+        //  should we fail for the wrong reason, or fail to fail then the captured
         //  error log will tell.
     }
     ifstr.close();
@@ -211,7 +211,7 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
     }
     catch (const std::exception&) {
         // succeeding by failing in the expected manner.
-        //  should we fail for the wrong reason, or fail to fail then the captured 
+        //  should we fail for the wrong reason, or fail to fail then the captured
         //  error log will tell.
     }
     ifstr.close();
@@ -280,7 +280,7 @@ BOOST_AUTO_TEST_CASE(RunTests)
     const CArgs& args = CNcbiApplication::Instance()->GetArgs();
 
     CDir test_cases_dir( args["test-dir"].AsDirectory() );
-    BOOST_REQUIRE_MESSAGE( test_cases_dir.IsDir(), 
+    BOOST_REQUIRE_MESSAGE( test_cases_dir.IsDir(),
         "Cannot find dir: " << test_cases_dir.GetPath() );
 
     bool update_all = args["update-all"].AsBoolean();
@@ -294,7 +294,7 @@ BOOST_AUTO_TEST_CASE(RunTests)
         sUpdateCase(test_cases_dir, update_case);
         return;
     }
-   
+
     const vector<string> kEmptyStringVec;
     TTestNameToInfoMap testNameToInfoMap;
     CTestNameToInfoMapLoader testInfoLoader(
@@ -320,7 +320,7 @@ BOOST_AUTO_TEST_CASE(RunTests)
     ITERATE(TTestNameToInfoMap, name_to_info_it, testNameToInfoMap) {
         const string & sName = name_to_info_it->first;
         const STestInfo & testInfo = name_to_info_it->second;
-        
+
         cout << "Running test: " << sName << endl;
 
         BOOST_CHECK_NO_THROW(sRunTest(sName, testInfo, args["keep-diffs"]));

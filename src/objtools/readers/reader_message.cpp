@@ -36,13 +36,13 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-static string sGetSeverityName(EDiagSev severity) 
+static string sGetSeverityName(EDiagSev severity)
 {
     return CNcbiDiag::SeverityName(severity);
 }
 
 //  ============================================================================
-CReaderMessage* CReaderMessage::Clone() const 
+CReaderMessage* CReaderMessage::Clone() const
 //  ============================================================================
 {
     return new CReaderMessage(GetSeverity(), m_LineNumber, GetText());

@@ -58,7 +58,7 @@ bool CBestFeatFinder::AddFeat( const CSeq_feat& new_feat )
     }
 }
 
-CConstRef<CSeq_feat> 
+CConstRef<CSeq_feat>
 CBestFeatFinder::FindBestFeatForLoc( const CSeq_loc &sought_loc ) const
 {
     // Try to find the smallest CDS that contains the given location
@@ -72,7 +72,7 @@ CBestFeatFinder::FindBestFeatForLoc( const CSeq_loc &sought_loc ) const
     return FindBestFeatForLoc( loc_start, loc_stop );
 }
 
-CConstRef<CSeq_feat> 
+CConstRef<CSeq_feat>
 CBestFeatFinder::FindBestFeatForLoc( const int loc_start, const int loc_stop ) const
 {
     // something wrong with sought_loc
@@ -130,8 +130,8 @@ CBestFeatFinder::FindBestFeatForLoc( const int loc_start, const int loc_stop ) c
 }
 
 bool
-CBestFeatFinder::CSeqLocSort::operator()( 
-    const CConstRef<CSeq_loc> &loc1, 
+CBestFeatFinder::CSeqLocSort::operator()(
+    const CConstRef<CSeq_loc> &loc1,
     const CConstRef<CSeq_loc> &loc2 ) const
 {
     // sort by location start

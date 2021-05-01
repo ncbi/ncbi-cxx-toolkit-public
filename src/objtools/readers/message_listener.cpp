@@ -71,7 +71,7 @@ CMessageListenerBase::PutProgress(
 
         string sXMLEncodedMessage = NStr::XmlEncode(sMessage);
 
-        // some functionality relies on progress messages fitting into 
+        // some functionality relies on progress messages fitting into
         // one line, so we escape newlines (just in case) while
         // we write it.
         ITERATE( string, msg_it, sXMLEncodedMessage ) {
@@ -96,7 +96,7 @@ CMessageListenerBase::PutProgress(
 }
 
 
-CGPipeMessageListener::CGPipeMessageListener(bool ignoreBadModValue) 
+CGPipeMessageListener::CGPipeMessageListener(bool ignoreBadModValue)
     : m_IgnoreBadModValue(ignoreBadModValue) {}
 
 

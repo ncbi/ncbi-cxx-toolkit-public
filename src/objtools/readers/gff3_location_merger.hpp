@@ -58,7 +58,7 @@ public:
     TSeqPos mStop;
     ENa_strand mStrand;
     string mType;
-    size_t mPartNum; 
+    size_t mPartNum;
     CCdregion::EFrame mFrame;
     string mSeqId;
 

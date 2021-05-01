@@ -41,7 +41,7 @@ USING_NCBI_SCOPE;
 // Make sure that no format is missing. Jira: MSS-289
 BOOST_AUTO_TEST_CASE(Test_All_Formats_Enum)
 {
-	CFormatGuess Guess;
+    CFormatGuess Guess;
     for (int fmt = 1; fmt < (int)CFormatGuess::eFormat_max; fmt++) {
         if ( fmt == CFormatGuess::eGtf_POISENED) continue;
         Guess.TestFormat((CFormatGuess::EFormat)fmt, CFormatGuess::eDefault);

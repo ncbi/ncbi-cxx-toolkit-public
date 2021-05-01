@@ -45,7 +45,7 @@ CNCBIeaa CHgvsProtIrepReader::x_ConvertToNcbieaa(string aa_seq) const
 
 
 CRef<CVariation_ref> CHgvsProtIrepReader::x_CreateInsertedRawseqSubvarref(
-        const string& raw_seq) const 
+        const string& raw_seq) const
 {
     auto ncbieaa_seq = x_ConvertToNcbieaa(raw_seq);
     auto seq_literal = Ref(new CSeq_literal());
@@ -57,7 +57,7 @@ CRef<CVariation_ref> CHgvsProtIrepReader::x_CreateInsertedRawseqSubvarref(
 
 
 CRef<CVariation_ref> CHgvsProtIrepReader::x_CreateInsertionSubvarref(
-        const CSeq_literal::TLength seq_length) const 
+        const CSeq_literal::TLength seq_length) const
 {
     auto seq_literal = Ref(new CSeq_literal());
     seq_literal->SetLength(seq_length);
@@ -67,24 +67,24 @@ CRef<CVariation_ref> CHgvsProtIrepReader::x_CreateInsertionSubvarref(
 
 
 CRef<CVariation_ref> CHgvsProtIrepReader::x_CreateInsertionSubvarref(
-        const CInsertion::TSeqinfo& insert) const 
+        const CInsertion::TSeqinfo& insert) const
 {
     CRef<CVariation_ref> var_ref;
     if ( insert.IsRaw_seq() ) {
         var_ref = x_CreateInsertedRawseqSubvarref(insert.GetRaw_seq());
-    } 
+    }
     else if ( insert.IsCount() ) {
         var_ref = x_CreateInsertionSubvarref(insert.GetCount().GetVal());
-    } 
+    }
     else {
-        NCBI_THROW(CVariationIrepException, eInvalidInsertion, "Unrecognized insertion type"); // LCOV_EXCL_LINE 
+        NCBI_THROW(CVariationIrepException, eInvalidInsertion, "Unrecognized insertion type"); // LCOV_EXCL_LINE
     }                                                                                          // Not expected to arise
     return var_ref;
 }
 
 
 CRef<CVariation_ref> CHgvsProtIrepReader::x_CreateDelinsSubvarref(
-        const CDelins::TInserted_seq_info& insert) const 
+        const CDelins::TInserted_seq_info& insert) const
 {
     CRef<CDelta_item> delta;
     auto seq_literal = Ref(new CSeq_literal());
@@ -92,11 +92,11 @@ CRef<CVariation_ref> CHgvsProtIrepReader::x_CreateDelinsSubvarref(
         const auto raw_seq = x_ConvertToNcbieaa(insert.GetRaw_seq());
         seq_literal->SetSeq_data().SetNcbieaa(raw_seq);
         seq_literal->SetLength(raw_seq.Get().size());
-    } 
+    }
     else if ( insert.IsCount() ) {
         const auto seq_length = insert.GetCount().GetVal();
         seq_literal->SetLength(seq_length);
-    } 
+    }
     else {
         NCBI_THROW(CVariationIrepException, eInvalidInsertion, "Unrecognized insertion type"); // LCOV_EXCL_LINE
     }                                                                                          // Not expected to arise
@@ -121,15 +121,15 @@ bool s_IntervalLimitsReversed(const CAaInterval& interval)
 CRef<CVariation_ref> CHgvsProtIrepReader::x_CreateVarrefFromLoc(
         CVariation_inst::EType type,
         const CAaLocation& aa_loc,
-        const CVariation_ref::EMethod_E method) const 
+        const CVariation_ref::EMethod_E method) const
 {
     if ( !aa_loc.IsSite() && !aa_loc.IsInt() ) {
-        NCBI_THROW(CVariationIrepException, 
-                eInvalidLocation, 
+        NCBI_THROW(CVariationIrepException,
+                eInvalidLocation,
                 "Unrecognized amino-acid location type"); // LCOV_EXCL_LINE
     }                                                     // Not expected to get past parser
 
-    CNCBIeaa aa_string;    
+    CNCBIeaa aa_string;
     CSeq_literal::TLength length;
     if (aa_loc.IsInt() && s_IntervalLimitsReversed(aa_loc.GetInt())) {
         auto aa_int = Ref(new CAaInterval());
@@ -140,8 +140,8 @@ CRef<CVariation_ref> CHgvsProtIrepReader::x_CreateVarrefFromLoc(
         aa_int->SetStart(aa_start.GetNCObject());
         aa_int->SetStop(aa_stop.GetNCObject());
 
-        aa_string = x_ConvertToNcbieaa(aa_int->GetString()); 
-        length = aa_int->size();       
+        aa_string = x_ConvertToNcbieaa(aa_int->GetString());
+        length = aa_int->size();
         return  x_CreateIdentitySubvarref(aa_string, aa_int->size());
     } else {
         aa_string = x_ConvertToNcbieaa(aa_loc.GetString());
@@ -165,7 +165,7 @@ CRef<CVariation_ref> CHgvsProtIrepReader::x_CreateIdentitySubvarref(
         NCBI_THROW(CVariationIrepException, eInvalidLocation, "Unrecognized amino-acid location type"); // LCOV_EXCL_LINE
     }                                                                                                   // Not expected to get past parser
 
-    string aa_string;    
+    string aa_string;
     if (aa_loc.IsInt() && s_IntervalLimitsReversed(aa_loc.GetInt())) {
         auto aa_int = Ref(new CAaInterval());
         auto aa_start = Ref(new CAaSite());
@@ -175,7 +175,7 @@ CRef<CVariation_ref> CHgvsProtIrepReader::x_CreateIdentitySubvarref(
         aa_int->SetStart(aa_start.GetNCObject());
         aa_int->SetStop(aa_stop.GetNCObject());
 
-        aa_string = x_ConvertToNcbieaa(aa_int->GetString());        
+        aa_string = x_ConvertToNcbieaa(aa_int->GetString());
         return  x_CreateIdentitySubvarref(aa_string, aa_int->size());
     }
 
@@ -185,7 +185,7 @@ CRef<CVariation_ref> CHgvsProtIrepReader::x_CreateIdentitySubvarref(
 
 
 CRef<CVariation_ref> CHgvsProtIrepReader::x_CreateIdentitySubvarref(const string& seq_string,
-        const CSeq_literal::TLength length) const 
+        const CSeq_literal::TLength length) const
 {
     auto ncbieaa_seq = x_ConvertToNcbieaa(seq_string);
     auto seq_literal = Ref(new CSeq_literal());
@@ -197,8 +197,8 @@ CRef<CVariation_ref> CHgvsProtIrepReader::x_CreateIdentitySubvarref(const string
 
 
 CRef<CSeq_feat> CHgvsProtIrepReader::x_CreateSimpleVariantFeat(const string& var_name,
-        const string& identifier, 
-        const CSimpleVariant& simple_var) const 
+        const string& identifier,
+        const CSimpleVariant& simple_var) const
 {
     auto seq_feat = Ref(new CSeq_feat());
     auto var_ref = x_CreateVarref(var_name, simple_var);
@@ -215,7 +215,7 @@ CRef<CSeq_feat> CHgvsProtIrepReader::x_CreateSimpleVariantFeat(const string& var
 
 // Make CreateSeqfeat a method of the base class, CHgvsIrepReader.
 // Make x_CreateSimpleVarianteat a virtual method, maybe.
-CRef<CSeq_feat> CHgvsProtIrepReader::CreateSeqfeat(const CVariantExpression& variant_expr) const 
+CRef<CSeq_feat> CHgvsProtIrepReader::CreateSeqfeat(const CVariantExpression& variant_expr) const
 {
     const auto& sequence_variant = variant_expr.GetSequence_variant();
     if (sequence_variant.IsSetComplex()) {
@@ -224,11 +224,11 @@ CRef<CSeq_feat> CHgvsProtIrepReader::CreateSeqfeat(const CVariantExpression& var
             message = "Chimeras ";
         } else if (sequence_variant.GetComplex() == CSequenceVariant::eComplex_mosaic) {
             message = "Mosaics ";
-        }    
+        }
         message += "are not currently supported.";
         message += " Please report to variation-services@ncbi.nlm.nih.gov";
         NCBI_THROW(CVariationIrepException, eUnsupported, message);
-    }    
+    }
 
 
     CRef<CVariant> subvariant = variant_expr.GetSequence_variant().GetSubvariants().front();
@@ -259,7 +259,7 @@ CRef<CSeq_feat> CHgvsProtIrepReader::CreateSeqfeat(const CVariantExpression& var
 
 
 CRef<CVariation_ref> CHgvsProtIrepReader::x_CreateVarref(const string& var_name,
-        const CSimpleVariant& var_desc) const 
+        const CSimpleVariant& var_desc) const
 {
     CRef<CVariation_ref> var_ref;
     const auto& var_type = var_desc.GetType();
@@ -269,7 +269,7 @@ CRef<CVariation_ref> CHgvsProtIrepReader::x_CreateVarref(const string& var_name,
         CVariation_ref::eMethod_E_unknown;
 
     switch (var_type.Which())  {
-        default: 
+        default:
             NCBI_THROW(CVariationIrepException, eUnknownVariation, "Unknown variation type"); // LCOV_EXCL_LINE
         case CSimpleVariant::TType::e_Prot_sub:
             var_ref = x_CreateProteinSubstVarref(var_type.GetProt_sub(), method);
@@ -282,7 +282,7 @@ CRef<CVariation_ref> CHgvsProtIrepReader::x_CreateVarref(const string& var_name,
             break;
         case CSimpleVariant::TType::e_Dup:
             var_ref = x_CreateProteinDupVarref(var_type.GetDup(), method);
-            break; 
+            break;
         case CSimpleVariant::TType::e_Ins:
             var_ref = x_CreateInsertionVarref(var_type.GetIns(), method);
             break;
@@ -338,7 +338,7 @@ CRef<CVariation_ref> CHgvsProtIrepReader::x_CreateProteinDelVarref(
 
 CRef<CVariation_ref> CHgvsProtIrepReader::x_CreateInsertionVarref(
         const CInsertion& ins,
-        const CVariation_ref::EMethod_E method) const 
+        const CVariation_ref::EMethod_E method) const
 {
     auto var_ref = Ref(new CVariation_ref());
     auto& var_set = var_ref->SetData().SetSet();
@@ -362,7 +362,7 @@ CRef<CVariation_ref> CHgvsProtIrepReader::x_CreateInsertionVarref(
 
 CRef<CVariation_ref> CHgvsProtIrepReader::x_CreateDelinsVarref(
         const CDelins& delins,
-        const CVariation_ref::EMethod_E method) const 
+        const CVariation_ref::EMethod_E method) const
 {
     auto var_ref = Ref(new CVariation_ref());
     auto& var_set = var_ref->SetData().SetSet();
@@ -384,7 +384,7 @@ CRef<CVariation_ref> CHgvsProtIrepReader::x_CreateDelinsVarref(
 
 CRef<CVariation_ref> CHgvsProtIrepReader::x_CreateSSRVarref(
         const CRepeat& ssr,
-        const CVariation_ref::EMethod_E method) const 
+        const CVariation_ref::EMethod_E method) const
 {
     auto var_ref = Ref(new CVariation_ref());
     auto& var_set = var_ref->SetData().SetSet();
@@ -406,7 +406,7 @@ CRef<CVariation_ref> CHgvsProtIrepReader::x_CreateSSRVarref(
 
 CRef<CVariation_ref> CHgvsProtIrepReader::x_CreateProteinDupVarref(
         const CDuplication& dup,
-        const CVariation_ref::EMethod_E method) const 
+        const CVariation_ref::EMethod_E method) const
 {
     auto var_ref = Ref(new CVariation_ref());
     auto& var_set = var_ref->SetData().SetSet();
@@ -414,7 +414,7 @@ CRef<CVariation_ref> CHgvsProtIrepReader::x_CreateProteinDupVarref(
 
     // Add first Variation-ref
     CRef<CVariation_ref> subvar_ref = g_CreateDuplication(method);
-    var_set.SetVariations().push_back(subvar_ref); 
+    var_set.SetVariations().push_back(subvar_ref);
 
     // Add identity Variation-ref
     subvar_ref = x_CreateIdentitySubvarref(dup.GetLoc().GetAaloc());
@@ -426,20 +426,20 @@ CRef<CVariation_ref> CHgvsProtIrepReader::x_CreateProteinDupVarref(
 
 
 CRef<CVariation_ref> CHgvsProtIrepReader::x_CreateProteinSubstVarref(
-        const CProteinSub& aa_sub, 
+        const CProteinSub& aa_sub,
         const CVariation_ref::EMethod_E method) const
 {
     //const auto& aa_sub = sub.GetAasub();
     string final_aa;
     if ( aa_sub.GetType() == CProteinSub::eType_missense ) {
         final_aa = x_ConvertToNcbieaa(aa_sub.GetFinal());
-    } 
+    }
     else if ( aa_sub.GetType() == CProteinSub::eType_nonsense ) {
         final_aa = "*";
-    } 
+    }
     else if ( aa_sub.GetType() == CProteinSub::eType_unknown ) {
         final_aa = "?";
-    } 
+    }
     else {
 // LCOV_EXCL_START - Not expected to get past parser
         NCBI_THROW(CVariationIrepException, eInvalidVariation, "Unrecognized protein substitution type");
@@ -476,7 +476,7 @@ CRef<CVariation_ref> CHgvsProtIrepReader::x_CreateProteinSubstVarref(
 
 CRef<CVariation_ref> CHgvsProtIrepReader::x_CreateFrameshiftVarref(
         const CFrameshift& fs,
-        const CVariation_ref::EMethod_E method) const 
+        const CVariation_ref::EMethod_E method) const
 {
     auto var_ref = Ref(new CVariation_ref());
     auto& var_set = var_ref->SetData().SetSet();
@@ -496,45 +496,45 @@ CRef<CVariation_ref> CHgvsProtIrepReader::x_CreateFrameshiftVarref(
 }
 
 
-CRef<CSeq_loc> CProtSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id, 
+CRef<CSeq_loc> CProtSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
         const CSimpleVariant& var_desc)
 {
     CRef<CSeq_loc> seq_loc;
     const auto& var_type = var_desc.GetType();
 
     switch(var_type.Which())  {
-        default: 
+        default:
             NCBI_THROW(CVariationIrepException, eUnknownVariation, "Unsupported variation type"); // LCOV_EXCL_LINE
-        case CSimpleVariant::TType::e_Prot_sub: 
-            seq_loc = CreateSeqloc(seq_id, 
+        case CSimpleVariant::TType::e_Prot_sub:
+            seq_loc = CreateSeqloc(seq_id,
                     var_type.GetProt_sub().GetInitial());
             break;
         case CSimpleVariant::TType::e_Prot_silent:
             seq_loc = CreateSeqloc(seq_id,
                     var_type.GetProt_silent());
             break;
-        case CSimpleVariant::TType::e_Del: 
-            seq_loc = CreateSeqloc(seq_id, 
+        case CSimpleVariant::TType::e_Del:
+            seq_loc = CreateSeqloc(seq_id,
                     var_type.GetDel().GetLoc().GetAaloc());
             break;
-        case CSimpleVariant::TType::e_Dup: 
-            seq_loc = CreateSeqloc(seq_id, 
+        case CSimpleVariant::TType::e_Dup:
+            seq_loc = CreateSeqloc(seq_id,
                     var_type.GetDup().GetLoc().GetAaloc());
             break;
-        case CSimpleVariant::TType::e_Ins:  
-            seq_loc = CreateSeqloc(seq_id, 
+        case CSimpleVariant::TType::e_Ins:
+            seq_loc = CreateSeqloc(seq_id,
                     var_type.GetIns().GetInt().GetAaint());
             break;
-        case CSimpleVariant::TType::e_Delins: 
-            seq_loc = CreateSeqloc(seq_id, 
+        case CSimpleVariant::TType::e_Delins:
+            seq_loc = CreateSeqloc(seq_id,
                     var_type.GetDelins().GetLoc().GetAaloc());
             break;
-        case CSimpleVariant::TType::e_Repeat: 
-            seq_loc = CreateSeqloc(seq_id, 
+        case CSimpleVariant::TType::e_Repeat:
+            seq_loc = CreateSeqloc(seq_id,
                     var_type.GetRepeat().GetLoc().GetAaloc());
             break;
-        case CSimpleVariant::TType::e_Frameshift: 
-            seq_loc = CreateSeqloc(seq_id, 
+        case CSimpleVariant::TType::e_Frameshift:
+            seq_loc = CreateSeqloc(seq_id,
                     var_type.GetFrameshift().GetAasite());
             break;
     }

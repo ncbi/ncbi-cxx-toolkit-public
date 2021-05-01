@@ -45,7 +45,7 @@ struct SHgvsProteinGrammar : boost::spirit::qi::grammar<TParseIterator, CRef<CSi
     TRule<CSimpleVariant> frameshift_nonstandard;
     TRule<CSimpleVariant> frameshift_short_form;
     TRule<CCount> end_codon_shift;
-    TRule<CCount> seq_size;  
+    TRule<CCount> seq_size;
     TRule<CAaLocation> aa_loc;
     TRule<CAaInterval> aa_interval;
     TRule<CAaSite> aa_site;

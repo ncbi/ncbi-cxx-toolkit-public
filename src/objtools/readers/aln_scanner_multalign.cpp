@@ -131,7 +131,7 @@ CAlnScannerMultAlign::xImportAlignmentData(
                 }
                 expecting = EExpecting::OFFSETS;
                 continue;
-            }    
+            }
             if (!inFirstBlock  &&  lineInBlock == expectedNumSequences) {
                 throw SShowStopper(
                     lineCount,
@@ -174,7 +174,6 @@ CAlnScannerMultAlign::xImportAlignmentData(
             continue;
         }
     }
-    
 }
 
 //  ----------------------------------------------------------------------------

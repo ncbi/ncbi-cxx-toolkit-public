@@ -1,4 +1,4 @@
-#ifndef _PROTEIN_IREP_TO_SEQFEAT_HPP_ 
+#ifndef _PROTEIN_IREP_TO_SEQFEAT_HPP_
 #define _PROTEIN_IREP_TO_SEQFEAT_HPP_
 
 #include <objects/seqfeat/Variation_ref.hpp>
@@ -20,16 +20,16 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 /// Helper class for constructing a CSeq_loc instance for a protein variant
-class CProtSeqlocHelper 
+class CProtSeqlocHelper
 {
-public: 
+public:
     static CRef<CSeq_loc> CreateSeqloc(const CSeq_id& seq_id,
                                        const CSimpleVariant& simple_var);
 
-    static CRef<CSeq_loc> CreateSeqloc(const CSeq_id& seq_id, 
+    static CRef<CSeq_loc> CreateSeqloc(const CSeq_id& seq_id,
                                        const CAaLocation& aa_loc);
 
-    static CRef<CSeq_loc> CreateSeqloc(const CSeq_id& seq_id, 
+    static CRef<CSeq_loc> CreateSeqloc(const CSeq_id& seq_id,
                                        const CAaSite& aa_site);
 
     static CRef<CSeq_loc> CreateSeqloc(const CSeq_id& seq_id,
@@ -42,11 +42,11 @@ class CHgvsProtIrepReader : public CHgvsIrepReader
 public:
         using TSet = CVariation_ref::C_Data::C_Set;
         using TDelta = CVariation_inst::TDelta::value_type;
- 
-        CHgvsProtIrepReader(CScope& scope) 
+
+        CHgvsProtIrepReader(CScope& scope)
             : CHgvsIrepReader(scope) {}
 
-        /// Construct the CSeq_feat object for a protein variant in the intermediate expression 
+        /// Construct the CSeq_feat object for a protein variant in the intermediate expression
         CRef<CSeq_feat> CreateSeqfeat(const CVariantExpression& variant_expr) const;
 
  private:
@@ -55,12 +55,12 @@ public:
             const string& var_name,
             const string& identifier,
             const CSimpleVariant& simple_var) const;
-          
+
         /// Construct the CVariation_ref object for a "simple" variant
         CRef<CVariation_ref> x_CreateVarref(
             const string& var_name,
             const CSimpleVariant& simple_var) const;
-        
+
         CRef<CVariation_ref> x_CreateSilentVarref(
             const CAaLocation& loc,
             const CVariation_ref::EMethod_E method) const;
@@ -92,10 +92,10 @@ public:
         CRef<CVariation_ref> x_CreateSSRVarref(
             const CRepeat& ssr,
             CVariation_ref::EMethod_E method=CVariation_ref::eMethod_E_unknown) const;
-        
+
         CRef<CVariation_ref> x_CreateVarrefFromLoc(
             CVariation_inst::EType type,
-            const CAaLocation& aa_loc, 
+            const CAaLocation& aa_loc,
             CVariation_ref::EMethod_E method=CVariation_ref::eMethod_E_unknown) const;
 
         /// Construct the first "sub" Variation-ref in the composite Variation-ref appearing in an Insertion Seq-feat
@@ -111,7 +111,7 @@ public:
 
         CRef<CVariation_ref> x_CreateIdentitySubvarref(const CAaLocation& aa_loc) const;
 
-        CRef<CVariation_ref> x_CreateIdentitySubvarref(const string& seq_str, 
+        CRef<CVariation_ref> x_CreateIdentitySubvarref(const string& seq_str,
                                                        CSeq_literal::TLength length) const;
 
         CSeq_data::TNcbieaa x_ConvertToNcbieaa(string aa_seq) const;

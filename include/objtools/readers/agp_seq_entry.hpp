@@ -56,11 +56,11 @@ public:
 
     enum EFlags {
         /// Found gaps will not be given Seq-data such as Type and Linkage
-        fSetSeqGap     = (1 << 0), 
+        fSetSeqGap     = (1 << 0),
         /// All IDs will be treated as local IDs.
         /// The default if this is NOT set is to first try to parse the ID,
         /// and only make local if parsing fails.
-        fForceLocalId  = (1 << 1)  
+        fForceLocalId  = (1 << 1)
     };
     typedef int TFlags;
 
@@ -70,12 +70,12 @@ public:
     /// @param agp_version
     ///   What is the AGP version of the input?  Default is to auto-detect AGP version,
     ///   which is likely what the user wants to do most of the time.
-    CAgpToSeqEntry( TFlags fFlags = 0, 
+    CAgpToSeqEntry( TFlags fFlags = 0,
         EAgpVersion agp_version = eAgpVersion_auto,
         CAgpErr* arg = NULL );
 
     /// This gets the results found, but don't call before finalizing.  We are intentionally
-    /// giving a non-const reference because the caller is free to 
+    /// giving a non-const reference because the caller is free to
     /// take the seq-entries inside and do whatever they like with them.
     /// Each Seq-entry contains just one Bioseq, built from the AGP file(s).
     TSeqEntryRefVec & GetResult(void) { return m_entries; }
@@ -103,7 +103,7 @@ protected:
     void x_FinishedBioseq(void);
 
     /// If you must change exactly how strings are turned into Seq-ids,
-    /// you can override this in a subclass.  The default 
+    /// you can override this in a subclass.  The default
     // is to use s_DefaultSeqIdFromStr.
     virtual CRef<objects::CSeq_id> x_GetSeqIdFromStr( const std::string & str );
 

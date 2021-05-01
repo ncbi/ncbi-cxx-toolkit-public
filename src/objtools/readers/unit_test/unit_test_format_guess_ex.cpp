@@ -54,12 +54,12 @@ USING_SCOPE(objects);
 ///
 BOOST_AUTO_TEST_CASE(Test_BED_OneLiner)
 {
-	const string BEDLine = "chr1\t16759829\t16778548\tchr1:21667704\t270866\t-\n";
-	CNcbiIstrstream Stream(BEDLine);
+    const string BEDLine = "chr1\t16759829\t16778548\tchr1:21667704\t270866\t-\n";
+    CNcbiIstrstream Stream(BEDLine);
 
-	CFormatGuessEx Guesser(Stream);
-	CFormatGuess::EFormat Guess;
-	Guess = Guesser.GuessFormat();
+    CFormatGuessEx Guesser(Stream);
+    CFormatGuess::EFormat Guess;
+    Guess = Guesser.GuessFormat();
 
 
     BOOST_CHECK_EQUAL(Guess, CFormatGuess::eBed);
@@ -70,12 +70,12 @@ BOOST_AUTO_TEST_CASE(Test_BED_OneLiner)
 ///
 BOOST_AUTO_TEST_CASE(Test_GFF_OneLiner)
 {
-	const string GFFLine = "NC_000008.9\tdbVar\tmisc\t151699\t186841\t.\t.\t.\n";
-	CNcbiIstrstream Stream(GFFLine);
+    const string GFFLine = "NC_000008.9\tdbVar\tmisc\t151699\t186841\t.\t.\t.\n";
+    CNcbiIstrstream Stream(GFFLine);
 
-	CFormatGuessEx Guesser(Stream);
-	CFormatGuess::EFormat Guess;
-	Guess = Guesser.GuessFormat();
+    CFormatGuessEx Guesser(Stream);
+    CFormatGuess::EFormat Guess;
+    Guess = Guesser.GuessFormat();
 
 
     BOOST_CHECK_EQUAL(Guess, CFormatGuess::eGff2);

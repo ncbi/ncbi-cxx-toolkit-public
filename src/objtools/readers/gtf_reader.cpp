@@ -75,7 +75,7 @@ bool CGtfReadRecord::xAssignAttributesFromGff(
     vector< string > attributes;
     xSplitGffAttributes(strRawAttributes, attributes);
 
-	for ( size_t u=0; u < attributes.size(); ++u ) {
+    for ( size_t u=0; u < attributes.size(); ++u ) {
         string key, value;
         string attribute(attributes[u]);
         if (!NStr::SplitInTwo(attribute, "=", key, value)) {
@@ -100,9 +100,9 @@ bool CGtfReadRecord::xAssignAttributesFromGff(
         }
         key = xNormalizedAttributeKey(key);
         value = xNormalizedAttributeValue(value);
-		if ( key.empty()  &&  value.empty() ) {
+        if ( key.empty()  &&  value.empty() ) {
             // Probably due to trailing "; ". Sequence Ontology generates such
-            // things. 
+            // things.
             continue;
         }
         if (NStr::StartsWith(value, "\"")) {
@@ -117,7 +117,7 @@ bool CGtfReadRecord::xAssignAttributesFromGff(
 }
 
 //  ----------------------------------------------------------------------------
-CGtfReader::CGtfReader( 
+CGtfReader::CGtfReader(
     unsigned int uFlags,
     const string& strAnnotName,
     const string& strAnnotTitle,
@@ -130,7 +130,7 @@ CGtfReader::CGtfReader(
 }
 
 //  ----------------------------------------------------------------------------
-CGtfReader::CGtfReader( 
+CGtfReader::CGtfReader(
     unsigned int uFlags,
     CReaderListener* pRL):
 //  ----------------------------------------------------------------------------
@@ -145,12 +145,12 @@ CGtfReader::~CGtfReader()
 {
 }
 
-//  ----------------------------------------------------------------------------                
+//  ----------------------------------------------------------------------------
 CRef<CSeq_annot>
 CGtfReader::ReadSeqAnnot(
     ILineReader& lineReader,
-    ILineErrorListener* pEC ) 
-//  ----------------------------------------------------------------------------                
+    ILineErrorListener* pEC )
+//  ----------------------------------------------------------------------------
 {
     mCurrentFeatureCount = 0;
     return CReaderBase::ReadSeqAnnot(lineReader, pEC);
@@ -160,7 +160,7 @@ CGtfReader::ReadSeqAnnot(
 void
 CGtfReader::xProcessData(
     const TReaderData& readerData,
-    CSeq_annot& annot) 
+    CSeq_annot& annot)
 //  ----------------------------------------------------------------------------
 {
     for (const auto& lineData: readerData) {
@@ -215,7 +215,7 @@ bool CGtfReader::xUpdateAnnotFeature(
         TYPEHANDLER handler = it->second;
         return (this->*handler)(gff, annot);
     }
- 
+
     //
     //  Every other type is not officially sanctioned GTF, and per spec we are
     //  supposed to ignore it. In the spirit of being lenient on input we may
@@ -344,7 +344,7 @@ bool CGtfReader::xCreateParentGene(
     xAddFeatureToAnnot(pFeature, annot);
     return true;
 }
-    
+
 //  ----------------------------------------------------------------------------
 bool CGtfReader::xFeatureSetQualifiersGene(
     const CGtfReadRecord& record,
@@ -372,7 +372,7 @@ bool CGtfReader::xFeatureSetQualifiersGene(
 
         // turn everything else into a qualifier
         xFeatureAddQualifiers(it->first, it->second, feature);
-    } 
+    }
     return true;
 }
 
@@ -400,7 +400,7 @@ bool CGtfReader::xFeatureSetQualifiersRna(
 
         // turn everything else into a qualifier
         xFeatureAddQualifiers(it->first, it->second, feature);
-    } 
+    }
     return true;
 }
 
@@ -428,7 +428,7 @@ bool CGtfReader::xFeatureSetQualifiersCds(
 
         // turn everything else into a qualifier
         xFeatureAddQualifiers(it->first, it->second, feature);
-    } 
+    }
     return true;
 }
 
@@ -527,7 +527,7 @@ bool CGtfReader::xFeatureSetDataMrna(
 {
     if (!xFeatureSetDataRna(record, feature, CSeqFeatData::eSubtype_mRNA)) {
         return false;
-    }    
+    }
     CRNA_ref& rna = feature.SetData().SetRna();
 
     string product = record.GtfAttributes().ValueOf("product");
@@ -597,7 +597,7 @@ bool CGtfReader::xFeatureTrimQualifiers(
 {
     typedef CSeq_feat::TQual TQual;
     //task:
-    // for each attribute of the new piece check if we already got a feature 
+    // for each attribute of the new piece check if we already got a feature
     //  qualifier
     // if so, and with the same value, then the qualifier is allowed to live
     // otherwise it is subfeature specific and hence removed from the feature
@@ -654,8 +654,8 @@ bool CGtfReader::xProcessQualifierSpecialCase(
         feature.SetComment(NStr::Join(values, ";"));
         return true;
     }
-    if ( 0 == NStr::CompareNocase(key, "dbxref") || 
-        0 == NStr::CompareNocase(key, "db_xref")) 
+    if ( 0 == NStr::CompareNocase(key, "dbxref") ||
+        0 == NStr::CompareNocase(key, "db_xref"))
     {
         for (auto value: values) {
             vector< string > tags;
@@ -678,7 +678,7 @@ bool CGtfReader::xProcessQualifierSpecialCase(
         }
     }
     return false;
-}  
+}
 
 //  ----------------------------------------------------------------------------
 void CGtfReader::xFeatureAddQualifiers(

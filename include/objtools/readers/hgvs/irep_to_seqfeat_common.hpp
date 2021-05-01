@@ -1,4 +1,4 @@
-#ifndef _IREP_TO_SEQFEAT_COMMON_HPP_ 
+#ifndef _IREP_TO_SEQFEAT_COMMON_HPP_
 #define _IREP_TO_SEQFEAT_COMMON_HPP_
 
 #include <corelib/ncbistd.hpp>

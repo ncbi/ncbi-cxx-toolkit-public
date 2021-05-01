@@ -127,7 +127,7 @@ CAutoSqlStandardFields::SetLocation(
     if (mColStrand == -1) {
         return true;
     }
-    
+
     CReaderMessage warning(
         eDiag_Warning,
         columnData.LineNo(),
@@ -175,8 +175,8 @@ CAutoSqlStandardFields::Validate(
     //at issue: do we have enough information to make a Seq-loc
     if (mColChrom == -1  ||  mColSeqStart == -1  ||  mColSeqStop == -1) {
         CReaderMessage fatal(
-            EDiagSev::eDiag_Error, 
-            0, 
+            EDiagSev::eDiag_Error,
+            0,
             "AutoSql: Table does not contain enough information to set a feature location.");
         messageHandler.Report(fatal);
         return false;

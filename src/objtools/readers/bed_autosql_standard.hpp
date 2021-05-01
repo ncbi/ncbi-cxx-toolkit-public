@@ -86,9 +86,9 @@ private:
     size_t mColScore;
     size_t mNumFields;
 
-    bool ContainsInfo() const 
+    bool ContainsInfo() const
     {
-        return (mColChrom + mColSeqStart + mColSeqStop + mColStrand + 
+        return (mColChrom + mColSeqStart + mColSeqStop + mColStrand +
             mColName + mColScore != -6);
     }
 };

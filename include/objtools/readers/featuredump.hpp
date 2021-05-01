@@ -28,7 +28,7 @@
  * Author:  Jian Ye
  *
  * File Description:
- *   defs for dumping features 
+ *   defs for dumping features
  *
  */
 
@@ -37,7 +37,7 @@
 #include <util/range.hpp>
 
 
-BEGIN_NCBI_SCOPE 
+BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 enum FeatureDefs {
@@ -53,7 +53,7 @@ struct SFeatInfo {
 };
 
 struct SOffsetInfo {
-    char id[eMaxSeqidLen + 1]; 
+    char id[eMaxSeqidLen + 1];
     unsigned int offset;
 };
 

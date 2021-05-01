@@ -68,7 +68,7 @@ public:
 
         CFile file(dirEntry);
         string name = file.GetName();
-        if (NStr::EndsWith(name, ".txt")  ||  NStr::EndsWith(name, ".new")  
+        if (NStr::EndsWith(name, ".txt")  ||  NStr::EndsWith(name, ".new")
                 ||NStr::StartsWith(name, ".")) {
             return;
         }
@@ -83,7 +83,7 @@ public:
         BOOST_REQUIRE(!tsTestName.empty());
         CTempString tsFileType = vecFileNamePieces[1];
         BOOST_REQUIRE(!tsFileType.empty());
-            
+
         STestInfo & test_info_to_load =
             (*m_pTestNameToInfoMap)[vecFileNamePieces[0]];
 
@@ -91,15 +91,15 @@ public:
         if (tsFileType == mExtInput) {
             BOOST_REQUIRE( test_info_to_load.mInFile.GetPath().empty() );
             test_info_to_load.mInFile = file;
-        } 
+        }
         else if (tsFileType == mExtOutput) {
             BOOST_REQUIRE( test_info_to_load.mOutFile.GetPath().empty() );
             test_info_to_load.mOutFile = file;
-        } 
+        }
         else if (tsFileType == mExtErrors) {
             BOOST_REQUIRE( test_info_to_load.mErrorFile.GetPath().empty() );
             test_info_to_load.mErrorFile = file;
-        } 
+        }
 
         else {
             BOOST_FAIL("Unknown file type " << sFileName << ".");

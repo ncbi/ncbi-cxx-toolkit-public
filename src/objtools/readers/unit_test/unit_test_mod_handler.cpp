@@ -95,22 +95,22 @@ public:
         BOOST_REQUIRE(!tsTestName.empty());
         CTempString tsFileType = vecFileNamePieces[1];
         BOOST_REQUIRE(!tsFileType.empty());
-            
+
         STestInfo & test_info_to_load = m_TestNameToInfoMap[tsTestName];
 
         // figure out what type of file we have and set appropriately
         if (tsFileType == mExtInput) {
             BOOST_REQUIRE( test_info_to_load.mInFile.GetPath().empty() );
             test_info_to_load.mInFile = file;
-        } 
+        }
         else if (tsFileType == mExtOutput) {
             BOOST_REQUIRE( test_info_to_load.mOutFile.GetPath().empty() );
             test_info_to_load.mOutFile = file;
-        } 
+        }
         else if (tsFileType == mExtErrors) {
             BOOST_REQUIRE( test_info_to_load.mErrorFile.GetPath().empty() );
             test_info_to_load.mErrorFile = file;
-        } 
+        }
 
         else {
             BOOST_FAIL("Unknown file type " << sFileName << ".");
@@ -182,7 +182,7 @@ static bool sGetMods(const CTempString& title, multimap<string, string>& mods)
         size_t lb_pos, end_pos, eq_pos;
         lb_pos = pos;
         if (sFindBrackets(title, lb_pos, end_pos, eq_pos))
-        {            
+        {
             if (eq_pos < end_pos) {
                 CTempString key = NStr::TruncateSpaces_Unsafe(title.substr(lb_pos+1, eq_pos - lb_pos - 1));
                 CTempString value = NStr::TruncateSpaces_Unsafe(title.substr(eq_pos + 1, end_pos - eq_pos - 1));
@@ -191,7 +191,7 @@ static bool sGetMods(const CTempString& title, multimap<string, string>& mods)
             pos = end_pos + 1;
         }
         else
-        { 
+        {
             break;
         }
     }
@@ -223,13 +223,13 @@ static CModHandler::EHandleExisting sGetHandleExisting(const string& handle_exis
     if (handle_existing == "append-preserve") {
         return CModHandler::eAppendPreserve;
     }
-    
+
     // default
     return CModHandler::eReplace;
 }
 
 
-static void sGetModInfo(const string& line, SModInfo& mod_info) 
+static void sGetModInfo(const string& line, SModInfo& mod_info)
 {
     if (NStr::IsBlank(line)) {
         return;
@@ -347,7 +347,7 @@ BOOST_AUTO_TEST_CASE(RunTests)
     const CArgs& args = CNcbiApplication::Instance()->GetArgs();
 
     CDir test_cases_dir( args["test-dir"].AsDirectory() );
-    BOOST_REQUIRE_MESSAGE( test_cases_dir.IsDir(), 
+    BOOST_REQUIRE_MESSAGE( test_cases_dir.IsDir(),
         "Cannot find dir: " << test_cases_dir.GetPath() );
 
     bool update_all = args["update-all"].AsBoolean();
@@ -361,7 +361,7 @@ BOOST_AUTO_TEST_CASE(RunTests)
      //   sUpdateCase(test_cases_dir, update_case);
         return;
     }
-   
+
     const vector<string> kEmptyStringVec;
     TTestNameToInfoMap testNameToInfoMap;
     CTestNameToInfoMapLoader testInfoLoader(
@@ -387,7 +387,7 @@ BOOST_AUTO_TEST_CASE(RunTests)
     ITERATE(TTestNameToInfoMap, name_to_info_it, testNameToInfoMap) {
         const string & sName = name_to_info_it->first;
         const STestInfo & testInfo = name_to_info_it->second;
-        
+
         cout << "Running test: " << sName << endl;
 
         BOOST_CHECK_NO_THROW(sRunTest(sName, testInfo, args["keep-diffs"]));

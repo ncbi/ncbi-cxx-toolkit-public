@@ -46,7 +46,7 @@ namespace objects {
     class CSubmit_block;
 }
 
-class NCBI_XOBJEDIT_EXPORT CAgpConverter 
+class NCBI_XOBJEDIT_EXPORT CAgpConverter
 {
 public:
     enum EOutputFlags {
@@ -93,7 +93,7 @@ public:
         /// Default is to print to cerr, but feel free to override in a subclass.
         /// In particular, it's reasonable to throw an exception here to halt
         /// the processing.
-        virtual void HandleError(EError /*eError*/, const string & sMessage ) const { 
+        virtual void HandleError(EError /*eError*/, const string & sMessage ) const {
             cerr << "Error: " << sMessage << endl; }
     };
 
@@ -107,7 +107,7 @@ public:
     ///   Flags to control the behavior of the conversion
     /// @param pErrorHandler
     ///   This is called whenever an error occurs.  The caller will want to give a subclass of CErrorHandler if the caller wants differently functionality from the default (which is to just print to stderr)
-    CAgpConverter( 
+    CAgpConverter(
         CConstRef<objects::CBioseq> pTemplateBioseq,
         const objects::CSubmit_block * pSubmitBlock = NULL,
         TOutputFlags fOutputFlags = 0,
@@ -119,7 +119,7 @@ public:
     /// Map id to chromosome name
     typedef map<string, string>  TChromosomeMap;
 
-    /// Give the chromosomes to this object.  
+    /// Give the chromosomes to this object.
     void SetChromosomesInfo(const TChromosomeMap & mapChromosomeNames );
 
     /// Input has 2 tab-delimited columns: id, then chromosome name
@@ -149,7 +149,7 @@ public:
         /// If set, each AGP Bioseq is written as its own object.
         /// * If Submit_block was given, each object is a Seq-submit
         /// * Otherwise, it's a Bioseq-set, Bioseq or Seq-entry depending on the other flags.
-        fOutputBioseqsFlags_OneObjectPerBioseq = (1 << 0), 
+        fOutputBioseqsFlags_OneObjectPerBioseq = (1 << 0),
         /// Bioseqs and Bioseq-sets should always be wrapped in a Seq-entry.
         /// This has no effect if Submit-block was given because
         /// Seq-submits must take Seq-entry's.
@@ -184,13 +184,13 @@ public:
 
     /// Outputs the results of each Seq-entry (or Seq-submit if Submit-block was given)
     /// into its own file in the given directory.
-    /// 
+    ///
     /// @param sDirName
     ///   The directory to put the output files into.
     /// @param vecAgpFileNames
     ///   A list of the AGP filenames to read from.
     /// @param sSuffix
-    ///   The suffix for each file.  If empty, it defaults to "sqn" 
+    ///   The suffix for each file.  If empty, it defaults to "sqn"
     ///   for Seq-submits and "ent" for Seq-entrys.
     /// @param pFileWrittenCallback
     ///   If non-NULL, its Notify function is called after each file is
@@ -225,7 +225,7 @@ private:
 
     TChromosomeMap m_mapChromosomeNames;
 
-    void x_ReadAgpEntries( 
+    void x_ReadAgpEntries(
         const string & sAgpFileName,
         CAgpToSeqEntry::TSeqEntryRefVec & out_agp_entries ) const;
 
@@ -239,11 +239,11 @@ private:
         string & out_id_str ) const;
 
     bool x_VerifyComponents(
-        CConstRef<objects::CSeq_entry> new_entry, 
+        CConstRef<objects::CSeq_entry> new_entry,
         const string & id_str) const;
 
     void x_SetChromosomeNameInSourceSubtype(
-        CRef<objects::CSeq_entry> new_entry, 
+        CRef<objects::CSeq_entry> new_entry,
         const string & unparsed_id_str ) const;
 
     void x_SetCreateAndUpdateDatesToToday(
@@ -255,7 +255,7 @@ private:
     /// \n
     /// * print out_sObjectOpeningString
     /// * If out_sObjectOpeningString is empty, print "Bioseq ::= "
-    /// * print all Bisoeqs in this object (comma-separated). 
+    /// * print all Bisoeqs in this object (comma-separated).
     ///   (example: "seq { [...snip...] }"
     /// * print out_sObjectClosingString
     /// \n

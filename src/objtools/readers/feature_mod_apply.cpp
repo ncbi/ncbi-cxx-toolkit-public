@@ -54,9 +54,9 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-CFeatModApply::CFeatModApply(CBioseq& bioseq, 
+CFeatModApply::CFeatModApply(CBioseq& bioseq,
         FReportError fReportError,
-        TSkippedMods& skipped_mods) : 
+        TSkippedMods& skipped_mods) :
     m_Bioseq(bioseq),
     m_fReportError(fReportError),
     m_SkippedMods(skipped_mods) {}
@@ -65,7 +65,7 @@ CFeatModApply::CFeatModApply(CBioseq& bioseq,
 CFeatModApply::~CFeatModApply() {}
 
 
-bool CFeatModApply::Apply(const TModEntry& mod_entry) 
+bool CFeatModApply::Apply(const TModEntry& mod_entry)
 {
     // A nucleotide sequence cannot have protein feature annotations
     static unordered_set<string> protein_quals = {"protein-desc", "protein", "ec-number", "activity"};
@@ -75,7 +75,7 @@ bool CFeatModApply::Apply(const TModEntry& mod_entry)
 
         if (m_fReportError) {
             for (const auto& mod_data : mod_entry.second) {
-                
+
                 string msg = "Cannot apply protein modifier to nucleotide sequence. The following modifier will be ignored: " + mod_data.GetName();
 
                 m_fReportError(mod_data, msg, eDiag_Warning, eModSubcode_ProteinModOnNucseq);
@@ -94,11 +94,11 @@ bool CFeatModApply::Apply(const TModEntry& mod_entry)
         bool first_name = true;
         for (const auto& name : qual_names) {
             if (first_name) {
-                first_name = false;        
-            } 
+                first_name = false;
+            }
             else {
                 name_string += ", ";
-            }     
+            }
             name_string  += name;
         }
         string msg = "Cannot apply protein modifier to nucleotide sequence. The following modifiers will be ignored: "
@@ -161,13 +161,13 @@ CSeq_feat& CFeatModApply::x_SetProtein(void)
 {
 
     if (!m_pProtein) {
-        m_pProtein = x_FindSeqfeat([](const CSeq_feat& seq_feat) 
+        m_pProtein = x_FindSeqfeat([](const CSeq_feat& seq_feat)
                 { return (seq_feat.IsSetData() &&
                           seq_feat.GetData().IsProt()); });
 
         if (!m_pProtein) {
             auto pFeatLoc = x_GetWholeSeqLoc();
-            m_pProtein = 
+            m_pProtein =
                 x_CreateSeqfeat([]() {
                     auto pData = Ref(new CSeqFeatData());
                     pData->SetProt();
@@ -176,7 +176,7 @@ CSeq_feat& CFeatModApply::x_SetProtein(void)
                     *pFeatLoc);
         }
     }
-    
+
     return *m_pProtein;
 }
 
@@ -205,12 +205,12 @@ CRef<CSeq_loc> CFeatModApply::x_GetWholeSeqLoc(void)
 
 
 CRef<CSeq_feat> CFeatModApply::x_FindSeqfeat(FVerifyFeat fVerifyFeature)
-{   
+{
     if (m_Bioseq.IsSetAnnot()) {
         for (auto& pAnnot : m_Bioseq.SetAnnot()) {
             if (pAnnot && pAnnot->IsFtable()) {
                 for (auto pSeqfeat : pAnnot->SetData().SetFtable()) {
-                    if (pSeqfeat && 
+                    if (pSeqfeat &&
                         fVerifyFeature(*pSeqfeat)) {
                         return pSeqfeat;
                     }

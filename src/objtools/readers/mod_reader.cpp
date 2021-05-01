@@ -114,7 +114,7 @@ const CModHandler::TNameSet CModHandler::sm_DeprecatedModifiers
 };
 
 
-const CModHandler::TNameSet CModHandler::sm_MultipleValuesForbidden = 
+const CModHandler::TNameSet CModHandler::sm_MultipleValuesForbidden =
 {
     "topology", // Seq-inst
     "molecule",
@@ -203,7 +203,7 @@ void CModHandler::SetExcludedMods(const vector<string>& excluded_mods)
 }
 
 
-void CModHandler::SetMods(const TMods& mods) 
+void CModHandler::SetMods(const TMods& mods)
 {
     m_Mods = mods;
 }
@@ -232,7 +232,7 @@ void CModHandler::AddMods(const TModList& mods,
             }
         }
 
-        if (m_ExcludedModifiers.find(canonical_name) != 
+        if (m_ExcludedModifiers.find(canonical_name) !=
             m_ExcludedModifiers.end()) {
             string message = "The following modifier is unsupported in this context and will be ignored: " + mod.GetName() + ".";
             if (fPostMessage) {
@@ -246,7 +246,7 @@ void CModHandler::AddMods(const TModList& mods,
             string message = "Use of the following modifier in a sequence file is discouraged and the information will be ignored: " + mod.GetName() + ".";
             if (fPostMessage) {
                 fPostMessage(mod, message, eDiag_Warning, eModSubcode_Deprecated);
-            } 
+            }
             rejected_mods.push_back(mod);
             continue;
         }
@@ -260,15 +260,15 @@ void CModHandler::AddMods(const TModList& mods,
             EModSubcode subcode;
 
             auto it = accepted_mods.find(canonical_name);
-            if (it != accepted_mods.end() && 
+            if (it != accepted_mods.end() &&
                 NStr::EqualNocase(it->second.front().GetValue(),
                        mod.GetValue())) {
-                msg = "Duplicated modifier value detected, ignoring duplicate, no action required: " 
+                msg = "Duplicated modifier value detected, ignoring duplicate, no action required: "
                     + mod.GetName() + "=" + mod.GetValue() + ".";
                 sev = eDiag_Warning;
                 subcode = eModSubcode_Duplicate;
-            } 
-            else 
+            }
+            else
             if (!allow_multiple_values) {
                 msg = "Conflicting modifiers detected. Provide one modifier with one value for: " + mod.GetName() + ".";
                 sev = eDiag_Error;
@@ -280,23 +280,23 @@ void CModHandler::AddMods(const TModList& mods,
                 }
                 conflicting_mods[canonical_name].push_back(mod);
             }
-            else 
+            else
             {
                 accepted_mods[canonical_name].push_back(mod);
                 continue;
             }
 
-            CModData reportMod = 
-                (subcode == eModSubcode_Duplicate) ?  
+            CModData reportMod =
+                (subcode == eModSubcode_Duplicate) ?
                 mod :
                 CModData( mod.GetName(), kEmptyStr);
-            
+
             if (fPostMessage) {
                 fPostMessage(reportMod, msg, sev, subcode);
                 continue;
-            }   
+            }
             NCBI_THROW(CModReaderException, eMultipleValuesForbidden, msg);
-       } 
+       }
 
         accepted_mods[canonical_name].push_back(mod);
     }
@@ -314,12 +314,12 @@ void CModHandler::x_SaveMods(TMods&& mods, EHandleExisting handle_existing, TMod
     if (handle_existing == eReplace) {
         for (auto& mod_entry : mods) {
             const auto& canonical_name = mod_entry.first;
-            dest[canonical_name] = mod_entry.second; 
+            dest[canonical_name] = mod_entry.second;
         }
     }
     else
     if (handle_existing == ePreserve) {
-        dest.insert(make_move_iterator(mods.begin()), 
+        dest.insert(make_move_iterator(mods.begin()),
                     make_move_iterator(mods.end()));
     }
     else
@@ -337,15 +337,15 @@ void CModHandler::x_SaveMods(TMods&& mods, EHandleExisting handle_existing, TMod
             }
         }
     }
-    else 
+    else
     if (handle_existing == eAppendPreserve) {
         for (auto& mod_entry : mods) {
             const auto& canonical_name = mod_entry.first;
             auto& dest_mod_list = dest[canonical_name];
             if (dest_mod_list.empty()) {
-                dest_mod_list = move(mod_entry.second);  
+                dest_mod_list = move(mod_entry.second);
             }
-            else 
+            else
             if (x_MultipleValuesAllowed(canonical_name)){
                 dest_mod_list.splice(
                         dest_mod_list.end(),
@@ -369,7 +369,7 @@ const CModHandler::TMods& CModHandler::GetMods(void) const
 }
 
 
-void CModHandler::Clear(void) 
+void CModHandler::Clear(void)
 {
     m_Mods.clear();
 }
@@ -384,10 +384,10 @@ const string& CModHandler::GetCanonicalName(const TModEntry& mod_entry)
 const string& CModHandler::AssertReturnSingleValue(const TModEntry& mod_entry)
 {
     assert(mod_entry.second.size() == 1);
-    return mod_entry.second.front().GetValue(); 
+    return mod_entry.second.front().GetValue();
 }
 
-string CModHandler::GetCanonicalName(const string& name) 
+string CModHandler::GetCanonicalName(const string& name)
 {
     const auto normalized_name = x_GetNormalizedString(name);
     const auto it = s_ModNameMap.find(normalized_name);
@@ -406,14 +406,14 @@ bool CModHandler::x_IsDeprecated(const string& canonical_name)
 }
 
 
-static string s_GetNormalizedString(const string& unnormalized) 
+static string s_GetNormalizedString(const string& unnormalized)
 {
     string normalized = unnormalized;
     NStr::ToLower(normalized);
     NStr::TruncateSpacesInPlace(normalized);
-    auto new_end = unique(normalized.begin(), 
+    auto new_end = unique(normalized.begin(),
                           normalized.end(),
-                          [](char a, char b) { 
+                          [](char a, char b) {
                               return ((a=='-' || a=='_' || a==' ') &&
                                       (b=='-' || b=='_' || b==' ')); });
 
@@ -452,8 +452,8 @@ void CModAdder::Apply(const CModHandler& mod_handler,
     CDescrModApply descr_mod_apply(bioseq,
                                    fPostMessage,
                                    skipped_mods);
-                
-    CFeatModApply feat_mod_apply(bioseq, 
+
+    CFeatModApply feat_mod_apply(bioseq,
                                  fPostMessage,
                                  skipped_mods);
 
@@ -467,15 +467,15 @@ void CModAdder::Apply(const CModHandler& mod_handler,
                     x_SetHist(mod_entry, bioseq.SetInst());
                 }
                 else if (mod_name == "mol-type") {
-                    // mol-type appears before molecule in the default-ordered 
-                    // map keys. Therefore, if both mol-type and molecule are 
-                    // specified, molecule will take precedence over (or, more precisly, overwrite) 
+                    // mol-type appears before molecule in the default-ordered
+                    // map keys. Therefore, if both mol-type and molecule are
+                    // specified, molecule will take precedence over (or, more precisly, overwrite)
                     // the information extracted from mol-type when setting Seq-inst::mol
                     x_SetMoleculeFromMolType(mod_entry, bioseq.SetInst());
                 }
                 applied = true;
             }
-            else 
+            else
             if (x_TrySeqInstMod(mod_entry, bioseq.SetInst(), skipped_mods, fPostMessage) ||
                 feat_mod_apply.Apply(mod_entry)) {
                 applied = true;
@@ -483,8 +483,8 @@ void CModAdder::Apply(const CModHandler& mod_handler,
 
             if (applied) {
                 if (logInfo) {
-                    applied_mods.push_back(x_GetModName(mod_entry));  
-                } 
+                    applied_mods.push_back(x_GetModName(mod_entry));
+                }
                 continue;
             }
 
@@ -511,8 +511,8 @@ void CModAdder::Apply(const CModHandler& mod_handler,
             if (fPostMessage) {
                 string canonicalName = x_GetModName(mod_entry);
                 fPostMessage(CModData( canonicalName, kEmptyStr), e.GetMsg(), eDiag_Error, eModSubcode_Undefined);
-            } 
-            else { 
+            }
+            else {
                 throw; // rethrow e
             }
         }
@@ -560,8 +560,8 @@ const string& CModAdder::x_GetModValue(const TModEntry& mod_entry)
 
 
 bool CModAdder::x_TrySeqInstMod(
-        const TModEntry& mod_entry, 
-        CSeq_inst& seq_inst, 
+        const TModEntry& mod_entry,
+        CSeq_inst& seq_inst,
         TSkippedMods& skipped_mods,
         FReportError fPostMessage)
 {
@@ -584,17 +584,17 @@ bool CModAdder::x_TrySeqInstMod(
 
 //   Note that we do not check for the 'secondary-accession' modifier here.
 //   secondary-accession also modifies the GB_block descriptor
-//   The check for secondary-accession and any resulting call 
-//   to x_SetHist is performed before x_TrySeqInstMod 
-//   is invoked. 
+//   The check for secondary-accession and any resulting call
+//   to x_SetHist is performed before x_TrySeqInstMod
+//   is invoked.
 
     return false;
 }
 
 
 
-void CModAdder::x_SetStrand(const TModEntry& mod_entry, 
-                            CSeq_inst& seq_inst, 
+void CModAdder::x_SetStrand(const TModEntry& mod_entry,
+                            CSeq_inst& seq_inst,
                             TSkippedMods& skipped_mods,
                             FReportError fPostMessage)
 {
@@ -630,14 +630,14 @@ void CModAdder::x_SetMoleculeFromMolType(const TModEntry& mod_entry, CSeq_inst& 
     if (it == g_BiomolStringToEnum.end()) {
         // No need to report an error here.
         // The error is reported in x_SetMolInfoType
-        return; 
+        return;
     }
     CSeq_inst::EMol mol = g_BiomolEnumToMolEnum.at(it->second);
     seq_inst.SetMol(mol);
 }
 
 
-void CModAdder::x_SetTopology(const TModEntry& mod_entry, 
+void CModAdder::x_SetTopology(const TModEntry& mod_entry,
                               CSeq_inst& seq_inst,
                               TSkippedMods& skipped_mods,
                               FReportError fPostMessage)
@@ -665,7 +665,7 @@ void CModAdder::x_SetHist(const TModEntry& mod_entry, CSeq_inst& seq_inst)
                 SSeqIdRange idrange(value);
                 id_list.insert(id_list.end(), idrange.begin(), idrange.end());
             }
-            catch (...) 
+            catch (...)
             {
                 id_list.push_back(value);
             }
@@ -691,7 +691,7 @@ CDefaultModErrorReporter::CDefaultModErrorReporter(
         IObjtoolsListener* pMessageListener)
     : m_SeqId(seqId),
       m_LineNum(lineNum),
-      m_pMessageListener(pMessageListener) 
+      m_pMessageListener(pMessageListener)
     {}
 
 
@@ -775,7 +775,7 @@ void CTitleParser::Apply(const CTempString& title, TModList& mods, string& remai
 }
 
 
-bool CTitleParser::HasMods(const CTempString& title) 
+bool CTitleParser::HasMods(const CTempString& title)
 {
     size_t start_pos = 0;
     while (start_pos < title.size()) {

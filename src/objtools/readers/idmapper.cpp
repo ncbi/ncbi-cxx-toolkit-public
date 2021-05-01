@@ -130,8 +130,8 @@ CSeq_id_Handle CIdMapper::Map(const CSeq_id_Handle& from )
     //  Cannot map this ID. We will treat this as an error.
     //
     if ( m_pErrors ) {
-        AutoPtr<CObjReaderLineException> pMapError( 
-            CObjReaderLineException::Create( 
+        AutoPtr<CObjReaderLineException> pMapError(
+            CObjReaderLineException::Create(
             eDiag_Error, 0, MapErrorString( from ) ) );
         if ( !m_pErrors->PutError( *pMapError ) ) {
             pMapError->Throw();
@@ -170,7 +170,7 @@ CRef<CSeq_loc> CIdMapper::Map(const CSeq_loc& from )
     //  Cannot map this ID. We will treat this as an error.
     //
     if ( m_pErrors ) {
-        AutoPtr<CObjReaderLineException> pMapError( 
+        AutoPtr<CObjReaderLineException> pMapError(
             CObjReaderLineException::Create(
             eDiag_Error, 0, MapErrorString( from ) ) );
         if ( !m_pErrors->PutError( *pMapError ) ) {

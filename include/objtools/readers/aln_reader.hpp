@@ -65,16 +65,16 @@ public:
         eAlnErr_BadFormat,
         eAlnErr_BadChar
     } EAlnErr;
-    
+
     // constructor
     CAlnError(int category, int line_num, string id, string message);
 
     /// Copy constructor.
     CAlnError(const CAlnError& e);
-    
+
     // destructor
     ~CAlnError() {}
-    
+
     // accessors
     EAlnErr        GetCategory() const { return m_Category; }
     int            GetLineNum()  const { return m_LineNum; }
@@ -84,7 +84,7 @@ public:
     /// @deprecated Use GetMsg() instead - to avoid conflict with Windows macro
     NCBI_DEPRECATED
     const string&  GetMessage()  const { return m_Message; }
-    
+
 private:
     EAlnErr m_Category;
     int     m_LineNum;
@@ -110,8 +110,8 @@ public:
         eAlpha_Rna_no_ambiguity,
     };
 
-    // This class is deprecated 
-    class CAlnErrorContainer 
+    // This class is deprecated
+    class CAlnErrorContainer
     {
     private:
         list<CAlnError> errors;
@@ -146,12 +146,12 @@ public:
         EAlphabet);
 
     using TLineInfo = objects::SLineInfo;
-    using FValidateIds = 
+    using FValidateIds =
         function<void(const list<CRef<objects::CSeq_id>>&,
                       int,
                       objects::CAlnErrorReporter*)>;
 
-    using FIdValidate = 
+    using FIdValidate =
         function<void(const objects::CSeq_id&,
                       int,
                       objects::CAlnErrorReporter*)>;
@@ -213,7 +213,7 @@ public:
 
     NCBI_DEPRECATED
     void Read(
-        bool guess, 
+        bool guess,
         bool generate_local_ids=false,
         objects::ILineErrorListener* pErrorListener=nullptr);
 
@@ -232,7 +232,7 @@ public:
 
     NCBI_DEPRECATED
     const TErrorList& GetErrorList(void)     const {return m_Errors;};
-    
+
     using TFastaFlags = objects::CFastaDeflineReader::TFastaFlags;
     /// Create ASN.1 classes from the parsed alignment
     CRef<objects::CSeq_align> GetSeqAlign(TFastaFlags fasta_flags=0,
@@ -297,12 +297,12 @@ private:
     int                       m_Dim;
     CRef<objects::CSeq_align> m_Aln;
     CRef<objects::CSeq_entry> m_Entry;
-    vector<string>            m_SeqVec; 
-    vector<TSeqPos>           m_SeqLen; 
+    vector<string>            m_SeqVec;
+    vector<TSeqPos>           m_SeqLen;
     TErrorList                m_Errors;
     bool                      m_UseNexusInfo;
 
-    /// characters have different contexts, depending on 
+    /// characters have different contexts, depending on
     /// whether they are before the first non-gap character,
     /// after the last non-gap character, or between the
     /// first and last non-gap character. This must be
@@ -322,14 +322,14 @@ private:
             TReadFlags flags,
             TIdList& ids);
 
-    void x_AddMods(const TLineInfo& defline_info, 
+    void x_AddMods(const TLineInfo& defline_info,
             objects::CBioseq& bioseq,
             objects::ILineErrorListener* pErrorListener);
 
     void x_AddTitle(const string& defline, objects::CBioseq& bioseq);
 
 protected:
-    virtual CRef<objects::CSeq_id> GenerateID(const string& fasta_defline, 
+    virtual CRef<objects::CSeq_id> GenerateID(const string& fasta_defline,
         const TSeqPos& line_number,
         TFastaFlags fasta_flags);
 
@@ -407,7 +407,7 @@ const string& CAlnReader::GetEndGap(void) const
 {
     return mSequenceInfo.EndGap();
 }
-    
+
 inline
 void CAlnReader::SetEndGap(const string& value)
 {
@@ -422,7 +422,7 @@ void CAlnReader::SetAlphabet(EAlphabet alpha)
 }
 
 
-inline 
+inline
 bool CAlnReader::IsAlphabet(EAlphabet alpha) const
 {
     return (GetAlphabet() == GetAlphabetLetters(alpha));

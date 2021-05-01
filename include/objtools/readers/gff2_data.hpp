@@ -70,7 +70,7 @@ public:
 
     //
     // Accessors:
-    //        
+    //
     bool IsAlignmentRecord() const {
         if (NStr::StartsWith(Type(), "match") ||
             NStr::EndsWith(Type(), "_match")) {
@@ -79,8 +79,8 @@ public:
         return false;
     };
 
-    const TAttributes& Attributes() const { 
-        return m_Attributes; 
+    const TAttributes& Attributes() const {
+        return m_Attributes;
     };
 
     bool GetAttribute(
@@ -94,7 +94,7 @@ public:
     virtual bool InitializeFeature(
         int,
         CRef<CSeq_feat>,
-        SeqIdResolver = nullptr ) const; 
+        SeqIdResolver = nullptr ) const;
 
     virtual bool UpdateFeature(
         int,
@@ -104,7 +104,7 @@ public:
     bool IsMultiParent() const;
 
     static void TokenizeGFF(
-        vector<CTempStringEx>& columns, 
+        vector<CTempStringEx>& columns,
         const CTempStringEx& line);
 
 protected:
@@ -169,7 +169,7 @@ protected:
     //
     // Data:
     //
-    string m_strAttributes;    
+    string m_strAttributes;
     TAttributes m_Attributes;
 };
 

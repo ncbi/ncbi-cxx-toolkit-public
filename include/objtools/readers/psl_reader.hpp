@@ -63,7 +63,7 @@ public:
         CReaderListener* pRL): CPslReader(flags, "", "", CReadUtil::AsSeqId, pRL) {};
 
     virtual ~CPslReader();
-    
+
 protected:
     void xProcessData(
         const TReaderData&,

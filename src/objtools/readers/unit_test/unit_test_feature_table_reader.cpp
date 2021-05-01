@@ -78,22 +78,22 @@ namespace {
 
         bool
             PutError(
-            const ILineError& err ) 
+            const ILineError& err )
         {
             if( err.Severity() > eDiag_Info ) {
                 StoreError(err);
             }
             return true;
         };
-    };   
-    
+    };
+
     // convert a string of text ASN.1 into an object of class TObj
     template<typename TObj>
     CRef<TObj> s_StrToObject(CTempString asn_text)
     {
         CRef<TObj> new_obj(new TObj);
         CNcbiIstrstream strmAsnText(asn_text.data());
-        BOOST_REQUIRE_NO_THROW( 
+        BOOST_REQUIRE_NO_THROW(
             strmAsnText >> MSerial_AsnText >> *new_obj );
         return new_obj;
     }
@@ -149,9 +149,9 @@ static size_t s_CountOccurrences(const CTempString & str, const CTempString & pa
 
 typedef list<ILineError::EProblem> TErrList;
 
-static void 
-s_CheckErrorsVersusExpected( 
-    ILineErrorListener * pMessageListener, 
+static void
+s_CheckErrorsVersusExpected(
+    ILineErrorListener * pMessageListener,
     TErrList expected_errors // yes, *copy* the container so we can modify
     )
 {
@@ -164,7 +164,7 @@ s_CheckErrorsVersusExpected(
             BOOST_ERROR("More errors occurred than expected at " << error_text);
         } else {
             BOOST_CHECK_EQUAL(
-                line_error.ProblemStr() + "(" + error_text + ")", 
+                line_error.ProblemStr() + "(" + error_text + ")",
                 ILineError::ProblemStr(expected_errors.front()) +
                     "(" + error_text + ")" );
             expected_errors.pop_front();
@@ -172,7 +172,7 @@ s_CheckErrorsVersusExpected(
     }
 
     BOOST_CHECK_MESSAGE( expected_errors.empty(),
-        "There were " << expected_errors.size() 
+        "There were " << expected_errors.size()
         << " expected errors which did not occur." );
 }
 
@@ -207,7 +207,7 @@ static CRef<CSeq_annot> s_ReadOneTableFromString (
         p_temp_err_container.reset( new CMessageListenerLenientIgnoreProgress );
         pMessageListener = p_temp_err_container.get();
     }
-        
+
     CRef<CSeq_annot> annot = CFeature_table_reader::ReadSequinFeatureTable
                    (*reader, // of type ILineReader, which is like istream but line-oriented
                     additional_flags | CFeature_table_reader::fReportBadKey, // flags also available: fKeepBadKey and fTranslateBadKey (to /standard_name=...)
@@ -217,7 +217,7 @@ static CRef<CSeq_annot> s_ReadOneTableFromString (
                     );
 
     s_CheckErrorsVersusExpected( pMessageListener, expected_errors );
-        
+
     BOOST_REQUIRE(annot != NULL);
     BOOST_REQUIRE(annot->IsFtable());
 
@@ -263,10 +263,10 @@ s_ReadMultipleTablesFromString(
     CRef<CSeq_annot> annot;
     while ((annot = CFeature_table_reader::ReadSequinFeatureTable
         (*reader,
-        additional_flags | CFeature_table_reader::fReportBadKey, 
-        pMessageListener, 
-        &tbl_filter 
-        )) != NULL) 
+        additional_flags | CFeature_table_reader::fReportBadKey,
+        pMessageListener,
+        &tbl_filter
+        )) != NULL)
     {
             BOOST_REQUIRE(annot->IsFtable());
             if( annot->GetData().GetFtable().empty() ) {
@@ -280,7 +280,7 @@ s_ReadMultipleTablesFromString(
     return pAnnotRefList;
 }
 
-static void CheckExpectedQuals (CConstRef<CSeq_feat> feat, 
+static void CheckExpectedQuals (CConstRef<CSeq_feat> feat,
     const set<string> & expected_quals)
 {
     set<string> found_quals;
@@ -387,7 +387,7 @@ BOOST_AUTO_TEST_CASE(Test_MultipleFeatureTables)
     BOOST_REQUIRE_EQUAL( pAnnotRefList->size(), 2 );
 
     ITERATE(TAnnotRefList, annot_ref_it, *pAnnotRefList ) {
-        const CSeq_annot::TData::TFtable& ftable = 
+        const CSeq_annot::TData::TFtable& ftable =
             (*annot_ref_it)->GetData().GetFtable();
         BOOST_REQUIRE_EQUAL( ftable.size(), 2 );
 
@@ -452,13 +452,13 @@ static const char * sc_Table3 = "\
 ///
 BOOST_AUTO_TEST_CASE(Test_FlybaseFeatureTableWithMultiIntervalTranslExcept)
 {
-    CRef<CSeq_annot> annot = s_ReadOneTableFromString (sc_Table3); 
+    CRef<CSeq_annot> annot = s_ReadOneTableFromString (sc_Table3);
     const CSeq_annot::TData::TFtable& ftable = annot->GetData().GetFtable();
     BOOST_CHECK_EQUAL(ftable.size(), 5);
     CConstRef<CSeq_feat> cds = ftable.back();
     BOOST_REQUIRE(cds->IsSetData());
     BOOST_REQUIRE(cds->GetData().IsCdregion());
-    BOOST_CHECK_EQUAL(cds->GetQual().size(), 3); 
+    BOOST_CHECK_EQUAL(cds->GetQual().size(), 3);
     NCBITEST_CHECK( cds->GetXref()[0]->GetData().IsGene() );
     set<string> expected_quals;
     expected_quals.insert("transcript_id");
@@ -630,7 +630,7 @@ static const char * sc_Table4 = "\
 ///
 BOOST_AUTO_TEST_CASE(Test_NCTableWithtRNAs)
 {
-    CRef<CSeq_annot> annot = s_ReadOneTableFromString (sc_Table4); 
+    CRef<CSeq_annot> annot = s_ReadOneTableFromString (sc_Table4);
     const CSeq_annot::TData::TFtable& ftable = annot->GetData().GetFtable();
     BOOST_CHECK_EQUAL(ftable.size(), 48);
     ITERATE(CSeq_annot::TData::TFtable, feat, ftable) {
@@ -652,8 +652,8 @@ BOOST_AUTO_TEST_CASE(Test_NCTableWithtRNAs)
             BOOST_REQUIRE (prot.IsSetName());
             BOOST_REQUIRE (prot.GetName().size() == 1);
             set<string> expected_quals;
-            expected_quals.insert("protein_id"); 
-        //    NCBITEST_CHECK( NStr::StartsWith( 
+            expected_quals.insert("protein_id");
+        //    NCBITEST_CHECK( NStr::StartsWith(
         //        (*feat)->GetProduct().GetWhole().GetOther().GetAccession(), "YP_0070247") );
             if (NStr::Equal(prot.GetName().front(), "cytochrome c oxidase subunit II")
                 || NStr::Equal(prot.GetName().front(), "cytochrome c oxidase subunit III")) {
@@ -718,7 +718,7 @@ static const char * sc_Table5 = "\
 ///
 BOOST_AUTO_TEST_CASE(Test_CPTableWithncRNAs)
 {
-    CRef<CSeq_annot> annot = s_ReadOneTableFromString (sc_Table5); 
+    CRef<CSeq_annot> annot = s_ReadOneTableFromString (sc_Table5);
     const CSeq_annot::TData::TFtable& ftable = annot->GetData().GetFtable();
     BOOST_CHECK_EQUAL(ftable.size(), 2);
     CConstRef<CSeq_feat> ncrna = ftable.back();
@@ -1333,7 +1333,7 @@ static const char * sc_Table6 = "\
 ///
 BOOST_AUTO_TEST_CASE(Test_TableWithVariationsAndGoTerms)
 {
-    CRef<CSeq_annot> annot = s_ReadOneTableFromString (sc_Table6); 
+    CRef<CSeq_annot> annot = s_ReadOneTableFromString (sc_Table6);
     const CSeq_annot::TData::TFtable& ftable = annot->GetData().GetFtable();
     BOOST_CHECK_EQUAL(ftable.size(), 138);
 
@@ -1357,8 +1357,8 @@ BOOST_AUTO_TEST_CASE(Test_TableWithVariationsAndGoTerms)
 
             // since no FASTA tag, becomes a local ID even though it might be
             // parsed as an accession
-         //   NCBITEST_CHECK( 
-         //       NStr::StartsWith( 
+         //   NCBITEST_CHECK(
+         //       NStr::StartsWith(
          //       (*feat)->GetProduct().GetWhole().GetLocal().GetStr(), "NP_") );
         }
     }
@@ -1386,7 +1386,7 @@ static const char * sc_Table7 = "\
 ///
 BOOST_AUTO_TEST_CASE(Test_CapitalizedQualifiers)
 {
-    CRef<CSeq_annot> annot = s_ReadOneTableFromString (sc_Table7); 
+    CRef<CSeq_annot> annot = s_ReadOneTableFromString (sc_Table7);
 }
 
 static const char * sc_Table8 = "\
@@ -1446,10 +1446,10 @@ BOOST_AUTO_TEST_CASE(Test_tRNAAnticodonQualifiers)
 
         if( ! trna_ext.GetAnticodon().Equals(*pExpectedAnticodonLoc) ) {
             BOOST_ERROR( "Anticodon mismatch: \n"
-                << "Received: " 
+                << "Received: "
                 << MSerial_AsnText << trna_ext.GetAnticodon() << "\n"
                 << "\n"
-                << "Expected: " 
+                << "Expected: "
                 << MSerial_AsnText << *pExpectedAnticodonLoc );
         }
 
@@ -1531,7 +1531,7 @@ BOOST_AUTO_TEST_CASE(TestCDSInGenesCheck)
     BOOST_REQUIRE( ! linesWithError.empty() );
 
     TErrList expected_errors;
-    fill_n( back_inserter(expected_errors), 
+    fill_n( back_inserter(expected_errors),
         linesWithError.size(), ILineError::eProblem_FeatMustBeInXrefdGene);
 
     CMessageListenerLenientIgnoreProgress err_container;
@@ -1542,7 +1542,7 @@ BOOST_AUTO_TEST_CASE(TestCDSInGenesCheck)
         CFeature_table_reader::fCDSsMustBeInTheirGenes,
         &err_container );
     const CSeq_annot::TData::TFtable& ftable = annot->GetData().GetFtable();
-    BOOST_CHECK_EQUAL(ftable.size(), 
+    BOOST_CHECK_EQUAL(ftable.size(),
         s_CountOccurrences(sc_Table10, "gene\n") +
             s_CountOccurrences(sc_Table10, "CDS\n") );
 
@@ -1618,7 +1618,7 @@ BOOST_AUTO_TEST_CASE(TestCreateGenesFromCDSs)
                 NStr::TruncateSpacesInPlace(sGeneLocus);
                 BOOST_CHECK( ! sGeneLocus.empty() );
                 // make sure no spaces
-                BOOST_CHECK( sGeneLocus.end() == 
+                BOOST_CHECK( sGeneLocus.end() ==
                     find_if(sGeneLocus.begin(), sGeneLocus.end(), ::isspace ) );
             }
             geneXrefExpectedOnEachCDS.push_back(sGeneLocus);
@@ -1626,12 +1626,12 @@ BOOST_AUTO_TEST_CASE(TestCreateGenesFromCDSs)
     }}
 
     ITERATE_BOTH_BOOL_VALUES(bCheckIfCDSInItsGene) {
-        cout << "Testing with bCheckIfCDSInItsGene = " 
+        cout << "Testing with bCheckIfCDSInItsGene = "
              << NStr::BoolToString(bCheckIfCDSInItsGene) << endl;
 
         TErrList expected_errors;
         vector<size_t> linesWithError;
-        CFeature_table_reader::TFlags readfeat_flags = 
+        CFeature_table_reader::TFlags readfeat_flags =
             CFeature_table_reader::fCreateGenesFromCDSs;
 
         if( bCheckIfCDSInItsGene ) {
@@ -1657,7 +1657,7 @@ BOOST_AUTO_TEST_CASE(TestCreateGenesFromCDSs)
             &err_container );
         typedef CSeq_annot::TData::TFtable TFtable;
         const TFtable& ftable = annot->GetData().GetFtable();
-        BOOST_CHECK_EQUAL(ftable.size(), 
+        BOOST_CHECK_EQUAL(ftable.size(),
             geneNamesExpected.size() +
             s_CountOccurrences(sc_Table11, "CDS\n") );
 
@@ -1667,11 +1667,11 @@ BOOST_AUTO_TEST_CASE(TestCreateGenesFromCDSs)
             // (The "2" is because the error line is 2 lines down from the CDS's start line)
             BOOST_CHECK_EQUAL( line_error.Line(), linesWithError[ii] );
             // Other lines expected only for "CDS not in xref'd gene" error
-            const size_t iNumOtherLinesExpected = ( 
+            const size_t iNumOtherLinesExpected = (
                 line_error.Line() != 23 &&
-                line_error.Problem() == 
+                line_error.Problem() ==
                 ILineError::eProblem_FeatMustBeInXrefdGene ? 1 : 0 );
-            BOOST_CHECK_EQUAL( line_error.OtherLines().size(), 
+            BOOST_CHECK_EQUAL( line_error.OtherLines().size(),
                 iNumOtherLinesExpected );
         }
 
@@ -1683,7 +1683,7 @@ BOOST_AUTO_TEST_CASE(TestCreateGenesFromCDSs)
             if( FIELD_IS_SET_AND_IS(feat, Data, Gene) ) {
                 BOOST_CHECK_NO_THROW( vecOfGenesInResult.push_back(
                     feat.GetData().GetGene().GetLocus() ) );
-                NCBITEST_CHECK( 
+                NCBITEST_CHECK(
                     RAW_FIELD_IS_EMPTY_OR_UNSET(
                         feat.GetData().GetGene(), Locus_tag));
             } else if( FIELD_IS_SET_AND_IS(feat, Data, Cdregion) ) {
@@ -1757,7 +1757,7 @@ BOOST_AUTO_TEST_CASE(TestOffsetCommand)
         copy( an_ftable.begin(), an_ftable.end(),
             back_inserter(merged_ftables) );
     }
-    
+
     // check that gene offsets are correct
     typedef SStaticPair<TSeqPos, TSeqPos> TGeneExtremes;
     TGeneExtremes gene_extremes_arr[] = { // 1-based, biological extremes
@@ -1770,20 +1770,20 @@ BOOST_AUTO_TEST_CASE(TestOffsetCommand)
         {25, 15}, // Note: complement
         {25, 35}
     };
-    BOOST_REQUIRE_EQUAL( 
+    BOOST_REQUIRE_EQUAL(
         ArraySize(gene_extremes_arr), merged_ftables.size() );
 
-    CSeq_annot::TData::TFtable::const_iterator merged_ftables_it = 
+    CSeq_annot::TData::TFtable::const_iterator merged_ftables_it =
         merged_ftables.begin();
     ITERATE_0_IDX(ii, merged_ftables.size() ) {
         BOOST_CHECK( FIELD_IS_SET_AND_IS(**merged_ftables_it, Data, Gene) );
 
         const CSeq_loc & gene_loc = (*merged_ftables_it)->GetLocation();
-        BOOST_CHECK_EQUAL( 
-            gene_loc.GetStart(eExtreme_Biological), 
+        BOOST_CHECK_EQUAL(
+            gene_loc.GetStart(eExtreme_Biological),
             (gene_extremes_arr[ii].first - 1) );
-        BOOST_CHECK_EQUAL( 
-            gene_loc.GetStop(eExtreme_Biological), 
+        BOOST_CHECK_EQUAL(
+            gene_loc.GetStop(eExtreme_Biological),
             (gene_extremes_arr[ii].second - 1) );
 
         ++merged_ftables_it;
@@ -1818,10 +1818,10 @@ BOOST_AUTO_TEST_CASE(TestBetweenBaseIntervals)
             s_ReadOneTableFromString(
                 NStr::Replace(sc_Table13, "END", pchEndVal).c_str(),
                 errList );
-        const CSeq_annot::TData::TFtable& ftable = 
+        const CSeq_annot::TData::TFtable& ftable =
             pSeqAnnot->GetData().GetFtable();
         BOOST_REQUIRE(ftable.size() == 3);
-            
+
         // first feature: a gene
         auto ftable_iter = ftable.cbegin();
         CRef<CSeq_feat> gene(*ftable_iter);
@@ -1835,10 +1835,10 @@ BOOST_AUTO_TEST_CASE(TestBetweenBaseIntervals)
             const CSeq_loc & variation_plus_loc = variation_plus->GetLocation();
             BOOST_CHECK_EQUAL(16u, variation_plus_loc.GetPnt().GetPoint());
             BOOST_CHECK_EQUAL(false, variation_plus_loc.IsReverseStrand());
-            BOOST_CHECK_EQUAL(CInt_fuzz::eLim_tr, 
+            BOOST_CHECK_EQUAL(CInt_fuzz::eLim_tr,
                               variation_plus_loc.GetPnt().GetFuzz().GetLim());
         }
-        
+
         // third feature: a variation on minus strand
         CRef<CSeq_feat> variation_minus(*++ftable_iter);
         BOOST_CHECK_EQUAL("variation",
@@ -1846,9 +1846,9 @@ BOOST_AUTO_TEST_CASE(TestBetweenBaseIntervals)
         const CSeq_loc & variation_minus_loc = variation_minus->GetLocation();
         BOOST_CHECK_EQUAL(21u, variation_minus_loc.GetPnt().GetPoint());
         BOOST_CHECK_EQUAL(true, variation_minus_loc.IsReverseStrand());
-        BOOST_CHECK_EQUAL(CInt_fuzz::eLim_tl, 
+        BOOST_CHECK_EQUAL(CInt_fuzz::eLim_tl,
                           variation_minus_loc.GetPnt().GetFuzz().GetLim());
-                          
+
         // there should be no more feats
         BOOST_CHECK(ftable.cend() == ++ftable_iter);
     }
@@ -1858,7 +1858,7 @@ BOOST_AUTO_TEST_CASE(TestBetweenBaseIntervals)
 BOOST_AUTO_TEST_CASE(TestSpacesBeforeFeature)
 {
     ITERATE_0_IDX(num_spaces, 3) {
-        string sTable = 
+        string sTable =
             ">" + string(num_spaces, ' ') + "Feature lcl|Seq1\n"
             "1\t20\tgene\n"
             "\t\t\tgene g0\n";
@@ -2058,7 +2058,7 @@ BOOST_AUTO_TEST_CASE(TestPeptideFeats)
 {
     CRef<CSeq_annot> annot = s_ReadOneTableFromString (sc_Table18);
     SerializeOutIfVerbose("TestCaseInsensitivity initial annot", *annot);
-    
+
     const CSeq_annot::TData::TFtable& ftable = annot->GetData().GetFtable();
 
     BOOST_REQUIRE_EQUAL(ftable.size(), 2);
@@ -2066,11 +2066,11 @@ BOOST_AUTO_TEST_CASE(TestPeptideFeats)
     BOOST_REQUIRE(ftable.back()->IsSetData());
 
     const CSeqFeatData & feat_data_0 = ftable.front()->GetData();
-    BOOST_REQUIRE_EQUAL(feat_data_0.GetProt().GetProcessed(), 
+    BOOST_REQUIRE_EQUAL(feat_data_0.GetProt().GetProcessed(),
                         CProt_ref::eProcessed_mature);
-                        
+
     const CSeqFeatData & feat_data_1 = ftable.back()->GetData();
-    BOOST_REQUIRE_EQUAL(feat_data_1.GetProt().GetProcessed(), 
+    BOOST_REQUIRE_EQUAL(feat_data_1.GetProt().GetProcessed(),
                         CProt_ref::eProcessed_propeptide);
 }
 
@@ -2086,13 +2086,13 @@ BOOST_AUTO_TEST_CASE(TestBadTranslTable)
 {
     TErrList expected_errors = {
         ILineError::eProblem_QualifierBadValue};
-        
+
     CRef<CSeq_annot> annot = s_ReadOneTableFromString (
         sc_Table19,
         expected_errors);
     const CSeq_annot::TData::TFtable& ftable = annot->GetData().GetFtable();
     BOOST_CHECK_EQUAL(ftable.size(), 1);
-    
+
     // expect no quals
     set<string> expected_quals;
     CheckExpectedQuals (ftable.front(), expected_quals);
@@ -2153,7 +2153,7 @@ static const char* sc_Table22 = "\
 \t\tstandard_name\trrn23 gene\n\
 ";
 
-BOOST_AUTO_TEST_CASE(TestRW1172) 
+BOOST_AUTO_TEST_CASE(TestRW1172)
 {
     TErrList expected_errors {
         ILineError::eProblem_BadFeatureInterval,

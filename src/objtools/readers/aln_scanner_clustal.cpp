@@ -45,7 +45,7 @@ BEGIN_SCOPE(objects);
 //  ============================================================================
 //  Clustal/Clustalw info:
 //  Clustal is loosely defined with pieces that may be there or not. Clustalw
-//    gets rid of the ambiguities and sets firm rules as what the data should 
+//    gets rid of the ambiguities and sets firm rules as what the data should
 //    look like.
 //  The following pertains to Clustalw:
 //  It starts with a header line stating it's clustalw, followed by one or more
@@ -54,7 +54,7 @@ BEGIN_SCOPE(objects);
 //    a conservation line, and at least one empty line.
 //  Each data line consists of a seqId, sequence data in one continuous run up
 //    to 60 characters long, and an -optional- trailing offset count.
-//  
+//
 //  The gap character is '-'.
 //  The alphabet can be anything, so for nucleotide sequences, we must accept
 //    ambiguity characters as well.
@@ -63,7 +63,7 @@ BEGIN_SCOPE(objects);
 //  ============================================================================
 
 
-struct SBlockInfo 
+struct SBlockInfo
 {
     int seqCount = 0;
     int lineLength = 0;
@@ -81,12 +81,12 @@ static void sTerminateBlock(
         numSeqs = blockInfo.seqCount;
         blockInfo.first = false;
     }
-    else 
+    else
     if (numSeqs != blockInfo.seqCount) {
-        string description = 
-            ErrorPrintf("Inconsistent number of sequences in the data blocks. " 
+        string description =
+            ErrorPrintf("Inconsistent number of sequences in the data blocks. "
                         "Each data block must contain the same number of sequences. "
-                        "The first block contains %d sequences. This block contains %d sequences.", 
+                        "The first block contains %d sequences. This block contains %d sequences.",
                         numSeqs, blockInfo.seqCount);
 
         throw SShowStopper(
@@ -133,12 +133,12 @@ CAlnScannerClustal::xImportAlignmentData(
         if (sIsConservationLine(line)) {
             if (!inBlock) {
                 string description = "Clustal conservation characters (e.g. *.: characters) were detected in the alignment file, "
-                    "but are out of the expected order. " 
+                    "but are out of the expected order. "
                     "Conservation characters, if included, must appear after sequence data lines.";
                 throw SShowStopper(
                     lineCount,
                     EAlnSubcode::eAlnSubcode_IllegalDataLine,
-                    description); 
+                    description);
             }
             sTerminateBlock(lineCount, numSeqs, blockInfo);
             inBlock = false;
@@ -150,7 +150,7 @@ CAlnScannerClustal::xImportAlignmentData(
         const auto num_tokens = tokens.size();
         if (num_tokens < 2 || num_tokens > 3) {
             string description =
-                "Date line does not follow the expected pattern of sequence_ID followed by sequence data and (optionally) data count. " 
+                "Date line does not follow the expected pattern of sequence_ID followed by sequence data and (optionally) data count. "
                 "Each data line should conform to the same expected pattern.";
             throw SShowStopper(
                 lineCount,
@@ -161,11 +161,11 @@ CAlnScannerClustal::xImportAlignmentData(
         int seqLength = 0;
         if (num_tokens == 3) {
             seqLength = NStr::StringToInt(tokens[2], NStr::fConvErr_NoThrow);
-            if (!seqLength) { 
+            if (!seqLength) {
                 throw SShowStopper(
                     lineCount,
                     EAlnSubcode::eAlnSubcode_IllegalDataLine,
-                    "In data line, expected seqID followed by sequence data and (optionally) data count."); 
+                    "In data line, expected seqID followed by sequence data and (optionally) data count.");
             }
         }
 
@@ -176,7 +176,7 @@ CAlnScannerClustal::xImportAlignmentData(
         sProcessClustalDataLine(
              tokens, lineCount,
              blockInfo.seqCount,
-             numSeqs, 
+             numSeqs,
              blockInfo.first,
              blockInfo.lineLength);
 
@@ -184,10 +184,10 @@ CAlnScannerClustal::xImportAlignmentData(
         ++(blockInfo.seqCount);
     }
 
-    if (inBlock) { 
-        string description = 
+    if (inBlock) {
+        string description =
             "The final data block does not end with a conservation line. "
-            "Each Clustal data block must end with a line that can contain a mix of *.: characters and white space, " 
+            "Each Clustal data block must end with a line that can contain a mix of *.: characters and white space, "
             "which shows the degree of conservation for the segment of the alignment in the block.";
         throw SShowStopper(
                 lineCount,
@@ -197,7 +197,7 @@ CAlnScannerClustal::xImportAlignmentData(
 }
 
 //  ----------------------------------------------------------------------------
-bool 
+bool
 CAlnScannerClustal::sIsConservationLine(
     const string& line)
 //  ----------------------------------------------------------------------------
@@ -222,15 +222,15 @@ CAlnScannerClustal::sProcessClustalDataLine(
         auto idComparison = xGetExistingSeqIdInfo(seqId, existingInfo);
         if (idComparison != ESeqIdComparison::eDifferentChars) {
             string description;
-            if (idComparison == ESeqIdComparison::eIdentical) { 
+            if (idComparison == ESeqIdComparison::eIdentical) {
                 description = ErrorPrintf(
-                "Duplicate ID: \"%s\" has already appeared in this block, on line %d.", 
+                "Duplicate ID: \"%s\" has already appeared in this block, on line %d.",
                 seqId.c_str(), existingInfo.mNumLine);
             }
             else { // ESeqIdComparison::eDifferByCase
                 description = ErrorPrintf(
-                "Conflicting IDs: \"%s\" differs only in case from \"%s\", " 
-                "which has already appeared in this block, on line %d.", 
+                "Conflicting IDs: \"%s\" differs only in case from \"%s\", "
+                "which has already appeared in this block, on line %d.",
                 seqId.c_str(), existingInfo.mData.c_str(), existingInfo.mNumLine);
             }
             throw SShowStopper(
@@ -243,7 +243,7 @@ CAlnScannerClustal::sProcessClustalDataLine(
     }
     else {
         if (seqCount >= numSeqs) {
-            string description = "Inconsistent sequence_IDs in the data blocks. " 
+            string description = "Inconsistent sequence_IDs in the data blocks. "
                 "Each data block must contain the same set of sequence_IDs.";
             throw SShowStopper(
                 lineNum,
@@ -253,9 +253,9 @@ CAlnScannerClustal::sProcessClustalDataLine(
 
         if (seqId != mSeqIds[seqCount].mData) {
             string description;
-            const auto it = 
-                find_if(mSeqIds.begin(), mSeqIds.end(), 
-                    [&seqId](const TLineInfo& idInfo){ 
+            const auto it =
+                find_if(mSeqIds.begin(), mSeqIds.end(),
+                    [&seqId](const TLineInfo& idInfo){
                         return NStr::EqualNocase(seqId,idInfo.mData);
                     });
 
@@ -277,7 +277,7 @@ CAlnScannerClustal::sProcessClustalDataLine(
                     it->mNumLine);
             }
             else {
-                description = "Sequence_IDs are in different orders in the data blocks in your file. " 
+                description = "Sequence_IDs are in different orders in the data blocks in your file. "
                     "The sequences and sequence_IDs are expected to be in the same order in each block.";
             }
             throw SShowStopper(
@@ -286,7 +286,7 @@ CAlnScannerClustal::sProcessClustalDataLine(
                 description);
         }
     }
-    
+
     if (seqCount==0) {
         blockLineLength = tokens[1].size();
         return;
@@ -294,7 +294,7 @@ CAlnScannerClustal::sProcessClustalDataLine(
 
     auto currentLineLength = tokens[1].size();
     if (currentLineLength != blockLineLength) {
-        string description = 
+        string description =
             BadCharCountPrintf(blockLineLength, currentLineLength);
         throw SShowStopper(
             lineNum,

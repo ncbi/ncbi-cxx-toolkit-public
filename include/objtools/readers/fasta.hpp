@@ -103,8 +103,8 @@ public:
         fAddMods              = 1<<17, ///< Parse defline mods and add to SeqEntry
         fLetterGaps           = 1<<18, ///< Parse runs of Ns when splitting data
         fNoUserObjs           = 1<<19, ///< Don't save raw deflines in User-objects
-        fBadModThrow  NCBI_STD_DEPRECATED("This flag is redundant as CFastaReader no longer utilizes CSourceModParser.")    = 1<<20, 
-        fUnknModThrow NCBI_STD_DEPRECATED("This flag is redundant as CFastaReader no longer utilizes CSourceModParser.")    = 1<<21, 
+        fBadModThrow  NCBI_STD_DEPRECATED("This flag is redundant as CFastaReader no longer utilizes CSourceModParser.")    = 1<<20,
+        fUnknModThrow NCBI_STD_DEPRECATED("This flag is redundant as CFastaReader no longer utilizes CSourceModParser.")    = 1<<21,
         fLeaveAsText          = 1<<22, ///< Don't reencode at all, just parse
         fQuickIDCheck         = 1<<23, ///< Just check local IDs' first characters
         fUseIupacaa           = 1<<24, ///< If Prot, use iupacaa instead of the default ncbieaa.
@@ -123,8 +123,8 @@ public:
     CFastaReader(ILineReader& reader, TFlags flags = 0, FIdCheck f_idcheck = CSeqIdCheck());
     CFastaReader(CNcbiIstream& in,    TFlags flags = 0, FIdCheck f_idcheck = CSeqIdCheck());
     CFastaReader(const string& path,  TFlags flags = 0, FIdCheck f_idcheck = CSeqIdCheck());
-    CFastaReader(CReaderBase::TReaderFlags fBaseFlags,  
-                 TFlags flags = 0, 
+    CFastaReader(CReaderBase::TReaderFlags fBaseFlags,
+                 TFlags flags = 0,
                  FIdCheck f_idcheck = CSeqIdCheck()
                  );
     virtual ~CFastaReader(void);
@@ -197,11 +197,11 @@ public:
 
     void SetGapLinkageEvidence(
             CSeq_gap::EType type,
-            const set<int>& defaultEvidence, 
+            const set<int>& defaultEvidence,
             const map<TSeqPos, set<int>>& countToEvidenceMap);
 
     void SetGapLinkageEvidences(
-        CSeq_gap::EType type, 
+        CSeq_gap::EType type,
         const set<int>& evidences);
 
     void IgnoreProblem(ILineError::EProblem problem);
@@ -212,14 +212,14 @@ public:
     using TSeqTitles = vector<SLineTextAndLoc>;
     typedef CTempString TStr;
 
-    static void ParseDefLine(const TStr& defLine, 
+    static void ParseDefLine(const TStr& defLine,
         const SDefLineParseInfo& info,
         const TIgnoredProblems& ignoredErrors,
-        list<CRef<CSeq_id>>& ids, 
+        list<CRef<CSeq_id>>& ids,
         bool& hasRange,
         TSeqPos& rangeStart,
         TSeqPos& rangeEnd,
-        TSeqTitles& seqTitles, 
+        TSeqTitles& seqTitles,
         ILineErrorListener* pMessageListener);
 
 protected:
@@ -231,7 +231,7 @@ protected:
 
     virtual void ParseDefLine (const TStr& s, ILineErrorListener * pMessageListener);
 
-    virtual void PostProcessIDs(const CBioseq::TId& defline_ids, 
+    virtual void PostProcessIDs(const CBioseq::TId& defline_ids,
         const string& defline,
         bool has_range=false,
         TSeqPos range_start=kInvalidSeqPos,
@@ -251,13 +251,13 @@ protected:
     virtual void   AssembleSeq   (ILineErrorListener * pMessageListener);
     virtual void   AssignMolType (ILineErrorListener * pMessageListener);
     virtual bool   CreateWarningsForSeqDataInTitle(
-        const TStr& sLineText, 
+        const TStr& sLineText,
         TSeqPos iLineNum,
         ILineErrorListener * pMessageListener) const;
     virtual void   PostWarning(ILineErrorListener * pMessageListener,
-            EDiagSev _eSeverity, size_t _uLineNum, CTempString _MessageStrmOps, 
-            CObjReaderParseException::EErrCode _eErrCode, 
-            ILineError::EProblem _eProblem, 
+            EDiagSev _eSeverity, size_t _uLineNum, CTempString _MessageStrmOps,
+            CObjReaderParseException::EErrCode _eErrCode,
+            ILineError::EProblem _eProblem,
             CTempString _sFeature, CTempString _sQualName, CTempString _sQualValue) const;
 
     typedef int                         TRowNum;
@@ -271,7 +271,7 @@ protected:
                                              TRowNum reference_row);
     void             x_AddMultiwayAlignment(CSeq_annot& annot, const TIds& ids);
 
-    // inline utilities 
+    // inline utilities
     void CloseGap(bool atStartOfLine=true, ILineErrorListener * pMessageListener = 0) {
         if (m_CurrentGapLength > 0) {
             x_CloseGap(m_CurrentGapLength, atStartOfLine, pMessageListener);
@@ -292,7 +292,7 @@ protected:
     bool          TestFlag(EInternalFlags flag) const
         { return (GetFlags() & flag) != 0; }
     CBioseq::TId& SetIDs(void)                { return m_CurrentSeq->SetId(); }
- 
+
     // NB: Not necessarily fully-formed!
     CBioseq& SetCurrentSeq(void)              { return *m_CurrentSeq; }
 
@@ -305,10 +305,10 @@ protected:
 
     std::string x_NucOrProt(void) const;
 
-private: 
+private:
     CModHandler m_ModHandler;
 
-    void x_ApplyMods(const string& title, 
+    void x_ApplyMods(const string& title,
                      TSeqPos line_number,
                      CBioseq& bioseq,
                      ILineErrorListener* pMessageListener);
@@ -336,15 +336,15 @@ protected:
             EKnownSize eKnownSize,
             TSeqPos uLineNumber,
             TNullableGapType pGapType = TNullableGapType(),
-            const set<CLinkage_evidence::EType>& setOfLinkageEvidence = 
+            const set<CLinkage_evidence::EType>& setOfLinkageEvidence =
                 set<CLinkage_evidence::EType>());
         // immutable once created
 
         // 0-based, and NOT counting previous gaps
-        const TSeqPos m_uPos; 
+        const TSeqPos m_uPos;
         // 0: unknown, negative: negated nominal length of unknown gap size.
         // positive: known gap size
-        const TSeqPos m_uLen; 
+        const TSeqPos m_uLen;
         const EKnownSize m_eKnownSize;
         const TSeqPos m_uLineNumber;
         // NULL means "no gap type specified"
@@ -356,9 +356,9 @@ protected:
         SGap & operator = (const SGap & );
         SGap(const SGap & rhs);
     };
-        
-    CRef<CSeq_align> xCreateAlignment(CRef<CSeq_id> old_id, 
-        CRef<CSeq_id> new_id, 
+
+    CRef<CSeq_align> xCreateAlignment(CRef<CSeq_id> old_id,
+        CRef<CSeq_id> new_id,
         TSeqPos range_start,
         TSeqPos range_end);
 
@@ -367,7 +367,6 @@ protected:
     typedef CRef<SGap> TGapRef;
     typedef vector<TGapRef>     TGaps;
     typedef set<CSeq_id_Handle> TIDTracker;
-   
 
     CRef<ILineReader>       m_LineReader;
     stack<TFlags>           m_Flags;
@@ -453,7 +452,7 @@ public:
     virtual ~IFastaEntryScan();
 
     /// Callback function, called after reading the fasta entry
-    virtual void EntryFound(CRef<CSeq_entry> se, 
+    virtual void EntryFound(CRef<CSeq_entry> se,
                             CNcbiStreampos stream_position) = 0;
 };
 
@@ -462,11 +461,11 @@ public:
 /// molecule entry after another filling the map structure describing and
 /// pointing on molecule entries. Fasta map can be used later for quick
 /// CSeq_entry retrival
-void NCBI_XOBJREAD_EXPORT ReadFastaFileMap(SFastaFileMap* fasta_map, 
+void NCBI_XOBJREAD_EXPORT ReadFastaFileMap(SFastaFileMap* fasta_map,
                                            CNcbiIfstream& input);
 
 /// Scan FASTA files, call IFastaEntryScan::EntryFound (payload function)
-void NCBI_XOBJREAD_EXPORT ScanFastaFile(IFastaEntryScan* scanner, 
+void NCBI_XOBJREAD_EXPORT ScanFastaFile(IFastaEntryScan* scanner,
                                         CNcbiIfstream&   input,
                                         CFastaReader::TFlags fread_flags);
 

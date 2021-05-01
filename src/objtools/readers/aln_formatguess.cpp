@@ -121,7 +121,7 @@ CAlnFormatGuesser::xSampleIsClustal(
     //  there are at least one and most SAMPLE_SIZE sample lines
 
     const string CONSENSUS_CHARS = " .:*";
- 
+
     string testLine = sample[0];
     NStr::ToLower(testLine);
     if (NStr::StartsWith(testLine, "clustalw")) {

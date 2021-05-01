@@ -161,7 +161,7 @@ public:
         CSeq_id& id,
         unsigned int start,
         unsigned int span,
-        double value) 
+        double value)
     {
         m_pInterval.Reset(new CSeq_interval());
         m_pInterval->SetId(id);
@@ -169,7 +169,7 @@ public:
         m_pInterval->SetTo(start-1+span-1);
         m_value = value;
     };
-    
+
     ~CRawWiggleRecord() {};
 
     void Dump(
@@ -243,14 +243,14 @@ public:
     typedef vector<SValueInfo> TValues;
 
 public:
-    CWiggleReader( 
+    CWiggleReader(
         int = fDefaults,
         const string& = "",
         const string& = "",
         CReaderListener* = nullptr);
-        
+
     virtual ~CWiggleReader();
-    
+
     //
     //  object interface:
     //
@@ -270,7 +270,7 @@ public:
         ILineReader&,
         ILineErrorListener* =0 );
 
-    virtual bool 
+    virtual bool
     ReadTrackData(
         ILineReader&,
         CRawWiggleTrack&,
@@ -291,11 +291,11 @@ protected:
     void xPostProcessAnnot(
         CSeq_annot&);
 
-    bool 
+    bool
     xParseBrowserLine(
         const string&);
 
-    bool 
+    bool
     xParseTrackLine(
         const string&);
 
@@ -309,12 +309,12 @@ protected:
         const string&,
         SFixedStepInfo&);
 
-    void 
+    void
     xReadFixedStepData(
         const SFixedStepInfo&,
         TReaderData::const_iterator&,
         const TReaderData&);
-    
+
     bool
     xReadFixedStepDataRaw(
         const SFixedStepInfo&,
@@ -337,7 +337,7 @@ protected:
         const string&,
         SVarStepInfo&);
 
-    void 
+    void
     xReadVariableStepData(
         const SVarStepInfo&,
         TReaderData::const_iterator&,
@@ -350,71 +350,71 @@ protected:
         const TReaderData&,
         CRawWiggleTrack&);
 
-    string 
+    string
     xGetWord(
         string&);
 
-    bool 
+    bool
     xSkipWS(
         string&);
 
-    string 
+    string
     xGetParamName(
         string&);
 
-    string 
+    string
     xGetParamValue(
         string&);
 
-    void 
+    void
     xGetPos(
         string&,
         TSeqPos& v);
 
-    bool 
+    bool
     xTryGetDoubleSimple(
         string&,
         double& v);
 
-    void 
+    void
     xGetDouble(
         string& line,
         double& v);
 
-    CRef<CSeq_id> 
+    CRef<CSeq_id>
     xMakeChromId();
 
-    CRef<CSeq_table> 
+    CRef<CSeq_table>
     xMakeTable();
 
-    CRef<CSeq_graph> 
+    CRef<CSeq_graph>
     xMakeGraph();
 
-    void 
+    void
     xPreprocessValues(
         SWiggleStat&);
 
-    void 
+    void
     xAddValue(const SValueInfo& value) {
         if ( !m_OmitZeros || value.m_Value != 0 ) {
             m_Values.push_back(value);
         }
     }
 
-    double 
+    double
     xEstimateSize(
-        size_t rows, 
+        size_t rows,
         bool fixed_span) const;
 
-    void 
+    void
     xSetTotalLoc(
-        CSeq_loc& loc, 
+        CSeq_loc& loc,
         CSeq_id& chrom_id);
 
     void
     xDumpChromValues();
 
-    void 
+    void
     xSetChrom(
         const string& chrom);
 

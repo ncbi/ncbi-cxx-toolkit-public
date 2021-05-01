@@ -31,13 +31,13 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbistd.hpp>              
+#include <corelib/ncbistd.hpp>
 
 #include <util/line_reader.hpp>
 
 #include <objects/general/Object_id.hpp>
 #include <objects/general/User_object.hpp>
-#include <objects/general/User_field.hpp> 
+#include <objects/general/User_field.hpp>
 #include <objects/general/Dbtag.hpp>
 
 #include <objects/seqloc/Seq_interval.hpp>
@@ -98,7 +98,7 @@ public:
 };
 
 //  ----------------------------------------------------------------------------
-ESpecType SpecType( 
+ESpecType SpecType(
     const string& spectype )
 //  ----------------------------------------------------------------------------
 {
@@ -154,7 +154,7 @@ ESpecNumber SpecNumber(
                 "Recognized settings are \'A\', \'G\', \'R\', \'.\', or numeric.",
                 ILineError::eProblem_GeneralParsingError) );
         pErr->Throw();
-    }    
+    }
     return ESpecNumber( 0 );
 };
 
@@ -176,12 +176,12 @@ CVcfReader::~CVcfReader()
 {
 }
 
-//  ----------------------------------------------------------------------------                
+//  ----------------------------------------------------------------------------
 CRef< CSeq_annot >
 CVcfReader::ReadSeqAnnot(
     ILineReader& lr,
-    ILineErrorListener* pEC ) 
-//  ----------------------------------------------------------------------------                
+    ILineErrorListener* pEC )
+//  ----------------------------------------------------------------------------
 {
     if (!m_Meta) {
         m_Meta.Reset( new CAnnotdesc );
@@ -197,7 +197,7 @@ CVcfReader::ReadSeqAnnot(
 
 //  ----------------------------------------------------------------------------
 CRef<CSeq_annot>
-CVcfReader::xCreateSeqAnnot() 
+CVcfReader::xCreateSeqAnnot()
 //  ----------------------------------------------------------------------------
 {
     CRef<CSeq_annot> pAnnot = CReaderBase::xCreateSeqAnnot();
@@ -228,11 +228,11 @@ CVcfReader::xGetData(
 void
 CVcfReader::xProcessData(
     const TReaderData& readerData,
-    CSeq_annot& annot) 
+    CSeq_annot& annot)
 //  ----------------------------------------------------------------------------
 {
     for (auto lineInfo: readerData) {
-        const auto& line = lineInfo.mData; 
+        const auto& line = lineInfo.mData;
         if (mActualVersion == 0.0) {
             bool lineContainsVersion(false);
             xSetFileFormat(line, annot, lineContainsVersion);
@@ -322,7 +322,7 @@ CVcfReader::xSetFileFormat(
         lineContainsVersion = false;
         return;
     }
-    
+
     lineContainsVersion = true;
 
     string versionStr = line.substr(prefix.length(), string::npos);
@@ -372,11 +372,11 @@ CVcfReader::xProcessMetaLineInfo(
     if ( ! NStr::StartsWith( line, prefix ) || ! NStr::EndsWith( line, postfix ) ) {
         return false;
     }
-    
+
     try {
         vector<string> fields;
         string key, id, numcount, type, description;
-        string info = line.substr( 
+        string info = line.substr(
             prefix.length(), line.length() - prefix.length() - postfix.length() );
         NStr::Split( info, ",", fields );
         NStr::SplitInTwo( fields[0], "=", key, id );
@@ -419,7 +419,7 @@ CVcfReader::xProcessMetaLineInfo(
                 ILineError::eProblem_BadInfoLine) );
             pErr->Throw();
         }
-        m_InfoSpecs[id] = CVcfInfoSpec( id, numcount, type, description );        
+        m_InfoSpecs[id] = CVcfInfoSpec( id, numcount, type, description );
     }
     catch (CObjReaderLineException& err) {
         ProcessError(err, nullptr);
@@ -440,11 +440,11 @@ CVcfReader::xProcessMetaLineFilter(
     if ( ! NStr::StartsWith( line, prefix ) || ! NStr::EndsWith( line, postfix ) ) {
         return false;
     }
-    
+
     try {
         vector<string> fields;
         string key, id, description;
-        string info = line.substr( 
+        string info = line.substr(
             prefix.length(), line.length() - prefix.length() - postfix.length() );
         NStr::Split( info, ",", fields );
         NStr::SplitInTwo( fields[0], "=", key, id );
@@ -467,7 +467,7 @@ CVcfReader::xProcessMetaLineFilter(
                 ILineError::eProblem_BadFilterLine) );
             pErr->Throw();
         }
-        m_FilterSpecs[id] = CVcfFilterSpec( id, description );        
+        m_FilterSpecs[id] = CVcfFilterSpec( id, description );
     }
     catch (CObjReaderLineException& err) {
         ProcessError(err, nullptr);
@@ -488,11 +488,11 @@ CVcfReader::xProcessMetaLineFormat(
     if ( ! NStr::StartsWith( line, prefix ) || ! NStr::EndsWith( line, postfix ) ) {
         return false;
     }
-    
+
     try {
         vector<string> fields;
         string key, id, numcount, type, description;
-        string info = line.substr( 
+        string info = line.substr(
             prefix.length(), line.length() - prefix.length() - postfix.length() );
         NStr::Split( info, ",", fields );
         NStr::SplitInTwo( fields[0], "=", key, id );
@@ -538,7 +538,7 @@ CVcfReader::xProcessMetaLineFormat(
                 ILineError::eProblem_BadFormatLine) );
             pErr->Throw();
         }
-        m_FormatSpecs[id] = CVcfFormatSpec( id, numcount, type, description );        
+        m_FormatSpecs[id] = CVcfFormatSpec( id, numcount, type, description );
     }
     catch (CObjReaderLineException& err) {
         ProcessError(err, nullptr);
@@ -575,7 +575,7 @@ CVcfReader::xProcessHeaderLine(
         m_GenotypeHeaders.erase( m_GenotypeHeaders.begin(), pos_format+1 );
         m_Meta->SetUser().AddField("genotype-headers", m_GenotypeHeaders);
     }
-    
+
     //
     //  The header line signals the end of meta information, so migrate the
     //  accumulated meta information into the seq descriptor:
@@ -595,7 +595,7 @@ CVcfReader::xAssignVcfMeta(
             annot.SetDesc(*desc);
         }
         annot.SetDesc().Set().push_back( m_Meta );
-    } 
+    }
     //else { // VCF input ought to include a header
     //    CReaderMessage warning(
     //        eDiag_Warning,
@@ -670,12 +670,12 @@ CVcfReader::xAssignVariationAlleleSet(
     //make one variation for the reference
     CRef<CVariation_ref> pIdentity(new CVariation_ref);
     vector<string> variant;
- 
+
     switch(data.m_SetType) {
     case CVcfData::ST_ALL_INS:
         pIdentity->SetDeletion();
         break;
-    default: 
+    default:
         variant.push_back(data.m_strRef);
         pIdentity->SetSNV(variant, CVariation_ref::eSeqType_na);
         break;
@@ -778,7 +778,7 @@ CVcfReader::xAssignVariantMnv(
 }
 
 //  ----------------------------------------------------------------------------
-static void 
+static void
 s_AddDeleteDeltaItem(
     CVariation_inst& instance )
 {
@@ -834,10 +834,10 @@ CVcfReader::xAssignVariantIns(
             static_cast<TSeqPos>(insertion.size()));
         CRef<CDelta_item> pItem(new CDelta_item);
         pItem->SetAction(CDelta_item::eAction_ins_before);
-        pItem->SetSeq().SetLiteral(*pLiteral); 
+        pItem->SetSeq().SetLiteral(*pLiteral);
         CVariation_inst& instance =  pVariant->SetData().SetInstance();
         instance.SetType(CVariation_inst::eType_ins);
-        instance.SetDelta().push_back(pItem);       
+        instance.SetDelta().push_back(pItem);
     }}
     variants.push_back(pVariant);
     return true;
@@ -873,7 +873,7 @@ CVcfReader::xAssignVariantDelins(
     CRef<CSeq_literal> pLiteral(new CSeq_literal);
     pLiteral->SetSeq_data().SetIupacna().Set(insertion);
     pLiteral->SetLength(static_cast<TSeqPos>(insertion.size()));
-    
+
     CRef<CDelta_item> pItem(new CDelta_item);
     pItem->SetSeq().SetLiteral(*pLiteral);
     instance.SetDelta().push_back(pItem);
@@ -922,8 +922,8 @@ CVcfReader::xParseData(
         vector<string> infos;
         if ( columns[7] != "." ) {
             NStr::Split( columns[7], ";", infos, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate );
-            for ( vector<string>::iterator it = infos.begin(); 
-                it != infos.end(); ++it ) 
+            for ( vector<string>::iterator it = infos.begin();
+                it != infos.end(); ++it )
             {
                 string key, value;
                 NStr::SplitInTwo( *it, "=", key, value );
@@ -1001,7 +1001,7 @@ CVcfReader::xParseData(
     }
 
     //test for all deletions:
-    // note: even it is all deletions we are not able to process them 
+    // note: even it is all deletions we are not able to process them
     // as such because those deletions would be at different ASN1
     // locations. Hence we punt to "indel" if there is more than one
     // alternative.
@@ -1086,10 +1086,10 @@ CVcfReader::xNormalizeData(
         trimSize++;
     }
     if (trimSize > 0) {
-        data.m_strRef = 
+        data.m_strRef =
             data.m_strRef.substr(0, data.m_strRef.size()-trimSize);
         for (size_t u=0; u < data.m_Alt.size(); ++u) {
-            data.m_Alt[u] = 
+            data.m_Alt[u] =
                 data.m_Alt[u].substr(0, data.m_Alt[u].size()-trimSize);
         }
     }
@@ -1146,10 +1146,10 @@ CVcfReader::xAssignFeatureLocationSet(
         }
         else {
             pFeat->SetLocation().SetInt().SetFrom(data.m_iPos-1);
-            //-1 for 0-based, 
+            //-1 for 0-based,
             //another -1 for inclusive end-point ( i.e. [], not [) )
-            pFeat->SetLocation().SetInt().SetTo( 
-                 static_cast<TSeqPos>(data.m_iPos -1 + data.m_strRef.length() - 1)); 
+            pFeat->SetLocation().SetInt().SetTo(
+                 static_cast<TSeqPos>(data.m_iPos -1 + data.m_strRef.length() - 1));
             pFeat->SetLocation().SetInt().SetId(*pId);
         }
         return true;
@@ -1167,15 +1167,15 @@ CVcfReader::xAssignFeatureLocationSet(
     }
     else {
         pFeat->SetLocation().SetInt().SetFrom(data.m_iPos-1);
-        pFeat->SetLocation().SetInt().SetTo( 
-            static_cast<TSeqPos>(data.m_iPos -1 + data.m_strRef.length() - 1)); 
+        pFeat->SetLocation().SetInt().SetTo(
+            static_cast<TSeqPos>(data.m_iPos -1 + data.m_strRef.length() - 1));
         pFeat->SetLocation().SetInt().SetId(*pId);
     }
     return true;
 }
 
 //  ----------------------------------------------------------------------------
-bool 
+bool
 CVcfReader::xProcessScore(
     CVcfData& data,
     CRef<CSeq_feat> pFeature )
@@ -1189,7 +1189,7 @@ CVcfReader::xProcessScore(
 }
 
 //  ----------------------------------------------------------------------------
-bool 
+bool
 CVcfReader::xProcessFilter(
     CVcfData& data,
     CRef<CSeq_feat> pFeature )
@@ -1203,7 +1203,7 @@ CVcfReader::xProcessFilter(
 }
 
 //  ----------------------------------------------------------------------------
-bool 
+bool
 CVcfReader::xProcessInfo(
     CVcfData& data,
     CRef<CSeq_feat> pFeature)
@@ -1248,9 +1248,9 @@ CVcfReader::xProcessTrackLine(
     CReadUtil::Tokenize( strLine, " \t", parts );
     if (parts.size() >= 3) {
         const string digits("0123456789");
-        bool col2_is_numeric = 
+        bool col2_is_numeric =
             (string::npos == parts[1].find_first_not_of(digits));
-        bool col3_is_numeric = 
+        bool col3_is_numeric =
             (string::npos == parts[2].find_first_not_of(digits));
         if (col2_is_numeric  &&  col3_is_numeric) {
             return false;
@@ -1258,8 +1258,8 @@ CVcfReader::xProcessTrackLine(
     }
     if (!CReaderBase::xParseTrackLine(strLine)) {
         CReaderMessage warning(
-            eDiag_Warning, 
-            m_uLineNumber, 
+            eDiag_Warning,
+            m_uLineNumber,
             "Bad track line: Expected \"track key1=value1 key2=value2 ...\". Ignored.");
         m_pMessageHandler->Report(warning);
     }
@@ -1294,20 +1294,20 @@ CVcfReader::xProcessFormat(
 
 //  ----------------------------------------------------------------------------
 bool CVcfReader::xAssigndbSNPTag(
-    const vector<string>& ids, 
+    const vector<string>& ids,
     CRef<CDbtag> pDbtag) const
 //  ----------------------------------------------------------------------------
 {
     for (const string& id : ids) {
         if (NStr::StartsWith(id, "rs") ||
-            NStr::StartsWith(id, "ss") ) 
+            NStr::StartsWith(id, "ss") )
         {
-            try { 
+            try {
                 const int idval = NStr::StringToInt(id.substr(2));
                 pDbtag->SetDb("dbSNP");
                 pDbtag->SetTag().SetId(idval);
             }
-            catch (...) { 
+            catch (...) {
                 continue;
             }
             return true;
@@ -1335,8 +1335,8 @@ CVcfReader::xAssignVariationIds(
 
     if (data.m_Info.end() != it) {
         vector<string> sources = it->second;
-        if (sources.size() > 0 && 
-            NStr::Equal(sources.front(), "dbsnp")) 
+        if (sources.size() > 0 &&
+            NStr::Equal(sources.front(), "dbsnp"))
         {
             CRef<CDbtag> pDbtag = Ref(new CDbtag());
             if (xAssigndbSNPTag(data.m_Ids, pDbtag)) {
@@ -1366,14 +1366,14 @@ CVcfReader::xAssignVariationIds(
     variation.SetId().SetTag().SetStr( data.m_Ids[0] );
 
     for ( size_t i=1; i < data.m_Ids.size(); ++i ) {
-        if ( data.m_Info.find( "DB" ) != data.m_Info.end()  
-            &&  data.m_Info.find( "H2" ) != data.m_Info.end() ) 
+        if ( data.m_Info.find( "DB" ) != data.m_Info.end()
+            &&  data.m_Info.find( "H2" ) != data.m_Info.end() )
         {
             variation.SetId().SetDb( "HapMap2" );
         }
         else {
             variation.SetId().SetDb( "local" );
-        }      
+        }
         variation.SetId().SetTag().SetStr( data.m_Ids[i] );
     }
     return true;
@@ -1390,7 +1390,7 @@ CVcfReader::xAssignVariantProps(
     typedef CVariantProperties VP;
 
     CVcfData::INFOS& infos = data.m_Info;
-    VP& props = pFeat->SetData().SetVariation().SetVariant_prop(); 
+    VP& props = pFeat->SetData().SetVariation().SetVariant_prop();
     CVcfData::INFOS::iterator it;
 
     props.SetResource_link() = 0;
@@ -1407,27 +1407,27 @@ CVcfReader::xAssignVariantProps(
     //superbyte F1
     it = infos.find("SLO");
     if (infos.end() != it) {
-        props.SetResource_link() |= VP::eResource_link_submitterLinkout; 
+        props.SetResource_link() |= VP::eResource_link_submitterLinkout;
         infos.erase(it);
     }
     it = infos.find("S3D");
     if (infos.end() != it) {
-        props.SetResource_link() |= VP::eResource_link_has3D; 
+        props.SetResource_link() |= VP::eResource_link_has3D;
         infos.erase(it);
     }
     it = infos.find("TPA");
     if (infos.end() != it) {
-        props.SetResource_link() |= VP::eResource_link_provisional; 
+        props.SetResource_link() |= VP::eResource_link_provisional;
         infos.erase(it);
     }
     it = infos.find("PM");
     if (infos.end() != it) {
-        props.SetResource_link() |= VP::eResource_link_preserved; 
+        props.SetResource_link() |= VP::eResource_link_preserved;
         infos.erase(it);
     }
     it = infos.find("CLN");
     if (infos.end() != it) {
-        props.SetResource_link() |= VP::eResource_link_clinical; 
+        props.SetResource_link() |= VP::eResource_link_clinical;
         infos.erase(it);
     }
     //todo: INFO ID=PMC
@@ -1446,7 +1446,7 @@ CVcfReader::xAssignVariantProps(
                 NStr::SplitInTwo(*cit, ":", db, tag);
                 if (db != "PM") {
                     CReaderMessage warning(
-                        eDiag_Warning, 
+                        eDiag_Warning,
                         m_uLineNumber,
                         "CVcfReader::xAssignVariantProps: Invalid PMID database ID.");
                     m_pMessageHandler->Report(warning);
@@ -1468,65 +1468,65 @@ CVcfReader::xAssignVariantProps(
     //superbyte F2
     it = infos.find("R5");
     if (infos.end() != it) {
-        props.SetGene_location() |= VP::eGene_location_near_gene_5; 
+        props.SetGene_location() |= VP::eGene_location_near_gene_5;
         infos.erase(it);
     }
     it = infos.find("R3");
     if (infos.end() != it) {
-        props.SetGene_location() |= VP::eGene_location_near_gene_3; 
+        props.SetGene_location() |= VP::eGene_location_near_gene_3;
         infos.erase(it);
     }
     it = infos.find("INT");
     if (infos.end() != it) {
-        props.SetGene_location() |= VP::eGene_location_intron; 
+        props.SetGene_location() |= VP::eGene_location_intron;
         infos.erase(it);
     }
     it = infos.find("DSS");
     if (infos.end() != it) {
-        props.SetGene_location() |= VP::eGene_location_donor; 
+        props.SetGene_location() |= VP::eGene_location_donor;
         infos.erase(it);
     }
     it = infos.find("ASS");
     if (infos.end() != it) {
-        props.SetGene_location() |= VP::eGene_location_acceptor; 
+        props.SetGene_location() |= VP::eGene_location_acceptor;
         infos.erase(it);
     }
     it = infos.find("U5");
     if (infos.end() != it) {
-        props.SetGene_location() |= VP::eGene_location_utr_5; 
+        props.SetGene_location() |= VP::eGene_location_utr_5;
         infos.erase(it);
     }
     it = infos.find("U3");
     if (infos.end() != it) {
-        props.SetGene_location() |= CVariantProperties::eGene_location_utr_3; 
+        props.SetGene_location() |= CVariantProperties::eGene_location_utr_3;
         infos.erase(it);
     }
 
     it = infos.find("SYN");
     if (infos.end() != it) {
-        props.SetGene_location() |= VP::eEffect_synonymous; 
+        props.SetGene_location() |= VP::eEffect_synonymous;
         infos.erase(it);
     }
     it = infos.find("NSN");
     if (infos.end() != it) {
-        props.SetGene_location() |= VP::eEffect_stop_gain; 
+        props.SetGene_location() |= VP::eEffect_stop_gain;
         infos.erase(it);
     }
     it = infos.find("NSM");
     if (infos.end() != it) {
-        props.SetGene_location() |= VP::eEffect_missense; 
+        props.SetGene_location() |= VP::eEffect_missense;
         infos.erase(it);
     }
     it = infos.find("NSF");
     if (infos.end() != it) {
-        props.SetGene_location() |= VP::eEffect_frameshift; 
+        props.SetGene_location() |= VP::eEffect_frameshift;
         infos.erase(it);
     }
 
     //byte F3
     it = infos.find("WGT");
     if (infos.end() != it) {
-        int weight = NStr::StringToInt( infos["WGT"][0] ); 
+        int weight = NStr::StringToInt( infos["WGT"][0] );
         switch(weight) {
         default:
             break;
@@ -1550,17 +1550,17 @@ CVcfReader::xAssignVariantProps(
 
     it = infos.find("ASP");
     if (infos.end() != it) {
-        props.SetMapping() |= VP::eMapping_is_assembly_specific; 
+        props.SetMapping() |= VP::eMapping_is_assembly_specific;
         infos.erase(it);
     }
     it = infos.find("CFL");
     if (infos.end() != it) {
-        props.SetMapping() |= VP::eMapping_has_assembly_conflict; 
+        props.SetMapping() |= VP::eMapping_has_assembly_conflict;
         infos.erase(it);
     }
     it = infos.find("OTH");
     if (infos.end() != it) {
-        props.SetMapping() |= VP::eMapping_has_other_snp; 
+        props.SetMapping() |= VP::eMapping_has_other_snp;
         infos.erase(it);
     }
 
@@ -1572,7 +1572,7 @@ CVcfReader::xAssignVariantProps(
     }
     it = infos.find("G5A");
     if (infos.end() != it) {
-        props.SetFrequency_based_validation() |= VP::eFrequency_based_validation_above_5pct_1plus; 
+        props.SetFrequency_based_validation() |= VP::eFrequency_based_validation_above_5pct_1plus;
         infos.erase(it);
     }
     it = infos.find("VLD");
@@ -1594,12 +1594,12 @@ CVcfReader::xAssignVariantProps(
     //byte F5
     it = infos.find("GNO");
     if (infos.end() != it) {
-        props.SetGenotype() |= VP::eGenotype_has_genotypes; 
+        props.SetGenotype() |= VP::eGenotype_has_genotypes;
         infos.erase(it);
     }
     it = infos.find("HD");
     if (infos.end() != it) {
-        props.SetResource_link() |= VP::eResource_link_genotypeKit; 
+        props.SetResource_link() |= VP::eResource_link_genotypeKit;
         infos.erase(it);
     }
 
@@ -1657,7 +1657,7 @@ void CVcfReader::xAssignVariantSource(CVcfData& data,
     if (infos.end() != it) {
         vector<string> sources = it->second;
         if (sources.size() > 0 &&
-            NStr::Equal(sources.front(),"dbsnp")) 
+            NStr::Equal(sources.front(),"dbsnp"))
         {
             bool valid_id=false;
             CRef<CDbtag> pDbtag(new CDbtag());
@@ -1668,7 +1668,7 @@ void CVcfReader::xAssignVariantSource(CVcfData& data,
 
             if (!valid_id) {
                 CReaderMessage warning(
-                    eDiag_Warning, 
+                    eDiag_Warning,
                     m_uLineNumber,
                     "CVcfReader::xAssignVariantProps: No valid dbSNP identifier");
                 m_pMessageHandler->Report(warning);

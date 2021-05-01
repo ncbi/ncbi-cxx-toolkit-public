@@ -55,7 +55,7 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
- 
+
 CIdMapperGCAssembly::CIdMapperGCAssembly(CScope&             scope,
                                          const CGC_Assembly& assm,
                                          EAliasMapping   mapping,

@@ -54,10 +54,10 @@ BEGIN_NCBI_SCOPE
 
 USING_SCOPE(objects);
 
-CAgpToSeqEntry::CAgpToSeqEntry( 
-    TFlags fFlags, 
+CAgpToSeqEntry::CAgpToSeqEntry(
+    TFlags fFlags,
     EAgpVersion agp_version,
-    CAgpErr* arg) 
+    CAgpErr* arg)
     : CAgpReader( arg, agp_version ),
       m_fFlags(fFlags)
 { }
@@ -66,7 +66,7 @@ CAgpToSeqEntry::CAgpToSeqEntry(
 CRef<CSeq_id> CAgpToSeqEntry::s_DefaultSeqIdFromStr( const string & str )
 {
     CRef<CSeq_id> seq_id;
-    try { 
+    try {
         seq_id.Reset( new CSeq_id( str ) );
     } catch(...) {
         // couldn't create real seq-id.  fall back on local seq-id
@@ -76,7 +76,7 @@ CRef<CSeq_id> CAgpToSeqEntry::s_DefaultSeqIdFromStr( const string & str )
 }
 
 // static
-CRef<objects::CSeq_id> 
+CRef<objects::CSeq_id>
     CAgpToSeqEntry::s_LocalSeqIdFromStr( const std::string & str )
 {
     CTempString sLocalID(str);
@@ -104,8 +104,8 @@ CRef<objects::CSeq_id>
 
 void CAgpToSeqEntry::OnGapOrComponent(void)
 {
-    if( ! m_bioseq || 
-        m_prev_row->GetObject() != m_this_row->GetObject() ) 
+    if( ! m_bioseq ||
+        m_prev_row->GetObject() != m_this_row->GetObject() )
     {
         x_FinishedBioseq();
 
@@ -118,7 +118,7 @@ void CAgpToSeqEntry::OnGapOrComponent(void)
         m_bioseq.Reset( new CBioseq );
         m_bioseq->SetInst(*seq_inst);
 
-        m_bioseq->SetId().push_back( 
+        m_bioseq->SetId().push_back(
             s_LocalSeqIdFromStr(m_this_row->GetObject()) );
     }
 
@@ -189,7 +189,7 @@ void CAgpToSeqEntry::x_FinishedBioseq(void)
     }
 }
 
-CRef<CSeq_id> 
+CRef<CSeq_id>
 CAgpToSeqEntry::x_GetSeqIdFromStr( const std::string & str )
 {
     if( m_fFlags & fForceLocalId ) {
@@ -237,8 +237,8 @@ void CAgpToSeqEntry::x_SetSeqGap( CSeq_gap & out_gap_info )
 
     // gap linkage
     {{
-        out_gap_info.SetLinkage( m_this_row->linkage ? 
-            CSeq_gap::eLinkage_linked : 
+        out_gap_info.SetLinkage( m_this_row->linkage ?
+            CSeq_gap::eLinkage_linked :
             CSeq_gap::eLinkage_unlinked );
     }}
 
@@ -263,7 +263,7 @@ void CAgpToSeqEntry::x_SetSeqGap( CSeq_gap & out_gap_info )
             typedef CStaticPairArrayMap<CAgpRow::ELinkageEvidence, CLinkage_evidence::EType> TEvidMap;
             DEFINE_STATIC_ARRAY_MAP(TEvidMap, sc_EvidMap, sc_EvidTrans);
 
-            CSeq_gap::TLinkage_evidence & link_evid = 
+            CSeq_gap::TLinkage_evidence & link_evid =
                 out_gap_info.SetLinkage_evidence();
 
             _ASSERT( ! m_this_row->linkage_evidences.empty() );
@@ -299,7 +299,7 @@ void CAgpToSeqEntry::x_SetSeqGap( CSeq_gap & out_gap_info )
                 break;
             default:
                 NCBI_USER_THROW_FMT(
-                    "Unknown or unexpected linkage_evidence_flags: " 
+                    "Unknown or unexpected linkage_evidence_flags: "
                     << m_this_row->linkage_evidence_flags);
                 break;
             }

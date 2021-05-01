@@ -49,7 +49,7 @@ BEGIN_SCOPE(objects)
 
 
 class NCBI_XOBJREAD_EXPORT CFastaDeflineReader : public CReaderBase {
-    
+
 public:
 
     using TFastaFlags = int;
@@ -69,14 +69,14 @@ public:
           m_iLineNum(iLineNum) {}
         string m_sLineText;
         TSeqPos m_iLineNum;
-    }; 
+    };
 
-    using TSeqTitles = vector<SLineTextAndLoc>; 
+    using TSeqTitles = vector<SLineTextAndLoc>;
 
     struct SDeflineParseInfo {
         TBaseFlags fBaseFlags=0;
         TFastaFlags fFastaFlags=0;
-        TSeqPos maxIdLength=0; // If maxIdLength is zero, the code uses the 
+        TSeqPos maxIdLength=0; // If maxIdLength is zero, the code uses the
                                // default values specified in CSeq_id
         TSeqPos lineNumber=0;
     };
@@ -100,7 +100,7 @@ public:
 
     static void ParseDefline(const CTempString& defline,
         const SDeflineParseInfo& info,
-        const TIgnoredProblems& ignoredErrors, 
+        const TIgnoredProblems& ignoredErrors,
         TIds& ids,
         bool& hasRange,
         TSeqPos& rangeStart,
@@ -108,8 +108,8 @@ public:
         TSeqTitles& seqTitles,
         ILineErrorListener* pMessageListener);
 
-    using FIdCheck = function<void(const TIds& id, 
-                                   const TInfo& info, 
+    using FIdCheck = function<void(const TIds& id,
+                                   const TInfo& info,
                                    ILineErrorListener* listener)>;
 
     using FIdValidate = function<void(const TIds& id,
@@ -151,11 +151,11 @@ public:
     using TInfo = CFastaDeflineReader::SDeflineParseInfo;
     using TIds = CFastaDeflineReader::TIds;
 
-    void operator()(const TIds& ids, 
+    void operator()(const TIds& ids,
                     const TInfo& info,
                     ILineErrorListener* listener);
 
-    using FReportError NCBI_STD_DEPRECATED("") = 
+    using FReportError NCBI_STD_DEPRECATED("") =
         function<void (const string& msg, EDiagSev severity)>;
 };
 
@@ -164,20 +164,19 @@ class NCBI_XOBJREAD_EXPORT CSeqIdGenerator : public CObject
 {
 public:
     typedef int TCount;
-    CSeqIdGenerator(TCount count = 1, 
+    CSeqIdGenerator(TCount count = 1,
                     const string& prefix = kEmptyStr,
-                    const string& suffix = kEmptyStr) : 
+                    const string& suffix = kEmptyStr) :
         m_Prefix(prefix),
         m_Suffix(suffix),
         m_Counter(count)
         {}
 
-    
     CRef<CSeq_id> GenerateID(const string& defline, bool advance);
     CRef<CSeq_id> GenerateID(bool advance);
     /// Equivalent to GenerateID(false)
     CRef<CSeq_id> GenerateID(void) const;
-    
+
     const string& GetPrefix (void) const    { return m_Prefix;  }
     TCount GetCounter(void) const           { return m_Counter; }
     const string& GetSuffix (void) const    { return m_Suffix;  }
@@ -187,17 +186,17 @@ public:
     void SetSuffix (const string& suffix)   { m_Suffix  = suffix; }
 
 protected:
-    string m_Prefix; 
+    string m_Prefix;
     string m_Suffix;
     std::atomic<TCount> m_Counter;
 };
 
 
-class NCBI_XOBJREAD_EXPORT CFastaIdHandler : public CObject 
+class NCBI_XOBJREAD_EXPORT CFastaIdHandler : public CObject
 {
 public:
     CFastaIdHandler(void) : mp_IdGenerator(new CSeqIdGenerator()) {}
-    
+
     void SetGenerator(CSeqIdGenerator& generator) {
         mp_IdGenerator.Reset(&generator);
     }
@@ -210,7 +209,7 @@ public:
         return *mp_IdGenerator;
     }
 
-    virtual CRef<CSeq_id> GenerateID(bool unique_id); 
+    virtual CRef<CSeq_id> GenerateID(bool unique_id);
 
     virtual CRef<CSeq_id> GenerateID(const string& defline, bool unique_id=true);
 

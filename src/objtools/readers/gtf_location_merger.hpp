@@ -97,7 +97,7 @@ public:
     TSeqPos mStop;
     ENa_strand mStrand;
     int mType;
-    int mPartNum; 
+    int mPartNum;
 
 };
 

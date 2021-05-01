@@ -21,7 +21,7 @@ private:
 //    CSeq_id_Handle x_ProcessCCDS(const string& identifier);
     bool x_LooksLikeLRG(const string& identifier) const;
     bool x_LooksLikeCCDS(const string& identifier) const;
-    CScope& m_Scope; 
+    CScope& m_Scope;
     unique_ptr<CRegexp> m_LRGregex; // CRef<CRegexp> is not supported
     unique_ptr<CRegexp> m_CCDSregex;
     unique_ptr<CEntrez2Client> m_E2Client;

@@ -38,11 +38,11 @@
 //  NCBI does not use match or missing characters (use ambiguity character 'N'
 //    for missing).
 //  NCBI uses '-' as its gap character but I can't find that mandated anywhere.
-//  Other sources will allow for anything that's not alphanumeric as a gap 
+//  Other sources will allow for anything that's not alphanumeric as a gap
 //    character. The gap character may even change depending on whether it's
 //    in the beginning, the middle, or the send of a sequence.
 //
-//  Reference: 
+//  Reference:
 //  www.cgl.ucsf.edu/chimera/docs/ContributedSoftware/multalignviewer/afasta.html
 //  blast.ncbi.nlm.nih.gov/Blast.cgi?CMD=Web&PAGE_TYPE=BlastDocs&DOC_TYPE=BlastHelp
 //  ============================================================================
@@ -105,21 +105,21 @@ CAlnScannerFastaGap::xImportAlignmentData(
             }
             else {
                 string seqData;
-                AlnUtil::StripBlanks(line, seqData); 
+                AlnUtil::StripBlanks(line, seqData);
                 if (processingFirstSequence) {
                     expectedDataSizes.push_back(seqData.size());
                 }
                 else {
 
                     if (!expectedNumLines) {
-                        expectedNumLines = expectedDataSizes.size(); 
+                        expectedNumLines = expectedDataSizes.size();
                     }
                     auto currentDataSize = seqData.size();
                     auto expectedDataSize = (currentDataLineIndex < expectedNumLines) ?
                         expectedDataSizes[currentDataLineIndex] :
                         0;
                     if (currentDataSize != expectedDataSize) {
-                        string description = 
+                        string description =
                             BadCharCountPrintf(expectedDataSize, currentDataSize);
                         throw SShowStopper(
                             lineNumber,
@@ -147,7 +147,7 @@ CAlnScannerFastaGap::xImportAlignmentData(
         }
 
         TLineInfo existingInfo;
-        auto idComparison 
+        auto idComparison
             = xGetExistingSeqIdInfo(seqId, existingInfo);
         if (idComparison != ESeqIdComparison::eDifferentChars) {
             string description;

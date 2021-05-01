@@ -53,7 +53,7 @@ CSafeStatic<TAliasToTerm> CGff3SofaTypes::m_Aliases;
 CGff3SofaTypes& SofaTypes()
 //  --------------------------------------------------------------------------
 {
-    static CSafeStatic<CGff3SofaTypes> m_Lookup;    
+    static CSafeStatic<CGff3SofaTypes> m_Lookup;
     return *m_Lookup;
 }
 
@@ -154,7 +154,7 @@ CFeatListItem CGff3SofaTypes::MapSofaTermToFeatListItem(
 {
     TLookupSofaToGenbankCit cit = m_Lookup->find( strSofa );
     if ( cit == m_Lookup->end() ) {
-        return CFeatListItem(CSeqFeatData::e_Imp, 
+        return CFeatListItem(CSeqFeatData::e_Imp,
             CSeqFeatData::eSubtype_bad, "", "");
     }
     return cit->second;

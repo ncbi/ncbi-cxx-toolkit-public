@@ -71,7 +71,7 @@ public:
         mAlphabet(alphabet),
         mMatch(match),
         mMissing(missing),
-        mBeginningGap(beginningGap), 
+        mBeginningGap(beginningGap),
         mMiddleGap(middleGap),
         mEndGap(endGap)
     {};
@@ -125,14 +125,14 @@ protected:
     string mBeginningGap;
     string mMiddleGap;
     string mEndGap;
-}; 
+};
 
 
 //  ============================================================================
 class SAlignmentFile {
 //  ============================================================================
 public:
-    size_t 
+    size_t
     NumDeflines() const { return mDeflines.size(); };
 
     size_t
@@ -141,12 +141,12 @@ public:
 
     using TLineInfo = SLineInfo;
 
-    vector<TLineInfo> mIds; 
+    vector<TLineInfo> mIds;
     vector<string> mSequences;
     vector<TLineInfo> mDeflines;
 };
 
-NCBI_XOBJREAD_EXPORT 
+NCBI_XOBJREAD_EXPORT
 bool ReadAlignmentFile(
     istream& istr,
     bool gen_local_ids,
@@ -155,13 +155,13 @@ bool ReadAlignmentFile(
     SAlignmentFile& alignmentInfo,
     ILineErrorListener* pErrorListener=nullptr);
 
-NCBI_XOBJREAD_EXPORT 
+NCBI_XOBJREAD_EXPORT
 bool ReadAlignmentFile(
     istream& istr,
     CSequenceInfo& sequenceInfo,
     SAlignmentFile& alignmentInfo);
 
-NCBI_XOBJREAD_EXPORT 
+NCBI_XOBJREAD_EXPORT
 bool ReadAlignmentFile(
     istream& istr,
     EAlignFormat&,

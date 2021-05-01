@@ -95,7 +95,7 @@ CGffBaseColumns::~CGffBaseColumns()
 {
     delete m_pdScore;
     delete m_peStrand;
-    delete m_pePhase; 
+    delete m_pePhase;
 };
 
 //  ============================================================================

@@ -111,13 +111,13 @@ class NCBI_XOBJREAD_EXPORT CBedReader
     //  object management:
     //
 public:
-    CBedReader( 
+    CBedReader(
         int = fNormal,
         const string& = "",
         const string& = "",
         CReaderListener* = nullptr);
     virtual ~CBedReader();
-    
+
     //
     //  object interface:
     //
@@ -135,14 +135,14 @@ public:
     /// @param lr
     ///   line reader to read from.
     /// @param pErrors
-    ///   pointer to optional error container object. 
-    ///  
+    ///   pointer to optional error container object.
+    ///
     virtual CRef< CSeq_annot >
     ReadSeqAnnot(
         ILineReader& lr,
         ILineErrorListener* pErrors=0 );
 
-    virtual bool 
+    virtual bool
     ReadTrackData(
         ILineReader&,
         CRawBedTrack&,
@@ -173,12 +173,12 @@ protected:
 
     virtual bool xParseTrackLine(
         const string&);
-  
+
     bool xParseFeature(
         const SReaderLine&,
         CSeq_annot&,
         ILineErrorListener*);
-      
+
     bool xParseFeatureAutoSql(
         const CBedColumnData&,
         CSeq_annot&,
@@ -238,28 +238,24 @@ protected:
     void xSetFeatureLocation(
         CRef<CSeq_feat>&,
         const CBedColumnData&);
-        
     void xSetFeatureLocationChrom(
         CRef<CSeq_feat>&,
         const CBedColumnData&);
     void xSetFeatureLocationGene(
         CRef<CSeq_feat>&,
         const CBedColumnData&);
-        
     void xSetFeatureLocationThick(
         CRef<CSeq_feat>&,
         const CBedColumnData&);
     void xSetFeatureLocationCds(
         CRef<CSeq_feat>&,
         const CBedColumnData&);
-        
     void xSetFeatureLocationBlock(
         CRef<CSeq_feat>&,
         const CBedColumnData&);
     void xSetFeatureLocationRna(
         CRef<CSeq_feat>&,
         const CBedColumnData&);
-        
     void xSetFeatureIdsChrom(
         CRef<CSeq_feat>&,
         const CBedColumnData&,
@@ -268,7 +264,6 @@ protected:
         CRef<CSeq_feat>&,
         const CBedColumnData&,
         unsigned int);
-        
     void xSetFeatureIdsThick(
         CRef<CSeq_feat>&,
         const CBedColumnData&,
@@ -277,7 +272,6 @@ protected:
         CRef<CSeq_feat>&,
         const CBedColumnData&,
         unsigned int);
-        
     void xSetFeatureIdsBlock(
         CRef<CSeq_feat>&,
         const CBedColumnData&,
@@ -286,16 +280,13 @@ protected:
         CRef<CSeq_feat>&,
         const CBedColumnData&,
         unsigned int);
-        
     void xSetFeatureBedData(
         CRef<CSeq_feat>&,
         const CBedColumnData&,
         ILineErrorListener*);
-        
     void xSetFeatureTitle(
         CRef<CSeq_feat>&,
         const CBedColumnData&);
-        
     void xSetFeatureScore(
         CRef<CUser_object>,
         const CBedColumnData&);
@@ -336,7 +327,7 @@ protected:
 
     virtual void xAssignBedColumnCount(
         CSeq_annot&);
-                    
+
     void xSetFeatureDisplayData(
         CRef<CSeq_feat>&,
         const CBedColumnData&);

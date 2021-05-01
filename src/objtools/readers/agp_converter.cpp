@@ -89,7 +89,7 @@ CAgpConverter::CAgpConverter(
     }
 }
 
-void 
+void
 CAgpConverter::SetComponentsBioseqSet(
     CConstRef<CBioseq_set> pComponentsBioseqSet)
 {
@@ -128,7 +128,7 @@ CAgpConverter::SetChromosomesInfo(
 }
 
 /// Input has 2 tab-delimited columns: id, then chromosome name
-void 
+void
 CAgpConverter::LoadChromosomeMap(CNcbiIstream & chromosomes_istr )
 {
     TChromosomeMap mapChromosomeNames;
@@ -151,7 +151,7 @@ CAgpConverter::LoadChromosomeMap(CNcbiIstream & chromosomes_istr )
         string id = split_line.front();
         string chr = split_line.back();
         if (mapChromosomeNames.find(id) != mapChromosomeNames.end()
-            && mapChromosomeNames[id] != chr) 
+            && mapChromosomeNames[id] != chr)
         {
             m_pErrorHandler->HandleError(
                 eError_ChromosomeIsInconsistent,
@@ -224,7 +224,7 @@ void CAgpConverter::OutputBioseqs(
 
                 // set new_bioseq
                 {{
-                    CRef<CSeq_entry> new_entry = 
+                    CRef<CSeq_entry> new_entry =
                         x_InitializeAndCheckCopyOfTemplate(
                         (*ent)->GetSeq(),
                         id_str );
@@ -261,7 +261,7 @@ void CAgpConverter::OutputBioseqs(
                 }
                 obj_writer.WriteObject(new_bioseq.GetPointer(), new_bioseq->GetThisTypeInfo());
                 // flush after every write in case the object writer has its own
-                // buffering that can cause corruption when intermixed with direct 
+                // buffering that can cause corruption when intermixed with direct
                 // stringstream "operator<<" calls.
                 obj_writer.Flush();
             }
@@ -278,10 +278,10 @@ void CAgpConverter::OutputOneFileForEach(
     IFileWrittenCallback * pFileWrittenCallback ) const
 {
     CDir outputDir(sDirName);
-    if( ! outputDir.Exists() || 
+    if( ! outputDir.Exists() ||
         ! outputDir.IsDir() )
     {
-        m_pErrorHandler->HandleError( 
+        m_pErrorHandler->HandleError(
             eError_OutputDirNotFoundOrNotADir,
             "The output directory is not a dir or is not found: " + sDirName );
         return;
@@ -300,7 +300,7 @@ void CAgpConverter::OutputOneFileForEach(
         ITERATE (CAgpToSeqEntry::TSeqEntryRefVec, ent, agp_entries) {
 
             string id_str;
-            CRef<CSeq_entry> new_entry = 
+            CRef<CSeq_entry> new_entry =
                 x_InitializeAndCheckCopyOfTemplate(
                 (*ent)->GetSeq(),
                 id_str );
@@ -345,12 +345,12 @@ void CAgpConverter::OutputOneFileForEach(
 #  error STRING_AND_VAR_PAIR
 #endif
 
-// This is less error prone because we don't have to 
+// This is less error prone because we don't have to
 // worry about getting the string and name out of sync
 #define STRING_AND_VAR_PAIR(_value) \
     {  #_value, _value }
 
-CAgpConverter::TOutputFlags 
+CAgpConverter::TOutputFlags
 CAgpConverter::OutputFlagStringToEnum(const string & sEnumAsString)
 {
     // check if this func has fallen out of date
@@ -370,14 +370,14 @@ CAgpConverter::OutputFlagStringToEnum(const string & sEnumAsString)
         kStrFlagMap.find(NStr::TruncateSpaces(sEnumAsString).c_str());
     if( find_iter == kStrFlagMap.end() ) {
         NCBI_USER_THROW_FMT(
-            "Bad string given to CAgpConverter::OutputFlagStringToEnum: " 
+            "Bad string given to CAgpConverter::OutputFlagStringToEnum: "
             << sEnumAsString);
     } else {
         return find_iter->second;
     }
 }
 
-CAgpConverter::EError 
+CAgpConverter::EError
 CAgpConverter::ErrorStringToEnum(const string & sEnumAsString)
 {
     // check if this func has fallen out of date
@@ -407,7 +407,7 @@ CAgpConverter::ErrorStringToEnum(const string & sEnumAsString)
         kStrErrorMap.find(NStr::TruncateSpaces(sEnumAsString).c_str());
     if( find_iter == kStrErrorMap.end() ) {
         NCBI_USER_THROW_FMT(
-            "Bad string given to CAgpConverter::ErrorStringToEnum: " 
+            "Bad string given to CAgpConverter::ErrorStringToEnum: "
             << sEnumAsString);
     } else {
         return find_iter->second;
@@ -416,14 +416,14 @@ CAgpConverter::ErrorStringToEnum(const string & sEnumAsString)
 
 #undef STRING_AND_VAR_PAIR
 
-void CAgpConverter::x_ReadAgpEntries( 
+void CAgpConverter::x_ReadAgpEntries(
     const string & sAgpFileName,
     CAgpToSeqEntry::TSeqEntryRefVec & out_agp_entries ) const
 {
     // load AGP Seq-entry's into agp_entries
 
     // set up the AGP to Seq-entry object
-    const CAgpToSeqEntry::TFlags fAgpReaderFlags = 
+    const CAgpToSeqEntry::TFlags fAgpReaderFlags =
         ( (m_fOutputFlags & fOutputFlags_SetGapInfo) ? CAgpToSeqEntry::fSetSeqGap : 0 );
     stringstream err_strm;
     CRef<CAgpErrEx> pErrHandler( new CAgpErrEx(&err_strm) );
@@ -441,7 +441,7 @@ void CAgpConverter::x_ReadAgpEntries(
     if( iErrCode != 0 ) {
         m_pErrorHandler->HandleError(
             eError_AGPErrorCode,
-            "AGP parsing returned error code " + 
+            "AGP parsing returned error code " +
             NStr::NumericToString(iErrCode) + " (" + pErrHandler->GetMsg(iErrCode) + ")");
         return;
     }
@@ -456,7 +456,7 @@ CAgpConverter::x_InitializeAndCheckCopyOfTemplate(
     string & out_id_str ) const
 {
     string unparsed_id_str;
-    CRef<CSeq_entry> new_entry = 
+    CRef<CSeq_entry> new_entry =
         x_InitializeCopyOfTemplate(agp_bioseq,
         unparsed_id_str,
         out_id_str );
@@ -481,8 +481,8 @@ CAgpConverter::x_InitializeAndCheckCopyOfTemplate(
                 "be written anyway: "
                 "fOutputFlags_AGPLenMustMatchOrig was set and the entry's "
                 "length is " +
-                NStr::NumericToString(uAGPBioseqLen) + 
-                " but the original template's length is " + 
+                NStr::NumericToString(uAGPBioseqLen) +
+                " but the original template's length is " +
                 NStr::NumericToString(uOrigBioseqLen) );
         }
     }
@@ -592,7 +592,7 @@ CAgpConverter::x_InitializeCopyOfTemplate(
 }
 
 bool CAgpConverter::x_VerifyComponents(
-    CConstRef<CSeq_entry> new_entry, 
+    CConstRef<CSeq_entry> new_entry,
     const string & id_str) const
 {
     bool failure = false;
@@ -632,7 +632,7 @@ bool CAgpConverter::x_VerifyComponents(
 }
 
 void CAgpConverter::x_SetChromosomeNameInSourceSubtype(
-    CRef<CSeq_entry> new_entry, 
+    CRef<CSeq_entry> new_entry,
     const string & unparsed_id_str ) const
 {
     TChromosomeMap::const_iterator chr_find_iter =
@@ -695,11 +695,11 @@ void CAgpConverter::x_SetUpObjectOpeningAndClosingStrings(
         // to use Bioseq-sets
         bUsingBioseqSets = true;
     } else if( fOutputBioseqsFlags & fOutputBioseqsFlags_OneObjectPerBioseq ) {
-        // There's only one Bioseq per object, so 
+        // There's only one Bioseq per object, so
         // there's no reason to use Bioseq-sets in each one
         // if we don't have to
         bUsingBioseqSets = false; // redundant assignment, but clarifies
-    } else if( ! bOnlyOneBioseqInAllAGPFiles ) 
+    } else if( ! bOnlyOneBioseqInAllAGPFiles )
     {
         // there's only one big object, so using Bioseq-sets
         // depends on whether there exists one Bioseq in all the AGP files
@@ -710,7 +710,7 @@ void CAgpConverter::x_SetUpObjectOpeningAndClosingStrings(
     // Each subsequent "if" should append to out_sObjectOpeningString
     // and prepend to out_sObjectClosingString, because we're going from the outside inward.
 
-    // At each step, we check if out_sObjectOpeningString is empty 
+    // At each step, we check if out_sObjectOpeningString is empty
     // to see whether or not to add a ASN.1 text header (example header: "Seq-submit :: ")
 
     // outermost possible level: is a Seq-submit needed?
@@ -732,11 +732,11 @@ void CAgpConverter::x_SetUpObjectOpeningAndClosingStrings(
 
         out_sObjectOpeningString = seq_sub_header_strm.str();
         out_sObjectClosingString = "} }" + out_sObjectClosingString;
-    } 
+    }
 
     // next level inward: is a Seq-entry needed?
-    const bool bUsingSeqEntry = ( 
-        m_pSubmitBlock || 
+    const bool bUsingSeqEntry = (
+        m_pSubmitBlock ||
         ( fOutputBioseqsFlags & fOutputBioseqsFlags_WrapInSeqEntry ) );
     if( bUsingSeqEntry ) {
         if( out_sObjectOpeningString.empty() ) {

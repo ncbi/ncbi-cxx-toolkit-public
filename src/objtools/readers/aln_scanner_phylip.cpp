@@ -44,7 +44,7 @@ BEGIN_SCOPE(objects);
 
 //  ============================================================================
 //  Phylip info:
-//  The first line contains the number of sequences and the common sequence 
+//  The first line contains the number of sequences and the common sequence
 //    length of the sequences in the file.
 //  The rest of the file is made up block containing lines of sequence data,
 //    which are separated by empty lines.
@@ -53,9 +53,9 @@ BEGIN_SCOPE(objects);
 //  Later blocks do not repeat the seqId and only contain (optionally chunked)
 //    sequence data.
 //  "Strict" phylip allocates exactly 10 characters for the seqId (padded with
-//    spaces if necessary). 
+//    spaces if necessary).
 //
-//  Gap characters are '-' and 'O', but '.' should be tolerated for historical 
+//  Gap characters are '-' and 'O', but '.' should be tolerated for historical
 //    reasons.
 //  There is no match character.
 //  Nucleotide alphabet includes all ambiguity characters as well as 'U'.
@@ -81,7 +81,7 @@ CAlnScannerPhylip::xImportAlignmentData(
     NStr::TruncateSpacesInPlace(line);
     NStr::Split(line,  " \t", tokens, NStr::fSplit_MergeDelimiters);
     mSequenceCount =  NStr::StringToInt(tokens[0]);
-    mSequenceLength = NStr::StringToInt(tokens[1]); 
+    mSequenceLength = NStr::StringToInt(tokens[1]);
 
 
     size_t dataLineCount(0);
@@ -114,7 +114,7 @@ CAlnScannerPhylip::xImportAlignmentData(
 
         string lowerLine(line);
         NStr::ToLower(lowerLine);
-        
+
         if (lowerLine == "begin ncbi;" ||
             lowerLine == "begin ncbi" ||
             lowerLine == "sequin" ||
@@ -139,7 +139,7 @@ CAlnScannerPhylip::xImportAlignmentData(
             }
 
             TLineInfo existingInfo;
-            auto idComparison = 
+            auto idComparison =
                 xGetExistingSeqIdInfo(seqId, existingInfo);
             if (idComparison != ESeqIdComparison::eDifferentChars) {
                 string description;
@@ -160,7 +160,7 @@ CAlnScannerPhylip::xImportAlignmentData(
             }
             mSeqIds.push_back({seqId, lineCount});
             mSequences.push_back(vector<TLineInfo>());
-        } 
+        }
         else {
             seqData = line;
         }
@@ -173,9 +173,9 @@ CAlnScannerPhylip::xImportAlignmentData(
         if (newBlock) {
             blockLineLength = currentLineLength;
         }
-        else 
+        else
         if (currentLineLength != blockLineLength) {
-            string description = 
+            string description =
                 BadCharCountPrintf(blockLineLength,currentLineLength);
             throw SShowStopper(
                 lineCount,
@@ -187,7 +187,7 @@ CAlnScannerPhylip::xImportAlignmentData(
         ++dataLineCount;
     }
 
-    int incompleteBlockSize = dataLineCount % mSequenceCount; 
+    int incompleteBlockSize = dataLineCount % mSequenceCount;
     if (incompleteBlockSize) {
         string description =
             ErrorPrintf("The final sequence block in the Phylip file is incomplete. It contains data for just %d sequences, but %d sequences are expected.",

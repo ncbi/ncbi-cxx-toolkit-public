@@ -108,8 +108,8 @@ string ErrorPrintf(const char *format, ...)
 string BadCharCountPrintf(int expectedCount, int actualCount)
 //  ----------------------------------------------------------------------------
 {
-    return 
-        ("Number of characters on sequence line is different from expected. " + 
+    return
+        ("Number of characters on sequence line is different from expected. " +
         ErrorPrintf("Expected number of characters is %d. Actual number of characters is %d.",
                 expectedCount, actualCount));
 }

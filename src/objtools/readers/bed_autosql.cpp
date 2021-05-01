@@ -177,7 +177,7 @@ CBedAutoSql::ReadSeqFeat(
     // true: useful data was generated, even if incomplete
     // false: any data will be flawed, don't use
     // exception: something so bad we can't deal with it on this level.
-    bool success = 
+    bool success =
         mWellKnownFields.SetLocation(
             columnData, mBedFlags, feat, messageHandler)  &&
         mWellKnownFields.SetTitle(
@@ -196,7 +196,7 @@ CBedAutoSql::Validate(
     CReaderMessageHandler& messageHandler) const
 //  ===============================================================================
 {
-    if ( !mWellKnownFields.Validate(messageHandler)  ||  
+    if ( !mWellKnownFields.Validate(messageHandler) ||
             !mCustomFields.Validate(messageHandler)) {
         return false;
     }
@@ -210,6 +210,6 @@ CBedAutoSql::Validate(
     }
     return true;
 }
-    
+
 END_SCOPE(objects)
 END_NCBI_SCOPE

@@ -87,7 +87,7 @@ public:
 
 
 
-class NCBI_XOBJREAD_EXPORT CModHandler 
+class NCBI_XOBJREAD_EXPORT CModHandler
 {
 public:
 
@@ -107,8 +107,8 @@ public:
     CModHandler();
     void SetExcludedMods(const vector<string>& excluded_mods);
 
-    void AddMods(const TModList& mods, 
-                 EHandleExisting handle_existing, 
+    void AddMods(const TModList& mods,
+                 EHandleExisting handle_existing,
                  TModList& rejected_mods,
                  FReportError fReportError=nullptr);
 
@@ -169,30 +169,30 @@ private:
     static const string& x_GetModName(const TModEntry& mod_entry);
     static const string& x_GetModValue(const TModEntry& mod_entry);
 
-    static bool x_TrySeqInstMod(const TModEntry& mod_entry, 
+    static bool x_TrySeqInstMod(const TModEntry& mod_entry,
             CSeq_inst& seq_inst,
             TSkippedMods& skipped_mods,
             FPostMessage fPostMessage);
 
-    static void x_SetStrand(const TModEntry& mod_entry, 
+    static void x_SetStrand(const TModEntry& mod_entry,
             CSeq_inst& seq_inst,
             TSkippedMods& skipped_mods,
             FPostMessage fPostMessage);
 
-    static void x_SetMolecule(const TModEntry& mod_entry, 
+    static void x_SetMolecule(const TModEntry& mod_entry,
             CSeq_inst& seq_inst,
             TSkippedMods& skipped_mods,
             FPostMessage fPostMessage);
 
-    static void x_SetMoleculeFromMolType(const TModEntry& mod_entry, 
+    static void x_SetMoleculeFromMolType(const TModEntry& mod_entry,
             CSeq_inst& seq_inst);
 
-    static void x_SetTopology(const TModEntry& mod_entry, 
+    static void x_SetTopology(const TModEntry& mod_entry,
             CSeq_inst& seq_inst,
             TSkippedMods& skipped_mods,
             FPostMessage fPostMessage);
 
-    static void x_SetHist(const TModEntry& mod_entry, 
+    static void x_SetHist(const TModEntry& mod_entry,
             CSeq_inst& seq_inst);
 
     static void x_ReportInvalidValue(const CModData& mod_data,
@@ -225,7 +225,7 @@ private:
 };
 
 
-class NCBI_XOBJREAD_EXPORT CTitleParser 
+class NCBI_XOBJREAD_EXPORT CTitleParser
 {
 public:
     using TModList = CModHandler::TModList;

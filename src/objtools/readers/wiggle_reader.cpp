@@ -78,7 +78,7 @@ CWiggleReader::CWiggleReader(
     m_TrackType(eTrackType_invalid)
 {
     m_uLineNumber = 0;
-    m_GapValue = 0.0; 
+    m_GapValue = 0.0;
 }
 
 //  ----------------------------------------------------------------------------
@@ -91,7 +91,7 @@ CWiggleReader::~CWiggleReader()
 CRef< CSeq_annot >
 CWiggleReader::ReadSeqAnnot(
     ILineReader& lr,
-    ILineErrorListener* pEL) 
+    ILineErrorListener* pEL)
 //  ----------------------------------------------------------------------------
 {
     m_ChromId.clear();
@@ -119,7 +119,7 @@ CWiggleReader::ReadSeqAnnot(
 }
 
 //  ----------------------------------------------------------------------------
-void 
+void
 CWiggleReader::xGetData(
     ILineReader& lr,
     TReaderData& readerData)
@@ -131,7 +131,7 @@ CWiggleReader::xGetData(
     readerData.clear();
     string line;
     while (xGetLine(lr, line)) {
-        bool isMeta = NStr::StartsWith(line, "fixedStep")  ||  
+        bool isMeta = NStr::StartsWith(line, "fixedStep")  ||
             NStr::StartsWith(line, "variableStep")  ||
             xIsTrackLine(line)  ||
             xIsBrowserLine(line);
@@ -149,12 +149,12 @@ CWiggleReader::xGetData(
     }
 }
 
-//  ----------------------------------------------------------------------------                
-void 
+//  ----------------------------------------------------------------------------
+void
 CWiggleReader::xProcessData(
     const TReaderData& readerData,
     CSeq_annot&)
-//  ----------------------------------------------------------------------------                
+//  ----------------------------------------------------------------------------
 {
     for (auto curData = readerData.begin(); curData != readerData.end(); curData++) {
         auto line = curData->mData;
@@ -177,7 +177,7 @@ CWiggleReader::xProcessData(
 
 
 //  ----------------------------------------------------------------------------
-bool 
+bool
 CWiggleReader::ReadTrackData(
     ILineReader& lr,
     CRawWiggleTrack& rawdata,
@@ -227,7 +227,7 @@ CWiggleReader::xReadFixedStepDataRaw(
         xGetDouble(line, value);
         rawdata.AddRecord(
             CRawWiggleRecord(*id, pos, fixedStepInfo.mSpan, value));
-        pos += fixedStepInfo.mStep;        
+        pos += fixedStepInfo.mStep;
         curIt++;
     }
     return rawdata.HasData();
@@ -312,7 +312,7 @@ void CWiggleReader::xPreprocessValues(SWiggleStat& stat)
     }
 
     const int range = 255;
-    if ( stat.m_Max > stat.m_Min && 
+    if ( stat.m_Max > stat.m_Min &&
             (!stat.m_IntValues || stat.m_Max-stat.m_Min > range) ) {
         stat.m_Step = (stat.m_Max-stat.m_Min)/range;
         stat.m_StepMul = 1/stat.m_Step;
@@ -410,7 +410,7 @@ CRef<CSeq_table> CWiggleReader::xMakeTable()
             }
         }
     }
-    
+
     // position
     CRef<CSeqTable_column> col_pos(new CSeqTable_column);
     table->SetColumns().push_back(col_pos);
@@ -419,7 +419,7 @@ CRef<CSeq_table> CWiggleReader::xMakeTable()
 
     SWiggleStat stat;
     xPreprocessValues(stat);
-    
+
     xSetTotalLoc(*table_loc, *chrom_id);
 
     table->SetNum_rows(static_cast<TSeqPos>(size));
@@ -460,7 +460,7 @@ CRef<CSeq_table> CWiggleReader::xMakeTable()
         CRef<CSeqTable_column> col_val(new CSeqTable_column);
         table->SetColumns().push_back(col_val);
         col_val->SetHeader().SetField_name("values");
-        
+
         if ( 1 ) {
             AutoPtr< vector<char> > values(new vector<char>());
             values->reserve(size);
@@ -476,7 +476,7 @@ CRef<CSeq_table> CWiggleReader::xMakeTable()
         else {
             CSeqTable_multi_data::TInt& values = col_val->SetData().SetInt();
             values.reserve(size);
-            
+
             ITERATE ( TValues, it, m_Values ) {
                 pos.push_back(it->m_Pos);
                 if ( span_ptr ) {
@@ -492,7 +492,7 @@ CRef<CSeq_table> CWiggleReader::xMakeTable()
         col_val->SetHeader().SetField_name("values");
         CSeqTable_multi_data::TReal& values = col_val->SetData().SetReal();
         values.reserve(size);
-        
+
         ITERATE ( TValues, it, m_Values ) {
             pos.push_back(it->m_Pos);
             if ( span_ptr ) {
@@ -517,14 +517,14 @@ CRef<CSeq_graph> CWiggleReader::xMakeGraph()
 
     SWiggleStat stat;
     xPreprocessValues(stat);
-    
+
     xSetTotalLoc(*graph_loc, *chrom_id);
 
     string trackName = m_pTrackDefaults->Name();
     if (!trackName.empty()) {
         graph->SetTitle(trackName);
     }
-       
+
     graph->SetComp(stat.m_Span);
     graph->SetA(stat.m_Step);
     graph->SetB(stat.m_Min);
@@ -1080,7 +1080,7 @@ bool CWiggleReader::xProcessBedData(
         xGetDouble(line, value.m_Value);
         value.m_Span -= value.m_Pos;
         xAddValue(value);
-        
+
         curIt++;
     }
     return true;

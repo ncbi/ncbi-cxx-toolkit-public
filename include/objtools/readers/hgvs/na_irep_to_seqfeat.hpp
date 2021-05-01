@@ -1,4 +1,4 @@
-#ifndef _NA_IREP_TO_SEQFEAT_HPP_ 
+#ifndef _NA_IREP_TO_SEQFEAT_HPP_
 #define _NA_IREP_TO_SEQFEAT_HPP_
 
 /*  $Id$
@@ -51,9 +51,9 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-/// Helper class for constructing a CDelta_item instances 
+/// Helper class for constructing a CDelta_item instances
 /// encoding intronic offsets.
-class CIntronOffsetHelper 
+class CIntronOffsetHelper
 {
 public:
     static CRef<CDelta_item> GetIntronOffset(const CNtSite& nt_site);
@@ -66,8 +66,8 @@ public:
 private:
     static void x_SetDeltaItemOffset(TSeqPos length,
                                      const CDelta_item::TMultiplier multiplier,
-                                     bool fuzzy, 
-                                     CDelta_item& delta_item);   
+                                     bool fuzzy,
+                                     CDelta_item& delta_item);
 };
 
 /// Helper class for constructing a CSeq_loc instance for a NA variant
@@ -81,7 +81,7 @@ public:
                                        const CSequenceVariant::TSeqtype& seq_type,
                                        CScope& scope);
 
-    /// Construct the CSeq_loc object for a given Seq-id and nucleotide location 
+    /// Construct the CSeq_loc object for a given Seq-id and nucleotide location
     /// in the intermediate variant representation
     static CRef<CSeq_loc> CreateSeqloc(const CSeq_id& seq_id,
                                        const CNtLocation& nt_loc,
@@ -89,7 +89,7 @@ public:
                                        CScope& scope);
 
 private:
-    /// Construct the CSeq_loc object for a given Seq-id and nucleotide site 
+    /// Construct the CSeq_loc object for a given Seq-id and nucleotide site
     /// in the intermediate rerpresentation.
     static CRef<CSeq_loc> x_CreateSeqloc(const CSeq_id& seq_id,
                                        const CNtSite& nt_site,
@@ -103,14 +103,14 @@ private:
                                        const CSequenceVariant::TSeqtype& seq_type,
                                        CScope& scope);
 
-    /// Construct the CSeq_loc object for a given Seq-id and nucleotide site interval 
+    /// Construct the CSeq_loc object for a given Seq-id and nucleotide site interval
     /// in the intermediate representation
     static CRef<CSeq_loc> x_CreateSeqloc(const CSeq_id& seq_id,
                                          const CNtInterval& nt_int,
                                          const CSequenceVariant::TSeqtype& seq_type,
                                          CScope& scope);
 
-    /// Attempt to translate a nucleotide interval limit in the intermediate 
+    /// Attempt to translate a nucleotide interval limit in the intermediate
     /// variant representation into a residue index on a Bioseq instance.
     static bool x_ComputeSiteIndex(const CSeq_id& seq_id,
                                    const CNtIntLimit& nt_limit,
@@ -118,7 +118,7 @@ private:
                                    CScope& scope,
                                    TSeqPos& site_index);
 
-    /// Attempt to translate a nucleotide site in the intermediate 
+    /// Attempt to translate a nucleotide site in the intermediate
     /// variant representation into a residue index on a Bioseq instance.
     static bool x_ComputeSiteIndex(const CSeq_id& seq_id,
                                    const CNtSite& nt_site,
@@ -126,7 +126,7 @@ private:
                                    CScope& scope,
                                    TSeqPos& site_index);
 
-    /// Attempt to translate a nucleotide site range in the intermediate 
+    /// Attempt to translate a nucleotide site range in the intermediate
     /// variant representation into a residue index on a Bioseq instance.
     static bool x_ComputeSiteIndex(const CSeq_id& seq_id,
                                    const CNtSiteRange& nt_range,
@@ -169,7 +169,7 @@ private:
                                                   const CSimpleVariant& simple_var) const;
 
         /// Return the top-level CVariation_ref object appearing in the variant Seq-feat
-        CRef<CVariation_ref> x_CreateVarref(const string& var_name, 
+        CRef<CVariation_ref> x_CreateVarref(const string& var_name,
                                             const CSimpleVariant& simple_var) const;
 
         /// Return a CVariation_ref describing a "no-change" variant
@@ -203,7 +203,7 @@ private:
         CRef<CVariation_ref> x_CreateDelinsVarref(const CDelins& delins,
                                                   CVariation_ref::EMethod_E method=CVariation_ref::eMethod_E_unknown) const;
 
-        CRef<CVariation_ref> x_CreateDelinsVarref(const CNtLocation& nt_loc, 
+        CRef<CVariation_ref> x_CreateDelinsVarref(const CNtLocation& nt_loc,
                                                   const string& initial_nt,
                                                   const string& final_nt,
                                                   CVariation_ref::EMethod_E method=CVariation_ref::eMethod_E_unknown) const;
@@ -211,10 +211,10 @@ private:
         CRef<CVariation_ref> x_CreateInversionVarref(const CInversion& inv,
                                                      CVariation_ref::EMethod_E method=CVariation_ref::eMethod_E_unknown) const;
 
-        CRef<CVariation_ref> x_CreateConversionVarref(const CConversion& conv, 
+        CRef<CVariation_ref> x_CreateConversionVarref(const CConversion& conv,
                                                       CVariation_ref::EMethod_E method=CVariation_ref::eMethod_E_unknown) const;
 
-        CRef<CVariation_ref> x_CreateSSRVarref(const CRepeat& ssr, 
+        CRef<CVariation_ref> x_CreateSSRVarref(const CRepeat& ssr,
                                                CVariation_ref::EMethod_E method=CVariation_ref::eMethod_E_unknown) const;
 
         /// Return a CSeq_literal encapsulating a known nucleotide sequence

@@ -66,15 +66,15 @@ CMicroArrayReader::CMicroArrayReader(
 //  ----------------------------------------------------------------------------
 CMicroArrayReader::~CMicroArrayReader()
 //  ----------------------------------------------------------------------------
-{ 
+{
 }
 
-//  ----------------------------------------------------------------------------                
+//  ----------------------------------------------------------------------------
 CRef< CSeq_annot >
 CMicroArrayReader::ReadSeqAnnot(
     ILineReader& lr,
-    ILineErrorListener* pEC) 
-//  ----------------------------------------------------------------------------                
+    ILineErrorListener* pEC)
+//  ----------------------------------------------------------------------------
 {
     CRef<CSeq_annot> pAnnot = CReaderBase::ReadSeqAnnot(lr, pEC);
     if (pAnnot) {
@@ -84,7 +84,7 @@ CMicroArrayReader::ReadSeqAnnot(
             CRef<CUser_object> columnCountUser( new CUser_object() );
             columnCountUser->SetType().SetStr( "NCBI_BED_COLUMN_COUNT" );
             columnCountUser->AddField("NCBI_BED_COLUMN_COUNT", int ( m_columncount ) );
-    
+
             CRef<CAnnotdesc> userDesc( new CAnnotdesc() );
             userDesc->SetUser().Assign( *columnCountUser );
             pAnnot->SetDesc().Set().push_back( userDesc );
@@ -95,7 +95,7 @@ CMicroArrayReader::ReadSeqAnnot(
 
 //  ----------------------------------------------------------------------------
 CRef<CSeq_annot>
-CMicroArrayReader::xCreateSeqAnnot() 
+CMicroArrayReader::xCreateSeqAnnot()
 //  ----------------------------------------------------------------------------
 {
     CRef<CSeq_annot> pAnnot = CReaderBase::xCreateSeqAnnot();
@@ -110,11 +110,11 @@ CMicroArrayReader::xCreateSeqAnnot()
 void
 CMicroArrayReader::xProcessData(
     const TReaderData& readerData,
-    CSeq_annot& annot) 
+    CSeq_annot& annot)
 //  ----------------------------------------------------------------------------
 {
     for (const auto& lineInfo: readerData) {
-        const auto& line = lineInfo.mData; 
+        const auto& line = lineInfo.mData;
         if (xParseBrowserLine(line, annot)) {
             return;
         }
@@ -156,7 +156,7 @@ CMicroArrayReader::xGetData(
             readerData.push_back(TReaderLine{m_uLineNumber, line});
             ++m_uDataCount;
             return;
-        } 
+        }
     }
 
     NStr::SplitInTwo(line, "\t", head, tail);
@@ -207,7 +207,7 @@ void CMicroArrayReader::xSetFeatureLocation(
 //  ----------------------------------------------------------------------------
 {
     feature->ResetLocation();
-    
+
     CRef<CSeq_id> id( new CSeq_id() );
     id->SetLocal().SetStr( fields[0] );
 
@@ -215,10 +215,10 @@ void CMicroArrayReader::xSetFeatureLocation(
     CSeq_interval& interval = location->SetInt();
     interval.SetFrom( NStr::StringToInt( fields[1] ) );
     interval.SetTo( NStr::StringToInt( fields[2] ) - 1 );
-    interval.SetStrand( 
+    interval.SetStrand(
         ( fields[5] == "+" ) ? eNa_strand_plus : eNa_strand_minus );
     location->SetId( *id );
-    
+
     feature->SetLocation( *location );
 }
 
@@ -230,7 +230,7 @@ void CMicroArrayReader::xSetFeatureDisplayData(
 {
     CRef<CUser_object> display_data( new CUser_object );
     display_data->SetType().SetStr( "Display Data" );
-    
+
     display_data->AddField( "name", fields[3] );
     if ( !m_usescore ) {
         display_data->AddField( "score", NStr::StringToInt(fields[4]) );
@@ -268,14 +268,14 @@ bool CMicroArrayReader::xProcessTrackLine(
     m_strExpNames = "";
     m_iExpScale = -1;
     m_iExpStep = -1;
-    
+
     if (!CReaderBase::xParseTrackLine(strLine)) {
         return false;
     }
     if ( m_iFlags & fReadAsBed ) {
         return true;
     }
-    
+
     if ( m_strExpNames.empty() ) {
         CReaderMessage error(
             eDiag_Warning,
@@ -297,7 +297,7 @@ bool CMicroArrayReader::xProcessTrackLine(
             "Track Line Processing: Missing \"expStep\" parameter." );
         m_pMessageHandler->Report(error);
     }
-    
+
     return true;
 }
 

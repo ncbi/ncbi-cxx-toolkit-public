@@ -26,7 +26,7 @@
  * Authors:  Justin Foley
  *
  */
-    
+
 #ifndef _MOD_TO_ENUM_HPP_
 #define _MOD_TO_ENUM_HPP_
 
@@ -39,7 +39,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-template<typename TEnum> 
+template<typename TEnum>
 using TStringToEnumMap = unordered_map<string,TEnum>;
 
 string g_GetNormalizedModVal(const string& unnormalized);
@@ -61,13 +61,13 @@ TStringToEnumMap<CBioSource::EOrigin>
 g_InitModNameOriginMap(void);
 
 
-extern const 
-TStringToEnumMap<CMolInfo::TBiomol> 
+extern const
+TStringToEnumMap<CMolInfo::TBiomol>
 g_BiomolStringToEnum;
 
 
-extern const 
-unordered_map<CMolInfo::TBiomol, CSeq_inst::EMol> 
+extern const
+unordered_map<CMolInfo::TBiomol, CSeq_inst::EMol>
 g_BiomolEnumToMolEnum;
 
 

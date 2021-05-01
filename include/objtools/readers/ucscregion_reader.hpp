@@ -51,10 +51,10 @@ class NCBI_XOBJREAD_EXPORT CUCSCRegionReader: public CReaderBase
 {
 public:
     CUCSCRegionReader(unsigned int = fNormal);
-    virtual ~CUCSCRegionReader();  
+    virtual ~CUCSCRegionReader();
 
     virtual CRef<CSeq_annot> ReadSeqAnnot(ILineReader& lr, ILineErrorListener* pEC);
-    virtual CRef< CSerialObject > 
+    virtual CRef< CSerialObject >
     ReadObject(
         ILineReader& lr,
         ILineErrorListener* pErrors=0);

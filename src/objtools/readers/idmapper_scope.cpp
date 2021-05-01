@@ -39,7 +39,7 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
- 
+
 CIdMapperScope::CIdMapperScope(CScope&               scope,
                                const CSeq_id_Handle& focus_idh)
     : m_Scope(&scope)

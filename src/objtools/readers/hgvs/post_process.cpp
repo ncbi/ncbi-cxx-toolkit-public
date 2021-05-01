@@ -19,11 +19,11 @@ CRef<CSeq_literal> CPostProcessUtils::GetLiteralAtLoc(const CSeq_loc& loc, CScop
     seqvec.GetSeqData(seqvec.begin(), seqvec.end(), sequence);
 
     if (sequence.size() > 1) { // LCOV_EXCL_START - At the moment, only identity instances involving a single base are supported
-        sequence = sequence.front() + ".." + sequence.back(); 
+        sequence = sequence.front() + ".." + sequence.back();
     } // LCOV_EXCL_STOP
 
     if (seqvec.IsProtein()) { // LCOV_EXCL_START - Don't expect amino acids without index. May be needed when validating.
-        literal->SetSeq_data().SetNcbieaa().Set(sequence); 
+        literal->SetSeq_data().SetNcbieaa().Set(sequence);
     } // LCOV_EXCL_STOP
     else {
         literal->SetSeq_data().SetIupacna().Set(sequence);
@@ -39,7 +39,7 @@ bool CPostProcessUtils::HasIntronOffset(const CVariation_inst& var_inst) const
 {
     if (!var_inst.IsSetDelta()) {
 // LCOV_EXCL_START
-        NCBI_THROW(CVariationValidateException, 
+        NCBI_THROW(CVariationValidateException,
                    eIncompleteObject,
                    "Delta-item not set");
 // LCOV_EXCL_STOP
@@ -68,7 +68,7 @@ CRef<CSeq_feat> CNormalizeVariant::GetNormalizedIdentity(const CSeq_feat& identi
         !normalized_feat->GetData().GetVariation().GetData().GetInstance().IsSetType() ||
         normalized_feat->GetData().GetVariation().GetData().GetInstance().GetType() != CVariation_inst::eType_identity) {
         return normalized_feat;
-    } 
+    }
 
     auto& var_inst = normalized_feat->SetData().SetVariation().SetData().SetInstance();
     NormalizeIdentityInstance(var_inst, normalized_feat->GetLocation());
@@ -109,7 +109,7 @@ void CNormalizeVariant::NormalizeIdentityInstance(CVariation_inst& identity_inst
     auto& delta_item = *identity_inst.SetDelta().back();
 
     if (!delta_item.IsSetSeq()) { // LCOV_EXCL_START
-        ERR_POST(Warning << "CDelta_item: Sequence not set"); 
+        ERR_POST(Warning << "CDelta_item: Sequence not set");
         return;
     } // LCOV_EXCL_STOP
 
@@ -120,7 +120,7 @@ void CNormalizeVariant::NormalizeIdentityInstance(CVariation_inst& identity_inst
         auto new_literal = utils.GetLiteralAtLoc(location, m_Scope);
         delta_item.SetSeq().SetLiteral(*new_literal);
     }
-    identity_inst.SetObservation(CVariation_inst::eObservation_asserted); 
+    identity_inst.SetObservation(CVariation_inst::eObservation_asserted);
 }
 
 
@@ -146,19 +146,19 @@ void s_ValidateSeqLiteral(const CSeq_literal& literal, const CSeq_loc& location,
         const auto literal_length = literal.GetLength();
         const auto interval_length = sequence::GetLength(location, scope);
         if (literal_length != interval_length) {
-            string message = "Literal length (" + NStr::IntToString(literal_length) 
+            string message = "Literal length (" + NStr::IntToString(literal_length)
                              + ") not consistent with interval length (" + NStr::IntToString(interval_length) + ")";
-            NCBI_THROW(CVariationValidateException, 
-                       eSeqliteralIntervalError, 
+            NCBI_THROW(CVariationValidateException,
+                       eSeqliteralIntervalError,
                        message);
         }
     }
 }
 
 
-// Turn this into a static method maybe. 
+// Turn this into a static method maybe.
 // Just use the class to organise the data
-void CValidateVariant::ValidateIdentityInst(const CVariation_inst& identity_inst, const CSeq_loc& location, bool IsCDS) 
+void CValidateVariant::ValidateIdentityInst(const CVariation_inst& identity_inst, const CSeq_loc& location, bool IsCDS)
 {
     if (!identity_inst.IsSetType() ||
          identity_inst.GetType() != CVariation_inst::eType_identity)
@@ -168,12 +168,12 @@ void CValidateVariant::ValidateIdentityInst(const CVariation_inst& identity_inst
         if (!identity_inst.IsSetType()) {
             message += "Type not set. ";
         } else {
-            message += "Invalid type (" 
-                    + NStr::NumericToString(identity_inst.GetType()) 
+            message += "Invalid type ("
+                    + NStr::NumericToString(identity_inst.GetType())
                     + ").";
         }
-        message += "Expected eType_identity"; 
-        
+        message += "Expected eType_identity";
+
         NCBI_THROW(CVariationValidateException,
                    eInvalidType,
                    message);
@@ -182,7 +182,7 @@ void CValidateVariant::ValidateIdentityInst(const CVariation_inst& identity_inst
 
     if (!identity_inst.IsSetDelta()) {
 // LCOV_EXCL_START
-        NCBI_THROW(CVariationValidateException, 
+        NCBI_THROW(CVariationValidateException,
                    eIncompleteObject,
                    "Delta-item not set");
 // LCOV_EXCL_STOP
@@ -221,26 +221,26 @@ void CValidateVariant::ValidateMicrosatelliteInst(const CVariation_inst& ms_inst
 // LCOV_EXCL_START
         string message = "CVariation_inst: ";
         message += "Type not set. ";
-        
+
         NCBI_THROW(CVariationValidateException,
                    eInvalidType,
                    message);
 // LCOV_EXCL_STOP
     }
-    
-    // Only worry about microsatellites here 
+
+    // Only worry about microsatellites here
     if (ms_inst.GetType() != CVariation_inst::eType_microsatellite) {
         return;
     }
 
     if (!ms_inst.IsSetDelta()) {
 // LCOV_EXCL_START
-        NCBI_THROW(CVariationValidateException, 
+        NCBI_THROW(CVariationValidateException,
                    eIncompleteObject,
                    "Delta-item not set");
 // LCOV_EXCL_STOP
     }
-    
+
     auto& delta_item = *ms_inst.GetDelta().back();
     if (!delta_item.IsSetSeq()) {
 // LCOV_EXCL_START
@@ -277,7 +277,7 @@ void g_ValidateVariationSeqfeat(const CSeq_feat& feat, CScope* scope, bool IsCDS
         CValidateVariant validator(*scope);
         validator.ValidateMicrosatelliteInst(var_inst, feat.GetLocation(), IsCDS);
         return;
-    } else 
+    } else
     if (!feat.GetData().GetVariation().GetData().IsSet()) {
         return;
     }
@@ -291,15 +291,15 @@ void g_ValidateVariationSeqfeat(const CSeq_feat& feat, CScope* scope, bool IsCDS
         return; // LCOV_EXCL_LINE
     }
 
-    // reference to list<CRef<CVariation_ref>> 
+    // reference to list<CRef<CVariation_ref>>
     auto&& variation_list = data_set.GetVariations();
     if (variation_list.size() < 2) { // LCOV_EXCL_START
         string err_msg = "2 Variation-refs expected. "
-                       + NStr::NumericToString(variation_list.size()) 
+                       + NStr::NumericToString(variation_list.size())
                        + " found.";
         NCBI_THROW(CVariationValidateException,
                    eIncompleteObject,
-                   ""); 
+                   "");
         return;
      } // LCOV_EXCL_STOP
 
@@ -318,7 +318,7 @@ void g_ValidateVariationSeqfeat(const CSeq_feat& feat, CScope* scope, bool IsCDS
     if (!reference->GetData().IsInstance()) {
 // LCOV_EXCL_START
          NCBI_THROW(CVariationValidateException,
-                    eInvalidType, 
+                    eInvalidType,
                     "Variation-ref does not reference Variation-inst object");
 // LCOV_EXCL_STOP
     }
@@ -339,7 +339,7 @@ void g_ValidateVariationSeqfeat(const CSeq_feat& feat, CScope* scope, bool IsCDS
     if (!assertion->GetData().IsInstance()) {
 // LCOV_EXCL_START
          NCBI_THROW(CVariationValidateException,
-                    eInvalidType, 
+                    eInvalidType,
                     "Variation-ref does not reference Variation-inst object");
 // LCOV_EXCL_STOP
     }
@@ -348,7 +348,7 @@ void g_ValidateVariationSeqfeat(const CSeq_feat& feat, CScope* scope, bool IsCDS
 
     if (!assertion_inst.IsSetType()) {
 // LCOV_EXCL_START
-        NCBI_THROW(CVariationValidateException, 
+        NCBI_THROW(CVariationValidateException,
                    eIncompleteObject,
                    "Variation-inst type not specified");
 // LCOV_EXCL_STOP
@@ -357,11 +357,11 @@ void g_ValidateVariationSeqfeat(const CSeq_feat& feat, CScope* scope, bool IsCDS
     const auto type = assertion_inst.GetType();
     // Checking for duplications, deletions, inversions, and Indels
     // Note that duplications have eType_ins
-    if (type != CVariation_inst::eType_ins && 
+    if (type != CVariation_inst::eType_ins &&
         type != CVariation_inst::eType_del &&
         type != CVariation_inst::eType_delins &&
         type != CVariation_inst::eType_inv) {
-        return; 
+        return;
     }
 
     CValidateVariant validator(*scope);

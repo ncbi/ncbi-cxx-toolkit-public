@@ -184,7 +184,7 @@ CReaderBase::~CReaderBase()
 CRef< CSerialObject >
 CReaderBase::ReadObject(
     CNcbiIstream& istr,
-    ILineErrorListener* pMessageListener ) 
+    ILineErrorListener* pMessageListener )
 //  ----------------------------------------------------------------------------
 {
     CStreamLineReader lr( istr );
@@ -195,11 +195,11 @@ CReaderBase::ReadObject(
 CRef<CSerialObject>
 CReaderBase::ReadObject(
     ILineReader& lr,
-    ILineErrorListener* pMessageListener ) 
+    ILineErrorListener* pMessageListener )
 //  ----------------------------------------------------------------------------
-{ 
-    CRef<CSerialObject> object( 
-        ReadSeqAnnot( lr, pMessageListener ).ReleaseOrNull() );    
+{
+    CRef<CSerialObject> object(
+        ReadSeqAnnot( lr, pMessageListener ).ReleaseOrNull() );
     return object;
 }
 
@@ -207,7 +207,7 @@ CReaderBase::ReadObject(
 CRef< CSeq_annot >
 CReaderBase::ReadSeqAnnot(
     CNcbiIstream& istr,
-    ILineErrorListener* pMessageListener ) 
+    ILineErrorListener* pMessageListener )
 //  ----------------------------------------------------------------------------
 {
     CStreamLineReader lr( istr );
@@ -218,7 +218,7 @@ CReaderBase::ReadSeqAnnot(
 CRef< CSeq_annot >
 CReaderBase::ReadSeqAnnot(
     ILineReader& lr,
-    ILineErrorListener* pEL) 
+    ILineErrorListener* pEL)
 //  ----------------------------------------------------------------------------
 {
     xProgressInit(lr);
@@ -248,10 +248,10 @@ CReaderBase::ReadSeqAnnot(
     xPostProcessAnnot(*pAnnot);
     return pAnnot;
 }
-                
+
 //  ----------------------------------------------------------------------------
 CRef<CSeq_annot>
-CReaderBase::xCreateSeqAnnot() 
+CReaderBase::xCreateSeqAnnot()
 //  ----------------------------------------------------------------------------
 {
     CRef<CSeq_annot> pAnnot(new CSeq_annot);
@@ -269,7 +269,7 @@ void
 CReaderBase::xGuardedGetData(
     ILineReader& lr,
     TReaderData& readerData,
-    ILineErrorListener* pEL) 
+    ILineErrorListener* pEL)
 //  ----------------------------------------------------------------------------
 {
     try {
@@ -291,7 +291,7 @@ void
 CReaderBase::xGuardedProcessData(
     const TReaderData& readerData,
     CSeq_annot& annot,
-    ILineErrorListener* pEL) 
+    ILineErrorListener* pEL)
 //  ----------------------------------------------------------------------------
 {
     try {
@@ -327,12 +327,12 @@ CReaderBase::xGetData(
 void
 CReaderBase::xProcessData(
     const TReaderData& readerData,
-    CSeq_annot& annot) 
+    CSeq_annot& annot)
 //  ----------------------------------------------------------------------------
 {
 }
 
-//  --------------------------------------------------------------------------- 
+//  ---------------------------------------------------------------------------
 void
 CReaderBase::ReadSeqAnnots(
     TAnnots& annots,
@@ -343,8 +343,8 @@ CReaderBase::ReadSeqAnnots(
     CStreamLineReader lr( istr );
     ReadSeqAnnots( annots, lr, pMessageListener );
 }
- 
-//  ---------------------------------------------------------------------------                       
+
+//  ---------------------------------------------------------------------------
 void
 CReaderBase::ReadSeqAnnots(
     TAnnots& annots,
@@ -360,12 +360,12 @@ CReaderBase::ReadSeqAnnots(
         annot = ReadSeqAnnot(lr, pMessageListener);
     }
 }
-                        
+
 //  ----------------------------------------------------------------------------
 CRef< CSeq_entry >
 CReaderBase::ReadSeqEntry(
     CNcbiIstream& istr,
-    ILineErrorListener* pMessageListener ) 
+    ILineErrorListener* pMessageListener )
 //  ----------------------------------------------------------------------------
 {
     CStreamLineReader lr( istr );
@@ -377,13 +377,13 @@ CReaderBase::ReadSeqEntry(
 CRef< CSeq_entry >
 CReaderBase::ReadSeqEntry(
     ILineReader& lr,
-    ILineErrorListener* ) 
+    ILineErrorListener* )
 //  ----------------------------------------------------------------------------
 {
     xProgressInit(lr);
     return CRef<CSeq_entry>();
 }
-               
+
 //  ----------------------------------------------------------------------------
 void
 CReaderBase::ProcessError(
@@ -415,7 +415,7 @@ CReaderBase::ProcessWarning(
 {
     err.SetLineNumber( m_uLineNumber );
     if (!pContainer) {
-        cerr << m_uLineNumber << ": " << err.SeverityStr() << err.Message() 
+        cerr << m_uLineNumber << ": " << err.SeverityStr() << err.Message()
             << endl;
         return;
     }
@@ -444,7 +444,7 @@ CReaderBase::ProcessWarning(
 //  ----------------------------------------------------------------------------
 {
     if (!pContainer) {
-        cerr << m_uLineNumber << ": " << err.SeverityStr() << err.Message() 
+        cerr << m_uLineNumber << ": " << err.SeverityStr() << err.Message()
             << endl;
         return;
     }
@@ -460,7 +460,7 @@ void CReaderBase::xSetBrowserRegion(
 //  ----------------------------------------------------------------------------
 {
     CReaderMessage error(
-        eDiag_Error, 
+        eDiag_Error,
         m_uLineNumber,
         "Bad browser line: cannot parse browser position.");
 
@@ -483,7 +483,7 @@ void CReaderBase::xSetBrowserRegion(
         string strTo;
         if ( ! NStr::SplitInTwo( strInterval, "-", strFrom, strTo ) ) {
             throw error;
-        }  
+        }
         try
         {
             int n_from,n_to;
@@ -511,7 +511,7 @@ void CReaderBase::xSetBrowserRegion(
         desc.Set().push_back( region );
     }
 }
-    
+
 //  ----------------------------------------------------------------------------
 bool CReaderBase::xParseBrowserLine(
     const string& strLine,
@@ -519,7 +519,7 @@ bool CReaderBase::xParseBrowserLine(
 //  ----------------------------------------------------------------------------
 {
     CReaderMessage error(
-        eDiag_Error, 
+        eDiag_Error,
         m_uLineNumber,
         "Bad browser line: incomplete position directive.");
 
@@ -527,7 +527,7 @@ bool CReaderBase::xParseBrowserLine(
         return false;
     }
     CAnnot_descr& desc = annot.SetDesc();
-    
+
     vector<string> fields;
     NStr::Split(strLine, " \t", fields, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     for ( vector<string>::iterator it = fields.begin(); it != fields.end(); ++it ) {
@@ -589,7 +589,7 @@ bool CReaderBase::xParseComment(
     }
     return false;
 }
- 
+
 //  ----------------------------------------------------------------------------
 void CReaderBase::xPostProcessAnnot(
     CSeq_annot&)
@@ -617,7 +617,7 @@ void CReaderBase::xAddConversionInfo(
         return;
     }
     CRef<CUser_object> conversioninfo(new CUser_object());
-    conversioninfo->SetType().SetStr("Conversion Info");    
+    conversioninfo->SetType().SetStr("Conversion Info");
     conversioninfo->AddField( "critical errors", static_cast<int>(countCritical));
     conversioninfo->AddField( "errors", static_cast<int>(countErrors));
     conversioninfo->AddField( "warnings", static_cast<int>(countWarnings));
@@ -796,7 +796,7 @@ CReaderBase::xProcessReaderMessage(
 //  (2) If an ILineError is emitted and we have an actual ILineErrorListener
 //      then give it a shot.
 //  (3) If we don't have an ILineErrorListener or it the ILineErrorListener
-//      does not want the ILineError then rethrow the ILineError and hope for 
+//      does not want the ILineError then rethrow the ILineError and hope for
 //      the best.
 //  ----------------------------------------------------------------------------
 {
@@ -837,15 +837,15 @@ void
 CReaderBase::xProcessUnknownException(
     const CException& error)
 //
-//  If we get errors outside of the established type system then there is no way 
-//  of knowing what happened, how it happened, how much data is bad, or even 
-//  whether there is any way of continuing at all. 
+//  If we get errors outside of the established type system then there is no way
+//  of knowing what happened, how it happened, how much data is bad, or even
+//  whether there is any way of continuing at all.
 //  We therefore turn all such errors into a FATAL CReaderMessage and rethrow
 //  it.
 //  ----------------------------------------------------------------------------
 {
     CReaderMessage terminator(
-        eDiag_Fatal, 
+        eDiag_Fatal,
         m_uLineNumber,
         "Exception: " + error.GetMsg());
     throw(terminator);

@@ -97,18 +97,18 @@ public:
 
     /// Construct object providing old-style error handling directives
     CSourceModParser(
-        EHandleBadMod handleBadMod = eHandleBadMod_Ignore) : 
-        m_HandleBadMod(handleBadMod), 
-        m_pErrorListener(nullptr) 
+        EHandleBadMod handleBadMod = eHandleBadMod_Ignore) :
+        m_HandleBadMod(handleBadMod),
+        m_pErrorListener(nullptr)
     {}
 
     /// Construct object providing external error handler
     CSourceModParser(
             ILineErrorListener* pErrorListener,
             size_t lineNumber =1) :
-        m_HandleBadMod(eHandleBadMod_ErrorListener), 
+        m_HandleBadMod(eHandleBadMod_ErrorListener),
         m_pErrorListener(pErrorListener),
-        m_LineNumber(lineNumber) 
+        m_LineNumber(lineNumber)
     {}
 
     /// Extract and store bracketed modifiers from a title string, returning a
@@ -132,7 +132,6 @@ public:
     void ApplyTPAMods(CUser_object& tpa);
     void ApplyGenomeProjectsDBMods(CUser_object& gpdb);
     void ApplyPubMods(CBioseq& seq);
-    
 
     static int CompareKeys(const CTempString& lhs, const CTempString& rhs);
 
@@ -179,8 +178,8 @@ public:
     // class which may be thrown
     class CBadModError : public runtime_error {
     public:
-        CBadModError( 
-            const SMod & badMod, 
+        CBadModError(
+            const SMod & badMod,
             const std::string & sAllowedValues );
         ~CBadModError() THROWS_NONE { } // required by GCC 4.6
 
@@ -191,7 +190,7 @@ public:
         std::string m_sAllowedValues;
 
         std::string x_CalculateErrorString(
-            const SMod & badMod, 
+            const SMod & badMod,
             const string & sAllowedValues );
     };
 
@@ -216,7 +215,7 @@ public:
     const TMods & GetAllMods(void) const { return m_Mods; }
 
     /// Return all modifiers matching the given criteria (if any) without
-    /// affecting their status (used vs. unused).  If you want all mods, if 
+    /// affecting their status (used vs. unused).  If you want all mods, if
     /// possible use GetAllMods since gives ref instead of copying underlying structure.
     TMods GetMods(TWhichMods which = fAllMods) const;
 
@@ -242,7 +241,7 @@ public:
     /// Allows user to get the list of bad mods found by this
     const TMods & GetBadMods(void) const { return m_BadMods; }
 
-    /// Set all mods to unused 
+    /// Set all mods to unused
     void SetAllUnused();
 
     class CModFilter : public CObject {
@@ -254,7 +253,7 @@ public:
     ///
     /// @param pModFilter
     ///   If this is an unset CRef, it turns off filtering.
-    void SetModFilter( CRef<CModFilter> pModFilter ) { 
+    void SetModFilter( CRef<CModFilter> pModFilter ) {
         m_pModFilter = pModFilter; }
 
     /// Given a mod name (e.g. "topology"), it returns the set of acceptable

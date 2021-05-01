@@ -55,7 +55,7 @@ public:
     unsigned int
     LineNo() const { return mLineNo; };
 
-    size_t 
+    size_t
     ColumnCount() const { return mData.size(); };
 
 protected:

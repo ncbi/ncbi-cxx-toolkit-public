@@ -78,7 +78,7 @@ s_StringToFeatId( const string& str )
     CRef<CFeat_id> featid( new CFeat_id );
     featid->SetLocal( *objid );
     return featid;
-}    
+}
 
 static string& s_URLDecode(const CTempString& s, string& out) {
     SIZE_TYPE pos = 0;
@@ -139,7 +139,7 @@ CRef<CSeq_entry> CGFFReader::Read(ILineReader& in, TFlags flags)
             // implicit ##FASTA
             x_ReadFastaSequences(in);
         } else {
-            line = *++in;            
+            line = *++in;
             if ( x_IsLineUcscMetaInformation(line) ) {
                 // UCSC browser or track line. For now, we ignore those.
                 continue;
@@ -150,7 +150,6 @@ CRef<CSeq_entry> CGFFReader::Read(ILineReader& in, TFlags flags)
             }
             CRef<SRecord> record = x_ParseFeatureInterval(line);
             if (record) {
-                
                 if (record->id.empty()) {
                     x_ParseAndPlace(*record);
                 } else {
@@ -275,9 +274,9 @@ CRef<CSeq_entry> CGFFReader::Read(ILineReader& in, TFlags flags)
             }
 
             // we work within the scope of one annotation
-            CSeq_annot::TData::TFtable::iterator feat_iter = 
+            CSeq_annot::TData::TFtable::iterator feat_iter =
                 annot.SetData().SetFtable().begin();
-            CSeq_annot::TData::TFtable::iterator feat_end = 
+            CSeq_annot::TData::TFtable::iterator feat_end =
                 annot.SetData().SetFtable().end();
 
             /// we plan to create a series of gene features, one for each gene
@@ -560,7 +559,7 @@ CGFFReader::x_ParseFeatureInterval(const TStr& line)
         record->type = SRecord::eAlign;
     } else {
         record->type = SRecord::eFeat;
-    } 
+    }
 
     // extracting additional gff3 attributes
     if (m_Version == 3) {
@@ -568,7 +567,7 @@ CGFFReader::x_ParseFeatureInterval(const TStr& line)
         if (id_it != record->attrs.end()) {
             record->id = (*id_it)[1];
         }
-    
+
         SRecord::TAttrs::const_iterator parent_it = record->FindAttribute("Parent");
         if (parent_it != record->attrs.end()) {
             record->parent = (*parent_it)[1];
@@ -577,7 +576,7 @@ CGFFReader::x_ParseFeatureInterval(const TStr& line)
         SRecord::TAttrs::const_iterator name_it = record->FindAttribute("Name");
         if (name_it != record->attrs.end()) {
             record->name = (*name_it)[1];
-        }        
+        }
     }
 
     record->line_no = m_LineNumber;
@@ -921,7 +920,7 @@ bool CGFFReader::x_SplitKeyValuePair( const string& pair, string& key, string& v
     x_Warn("attribute without value: " + key, x_GetLineNumber());
     return false;
 }
-            
+
 
 void CGFFReader::x_ParseV3Attributes(SRecord& record, const TStrVec& v,
                                      SIZE_TYPE& i)
@@ -984,16 +983,16 @@ string CGFFReader::x_FeatureID(const SRecord& record)
     // has been retrieved in initial interval parsing
     if (m_Version == 3) {
         if (!record.id.empty()) {
-            return  record.id;   
-        }        
+            return  record.id;
+        }
         else if (!record.parent.empty()) {
             return record.source + record.key + record.parent;
         }
         else {
             return "";
         }
-    }    
-    
+    }
+
     SRecord::TAttrs::const_iterator gene_it = record.FindAttribute("gene_id");
     SRecord::TAttrs::const_iterator transcript_it
         = record.FindAttribute("transcript_id");
@@ -1369,9 +1368,9 @@ void CGFFReader::x_CreateGeneFeatures( CRef<CSeq_entry>& tse )
         }
 
         // we work within the scope of one annotation
-        CSeq_annot::TData::TFtable::iterator feat_iter = 
+        CSeq_annot::TData::TFtable::iterator feat_iter =
             annot.SetData().SetFtable().begin();
-        CSeq_annot::TData::TFtable::iterator feat_end = 
+        CSeq_annot::TData::TFtable::iterator feat_end =
             annot.SetData().SetFtable().end();
 
         /// we plan to create a series of gene features, one for each gene
@@ -1516,7 +1515,7 @@ CGFFReader::x_IsLineUcscMetaInformation(const TStr& line)
     // line starts with keyword "browser" or "track"
     return (NStr::StartsWith(line, "browser") || NStr::StartsWith(line, "track") );
 }
-    
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

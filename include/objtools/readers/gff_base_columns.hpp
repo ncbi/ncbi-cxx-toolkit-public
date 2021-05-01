@@ -55,48 +55,48 @@ public:
 
     //
     // accessors:
-    const string& Id() const { 
-        return mSeqId; 
+    const string& Id() const {
+        return mSeqId;
     };
 
-    TSeqPos SeqStart() const { 
-        return m_uSeqStart; 
+    TSeqPos SeqStart() const {
+        return m_uSeqStart;
     };
 
-    TSeqPos SeqStop() const { 
-        return m_uSeqStop; 
+    TSeqPos SeqStop() const {
+        return m_uSeqStop;
     };
 
     const string& Source() const {
-        return m_strSource; 
+        return m_strSource;
     };
 
     const string& Type() const {
-        return m_strType; 
+        return m_strType;
     };
 
-    double Score() const { 
-        return IsSetScore() ? *m_pdScore : 0.0; 
+    double Score() const {
+        return IsSetScore() ? *m_pdScore : 0.0;
     };
 
-    ENa_strand Strand() const { 
-        return IsSetStrand() ? *m_peStrand : eNa_strand_unknown; 
+    ENa_strand Strand() const {
+        return IsSetStrand() ? *m_peStrand : eNa_strand_unknown;
     };
 
     TFrame Phase() const {
-        return IsSetPhase() ? *m_pePhase : CCdregion::eFrame_not_set; 
+        return IsSetPhase() ? *m_pePhase : CCdregion::eFrame_not_set;
     };
 
-    bool IsSetScore() const { 
-        return m_pdScore != 0; 
+    bool IsSetScore() const {
+        return m_pdScore != 0;
     };
 
-    bool IsSetStrand() const { 
-        return m_peStrand != 0; 
+    bool IsSetStrand() const {
+        return m_peStrand != 0;
     };
 
-    bool IsSetPhase() const { 
-        return m_pePhase != 0; 
+    bool IsSetPhase() const {
+        return m_pePhase != 0;
     };
 
     CRef<CSeq_id> GetSeqId(
@@ -111,7 +111,7 @@ public:
     virtual bool InitializeFeature(
         int,
         CRef<CSeq_feat>,
-        SeqIdResolver = nullptr ) const; 
+        SeqIdResolver = nullptr ) const;
 
     virtual void SetExtent(
         TSeqPos seqStart,

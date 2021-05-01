@@ -130,7 +130,7 @@ public:
         m_type( SpecType( type ) ),
         m_description( description )
     {};
-        
+
     string m_id;
     int m_numvals;
     ESpecType m_type;
@@ -152,11 +152,11 @@ public:
         fUseSetFormat = 1<<8,
     };
 
-    CVcfReader( 
+    CVcfReader(
         int = 0,
         CReaderListener* = nullptr);
     virtual ~CVcfReader();
-    
+
     //
     //  object interface:
     //
@@ -180,15 +180,15 @@ protected:
         const TReaderData&,
         CSeq_annot&);
 
-    virtual bool 
+    virtual bool
     xIsCommentLine(
         const CTempString& );
 
-    virtual bool 
+    virtual bool
     xProcessTrackLine(
         const string&,
         CSeq_annot&);
-        
+
     virtual bool
     xProcessMetaLine(
         const string&,
@@ -224,7 +224,7 @@ protected:
     xProcessDataLine(
         const string&,
         CSeq_annot&);
-        
+
     virtual bool
     xAssignVcfMeta(
         CSeq_annot&);
@@ -318,7 +318,7 @@ protected:
     //  data:
     //
 private:
-    bool 
+    bool
     xAssigndbSNPTag(
         const vector<string>& ids,
         CRef<CDbtag> pDbtag) const;

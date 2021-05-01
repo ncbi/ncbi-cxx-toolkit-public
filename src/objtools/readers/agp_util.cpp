@@ -39,7 +39,7 @@
 
 BEGIN_NCBI_SCOPE
 
-const CAgpErr::TMsgMap 
+const CAgpErr::TMsgMap
 CAgpErr::sMessageMap = {
     // Content Errors (codes 1..20)
     {CAgpErr::E_ColumnCount, "expecting 9 tab-separated columns"},
@@ -183,7 +183,7 @@ const CAgpErr::TStr CAgpErr::s_msg[]= {
     "same gap_length=X in all gap lines, and component_type='N' ('U' is required for gaps of unknown size)",
     // "'|' character can only follow a recognized Seq-id type",
     "invalid use of \"|\" character",
-    
+
     "singleton object has component_beg=1 and in minus orientation",
     kEmptyCStr,
     kEmptyCStr,
@@ -275,7 +275,7 @@ CAgpErr::CAgpErr()
 {
 }
 
-const char* CAgpErr::GetMsg(int code) 
+const char* CAgpErr::GetMsg(int code)
 {
     auto it = sMessageMap.find(static_cast<EErrCode>(code));
     if (it != sMessageMap.end()) {
@@ -1029,7 +1029,7 @@ bool CAgpReader::ProcessThisRow()
     if(this_row->is_gap) {
         if(!m_prev_line_skipped) {
             if( m_new_obj ) {
-	        if( !this_row->GapValidAtObjectEnd() ) {
+                if( !this_row->GapValidAtObjectEnd() ) {
                     m_AgpErr->Msg(CAgpErr::W_GapObjBegin, this_row->GetObject()); // , CAgpErr::fAtThisLine|CAgpErr::fAtPrevLine
                 }
             }
@@ -1037,7 +1037,7 @@ bool CAgpReader::ProcessThisRow()
                 const auto prevGapType = prev_row->gap_type;
                 const auto currentGapType = this_row->gap_type;
                 if( prevGapType == currentGapType &&
-                    prev_row->linkage  == this_row->linkage ) { 
+                    prev_row->linkage  == this_row->linkage ) {
                     m_AgpErr->Msg( CAgpErr::E_SameConseqGaps, CAgpErr::fAtThisLine|CAgpErr::fAtPrevLine);
                 }
                 else if (currentGapType != CAgpRow::eGapContamination &&
@@ -1341,8 +1341,8 @@ string CAgpErrEx::GetPrintableCode(int code, bool strict) const
         if (TreatAsError(code) ||
             (strict && !IsStrictModeWarning(code))) {
             res = "e";
-        }  
-    } 
+        }
+    }
     if(code<10) res += "0";
     res += i2s(code);
     return res;
@@ -1509,11 +1509,11 @@ const char* CAgpErrEx::ErrorWarningOrNoteEx(int code)
     if(m_strict && t[0]=='W' && !IsStrictModeWarning(code) ) {
         return "ERROR";
     }
-    
+
     if (TreatAsError(code)) {
         return "ERROR";
     }
-   
+
     return t;
 }
 

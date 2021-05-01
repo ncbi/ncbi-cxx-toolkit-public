@@ -7,13 +7,13 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
 BEGIN_SCOPE(NHgvsTestUtils)
 
-CRef<CVariation_ref> g_CreateSNV(const CSeq_data& nucleotide, 
+CRef<CVariation_ref> g_CreateSNV(const CSeq_data& nucleotide,
                                  CVariation_ref::EMethod_E method = CVariation_ref::eMethod_E_unknown,
                                  CRef<CDelta_item> offset=null);
 
 CRef<CVariation_ref> g_CreateMNP(const CSeq_data& nucleotide,
                                  TSeqPos length,
-                                 CVariation_ref::EMethod_E method = CVariation_ref::eMethod_E_unknown, 
+                                 CVariation_ref::EMethod_E method = CVariation_ref::eMethod_E_unknown,
                                  CRef<CDelta_item> offset=null);
 
 CRef<CVariation_ref> g_CreateMissense(const CSeq_data& amino_acid,
@@ -26,7 +26,7 @@ CRef<CVariation_ref> g_CreateDeletion(CVariation_ref::EMethod_E method = CVariat
 
 
 CRef<CVariation_ref> g_CreateDuplication(CVariation_ref::EMethod_E method = CVariation_ref::eMethod_E_unknown,
-                                         CRef<CDelta_item> start_offset=null, 
+                                         CRef<CDelta_item> start_offset=null,
                                          CRef<CDelta_item> stop_offset=null);
 
 
@@ -43,13 +43,13 @@ CRef<CVariation_ref> g_CreateVarref(CRef<CSeq_literal> seq_literal,
                                     CRef<CDelta_item> stop_offset=null,
                                     bool enforce_assert=false);
 
-CRef<CVariation_ref> g_CreateDelins(CSeq_literal& insertion, 
+CRef<CVariation_ref> g_CreateDelins(CSeq_literal& insertion,
                                     CVariation_ref::EMethod_E method = CVariation_ref::eMethod_E_unknown,
                                     CRef<CDelta_item> start_offset=null,
                                     CRef<CDelta_item> stop_offset=null);
 
 
-CRef<CVariation_ref> g_CreateInsertion(CSeq_literal& insertion, 
+CRef<CVariation_ref> g_CreateInsertion(CSeq_literal& insertion,
                                        CVariation_ref::EMethod_E method = CVariation_ref::eMethod_E_unknown,
                                        CRef<CDelta_item> start_offset=null,
                                        CRef<CDelta_item> stop_offset=null);
@@ -66,7 +66,7 @@ CRef<CVariation_ref> g_CreateMicrosatellite(CRef<CDelta_item> repeat_info,
                                             CRef<CDelta_item> stop_offset=null);
 
 
-CRef<CVariation_ref> g_CreateConversion(const CSeq_loc& interval, 
+CRef<CVariation_ref> g_CreateConversion(const CSeq_loc& interval,
                                         CVariation_ref::EMethod_E method = CVariation_ref::eMethod_E_unknown,
                                         CRef<CDelta_item> start_offset=null,
                                         CRef<CDelta_item> stop_offset=null);

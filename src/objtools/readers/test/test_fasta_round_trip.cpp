@@ -122,7 +122,7 @@ int CFastaRoundTripTestApp::Run(void)
     }}
 
     if (args["expected"]) {
-        mf.reset(new CMemoryFile(args["expected"].AsString()));        
+        mf.reset(new CMemoryFile(args["expected"].AsString()));
     }
     {{
         const void *p = mf->Map();

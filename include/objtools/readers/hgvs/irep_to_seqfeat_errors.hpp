@@ -19,7 +19,7 @@ public:
         eInvalidInsertion,
         eInvalidCount,
         eUnknownVariation, // Unrecognized variation type
-        eInvalidVariation,  // CVarDesc data not consistent with variation type 
+        eInvalidVariation,  // CVarDesc data not consistent with variation type
         eInvalidSeqType,
         eInvalidSeqId,
         eCDSError,
@@ -33,7 +33,7 @@ public:
 
 class CVariationValidateException : public CException
 {
-public: 
+public:
     enum EErrCode {
       eIDResolveError,
       eSeqliteralIntervalError,

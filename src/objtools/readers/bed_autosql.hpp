@@ -56,7 +56,7 @@ public:
 
     bool Load(
         CNcbiIstream&,
-        CReaderMessageHandler&); 
+        CReaderMessageHandler&);
 
     bool Validate(
         CReaderMessageHandler&) const;
@@ -80,7 +80,7 @@ protected:
     CAutoSqlStandardFields mWellKnownFields;
     CAutoSqlCustomFields mCustomFields;
     size_t mColumnCount;
-    
+
     string
     xReadLine(
         CNcbiIstream&);

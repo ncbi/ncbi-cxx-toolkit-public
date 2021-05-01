@@ -40,7 +40,7 @@ BEGIN_SCOPE(objects);
 struct SAlignFileRaw;
 
 //  ============================================================================
-struct SNexusCommand   
+struct SNexusCommand
 //  ============================================================================
 {
     using TArgs = list<SLineInfo>;
@@ -56,12 +56,12 @@ class CAlnScannerNexus:
 //  ============================================================================
 {
 public:
-//    CAlnScannerNexus(): 
+//    CAlnScannerNexus():
 //        mGapChar(0), mMissingChar(0), mMatchChar(0) {};
     ~CAlnScannerNexus() {};
 
     TDeflines& SetDeflines(void) { return mDeflines; }
-    
+
     using TCommand = SNexusCommand;
     using TCommandArgs = TCommand::TArgs;
     using TCommandTokens = TCommandArgs;
@@ -87,37 +87,37 @@ protected:
 
 */
     void
-    xProcessCommand(const TCommandTokens& commandTokens, 
+    xProcessCommand(const TCommandTokens& commandTokens,
             CSequenceInfo& sequenceInfo);
 
-    void 
+    void
     xProcessDimensions(const TCommandArgs& args);
 
     void
     xProcessFormat(const TCommandArgs& args);
 
-    void 
+    void
     xProcessSequin(const TCommandArgs& args);
-    
+
     void
     xProcessMatrix(const TCommandArgs& args);
 
-    void 
+    void
     xProcessNCBIBlockCommand(TCommand& command,
             CSequenceInfo& sequenceInfo);
 
-    void 
+    void
     xProcessDataBlockCommand(TCommand& command,
             CSequenceInfo& sequenceInfo);
 
-    void 
+    void
     xProcessTaxaBlockCommand(TCommand& command,
             CSequenceInfo& sequenceInfo);
 
-    void 
+    void
     xBeginBlock(const TCommandArgs& command);
 
-    void 
+    void
     xEndBlock(int lineNum);
 
     bool
@@ -128,11 +128,11 @@ protected:
             const string& token) const;
 
     pair<string, int>
-    xGetKeyVal(const TCommandArgs& command, 
+    xGetKeyVal(const TCommandArgs& command,
         const string& key);
 
     static void sStripCommentsOutsideCommand(
-        string& line, 
+        string& line,
         int &numUnmatchedLeftBrackets,
         bool &inCommand);
 

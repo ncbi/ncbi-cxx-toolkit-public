@@ -28,7 +28,7 @@
  * Authors: Frank Ludwig
  *
  */
-#include <ncbi_pch.hpp> 
+#include <ncbi_pch.hpp>
 #include <objtools/readers/line_error.hpp>
 #include <objtools/readers/reader_listener.hpp>
 #include "reader_message_handler.hpp"
@@ -40,7 +40,7 @@ class ILineErrorListener;
 
 //  ============================================================================
 void
-CReaderMessageHandler::Report( 
+CReaderMessageHandler::Report(
     const CReaderMessage& readerMessage)
 //  ============================================================================
 {
@@ -60,7 +60,7 @@ CReaderMessageHandler::Report(
 
 //  ============================================================================
 void
-CReaderMessageHandler::Progress( 
+CReaderMessageHandler::Progress(
     const CReaderProgress& readerProgress)
 //  ============================================================================
 {

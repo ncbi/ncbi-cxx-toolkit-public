@@ -65,7 +65,7 @@ struct CFileContentInfoGff3
         eContentAlignment,
         eContentVariations,
     };
-        
+
     CFileContentInfoGff3(): mContentType(eContentUnknown) {};
 
     EContentType mContentType;
@@ -105,7 +105,7 @@ union CFileContentInfo
 ///
 /// Wraps CFormatGuess, and if CFormatGuess's result is Unknown,
 ///  it tries every file reader until one works.
-/// 
+///
 
 class NCBI_XOBJREAD_EXPORT CFormatGuessEx
 {
@@ -133,7 +133,7 @@ public:
     bool TestFormat(CFormatGuess::EFormat );
 
     /// Get format hints
-    CFormatGuess::CFormatHints& GetFormatHints(void) 
+    CFormatGuess::CFormatHints& GetFormatHints(void)
         { return m_Guesser->GetFormatHints(); }
 
 protected:
@@ -142,7 +142,6 @@ protected:
     set<TTypeInfo>& m_EffectiveRecognizedGenbankObjectTypes;
 
     bool x_FillLocalBuffer(CNcbiIstream& In);
-    
     bool x_TryFormat(CFormatGuess::EFormat Format);
 
     // bool x_TryBinaryAsn();

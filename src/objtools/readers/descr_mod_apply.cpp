@@ -122,7 +122,7 @@ static const auto s_OrgModStringToEnum = g_InitModNameOrgSubtypeMap();
 static const auto s_SubSourceStringToEnum = g_InitModNameSubSrcSubtypeMap();
 
 
-class CDescrCache 
+class CDescrCache
 {
 public:
 
@@ -154,7 +154,7 @@ public:
     TSubtype& SetSubtype(void);
     TOrgMods& SetOrgMods(void);
     CPCRReactionSet& SetPCR_primers(void);
-    
+
 private:
     enum EChoice : size_t {
         eDBLink = 1,
@@ -168,11 +168,11 @@ private:
 
     void x_SetUserType(const string& type, CUser_object& user_object);
 
-    CSeqdesc& x_SetDescriptor(const EChoice eChoice, 
+    CSeqdesc& x_SetDescriptor(const EChoice eChoice,
                               function<bool(const CSeqdesc&)> f_verify,
                               function<CRef<CSeqdesc>(void)> f_create);
 
-    CSeqdesc& x_SetDescriptor(const EChoice eChoice, 
+    CSeqdesc& x_SetDescriptor(const EChoice eChoice,
                               function<bool(const CSeqdesc&)> f_verify,
                               function<CRef<CSeqdesc>(void)> f_create,
                               TDescrContainer* pDescrContainer);
@@ -192,7 +192,7 @@ private:
 };
 
 
-CDescrModApply::CDescrModApply(CBioseq& bioseq, 
+CDescrModApply::CDescrModApply(CBioseq& bioseq,
         FReportError fReportError,
         TSkippedMods& skipped_mods) :
 m_pDescrCache(new CDescrCache(bioseq)),
@@ -274,7 +274,7 @@ bool CDescrModApply::x_TryBioSourceMod(const TModEntry& mod_entry, bool& preserv
         if (NStr::EqualNocase(value, "true")) {
             m_pDescrCache->SetBioSource().SetIs_focus();
         }
-        else 
+        else
         if (NStr::EqualNocase(value, "false")) {
             x_ReportInvalidValue(mod_entry.second.front());
         }
@@ -341,7 +341,7 @@ static void s_SetPrimerNames(const string& primer_names, CPCRPrimerSet& primer_s
         if (i<set_size) {
             (*it)->SetName().Set(names[i]);
             ++it;
-        } 
+        }
         else {
             auto pPrimer = Ref(new CPCRPrimer());
             pPrimer->SetName().Set(names[i]);
@@ -366,7 +366,7 @@ static void s_SetPrimerSeqs(const string& primer_seqs, CPCRPrimerSet& primer_set
         if (i<set_size) {
             (*it)->SetSeq().Set(seqs[i]);
             ++it;
-        } 
+        }
         else {
             auto pPrimer = Ref(new CPCRPrimer());
             pPrimer->SetSeq().Set(seqs[i]);
@@ -406,7 +406,7 @@ static void s_AppendPrimerSeqs(const string& mod, vector<string>& reaction_seqs)
 bool CDescrModApply::x_TryPCRPrimerMod(const TModEntry& mod_entry)
 {
     const auto& mod_name = x_GetModName(mod_entry);
-    
+
     // Refactor to eliminate duplicated code
     if (mod_name == "fwd-primer-name") {
         vector<string> names;
@@ -422,8 +422,8 @@ bool CDescrModApply::x_TryPCRPrimerMod(const TModEntry& mod_entry)
                 auto pPCRReaction = Ref(new CPCRReaction());
                 s_SetPrimerNames(reaction_names, pPCRReaction->SetForward());
                 pcr_reaction_set.Set().push_back(move(pPCRReaction));
-            } 
-            else { 
+            }
+            else {
                 s_SetPrimerNames(reaction_names, (*it++)->SetForward());
             }
         }
@@ -444,8 +444,8 @@ bool CDescrModApply::x_TryPCRPrimerMod(const TModEntry& mod_entry)
                 auto pPCRReaction = Ref(new CPCRReaction());
                 s_SetPrimerSeqs(reaction_seqs, pPCRReaction->SetForward());
                 pcr_reaction_set.Set().push_back(move(pPCRReaction));
-            } 
-            else { 
+            }
+            else {
                 s_SetPrimerSeqs(reaction_seqs, (*it++)->SetForward());
             }
         }
@@ -453,7 +453,7 @@ bool CDescrModApply::x_TryPCRPrimerMod(const TModEntry& mod_entry)
     }
 
 
-    if(mod_name == "rev-primer-name") 
+    if(mod_name == "rev-primer-name")
     {
         vector<string> names;
         for (const auto& mod : mod_entry.second) {
@@ -487,7 +487,7 @@ bool CDescrModApply::x_TryPCRPrimerMod(const TModEntry& mod_entry)
     }
 
 
-    if(mod_name == "rev-primer-seq") 
+    if(mod_name == "rev-primer-seq")
     {
         vector<string> seqs;
         for (const auto& mod : mod_entry.second) {
@@ -572,7 +572,7 @@ bool CDescrModApply::x_TryOrgRefMod(const TModEntry& mod_entry, bool& preserve_t
 
 
 void CDescrModApply::x_SetDBxref(const TModEntry& mod_entry)
-{   
+{
    vector<CRef<CDbtag>> dbtags;
    for (const auto& value_attrib : mod_entry.second) {
        const auto& value = value_attrib.GetValue();
@@ -616,11 +616,11 @@ bool CDescrModApply::x_TryOrgNameMod(const TModEntry& mod_entry)
     // check for gcode, mgcode, pgcode
     using TSetCodeMemFn = void (COrgName::*)(int);
     using TFunction = function<void(COrgName&, int)>;
-    static const 
-        unordered_map<string, TFunction> 
-                s_GetCodeSetterMethods = 
-                {{"gcode",  TFunction(static_cast<TSetCodeMemFn>(&COrgName::SetGcode))}, 
-                 {"mgcode",  TFunction(static_cast<TSetCodeMemFn>(&COrgName::SetMgcode))}, 
+    static const
+        unordered_map<string, TFunction>
+                s_GetCodeSetterMethods =
+                {{"gcode",  TFunction(static_cast<TSetCodeMemFn>(&COrgName::SetGcode))},
+                 {"mgcode",  TFunction(static_cast<TSetCodeMemFn>(&COrgName::SetMgcode))},
                  {"pgcode",  TFunction(static_cast<TSetCodeMemFn>(&COrgName::SetPgcode))}};
 
     auto it = s_GetCodeSetterMethods.find(name);
@@ -663,7 +663,7 @@ void CDescrModApply::x_SetOrgMod(const TModEntry& mod_entry)
 }
 
 
-void CDescrModApply::x_SetDBLink(const TModEntry& mod_entry) 
+void CDescrModApply::x_SetDBLink(const TModEntry& mod_entry)
 {
     const auto& name = x_GetModName(mod_entry);
     static const unordered_map<string, string> s_NameToLabel =
@@ -769,7 +769,7 @@ void CDescrModApply::x_SetFileTrack(const TModEntry& mod_entry)
     for (const auto& mod : mod_entry.second) {
         vals.push_back(mod.GetValue());
     }
-    
+
     string label = (mod_entry.first == "ft-map") ?
                     "Map-FileTrackURL" :
                     "BaseModification-FileTrackURL";
@@ -786,8 +786,8 @@ void CDescrModApply::x_SetFileTrack(const TModEntry& mod_entry)
 
 
 void CDescrModApply::x_SetTpaAssembly(const TModEntry& mod_entry)
-{ 
-    list<CStringUTF8> accession_list; 
+{
+    list<CStringUTF8> accession_list;
     for (const auto& mod : mod_entry.second) {
         list<CTempString> value_sublist;
         const auto& vals = mod.GetValue();
@@ -800,7 +800,7 @@ void CDescrModApply::x_SetTpaAssembly(const TModEntry& mod_entry)
         }
         catch (...) {
             x_ReportInvalidValue(mod);
-            continue;    
+            continue;
         }
         accession_list.splice(accession_list.end(), accession_sublist);
     }
@@ -821,7 +821,7 @@ void CDescrModApply::x_SetTpaAssembly(const TModEntry& mod_entry)
 
     auto& user = m_pDescrCache->SetTpaAssembly();
     user.SetData().resize(accession_list.size());
-    transform(accession_list.begin(), accession_list.end(), 
+    transform(accession_list.begin(), accession_list.end(),
             user.SetData().begin(), make_user_field);
 }
 
@@ -872,12 +872,12 @@ void CDescrModApply::x_SetGenomeProjects(const TModEntry& mod_entry)
 {
     list<int> id_list;
     for (const auto& mod : mod_entry.second) {
-        list<CTempString> value_sublist;  
+        list<CTempString> value_sublist;
         const auto& vals = mod.GetValue();
         NStr::Split(vals, ",; \t", value_sublist, NStr::fSplit_Tokenize);
         list<int> id_sublist;
         try {
-            transform(value_sublist.begin(), value_sublist.end(), back_inserter(id_sublist), 
+            transform(value_sublist.begin(), value_sublist.end(), back_inserter(id_sublist),
                     [](const CTempString& val) { return NStr::StringToUInt(val); });
         }
         catch (...) {
@@ -906,7 +906,7 @@ void CDescrModApply::x_SetGenomeProjects(const TModEntry& mod_entry)
 
     auto& user = m_pDescrCache->SetGenomeProjects();
     user.SetData().resize(id_list.size());
-    transform(id_list.begin(), id_list.end(), 
+    transform(id_list.begin(), id_list.end(),
             user.SetData().begin(), make_user_field);
 }
 
@@ -932,7 +932,7 @@ void CDescrModApply::x_SetPMID(const TModEntry& mod_entry)
         catch(...) {
             x_ReportInvalidValue(mod_entry.second.front(), "Expected integer value.");
             continue;
-        } 
+        }
         auto pPub = Ref(new CPub());
         pPub->SetPmid().Set(pmid);
         m_pDescrCache->SetPubdesc()
@@ -1025,14 +1025,14 @@ CDescrCache::CDescrCache(CBioseq& bioseq)
 
 
 
-void CDescrCache::x_SetUserType(const string& type, 
-                                     CUser_object& user_object) 
+void CDescrCache::x_SetUserType(const string& type,
+                                     CUser_object& user_object)
 {
     user_object.SetType().SetStr(type);
-} 
+}
 
 
-static bool s_EmptyAfterRemovingPMID(CRef<CSeqdesc>& pDesc) 
+static bool s_EmptyAfterRemovingPMID(CRef<CSeqdesc>& pDesc)
 {
     if (!pDesc ||
         !pDesc->IsPub()) {
@@ -1045,7 +1045,7 @@ static bool s_EmptyAfterRemovingPMID(CRef<CSeqdesc>& pDesc)
 }
 
 
-CPubdesc& CDescrCache::SetPubdesc() 
+CPubdesc& CDescrCache::SetPubdesc()
 {
     assert(m_pPrimaryContainer);
 
@@ -1079,9 +1079,9 @@ string& CDescrCache::SetComment()
 }
 
 
-CUser_object& CDescrCache::SetDBLink() 
+CUser_object& CDescrCache::SetDBLink()
 {
-    return x_SetDescriptor(eDBLink, 
+    return x_SetDescriptor(eDBLink,
         [](const CSeqdesc& desc) {
             return (desc.IsUser() && desc.GetUser().IsDBLink());
         },
@@ -1141,9 +1141,9 @@ CUser_object& CDescrCache::SetGenomeProjects()
 
 CGB_block& CDescrCache::SetGBblock()
 {
-    return x_SetDescriptor(eGBblock, 
-        [](const CSeqdesc& desc) { 
-            return desc.IsGenbank(); 
+    return x_SetDescriptor(eGBblock,
+        [](const CSeqdesc& desc) {
+            return desc.IsGenbank();
         },
         []() {
             auto pDesc = Ref(new CSeqdesc());
@@ -1155,10 +1155,10 @@ CGB_block& CDescrCache::SetGBblock()
 
 
 CMolInfo& CDescrCache::SetMolInfo()
-{   // MolInfo is a Bioseq descriptor 
+{   // MolInfo is a Bioseq descriptor
     return x_SetDescriptor(eMolInfo,
-        [](const CSeqdesc& desc) { 
-            return desc.IsMolinfo(); 
+        [](const CSeqdesc& desc) {
+            return desc.IsMolinfo();
         },
         []() {
             auto pDesc = Ref(new CSeqdesc());
@@ -1212,13 +1212,13 @@ CPCRReactionSet& CDescrCache::SetPCR_primers()
 {
     if (!m_pPCRReactionSet) {
         m_pPCRReactionSet = &(SetBioSource().SetPcr_primers());
-        m_pPCRReactionSet->Set().clear();   
+        m_pPCRReactionSet->Set().clear();
     }
     return *m_pPCRReactionSet;
 }
 
 
-CSeqdesc& CDescrCache::x_SetDescriptor(const EChoice eChoice, 
+CSeqdesc& CDescrCache::x_SetDescriptor(const EChoice eChoice,
                                        function<bool(const CSeqdesc&)> f_verify,
                                        function<CRef<CSeqdesc>(void)> f_create)
 {
@@ -1226,7 +1226,7 @@ CSeqdesc& CDescrCache::x_SetDescriptor(const EChoice eChoice,
 }
 
 
-CSeqdesc& CDescrCache::x_SetDescriptor(const EChoice eChoice, 
+CSeqdesc& CDescrCache::x_SetDescriptor(const EChoice eChoice,
                                        function<bool(const CSeqdesc&)> f_verify,
                                        function<CRef<CSeqdesc>(void)> f_create,
                                        TDescrContainer* pDescrContainer)

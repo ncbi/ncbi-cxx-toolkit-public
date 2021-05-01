@@ -65,7 +65,7 @@ CPslReader::~CPslReader()
 void
 CPslReader::xProcessData(
     const TReaderData& readerData,
-    CSeq_annot& annot) 
+    CSeq_annot& annot)
 //  ----------------------------------------------------------------------------
 {
     CPslData pslData(m_pMessageHandler.get());

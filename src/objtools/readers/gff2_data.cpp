@@ -77,7 +77,7 @@ CRef<CCode_break> s_StringToCodeBreak(
     const string cdstr_start = "(pos:";
     const string cdstr_div = ",aa:";
     const string cdstr_end = ")";
-    
+
     CRef<CCode_break> pCodeBreak;
     if (!NStr::StartsWith(str, cdstr_start)  ||  !NStr::EndsWith(str, cdstr_end)) {
         return pCodeBreak;
@@ -160,10 +160,10 @@ CBioSource::EGenome s_StringToGenome(
     }
     return CBioSource::eGenome_unknown;
 }
-    
+
 //  -----------------------------------------------------------------------------
 void CGff2Record::TokenizeGFF(
-    vector<CTempStringEx>& columns, 
+    vector<CTempStringEx>& columns,
     const CTempStringEx& in_line)
 //  -----------------------------------------------------------------------------
 {
@@ -177,11 +177,11 @@ void CGff2Record::TokenizeGFF(
     columns.clear();
 
     // better to be thread-safe static
-    const CTempString space_tab_delim("\t "); 
+    const CTempString space_tab_delim("\t ");
     const CTempString digits("0123456789");
 
     size_t current = 0;
-    while (current != CTempStringEx::npos && columns.size()<8 && 
+    while (current != CTempStringEx::npos && columns.size()<8 &&
             (index = in_line.find_first_of(space_tab_delim, current)) != CTempStringEx::npos) {
         CTempStringEx next = in_line.substr(current, index-current);
         current = in_line.find_first_not_of(space_tab_delim, index);
@@ -205,7 +205,7 @@ void CGff2Record::TokenizeGFF(
                 continue;
             }
         }
-        columns.push_back(next); 
+        columns.push_back(next);
     }
     if (current != CTempStringEx::npos)
         columns.push_back(in_line.substr(current));
@@ -216,7 +216,7 @@ bool CGff2Record::AssignFromGff(
 //  ----------------------------------------------------------------------------
 {
     vector< CTempStringEx > columns;
-    
+
     TokenizeGFF(columns, strRawInput);
     if ( columns.size() < 9 ) {
         AutoPtr<CObjReaderLineException> pErr(
@@ -261,7 +261,7 @@ bool CGff2Record::AssignFromGff(
 
     enum ENa_strand strand;
     switch (columns[6][0]) {
-    default: 
+    default:
         strand = objects::eNa_strand_unknown;
         break;
     case '+':
@@ -295,12 +295,12 @@ bool CGff2Record::AssignFromGff(
         m_pePhase = new TFrame(frame);
 
     columns[8].Copy(m_strAttributes, 0, CTempString::npos);
-    
+
     return xAssignAttributesFromGff(m_strType, columns[8]);
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff2Record::GetAttribute( 
+bool CGff2Record::GetAttribute(
     const string& strKey,
     string& strValue ) const
 //  ----------------------------------------------------------------------------
@@ -315,7 +315,7 @@ bool CGff2Record::GetAttribute(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff2Record::GetAttribute( 
+bool CGff2Record::GetAttribute(
     const string& strKey,
     list<string>& values ) const
 //  ----------------------------------------------------------------------------
@@ -348,7 +348,7 @@ string CGff2Record::xNormalizedAttributeValue(
     }
     if ( NStr::EndsWith( strValue, "\"" ) ) {
         strValue = strValue.substr( 0, strValue.length() - 1 );
-    }   
+    }
     return NStr::URLDecode(strValue, NStr::eUrlDec_Percent);
 }
 
@@ -432,7 +432,7 @@ bool x_GetNextAttribute(CTempString& input, CTempString& key, CTempString& value
             break;
         }
     }
-    
+
     if (semicolon == CTempString::npos)
         semicolon = input.length();
 
@@ -468,7 +468,7 @@ bool CGff2Record::xAssignAttributesFromGff(
 //  ----------------------------------------------------------------------------
 bool CGff2Record::xSplitGffAttributes(
     const string& strRawAttributes,
-	vector< string >& attributes) const
+    vector< string >& attributes) const
 //  ----------------------------------------------------------------------------
 {
     string strCurrAttrib;
@@ -478,7 +478,7 @@ bool CGff2Record::xSplitGffAttributes(
         if (inQuotes) {
             if (*iterChar == '\"') {
                 inQuotes = false;
-            }  
+            }
             strCurrAttrib += *iterChar;
         } else { // not in quotes
             if (*iterChar == ';') {
@@ -495,11 +495,11 @@ bool CGff2Record::xSplitGffAttributes(
         }
     }
 
-	NStr::TruncateSpacesInPlace( strCurrAttrib );
-	if (!strCurrAttrib.empty())
-		attributes.push_back(strCurrAttrib);
+    NStr::TruncateSpacesInPlace( strCurrAttrib );
+    if (!strCurrAttrib.empty())
+        attributes.push_back(strCurrAttrib);
 
-	return true;
+    return true;
 }
 
 //  ----------------------------------------------------------------------------
@@ -583,14 +583,14 @@ bool CGff2Record::xUpdateFeatureData(
     }
     return true;
 }
-    
+
 //  ----------------------------------------------------------------------------
 bool CGff2Record::xMigrateAttributes(
     int flags,
     CRef<CSeq_feat> pFeature ) const
 //  ----------------------------------------------------------------------------
 {
-    TAttributes attrs_left(m_Attributes.begin(), m_Attributes.end()); 
+    TAttributes attrs_left(m_Attributes.begin(), m_Attributes.end());
     TAttrIt it;
 
     it = attrs_left.find("Note");
@@ -852,7 +852,7 @@ bool CGff2Record::xMigrateAttributes(
     if (it != attrs_left.end()) {
         if (pFeature->GetData().IsImp()  &&  pFeature->GetData().GetImp().GetKey() == "repeat_region") {
             attrs_left.erase(it);
-        }           
+        }
     }
 
     it = attrs_left.find("transl_except");
@@ -860,7 +860,7 @@ bool CGff2Record::xMigrateAttributes(
         if (pFeature->GetData().IsCdregion()) {
             vector<string> codebreaks;
             NStr::Split(it->second, ",", codebreaks, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
-            for (vector<string>::iterator it1 = codebreaks.begin(); 
+            for (vector<string>::iterator it1 = codebreaks.begin();
                     it1 != codebreaks.end(); ++it1 ) {
                 string breakData = xNormalizedAttributeValue(*it1);
                 CRef<CSeq_id> pBreakId = GetSeqId(flags);
@@ -886,10 +886,10 @@ bool CGff2Record::xMigrateAttributes(
     }
 
     if (!xMigrateAttributesGo(flags, pFeature, attrs_left)) {
-		return false;
-	}
+        return false;
+    }
 
-    if (pFeature->GetData().IsBiosrc()) { 
+    if (pFeature->GetData().IsBiosrc()) {
         if (!xMigrateAttributesSubSource(flags, pFeature, attrs_left)) {
             return false;
         }
@@ -1014,7 +1014,7 @@ bool CGff2Record::xMigrateAttributesOrgName(
     }
     list<CRef<COrgMod> >& orgMod =
         pFeature->SetData().SetBiosrc().SetOrg().SetOrgname().SetMod();
-    for ( ORGMOD_MAP::const_iterator sit = sOrgModMap.begin(); 
+    for ( ORGMOD_MAP::const_iterator sit = sOrgModMap.begin();
             sit != sOrgModMap.end(); ++sit) {
         TAttributes::iterator ait = attrs_left.find(sit->first);
         if (ait == attrs_left.end()) {
@@ -1111,7 +1111,7 @@ bool CGff2Record::xMigrateAttributesSubSource(
 
     list<CRef<CSubSource> >& subType =
         pFeature->SetData().SetBiosrc().SetSubtype();
-    for ( SUBSOURCE_MAP::const_iterator sit = sSubSourceMap.begin(); 
+    for ( SUBSOURCE_MAP::const_iterator sit = sSubSourceMap.begin();
             sit != sSubSourceMap.end(); ++sit) {
         TAttributes::iterator ait = attrs_left.find(sit->first);
         if (ait == attrs_left.end()) {

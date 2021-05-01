@@ -68,7 +68,7 @@ public:
 
     /// Extract track information that should be present if the data originated from
     /// a UCSC data file. "name" and "db" have their designated accessors to recognize
-    /// their special importance. The third variant can be used to access arbitrary 
+    /// their special importance. The third variant can be used to access arbitrary
     /// track values.
     /// @param annot
     //      the Seq-annot to inspect.
@@ -79,7 +79,7 @@ public:
     //  @return
     ///     true if the requested information os available and the value parameter is
     ///     good to use.
-    ///     false otherwise. 
+    ///     false otherwise.
     static bool GetTrackName(
         const CSeq_annot& annot,
         string& value);

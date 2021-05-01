@@ -63,10 +63,10 @@ BEGIN_SCOPE(objects);
 
 
 // -----------------------------------------------------------------------------
-bool 
+bool
 CAlnScannerNexus::xUnexpectedEndBlock(TCommand& command)
 // -----------------------------------------------------------------------------
-{   
+{
     auto& args = command.args;
     string lastLine = args.back().mData;
     auto lastWhiteSpacePos = lastLine.find_last_of(" \t");
@@ -78,7 +78,7 @@ CAlnScannerNexus::xUnexpectedEndBlock(TCommand& command)
     NStr::ToLower(lastTokenLower);
 
     if (lastTokenLower == "end") {
-        const bool onlyArg = (args.size() == 1 && 
+        const bool onlyArg = (args.size() == 1 &&
                               lastWhiteSpacePos == NPOS);
         if (onlyArg) {
             throw SShowStopper(
@@ -108,16 +108,16 @@ CAlnScannerNexus::xUnexpectedEndBlock(TCommand& command)
 
 
 //  ----------------------------------------------------------------------------
-void 
+void
 CAlnScannerNexus::xProcessCommand(
     const TCommandTokens& commandTokens,
-    CSequenceInfo& sequenceInfo) 
+    CSequenceInfo& sequenceInfo)
 //  ----------------------------------------------------------------------------
 {
     SNexusCommand command;
     command.args = commandTokens;
 
-    auto nameEnd = 
+    auto nameEnd =
         commandTokens.front().mData.find_first_of(" \t[");
     if (nameEnd == NPOS) {
         command.name = command.args.front().mData;
@@ -125,7 +125,7 @@ CAlnScannerNexus::xProcessCommand(
     }
     else {
         command.name = command.args.front().mData.substr(0, nameEnd);
-        command.args.front().mData = 
+        command.args.front().mData =
             NStr::TruncateSpaces(command.args.front().mData.substr(nameEnd));
     }
     command.startLineNum = commandTokens.front().mNumLine;
@@ -150,7 +150,7 @@ CAlnScannerNexus::xProcessCommand(
                 command.startLineNum,
                 EAlnSubcode::eAlnSubcode_UnexpectedCommand,
                 "\"" + command.name + "\" command appears outside of block.");
-    } 
+    }
 
     string block = mCurrentBlock;
     NStr::ToLower(block);
@@ -158,17 +158,17 @@ CAlnScannerNexus::xProcessCommand(
         xProcessNCBIBlockCommand(command, sequenceInfo);
         return;
     }
-    
+
     if (nameLower == "end") {
         if (!command.args.empty()) {
             throw SShowStopper(
                 command.startLineNum,
                 EAlnSubcode::eAlnSubcode_UnexpectedCommandArgs,
-                "\"" + command.name + 
-                "\" command terminates a block and does not take any arguments.");   
+                "\"" + command.name +
+                "\" command terminates a block and does not take any arguments.");
         }
-        xEndBlock(command.startLineNum);    
-        return;    
+        xEndBlock(command.startLineNum);
+        return;
     }
 
     if (block ==  "data" ||
@@ -176,7 +176,7 @@ CAlnScannerNexus::xProcessCommand(
         xProcessDataBlockCommand(command, sequenceInfo);
         return;
     }
-    
+
     if (block == "taxa") {
         xProcessTaxaBlockCommand(command, sequenceInfo);
         return;
@@ -208,7 +208,7 @@ CAlnScannerNexus::xProcessDataBlockCommand(
     if (nameLower == "matrix") {
         xProcessMatrix(command.args);
     }
-    // Don't report an error. 
+    // Don't report an error.
     // There are many other possible commands
 
     if (unexpectedEnd) {
@@ -233,8 +233,8 @@ CAlnScannerNexus::xProcessTaxaBlockCommand(
     if (nameLower == "dimensions") {
         xProcessDimensions(command.args);
     }
-    // Don't report an error. 
-    // There are other possible commands that we currently ignore, 
+    // Don't report an error.
+    // There are other possible commands that we currently ignore,
     // such as taxlabels
 
     if (unexpectedEnd) {
@@ -278,7 +278,7 @@ CAlnScannerNexus::xProcessNCBIBlockCommand(
         throw SShowStopper(
             command.startLineNum,
             EAlnSubcode::eAlnSubcode_UnexpectedCommand,
-            "Unexpected \"" + command.name  + "\" command inside \"NCBI\" block. The \"NCBI\" block must contain a \"sequin\" command and no other commands."); 
+            "Unexpected \"" + command.name  + "\" command inside \"NCBI\" block. The \"NCBI\" block must contain a \"sequin\" command and no other commands.");
     }
 
     if (unexpectedEnd) {
@@ -290,7 +290,7 @@ CAlnScannerNexus::xProcessNCBIBlockCommand(
 
 
 //  ----------------------------------------------------------------------------
-void 
+void
 CAlnScannerNexus::xProcessSequin(
         const TCommandArgs& args)
 //  ----------------------------------------------------------------------------
@@ -306,13 +306,13 @@ CAlnScannerNexus::xProcessSequin(
             showStopper.mLineNumber = lineNum;
             throw;
         }
-        
+
         if (!dummy.empty()) {
             string description =
-                "The definition lines in the Nexus file are not correctly formatted. " 
-                "Definition lines are optional, " 
-                "but if included, must start with \">\" followed by modifiers in square brackets. " 
-                "The sequences have been imported " 
+                "The definition lines in the Nexus file are not correctly formatted. "
+                "Definition lines are optional, "
+                "but if included, must start with \">\" followed by modifiers in square brackets. "
+                "The sequences have been imported "
                 "but the information in the definition lines will be ignored.";
             throw SShowStopper(
                 lineNum,
@@ -326,7 +326,7 @@ CAlnScannerNexus::xProcessSequin(
 
 
 //  ----------------------------------------------------------------------------
-void 
+void
 CAlnScannerNexus::xBeginBlock(
     const TCommandArgs& command)
 //  ----------------------------------------------------------------------------
@@ -337,7 +337,7 @@ CAlnScannerNexus::xBeginBlock(
         auto description = ErrorPrintf(
                 "Nested blocks detected. New block \"%s\" while still in \"%s\" block. \"%s\" block begins on line %d",
                 newBlockName.c_str(),
-                mCurrentBlock.c_str(), 
+                mCurrentBlock.c_str(),
                 mCurrentBlock.c_str(),
                 mBlockStartLine);
 
@@ -354,8 +354,8 @@ CAlnScannerNexus::xBeginBlock(
 
 
 //  ----------------------------------------------------------------------------
-void 
-CAlnScannerNexus::xEndBlock(int lineNum) 
+void
+CAlnScannerNexus::xEndBlock(int lineNum)
 //  ----------------------------------------------------------------------------
 {
 
@@ -374,7 +374,7 @@ CAlnScannerNexus::xEndBlock(int lineNum)
 
 
 //  ----------------------------------------------------------------------------
-void 
+void
 CAlnScannerNexus::xProcessMatrix(
     const TCommandArgs& command)
 //  ----------------------------------------------------------------------------
@@ -392,7 +392,7 @@ CAlnScannerNexus::xProcessMatrix(
         vector<string> tokens;
         NStr::Split(data, " \t", tokens, NStr::fSplit_Tokenize);
         if (tokens.size() < 2) {
-            string description = 
+            string description =
             "Data line does not follow the expected pattern of sequence_ID followed by sequence data. "
             "Each data line should conform to the same expected pattern.";
             throw SShowStopper(
@@ -402,7 +402,7 @@ CAlnScannerNexus::xProcessMatrix(
         }
 
         const string& seqId = tokens[0];
-        if (mNumSequences == 0 &&    
+        if (mNumSequences == 0 &&
             !mSeqIds.empty() &&
             seqId == mSeqIds[0].mData) {
             mNumSequences = mSeqIds.size();
@@ -419,18 +419,17 @@ CAlnScannerNexus::xProcessMatrix(
             mSeqIds.push_back({seqId, lineNum});
             mSequences.push_back(vector<TLineInfo>());
         }
-        
+
         string seqData = NStr::Join(tokens.begin()+1, tokens.end(), "");
         const int dataSize = seqData.size();
 
 
-        
         if (seqCount == 0) {
             sequenceCharCount += dataSize;
             if (sequenceCharCount > mSequenceSize) {
-                string description = 
+                string description =
                     ErrorPrintf(
-                        "The expected number of characters per sequence specified by nChar in the Nexus file is %d. " 
+                        "The expected number of characters per sequence specified by nChar in the Nexus file is %d. "
                         "The actual number of characters counted for the first sequence is %d. "
                         "The expected number of characters must equal the actual number of characters.",
                         mSequenceSize,
@@ -438,18 +437,18 @@ CAlnScannerNexus::xProcessMatrix(
                 throw SShowStopper(
                     lineNum,
                     EAlnSubcode::eAlnSubcode_BadDataCount,
-                    description); 
+                    description);
             }
             blockLineLength = dataSize;
         }
         else
         if (dataSize != blockLineLength) {
-            string description = 
+            string description =
                 BadCharCountPrintf(blockLineLength,dataSize);
             throw SShowStopper(
                 lineNum,
                 EAlnSubcode::eAlnSubcode_BadDataCount,
-                description); 
+                description);
         }
         mSequences[seqCount].push_back({seqData, lineNum});
 
@@ -458,35 +457,35 @@ CAlnScannerNexus::xProcessMatrix(
 
 
     if (maxSeqCount != mNumSequences-1) {
-        string description = 
+        string description =
             ErrorPrintf(
                 "The expected number of sequences specified by nTax in the Nexus file is %d. "
-                "The actual number of sequences encountered is %d. " 
+                "The actual number of sequences encountered is %d. "
                 "The number of sequences in the file must equal the expected number of sequences.",
                 mNumSequences,
                 maxSeqCount+1);
         throw SShowStopper(
             -1,
             EAlnSubcode::eAlnSubcode_BadSequenceCount,
-            description); 
+            description);
     }
 
     if (seqCount != maxSeqCount) {
         string description =
             ErrorPrintf(
-                "The final sequence block in the Nexus file is incomplete. " 
+                "The final sequence block in the Nexus file is incomplete. "
                 "It contains data for just %d sequences, but %d sequences are expected.",
                 seqCount+1, mNumSequences);
         throw SShowStopper(
             -1,
             EAlnSubcode::eAlnSubcode_BadSequenceCount,
-            description); 
+            description);
     }
 
     if (sequenceCharCount != mSequenceSize) {
-        string description = 
+        string description =
             ErrorPrintf(
-                "The expected number of characters per sequence specified by nChar in the Nexus file is %d. " 
+                "The expected number of characters per sequence specified by nChar in the Nexus file is %d. "
                 "The actual number of characters counted for the first sequence is %d. "
                 "The expected number of characters must equal the actual number of characters.",
                 mSequenceSize,
@@ -494,12 +493,12 @@ CAlnScannerNexus::xProcessMatrix(
         throw SShowStopper(
             -1,
             EAlnSubcode::eAlnSubcode_BadDataCount,
-            description); 
+            description);
     }
 }
 
 //  ----------------------------------------------------------------------------
-void 
+void
 CAlnScannerNexus::xProcessDimensions(
     const TCommandArgs& args)
 //  ----------------------------------------------------------------------------
@@ -508,13 +507,13 @@ CAlnScannerNexus::xProcessDimensions(
        auto ntaxPos = xGetArgPos(args, "ntax");
 
        // If "ntax" appears in a line,
-       // check that it is immediately preceded by "newtaxa". 
-       // "newtaxa" could be on the same line as "ntax" or at the 
+       // check that it is immediately preceded by "newtaxa".
+       // "newtaxa" could be on the same line as "ntax" or at the
        // end of the preceding line.
        if (ntaxPos.second != string::npos) {
            string ntaxSubStr;
            size_t ntaxLinePos = ntaxPos.second;
-           if (ntaxLinePos == 0 && 
+           if (ntaxLinePos == 0 &&
                ntaxPos.first != args.begin()) {
                 ntaxSubStr = prev(ntaxPos.first)->mData;
                 ntaxLinePos += ntaxSubStr.size();
@@ -526,10 +525,10 @@ CAlnScannerNexus::xProcessDimensions(
                ntaxSubStr += ntaxPos.first->mData;
                auto endOfPreviousToken = ntaxSubStr.find_last_not_of(" \t", ntaxLinePos-1);
                if (endOfPreviousToken != NPOS &&
-                   endOfPreviousToken >= (litLength-1) && 
+                   endOfPreviousToken >= (litLength-1) &&
                    NStr::EqualNocase(
                        ntaxSubStr.substr(
-                           endOfPreviousToken-(litLength-1), litLength), "newtaxa")) { 
+                           endOfPreviousToken-(litLength-1), litLength), "newtaxa")) {
                    foundError = false;
                }
            }
@@ -553,7 +552,7 @@ CAlnScannerNexus::xProcessDimensions(
             mNumSequences = NStr::StringToInt(ntax.first);
         }
         catch(...) {
-            string description = 
+            string description =
                 ErrorPrintf("Nexus file has invalid nTax setting: \"%s\". nTax must be an integer.",
                     ntax.first.c_str());
                 throw SShowStopper(
@@ -562,15 +561,15 @@ CAlnScannerNexus::xProcessDimensions(
                     description);
         }
     }
-    
-    auto nchar = xGetKeyVal(args, "nchar"); 
+
+    auto nchar = xGetKeyVal(args, "nchar");
     if (!nchar.first.empty()) {
         try {
             mSequenceSize = NStr::StringToInt(nchar.first);
         }
         catch(...) {
-            string description = 
-                ErrorPrintf("Nexus file has invalid nChar setting: \"%s\". nChar must be an integer.", 
+            string description =
+                ErrorPrintf("Nexus file has invalid nChar setting: \"%s\". nChar must be an integer.",
                         nchar.first.c_str());
                     throw SShowStopper(
                         nchar.second,
@@ -582,7 +581,7 @@ CAlnScannerNexus::xProcessDimensions(
 
 
 //  ----------------------------------------------------------------------------
-void 
+void
 CAlnScannerNexus::xProcessFormat(
     const TCommandArgs& command)
 //  ----------------------------------------------------------------------------
@@ -639,7 +638,7 @@ CAlnScannerNexus::xGetKeyVal(
                 }
                 return {lineInfo.mData.substr(valPos), lineInfo.mNumLine};
             }
-        } 
+        }
     }
     return {"", -1};
 }
@@ -650,7 +649,6 @@ CAlnScannerNexus::xGetArgPos(const TCommandArgs& args,
         const string& token) const
 //  ----------------------------------------------------------------------------
 {
-    
     for (auto it = args.cbegin(); it != args.cend(); ++it) {
         string line(it->mData);
         NStr::ToLower(line);
@@ -664,9 +662,8 @@ CAlnScannerNexus::xGetArgPos(const TCommandArgs& args,
 }
 
 
- 
 //  ----------------------------------------------------------------------------
-size_t 
+size_t
 CAlnScannerNexus::sFindCharOutsideComment(
         char c,
         const string& line,
@@ -678,11 +675,11 @@ CAlnScannerNexus::sFindCharOutsideComment(
         if (line[index] == '[') {
             ++numUnmatchedLeftBrackets;
         }
-        else 
+        else
         if (line[index] == ']') {
             --numUnmatchedLeftBrackets;
         }
-        else 
+        else
         if ((numUnmatchedLeftBrackets == 0) &&
             line[index] == c) {
             return index;
@@ -690,10 +687,10 @@ CAlnScannerNexus::sFindCharOutsideComment(
     }
     return NPOS;
 }
-                        
+
 
 //  ----------------------------------------------------------------------------
-void 
+void
 CAlnScannerNexus::xImportAlignmentData(
     CSequenceInfo& sequenceInfo,
     CLineInput& iStr)
@@ -716,21 +713,20 @@ CAlnScannerNexus::xImportAlignmentData(
 
         string lineStrLower(line);
         NStr::ToLower(lineStrLower);
-        if (lineStrLower == "#nexus") { 
+        if (lineStrLower == "#nexus") {
             if (!firstToken) {
                 throw SShowStopper(
                         lineCount,
                         eAlnSubcode_IllegalDataLine,
                         "Unexpected token. \"#NEXUS\" should appear once at the beginnng of the file."
-                        
                         );
             }
             firstToken = false;
             continue;
         }
-    /*  
+    /*
       // this code is redundant because the file will not be recognised as Nexus anyway.
-        else 
+        else
         if (firstToken) {
             throw SShowStopper(
                     lineCount,
@@ -759,7 +755,7 @@ CAlnScannerNexus::xImportAlignmentData(
 
 
         while (commandEnd != NPOS) {
-            string commandSubstr = 
+            string commandSubstr =
                 NStr::TruncateSpaces(line.substr(commandStart, commandEnd-commandStart));
             if (!commandSubstr.empty()) {
                 commandTokens.push_back({commandSubstr, lineCount});
@@ -769,7 +765,7 @@ CAlnScannerNexus::xImportAlignmentData(
 
             commandStart = commandEnd+1;
             previousOpenBrackets = numOpenBrackets;
-            commandEnd = 
+            commandEnd =
                 sFindCharOutsideComment(';',line, numOpenBrackets, commandStart);
             if (previousOpenBrackets == 0 &&
                 numOpenBrackets > 0) {
@@ -794,7 +790,7 @@ CAlnScannerNexus::xImportAlignmentData(
     }
 
     if (!commandTokens.empty()) {
-        string description = 
+        string description =
             "Terminating semicolon missing from command. Commands in a Nexus file must end with a semicolon.";
         throw SShowStopper(
             lineCount,
@@ -813,8 +809,8 @@ CAlnScannerNexus::xAdjustSequenceInfo(
     if (mGapChar != 0) {
         sequenceInfo
             .SetBeginningGap(string(1, mGapChar))
-			.SetMiddleGap(string(1, mGapChar))
-			.SetEndGap(string(1, mGapChar));
+            .SetMiddleGap(string(1, mGapChar))
+            .SetEndGap(string(1, mGapChar));
     }
     if (mMatchChar != 0) {
         sequenceInfo.SetMatch(string(1, mMatchChar));
@@ -826,9 +822,9 @@ CAlnScannerNexus::xAdjustSequenceInfo(
 
 
 //  ----------------------------------------------------------------------------
-static void 
+static void
 sStripNexusComments(
-    string& line, 
+    string& line,
     int &numUnmatchedLeftBrackets)
 //  ----------------------------------------------------------------------------
 {
@@ -848,7 +844,7 @@ sStripNexusComments(
                 start = index;
             }
         }
-        else 
+        else
         if (c == ']') {
             if (numUnmatchedLeftBrackets==1) {
                 stop = index;
@@ -872,9 +868,9 @@ sStripNexusComments(
 }
 
 //  ----------------------------------------------------------------------------
-void 
+void
 CAlnScannerNexus::sStripCommentsOutsideCommand(
-    string& line, 
+    string& line,
     int &numUnmatchedLeftBrackets,
     bool &inCommand)
 //  ----------------------------------------------------------------------------
@@ -901,7 +897,7 @@ CAlnScannerNexus::sStripCommentsOutsideCommand(
         if (inCommand) {
             if (c == ';' &&
                 numUnmatchedLeftBrackets==0) {
-                inCommand = false;        
+                inCommand = false;
             }
             continue;
         }
@@ -913,7 +909,7 @@ CAlnScannerNexus::sStripCommentsOutsideCommand(
                 start = index;
             }
         }
-        else 
+        else
         if (c == ']') {
             --numUnmatchedLeftBrackets;
             if (numUnmatchedLeftBrackets==0) {
@@ -924,7 +920,7 @@ CAlnScannerNexus::sStripCommentsOutsideCommand(
         else
         if (numUnmatchedLeftBrackets == 0 &&
             !isspace(c)) {
-           inCommand = true; 
+           inCommand = true;
         }
     }
 
@@ -942,7 +938,7 @@ CAlnScannerNexus::sStripCommentsOutsideCommand(
 
 
 //  ----------------------------------------------------------------------------
-void 
+void
 CAlnScannerNexus::sStripNexusCommentsFromCommand(
     TCommandArgs& command)
 //  ----------------------------------------------------------------------------

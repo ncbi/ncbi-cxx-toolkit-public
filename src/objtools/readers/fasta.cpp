@@ -128,7 +128,7 @@ class CTempPusher
 public:
     typedef typename TStack::value_type TValue;
     CTempPusher(TStack& s, const TValue& v) : m_Stack(s) { s.push(v); }
-    ~CTempPusher() { _ASSERT( !m_Stack.empty() );  m_Stack.pop(); }    
+    ~CTempPusher() { _ASSERT( !m_Stack.empty() );  m_Stack.pop(); }
 
 private:
     TStack& m_Stack;
@@ -143,8 +143,8 @@ public:
         CRef<TObject> & pObj1,
         CRef<TObject> & pObj2 ) :
     m_pObj1(pObj1),
-        m_pObj2(pObj2) 
-    { 
+        m_pObj2(pObj2)
+    {
         m_pObj1.Swap(m_pObj2);
     }
 
@@ -219,7 +219,7 @@ inline static bool s_ASCII_IsUnAmbigNuc(unsigned char c)
 }
 
 CFastaReader::CFastaReader(ILineReader& reader, TFlags flags, FIdCheck f_idcheck)
-    : m_LineReader(&reader), m_MaskVec(0), 
+    : m_LineReader(&reader), m_MaskVec(0),
       m_gapNmin(0), m_gap_Unknown_length(0),
       m_MaxIDLength(kMax_UI4),
       m_fIdCheck(f_idcheck)
@@ -235,7 +235,7 @@ CFastaReader::CFastaReader(const string& path, TFlags flags, FIdCheck f_idcheck)
     : CFastaReader(*(ILineReader::New(path)), flags, f_idcheck) {}
 
 CFastaReader::CFastaReader(CReaderBase::TReaderFlags fBaseFlags, TFlags flags, FIdCheck f_idcheck)
-    : CReaderBase(fBaseFlags), m_MaskVec(0), 
+    : CReaderBase(fBaseFlags), m_MaskVec(0),
       m_gapNmin(0), m_gap_Unknown_length(0),
       m_MaxIDLength(kMax_UI4),
       m_fIdCheck(f_idcheck)
@@ -257,12 +257,12 @@ void CFastaReader::SetMinGaps(TSeqPos gapNmin, TSeqPos gap_Unknown_length)
 CRef<CSerialObject>
 CFastaReader::ReadObject (ILineReader &lr, ILineErrorListener *pMessageListener)
 {
-    CRef<CSerialObject> object( 
+    CRef<CSerialObject> object(
         ReadSeqEntry( lr, pMessageListener ).ReleaseOrNull() );
     return object;
 }
 
-CRef<CSeq_entry> 
+CRef<CSeq_entry>
 CFastaReader::ReadSeqEntry (ILineReader &lr, ILineErrorListener *pMessageListener)
 {
     CRef<ILineReader> pTempLineReader( &lr );
@@ -304,7 +304,7 @@ CRef<CSeq_entry> CFastaReader::ReadOneSeq(ILineErrorListener * pMessageListener)
             FASTA_PROGRESS("Processing line " << LineNumber());
         }
         if (GetLineReader().AtEOF()) {
-            FASTA_ERROR(LineNumber(), 
+            FASTA_ERROR(LineNumber(),
                         "CFastaReader: Unexpected end-of-file around line " << LineNumber(),
                         CObjReaderParseException::eEOF );
             break;
@@ -352,7 +352,7 @@ CRef<CSeq_entry> CFastaReader::ReadOneSeq(ILineErrorListener * pMessageListener)
             } else {
                 const auto lineNum = LineNumber();
                 GetLineReader().UngetLine();
-                NCBI_THROW2(CObjReaderParseException, eNoDefline, 
+                NCBI_THROW2(CObjReaderParseException, eNoDefline,
                             "CFastaReader: Input doesn't start with"
                             " a defline or comment around line " + NStr::NumericToString(lineNum),
                              lineNum);
@@ -361,13 +361,13 @@ CRef<CSeq_entry> CFastaReader::ReadOneSeq(ILineErrorListener * pMessageListener)
 
         if ( !TestFlag(fNoSeqData) ) {
             try {
-				string strmodified;
-				if( NStr::StartsWith(line, ">?_") ) {
-					CTempString tmp = line.substr(3);
-					strmodified = ">";
-					strmodified.append(tmp.data(), tmp.length());
-					line = strmodified;
-				}
+                string strmodified;
+                if( NStr::StartsWith(line, ">?_") ) {
+                    CTempString tmp = line.substr(3);
+                    strmodified = ">";
+                    strmodified.append(tmp.data(), tmp.length());
+                    line = strmodified;
+                }
                 ParseDataLine(line, pMessageListener);
             } catch(CBadResiduesException & e) {
                 // we have to catch this exception so we can build up
@@ -453,7 +453,7 @@ void CFastaReader::SetMaxIDLength(Uint4 max_len)
 }
 
 
-// For reasons of efficiency, this method does not use 
+// For reasons of efficiency, this method does not use
 // CRef<CSeq_interval> to access range information - RW-26
 void CFastaReader::ParseDefLine(const TStr& defLine,
                                 const SDefLineParseInfo& info,
@@ -462,8 +462,8 @@ void CFastaReader::ParseDefLine(const TStr& defLine,
                                 bool& hasRange,
                                 TSeqPos& rangeStart,
                                 TSeqPos& rangeEnd,
-                                TSeqTitles& seqTitles, 
-                                ILineErrorListener* pMessageListener) 
+                                TSeqTitles& seqTitles,
+                                ILineErrorListener* pMessageListener)
 {
     CFastaDeflineReader::SDeflineData data;
     CFastaDeflineReader::ParseDefline(
@@ -480,8 +480,8 @@ void CFastaReader::ParseDefLine(const TStr& defLine,
 }
 
 
-CRef<CSeq_align> CFastaReader::xCreateAlignment(CRef<CSeq_id> old_id, 
-                CRef<CSeq_id> new_id, 
+CRef<CSeq_align> CFastaReader::xCreateAlignment(CRef<CSeq_id> old_id,
+                CRef<CSeq_id> new_id,
                 TSeqPos range_start,
                 TSeqPos range_end)
 {
@@ -512,7 +512,7 @@ bool CFastaReader::xSetSeqMol(const list<CRef<CSeq_id>>& ids, CSeq_inst_Base::EM
     for (auto pId : ids) {
         const CSeq_id::EAccessionInfo acc_info = pId->IdentifyAccession();
         if (acc_info & CSeq_id::fAcc_nuc) {
-            mol = CSeq_inst::eMol_na; 
+            mol = CSeq_inst::eMol_na;
             return true;
         }
 
@@ -545,7 +545,7 @@ void CFastaReader::ParseDefLine(const TStr& s, ILineErrorListener * pMessageList
     }
     else if (!TestFlag(fForceType)) {
         CSeq_inst::EMol mol;
-        if (xSetSeqMol(data.ids, mol)) { 
+        if (xSetSeqMol(data.ids, mol)) {
             m_CurrentSeq->SetInst().SetMol(mol);
         }
     }
@@ -579,7 +579,7 @@ void CFastaReader::ParseDefLine(const TStr& s, ILineErrorListener * pMessageList
 
 
 void CFastaReader::PostProcessIDs(
-    const CBioseq::TId& defline_ids, 
+    const CBioseq::TId& defline_ids,
     const string& defline,
     const bool has_range,
     const TSeqPos range_start,
@@ -587,7 +587,7 @@ void CFastaReader::PostProcessIDs(
 {
     if (defline_ids.empty()) {
         GenerateID();
-    } 
+    }
     else {
         SetIDs() = defline_ids;
     }
@@ -598,7 +598,7 @@ void CFastaReader::PostProcessIDs(
         SetIDs().clear();
         GenerateID();
 
-        CRef<CSeq_align> align = xCreateAlignment(old_id, 
+        CRef<CSeq_align> align = xCreateAlignment(old_id,
             GetIDs().front(), range_start, range_end);
 
         m_CurrentSeq->SetInst().SetHist().SetAssembly().push_back(align);
@@ -618,12 +618,12 @@ void CFastaReader::x_SetDeflineParseInfo(SDefLineParseInfo& info)
 
 
 size_t CFastaReader::ParseRange(
-    const TStr& s, TSeqPos& start, TSeqPos& end, 
+    const TStr& s, TSeqPos& start, TSeqPos& end,
     ILineErrorListener* pMessageListener)
 {
     return CFastaDeflineReader::ParseRange(
         s,
-        start, 
+        start,
         end,
         pMessageListener);
 }
@@ -652,7 +652,7 @@ bool CFastaReader::IsValidLocalID(const TStr& s) const
     return IsValidLocalID(s, GetFlags());
 }
 
-bool CFastaReader::IsValidLocalID(const TStr& idString, 
+bool CFastaReader::IsValidLocalID(const TStr& idString,
     const TFlags fFastaFlags)
 {
     if ( fFastaFlags & fQuickIDCheck) { // check only the first character
@@ -723,10 +723,10 @@ void CFastaReader::CheckDataLine(
     const static size_t kWarnPercentAmbiguous = 40; // e.g. "40" means "40%"
     const size_t percent_ambig = (good == 0)?100:((ambig_nuc * 100) / good);
     if( len_to_check > 3 && percent_ambig > kWarnPercentAmbiguous ) {
-        FASTA_WARNING(LineNumber(), 
+        FASTA_WARNING(LineNumber(),
             "FASTA-Reader: Start of first data line in seq is about "
             << percent_ambig << "% ambiguous nucleotides (shouldn't be over "
-            << kWarnPercentAmbiguous << "%)",   
+            << kWarnPercentAmbiguous << "%)",
             ILineError::eProblem_TooManyAmbiguousResidues,
             "first data line");
     }
@@ -776,13 +776,13 @@ void CFastaReader::ParseDataLine(
     );
 
     m_SeqData.resize(m_CurrentPos + s_len);
-        
+
     // these will stay as -1 and empty unless there's an error
     int bad_pos_line_num = -1;
-    vector<TSeqPos> bad_pos_vec; 
+    vector<TSeqPos> bad_pos_vec;
 
     const bool bHyphensIgnoreAndWarn = TestFlag(fHyphensIgnoreAndWarn);
-    const bool bHyphensAreGaps = 
+    const bool bHyphensAreGaps =
         ( TestFlag(fParseGaps) && ! bHyphensIgnoreAndWarn );
     const bool bAllowLetterGaps =
         ( TestFlag(fParseGaps) && TestFlag(fLetterGaps) );
@@ -956,7 +956,7 @@ void CFastaReader::ParseDataLine(
 
     // before throwing, be sure that we're in a valid state so that callers can
     // parse multiple lines and get the invalid residues in all of them.
-    
+
     if( ! bad_pos_vec.empty() ) {
         if (TestFlag(fValidate)) {
             NCBI_THROW2(CBadResiduesException, eBadResidues,
@@ -964,12 +964,12 @@ void CFastaReader::ParseDataLine(
                 CBadResiduesException::SBadResiduePositions( m_BestID, bad_pos_vec, bad_pos_line_num ) );
         } else {
             stringstream warn_strm;
-            warn_strm << "FASTA-Reader: Ignoring invalid " << x_NucOrProt() 
+            warn_strm << "FASTA-Reader: Ignoring invalid " << x_NucOrProt()
                 << "residues at position(s): ";
-            CBadResiduesException::SBadResiduePositions( 
+            CBadResiduesException::SBadResiduePositions(
                 m_BestID, bad_pos_vec, bad_pos_line_num ).ConvertBadIndexesToString(warn_strm);
 
-            FASTA_WARNING(0, 
+            FASTA_WARNING(0,
                 warn_strm.str(),
                 ILineError::eProblem_InvalidResidue,
                 kEmptyStr );
@@ -1019,9 +1019,8 @@ void CFastaReader::x_CloseGap(
             }
         }
 
-       
         const auto cit = m_GapsizeToLinkageEvidence.find(len);
-        const auto& gap_linkage_evidence = 
+        const auto& gap_linkage_evidence =
             (cit != m_GapsizeToLinkageEvidence.end()) ?
             cit->second :
             m_DefaultLinkageEvidence;
@@ -1091,7 +1090,7 @@ bool CFastaReader::ParseGapLine(
             0, uNumDigits);
         uGapSize = NStr::StringToUInt(sDigits, NStr::fConvErr_NoThrow);
         if( uGapSize <= 0 ) {
-            FASTA_WARNING(LineNumber(), 
+            FASTA_WARNING(LineNumber(),
                 "CFastaReader: Bad gap size at line " << LineNumber(),
                 ILineError::eProblem_NonPositiveLength,
                 "gapline" );
@@ -1119,10 +1118,10 @@ bool CFastaReader::ParseGapLine(
         if( uPosOfEqualSign != TStr::npos ) {
             uCloseBracketPos = sRemainingLine.find(']', uPosOfEqualSign + 1);
         }
-        if( uCloseBracketPos == TStr::npos ) 
+        if( uCloseBracketPos == TStr::npos )
         {
             FASTA_WARNING(LineNumber(),
-                "CFastaReader: Problem parsing gap mods at line " 
+                "CFastaReader: Problem parsing gap mods at line "
                 << LineNumber(),
                 ILineError::eProblem_ParsingModifiers,
                 "gapline" );
@@ -1131,12 +1130,12 @@ bool CFastaReader::ParseGapLine(
 
         // extract the key and the value
         TStr sKey = NStr::TruncateSpaces_Unsafe(
-            sRemainingLine.substr(uOpenBracketPos + 1, 
+            sRemainingLine.substr(uOpenBracketPos + 1,
                 (uPosOfEqualSign - uOpenBracketPos - 1) ) );
         TStr sValue = NStr::TruncateSpaces_Unsafe(
             sRemainingLine.substr(uPosOfEqualSign + 1,
                 uCloseBracketPos - uPosOfEqualSign - 1) );
-        
+
         // remember what we saw
         modKeyValueMultiMap.insert(
             TModKeyValueMultiMap::value_type(sKey, sValue) );
@@ -1201,12 +1200,12 @@ bool CFastaReader::ParseGapLine(
             }
             continue;
 
-        } 
-        
+        }
+
         if( canonicalKey == "linkage-evidence") {
             // could be semi-colon separated
             vector<CTempString> arrLinkageEvidences;
-            NStr::Split(sValue, ";", arrLinkageEvidences, 
+            NStr::Split(sValue, ";", arrLinkageEvidences,
                         NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 
             ITERATE(vector<CTempString>, link_evid_it, arrLinkageEvidences) {
@@ -1228,7 +1227,7 @@ bool CFastaReader::ParseGapLine(
                 }
             }
             continue;
-        } 
+        }
 
         // unknown mod.
         FASTA_WARNING_EX(
@@ -1260,12 +1259,12 @@ bool CFastaReader::ParseGapLine(
                 // silently add the required "unspecified"
                 setOfLinkageEvidence.insert(CLinkage_evidence::eType_unspecified);
             }
-        } else if( setOfLinkageEvidence.size() > 1 || 
+        } else if( setOfLinkageEvidence.size() > 1 ||
             *setOfLinkageEvidence.begin() != CLinkage_evidence::eType_unspecified )
         {
             // only "unspecified" is allowed
             FASTA_WARNING(
-                LineNumber(), 
+                LineNumber(),
                 "FASTA-Reader: Unknown gap-type can have linkage-evidence "
                     "of type 'unspecified' only.",
                 ILineError::eProblem_ExtraModifierFound,
@@ -1303,7 +1302,7 @@ bool CFastaReader::ParseGapLine(
     }
 
     TGapRef pGap( new SGap(
-        uPos, uGapSize, eIsKnown, LineNumber(), pGapType, 
+        uPos, uGapSize, eIsKnown, LineNumber(), pGapType,
         setOfLinkageEvidence ) );
 
     m_Gaps.push_back(pGap);
@@ -1330,8 +1329,8 @@ void CFastaReader::AssembleSeq(ILineErrorListener * pMessageListener)
 
     CSeq_data::E_Choice format
         = ( inst.IsAa() ?
-            ( TestFlag(fUseIupacaa) ? 
-              CSeq_data::e_Iupacaa : 
+            ( TestFlag(fUseIupacaa) ?
+              CSeq_data::e_Iupacaa :
               CSeq_data::e_Ncbieaa ) :
             CSeq_data::e_Iupacna);
 
@@ -1357,7 +1356,7 @@ void CFastaReader::AssembleSeq(ILineErrorListener * pMessageListener)
             // any specified extra information that can't be
             // represented with a mere 'X' or 'N', so at least
             // give a warning
-            const bool bHasSpecifiedGapType = 
+            const bool bHasSpecifiedGapType =
                 ( (*it)->m_pGapType && *(*it)->m_pGapType != CSeq_gap::eType_unknown );
             const bool bHasSpecifiedLinkEvid =
                 ( ! (*it)->m_setOfLinkageEvidence.empty() &&
@@ -1400,7 +1399,7 @@ void CFastaReader::AssembleSeq(ILineErrorListener * pMessageListener)
                     CObjReaderParseException::eNoResidues);
             }
     }
-    else 
+    else
     if (m_Gaps.empty() && TestFlag(fNoSplit)) {
         inst.SetLength(GetCurrentPos(eRawPos));
         inst.SetRepr(CSeq_inst::eRepr_raw);
@@ -1435,8 +1434,8 @@ void CFastaReader::AssembleSeq(ILineErrorListener * pMessageListener)
 
                 if( m_Gaps[i]->m_pGapType || ! m_Gaps[i]->m_setOfLinkageEvidence.empty() ) {
                     CSeq_gap & seq_gap = gap_ds->SetLiteral().SetSeq_data().SetGap();
-                    seq_gap.SetType( m_Gaps[i]->m_pGapType ? 
-                        *m_Gaps[i]->m_pGapType : 
+                    seq_gap.SetType( m_Gaps[i]->m_pGapType ?
+                        *m_Gaps[i]->m_pGapType :
                         CSeq_gap::eType_unknown );
 
                     // set linkage and linkage-evidence, if any
@@ -1445,10 +1444,10 @@ void CFastaReader::AssembleSeq(ILineErrorListener * pMessageListener)
                         // implies "linked"
                         seq_gap.SetLinkage( CSeq_gap::eLinkage_linked );
 
-                        CSeq_gap::TLinkage_evidence & vecLinkEvids = 
+                        CSeq_gap::TLinkage_evidence & vecLinkEvids =
                             seq_gap.SetLinkage_evidence();
-                        ITERATE(SGap::TLinkEvidSet, link_evid_it, 
-                            m_Gaps[i]->m_setOfLinkageEvidence ) 
+                        ITERATE(SGap::TLinkEvidSet, link_evid_it,
+                            m_Gaps[i]->m_setOfLinkageEvidence )
                         {
                             CSeq_gap::TLinkage_evidence::value_type pNewLinkEvid(
                                 new CLinkage_evidence );
@@ -1485,11 +1484,10 @@ static void s_AddBiomol(CMolInfo::EBiomol biomol, CBioseq& bioseq)
     bioseq.SetDescr().Set().emplace_back(move(pDesc));
 }
 
-static bool sRefineNaMol(const char* beginSeqData, const char* endSeqData, CBioseq& bioseq) 
+static bool sRefineNaMol(const char* beginSeqData, const char* endSeqData, CBioseq& bioseq)
 {
-
     auto& seqInst = bioseq.SetInst();
-    const bool hasT = 
+    const bool hasT =
         (find_if(beginSeqData, endSeqData, [](char c) { return (c=='t' || c == 'T'); }) != endSeqData);
     const bool hasU =
         (find_if(beginSeqData, endSeqData, [](char c) { return (c=='u' || c == 'U'); }) != endSeqData);
@@ -1534,17 +1532,17 @@ void CFastaReader::AssignMolType(ILineErrorListener * pMessageListener)
         _ASSERT(default_mol != CSeq_inst::eMol_not_set);
         inst.SetMol(default_mol);
         return;
-    } 
-        
+    }
+
     if (inst.IsSetMol()) {
         if (inst.GetMol() == CSeq_inst::eMol_na && !m_SeqData.empty()) {
-            sRefineNaMol(m_SeqData.data(), 
-                    m_SeqData.data() + min(m_SeqData.length(), SIZE_TYPE(4096)), 
+            sRefineNaMol(m_SeqData.data(),
+                    m_SeqData.data() + min(m_SeqData.length(), SIZE_TYPE(4096)),
                     *m_CurrentSeq);
         }
         return;
-    } 
-        
+    }
+
     if (m_SeqData.empty()) {
         // Nothing else to go on, but that's OK (no sequence to worry
         // about encoding); however, Seq-inst.mol is still mandatory.
@@ -1557,7 +1555,7 @@ void CFastaReader::AssignMolType(ILineErrorListener * pMessageListener)
     SIZE_TYPE length = min(m_SeqData.length(), SIZE_TYPE(4096));
     const auto& data = m_SeqData.data();
     switch (CFormatGuess::SequenceType(data, length, strictness)) {
-    case CFormatGuess::eNucleotide:  
+    case CFormatGuess::eNucleotide:
     {
         if (!sRefineNaMol(data, data+length, *m_CurrentSeq)) {
             inst.SetMol(CSeq_inst::eMol_na);
@@ -1573,13 +1571,13 @@ void CFastaReader::AssignMolType(ILineErrorListener * pMessageListener)
         } else {
             inst.SetMol(default_mol);
         }
-    } 
+    }
 }
 
 
 bool
 CFastaReader::CreateWarningsForSeqDataInTitle(
-    const TStr& sLineText, 
+    const TStr& sLineText,
     TSeqPos iLineNum,
     ILineErrorListener * pMessageListener) const
 {
@@ -1590,7 +1588,6 @@ CFastaReader::CreateWarningsForSeqDataInTitle(
 
     const size_t length = sLineText.length();
     SIZE_TYPE pos_to_check = length-1;
-    
 
     if((length > kWarnNumNucCharsAtEnd) && !TestFlag(fAssumeProt)) {
         // find last non-nuc character, within the last kWarnNumNucCharsAtEnd characters
@@ -1603,7 +1600,7 @@ CFastaReader::CreateWarningsForSeqDataInTitle(
         }
         if( pos_to_check < last_pos_to_check_for_nuc ) {
             FASTA_WARNING(iLineNum,
-                "FASTA-Reader: Title ends with at least " << kWarnNumNucCharsAtEnd 
+                "FASTA-Reader: Title ends with at least " << kWarnNumNucCharsAtEnd
                 << " valid nucleotide characters.  Was the sequence "
                 << "accidentally put in the title line?",
                 ILineError::eProblem_UnexpectedNucResidues,
@@ -1653,8 +1650,8 @@ CRef<CSeq_entry> CFastaReader::ReadAlignedSet(
     CRef<CSeq_annot> annot(new CSeq_annot);
 
     if ( !entry->IsSet()
-        ||  entry->GetSet().GetSeq_set().size() < 
-            static_cast<unsigned int>(max(reference_row + 1, 2))) 
+        ||  entry->GetSet().GetSeq_set().size() <
+            static_cast<unsigned int>(max(reference_row + 1, 2)))
     {
         NCBI_THROW2(CObjReaderParseException, eEOF,
                     "CFastaReader::ReadAlignedSet: not enough input sequences.",
@@ -1707,7 +1704,7 @@ CRef<CSeq_entry> CFastaReader::x_ReadSeqsToAlign(TIds& ids,
             if (*it != len) {
                 FASTA_ERROR(LineNumber(),
                             "CFastaReader::ReadAlignedSet: Rows have different "
-                            "lengths. For example, look around line " << LineNumber(), 
+                            "lengths. For example, look around line " << LineNumber(),
                             CObjReaderParseException::eFormat );
             }
         }
@@ -1724,7 +1721,7 @@ void CFastaReader::x_AddPairwiseAlignments(CSeq_annot& annot, const TIds& ids,
 
     TRowNum             rows = m_Row;
     vector<TBuilderRef> builders(rows);
-    
+
     for (TRowNum r = 0;  r < rows;  ++r) {
         if (r != reference_row) {
             builders[r].Reset(new TBuilder(ids[reference_row], ids[r]));
@@ -1843,15 +1840,15 @@ class CFastaMapper : public CFastaReader
 public:
     typedef CFastaReader TParent;
 
-    CFastaMapper(ILineReader& reader, 
-                 SFastaFileMap* fasta_map, 
-                 TFlags flags, 
+    CFastaMapper(ILineReader& reader,
+                 SFastaFileMap* fasta_map,
+                 TFlags flags,
                  FIdCheck f_idcheck = CSeqIdCheck());
 
 protected:
-    void ParseDefLine(const TStr& s, 
+    void ParseDefLine(const TStr& s,
         ILineErrorListener * pMessageListener);
-    void ParseTitle(const SLineTextAndLoc & lineInfo, 
+    void ParseTitle(const SLineTextAndLoc & lineInfo,
         ILineErrorListener * pMessageListener = 0);
     void AssembleSeq(ILineErrorListener * pMessageListener);
 
@@ -1860,7 +1857,7 @@ private:
     SFastaFileMap::SFastaEntry m_MapEntry;
 };
 
-CFastaMapper::CFastaMapper(ILineReader& reader, 
+CFastaMapper::CFastaMapper(ILineReader& reader,
                            SFastaFileMap* fasta_map,
                            TFlags flags,
                            FIdCheck f_idcheck)
@@ -1881,7 +1878,7 @@ void CFastaMapper::ParseDefLine(const TStr& s, ILineErrorListener * pMessageList
     m_MapEntry.stream_offset = StreamPosition() - s.length();
 }
 
-void CFastaMapper::ParseTitle(const SLineTextAndLoc & s, 
+void CFastaMapper::ParseTitle(const SLineTextAndLoc & s,
     ILineErrorListener * pMessageListener)
 {
     TParent::ParseTitle(s, pMessageListener);
@@ -1910,7 +1907,7 @@ void ReadFastaFileMap(SFastaFileMap* fasta_map, CNcbiIfstream& input)
 }
 
 
-void ScanFastaFile(IFastaEntryScan* scanner, 
+void ScanFastaFile(IFastaEntryScan* scanner,
                    CNcbiIfstream&   input,
                    CFastaReader::TFlags fread_flags)
 {
@@ -1938,15 +1935,15 @@ void ScanFastaFile(IFastaEntryScan* scanner,
 
 
 static void s_AppendMods(
-        const CModHandler::TModList& mods, 
+        const CModHandler::TModList& mods,
         string& title
-        ) 
+        )
 {
     for (const auto& mod : mods) {
 
-        title.append(" [" 
+        title.append(" ["
                 + mod.GetName()
-                + "=" 
+                + "="
                 + mod.GetValue()
                 + "]");
     }
@@ -1959,9 +1956,9 @@ void CFastaReader::SetExcludedMods(const vector<string>& excluded_mods)
 }
 
 
-void CFastaReader::x_ApplyMods(     
-     const string& title, 
-     TSeqPos line_number, 
+void CFastaReader::x_ApplyMods(
+     const string& title,
+     TSeqPos line_number,
      CBioseq& bioseq,
      ILineErrorListener* pMessageListener )
 {
@@ -1975,7 +1972,7 @@ void CFastaReader::x_ApplyMods(
         _ASSERT(pFirstID != nullptr);
         const auto idString = pFirstID->AsFastaString();
 
-        CDefaultModErrorReporter 
+        CDefaultModErrorReporter
             errorReporter(idString, line_number, pMessageListener);
 
         CModHandler::TModList rejected_mods;
@@ -1984,7 +1981,7 @@ void CFastaReader::x_ApplyMods(
         s_AppendMods(rejected_mods, remainder);
 
         CModHandler::TModList skipped_mods;
-        const bool logInfo = 
+        const bool logInfo =
             pMessageListener ?
             pMessageListener->SevEnabled(eDiag_Info) :
             false;
@@ -2014,7 +2011,7 @@ void CFastaReader::x_ApplyMods(
 
 std::string CFastaReader::x_NucOrProt(void) const
 {
-    if( m_CurrentSeq && m_CurrentSeq->IsSetInst() && 
+    if( m_CurrentSeq && m_CurrentSeq->IsSetInst() &&
         m_CurrentSeq->GetInst().IsSetMol() )
     {
         return ( m_CurrentSeq->GetInst().IsAa() ? "protein " : "nucleotide " );
@@ -2043,7 +2040,7 @@ string CFastaReader::CanonicalizeString(const TStr & sValue)
     return newString;
 }
 
-  
+
 CFastaReader::SGap::SGap(
     TSeqPos uPos,
     TSignedSeqPos uLen,
@@ -2064,7 +2061,7 @@ CFastaReader::SGap::SGap(
 void CFastaReader::SetGapLinkageEvidence(
     CSeq_gap::EType type,
     const set<int>& defaultEvidence,
-    const map<TSeqPos, set<int>>& countToEvidenceMap 
+    const map<TSeqPos, set<int>>& countToEvidenceMap
 )
 {
     SetGapLinkageEvidences(type, defaultEvidence);
@@ -2083,7 +2080,7 @@ void CFastaReader::SetGapLinkageEvidence(
 void CFastaReader::SetGapLinkageEvidences(CSeq_gap::EType type, const set<int>& evidences)
 {
     m_gap_type.Reset(new SGap::TGapTypeObj(type));
-    
+
     m_DefaultLinkageEvidence.clear();
     for (const auto& evidence : evidences) {
         m_DefaultLinkageEvidence.insert(static_cast<CLinkage_evidence::EType>(evidence));
@@ -2100,20 +2097,20 @@ void CFastaReader::PostWarning(
         return;
 
     string sSeqId = ( m_BestID ? m_BestID->AsFastaString() : kEmptyStr);
-    AutoPtr<CObjReaderLineException> pLineExpt(                        
-        CObjReaderLineException::Create(                            
-        (_eSeverity), _uLineNum,                        
-        _MessageStrmOps,                                
-        (_eProblem),                                            
+    AutoPtr<CObjReaderLineException> pLineExpt(
+        CObjReaderLineException::Create(
+        (_eSeverity), _uLineNum,
+        _MessageStrmOps,
+        (_eProblem),
         sSeqId, (_sFeature),
-        (_sQualName), (_sQualValue),                            
-        _eErrCode) );                 
-    if ( ! pMessageListener && (_eSeverity) <= eDiag_Warning ) {    
-        LOG_POST_X(1, Warning << pLineExpt->Message()); 
-    } else if ( ! pMessageListener || ! pMessageListener->PutError( *pLineExpt ) ) 
-    {                                       
+        (_sQualName), (_sQualValue),
+        _eErrCode) );
+    if ( ! pMessageListener && (_eSeverity) <= eDiag_Warning ) {
+        LOG_POST_X(1, Warning << pLineExpt->Message());
+    } else if ( ! pMessageListener || ! pMessageListener->PutError( *pLineExpt ) )
+    {
         throw CObjReaderParseException(DIAG_COMPILE_INFO, 0, _eErrCode, _MessageStrmOps, _uLineNum, _eSeverity);
-    }                                                               
+    }
 }
 
 void CFastaReader::IgnoreProblem(ILineError::EProblem problem)

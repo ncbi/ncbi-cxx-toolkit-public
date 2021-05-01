@@ -106,7 +106,7 @@ CRef<CSeq_id> CReadUtil::AsSeqId(
                 idSet = true;
             } catch(CException&) {}
         }
-        if (!idSet) {   
+        if (!idSet) {
             pId->SetLocal().SetStr(rawId);
         }
         return pId;
@@ -185,7 +185,7 @@ bool CReadUtil::GetTrackValue(
         return false;
     }
     const CAnnot_descr::Tdata& descr = annot.GetDesc().Get();
-    for (CAnnot_descr::Tdata::const_iterator ait = descr.begin(); 
+    for (CAnnot_descr::Tdata::const_iterator ait = descr.begin();
             ait != descr.end(); ++ait) {
         const CAnnotdesc& desc = **ait;
         if (!desc.IsUser()) {
@@ -205,7 +205,7 @@ bool CReadUtil::GetTrackValue(
         const CUser_object::TData& fields = user.GetData();
         for (CUser_object::TData::const_iterator fit = fields.begin();
                 fit != fields.end(); ++fit) {
-            const CUser_field& field = **fit; 
+            const CUser_field& field = **fit;
             if (!field.IsSetLabel()  ||  !field.GetLabel().IsStr()) {
                 continue;
             }
@@ -239,9 +239,9 @@ void sParseGeneOntologyTerm(
         0,
         "",
         qual,
-        rawVal, 
+        rawVal,
         ""));
-        
+
     vector<CTempString> fields; fields.reserve(4);
     NStr::Split(rawVal, "|", fields);
     while (fields.size() < 4) {
@@ -256,14 +256,14 @@ void sParseGeneOntologyTerm(
     }
 
     //column 0: comment, anything goes:
-    comment = fields[0]; 
+    comment = fields[0];
 
     //column 1: GO id, must be seven digits if present at all:
     goId = fields[1];
     NStr::ToLower(goId);
     if (NStr::StartsWith(goId, "go:")) {
         goId = goId.substr(3);
-    } 
+    }
     if (goId.size() > 7) {
         pErr->PatchErrorMessage("GO ID (column 2) must be at most seven digits long");
         pErr->Throw();
@@ -316,7 +316,7 @@ void CReadUtil::AddGeneOntologyTerm(
             0,
             "",
             qual,
-            val, 
+            val,
             "GO_ qualifier not recognized"));
         pErr->Throw();
     }
@@ -339,7 +339,7 @@ void CReadUtil::AddGeneOntologyTerm(
     text_field->SetLabel().SetStr("text string");
     text_field->SetData().SetStr(CUtf8::AsUTF8(comment, eEncoding_Ascii));
     field.SetData().SetFields().push_back(text_field);
-  
+
     if (!NStr::IsBlank(goId)) {
         CRef<CUser_field> goid (new CUser_field());
         goid->SetLabel().SetStr("go id");

@@ -31,7 +31,7 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbistd.hpp>              
+#include <corelib/ncbistd.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbithr.hpp>
 #include <corelib/ncbiutil.hpp>
@@ -48,7 +48,7 @@
 #include <objects/general/Int_fuzz.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/general/User_object.hpp>
-#include <objects/general/User_field.hpp> 
+#include <objects/general/User_field.hpp>
 #include <objects/general/Dbtag.hpp>
 
 #include <objects/seqloc/Seq_id.hpp>
@@ -110,7 +110,7 @@ CRef<objects::CSeq_feat> CUCSCRegionReader::xParseFeatureUCSCFormat(const string
     CRef<CSeq_feat> Feat(new CSeq_feat);
 #if 0
     vector<string> Tokens;
-	string Delims = ".:- \t";
+    string Delims = ".:- \t";
     {{
         size_t IdSubI = 0;
         for(int I = 0; I < Line.length(); I++) {
@@ -119,7 +119,7 @@ CRef<objects::CSeq_feat> CUCSCRegionReader::xParseFeatureUCSCFormat(const string
                 IdSubI = I;
             }
         }
-        
+
         if(IdSubI > 0) {
             string IdStr = Line.substr(0, IdSubI);
             string SubLine = Line.substr(IdSubI );
@@ -132,41 +132,41 @@ CRef<objects::CSeq_feat> CUCSCRegionReader::xParseFeatureUCSCFormat(const string
         }
     }}
 
-	//ITERATE(vector<string>, iter, Tokens) {
-	//	cerr << "\t" << *iter << endl;
-	//}
+    //ITERATE(vector<string>, iter, Tokens) {
+    //  cerr << "\t" << *iter << endl;
+    //}
 
     if(Tokens.size() < K_START+1)
         return CRef<CSeq_feat>();
 
-	NStr::ReplaceInPlace(Tokens[K_START], ",", "");
-	NStr::ReplaceInPlace(Tokens[K_START], ".", "");
-	if(Tokens.size() >= K_STOP+1) {
-		NStr::ReplaceInPlace(Tokens[K_STOP], ",", "");
-		NStr::ReplaceInPlace(Tokens[K_STOP], ".", "");
+    NStr::ReplaceInPlace(Tokens[K_START], ",", "");
+    NStr::ReplaceInPlace(Tokens[K_START], ".", "");
+    if(Tokens.size() >= K_STOP+1) {
+        NStr::ReplaceInPlace(Tokens[K_STOP], ",", "");
+        NStr::ReplaceInPlace(Tokens[K_STOP], ".", "");
     }
 
-	Feat->SetData().SetRegion("region: "+NStr::IntToString(Number)); 
+    Feat->SetData().SetRegion("region: "+NStr::IntToString(Number));
 
     CRef<CSeq_loc> TopLoc(new CSeq_loc);
-    TopLoc->SetInt().SetId().Assign(*CRegionFile::x_ParseId(Tokens[K_ID])); 
+    TopLoc->SetInt().SetId().Assign(*CRegionFile::x_ParseId(Tokens[K_ID]));
     TopLoc->SetInt().SetFrom() = NStr::StringToUInt8(Tokens[K_START])-1;
-    if(Tokens.size() >= K_STOP+1) 
-		TopLoc->SetInt().SetTo() = NStr::StringToUInt8(Tokens[K_STOP])-1;
-   	else
-		TopLoc->SetInt().SetTo() = TopLoc->GetInt().GetFrom();
+    if(Tokens.size() >= K_STOP+1)
+        TopLoc->SetInt().SetTo() = NStr::StringToUInt8(Tokens[K_STOP])-1;
+    else
+        TopLoc->SetInt().SetTo() = TopLoc->GetInt().GetFrom();
 
-	if(Tokens.size() >= K_STRAND+1) {
-		if(Tokens[K_STRAND] == "+")
-			TopLoc->SetInt().SetStrand() = eNa_strand_plus;
-		else if(Tokens[K_STRAND] == "-")
-			TopLoc->SetInt().SetStrand() = eNa_strand_minus;
-		else
-			TopLoc->SetInt().SetStrand() = eNa_strand_plus;
-	} else {
-		TopLoc->SetInt().SetStrand() = eNa_strand_plus;
+    if(Tokens.size() >= K_STRAND+1) {
+        if(Tokens[K_STRAND] == "+")
+            TopLoc->SetInt().SetStrand() = eNa_strand_plus;
+        else if(Tokens[K_STRAND] == "-")
+            TopLoc->SetInt().SetStrand() = eNa_strand_minus;
+        else
+            TopLoc->SetInt().SetStrand() = eNa_strand_plus;
+    } else {
+        TopLoc->SetInt().SetStrand() = eNa_strand_plus;
     }
-	Feat->SetLocation().Assign(*TopLoc);
+    Feat->SetLocation().Assign(*TopLoc);
 
     if(!Feat->CanGetTitle())
         Feat->SetTitle() = "Line:"+NStr::IntToString(Number);
@@ -222,7 +222,7 @@ bool CUCSCRegionReader::xParseFeature(
     ftable.push_back( feature );
     return true;
 }
-//  ----------------------------------------------------------------------------                
+//  ----------------------------------------------------------------------------
 void CUCSCRegionReader::x_SetFeatureLocation(
     CRef<CSeq_feat>& feature,
     const vector<string>& fields )
@@ -313,7 +313,6 @@ void CUCSCRegionReader::x_SetFeatureLocation(
             "Malformed sequence id:" ) );
         pErr->Throw();
     }
-    
 }
 
 
@@ -325,10 +324,10 @@ CRef<CSerialObject> CUCSCRegionReader::ReadObject(ILineReader& lr, ILineErrorLis
 }
 
 
-//  ----------------------------------------------------------------------------                
+//  ----------------------------------------------------------------------------
 CRef<CSeq_annot> CUCSCRegionReader::ReadSeqAnnot(
     ILineReader& lr,
-    ILineErrorListener* pEC ) 
+    ILineErrorListener* pEC )
 {
     const size_t MAX_RECORDS = 100000;
 
@@ -354,7 +353,7 @@ CRef<CSeq_annot> CUCSCRegionReader::ReadSeqAnnot(
         if (xParseComment(line, pAnnot)) {
             continue;
         }
-	    CTempString record_copy = NStr::TruncateSpaces_Unsafe(line);
+        CTempString record_copy = NStr::TruncateSpaces_Unsafe(line);
 
         //  parse
         vector<string> fields;

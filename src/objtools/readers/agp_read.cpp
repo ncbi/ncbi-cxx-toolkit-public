@@ -137,14 +137,14 @@ void AgpRead(CNcbiIstream& is,
         if (fields.size() != 9) {
             if (fields.size() >= 5 && fields[4] != "N" && fields[4] != "U") {
                 NCBI_THROW2(CObjReaderParseException, eFormat,
-                            string("error at line ") + 
+                            string("error at line ") +
                             NStr::NumericToString(line_num) + ": found " +
                             NStr::NumericToString(fields.size()) +
                             " columns; there should be 9",
                             is.tellg() - CT_POS_TYPE(0));
             } else if (fields.size() != 8) {
                 NCBI_THROW2(CObjReaderParseException, eFormat,
-                            string("error at line ") + 
+                            string("error at line ") +
                             NStr::NumericToString(line_num) + ": found " +
                             NStr::NumericToString(fields.size()) +
                             " columns; there should be 8 or 9",
@@ -184,7 +184,7 @@ void AgpRead(CNcbiIstream& is,
         part_num = NStr::StringToInt(fields[3]);
         if (part_num != last_part_num + 1) {
             NCBI_THROW2(CObjReaderParseException, eFormat,
-                        string("error at line ") + 
+                        string("error at line ") +
                         NStr::IntToString(line_num) +
                         ": part number out of order",
                         is.tellg() - CT_POS_TYPE(0));
@@ -192,7 +192,7 @@ void AgpRead(CNcbiIstream& is,
         last_part_num = part_num;
         if (NStr::StringToInt(fields[1]) != last_to + 1) {
             NCBI_THROW2(CObjReaderParseException, eFormat,
-                        string("error at line ") + 
+                        string("error at line ") +
                          NStr::IntToString(line_num) +
                          ": begining not equal to previous end + 1",
                          is.tellg() - CT_POS_TYPE(0));
@@ -200,7 +200,7 @@ void AgpRead(CNcbiIstream& is,
         last_to = NStr::StringToInt(fields[2]);
 
 
-        // build a Delta-seq, either a Seq-literal (for a gap) or a Seq-loc 
+        // build a Delta-seq, either a Seq-literal (for a gap) or a Seq-loc
 
         CRef<CDelta_seq> delta_seq(new CDelta_seq);
 
@@ -255,10 +255,10 @@ void AgpRead(CNcbiIstream& is,
                            .SetGap().SetLinkage(linkage);
             }
             length += gap_len;
-        } else if (fields[4].size() == 1 && 
+        } else if (fields[4].size() == 1 &&
                    fields[4].find_first_of("ADFGPOW") == 0) {
             CSeq_loc& loc = delta_seq->SetLoc();
-            
+
             // Component ID
             CRef<CSeq_id> comp_id;
             if (component_id_rule != eAgpRead_ForceLocalId) {
@@ -289,14 +289,14 @@ void AgpRead(CNcbiIstream& is,
                 loc.SetInt().SetStrand(eNa_strand_other);
             } else {
                 NCBI_THROW2(CObjReaderParseException, eFormat,
-                            string("error at line ") + 
+                            string("error at line ") +
                             NStr::IntToString(line_num) + ": invalid "
                             "orientation " + fields[8],
                             is.tellg() - CT_POS_TYPE(0));
             }
         } else {
             NCBI_THROW2(CObjReaderParseException, eFormat,
-                        string("error at line ") + 
+                        string("error at line ") +
                         NStr::IntToString(line_num) + ": invalid "
                         "component type " + fields[4],
                         is.tellg() - CT_POS_TYPE(0));

@@ -26,7 +26,7 @@
 * Authors:  Justin Foley
 *
 * File Description:
-*   Reader for FASTA-format definition lines. Based on code 
+*   Reader for FASTA-format definition lines. Based on code
 *   originally contained in CFastaReader.
 *
 * ===========================================================================
@@ -41,7 +41,7 @@
 #include <objtools/readers/fasta_reader_utils.hpp>
 #include <objtools/readers/seqid_validate.hpp>
 
-#define NCBI_USE_ERRCODE_X Objtools_Rd_Fasta // Will need to change this 
+#define NCBI_USE_ERRCODE_X Objtools_Rd_Fasta // Will need to change this
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -57,15 +57,14 @@ static void s_PostError(ILineErrorListener* pMessageListener,
     const string& idString,
     const string& errMessage,
     const CObjReaderLineException::EProblem problem,
-    const CObjReaderParseException::EErrCode errCode) 
+    const CObjReaderParseException::EErrCode errCode)
 {
-    
     if (pMessageListener) {
         unique_ptr<CObjReaderLineException> pLineExpt(
             CObjReaderLineException::Create(
             eDiag_Error,
             lineNumber,
-            errMessage, 
+            errMessage,
             problem,
             idString, "", "", "",
             errCode));
@@ -75,26 +74,26 @@ static void s_PostError(ILineErrorListener* pMessageListener,
         }
     }
 
-    throw CObjReaderParseException(DIAG_COMPILE_INFO, 
-            0, 
-            errCode, 
-            errMessage, 
-            lineNumber, 
+    throw CObjReaderParseException(DIAG_COMPILE_INFO,
+            0,
+            errCode,
+            errMessage,
+            lineNumber,
             eDiag_Error);
 }
 
-static void s_PostWarning(ILineErrorListener* pMessageListener, 
+static void s_PostWarning(ILineErrorListener* pMessageListener,
     const TSeqPos lineNumber,
     const string& idString,
-    const string& errMessage, 
-    const CObjReaderLineException::EProblem problem, 
-    const CObjReaderParseException::EErrCode errCode) 
+    const string& errMessage,
+    const CObjReaderLineException::EProblem problem,
+    const CObjReaderParseException::EErrCode errCode)
 {
     unique_ptr<CObjReaderLineException> pLineExpt(
         CObjReaderLineException::Create(
         eDiag_Warning,
         lineNumber,
-        errMessage, 
+        errMessage,
         problem,
         idString, "", "", "",
         errCode));
@@ -105,16 +104,16 @@ static void s_PostWarning(ILineErrorListener* pMessageListener,
     }
 
     if (!pMessageListener->PutError(*pLineExpt)) {
-        throw CObjReaderParseException(DIAG_COMPILE_INFO, 
-                0, 
-                errCode, 
-                errMessage, 
-                lineNumber, 
+        throw CObjReaderParseException(DIAG_COMPILE_INFO,
+                0,
+                errCode,
+                errMessage,
+                lineNumber,
                 eDiag_Warning);
     }
 }
 
-// For reasons of efficiency, this method does not use CRef<CSeq_interval> to access range 
+// For reasons of efficiency, this method does not use CRef<CSeq_interval> to access range
 // information - RW-26
 void CFastaDeflineReader::ParseDefline(const CTempString& defline,
     const SDeflineParseInfo& info,
@@ -123,8 +122,8 @@ void CFastaDeflineReader::ParseDefline(const CTempString& defline,
     bool& has_range,
     TSeqPos& range_start,
     TSeqPos& range_end,
-    TSeqTitles& titles, 
-    ILineErrorListener* pMessageListener) 
+    TSeqTitles& titles,
+    ILineErrorListener* pMessageListener)
 {
     SDeflineData data;
     ParseDefline(defline, info, data, pMessageListener);
@@ -148,7 +147,7 @@ void CFastaDeflineReader::ParseDefline(const CTempString& defline,
         const SDeflineParseInfo& info,
         SDeflineData& data,
         ILineErrorListener* pMessageListener,
-        FIdCheck fn_idcheck) 
+        FIdCheck fn_idcheck)
 {
     size_t range_len = 0;
     const TFastaFlags& fFastaFlags = info.fFastaFlags;
@@ -156,13 +155,13 @@ void CFastaDeflineReader::ParseDefline(const CTempString& defline,
     data.has_range = false;
 
         const size_t len = defline.length();
-        if (len <= 1 || 
+        if (len <= 1 ||
             NStr::IsBlank(defline.substr(1))) {
             return;
         }
 
         if (defline[0] != '>') {
-            NCBI_THROW2(CObjReaderParseException, eFormat, 
+            NCBI_THROW2(CObjReaderParseException, eFormat,
                 "Invalid defline. First character is not '>'", 0);
         }
 
@@ -179,12 +178,11 @@ void CFastaDeflineReader::ParseDefline(const CTempString& defline,
         if ((fFastaFlags & CFastaReader::fNoParseID)) {
             title_start = start;
         }
-        else 
+        else
         {
         // This loop finds the end of the sequence ID
             for ( pos = start;  pos < len;  ++pos) {
                 unsigned char c = defline[pos];
-                    
                 if (c <= ' ' ) { // assumes ASCII
                     break;
                 } else if( c == '[' ) {
@@ -200,7 +198,7 @@ void CFastaDeflineReader::ParseDefline(const CTempString& defline,
                     ++pos;
 
                     // arbitrary, but shouldn't be too much bigger than the largest possible mod key for efficiency
-                    const static size_t kMaxCharsToLookAt = 30; 
+                    const static size_t kMaxCharsToLookAt = 30;
                     // we give up much sooner than the length of the string, if the string is long.
                     // also note that we give up *before* the end so even if pos
                     // reaches bracket_give_up_pos, we can still say defline[pos] without worrying
@@ -232,7 +230,7 @@ void CFastaDeflineReader::ParseDefline(const CTempString& defline,
                         pos = left_bracket_pos;
                         break;
                     } else {
-                        // if we stopped on anything but an equal sign, this is NOT a 
+                        // if we stopped on anything but an equal sign, this is NOT a
                         // FASTA mod.
                         if( first_space_pos < len ) {
                             // If we've found a space at any point, we consider that the end of the seq-id
@@ -253,28 +251,27 @@ void CFastaDeflineReader::ParseDefline(const CTempString& defline,
 
             auto id_string = defline.substr(start, pos - start - range_len);
             if (NStr::IsBlank(id_string)) {
-                NCBI_THROW2(CObjReaderParseException, eFormat, 
+                NCBI_THROW2(CObjReaderParseException, eFormat,
                     "Unable to locate sequence id in definition line", 0);
             }
 
         title_start = pos;
         x_ProcessIDs(id_string,
             info,
-            data.ids, 
+            data.ids,
             pMessageListener,
             fn_idcheck);
 
         data.has_range = (range_len>0);
     }
 
-    
     // trim leading whitespace from title (is this appropriate?)
     while (title_start < len
         &&  isspace((unsigned char)defline[title_start])) {
         ++title_start;
     }
 
-    if (title_start < len) { 
+    if (title_start < len) {
         for (pos = title_start + 1;  pos < len;  ++pos) {
             if ((unsigned char)defline[pos] < ' ') {
             break;
@@ -289,9 +286,9 @@ void CFastaDeflineReader::ParseDefline(const CTempString& defline,
 
 
 TSeqPos CFastaDeflineReader::ParseRange(
-    const CTempString& s, 
-    TSeqPos& start, 
-    TSeqPos& end, 
+    const CTempString& s,
+    TSeqPos& start,
+    TSeqPos& end,
     ILineErrorListener * pMessageListener)
 {
 
@@ -340,8 +337,8 @@ class CIdErrorReporter
 public:
     CIdErrorReporter(ILineErrorListener* pMessageListener, bool ignoreGeneralParsingError=false);
 
-    void operator() (EDiagSev severity, 
-            int lineNum, 
+    void operator() (EDiagSev severity,
+            int lineNum,
             const string& idString,
             CFastaIdValidate::EErrCode errCode,
             const string& msg);
@@ -353,7 +350,7 @@ private:
 
 
 
-CIdErrorReporter::CIdErrorReporter(ILineErrorListener* pMessageListener, bool ignoreGeneralParsingError) : 
+CIdErrorReporter::CIdErrorReporter(ILineErrorListener* pMessageListener, bool ignoreGeneralParsingError) :
     m_pMessageListener(pMessageListener), m_IgnoreGeneralParsingError(ignoreGeneralParsingError) {}
 
 
@@ -374,7 +371,7 @@ void CIdErrorReporter::operator()(EDiagSev severity,
 
 
     const auto cit = s_CodeMap.find(errCode);
-    _ASSERT(cit != s_CodeMap.end()); // convert this to a compile-time assertion 
+    _ASSERT(cit != s_CodeMap.end()); // convert this to a compile-time assertion
 
     const auto& problem = cit->second.first;
     if (m_IgnoreGeneralParsingError &&
@@ -400,7 +397,7 @@ void CFastaDeflineReader::x_ProcessIDs(
     FIdCheck f_id_check
     )
 {
-    if (info.fBaseFlags & CReaderBase::fAllIdsAsLocal) 
+    if (info.fBaseFlags & CReaderBase::fAllIdsAsLocal)
     {
         CRef<CSeq_id> pSeqId(new CSeq_id(CSeq_id::e_Local, id_string));
         ids.push_back(pSeqId);
@@ -408,7 +405,7 @@ void CFastaDeflineReader::x_ProcessIDs(
         return;
     }
 
-    CSeq_id::TParseFlags flags = 
+    CSeq_id::TParseFlags flags =
         CSeq_id::fParse_PartialOK |
         CSeq_id::fParse_AnyLocal;
 
@@ -420,7 +417,7 @@ void CFastaDeflineReader::x_ProcessIDs(
     auto to_parse = id_string;
     if (id_string.find(',') != NPOS &&
         id_string.find('|') == NPOS) {
-        const string err_message = 
+        const string err_message =
             "Near line " + NStr::NumericToString(info.lineNumber)
             + ", the sequence id string contains 'comma' symbol, which has been replaced with 'underscore' "
             + "symbol. Please correct the sequence id string.";
@@ -431,7 +428,7 @@ void CFastaDeflineReader::x_ProcessIDs(
             err_message,
             ILineError::eProblem_GeneralParsingError,
             CObjReaderParseException::eFormat);
-            
+
         local_copy = id_string;
         for (auto& rit : local_copy)
             if (rit == ',')
@@ -450,13 +447,13 @@ void CFastaDeflineReader::x_ProcessIDs(
     }
 
     if (ids.empty()) {
-        s_PostError(pMessageListener, 
+        s_PostError(pMessageListener,
                 info.lineNumber,
                 id_string,
                 "Could not construct seq-id from '" + id_string + "'",
                 ILineError::eProblem_GeneralParsingError,
                 CObjReaderParseException::eNoIDs);
-    
+
         ids.push_back(Ref(new CSeq_id(CSeq_id::e_Local, id_string)));
         return;
     }
@@ -473,8 +470,8 @@ bool CFastaDeflineReader::ParseIDs(
     const CTempString& s,
     const SDeflineParseInfo& info,
     const TIgnoredProblems& ignoredErrors,
-    TIds& ids, 
-    ILineErrorListener* pMessageListener) 
+    TIds& ids,
+    ILineErrorListener* pMessageListener)
 {
     if (s.empty()) {
         return false;
@@ -496,8 +493,8 @@ bool CFastaDeflineReader::ParseIDs(
     }
 
     const bool ignoreGeneralParsingError
-        = (find(ignoredErrors.cbegin(), ignoredErrors.cend(), ILineError::eProblem_GeneralParsingError) 
-           != ignoredErrors.cend()); 
+        = (find(ignoredErrors.cbegin(), ignoredErrors.cend(), ILineError::eProblem_GeneralParsingError)
+           != ignoredErrors.cend());
 
     try {
         if (s.find(',') != NPOS && s.find('|') == NPOS)
@@ -509,13 +506,13 @@ bool CFastaDeflineReader::ParseIDs(
 
             CSeq_id::ParseIDs(ids, local_copy, flags);
 
-            const string errMessage = 
-                "Near line " + NStr::NumericToString(info.lineNumber) 
+            const string errMessage =
+                "Near line " + NStr::NumericToString(info.lineNumber)
                 + ", the sequence contains 'comma' symbol and replaced with 'underscore' "
                 + "symbol. Please find and correct the sequence id.";
 
             if (!ignoreGeneralParsingError) {
-                s_PostWarning(pMessageListener, 
+                s_PostWarning(pMessageListener,
                             info.lineNumber,
                             s,
                             errMessage,
@@ -561,9 +558,9 @@ void CFastaDeflineReader::x_ConvertNumericToLocal(
 }
 
 
-void CSeqIdCheck::operator()(const TIds& ids, 
+void CSeqIdCheck::operator()(const TIds& ids,
                              const TInfo& info,
-                             ILineErrorListener* listener) 
+                             ILineErrorListener* listener)
 {
     if (ids.empty()) {
         return;
@@ -579,7 +576,7 @@ void CSeqIdCheck::operator()(const TIds& ids,
 }
 
 
-CRef<CSeq_id> CFastaIdHandler::GenerateID(bool unique_id) 
+CRef<CSeq_id> CFastaIdHandler::GenerateID(bool unique_id)
 {
     return GenerateID("", unique_id);
 }

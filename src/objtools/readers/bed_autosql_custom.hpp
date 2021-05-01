@@ -78,7 +78,7 @@ private:
         CUser_object&,
         CReaderMessageHandler&) const;
 
-    using FormatHandler = 
+    using FormatHandler =
         bool (*)(const string&, const string&, unsigned int, int, CUser_object&, CReaderMessageHandler&);
     using FormatHandlers =  map<string, FormatHandler>;
     static FormatHandlers mFormatHandlers;

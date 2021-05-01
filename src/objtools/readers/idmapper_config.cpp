@@ -189,12 +189,12 @@ CIdMapperConfig::SetCurrentContext(
 {
     vector<string> columns;
     NStr::Split( strLine, " \t[]|:", columns, NStr::fSplit_MergeDelimiters);
-    
+
     //sanity check: only a single columns remaining
     if ( columns.size() != 1 ) {
         return;
     }
-    
+
     strContext = columns[0];
 };
 
@@ -206,7 +206,7 @@ CIdMapperConfig::AddMapEntry(
 {
     vector<string> columns;
     NStr::Split(strLine, " \t", columns, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
-    
+
     //sanity check: two or three columns. If three columns, the last better be
     //integer
     if ( columns.size() != 2 && columns.size() != 3 ) {
@@ -221,7 +221,7 @@ CIdMapperConfig::AddMapEntry(
             return;
         }
     }
-    
+
     CSeq_id_Handle hSource = SourceHandle( columns[0] );
     CSeq_id_Handle hTarget = TargetHandle( columns[1] );
     if ( hSource && hTarget ) {
@@ -254,7 +254,7 @@ CIdMapperConfig::TargetHandle(
         //or, maybe not ...
     }
 
-    //if not, assume a fasta string of one or more IDs. If more than one, pick 
+    //if not, assume a fasta string of one or more IDs. If more than one, pick
     // the first
     list< CRef< CSeq_id > > ids;
     CSeq_id::ParseFastaIds( ids, strId, true );
@@ -262,25 +262,22 @@ CIdMapperConfig::TargetHandle(
         //nothing to work with ...
         return CSeq_id_Handle();
     }
-    
+
     list< CRef< CSeq_id > >::iterator idit;
     CSeq_id_Handle hTo;
-    
+
     for ( idit = ids.begin(); idit != ids.end(); ++idit ) {
-    
+
         //we favor GI numbers over everything else. In the absence of a GI number
         // go for a Genbank accession. If neither is available, we use the first
         // id we find.
         const CSeq_id& current = **idit;
         switch ( current.Which() ) {
-        
         case CSeq_id::e_Gi:
             return CSeq_id_Handle::GetHandle( current );
-        
         case CSeq_id::e_Genbank:
             hTo = CSeq_id_Handle::GetHandle( current );
             break;
-                
         default:
             if ( !hTo ) {
                 hTo = CSeq_id_Handle::GetHandle( current );
@@ -288,10 +285,10 @@ CIdMapperConfig::TargetHandle(
             break;
         }
     }
-    
+
     //don't know what else to do...
     return hTo;
 };
-   
+
 END_NCBI_SCOPE
 

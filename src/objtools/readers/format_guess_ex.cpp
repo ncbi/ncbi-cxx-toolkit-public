@@ -32,7 +32,7 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbistd.hpp>              
+#include <corelib/ncbistd.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbithr.hpp>
 #include <corelib/ncbiutil.hpp>
@@ -85,16 +85,15 @@ set<TTypeInfo> CFormatGuessEx::sDefaultRecognizedGenbankObjectTypes = {
 };
 
 
-CFormatGuessEx::CFormatGuessEx() : 
-    m_Guesser(new CFormatGuess), 
+CFormatGuessEx::CFormatGuessEx() :
+    m_Guesser(new CFormatGuess),
     m_EffectiveRecognizedGenbankObjectTypes(sDefaultRecognizedGenbankObjectTypes)
 {
-    ;
 }
 
 
-CFormatGuessEx::CFormatGuessEx(const string& FileName) : 
-    m_Guesser(new CFormatGuess(FileName)), 
+CFormatGuessEx::CFormatGuessEx(const string& FileName) :
+    m_Guesser(new CFormatGuess(FileName)),
     m_EffectiveRecognizedGenbankObjectTypes(sDefaultRecognizedGenbankObjectTypes)
 {
     CNcbiIfstream FileIn(FileName.c_str());
@@ -102,8 +101,8 @@ CFormatGuessEx::CFormatGuessEx(const string& FileName) :
 }
 
 
-CFormatGuessEx::CFormatGuessEx(CNcbiIstream& In) : 
-    m_Guesser(new CFormatGuess(In)), 
+CFormatGuessEx::CFormatGuessEx(CNcbiIstream& In) :
+    m_Guesser(new CFormatGuess(In)),
     m_EffectiveRecognizedGenbankObjectTypes(sDefaultRecognizedGenbankObjectTypes)
 {
     x_FillLocalBuffer(In);
@@ -112,7 +111,6 @@ CFormatGuessEx::CFormatGuessEx(CNcbiIstream& In) :
 
 CFormatGuessEx::~CFormatGuessEx()
 {
-    ;
 }
 
 
@@ -120,9 +118,9 @@ CFormatGuess::EFormat CFormatGuessEx::GuessFormat()
 {
     CFormatGuess::EFormat Guess;
     Guess = m_Guesser->GuessFormat();
-	
+
     ERR_POST(Info << " CFormatGuessEx:: Initial CFormatGuess: " << (int)Guess);
-	
+
     if(Guess != CFormatGuess::eUnknown) {
         return Guess;
     }
@@ -160,7 +158,6 @@ bool CFormatGuessEx::TestFormat(CFormatGuess::EFormat Format)
     if(TestResult) {
         return true;
     }
-    
     else {
         return x_TryFormat(Format);
     }
@@ -168,11 +165,11 @@ bool CFormatGuessEx::TestFormat(CFormatGuess::EFormat Format)
 
 
 
-bool CFormatGuessEx::x_FillLocalBuffer(CNcbiIstream& In) 
+bool CFormatGuessEx::x_FillLocalBuffer(CNcbiIstream& In)
 {
     m_LocalBuffer.str().clear();
     m_LocalBuffer.clear();
-	
+
     streamsize Total = 0;
     while(!In.eof()) {
         char buff[4096];
@@ -196,41 +193,41 @@ bool CFormatGuessEx::x_FillLocalBuffer(CNcbiIstream& In)
 bool CFormatGuessEx::x_TryFormat(CFormatGuess::EFormat Format)
 {
     switch(Format) {
-	
-	//case CFormatGuess::eBinaryAsn:
-	//	return x_TryBinaryAsn();
-	case CFormatGuess::eRmo:
-            return x_TryRmo();
-	case CFormatGuess::eAgp:
-            return x_TryAgp();
-            //case CFormatGuess::eXml:
-            //	return x_TryXml();
-	case CFormatGuess::eWiggle:
-            return x_TryWiggle();
-	case CFormatGuess::eBed:
-            return x_TryBed();
-	case CFormatGuess::eBed15:
-            return x_TryBed15();
-	case CFormatGuess::eFasta:
-            return x_TryFasta();
-            //case CFormatGuess::eTextAsn:
-            //	return x_TryTextAsn();
-	case CFormatGuess::eGtf:
-            return x_TryGtf();
-	case CFormatGuess::eGff3:
-            return x_TryGff3();
-	case CFormatGuess::eGff2:
-            return x_TryGff2();
-            //case CFormatGuess::eHgvs:
-            //	return x_TryHgvs();
 
-	default:
+        //case CFormatGuess::eBinaryAsn:
+        //  return x_TryBinaryAsn();
+        case CFormatGuess::eRmo:
+            return x_TryRmo();
+        case CFormatGuess::eAgp:
+            return x_TryAgp();
+        //case CFormatGuess::eXml:
+        //  return x_TryXml();
+        case CFormatGuess::eWiggle:
+            return x_TryWiggle();
+        case CFormatGuess::eBed:
+            return x_TryBed();
+        case CFormatGuess::eBed15:
+            return x_TryBed15();
+        case CFormatGuess::eFasta:
+            return x_TryFasta();
+        //case CFormatGuess::eTextAsn:
+            //  return x_TryTextAsn();
+        case CFormatGuess::eGtf:
+            return x_TryGtf();
+        case CFormatGuess::eGff3:
+            return x_TryGff3();
+        case CFormatGuess::eGff2:
+            return x_TryGff2();
+        //case CFormatGuess::eHgvs:
+            //  return x_TryHgvs();
+
+        default:
             return false;
     };
 }
 
 
-//	bool x_TryBinaryAsn();
+//  bool x_TryBinaryAsn();
 
 bool CFormatGuessEx::x_TryRmo()
 {
@@ -250,7 +247,7 @@ bool CFormatGuessEx::x_TryRmo()
     catch(...)
     {
     }
-    
+
     return Result.NotEmpty();
 }
 
@@ -258,7 +255,7 @@ bool CFormatGuessEx::x_TryAgp()
 {
     m_LocalBuffer.clear();
     m_LocalBuffer.seekg(0);
-	
+
     CAgpToSeqEntry::TSeqEntryRefVec Bioseqs;
     try {
         CAgpToSeqEntry agp_reader;
@@ -273,7 +270,7 @@ bool CFormatGuessEx::x_TryAgp()
     return (!Bioseqs.empty());
 }
 
-//	bool x_TryXml();
+//  bool x_TryXml();
 
 bool CFormatGuessEx::x_TryWiggle()
 {
@@ -281,10 +278,10 @@ bool CFormatGuessEx::x_TryWiggle()
     m_LocalBuffer.seekg(0);
 
     int WiggleCount = 0;
-	
+
     CWiggleReader Reader;
     CStreamLineReader LineReader(m_LocalBuffer);
-		
+
     CRef<CSeq_annot> Annot;
     try {
         Annot = Reader.ReadSeqAnnot(LineReader);
@@ -293,7 +290,7 @@ bool CFormatGuessEx::x_TryWiggle()
     }
 
     if (!Annot.IsNull() &&
-        Annot->CanGetData() && 
+        Annot->CanGetData() &&
         Annot->GetData().IsFtable())
         WiggleCount++;
 
@@ -306,10 +303,10 @@ bool CFormatGuessEx::x_TryBed()
     m_LocalBuffer.seekg(0);
 
     int BedCount = 0;
-	
+
     CBedReader Reader;
     CStreamLineReader LineReader(m_LocalBuffer);
-	
+
     list<CRef<CSeq_annot> > LocalAnnots;
     try {
         Reader.ReadSeqAnnots(LocalAnnots, LineReader);
@@ -318,7 +315,7 @@ bool CFormatGuessEx::x_TryBed()
     }
 
     ITERATE(list<CRef<CSeq_annot> >, AnnotIter, LocalAnnots) {
-        if(!AnnotIter->IsNull() && (*AnnotIter)->CanGetData() && 
+        if(!AnnotIter->IsNull() && (*AnnotIter)->CanGetData() &&
            (*AnnotIter)->GetData().IsFtable())
             BedCount++;
     }
@@ -332,10 +329,10 @@ bool CFormatGuessEx::x_TryBed15()
     m_LocalBuffer.seekg(0);
 
     int Bed15Count = 0;
-	
+
     CMicroArrayReader Reader;
     CStreamLineReader LineReader(m_LocalBuffer);
-		
+
     CRef<CSeq_annot> Annot;
     try {
         Annot = Reader.ReadSeqAnnot(LineReader);
@@ -344,7 +341,7 @@ bool CFormatGuessEx::x_TryBed15()
     }
 
     if (!Annot.IsNull() &&
-        Annot->CanGetData() && 
+        Annot->CanGetData() &&
         Annot->GetData().IsFtable())
         Bed15Count++;
 
@@ -359,7 +356,7 @@ bool CFormatGuessEx::x_TryFasta()
     CRef<CSeq_entry> Result;
     try {
         CFastaReader Reader(m_LocalBuffer);
-     	Result = Reader.ReadSet();
+        Result = Reader.ReadSet();
     } catch(CException&) {
     } catch(...) {
     }
@@ -367,7 +364,7 @@ bool CFormatGuessEx::x_TryFasta()
     return Result.NotEmpty();
 }
 
-//	bool x_TryTextAsn();
+//  bool x_TryTextAsn();
 
 bool CFormatGuessEx::x_TryGtf()
 {
@@ -375,10 +372,10 @@ bool CFormatGuessEx::x_TryGtf()
     m_LocalBuffer.seekg(0);
 
     int GtfCount = 0;
-	
+
     CGtfReader Reader(0);
     CStreamLineReader LineReader(m_LocalBuffer);
-		
+
     CGtfReader::TAnnots LocalAnnots;
     try {
         Reader.ReadSeqAnnots(LocalAnnots, LineReader);
@@ -387,7 +384,7 @@ bool CFormatGuessEx::x_TryGtf()
     }
 
     ITERATE(CGtfReader::TAnnots, AnnotIter, LocalAnnots) {
-        if(!AnnotIter->IsNull() && (**AnnotIter).CanGetData() && 
+        if(!AnnotIter->IsNull() && (**AnnotIter).CanGetData() &&
             (**AnnotIter).GetData().IsFtable())
             GtfCount++;
     }
@@ -401,10 +398,10 @@ bool CFormatGuessEx::x_TryGff3()
     m_LocalBuffer.seekg(0);
 
     int Gff3Count = 0;
-	
+
     CGff3Reader Reader(0);
     CStreamLineReader LineReader(m_LocalBuffer);
-		
+
     CGff3Reader::TAnnots LocalAnnots;
     try {
         Reader.ReadSeqAnnots(LocalAnnots, LineReader);
@@ -427,10 +424,10 @@ bool CFormatGuessEx::x_TryGff2()
     m_LocalBuffer.seekg(0);
 
     int Gff2Count = 0;
-	
+
     CGff2Reader Reader(0);
     CStreamLineReader LineReader(m_LocalBuffer);
-		
+
     CGff2Reader::TAnnots LocalAnnots;
     try {
         Reader.ReadSeqAnnots(LocalAnnots, LineReader);
@@ -470,7 +467,7 @@ string CFormatGuessEx::xGuessGenbankObjectType(
     case CFormatGuess::eJSON:
         pObjStream.reset(new CObjectIStreamJson(m_LocalBuffer, eNoOwnership));
         break;
-    }        
+    }
     if( !pObjStream.get() ) {
         return "unknown";
     }
@@ -519,7 +516,7 @@ CFormatGuess::EFormat CFormatGuessEx::GuessFormatAndContent(
   m_LocalBuffer.clear();
   m_LocalBuffer.seekg(0);
 
-  CScope* Dummy = NULL;	
+  CScope* Dummy = NULL;
   CHgvsParser Parser(*Dummy);
 
   int HgvsCount = 0;
@@ -541,7 +538,7 @@ CFormatGuess::EFormat CFormatGuessEx::GuessFormatAndContent(
   } catch(...) {
   }
 
-  if(Parsed) 
+  if(Parsed)
   HgvsCount++;
   }
 

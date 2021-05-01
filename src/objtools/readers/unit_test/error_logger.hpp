@@ -51,14 +51,14 @@ public:
     ~CErrorLogger() {
         mStream.close();
     };
-    
+
     bool
     PutError(
-        const ILineError& err ) 
+        const ILineError& err )
     {
         StoreError(err);
-        if (err.Line() == 0) { 
-            mStream << "Line No    : " 
+        if (err.Line() == 0) {
+            mStream << "Line No    : "
                     << "None (Encountered during pre or post processing)" << endl;
         }
         else {
@@ -93,5 +93,5 @@ public:
 
 protected:
     ofstream mStream;
-};    
-        
+};
+

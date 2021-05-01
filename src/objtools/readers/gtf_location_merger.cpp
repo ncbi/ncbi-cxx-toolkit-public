@@ -142,7 +142,7 @@ CGtfLocationRecord::IsContainedBy(
 }
 
 //  ----------------------------------------------------------------------------
-CRef<CSeq_loc> 
+CRef<CSeq_loc>
 CGtfLocationRecord::GetLocation()
 //  ----------------------------------------------------------------------------
 {
@@ -160,9 +160,9 @@ CGtfLocationRecord::GetLocation()
 bool CGtfLocationRecord::CompareTypeAndPartNumbers(
     const CGtfLocationRecord& lhs,
     const CGtfLocationRecord& rhs)
-//  ---------------------------------------------------------------------------- 
+//  ----------------------------------------------------------------------------
 {
-    if (lhs.mType == rhs.mType) {  
+    if (lhs.mType == rhs.mType) {
         return (lhs.mPartNum < rhs.mPartNum);
     }
     return (lhs.mType < rhs.mType);
@@ -187,9 +187,9 @@ CGtfLocationMerger::GetFeatureIdFor(
 //  ============================================================================
 {
     static const list<string> cdsTypes{ "start_codon", "stop_codon", "cds" };
-    static const list<string> transcriptTypes = { "5utr", "3utr", "exon", 
+    static const list<string> transcriptTypes = { "5utr", "3utr", "exon",
         "initial", "internal", "terminal", "single" };
-    
+
     auto prefix = prefixOverride;
     if (prefixOverride.empty()) {
         prefix = record.Type();
@@ -197,7 +197,7 @@ CGtfLocationMerger::GetFeatureIdFor(
         if (std::find(cdsTypes.begin(), cdsTypes.end(), prefix) != cdsTypes.end()) {
             prefix = "cds";
         }
-        else if (std::find(transcriptTypes.begin(), transcriptTypes.end(), prefix) 
+        else if (std::find(transcriptTypes.begin(), transcriptTypes.end(), prefix)
                 != transcriptTypes.end()) {
             prefix = "transcript";
         }
@@ -266,7 +266,7 @@ CGtfLocationMerger::AddStubForId(
 
 
 //  ============================================================================
-CRef<CSeq_loc> 
+CRef<CSeq_loc>
 CGtfLocationMerger::MergeLocation(
     CSeqFeatData::ESubtype subType,
     LOCATIONS& locations)
@@ -294,21 +294,21 @@ CGtfLocationMerger::MergeLocation(
 
 
 //  ============================================================================
-CRef<CSeq_loc> 
+CRef<CSeq_loc>
 CGtfLocationMerger::MergeLocationDefault(
     LOCATIONS& locations)
 //  ============================================================================
 {
-    NCBI_ASSERT(!locations.empty(), 
+    NCBI_ASSERT(!locations.empty(),
         "Cannot call MergeLocationDefault with empty location");
     CRef<CSeq_loc> pSeqloc(new CSeq_loc);
     if (locations.size() == 1) {
         auto& onlyOne = locations.front();
-        pSeqloc = onlyOne.GetLocation(); 
+        pSeqloc = onlyOne.GetLocation();
         return pSeqloc;
     }
     locations.sort(CGtfLocationRecord::CompareTypeAndPartNumbers);
-    
+
     auto& mix = pSeqloc->SetMix();
     for (auto& location: locations) {
         mix.AddSeqLoc(*location.GetLocation());
@@ -317,12 +317,12 @@ CGtfLocationMerger::MergeLocationDefault(
 }
 
 //  ============================================================================
-CRef<CSeq_loc> 
+CRef<CSeq_loc>
 CGtfLocationMerger::MergeLocationForCds(
     LOCATIONS& locations)
 //  ============================================================================
 {
-    NCBI_ASSERT(!locations.empty(), 
+    NCBI_ASSERT(!locations.empty(),
         "Cannot call MergeLocationForCds with empty location");
 
     locations.sort(CGtfLocationRecord::CompareTypeAndPartNumbers);
@@ -336,12 +336,12 @@ CGtfLocationMerger::MergeLocationForCds(
 }
 
 //  ============================================================================
-CRef<CSeq_loc> 
+CRef<CSeq_loc>
 CGtfLocationMerger::MergeLocationForGene(
     LOCATIONS& locations)
 //  ============================================================================
 {
-    NCBI_ASSERT(!locations.empty(), 
+    NCBI_ASSERT(!locations.empty(),
         "Cannot call MergeLocationForGene with empty location");
 
     CRef<CSeq_loc> pSeqloc = MergeLocationDefault(locations);
@@ -350,7 +350,7 @@ CGtfLocationMerger::MergeLocationForGene(
     }
 
     pSeqloc->ChangeToPackedInt();
-    auto seqlocIntervals = pSeqloc->GetPacked_int().Get(); 
+    auto seqlocIntervals = pSeqloc->GetPacked_int().Get();
 
     CRef<CSeq_id> pRangeId(new CSeq_id);
     pRangeId->Assign(*pSeqloc->GetId());
@@ -364,7 +364,7 @@ CGtfLocationMerger::MergeLocationForGene(
     if (rangeStrand == eNa_strand_minus) {
         if (rangeStart >= rangeStop) {
             CRef<CSeq_interval> pOverlap(
-                new CSeq_interval(*pRangeId, rangeStop, rangeStart, rangeStrand)); 
+                new CSeq_interval(*pRangeId, rangeStop, rangeStart, rangeStrand));
             pSeqloc->SetInt(*pOverlap);
         }
         else {
@@ -394,7 +394,7 @@ CGtfLocationMerger::MergeLocationForGene(
     else {
         if (rangeStart <= rangeStop) {
             CRef<CSeq_interval> pOverlap(
-                new CSeq_interval(*pRangeId, rangeStart, rangeStop, rangeStrand)); 
+                new CSeq_interval(*pRangeId, rangeStart, rangeStop, rangeStrand));
             pSeqloc->SetInt(*pOverlap);
         }
         else {
@@ -419,12 +419,12 @@ CGtfLocationMerger::MergeLocationForGene(
             pMix->AddInterval(*pRangeId, oldFrom, oldTo, rangeStrand);
             pSeqloc->SetMix(*pMix);
         }
-    }    
+    }
     return pSeqloc;
 }
 
 //  ============================================================================
-CRef<CSeq_loc> 
+CRef<CSeq_loc>
 CGtfLocationMerger::MergeLocationForTranscript(
     LOCATIONS& locations)
 //  ============================================================================
@@ -443,7 +443,7 @@ CGtfLocationMerger::GetNextElementOfType(
     if (locIt == locations.end()) {
         return;
     }
-    
+
     string lookupTypeStr(recType);
     NStr::ToLower(lookupTypeStr);
     auto typeIt = CGtfLocationRecord::msTypeOrder.find(lookupTypeStr);

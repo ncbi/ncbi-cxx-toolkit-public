@@ -59,7 +59,7 @@ class NCBI_XOBJREAD_EXPORT CFeature_table_reader : public CReaderBase
 {
 public:
     /// Some flags that control feature table generation.
-    /// Note that "bad key" could mean many different conditions, from 
+    /// Note that "bad key" could mean many different conditions, from
     /// unrecognized feature name to qualifier without a feature, and so on.
     enum EFlags {
         fReportBadKey           = (1<<0), ///< = 0x01 (Report bad keys into the error container)
@@ -77,7 +77,7 @@ public:
 
     CFeature_table_reader(TReaderFlags fReaderFlags = 0);
 
-    CFeature_table_reader(ILineReader& lr, 
+    CFeature_table_reader(ILineReader& lr,
                           ILineErrorListener* pErrors=0);
 
     ~CFeature_table_reader();
@@ -149,7 +149,7 @@ public:
                              const string& val,
                              const TFlags flags = 0,
                              ILineErrorListener* pMessageListener=0,
-                             int line = 0, 	
+                             int line = 0,
                              const string &seq_id = std::string() );
 
     /// If line_arg is a feature line (e.g. ">Feature lcl|seq1"), then
@@ -161,7 +161,7 @@ public:
     ///   If returning true, this will hold the seqid of line_arg
     ///   (or empty if there is none)
     /// @param out_annotname
-    ///   If returning true, this will hold the annotname of 
+    ///   If returning true, this will hold the annotname of
     ///   line_arg (or empty if there is none)
     /// @returns
     ///   True if it is a feature line and false if it's not.
@@ -171,13 +171,13 @@ public:
         CTempStringEx& out_annotname );
 
 private:
-    static CRef<CSeq_annot> x_ReadFeatureTable(CFeatureTableReader_Imp& reader, 
+    static CRef<CSeq_annot> x_ReadFeatureTable(CFeatureTableReader_Imp& reader,
                                                const CTempString& seqid,
                                                const CTempString& annot_name,
-                                               const TFlags flags, 
+                                               const TFlags flags,
                                                ITableFilter* filter);
 
-    static CRef<CSeq_annot> x_ReadFeatureTable(CFeatureTableReader_Imp& reader, 
+    static CRef<CSeq_annot> x_ReadFeatureTable(CFeatureTableReader_Imp& reader,
                                                const TFlags flags,
                                                ITableFilter* filter,
                                                const string& seqid_prefix=kEmptyStr);

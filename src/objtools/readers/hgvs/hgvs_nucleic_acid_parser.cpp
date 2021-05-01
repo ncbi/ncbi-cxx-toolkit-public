@@ -15,7 +15,7 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 
-SHgvsNucleicAcidGrammar::SHgvsNucleicAcidGrammar(const SHgvsLexer& tok) : 
+SHgvsNucleicAcidGrammar::SHgvsNucleicAcidGrammar(const SHgvsLexer& tok) :
     SHgvsNucleicAcidGrammar::base_type(simple_dna_variation)
 
 {
@@ -38,19 +38,19 @@ SHgvsNucleicAcidGrammar::SHgvsNucleicAcidGrammar(const SHgvsLexer& tok) :
     dup = (nucleotide_location >> tok.dup >> nucleotide_seq) ACTION2(AssignNtDup) | // Need to change this to allow remote sequences
           (nucleotide_location >> tok.dup) ACTION1(AssignNtDup);
 
-    delins = (nucleotide_location >> tok.del >> nucleotide_seq >> tok.ins >> nucleotide_seq) ACTION3(AssignNtDelins) | 
+    delins = (nucleotide_location >> tok.del >> nucleotide_seq >> tok.ins >> nucleotide_seq) ACTION3(AssignNtDelins) |
              (nucleotide_location >> tok.delins >> nucleotide_seq) ACTION2(AssignNtDelins);
 
-    del = (nucleotide_location >> tok.del >> nucleotide_seq) ACTION2(AssignNtDeletion) | 
+    del = (nucleotide_location >> tok.del >> nucleotide_seq) ACTION2(AssignNtDeletion) |
           (nucleotide_location >> tok.del) ACTION1(AssignNtDeletion);
 
     ins = (nucleotide_site_interval >> tok.ins >> nucleotide_seq) ACTION2(AssignNtInsertion); // Need to change this to allow remote sequences
 
-    conv = (nucleotide_site_interval >> tok.con >> remote_nucleotide_interval) ACTION2(AssignNtConversion); 
+    conv = (nucleotide_site_interval >> tok.con >> remote_nucleotide_interval) ACTION2(AssignNtConversion);
 
     inv = (nucleotide_site_interval >> tok.inv >> nucleotide_seq) ACTION2(AssignNtInv) |
           (nucleotide_site_interval >> tok.inv >> tok.pos_int) ACTION2(AssignNtInvSize) | // Assign interval with size
-          (nucleotide_site_interval >> tok.inv) ACTION1(AssignNtInv); 
+          (nucleotide_site_interval >> tok.inv) ACTION1(AssignNtInv);
 
 
     ssr = (nucleotide_location >> "[" >> count >> "]") ACTION2(AssignNtSSR) |
@@ -70,12 +70,11 @@ SHgvsNucleicAcidGrammar::SHgvsNucleicAcidGrammar(const SHgvsLexer& tok) :
 
     nucleotide_site_interval = (nucleotide_site >> "_" >> nucleotide_site) ACTION2(AssignNtInterval);
 
-    nucleotide_site =  nucleotide_site_range VALASSIGN | 
+    nucleotide_site =  nucleotide_site_range VALASSIGN |
                        nucleotide_single_site ACTION1(AssignNtSite) |
                        nucleotide_uncertain_site ACTION1(AssignNtSite);
 
-  
-    nucleotide_site_range = ("(" >> nucleotide_single_site >> "_" >> nucleotide_single_site >> ")") 
+    nucleotide_site_range = ("(" >> nucleotide_single_site >> "_" >> nucleotide_single_site >> ")")
                             ACTION2(AssignNtSiteRange);
 
     nucleotide_uncertain_site = ("(" >> nucleotide_single_site >> ")") ACTION1(AssignFuzzyNtSite);
@@ -85,17 +84,17 @@ SHgvsNucleicAcidGrammar::SHgvsNucleicAcidGrammar(const SHgvsLexer& tok) :
                              intron_site |
                              simple_site;
 
-    pretranslation_site = "-" >> intron_site ACTION1(Assign5primeUTRSite) | 
+    pretranslation_site = "-" >> intron_site ACTION1(Assign5primeUTRSite) |
                           "-" >> simple_site ACTION1(Assign5primeUTRSite);
 
-    posttranslation_site = tok.stop >> intron_site ACTION1(Assign3primeUTRSite) | 
+    posttranslation_site = tok.stop >> intron_site ACTION1(Assign3primeUTRSite) |
                            tok.stop >> simple_site ACTION1(Assign3primeUTRSite);
 
     intron_site = (tok.pos_int >> intron_offset) ACTION2(AssignIntronSite);
 
     intron_offset = "+" >> offset_length [_val = "+" + _1] |
                     "-" >> offset_length [_val = "-" + _1];
-  
+
     offset_length = tok.pos_int | tok.fuzzy_pos_int | tok.unknown_val;
 
     simple_site = tok.pos_int ACTION1(AssignSimpleNtSite) |
@@ -106,8 +105,8 @@ SHgvsNucleicAcidGrammar::SHgvsNucleicAcidGrammar(const SHgvsLexer& tok) :
 
     nucleotide = tok.acgu | tok.ACGT;
 
-    count = val_or_unknown ACTION1(AssignCount) | 
-            count_range VALASSIGN; 
+    count = val_or_unknown ACTION1(AssignCount) |
+            count_range VALASSIGN;
 
     fuzzy_count = tok.fuzzy_pos_int ACTION1(AssignFuzzyCount);
 
