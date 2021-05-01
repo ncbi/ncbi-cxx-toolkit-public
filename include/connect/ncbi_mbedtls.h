@@ -71,6 +71,9 @@ SOCKSSL NcbiSetupMbedTls(void);
  * @warning The call does not create a copy of either xcert or xpkey, so they
  * must remain valid for the entire duration of a session (or sessions) that
  * they are being used with.
+ *
+ * @sa
+ *  NcbiDeleteTlsCertCredentials
  */
 extern NCBI_XCONNECT_EXPORT
 NCBI_CRED NcbiCredMbedTls(void* xcert, void* xpkey);

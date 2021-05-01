@@ -69,6 +69,9 @@ SOCKSSL NcbiSetupGnuTls(void);
  * @warning The call does not create a copy of xcred, so xcred must remain
  * valid for the entire duration of a session (or sessions) that it is being
  * used with.
+ *
+ * @sa
+ *  NcbiDeleteTlsCertCredentials
  */
 extern NCBI_XCONNECT_EXPORT
 NCBI_CRED NcbiCredGnuTls(void* xcred);

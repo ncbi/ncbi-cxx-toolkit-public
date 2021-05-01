@@ -133,6 +133,33 @@ struct SOCKSSL_struct {
 };
 
 
+/* Internal certificate credentials management routines */
+
+#if defined(HAVE_LIBMBEDTLS)  ||  defined(NCBI_CXX_TOOLKIT)
+
+NCBI_CRED NcbiCreateMbedTlsCertCredentials(const void* cert,
+                                           size_t      certsz,
+                                           const void* pkey,
+                                           size_t      pkeysz);
+
+void NcbiDeleteMbedTlsCertCredentials(NCBI_CRED cred);
+
+#endif /*HAVE_LIBMBEDTLS || NCBI_CXX_TOOLKIT*/
+
+
+#ifdef HAVE_LIBGNUTLS
+
+NCBI_CRED NcbiCreateGnuTlsCertCredentials(const void* cert,
+                                          size_t      certsz,
+                                          const void* pkey,
+                                          size_t      pkeysz);
+
+
+void NcbiDeleteGnuTlsCertCredentials(NCBI_CRED cred);
+
+#endif /*HAVE_LIBGNUTLS*/
+
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

@@ -45,6 +45,7 @@
 #    include <mbedtls/debug.h>
 #    include <mbedtls/entropy.h>
 #    include <mbedtls/error.h>
+#    include <mbedtls/pk.h>
 #    include <mbedtls/net_sockets.h>
 #    include <mbedtls/ssl.h>
 #    include <mbedtls/threading.h>
@@ -54,6 +55,7 @@
 #    include "mbedtls/mbedtls/debug.h"
 #    include "mbedtls/mbedtls/entropy.h"
 #    include "mbedtls/mbedtls/error.h"
+#    include "mbedtls/mbedtls/pk.h"
 #    include "mbedtls/mbedtls/net_sockets.h"
 #    include "mbedtls/mbedtls/ssl.h"
 #    include "mbedtls/mbedtls/threading.h"
@@ -67,6 +69,8 @@
 #  else
 #    define NCBI_NOTSUPPORTED  EINVAL
 #  endif
+
+#define NCBI_USE_ERRCODE_X   Connect_TLS
 
 
 #  if defined(MBEDTLS_THREADING_ALT)  &&  defined(NCBI_THREADS)
@@ -167,7 +171,8 @@ static void x_MbedTlsLogger(void* unused, int level,
         return;
     if (message[len - 1] == '\n')
         --len;
-    CORE_LOGF(eLOG_Note, ("MBEDTLS%d: %.*s", level, (int) len, message));
+    CORE_LOGF_X(1, eLOG_Note,
+                ("MBEDTLS%d: %.*s", level, (int) len, message));
 }
 
 
@@ -332,7 +337,8 @@ static void* s_MbedTlsCreate(ESOCK_Side side, SNcbiSSLctx* ctx, int* error)
     int err;
 
     if (end == MBEDTLS_SSL_IS_SERVER) {
-        CORE_LOG(eLOG_Error, "Server-side SSL not yet supported with MBEDTLS");
+        CORE_LOG_X(2, eLOG_Critical,
+                   "Server-side SSL not yet supported with MBEDTLS");
         *error = 0;
         return 0;
     }
@@ -340,11 +346,11 @@ static void* s_MbedTlsCreate(ESOCK_Side side, SNcbiSSLctx* ctx, int* error)
     if (ctx->cred) {
         if (ctx->cred->type != eNcbiCred_MbedTls  ||  !ctx->cred->data) {
             /*FIXME: there's a NULL(data)-terminated array of credentials */
-            CORE_LOGF(eLOG_Error,
-                      ("%s credentials in MBEDTLS session",
-                       ctx->cred->type != eNcbiCred_MbedTls
-                       ? "Foreign"
-                       : "Empty"));
+            CORE_LOGF_X(3, eLOG_Error,
+                        ("%s credentials in MBEDTLS session",
+                         ctx->cred->type != eNcbiCred_MbedTls
+                         ? "Foreign"
+                         : "Empty"));
             *error = 0;
             return 0;
         }
@@ -658,8 +664,8 @@ static EIO_Status x_InitLocking(void)
     } else
         status = lk ? eIO_Success : eIO_NotSupported;
 #  elif !defined(NCBI_NO_THREADS)  &&  defined(_MT)
-    CORE_LOG(eLOG_Critical,
-             "MBEDTLS locking uninited: Unknown threading model");
+    CORE_LOG_X(4, eLOG_Critical,
+               "MBEDTLS locking uninited: Unknown threading model");
     status = eIO_NotSupported;
 #  else
     status = eIO_Success;
@@ -694,9 +700,9 @@ static EIO_Status s_MbedTlsInit(FSSLPull pull, FSSLPush push)
 
     mbedtls_version_get_string(version);
     if (strcasecmp(MBEDTLS_VERSION_STRING, version) != 0) {
-        CORE_LOGF(eLOG_Critical,
-                  ("%s version mismatch: %s headers vs. %s runtime",
-                   kMbedTls, MBEDTLS_VERSION_STRING, version));
+        CORE_LOGF_X(5, eLOG_Critical,
+                    ("%s version mismatch: %s headers vs. %s runtime",
+                     kMbedTls, MBEDTLS_VERSION_STRING, version));
         assert(0);
     }
 
@@ -732,8 +738,8 @@ static EIO_Status s_MbedTlsInit(FSSLPull pull, FSSLPush push)
             level = eLOG_Note;
         } else
             level = eLOG_Trace;
-        CORE_LOGF(level, ("%s V%s (LogLevel=%d)",
-                          kMbedTls, version, s_MbedTlsLogLevel));
+        CORE_LOGF_X(6, level, ("%s V%s (LogLevel=%d)",
+                               kMbedTls, version, s_MbedTlsLogLevel));
     } else
         CORE_UNLOCK;
 
@@ -803,7 +809,7 @@ static const char* s_MbedTlsError(void* session/*unused*/, int error,
 /*ARGSUSED*/
 static EIO_Status s_MbedTlsInit(FSSLPull unused_pull, FSSLPush unused_push)
 {
-    CORE_LOG(eLOG_Critical, "Unavailable feature MBEDTLS");
+    CORE_LOG_X(7, eLOG_Critical, "Unavailable feature MBEDTLS");
     return eIO_NotSupported;
 }
 
@@ -828,7 +834,7 @@ extern SOCKSSL NcbiSetupMbedTls(void)
 #endif /*HAVE_LIBMBEDTLS || NCBI_CXX_TOOLKIT*/
     };
 #if !defined(HAVE_LIBMBEDTLS)  &&  !defined(NCBI_CXX_TOOLKIT)
-    CORE_LOG(eLOG_Warning, "Unavailable feature MBEDTLS");
+    CORE_LOG_X(8, eLOG_Warning, "Unavailable feature MBEDTLS");
 #endif /*!HAVE_LIBMBEDTLS && !NCBI_CXX_TOOLKIT*/
     return &kMbedTlsOps;
 }
@@ -842,9 +848,8 @@ extern NCBI_CRED NcbiCredMbedTls(void* xcert, void* xpkey)
         size <<= 1;
         size  += 2 * sizeof(void*);
     }
-    cred = (NCBI_CRED) malloc(size);
+    cred = (NCBI_CRED) calloc(1, size);
     if (cred) {
-        memset(cred, 0, size);
         cred->type = eNcbiCred_MbedTls;
         if (xcert  &&  xpkey) {
             void** data = (void**)((char*) cred + 2 * sizeof(*cred));
@@ -855,3 +860,108 @@ extern NCBI_CRED NcbiCredMbedTls(void* xcert, void* xpkey)
     }
     return cred;
 }
+
+
+#if defined(HAVE_LIBMBEDTLS)  ||  defined(NCBI_CXX_TOOLKIT)
+
+void NcbiDeleteMbedTlsCertCredentials(NCBI_CRED cred)
+{
+    if (cred->type / 100 == eNcbiCred_MbedTls / 100  &&  !(cred->type % 100)) {
+        mbedtls_x509_crt_free((mbedtls_x509_crt*)  ((void**) cred->data)[0]);
+        mbedtls_pk_free      ((mbedtls_pk_context*)((void**) cred->data)[1]);
+    } else {
+        char who[80];
+        switch (cred->type / 100) {
+        case eNcbiCred_GnuTls / 100:
+            strcpy(who, "GNUTLS");
+            break;
+        case eNcbiCred_MbedTls / 100:
+            strcpy(who, "MBEDTLS");
+            break;
+        default:
+            sprintf(who, "TLS 0x%08X", cred->type);
+            break;
+        }
+        CORE_LOGF_X(9, eLOG_Critical,
+                    ("Deleting unknown certificate credentials (%s/%u)",
+                     who, cred->type % 100));
+        assert(0);
+    }
+    cred->type = (ENcbiCred) 0;
+    free(cred);
+}
+
+
+NCBI_CRED NcbiCreateMbedTlsCertCredentials(const void* cert,
+                                           size_t      certsz,
+                                           const void* pkey,
+                                           size_t      pkeysz)
+{
+    struct SNcbiCred*   ncbi_cred;
+    mbedtls_x509_crt*   mtls_cert;
+    mbedtls_pk_context* mtls_pkey;
+    size_t size = (2 * sizeof(*ncbi_cred) +
+                   2 * sizeof(void*)      +
+                   sizeof(*mtls_cert) + sizeof(*mtls_pkey));
+    CORE_DEBUG_ARG(char tmp[1024];)
+    char   errbuf[80];
+    void** data;
+    int    err;
+
+    if (!(ncbi_cred = (NCBI_CRED) calloc(1, size))) {
+        CORE_LOGF_ERRNO_X(10, eLOG_Error, errno,
+                          ("Cannot allocate NCBI_CRED (%lu bytes)",
+                           (unsigned long) size));
+        return 0;
+    }
+
+    data = (void**)
+        ((char*) ncbi_cred + 2 * sizeof(*ncbi_cred));
+    mtls_cert = (mbedtls_x509_crt*)
+        ((char*) data      + 2 * sizeof(void*));
+    mtls_pkey = (mbedtls_pk_context*)
+        ((char*) mtls_cert + sizeof(*mtls_cert));
+    data[0] = mtls_cert;
+    data[1] = mtls_pkey;
+    ncbi_cred->type = eNcbiCred_MbedTls;
+    ncbi_cred->data = data;
+
+    /* these are not technically necessary as they just zero the memory */
+    mbedtls_x509_crt_init(mtls_cert);
+    mbedtls_pk_init      (mtls_pkey);
+
+    err = mbedtls_x509_crt_parse(mtls_cert,
+                                 (const unsigned char*) cert, certsz ? certsz
+                                 : strlen((const char*) cert) + 1);
+    if (err) {
+        mbedtls_strerror(err, errbuf, sizeof(errbuf) - 1);
+        CORE_LOG_ERRNO_EXX(11, eLOG_Error, err, errbuf,
+                           "mbedTLS cannot parse X.509 certificate");
+        goto out;
+    }
+    CORE_DEBUG_ARG(err = mbedtls_x509_crt_info(tmp, sizeof(tmp),
+                                               "", mtls_cert));
+    CORE_TRACEF(("Certificate loaded%s%s",
+                 err > 0 ? ":\n" : "",
+                 err > 0 ? tmp   : ""));
+
+    err = mbedtls_pk_parse_key(mtls_pkey,
+                               (const unsigned char*) pkey, pkeysz ? pkeysz
+                               : strlen((const char*) pkey) + 1, 0, 0);
+    if (err) {
+        mbedtls_strerror(err, errbuf, sizeof(errbuf) - 1);
+        CORE_LOG_ERRNO_EXX(12, eLOG_Error, err, errbuf,
+                           "mbedTLS cannot parse private key");
+        goto out;
+    }
+    CORE_TRACEF(("Private key loaded: %s",
+                 mbedtls_pk_get_name(mtls_pkey)));
+
+    return ncbi_cred;
+
+ out:
+    NcbiDeleteMbedTlsCertCredentials(ncbi_cred);
+    return 0;
+}
+
+#endif /*HAVE_LIBMBEDTLS || NCBI_CXX_TOOLKIT*/

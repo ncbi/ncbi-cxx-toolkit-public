@@ -106,6 +106,8 @@ NCBI_C_DEFINE_ERRCODE_X(Connect_Mghbn,         311,  16);
 NCBI_C_DEFINE_ERRCODE_X(Connect_Crypt,         312,   5);
 NCBI_C_DEFINE_ERRCODE_X(Connect_LocalIP,       313,   5);
 NCBI_C_DEFINE_ERRCODE_X(Connect_NamerdLinkerd, 314,  14);
+NCBI_C_DEFINE_ERRCODE_X(Connect_TLS,           319,  47);
+
 
 /** Make one identifier from 2 parts */
 #define NCBI_C_CONCAT_IDENTIFIER(prefix, postfix)  prefix##postfix

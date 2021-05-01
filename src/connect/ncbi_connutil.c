@@ -62,6 +62,19 @@ const STimeout g_NcbiDefConnTimeout = {
 static TNCBI_BigCount s_FWPorts[1024 / sizeof(TNCBI_BigCount)] = { 0 };
 
 
+#if 0
+static char* x_getenv(const char* name)
+{
+    char* env = getenv(name);
+    CORE_TRACEF(("getenv(\"%s\") = %s%s%s", name,
+                 &"\""[!env], env ? env : "NULL", &"\""[!env]));
+    return env;
+}
+#else
+#  define x_getenv  getenv
+#endif
+
+
 static int/*bool*/ x_StrcatCRLF(char** dstp, const char* src)
 {
     char*  dst = *dstp;
@@ -204,9 +217,9 @@ static const char* x_GetValue(const char* svc, size_t svclen,
         if (strncompar != strncmp)
             strupr(s);
         CORE_LOCK_READ;
-        if ((val = getenv(buf)) != 0
+        if ((val = x_getenv(buf)) != 0
             ||  (memcmp(buf, tmp, svclen) != 0
-                 &&  (val = getenv((char*) memcpy(buf, tmp, svclen))) != 0)) {
+                 &&  (val = x_getenv((char*) memcpy(buf, tmp, svclen))) != 0)){
             rv = x_strncpy0(value, val, value_size);
             CORE_UNLOCK;
             return rv;
@@ -250,7 +263,7 @@ static const char* x_GetValue(const char* svc, size_t svclen,
 
     /* Environment search for 'CONN_param' */
     CORE_LOCK_READ;
-    if ((val = getenv(s)) != 0) {
+    if ((val = x_getenv(s)) != 0) {
         rv = x_strncpy0(value, val, value_size);
         CORE_UNLOCK;
         return rv;
@@ -485,7 +498,7 @@ static int/*tri-state*/ x_SetupHttpProxy(SConnNetInfo* info, const char* env)
     assert(!info->http_proxy_host[0]  &&  !info->http_proxy_port);
     assert(env  &&  *env);
     CORE_LOCK_READ;
-    if (!(val = getenv(env))  ||  !*val
+    if (!(val = x_getenv(env))  ||  !*val
         ||  strcmp(val, "''") == 0  ||  strcmp(val, "\"\"") == 0) {
         CORE_UNLOCK;
         return -1/*noop*/;
@@ -1825,7 +1838,9 @@ extern int/*bool*/ ConnNetInfo_SetupStandardArgs(SConnNetInfo* info,
     if (s != info->client_host)
         free((void*) s);
     if (service) {
-        if (!ConnNetInfo_PreOverrideArg(info, kService, service)) {
+        if (!*service)
+            ConnNetInfo_DeleteArg(info, kService);
+        else if (!ConnNetInfo_PreOverrideArg(info, kService, service)) {
             ConnNetInfo_DeleteArg(info, kPlatform);
             if (!ConnNetInfo_PreOverrideArg(info, kService, service)) {
                 ConnNetInfo_DeleteArg(info, kAddress);
@@ -2008,22 +2023,31 @@ static const char* x_CredInfo(NCBI_CRED cred, char buf[])
 {
     unsigned int who, what;
     if (!cred)
-        return "NULL";
-    who  = (cred->type / 100) * 100;
-    what =  cred->type % 100;
+        return "NONE";
+    who  = cred->type / 100;
+    what = cred->type % 100;
     switch (who) {
-    case eNcbiCred_GnuTls:
+    case eNcbiCred_GnuTls / 100:
         switch (what) {
         case 0:
-            return "(GNUTLS X.509 Cert)";
+            return "(GNUTLS X.509 Cert Cred)";
         default:
-            sprintf(buf, "(GNUTLS #%u)", what);
+            sprintf(buf, "(GNUTLS/%u)", what);
+            return buf;
+        }
+    case eNcbiCred_MbedTls / 100:
+        switch (what) {
+        case 0:
+            return "(MBEDTLS X.509 Cert & PK)";
+        default:
+            sprintf(buf, "(MBEDTLS/%u)", what);
             return buf;
         }
     default:
         break;
     }
-    return x_Num(cred->type, buf);
+    sprintf(buf, "(TLS 0x%08X/%u)", cred->type, what);
+    return buf;
 }
 
 

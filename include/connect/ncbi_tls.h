@@ -97,6 +97,55 @@ SOCKSSL NcbiSetupTls(void);
  */
 
 
+/** Build NCBI_CRED from memory buffers containing X.509 certificate and
+ *  private key, respectively, in either PEM or DER format (independently of
+ *  each other).
+ *
+ *  The returned credentials handle must not be deleted while it's in use.
+ *
+ *  If a size is passed as 0, the corresponding pointer argument is assumed to
+ *  be a '\0'-terminated string, and the size gets computed internally as
+ *  strlen(ptr) + 1, to cover the trailing '\0' byte, see below.
+ *
+ *  To figure out the format of cert / key, the passed buffer gets analyzed to
+ *  see whether the last byte is '\0' and whether the therefore properly
+ *  terminated C-string happens to contain a "-----BEGIN " substring:  if both
+ *  conditions are true, then the buffer is considered in PEM format;  or DER,
+ *  otherwise.
+ *
+ * @note that the size value ("certsz" / "pkeysz"), when expliciltly specified,
+ * MUST include the terminating '\0' byte for PEM formatted buffers.  It MUST
+ * always be specified precisely for DER formatted buffers.
+ *
+ * @warning Calling free() on the returned handle will cause memory leaks;  so
+ * always use NcbiDeleteTlsCertCredentials() when the handle is no longer used.
+ *
+ * @sa
+ *  NcbiDeleteTlsCertCredentials
+ */
+
+extern NCBI_XCONNECT_EXPORT
+NCBI_CRED NcbiCreateTlsCertCredentials(const void* cert,
+                                       size_t      certsz,
+                                       const void* pkey,
+                                       size_t      pkeysz);
+
+
+/** Delete a NCBI_CRED handle created by NcbiCreateTlsCertCredentials().
+ *
+ * @warning Do not use this call while the handle can be potentially in use.
+ *
+ * @note This routine can be safely used for handles returned by
+ * NcbiCredMbedTls() and NcbiCredGnuTls(), to avoid having to delete the
+ * underlying TLS-provider-specific handles passed to either call, explicitly.
+ *
+ * @sa
+ *  NcbiCreateTlsCertCredentials, NcbiCredMbedTls, NcbiCredGnuTls
+ */
+extern NCBI_XCONNECT_EXPORT
+void NcbiDeleteTlsCertCredentials(NCBI_CRED cred);
+
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif

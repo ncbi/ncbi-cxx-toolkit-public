@@ -38,9 +38,13 @@
 #include <connect/ncbi_tls.h>
 #include <stdlib.h>
 
+#define NCBI_USE_ERRCODE_X   Connect_TLS
+
+
 #ifdef HAVE_LIBGNUTLS
 
 #  include <gnutls/gnutls.h>
+#  include <gnutls/x509.h>
 
 #  if   defined(ENOTSUP)
 #    define NCBI_NOTSUPPORTED  ENOTSUP
@@ -188,7 +192,8 @@ static void x_GnuTlsLogger(int level, const char* message)
         return;
     if (message[len - 1] == '\n')
         --len;
-    CORE_LOGF(eLOG_Note, ("GNUTLS%d: %.*s", level, (int) len, message));
+    CORE_LOGF_X(21, eLOG_Note,
+                ("GNUTLS%d: %.*s", level, (int) len, message));
 }
 
 
@@ -342,7 +347,8 @@ static void* s_GnuTlsCreate(ESOCK_Side side, SNcbiSSLctx* ctx, int* error)
     int err;
 
     if (end == GNUTLS_SERVER) {
-        CORE_LOG(eLOG_Error, "Server-side SSL not yet supported with GNUTLS");
+        CORE_LOG_X(22, eLOG_Critical,
+                   "Server-side SSL not yet supported with GNUTLS");
         *error = 0;
         return 0;
     }
@@ -355,9 +361,10 @@ static void* s_GnuTlsCreate(ESOCK_Side side, SNcbiSSLctx* ctx, int* error)
     if (!acred
         ||  (ctx->cred
              &&  (ctx->cred->type != eNcbiCred_GnuTls  ||  !ctx->cred->data))){
-        CORE_LOGF(eLOG_Error, ("Cannot %s GNUTLS credentials: %s",
-                               acred ? "use"            : "set",
-                               acred ? "Invalid format" : "Not initialized"));
+        CORE_LOGF_X(23, eLOG_Error,
+                    ("Cannot %s GNUTLS credentials: %s",
+                     acred ? "use"            : "set",
+                     acred ? "Invalid format" : "Not initialized"));
         /*FIXME: there's a NULL(data)-terminated array of credentials */
         *error = 0;
         return 0;
@@ -391,7 +398,9 @@ static void* s_GnuTlsCreate(ESOCK_Side side, SNcbiSSLctx* ctx, int* error)
 #  endif /*LIBGNUTLS_VERSION_NUMBER<3.3.6*/
         (err = gnutls_credentials_set(session, GNUTLS_CRD_CERTIFICATE,
                                       ctx->cred
-                                      ? ctx->cred->data : xcred))      != 0  ||
+                                      ? (gnutls_certificate_credentials_t)
+                                         ctx->cred->data
+                                      : xcred))                        != 0  ||
         (err = gnutls_credentials_set(session, GNUTLS_CRD_ANON, acred))!= 0  ||
         (len  &&  (err = gnutls_server_name_set(session, GNUTLS_NAME_DNS,
                                                 ctx->host, len))       != 0)) {
@@ -683,7 +692,8 @@ static EIO_Status x_InitLocking(void)
     } else
         status = lk ? eIO_Success : eIO_NotSupported;
 #      elif !defined(NCBI_NO_THREADS)  &&  defined(_MT)
-    CORE_LOG(eLOG_Critical,"LIBGCRYPT uninitialized: Unknown threading model");
+    CORE_LOG_X(24, eLOG_Critical,
+               "LIBGCRYPT uninitialized: Unknown threading model");
     status = eIO_NotSupported;
 #      endif /*NCBI_POSIX_THREADS*/
 #    endif /*HAVE_LIBGCRYPT*/
@@ -698,7 +708,8 @@ static EIO_Status x_InitLocking(void)
     } else
         status = lk ? eIO_Success : eIO_NotSupported;
 #  elif !defined(NCBI_NO_THREADS)  &&  defined(_MT)
-    CORE_LOG(eLOG_Critical,"GNUTLS locking uninited: Unknown threading model");
+    CORE_LOG_X(25, eLOG_Critical,
+               "GNUTLS locking uninited: Unknown threading model");
     status = eIO_NotSupported;
 #  else
     status = eIO_Success;
@@ -722,9 +733,9 @@ static EIO_Status s_GnuTlsInit(FSSLPull pull, FSSLPush push)
 
     version = gnutls_check_version(0);
     if (strcasecmp(GNUTLS_VERSION, version) != 0) {
-        CORE_LOGF(eLOG_Critical,
-                  ("GNUTLS version mismatch: %s headers vs. %s runtime",
-                   GNUTLS_VERSION, version));
+        CORE_LOGF_X(26, eLOG_Critical,
+                    ("GNUTLS version mismatch: %s headers vs. %s runtime",
+                     GNUTLS_VERSION, version));
         assert(0);
     }
 
@@ -756,8 +767,8 @@ static EIO_Status s_GnuTlsInit(FSSLPull pull, FSSLPush push)
             level = eLOG_Note;
         } else
             level = eLOG_Trace;
-        CORE_LOGF(level, ("GNUTLS V%s (LogLevel=%d)",
-                          version, s_GnuTlsLogLevel));
+        CORE_LOGF_X(27, level, ("GNUTLS V%s (LogLevel=%d)",
+                                version, s_GnuTlsLogLevel));
     } else
         CORE_UNLOCK;
 
@@ -850,7 +861,7 @@ static const char* s_GnuTlsError(void* session, int error,
 /*ARGSUSED*/
 static EIO_Status s_GnuTlsInit(FSSLPull unused_pull, FSSLPush unused_push)
 {
-    CORE_LOG(eLOG_Critical, "Unavailable feature GNUTLS");
+    CORE_LOG_X(28, eLOG_Critical, "Unavailable feature GNUTLS");
     return eIO_NotSupported;
 }
 
@@ -875,7 +886,7 @@ extern SOCKSSL NcbiSetupGnuTls(void)
 #endif /*HAVE_LIBGNUTLS*/
     };
 #ifndef HAVE_LIBGNUTLS
-    CORE_LOG(eLOG_Warning, "Unavailable feature GNUTLS");
+    CORE_LOG_X(29, eLOG_Warning, "Unavailable feature GNUTLS");
 #endif /*!HAVE_LIBGNUTLS*/
     return &kGnuTlsOps;
 }
@@ -890,3 +901,123 @@ extern NCBI_CRED NcbiCredGnuTls(void* xcred)
     }
     return cred;
 }
+
+
+#ifdef HAVE_LIBGNUTLS
+
+static gnutls_x509_crt_fmt_t x_GnuTlsFormat(const gnutls_datum_t* data)
+{
+    assert(data);
+    /* A la the logic in MbedTLS */
+    if (data->size  &&  data->data
+        &&  !(((const char*) data->data)[data->size - 1])
+        &&  strstr((const char*) data->data, "-----BEGIN ")) {
+        return GNUTLS_X509_FMT_PEM;
+    }
+    return GNUTLS_X509_FMT_DER;
+}
+
+
+void NcbiDeleteGnuTlsCertCredentials(NCBI_CRED cred)
+{
+    if (cred->type / 100 == eNcbiCred_GnuTls / 100  &&  !(cred->type % 100)) {
+        gnutls_certificate_free_credentials
+            ((gnutls_certificate_credentials_t) cred->data);
+    } else {
+        char who[80];
+        switch (cred->type / 100) {
+        case eNcbiCred_GnuTls / 100:
+            strcpy(who, "GNUTLS");
+            break;
+        case eNcbiCred_MbedTls / 100:
+            strcpy(who, "MBEDTLS");
+            break;
+        default:
+            sprintf(who, "TLS 0x%08X", cred->type);
+            break;
+        }
+        CORE_LOGF_X(30, eLOG_Critical,
+                    ("Deleting unknown certificate credentials (%s/%u)",
+                     who, cred->type % 100));
+        assert(0);
+    }
+    cred->type = (ENcbiCred) 0;
+    free(cred);
+}
+
+
+NCBI_CRED NcbiCreateGnuTlsCertCredentials(const void* cert,
+                                          size_t      certsz,
+                                          const void* pkey,
+                                          size_t      pkeysz)
+{
+    struct SNcbiCred*                 ncbi_cred;
+    gnutls_certificate_credentials_t* gtls_xcred;
+    gnutls_x509_crt_t                 gtls_cert = 0;
+    gnutls_x509_privkey_t             gtls_pkey = 0;
+    gnutls_datum_t data;
+    int err;
+
+    if (!(ncbi_cred = (NCBI_CRED) calloc(2, sizeof(*ncbi_cred)))) {
+        CORE_LOGF_ERRNO_X(31, eLOG_Error, errno,
+                          ("Cannot allocate NCBI_CRED (%lu bytes)",
+                           (unsigned long)(2 * sizeof(*ncbi_cred))));
+        return 0;
+    }
+
+    ncbi_cred->type = eNcbiCred_GnuTls;
+    gtls_xcred = (gnutls_certificate_credentials_t*) &ncbi_cred->data;
+
+    err = gnutls_certificate_allocate_credentials(gtls_xcred);
+    if (err) {
+        CORE_LOG_ERRNO_EXX(32, eLOG_Error, err, gnutls_strerror(err),
+                           "GNUTLS cannot allocate certificate credentials");
+        goto out;
+    }
+
+    data.data = (void*) cert;
+    data.size = certsz ? certsz : strlen((const char*) cert) + 1;
+    if ((err = gnutls_x509_crt_init (&gtls_cert)) != 0  ||
+        (err = gnutls_x509_crt_import(gtls_cert, &data,
+                                      x_GnuTlsFormat(&data))) != 0) {
+        CORE_LOGF_ERRNO_EXX(33, eLOG_Error, err, gnutls_strerror(err),
+                            ("GNUTLS cannot %s X.509 certificate",
+                             gtls_cert ? "build" : "parse"));
+        goto out;
+    }
+
+    data.data = (void*) pkey;
+    data.size = pkeysz ? pkeysz : strlen((const char*) pkey) + 1;
+    if ((err = gnutls_x509_privkey_init (&gtls_pkey)) != 0  ||
+        (err = gnutls_x509_privkey_import(gtls_pkey, &data,
+                                          x_GnuTlsFormat(&data))) != 0) {
+        CORE_LOGF_ERRNO_EXX(34, eLOG_Error, err, gnutls_strerror(err),
+                            ("GNUTLS cannot %s private key",
+                             gtls_pkey ? "build" : "parse"));
+        goto out;
+    }
+
+    err = gnutls_certificate_set_x509_key(*gtls_xcred,
+                                          &gtls_cert, 1, gtls_pkey);
+    if (err) {
+        CORE_LOG_ERRNO_EXX(35, eLOG_Error, err, gnutls_strerror(err),
+                           "GNUTLS cannot setup certificate credentials");
+        goto out;
+    }
+
+    /* once they have been copied into xcred, they can be safely disposed of */
+    gnutls_x509_crt_deinit    (gtls_cert);
+    gnutls_x509_privkey_deinit(gtls_pkey);
+
+    return ncbi_cred;
+
+ out:
+    if (gtls_cert)
+        gnutls_x509_crt_deinit    (gtls_cert);
+    if (gtls_pkey)
+        gnutls_x509_privkey_deinit(gtls_pkey);
+    NcbiDeleteGnuTlsCertCredentials(ncbi_cred);
+    return 0;
+}
+
+#endif /*HAVE_LIBGNUTLS*/

@@ -31,6 +31,7 @@
  */
 
 #include "../ncbi_ansi_ext.h"
+#include "../ncbi_connssl.h"
 #include "../ncbi_priv.h"               /* CORE logging facilities */
 #include <connect/ncbi_base64.h>
 #include <connect/ncbi_http_connector.h>
@@ -53,6 +54,9 @@
 #  include <unistd.h>  /* for access() and maybe usleep() */
 #endif /*NCBI_OS_UNIX*/
 
+#define TLS_CERT_FILE   "TEST_NCBI_HTTP_GET_CLIENT_CERT"
+#define TLS_PKEY_FILE   "TEST_NCBI_HTTP_GET_CLIENT_PKEY"
+
 #ifdef HAVE_LIBGNUTLS
 #  include <connect/ncbi_gnutls.h>
 #  include <gnutls/gnutls.h>
@@ -67,26 +71,11 @@
 #  define GNUTLS_PKCS12_PASS  "TEST_NCBI_HTTP_GET_PASS"
 #endif /*HAVE_LIBGNUTLS*/
 
-#if defined(HAVE_LIBMBEDTLS)
-#  include <mbedtls/error.h>
-#  include <mbedtls/pk.h>
-#  include <mbedtls/x509_crt.h>
-#elif defined(NCBI_CXX_TOOLKIT)
-#  include "../mbedtls/mbedtls/error.h"
-#  include "../mbedtls/mbedtls/pk.h"
-#  include "../mbedtls/mbedtls/x509_crt.h"
-#endif /*HAVE_LIBMBEDTLS*/
-#define MBEDTLS_CERT_FILE   "TEST_NCBI_HTTP_GET_CLIENT_CERT"
-#define MBEDTLS_PKEY_FILE   "TEST_NCBI_HTTP_GET_CLIENT_PKEY"
-
 #include "test_assert.h"  /* This header must go last */
 
 
 #ifdef HAVE_LIBGNUTLS
 
-#ifdef __GNUC__
-inline
-#endif /*__GNUC__*/
 static int/*bool*/ x_IsPrintable(const char* buf, size_t size)
 {
     size_t n;
@@ -280,7 +269,61 @@ static int x_CertRtrCB(gnutls_session_t session,
 }
 #  endif /*LIBGNUTLS_VERSION_NUMBER>=3.4.0*/
 
+
+static void x_GnuTlsSetupCB(gnutls_certificate_credentials_t xcred,
+                            EDebugPrintout debug_printout)
+{
+    if (debug_printout == eDebugPrintout_Data) {
+#  if LIBGNUTLS_VERSION_NUMBER >= 0x021000
+        gnutls_certificate_set_verify_function(xcred, x_CertVfyCB);
+#  endif /*LIBGNUTLS_VERSION_NUMBER>=2.10.0*/
+#  if LIBGNUTLS_VERSION_NUMBER >= 0x030400
+        gnutls_certificate_set_retrieve_function2(xcred, x_CertRtrCB);
+#  endif /*LIBGNUTLS_VERSION_NUMBER>=3.4.0*/
+    }
+}
+
+    
 #endif /*HAVE_LIBGNUTLS*/
+
+
+#if defined(HAVE_LIBGNUTLS)   ||  \
+    defined(HAVE_LIBMBEDTLS)  ||  \
+    defined(NCBI_CXX_TOOLKIT)
+
+static void* x_LoadFile(const char* file, size_t* size)
+{
+    char* buf;
+    long  off;
+    FILE* fp;
+
+    if (!(fp = fopen(file, "rb")))
+        return 0;
+    if (fseek(fp, 0, SEEK_END) != 0  ||  (off = ftell(fp)) == -1) {
+        fclose(fp);
+        return 0;
+    }
+    *size = (size_t) off + 1;
+    if (!*size  ||  !(buf = malloc(*size))) {
+        if (!*size)
+            errno = EINVAL;
+        fclose(fp);
+        return 0;
+    }
+    rewind(fp);
+    if (fread(buf, 1, (size_t) off, fp) != (size_t) off) {
+        free(buf);
+        fclose(fp);
+        return 0;
+    }
+    fclose(fp);
+    buf[off] = '\0';
+    if (!strstr(buf, "-----BEGIN "))
+        (*size)--;
+    return buf;
+}
+
+#endif /*HAVE_LIBGNUTLS || HAVE_LIBMBEDTLS || NCBI_CXX_TOOLKIT*/
 
 
 static int xstrcasecmp(const char* s1, const char* s2)
@@ -308,10 +351,6 @@ int main(int argc, char* argv[])
 #ifdef HAVE_LIBGNUTLS
     gnutls_certificate_credentials_t gtls_xcred = 0;
 #endif /*HAVE_LIBGNUTLS*/
-#ifdef HAVE_LIBMBEDTLS
-    mbedtls_x509_crt   mtls_cert;
-    mbedtls_pk_context mtls_pkey;
-#endif /*HAVE_LIBMBEDTLS*/
     CONNECTOR     connector;
     SConnNetInfo* net_info;
     char          blk[250];
@@ -323,11 +362,6 @@ int main(int argc, char* argv[])
     FILE*         fp;
     time_t        t;
     size_t        n;
-
-#ifdef HAVE_LIBMBEDTLS
-    mbedtls_x509_crt_init(&mtls_cert);
-    mbedtls_pk_init(&mtls_pkey);
-#endif /*HAVE_LIBMBEDTLS*/
 
     CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
                            fLOG_OmitNoteLevel | fLOG_DateTime);
@@ -382,7 +416,55 @@ int main(int argc, char* argv[])
                               IO_StatusStr(status)));
     }
 
-    if (net_info->scheme == eURL_Https
+    if (net_info->scheme == eURL_Https) {
+#if defined(HAVE_LIBGNUTLS)   ||  \
+    defined(HAVE_LIBMBEDTLS)  ||  \
+    defined(NCBI_CXX_TOOLKIT)
+        const size_t size = sizeof(blk) / 2;
+        const char *cert_file, *pkey_file;
+        cert_file = ConnNetInfo_GetValue(0, TLS_CERT_FILE,
+                                         blk,        size - 1, 0);
+        pkey_file = ConnNetInfo_GetValue(0, TLS_PKEY_FILE,
+                                         blk + size, size - 1, 0);
+        if (cert_file  &&  *cert_file  &&  access(cert_file, R_OK) == 0  &&
+            pkey_file  &&  *pkey_file  &&  access(pkey_file, R_OK) == 0) {
+            void  *cert,  *pkey;
+            size_t certsz, pkeysz;
+            if (!(cert = x_LoadFile(cert_file, &certsz))) {
+                CORE_LOGF_ERRNO(eLOG_Fatal, errno,
+                                ("Cannot load certificate from \"%s\"",
+                                 cert_file));
+            }
+            CORE_LOGF(eLOG_Note,
+                      ("Certificate loaded from \"%s\"", cert_file));
+            if (!(pkey = x_LoadFile(pkey_file, &pkeysz))) {
+                CORE_LOGF_ERRNO(eLOG_Fatal, errno,
+                                ("Cannot load private key from \"%s\"",
+                                 pkey_file));
+            }
+            CORE_LOGF(eLOG_Note,
+                      ("Private key loaded from \"%s\"", pkey_file));
+            if (!(cred = NcbiCreateTlsCertCredentials(cert, certsz,
+                                                      pkey, pkeysz))) {
+                CORE_LOG(eLOG_Fatal, "Cannot create NCBI_CRED");
+            }
+#    ifdef HAVE_LIBGNUTLS
+            /* only for debugging -- not really necessary in general */
+            if (cred->type == eNcbiCred_GnuTls) {
+                gtls_xcred = (gnutls_certificate_credentials_t) cred->data;
+                x_GnuTlsSetupCB(gtls_xcred, net_info->debug_printout);
+            }
+#    endif /*HAVE_LIBGNUTLS*/
+            free(pkey);
+            free(cert);
+            net_info->credentials = cred;
+        }
+#else
+        CORE_LOG(eLOG_Critical, "TLS required but not supported");
+#endif /*HAVE_LIBGNUTLS || HAVE_LIBMBEDTLS || NCBI_CXX_TOOLKIT*/
+    }
+
+    if (net_info->scheme == eURL_Https  &&  !cred
         &&  xstrcasecmp(SOCK_SSLName(), "GNUTLS") == 0) {
 #ifdef HAVE_LIBGNUTLS
         int err;
@@ -407,8 +489,8 @@ int main(int argc, char* argv[])
             }
         } else if (net_info->debug_printout == eDebugPrintout_Data) {
             /* We don't have to create empty cert credentials, in general
-             * (as the ncbi_gnutls shim does that for us); but if we want
-             * callbacks, then they can only be associated with the
+             * (as the ncbi_gnutls shim does that for us),  but if we want
+             * callbacks, then they can only be associated with a
              * credentials handle (gnutls design???) so here it goes: */
             if ((err = gnutls_certificate_allocate_credentials(&gtls_xcred))) {
                 CORE_LOGF(eLOG_Critical,
@@ -420,67 +502,19 @@ int main(int argc, char* argv[])
         } else
             file = 0;
         if (gtls_xcred) {
+            x_GnuTlsSetupCB(gtls_xcred, net_info->debug_printout);
             if (!(cred = NcbiCredGnuTls(gtls_xcred)))
                 CORE_LOG_ERRNO(eLOG_Fatal, errno, "Cannot create NCBI_CRED");
-            net_info->credentials = cred;
             if (file) {
                 CORE_LOGF(eLOG_Note, ("PKCS#12 %s credentials loaded from"
                                       " \"%s\"", type, file));
             } else
                 CORE_LOG(eLOG_Note, "Debug certificate credentials set");
-            if (net_info->debug_printout == eDebugPrintout_Data) {
-#  if LIBGNUTLS_VERSION_NUMBER >= 0x021000
-                gnutls_certificate_set_verify_function(gtls_xcred,
-                                                       x_CertVfyCB);
-#  endif /*LIBGNUTLS_VERSION_NUMBER>=2.10.0*/
-#  if LIBGNUTLS_VERSION_NUMBER >= 0x030400
-                gnutls_certificate_set_retrieve_function2(gtls_xcred,
-                                                          x_CertRtrCB);
-#  endif /*LIBGNUTLS_VERSION_NUMBER>=3.4.0*/
-            }
+            net_info->credentials = cred;
         }
 #else
         CORE_LOG(eLOG_Critical, "GNUTLS required but not supported");
 #endif /*HAVE_LIBGNUTLS*/
-    }
-    if (net_info->scheme == eURL_Https
-        &&  xstrcasecmp(SOCK_SSLName(), "MBEDTLS") == 0) {
-#ifdef HAVE_LIBMBEDTLS
-        char buf[4096];
-        const char* cert_file, *pkey_file;
-        const size_t size = sizeof(blk) / 2;
-        cert_file = ConnNetInfo_GetValue(0, MBEDTLS_CERT_FILE,
-                                         blk,        size - 1, 0);
-        pkey_file = ConnNetInfo_GetValue(0, MBEDTLS_PKEY_FILE,
-                                         blk + size, size - 1, 0);
-        if (cert_file  &&  *cert_file  &&  pkey_file  &&  *pkey_file) {
-            int err;
-            err = mbedtls_x509_crt_parse_file(&mtls_cert, cert_file);
-            if (err < 0) {
-                mbedtls_strerror(err, blk + size, size - 1);
-                CORE_LOGF(eLOG_Fatal, ("Cannot load certificate from \"%s\":"
-                                       " %s (0x%04X)", blk, blk + size, -err));
-            }
-            if (mbedtls_x509_crt_info(buf, sizeof(buf), "", &mtls_cert) > 0)
-                CORE_LOGF(eLOG_Note, ("Certificate loaded:\n%s", buf));
-            else
-                CORE_LOGF(eLOG_Note, ("Certificate loaded (%d)", err));
-            err = mbedtls_pk_parse_keyfile(&mtls_pkey, pkey_file, 0/*pswrd*/);
-            if (err) {
-                assert(err < 0);
-                mbedtls_strerror(err, blk, size - 1);
-                CORE_LOGF(eLOG_Fatal, ("Cannot load private key from \"%s\":"
-                                       " %s (0x%04X)", blk + size, blk, -err));
-            }
-            CORE_LOGF(eLOG_Note, ("Private key loaded: %s",
-                                  mbedtls_pk_get_name(&mtls_pkey)));
-            if (!(cred = NcbiCredMbedTls(&mtls_cert, &mtls_pkey)))
-                CORE_LOG_ERRNO(eLOG_Fatal, errno, "Cannot create NCBI_CRED");
-            net_info->credentials = cred;
-        }
-#else
-        CORE_LOG(eLOG_Critical, "MBEDTLS required but not supported");
-#endif /*HAVE_LIBMBEDTLS*/
     }
 
     url = ConnNetInfo_URL(net_info);
@@ -551,16 +585,7 @@ int main(int argc, char* argv[])
     CONN_Close(conn);  /* this makes sure credentials are no longer accessed */
 
     if (cred)
-        free(cred);
-#ifdef HAVE_LIBMBEDTLS
-    mbedtls_pk_free(&mtls_pkey);
-    mbedtls_x509_crt_free(&mtls_cert);
-#endif /*HAVE_LIBMBEDTLS*/
-#ifdef HAVE_LIBGNUTLS
-    if (gtls_xcred)
-        gnutls_certificate_free_credentials(gtls_xcred);
-#endif /*HAVE_LIBGNUTLS*/
-
+        NcbiDeleteTlsCertCredentials(cred);
     CORE_LOG(eLOG_Note, "Completed successfully");
     CORE_SetLOG(0);
     return 0;
