@@ -106,10 +106,10 @@ static void sx_RunTest_Reassign_Feature_Ids(const string& file_name)
         in >> MSerial_AsnText >> entry;
     }
 
-    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
     CSeq_entry_Handle tse = scope->AddTopLevelSeqEntry(entry);
     entry.Parentize();
-    
+
     map<CSeq_feat_Handle, CRef<CSeq_feat> > changed_feats;
     CFixFeatureId::s_ReassignFeatureIds(tse, changed_feats);
     for (auto &fh_feat : changed_feats)

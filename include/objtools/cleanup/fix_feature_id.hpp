@@ -43,7 +43,7 @@ BEGIN_NCBI_SCOPE
 
 class NCBI_CLEANUP_EXPORT CFixFeatureId
 {
-public: 
+public:
     static objects::CObject_id::TId s_FindHighestFeatureId(const objects::CSeq_entry_Handle& entry);
     static void s_ApplyToSeqInSet(objects::CSeq_entry_Handle tse, map<objects::CSeq_feat_Handle, CRef<objects::CSeq_feat> > &changed_feats);
     static void s_ReassignFeatureIds(const objects::CSeq_entry_Handle& entry, map<objects::CSeq_feat_Handle, CRef<objects::CSeq_feat> > &changed_feats);

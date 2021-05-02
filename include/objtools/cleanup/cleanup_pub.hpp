@@ -222,7 +222,7 @@ protected:
 CRef<CPubCleaner> PubCleanerFactory(CPub& pub);
 
 
-class NCBI_CLEANUP_EXPORT CCleanupPub : public CObject 
+class NCBI_CLEANUP_EXPORT CCleanupPub : public CObject
 {
 public:
     static bool CleanPubdesc(CPubdesc& pubdesc, bool strip_serial);

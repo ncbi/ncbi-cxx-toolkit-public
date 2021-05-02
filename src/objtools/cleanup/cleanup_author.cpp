@@ -60,7 +60,7 @@ bool CCleanup::CleanupAuthor(CAuthor& author, bool fix_initials)
         case CPerson_id::e_Ml:
             n = author.GetName().GetMl().size();
             NStr::TruncateSpacesInPlace(author.SetName().SetMl());
-            if (n != author.GetName().GetMl().size() ) { 
+            if (n != author.GetName().GetMl().size() ) {
                 any_change = true;
             }
             if (NStr::IsBlank(author.GetName().GetMl())) {
@@ -70,7 +70,7 @@ bool CCleanup::CleanupAuthor(CAuthor& author, bool fix_initials)
         case CPerson_id::e_Str:
             n = author.GetName().GetStr().size();
             NStr::TruncateSpacesInPlace(author.SetName().SetStr());
-            if (n != author.GetName().GetStr().size() ) { 
+            if (n != author.GetName().GetStr().size() ) {
                 any_change = true;
             }
             if (NStr::IsBlank(author.GetName().GetStr())) {
@@ -80,7 +80,7 @@ bool CCleanup::CleanupAuthor(CAuthor& author, bool fix_initials)
         case CPerson_id::e_Consortium:
             n = author.GetName().GetConsortium().size();
             NStr::TruncateSpacesInPlace(author.SetName().SetConsortium());
-            if (n != author.GetName().GetConsortium().size() ) { 
+            if (n != author.GetName().GetConsortium().size() ) {
                 any_change = true;
             }
             if (NStr::IsBlank(author.GetName().GetConsortium())) {
@@ -99,12 +99,12 @@ bool CCleanup::s_CleanupNameStdBC ( CName_std& name, bool fix_initials )
 {
     // there's a lot of shuffling around (e.g. adding and removing
     // periods in initials), so we can't determine
-    // if we've actually changed anything until we get to the end of 
+    // if we've actually changed anything until we get to the end of
     // this function.
     CRef<CName_std> original_name( new CName_std );
     original_name->Assign( name );
 
-    // if initials starts with uppercase, we remember to 
+    // if initials starts with uppercase, we remember to
     // upcase the whole thing later
     bool upcaseinits = false;
     if( name.IsSetInitials() && isupper( name.GetInitials()[0] ) ) {
@@ -123,7 +123,7 @@ bool CCleanup::s_CleanupNameStdBC ( CName_std& name, bool fix_initials )
             name.ResetFirst();
         }
     }
-    
+
     if( name.IsSetInitials() ) {
         NStr::ReplaceInPlace( name.SetInitials(), sDot, kEmptyStr);
         NStr::TruncateSpacesInPlace( name.SetInitials(), NStr::eTrunc_Begin );
@@ -159,7 +159,7 @@ bool CCleanup::s_CleanupNameStdBC ( CName_std& name, bool fix_initials )
             }
         }
     }
-    
+
     // continue extracting initials from middle name, but only if existing Initials field is empty
     if ((!name.IsSetInitials() || NStr::IsBlank(name.GetInitials()))
         && name.IsSetMiddle()) {
@@ -194,7 +194,7 @@ bool CCleanup::s_CleanupNameStdBC ( CName_std& name, bool fix_initials )
         // skip part of initials that matches first_initials
         string::size_type initials_first_good_idx = 0;
         for( ; initials_first_good_idx < initials.length() &&
-                initials_first_good_idx < first_initials.length() && 
+                initials_first_good_idx < first_initials.length() &&
                 toupper(initials[initials_first_good_idx]) == toupper(first_initials[initials_first_good_idx]) ;
             ++initials_first_good_idx )
         {
@@ -245,7 +245,7 @@ bool CCleanup::s_CleanupNameStdBC ( CName_std& name, bool fix_initials )
                 }
             }
         }
-            
+
         if( initials != new_initials ) {
             initials.swap(new_initials); // swap is faster than assignment
             new_initials.clear();
@@ -374,7 +374,7 @@ static const TStringPair bad_sfxs[] = {
     { "III.", "III" },
     { "IV." , "IV" },
     { "Jr"  , "Jr." },
-    { "Sr"  , "Sr." },    
+    { "Sr"  , "Sr." },
     //{ "V."  , "V" }, // presumably commented out since it resembles initials
     { "VI." , "VI" }
 };
@@ -420,7 +420,7 @@ void CCleanup::s_FixEtAl(CName_std& name)
     }
     const string& init = name.GetInitials();
     if( NStr::Equal(name.GetLast(), "et") &&
-        ( NStr::Equal(init, "al")  || 
+        ( NStr::Equal(init, "al")  ||
           NStr::Equal(init, "al.") ||
           NStr::Equal(init, "Al.") )) {
         name.ResetInitials();

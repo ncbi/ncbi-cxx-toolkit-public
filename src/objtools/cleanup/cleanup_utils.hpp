@@ -55,7 +55,7 @@ class CAuth_list;
 /// false if no change was needed.
 
 /// convert double quotes to single quotes
-inline 
+inline
 bool ConvertDoubleQuotes(string& str)
 {
     bool changed = false;
@@ -148,7 +148,6 @@ bool RemoveDupsNoSort(Cont& l, bool case_insensitive = false)
     typedef typename Cont::iterator iterator;
     iterator l_it = l.begin();
     while (l_it != l.end()) {
-        
         iterator dup_it = case_insensitive ?
             find_if( l.begin(), l_it, SCaseInsensitiveStrComp(*l_it) ) :
             find( l.begin(), l_it, *l_it );
@@ -156,7 +155,7 @@ bool RemoveDupsNoSort(Cont& l, bool case_insensitive = false)
             l_it = l.erase(l_it);
             changed = true;
         } else {
-            ++l_it;            
+            ++l_it;
         }
     }
     return changed;
@@ -306,7 +305,7 @@ if ((o).IsSet##x()) { \
         && !NStr::IsBlank ((o2).Get##x()) \
         && !NStr::Equal ((o1).Get##x(), (o2).Get##x())) { \
         return false; \
-    }    
+    }
 
 #define MERGEABLE_STRING_LIST(o1, o2, x) \
     if ((o1).CanGet##x() && (o2).CanGet##x() \
@@ -323,8 +322,8 @@ if ((o).IsSet##x()) { \
         if (it1 != (o1).Get##x().end() || it2 != (o2).Get##x().end()) { \
             return false; \
         } \
-    } 
-    
+    }
+
 #define MERGEABLE_INT_VALUE(o1, o2, x) \
     (!(o1).CanGet##x() || !(o2).CanGet##x() \
      || (o1).Get##x() == 0 \
@@ -352,8 +351,8 @@ if ((o).IsSet##x()) { \
         if (it1 != (o1).Get##x().end() || it2 != (o2).Get##x().end()) { \
             return false; \
         } \
-    } 
-    
+    }
+
 #define MATCH_INT_VALUE(o1, o2, x) \
     ((!(o1).CanGet##x() && !(o2).CanGet##x()) \
      || ((o1).CanGet##x() && (o2).CanGet##x() \
@@ -361,7 +360,7 @@ if ((o).IsSet##x()) { \
      || ((o1).CanGet##x() && (o1).Get##x() == 0 \
          && !(o2).CanGet##x()) \
      || ((o2).CanGet##x() && (o2).Get##x() == 0 \
-         && !(o1).CanGet##x()))         
+         && !(o1).CanGet##x()))
 
 #define MATCH_BOOL_VALUE(o1, o2, x) \
     if (!(o1).IsSet##x()) { \
@@ -399,13 +398,13 @@ bool is_sorted(Iter first, Iter last,
 {
     if (first == last)
         return true;
-    
+
     Iter next = first;
     for (++next; next != last; first = next, ++next) {
         if (comp(*next, *first))
             return false;
     }
-    
+
     return true;
 }
 
@@ -415,13 +414,13 @@ bool is_sorted(Iter first, Iter last)
 {
     if (first == last)
         return true;
-    
+
     Iter next = first;
     for (++next; next != last; first = next, ++next) {
         if (*next < *first)
             return false;
     }
-    
+
     return true;
 }
 

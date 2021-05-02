@@ -84,7 +84,7 @@ class CCit_proc;
 class CCit_jour;
 class CPubMedId;
 class CAuth_list;
-class CAuthor; 
+class CAuthor;
 class CAffil;
 class CPerson_id;
 class CName_std;
@@ -138,7 +138,7 @@ public:
     virtual ~CNewCleanup_imp ();
 
     /// Main methods
-    
+
     void SetScope(CScope& scope) { m_Scope.Reset(&scope); }
 
     /// Basic Cleanup methods
@@ -151,7 +151,7 @@ public:
         CSeq_submit& ss
     );
 
-	void BasicCleanupSubmitblock(CSubmit_block& sb);
+    void BasicCleanupSubmitblock(CSubmit_block& sb);
 
     void BasicCleanupSeqAnnot (
         CSeq_annot& sa
@@ -244,7 +244,7 @@ private:
 
     void SeqIdBC( CSeq_id &seq_id );
 
-    void GBblockOriginBC( string& str); 
+    void GBblockOriginBC( string& str);
     void GBblockBC (CGB_block& gbk);
     void EMBLblockBC (CEMBL_block& emb);
 
@@ -348,7 +348,7 @@ private:
     // m_OldLabelToPubMap and m_PubToNewPubLabelMap work together.
     // They supply "old_label -> node" and "node -> new_label", respectively,
     // so together we can get a mapping of "old_label -> new_label".
-    // m_OldLabelToPubMap is a multimap because a node's address may change as we do our cleaning, and 
+    // m_OldLabelToPubMap is a multimap because a node's address may change as we do our cleaning, and
     // at least one should remain so we can make the "old_label -> new_label" connection.
     typedef std::multimap< string, CRef<CPub> > TOldLabelToPubMap;
     TOldLabelToPubMap m_OldLabelToPubMap;
@@ -375,7 +375,7 @@ private:
     void x_AddNcbiCleanupObject( CSeq_entry &seq_entry );
 
 
-    // for rpt_unit and replace GenBank qualifiers 
+    // for rpt_unit and replace GenBank qualifiers
     bool x_CleanupRptUnit(CGb_qual& gbq);
     bool x_CleanupRptUnitRange(string& val);
     static bool x_IsBaseRange(const string& val);
@@ -447,9 +447,9 @@ private:
     void x_MoveCdregionXrefsToProt (CCdregion& cds, CSeq_feat& seqfeat);
     bool x_InGpsGenomic( const CSeq_feat& seqfeat );
 
-    void x_AddNonCopiedQual( 
-        vector< CRef< CGb_qual > > &out_quals, 
-        const char *qual, 
+    void x_AddNonCopiedQual(
+        vector< CRef< CGb_qual > > &out_quals,
+        const char *qual,
         const char *val );
 
     void x_GBQualToOrgRef( COrg_ref &org, CSeq_feat &seqfeat );
@@ -497,7 +497,7 @@ private:
 
     // functions that prepare for post-processing while traversing
     void x_NotePubdescOrAnnotPubs( const CPub_equiv &pub_equiv );
-    void x_NotePubdescOrAnnotPubs_RecursionHelper( 
+    void x_NotePubdescOrAnnotPubs_RecursionHelper(
         const CPub_equiv &pub_equiv, int &muid, int &pmid );
     void x_RememberPubOldLabel( CPub &pub );
     void x_RememberMuidThatMightBeConvertibleToPmid( int &muid, CPub &pub );

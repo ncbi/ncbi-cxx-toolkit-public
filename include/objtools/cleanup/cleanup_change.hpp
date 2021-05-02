@@ -64,7 +64,7 @@ public:
         eCleanOrgmod,
         // Set when fields are moved or have content changes
         eRepairBioseqMol, //10
-        eChangeFeatureKey, 
+        eChangeFeatureKey,
         eNormalizeAuthors,
         eChangePublication,
         eChangeQualifiers,
@@ -165,28 +165,27 @@ public:
         eMoveGeneOntologyTerm,
         // set when any other change is made.
         eChangeOther,
-        
+
         eNumberofChangeTypes
     };
-    
+
     // constructors
     CCleanupChange();
-    
+
     bool    IsChanged(EChanges e) const;
     void    SetChanged(EChanges e);
-    
+
     vector<EChanges>    GetAllChanges() const;
     vector<string>      GetAllDescriptions() const;
-    
+
     size_t  ChangeCount() const;
-    
+
     static string  GetDescription(EChanges e);
 private:
     static const char* const sm_ChangeDesc[eNumberofChangeTypes+1];
-    
+
     typedef bitset<eNumberofChangeTypes> TChangeBits;
     TChangeBits     m_Changes;
-    
 };
 
 

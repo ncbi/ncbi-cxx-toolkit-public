@@ -48,7 +48,7 @@ BEGIN_SCOPE(objects)
 
 
 bool CCleanup::CleanupUserObject( CUser_object &user_object )
-{    
+{
     bool any_change = false;
 
     // clean type str
@@ -95,7 +95,7 @@ bool CCleanup::x_CleanupUserField(CUser_field& field)
             }
             break;
         case CUser_field::TData::e_Strs:
-            // NOTE: for some reason, using the auto range 
+            // NOTE: for some reason, using the auto range
             // does not work here
             for (auto str = field.SetData().SetStrs().begin(); str != field.SetData().SetStrs().end(); str++) {
                 any_change |= Asn2gnbkCompressSpaces(*str);
@@ -168,7 +168,7 @@ bool CCleanup::s_CleanupGeneOntology(CUser_object& obj)
             }
         }
     }
-    
+
     return any_change;
 }
 
@@ -201,7 +201,7 @@ bool CCleanup::s_CleanupStructuredComment( CUser_object &obj )
             bool is_suffix = NStr::Equal(field.GetLabel().GetStr(), "StructuredCommentSuffix");
             if (is_prefix || is_suffix) {
                 string core = CUtf8::AsUTF8(field.GetData().GetStr(), eEncoding_Ascii);
-                CComment_rule::NormalizePrefix(core);               
+                CComment_rule::NormalizePrefix(core);
                 string new_val = is_prefix ? CComment_rule::MakePrefixFromRoot(core) : CComment_rule::MakeSuffixFromRoot(core);
                 if (!NStr::Equal(new_val, field.GetData().GetStr())) {
                     field.SetData().SetStr(new_val);
@@ -283,7 +283,7 @@ bool CCleanup::s_CleanupGenomeAssembly(CUser_object& obj)
                     if (!NStr::IsBlank(day)) {
                         new_date += day + "-";
                     }
-                    if (!NStr::IsBlank(month)) {                           
+                    if (!NStr::IsBlank(month)) {
                         new_date += month + "-";
                     }
                     if (!NStr::IsBlank(year)) {
@@ -322,7 +322,7 @@ bool CCleanup::s_RemoveEmptyFields(CUser_object& obj)
                 }
             } else if ((*it)->GetData().Which() == CUser_field::TData::e_not_set) {
                 is_blank = true;
-            }            
+            }
         } else {
             is_blank = true;
         }

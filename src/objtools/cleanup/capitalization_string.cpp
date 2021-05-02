@@ -26,7 +26,7 @@
 * Author:  Andrea Asztalos, Igor Filippov
 *
 * File Description:
-*   Implement capitalization change in strings. 
+*   Implement capitalization change in strings.
 */
 
 #include <ncbi_pch.hpp>
@@ -42,7 +42,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-static const SStaticPair<const char*, const char*> set_abbreviation_list[] = 
+static const SStaticPair<const char*, const char*> set_abbreviation_list[] =
 {
     {"\\barabidopsis thaliana\\b","Arabidopsis thaliana"},
     {"\\badp\\b", "ADP" },
@@ -102,11 +102,11 @@ static const SStaticPair<const char*, const char*> set_abbreviation_list[] =
     {"\\b\\(hiv\\)\\b", "(HIV)" },
     {"\\b\\(hiv1\\)\\b", "(HIV1)" },
     {"\\b\\(hiv\\-1\\)\\b", "(HIV-1)"},
-   
+
     {"\0","\0"}
 };
 
-static const SStaticPair<const char*, const char*> set_abbreviation_list_end_of_sentence[] = 
+static const SStaticPair<const char*, const char*> set_abbreviation_list_end_of_sentence[] =
 {
     {"\\bsp\\.$", "sp.." },
     {"\\bnov\\.$", "nov.." },
@@ -116,7 +116,7 @@ static const SStaticPair<const char*, const char*> set_abbreviation_list_end_of_
     {"\0","\0"}
 };
 
-static const SStaticPair<const char*, const char*> map_state_to_abbrev[] = 
+static const SStaticPair<const char*, const char*> map_state_to_abbrev[] =
 {
 { "ala", "AL"},
 { "alabama", "AL"},
@@ -238,7 +238,7 @@ static const string mouse_strain_fixes[] = {
 typedef CStaticPairArrayMap<const char*, const char*, PCase_CStr> TCStringPairsMap;
 DEFINE_STATIC_ARRAY_MAP(TCStringPairsMap,k_state_abbrev, map_state_to_abbrev);
 
-static const SStaticPair<const char*, const char*> set_short_words[] = 
+static const SStaticPair<const char*, const char*> set_short_words[] =
 {
     {"\\bA\\b", "a" },
     {"\\bAbout\\b", "about" },
@@ -259,7 +259,7 @@ static const SStaticPair<const char*, const char*> set_short_words[] =
 };
 
 
-static const SStaticPair<const char*, const char*> set_country_fixes[] = 
+static const SStaticPair<const char*, const char*> set_country_fixes[] =
 {
 
     {"\\bchnia\\b", "China" },
@@ -278,7 +278,7 @@ static const SStaticPair<const char*, const char*> set_country_fixes[] =
     {"\0","\0"}
 };
 
-static const SStaticPair<const char*, const char*> set_AffiliationShortWordList[] = 
+static const SStaticPair<const char*, const char*> set_AffiliationShortWordList[] =
 {
     {"\\bAu\\b", "au" },
     {"\\bAux\\b", "aux" },
@@ -302,7 +302,7 @@ static const SStaticPair<const char*, const char*> set_AffiliationShortWordList[
     {"\0","\0"}
 };
 
-static const char* set_ordinal_endings[] = 
+static const char* set_ordinal_endings[] =
 {
     "\\dth\\b",
     "\\dst\\b",
@@ -311,7 +311,7 @@ static const char* set_ordinal_endings[] =
     "\0"
 };
 
-static const SStaticPair<const char*, const char*> set_KnownAbbreviationList[] = 
+static const SStaticPair<const char*, const char*> set_KnownAbbreviationList[] =
 {
     {"\\bpo box\\b", "PO Box" },
     {"\\bPobox\\b", "PO Box" },
@@ -622,7 +622,7 @@ void FixCapitalizationInString (objects::CSeq_entry_Handle seh, string& str, ECa
     } else {
         switch (capchange_opt) {
             case eCapChange_tolower:
-                NStr::ToLower(str); 
+                NStr::ToLower(str);
                 FixAbbreviationsInElement(str,seh);
                 FixOrgNames(seh, str);
                 break;
@@ -686,8 +686,8 @@ void FixAbbreviationsInElement(string& result, bool fix_end_of_sentence)
 {
     for (int pat=0; set_abbreviation_list[pat].first[0]!='\0'; ++pat) {
         CRegexpUtil replacer( result );
-        //int num_replacements = 
-        replacer.Replace( set_abbreviation_list[pat].first, set_abbreviation_list[pat].second, 
+        //int num_replacements =
+        replacer.Replace( set_abbreviation_list[pat].first, set_abbreviation_list[pat].second,
             CRegexp::fCompile_ignore_case, CRegexp::fMatch_default, 0);
         replacer.GetResult().swap( result );
     }
@@ -695,12 +695,11 @@ void FixAbbreviationsInElement(string& result, bool fix_end_of_sentence)
     {
         for (int pat=0; set_abbreviation_list_end_of_sentence[pat].first[0]!='\0'; ++pat) {
             CRegexpUtil replacer( result );
-            replacer.Replace( set_abbreviation_list_end_of_sentence[pat].first, set_abbreviation_list_end_of_sentence[pat].second, 
+            replacer.Replace( set_abbreviation_list_end_of_sentence[pat].first, set_abbreviation_list_end_of_sentence[pat].second,
                               CRegexp::fCompile_ignore_case, CRegexp::fMatch_default, 0);
             replacer.GetResult().swap( result );
         }
     }
-    
 }
 
 static bool s_ReplaceInPlaceWholeWordNoCase(string& str, const string& search, const string& replace)
@@ -757,7 +756,7 @@ void RemoveFieldNameFromString( const string& field_name, string& str)
     if (NStr::IsBlank(field_name) || NStr::IsBlank(str)) {
         return;
     }
-    
+
     NStr::TruncateSpacesInPlace(str);
     if (NStr::StartsWith(str, field_name, NStr::eNocase) && str.length() > field_name.length()
         && str[field_name.length()] == ' ') {
@@ -928,8 +927,8 @@ void FixAffiliationShortWordsInElement(string& result)
     for (int pat=0; set_AffiliationShortWordList[pat].first[0]!='\0'; ++pat)
     {
         CRegexpUtil replacer( result );
-        //int num_replacements = 
-        replacer.Replace( set_AffiliationShortWordList[pat].first, 
+        //int num_replacements =
+        replacer.Replace( set_AffiliationShortWordList[pat].first,
             set_AffiliationShortWordList[pat].second, CRegexp::fCompile_ignore_case, CRegexp::fMatch_default, 0);
         replacer.GetResult().swap( result );
     }
@@ -937,10 +936,10 @@ void FixAffiliationShortWordsInElement(string& result)
     // fix d'
     {
         CRegexpUtil replacer( result );
-        //int num_replacements = 
+        //int num_replacements =
         replacer.Replace( "\\bD\\'", "d'", CRegexp::fCompile_default, CRegexp::fMatch_default, 0);
         replacer.GetResult().swap( result );
-        
+
         string temp;
         CRegexp pattern("\\bd\\'\\w");
         size_t start = 0;
@@ -996,7 +995,7 @@ void FixKnownAbbreviationsInElement(string& result)
     for (int pat=0; set_KnownAbbreviationList[pat].first[0] != '\0' ; ++pat)
     {
         CRegexpUtil replacer( result );
-        //int num_replacements = 
+        //int num_replacements =
         replacer.Replace( set_KnownAbbreviationList[pat].first, set_KnownAbbreviationList[pat].second, CRegexp::fCompile_ignore_case, CRegexp::fMatch_default, 0);
         replacer.GetResult().swap( result );
     }
@@ -1005,7 +1004,7 @@ void FixKnownAbbreviationsInElement(string& result)
 void CapitalizeSAfterNumber(string& result)
 {
     CRegexpUtil replacer( result );
-    //int num_replacements = 
+    //int num_replacements =
     replacer.Replace( "(\\d)s\\b", "$1S", CRegexp::fCompile_default, CRegexp::fMatch_default, 0);
     replacer.GetResult().swap( result );
 }
@@ -1023,11 +1022,11 @@ void ResetCapitalization(string& result, bool first_is_upper)
         result[0] = toupper(result[0]);
     }
     else
-    {   
+    {
         /* set first character to lower */
         result[0] = tolower(result[0]);
     }
-   
+
     if (isdigit ((Int4)(result[0])))
     {
         was_digit = true;
@@ -1047,13 +1046,13 @@ void ResetCapitalization(string& result, bool first_is_upper)
                 was_digit = true;
             }
             else
-            {   
+            {
                 was_digit = false;
                 pCh = tolower (pCh);
             }
             i++;
-    }  
-}    
+    }
+}
 
 void FixCountryCapitalization(string& result)
 {

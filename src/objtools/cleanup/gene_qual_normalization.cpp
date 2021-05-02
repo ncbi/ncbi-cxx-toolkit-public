@@ -26,7 +26,7 @@
  * Author:  Colleen Bollin
  *
  * File Description:
- *   Code for moving gene qualifiers from gene xrefs on child features to 
+ *   Code for moving gene qualifiers from gene xrefs on child features to
  *   the actual gene
  *
  */
@@ -49,9 +49,9 @@ BEGIN_SCOPE(objects)
 
 bool IsMappablePair(const CSeq_feat& cds, const CSeq_feat& gene)
 {
-    // we're only going to move the qualifiers if the gene has a 
+    // we're only going to move the qualifiers if the gene has a
     // locus_tag and no locus
-    if (!gene.GetData().IsGene() || 
+    if (!gene.GetData().IsGene() ||
         gene.GetData().GetGene().IsSetLocus() ||
         !gene.GetData().GetGene().IsSetLocus_tag() ||
         !cds.IsSetXref()) {
@@ -85,7 +85,7 @@ bool IsMappablePair(const CSeq_feat& cds, const CSeq_feat& gene)
         return false;
     }
 
-    if (!NStr::IsBlank(locus_tag) && 
+    if (!NStr::IsBlank(locus_tag) &&
         gene.GetData().GetGene().IsSetLocus_tag() &&
         !NStr::Equal(locus_tag, gene.GetData().GetGene().GetLocus_tag())) {
         return false;
@@ -130,7 +130,7 @@ bool CCleanup::NormalizeGeneQuals(CSeq_feat& cds, CSeq_feat& gene)
         return false;
     }
 
-    if (!NStr::IsBlank(locus_tag) && 
+    if (!NStr::IsBlank(locus_tag) &&
         gene.GetData().GetGene().IsSetLocus_tag() &&
         !NStr::Equal(locus_tag, gene.GetData().GetGene().GetLocus_tag())) {
         return false;
@@ -138,7 +138,7 @@ bool CCleanup::NormalizeGeneQuals(CSeq_feat& cds, CSeq_feat& gene)
 
     if (!NStr::IsBlank(locus)) {
         gene.SetData().SetGene().SetLocus(locus);
-        if (gene.GetData().GetGene().IsSetLocus_tag() && 
+        if (gene.GetData().GetGene().IsSetLocus_tag() &&
             !NStr::IsBlank(gene.GetData().GetGene().GetLocus_tag())) {
             // gene xrefs should point to locus_tag instead of locus
             gene_xref->SetData().SetGene().ResetLocus();
@@ -180,7 +180,7 @@ vector<CCleanup::TFeatGenePair> CCleanup::GetNormalizableGeneQualPairs(CBioseq_H
             if (gene) {
                 TGeneCDSMap::iterator smit = gene_cds.find(gene);
                 if (smit == gene_cds.end()) {
-                    // not found before                    
+                    // not found before
                     bool ok_to_map = IsMappablePair(f->GetOriginalFeature(), gene.GetOriginalFeature());
                     gene_cds[gene] = { f->GetSeq_feat_Handle(), ok_to_map };
                 } else {

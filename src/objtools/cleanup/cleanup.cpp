@@ -117,7 +117,7 @@ CRef<CCleanupChange> makeCleanupChange(Uint4 options)
 {
     CRef<CCleanupChange> changes;
     if (! (options  &  CCleanup::eClean_NoReporting)) {
-        changes.Reset(new CCleanupChange);        
+        changes.Reset(new CCleanupChange);
     }
     return changes;
 }
@@ -145,13 +145,13 @@ CConstRef<CCleanupChange> CCleanup::BasicCleanup(CSeq_submit& ss, Uint4 options)
 
 CConstRef<CCleanupChange> CCleanup::BasicCleanup(CSubmit_block& block, Uint4 options)
 {
-	CLEANUP_SETUP
-	clean_i.BasicCleanupSubmitblock(block);
-	return changes;
+    CLEANUP_SETUP
+    clean_i.BasicCleanupSubmitblock(block);
+    return changes;
 }
 
 
-/// Cleanup a Bioseq. 
+/// Cleanup a Bioseq.
 CConstRef<CCleanupChange> CCleanup::BasicCleanup(CBioseq& bs, Uint4 options)
 {
     CLEANUP_SETUP
@@ -254,7 +254,7 @@ CConstRef<CCleanupChange> CCleanup::BasicCleanup(CSeqdesc& desc, Uint4 options)
 CConstRef<CCleanupChange> CCleanup::BasicCleanup(CSeq_descr & desc, Uint4 options)
 {
     CLEANUP_SETUP
-    
+
     for (auto& it : desc.Set()) {
         clean_i.BasicCleanup(*it);
     }
@@ -267,7 +267,7 @@ CConstRef<CCleanupChange> CCleanup::ExtendedCleanup(CSeq_entry& se,  Uint4 optio
 {
     CLEANUP_SETUP
     clean_i.ExtendedCleanupSeqEntry(se);
-    
+
     return changes;
 }
 
@@ -368,10 +368,10 @@ const char* const CCleanupChange::sm_ChangeDesc[eNumberofChangeTypes + 1] = {
     "Clean CitonFeat List",
     "Clean Keywords List",
     "Clean Subsource List",
-    "Clean Orgmod List", 
+    "Clean Orgmod List",
     // Set when fields are moved or have content changes
     "Repair BioseqMol", //10
-    "Change Feature Key", 
+    "Change Feature Key",
     "Normalize Authors",
     "Change Publication",
     "Change Qualifiers",
@@ -415,7 +415,7 @@ const char* const CCleanupChange::sm_ChangeDesc[eNumberofChangeTypes + 1] = {
     "Remove Keyword",
     "Add Descriptor",
     "Move Descriptor",
-    "Convert Feature to Descriptor", 
+    "Convert Feature to Descriptor",
     "Collapse Set",
     "Change Feature Location",
     "Remove Annotation",
@@ -423,10 +423,10 @@ const char* const CCleanupChange::sm_ChangeDesc[eNumberofChangeTypes + 1] = {
     "Remove Comment",
     "Add BioSource OrgMod", //50
     "Add BioSource SubSource",
-    "Change BioSource Genome", 
-    "Change BioSource Origin", 
+    "Change BioSource Genome",
+    "Change BioSource Origin",
     "Change BioSource Other",
-    "Change SeqId", 
+    "Change SeqId",
     "Remove Empty Publication",
     "Add Qualifier",
     "Cleanup Date",
@@ -471,7 +471,7 @@ const char* const CCleanupChange::sm_ChangeDesc[eNumberofChangeTypes + 1] = {
     "Move GO term to GeneOntology object",
 
     // set when any other change is made.
-    "Change Other", 
+    "Change Other",
     "Invalid Change Code"
 };
 
@@ -563,7 +563,7 @@ bool s_IsPreprotein(CSeq_feat_Handle fh)
 void RescueProtProductQual(CSeq_feat& feat)
 {
     if (!feat.IsSetQual() ||
-        !feat.IsSetData() || 
+        !feat.IsSetData() ||
         !feat.GetData().IsProt() ||
         feat.GetData().GetProt().IsSetName()) {
         return;
@@ -587,7 +587,7 @@ void RescueProtProductQual(CSeq_feat& feat)
 }
 
 
-static CConstRef<CSeq_feat> s_GetCdsByProduct(CScope& scope, const CSeq_loc& product) 
+static CConstRef<CSeq_feat> s_GetCdsByProduct(CScope& scope, const CSeq_loc& product)
 {
     const bool feat_by_product = true;
     SAnnotSelector sel(CSeqFeatData::e_Cdregion, feat_by_product);
@@ -602,11 +602,11 @@ static CConstRef<CSeq_feat> s_GetCdsByLocation(CScope& scope, const CSeq_loc& fe
 {
     sequence::TFeatScores cdsScores;
     sequence::GetOverlappingFeatures(
-            feat_loc, 
+            feat_loc,
             CSeqFeatData::e_Cdregion,
             CSeqFeatData::eSubtype_cdregion,
-            sequence::eOverlap_Contained, 
-            cdsScores, 
+            sequence::eOverlap_Contained,
+            cdsScores,
             scope);
 
     if (cdsScores.empty()) {
@@ -621,7 +621,7 @@ static CConstRef<CSeq_feat> s_GetCdsByLocation(CScope& scope, const CSeq_loc& fe
             }
         }
     }
-        
+
     return cdsScores.front().second;
 }
 
@@ -732,7 +732,7 @@ bool CCleanup::MoveFeatToProtein(CSeq_feat_Handle fh)
 
     CBioseq_EditHandle eh = target_bsh.GetEditHandle();
 
-    // Find a feature table on the protein sequence to add the feature to.    
+    // Find a feature table on the protein sequence to add the feature to.
     CSeq_annot_Handle ftable;
     if (target_bsh.GetCompleteBioseq()->IsSetAnnot()) {
         ITERATE(CBioseq::TAnnot, annot_it, target_bsh.GetCompleteBioseq()->GetAnnot()) {
@@ -741,7 +741,7 @@ bool CCleanup::MoveFeatToProtein(CSeq_feat_Handle fh)
             }
         }
     }
-    
+
     // If there is no feature table present, make one
     if (!ftable) {
         CRef<CSeq_annot> new_annot(new CSeq_annot());
@@ -788,7 +788,7 @@ bool CCleanup::IsGeneXrefUnnecessary(const CSeq_feat& sf, CScope& scope, const C
         return false;
     }
 
-    CConstRef<CSeq_feat> gene = sequence::GetOverlappingGene(sf.GetLocation(), scope);    
+    CConstRef<CSeq_feat> gene = sequence::GetOverlappingGene(sf.GetLocation(), scope);
     if (!gene || !gene->IsSetData() || !gene->GetData().IsGene()) {
         return false;
     }
@@ -808,7 +808,7 @@ bool CCleanup::IsGeneXrefUnnecessary(const CSeq_feat& sf, CScope& scope, const C
     }
 
     ITERATE(sequence::TFeatScores, g, scores) {
-        if (g->second.GetPointer() != gene.GetPointer() && 
+        if (g->second.GetPointer() != gene.GetPointer() &&
             sequence::Compare(g->second->GetLocation(), gene->GetLocation(), &scope, sequence::fCompareOverlapping) == sequence::eSame) {
             return false;
         }
@@ -952,7 +952,7 @@ bool CCleanup::RepairXrefs(const CSeq_feat& f, const CTSE_Handle& tse)
     }
 
     ITERATE(CSeq_feat::TXref, xit, f.GetXref()) {
-        if ((*xit)->IsSetId() && (*xit)->GetId().IsLocal()) {            
+        if ((*xit)->IsSetId() && (*xit)->GetId().IsLocal()) {
             const CTSE_Handle::TFeatureId& x_id = (*xit)->GetId().GetLocal();
             CTSE_Handle::TSeq_feat_Handles far_feats = tse.GetFeaturesWithId(CSeqFeatData::e_not_set, x_id);
             if (far_feats.size() == 1) {
@@ -989,7 +989,7 @@ bool CCleanup::FindMatchingLocusGene(CSeq_feat& f, const CGene_ref& gene_xref, C
     for (CFeat_CI feat_ci(bsh, SAnnotSelector(CSeqFeatData::eSubtype_gene)); feat_ci; ++feat_ci)
     {
         string locus2;
-        if ( !f.Equals(*feat_ci->GetSeq_feat()) && feat_ci->GetSeq_feat()->IsSetData() && feat_ci->GetSeq_feat()->GetData().IsGene() 
+        if ( !f.Equals(*feat_ci->GetSeq_feat()) && feat_ci->GetSeq_feat()->IsSetData() && feat_ci->GetSeq_feat()->GetData().IsGene()
              && feat_ci->GetSeq_feat()->GetData().GetGene().IsSetLocus())
         {
             locus2 = feat_ci->GetSeq_feat()->GetData().GetGene().GetLocus();
@@ -1037,7 +1037,7 @@ bool CCleanup::FindMatchingLocus_tagGene(CSeq_feat& f, const CGene_ref& gene_xre
     for (CFeat_CI feat_ci(bsh, SAnnotSelector(CSeqFeatData::eSubtype_gene)); feat_ci; ++feat_ci)
     {
         string locus_tag2;
-        if ( !f.Equals(*feat_ci->GetSeq_feat()) && feat_ci->GetSeq_feat()->IsSetData() && feat_ci->GetSeq_feat()->GetData().IsGene() 
+        if ( !f.Equals(*feat_ci->GetSeq_feat()) && feat_ci->GetSeq_feat()->IsSetData() && feat_ci->GetSeq_feat()->GetData().IsGene()
              && feat_ci->GetSeq_feat()->GetData().GetGene().IsSetLocus_tag())
         {
             locus_tag2 = feat_ci->GetSeq_feat()->GetData().GetGene().GetLocus_tag();
@@ -1132,7 +1132,7 @@ bool CCleanup::ExtendStopPosition(CSeq_feat& f, const CSeq_feat* cdregion, size_
     // the last element of the mix or the single location MUST be converted into interval
     // whethe it's whole or point, etc
     if (last_interval->IsSetStrand() && last_interval->GetStrand() == eNa_strand_minus) {
-        new_start = (cdregion ? cdregion->GetLocation().GetStart(eExtreme_Positional) :          
+        new_start = (cdregion ? cdregion->GetLocation().GetStart(eExtreme_Positional) :
               last_interval->GetStart(eExtreme_Positional)) - extension;
 
         new_stop = last_interval->GetStop(eExtreme_Positional);
@@ -1180,7 +1180,7 @@ bool CCleanup::ExtendToStopCodon(CSeq_feat& f, CBioseq_Handle bsh, size_t limit)
     } else if (frame == CCdregion::eFrame_three) {
         len -= 2;
     }
-    
+
     TSeqPos mod = len % 3;
     CRef<CSeq_loc> vector_loc(new CSeq_loc());
     vector_loc->SetInt().SetId().Assign(*(bsh.GetId().front().GetSeqId()));
@@ -1388,7 +1388,7 @@ void CCleanup::SetProteinName(CProt_ref& prot_ref, const string& protein_name, b
     if (append && prot_ref.IsSetName() && prot_ref.GetName().size() > 0) {
         if (!NStr::IsBlank(prot_ref.GetName().front())) {
             prot_ref.SetName().front() += "; ";
-        } 
+        }
         prot_ref.SetName().front() += protein_name;
     } else {
         prot_ref.SetName().push_back(protein_name);
@@ -1523,7 +1523,7 @@ const string& CCleanup::GetProteinName(const CSeq_feat& cds, CScope& scope)
             CFeat_CI f(prot, CSeqFeatData::eSubtype_prot);
             if (f) {
                 return GetProteinName(f->GetData().GetProt());
-            } 
+            }
         }
     }
     if (cds.IsSetXref()) {
@@ -1697,7 +1697,7 @@ bool CCleanup::SetFeaturePartial(CSeq_feat& f)
 bool CCleanup::UpdateECNumbers(CProt_ref::TEc & ec_num_list)
 {
     bool changed = false;
-    // CProt_ref::TEc is a list, so the iterator stays valid even if we 
+    // CProt_ref::TEc is a list, so the iterator stays valid even if we
     // add new entries after the current one
     NON_CONST_ITERATE(CProt_ref::TEc, ec_num_iter, ec_num_list) {
         string & ec_num = *ec_num_iter;
@@ -1779,7 +1779,7 @@ bool CCleanup::SetGenePartialByLongestContainedFeature(CSeq_feat& gene, CScope& 
     CFeat_CI under(scope, gene.GetLocation());
     size_t longest = 0;
     CConstRef<CSeq_feat> longest_feat(NULL);
-    
+
     while (under) {
         // ignore genes
         if (under->GetData().IsGene()) {
@@ -1787,7 +1787,7 @@ bool CCleanup::SetGenePartialByLongestContainedFeature(CSeq_feat& gene, CScope& 
         } else {
             // must be contained in gene location
             sequence::ECompare loc_cmp = sequence::Compare(gene.GetLocation(), under->GetLocation(), &scope, sequence::fCompareOverlapping);
-            
+
             if (loc_cmp == sequence::eSame || loc_cmp == sequence::eContains) {
                 size_t len = sequence::GetLength(under->GetLocation(), &scope);
                 // if longer than longest, record new length and feature
@@ -1866,8 +1866,8 @@ bool CCleanup::AddMissingMolInfo(CBioseq& seq, bool is_product)
         NON_CONST_ITERATE(CBioseq::TDescr::Tdata, it, seq.SetDescr().Set()) {
             if ((*it)->IsMolinfo()) {
                 needs_molinfo = false;
-                if (seq.IsAa() && 
-                    (!(*it)->GetMolinfo().IsSetBiomol() || 
+                if (seq.IsAa() &&
+                    (!(*it)->GetMolinfo().IsSetBiomol() ||
                      (*it)->GetMolinfo().GetBiomol() == CMolInfo::eBiomol_unknown)) {
                     (*it)->SetMolinfo().SetBiomol(CMolInfo::eBiomol_peptide);
                 }
@@ -2313,7 +2313,7 @@ static SIZE_TYPE s_TitleEndsInOrganism(
                 !NStr::IsBlank((*it)->GetSubname())) {
                 suffixPos = s_TitleEndsInOrganism(sTitle, (*it)->GetSubname(), organelle_pos);
                 if (suffixPos != NPOS) {
-                    return suffixPos;                    
+                    return suffixPos;
                 }
             }
         }
@@ -2691,7 +2691,7 @@ bool CCleanup::WGSCleanup(CSeq_entry_Handle entry, bool instantiate_missing_prot
                 // need to set product if not set
                 if (!new_cds->IsSetProduct() && !sequence::IsPseudo(*new_cds, entry.GetScope())) {
                     string id_label;
-                    CRef<CSeq_id> new_id = objects::edit::GetNewProtId(entry.GetScope().GetBioseqHandle(new_cds->GetLocation()), protein_id_counter, id_label, create_general_only); 
+                    CRef<CSeq_id> new_id = objects::edit::GetNewProtId(entry.GetScope().GetBioseqHandle(new_cds->GetLocation()), protein_id_counter, id_label, create_general_only);
                     if (new_id) {
                         new_cds->SetProduct().SetWhole().Assign(*new_id);
                         change_this_cds = true;
@@ -2769,7 +2769,7 @@ bool CCleanup::WGSCleanup(CSeq_entry_Handle entry, bool instantiate_missing_prot
         //any_changes |= feature::RetranslateCDS(*new_cds, entry.GetScope());
         if (change_this_cds) {
             CSeq_feat_EditHandle cds_h(*cds_it);
-            
+
             cds_h.Replace(*new_cds);
             any_changes = true;
 
@@ -2783,7 +2783,7 @@ bool CCleanup::WGSCleanup(CSeq_entry_Handle entry, bool instantiate_missing_prot
     for (CFeat_CI rna_it(entry, SAnnotSelector(CSeqFeatData::e_Rna)); rna_it; ++rna_it) {
 
         const CSeq_feat& rna_feat = *(rna_it->GetSeq_feat());
-        if (rna_feat.IsSetData() && 
+        if (rna_feat.IsSetData() &&
             rna_feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_rRNA &&
             s_CleanupIsShortrRNA(rna_feat, &(entry.GetScope()))) {
 
@@ -2951,7 +2951,7 @@ bool CCleanup::AddLowQualityException(CSeq_entry_Handle entry)
 //LCOV_EXCL_STOP
 
 
-// maps the type of seqdesc to the order it should be in 
+// maps the type of seqdesc to the order it should be in
 // (lowest to highest)
 typedef SStaticPair<CSeqdesc::E_Choice, int>  TSeqdescOrderElem;
 static const TSeqdescOrderElem sc_seqdesc_order_map[] = {
@@ -2979,8 +2979,7 @@ static const TSeqdescOrderElem sc_seqdesc_order_map[] = {
         { CSeqdesc::e_Prf, 19 },
         { CSeqdesc::e_Pdb, 20 },
         { CSeqdesc::e_Het, 4 },
-        
-        
+
         { CSeqdesc::e_Source, 2 },
         { CSeqdesc::e_Molinfo, 3 },
         { CSeqdesc::e_Modelev, 23 }
@@ -3378,7 +3377,7 @@ void CCleanup::MoveOneFeatToPubdesc(CSeq_feat_Handle feat, CRef<CSeqdesc> d, CBi
     } else if (parent && parent.IsSetClass() &&
         parent.GetClass() == CBioseq_set::eClass_nuc_prot &&
         parent.IsSetDescr() && PubAlreadyInSet(d->GetPub(), parent.GetDescr())) {
-        // don't add descriptor, just delete feature 
+        // don't add descriptor, just delete feature
     } else if (OkToPromoteNpPub((d)->GetPub()) &&
         parent && parent.IsSetClass() &&
         parent.GetClass() == CBioseq_set::eClass_nuc_prot) {
@@ -3464,7 +3463,7 @@ bool CCleanup::IsMinPub(const CPubdesc& pd, bool is_refseq_prot)
             break;
         }
     }
-    
+
     return !found_non_minimal;
 }
 
@@ -3498,7 +3497,7 @@ bool CCleanup::RescueSiteRefPubs(CSeq_entry_Handle seh)
         for (CFeat_CI p(*b); p; ++p) {
             if (!p->IsSetCit() || p->GetCit().Which() != CPub_set::e_Pub) {
                 continue;
-            }            
+            }
 
             bool is_site_ref = IsSiteRef(*(p->GetSeq_feat()));
             ITERATE(CSeq_feat::TCit::TPub, c, p->GetCit().GetPub()) {
@@ -4076,7 +4075,7 @@ bool CCleanup::RenormalizeNucProtSets(CSeq_entry_Handle seh)
     CConstRef<CSeq_entry> entry = seh.GetCompleteSeq_entry();
     if (seh.IsSet() && seh.GetSet().IsSetClass() &&
         entry->GetSet().IsSetSeq_set()) {
-        CBioseq_set::TClass set_class = seh.GetSet().GetClass();        
+        CBioseq_set::TClass set_class = seh.GetSet().GetClass();
         if (set_class == CBioseq_set::eClass_nuc_prot) {
             if (entry->GetSet().GetSeq_set().size() == 1 &&
                 entry->GetSet().GetSeq_set().front()->IsSeq()) {
@@ -4165,8 +4164,8 @@ bool CCleanup::DecodeXMLMarkChanged(std::string & str)
         CFastMutexGuard searcher_mtx_guard( searcher_mtx );
         if( ! searcher.IsPrimed() ) {
             for( int idx = 0;
-                idx < sizeof(transformations)/sizeof(transformations[0]); 
-                ++idx ) 
+                idx < sizeof(transformations)/sizeof(transformations[0]);
+                ++idx )
             {
                 // match type is index into transformations array
                 searcher.AddWord( transformations[idx].src_word, idx );
@@ -4181,7 +4180,7 @@ bool CCleanup::DecodeXMLMarkChanged(std::string & str)
 
     // fill result up to the first '&'
     string result;
-    result.reserve( str_len ); 
+    result.reserve( str_len );
     copy( str.begin(), str.begin() + amp,
         back_inserter(result) );
 
@@ -4435,9 +4434,9 @@ bool CCleanup::ConvertDeltaSeqToRaw(CSeq_entry_Handle seh, CSeq_inst::EMol filte
 }
 
 
-bool CCleanup::ParseCodeBreak(const CSeq_feat& feat, 
-        CCdregion& cds, 
-        const CTempString& str, 
+bool CCleanup::ParseCodeBreak(const CSeq_feat& feat,
+        CCdregion& cds,
+        const CTempString& str,
         CScope& scope,
         IObjtoolsListener* pMessageListener)
 {
@@ -4532,7 +4531,7 @@ bool CCleanup::ParseCodeBreak(const CSeq_feat& feat,
             postMessage(msg, TSubcode::eBadLocation);
         }
         return false;
-    } 
+    }
     if ((break_loc->IsInt() || break_loc->IsPnt()) &&
          sequence::Compare(*break_loc, feat.GetLocation(), &scope, sequence::fCompareOverlapping) != sequence::eContained) {
         if (pMessageListener) {
@@ -4563,7 +4562,7 @@ bool CCleanup::ParseCodeBreak(const CSeq_feat& feat,
 
 bool CCleanup::ParseCodeBreaks(CSeq_feat& feat, CScope& scope)
 {
-    if (!feat.IsSetData() || !feat.GetData().IsCdregion() || 
+    if (!feat.IsSetData() || !feat.GetData().IsCdregion() ||
         !feat.IsSetQual() || !feat.IsSetLocation()) {
         return false;
     }
@@ -4589,20 +4588,20 @@ bool CCleanup::ParseCodeBreaks(CSeq_feat& feat, CScope& scope)
 
 
 // From SQD-4297
-// Influenza is a multi-segmented virus. We would like to create 
+// Influenza is a multi-segmented virus. We would like to create
 // small-genome sets when all segments of a particular viral strain
-// are submitted together. This is made more difficult due to fact 
-// that submitters often have large submissions with multiple strains 
+// are submitted together. This is made more difficult due to fact
+// that submitters often have large submissions with multiple strains
 // at one time.
-// This function will segregate sequences with the same taxname 
-// plus additional qualifiers into small-genome sets, if there are enough 
-// sequences for that type of Influenza *AND* all CDS and gene features 
+// This function will segregate sequences with the same taxname
+// plus additional qualifiers into small-genome sets, if there are enough
+// sequences for that type of Influenza *AND* all CDS and gene features
 // on the sequences are complete.
 // * Influenza A virus: 8 or more nucleotide sequences with same strain and serotype
-// * Influenza B virus: 8 or more nucleotide sequences with same strain 
-// * Influenza C virus: 7 or more nucleotide sequences with same strain 
+// * Influenza B virus: 8 or more nucleotide sequences with same strain
+// * Influenza C virus: 7 or more nucleotide sequences with same strain
 // * Influenza D virus: 7 or more records with same strain
-// Note that as long as we are making strain-specific organism names, 
+// Note that as long as we are making strain-specific organism names,
 // the taxname must only start with the Influenza designation, not match it.
 // Can only make a set if at least one instance of each segment value is represented.
 class CInfluenzaSet : public CObject {
@@ -4635,8 +4634,8 @@ protected:
 };
 
 
-CInfluenzaSet::CInfluenzaSet(const string& key) : m_Key(key) 
-{ 
+CInfluenzaSet::CInfluenzaSet(const string& key) : m_Key(key)
+{
     m_FluType = GetInfluenzaType(key);
     m_Required = 7;
     if (m_FluType == eInfluenzaA || m_FluType == eInfluenzaB) {
@@ -4939,7 +4938,7 @@ bool CCleanup::IsMethionine(const CCode_break& cb)
         case CCode_break::TAa::e_Ncbieaa:
             if (cb.GetAa().GetNcbieaa() == 'M') {
                 rval = true;
-            } 
+            }
             break;
         case CCode_break::TAa::e_Ncbistdaa:
             if (cb.GetAa().GetNcbistdaa() == methionine_encoded) {
@@ -5026,20 +5025,20 @@ void CCleanup::SetCodeBreakLocation(CCode_break& cb, size_t pos, const CSeq_feat
         if (offset <= start && offset + len > start) {
             CRef<CSeq_interval> tmp(new CSeq_interval());
             tmp->SetId().Assign(loc_iter.GetSeq_id());
-            if (loc_iter.IsSetStrand() && loc_iter.GetStrand() == eNa_strand_minus) {                    
+            if (loc_iter.IsSetStrand() && loc_iter.GetStrand() == eNa_strand_minus) {
                 tmp->SetStrand(eNa_strand_minus);
                 tmp->SetTo(loc_iter.GetRange().GetTo() - (start - offset) );
             } else {
                 tmp->SetFrom(loc_iter.GetRange().GetFrom() + start - offset);
             }
             if (offset <= start + 2 && offset + len > start + 2) {
-                if (loc_iter.IsSetStrand() && loc_iter.GetStrand() == eNa_strand_minus) {                    
+                if (loc_iter.IsSetStrand() && loc_iter.GetStrand() == eNa_strand_minus) {
                     tmp->SetFrom(loc_iter.GetRange().GetTo() - (start - offset + 2) );
                 } else {
                     tmp->SetTo(loc_iter.GetRange().GetFrom() + start - offset + 2);
                 }
             } else {
-                if (loc_iter.IsSetStrand() && loc_iter.GetStrand() == eNa_strand_minus) {                    
+                if (loc_iter.IsSetStrand() && loc_iter.GetStrand() == eNa_strand_minus) {
                     tmp->SetFrom(loc_iter.GetRange().GetFrom());
                 } else {
                     tmp->SetTo(loc_iter.GetRange().GetTo());
@@ -5050,7 +5049,7 @@ void CCleanup::SetCodeBreakLocation(CCode_break& cb, size_t pos, const CSeq_feat
             // add new interval
             CRef<CSeq_interval> tmp (new CSeq_interval());
             tmp->SetId().Assign(loc_iter.GetSeq_id());
-            if (loc_iter.IsSetStrand() && loc_iter.GetStrand() == eNa_strand_minus) {                    
+            if (loc_iter.IsSetStrand() && loc_iter.GetStrand() == eNa_strand_minus) {
                 tmp->SetStrand(eNa_strand_minus);
                 tmp->SetTo(loc_iter.GetRange().GetTo());
                 if (offset + len >= start + 2) {
@@ -5067,8 +5066,8 @@ void CCleanup::SetCodeBreakLocation(CCode_break& cb, size_t pos, const CSeq_feat
                 }
             }
 
-            packed->SetPacked_int().Set().push_back(tmp);         
-        } 
+            packed->SetPacked_int().Set().push_back(tmp);
+        }
         offset += len;
     }
     if (packed->Which() != CSeq_loc::e_Packed_int || packed->GetPacked_int().Get().size() == 0) {
@@ -5173,7 +5172,7 @@ bool CCleanup::CleanupCollectionDates(CSeq_entry_Handle seh, bool month_first)
         }
     }
 
-    return any_changes;    
+    return any_changes;
 }
 //LCOV_EXCL_STOP
 

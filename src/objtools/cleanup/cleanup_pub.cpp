@@ -152,7 +152,7 @@ bool s_PubWhichCompare(CRef<CPub> pub1, CRef<CPub> pub2) {
 struct SPMIDMatch {
     const CPubMedId& m_ID;
 
-    bool operator()(CRef< CArticleId > other_id) 
+    bool operator()(CRef< CArticleId > other_id)
     {
         return (other_id->IsPubmed() && other_id->GetPubmed() == m_ID);
     }
@@ -418,7 +418,7 @@ bool CCitGenCleaner::IsEmpty()
 bool CCitSubCleaner::Clean(bool fix_initials, bool strip_serial)
 {
     bool any_change = false;
-    
+
     if (m_Sub.IsSetAuthors()) {
         auto& authors = m_Sub.SetAuthors();
         if (CCleanup::CleanupAuthList(authors, fix_initials)) {
@@ -448,7 +448,7 @@ bool CCitSubCleaner::Clean(bool fix_initials, bool strip_serial)
                     NStr::TrimPrefixInPlace(str, ".");
                     any_change = true;
                 }
-                    
+
                 if (CCleanup::CleanupAffil(affil)) {
                     any_change = true;
                 }

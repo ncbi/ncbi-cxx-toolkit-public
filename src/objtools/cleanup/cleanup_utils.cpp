@@ -189,7 +189,7 @@ bool CleanVisStringJunk( string &str, bool allow_ellipses )
         // allow one period at end
         if (isPeriod) {
             suffix = ".";
-            if ( allow_ellipses && (chars_in_junk >= 3) && 
+            if ( allow_ellipses && (chars_in_junk >= 3) &&
                 str[start_of_junk_pos+1] == '.' && str[start_of_junk_pos+2] == '.' ) {
                 suffix = "...";
             }
@@ -276,7 +276,7 @@ bool CleanDoubleQuote(string& str)
 void TrimInternalSemicolons (string& str)
 {
     size_t pos, next_pos;
-  
+
     pos = NStr::Find (str, ";");
     while (pos != string::npos) {
         next_pos = pos + 1;
@@ -594,8 +594,8 @@ typedef struct proteinabbrev {
     char letter;
 } ProteinAbbrevData;
 
-static ProteinAbbrevData abbreviation_list[] = 
-{ 
+static ProteinAbbrevData abbreviation_list[] =
+{
     {"Ala", 'A'},
     {"Asx", 'B'},
     {"Cys", 'C'},
@@ -617,7 +617,7 @@ static ProteinAbbrevData abbreviation_list[] =
     {"Ser", 'S'},
     {"Thr", 'T'},
     {"Val", 'V'},
-    {"Trp", 'W'}, 
+    {"Trp", 'W'},
     {"Sec", 'U'}, /* was - not in iupacaa */
     {"Xxx", 'X'},
     {"Tyr", 'Y'},
@@ -627,20 +627,20 @@ static ProteinAbbrevData abbreviation_list[] =
 };
 
 // Find the single-letter abbreviation for either the single letter abbreviation
-// or three-letter abbreviation.  
+// or three-letter abbreviation.
 // Use X if the abbreviation is not found.
 
 char ValidAminoAcid (const string& abbrev)
 {
     char ch = 'X';
-    
+
     for (unsigned int k = 0; k < sizeof(abbreviation_list) / sizeof (ProteinAbbrevData); k++) {
         if (NStr::EqualNocase (abbrev, abbreviation_list[k].abbreviation)) {
             ch = abbreviation_list[k].letter;
             break;
         }
     }
-    
+
     if (abbrev.length() == 1) {
         for (unsigned int k = 0; k < sizeof(abbreviation_list) / sizeof (ProteinAbbrevData); k++) {
             if (abbrev.c_str()[0] == abbreviation_list[k].letter) {
@@ -649,7 +649,7 @@ char ValidAminoAcid (const string& abbrev)
             }
         }
     }
-    
+
     return ch;
 }
 

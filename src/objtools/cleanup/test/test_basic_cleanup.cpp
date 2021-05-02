@@ -98,7 +98,7 @@ private:
     CConstRef<CCleanupChange> ProcessBioseqSet(void);
     void ProcessReleaseFile(const CArgs& args);
     CRef<CSeq_entry> ReadSeqEntry(void);
-    SIZE_TYPE PrintChanges(CConstRef<CCleanupChange> errors, 
+    SIZE_TYPE PrintChanges(CConstRef<CCleanupChange> errors,
         const CArgs& args);
 
     unique_ptr<CObjectIStream> m_In;
@@ -137,7 +137,7 @@ void CTest_cleanupApplication::Init(void)
     arg_desc->AddDefaultKey
         ("o", "ASNFile", "Output Seq-entry/Seq_submit ASN.1 text file",
          CArgDescriptions::eString, "-", CArgDescriptions::fAllowMultiple );
-    
+
     arg_desc->AddFlag("s", "Input is Seq-submit");
     arg_desc->AddFlag("t", "Input is Seq-set (NCBI Release file)");
     arg_desc->AddFlag("b", "Input is in binary format");
@@ -179,7 +179,7 @@ int CTest_cleanupApplication::Run(void)
             "You must specify at least one input and output file");
     }
 
-    // Open File 
+    // Open File
     int file_index = 0;
     for( ; file_index < (int)input_files.size(); ++file_index ) {
         m_In .reset(input_files[file_index]);
@@ -200,7 +200,7 @@ int CTest_cleanupApplication::Run(void)
             if ( args["s"]  &&  header != "Seq-submit" ) {
                 NCBI_THROW(CException, eUnknown,
                     "Conflict: '-s' flag is specified but file is not Seq-submit");
-            } 
+            }
             if ( args["s"]  ||  header == "Seq-submit" ) {  // Seq-submit
                 changes = ProcessSeqSubmit();
             } else if ( header == "Seq-entry" ) {           // Seq-entry
@@ -246,7 +246,7 @@ void CTest_cleanupApplication::ReadClassMember
                 CCleanup cleanup;
                 CConstRef<CCleanupChange> changes;
                 if ( ! m_NoCleanup) {
-                    changes = ( m_DoExtendedCleanup ? 
+                    changes = ( m_DoExtendedCleanup ?
                         cleanup.ExtendedCleanup( *se, m_Options ) :
                         cleanup.BasicCleanup(*se, m_Options) );
                 }
@@ -280,7 +280,7 @@ void CTest_cleanupApplication::ProcessReleaseFile
 
     m_Continue = args["c"];
 
-    // Read the CBioseq_set, it will call the hook object each time we 
+    // Read the CBioseq_set, it will call the hook object each time we
     // encounter a Seq-entry
     *m_In >> *seqset;
 
@@ -334,7 +334,7 @@ CConstRef<CCleanupChange> CTest_cleanupApplication::ProcessSeqSubmit(void)
     if ( ! m_NoCleanup) {
         // There is no handle version for Seq-submit
         changes = ( m_DoExtendedCleanup ?
-            cleanup.ExtendedCleanup(*ss, m_Options) : 
+            cleanup.ExtendedCleanup(*ss, m_Options) :
             cleanup.BasicCleanup(*ss, m_Options) );
     }
     *m_Out << (*ss);
@@ -379,7 +379,7 @@ CConstRef<CCleanupChange> CTest_cleanupApplication::ProcessSeqFeat(void)
     CConstRef<CCleanupChange> changes;
     if ( ! m_NoCleanup) {
         if( m_UseHandleVersion ) {
-            // set up a minimal fake Seq-entry so that we can 
+            // set up a minimal fake Seq-entry so that we can
             // get a handle for the Seq-feat.
             CRef<CSeq_annot> annot( new CSeq_annot );
             annot->SetData().SetFtable().push_back( sf );
@@ -496,7 +496,7 @@ vector<CObjectIStream*> CTest_cleanupApplication::OpenIFiles
             in_file = new CNcbiIfstream( file_name_iter->c_str() );
         }
 
-        // file format 
+        // file format
         ESerialDataFormat format = eSerial_AsnText;
         if ( args["b"] ) {
             format = eSerial_AsnBinary;
@@ -528,7 +528,7 @@ vector<CObjectOStream*> CTest_cleanupApplication::OpenOFiles
             out_file = new CNcbiOfstream( file_name_iter->c_str() );
         }
 
-        // file format 
+        // file format
         ESerialDataFormat format = eSerial_AsnText;
 
         result.push_back( CObjectOStream::Open(format, *out_file) );
@@ -541,7 +541,7 @@ vector<CObjectOStream*> CTest_cleanupApplication::OpenOFiles
 
 
 SIZE_TYPE CTest_cleanupApplication::PrintChanges
-(CConstRef<CCleanupChange> changes, 
+(CConstRef<CCleanupChange> changes,
  const CArgs& args)
 {
     if (args["x"]) {

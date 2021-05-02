@@ -38,11 +38,11 @@ BEGIN_SCOPE(objects)
 CCleanupMessage::CCleanupMessage(string text, EDiagSev sev, ECode code, ESubcode subcode)
     : CObjtoolsMessage(text, sev), m_Code(code), m_Subcode(subcode) {}
 
-CCleanupMessage* CCleanupMessage::Clone(void) const 
+CCleanupMessage* CCleanupMessage::Clone(void) const
 {
     return new CCleanupMessage(GetText(), GetSeverity(), m_Code, m_Subcode);
 }
 
 END_SCOPE(objects)
-END_NCBI_SCOPE    
+END_NCBI_SCOPE
 

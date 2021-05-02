@@ -46,7 +46,7 @@
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
-BOOST_AUTO_TEST_CASE(Test_ParseCodeBreakMessages) 
+BOOST_AUTO_TEST_CASE(Test_ParseCodeBreakMessages)
 {
     auto pEntry = unit_test_util::BuildGoodNucProtSet();
     auto pCds = unit_test_util::GetCDSFromGoodNucProtSet(pEntry);
@@ -68,7 +68,7 @@ BOOST_AUTO_TEST_CASE(Test_ParseCodeBreakMessages)
     auto it = listener.begin();
     BOOST_CHECK_EQUAL(it->GetSubCode(), static_cast<int>(CCleanupMessage::ESubcode::eParseError));
     BOOST_CHECK_EQUAL(it->GetText(), "Unable to identify code-break location in ':3..5,aa:Met'");
- 
+
     ++it;
     BOOST_CHECK_EQUAL(it->GetSubCode(), static_cast<int>(CCleanupMessage::ESubcode::eBadLocation));
     BOOST_CHECK_EQUAL(it->GetText(), "code-break location exceeds 3 bases");

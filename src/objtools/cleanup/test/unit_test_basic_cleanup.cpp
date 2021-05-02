@@ -109,22 +109,22 @@ BOOST_AUTO_TEST_CASE(Test_CleanRptUnitSeq)
     cleanup.SetScope (scope);
     changes = cleanup.BasicCleanup (entry);
     // look for expected change flags
-	vector<string> changes_str = changes->GetAllDescriptions();
-	if (changes_str.size() < 1) {
+    vector<string> changes_str = changes->GetAllDescriptions();
+    if (changes_str.size() < 1) {
         BOOST_CHECK_EQUAL("missing cleanup", "Change Qualifiers");
-	} else {
+    } else {
         BOOST_CHECK_EQUAL (changes_str[0], "Change Qualifiers");
         for (size_t i = 2; i < changes_str.size(); i++) {
             BOOST_CHECK_EQUAL("unexpected cleanup", changes_str[i]);
         }
-	}
+    }
     // make sure change was actually made
     CFeat_CI f(scope->GetBioseqHandle(entry.GetSeq()));
     while (f) {
         FOR_EACH_GBQUAL_ON_SEQFEAT (q, *f) {
             if ((*q)->IsSetQual() && NStr::Equal((*q)->GetQual(), "rpt_unit_seq") && (*q)->IsSetVal()) {
                 string val = (*q)->GetVal();
-                string expected = NStr::ToLower(val); 
+                string expected = NStr::ToLower(val);
                 BOOST_CHECK_EQUAL (val, expected);
             }
         }
@@ -184,8 +184,8 @@ Seq-entry ::= seq {\
 
 typedef vector< CRef<CSeq_entry> > TSeqEntryVec;
 
-void s_LoadAllSeqEntries( 
-    TSeqEntryVec &out_expected_seq_entries, 
+void s_LoadAllSeqEntries(
+    TSeqEntryVec &out_expected_seq_entries,
     CObjectIStreamAsn *in_stream )
 {
     if( ! in_stream ) {
@@ -282,15 +282,15 @@ BOOST_AUTO_TEST_CASE(Test_CleanAssemblyDate)
     cleanup.SetScope (scope);
     changes = cleanup.BasicCleanup (entry);
     // look for expected change flags
-	vector<string> changes_str = changes->GetAllDescriptions();
-	if (changes_str.size() < 1) {
+    vector<string> changes_str = changes->GetAllDescriptions();
+    if (changes_str.size() < 1) {
         BOOST_CHECK_EQUAL("missing cleanup", "Clean User-Object Or -Field");
-	} else {
+    } else {
         BOOST_CHECK_EQUAL (changes_str[0], "Clean User-Object Or -Field");
         for (size_t i = 2; i < changes_str.size(); i++) {
             BOOST_CHECK_EQUAL("unexpected cleanup", changes_str[i]);
         }
-	}
+    }
     // make sure change was actually made
     CSeqdesc_CI d(scope->GetBioseqHandle(entry.GetSeq()), CSeqdesc::e_User);
     if (d) {
@@ -357,7 +357,7 @@ BOOST_AUTO_TEST_CASE(Test_CleanStructuredVoucher2)
 
     for (size_t i = 3; i < changes_str.size(); i++) {
         BOOST_CHECK_EQUAL("unexpected cleanup", changes_str[i]);
-	}
+    }
 
     // make sure change was not actually made
     CSeqdesc_CI d(scope->GetBioseqHandle(entry.GetSeq()), CSeqdesc::e_Source);
@@ -420,8 +420,8 @@ BOOST_AUTO_TEST_CASE(Test_CleanPCRPrimerSeq)
     cleanup.SetScope (scope);
     changes = cleanup.BasicCleanup (entry);
     // look for expected change flags
-	vector<string> changes_str = changes->GetAllDescriptions();
-	if (changes_str.size() < 1) {
+    vector<string> changes_str = changes->GetAllDescriptions();
+    if (changes_str.size() < 1) {
         BOOST_CHECK_EQUAL("missing cleanup", "eChangePCRPrimers");
     } else {
         BOOST_CHECK_EQUAL (changes_str[0], "Change PCR Primers");
@@ -429,7 +429,7 @@ BOOST_AUTO_TEST_CASE(Test_CleanPCRPrimerSeq)
 
     for (size_t i = 1; i < changes_str.size(); i++) {
         BOOST_CHECK_EQUAL("unexpected cleanup", changes_str[i]);
-	}
+    }
 
     // make sure change was actually made
     CSeqdesc_CI d(scope->GetBioseqHandle(entry.GetSeq()), CSeqdesc::e_Source);
@@ -733,7 +733,7 @@ void CompareOldAndNew(const CAuthor& orig)
                 BOOST_CHECK_EQUAL(old_result.GetName().GetStr(), new_result->GetName().GetStr());
                 break;
             case CAuthor::TName::e_Name:
-                BOOST_CHECK(old_result.GetName().GetName().Equals(new_result->GetName().GetName())); 
+                BOOST_CHECK(old_result.GetName().GetName().Equals(new_result->GetName().GetName()));
                 CheckStd(old_result.GetName().GetName(), new_result->GetName().GetName());
                 break;
             case CAuthor::TName::e_not_set:
@@ -826,7 +826,7 @@ BOOST_AUTO_TEST_CASE(Test_SQD_4498)
         auth->SetName().SetName().SetLast("Safe");
         auth->SetName().SetName().SetFull(s);
         CompareOldAndNew(*auth);
-        auth->ResetName();        
+        auth->ResetName();
     }
 
     auth->SetName().SetName().SetLast("et");
@@ -959,7 +959,7 @@ BOOST_AUTO_TEST_CASE(Test_SetFrameFromLoc)
     BOOST_CHECK_EQUAL(CCleanup::SetFrameFromLoc(*cdr, misc->GetLocation(), *scope), true);
     BOOST_CHECK_EQUAL(cdr->GetFrame(), CCdregion::eFrame_three);
     BOOST_CHECK_EQUAL(CCleanup::SetFrameFromLoc(*cdr, misc->GetLocation(), *scope), false);
-    
+
     misc->SetLocation().SetInt().SetFrom(1);
     BOOST_CHECK_EQUAL(CCleanup::SetFrameFromLoc(*cdr, misc->GetLocation(), *scope), true);
     BOOST_CHECK_EQUAL(cdr->GetFrame(), CCdregion::eFrame_two);
@@ -995,7 +995,7 @@ void CheckQuals(const CSeq_feat::TQual& expected, const CSeq_feat::TQual& actual
         BOOST_CHECK_EQUAL((*it1)->GetVal(), (*it2)->GetVal());
         ++it1;
         ++it2;
-    }       
+    }
 }
 
 
@@ -1011,7 +1011,7 @@ BOOST_AUTO_TEST_CASE(Test_SQD_3943)
     sf->SetLocation().SetInt().SetFrom(0);
     sf->SetLocation().SetInt().SetTo(10);
 
-    CSeq_feat::TQual expected;   
+    CSeq_feat::TQual expected;
 
     sf->SetQual().push_back(CRef<CGb_qual>(new CGb_qual("product", "c")));
     sf->SetQual().push_back(CRef<CGb_qual>(new CGb_qual("product", "b")));
@@ -1059,7 +1059,7 @@ BOOST_AUTO_TEST_CASE(Test_SQD_3994)
     BOOST_CHECK_EQUAL(name->ExtractSuffixFromLastName(), true);
     BOOST_CHECK_EQUAL(name->GetLast(), "Pogson");
     BOOST_CHECK_EQUAL(name->GetSuffix(), "Sr.");
-    
+
     //should not extract II because suffix is already set
     name->SetLast("Pogson II");
     BOOST_CHECK_EQUAL(name->ExtractSuffixFromLastName(), false);
@@ -1697,19 +1697,19 @@ void x_CheckCodeBreakFrame(const CSeq_feat& cds, TSeqPos start, TSeqPos stop)
     CCleanup::SetCodeBreakLocation(*cb, 1, cds);
     x_CheckIntervalLoc(cb->GetLoc(), start, stop, is_minus);
     CCleanup::SetCodeBreakLocation(*cb, 2, cds);
-    x_CheckIntervalLoc(cb->GetLoc(), 
+    x_CheckIntervalLoc(cb->GetLoc(),
                        is_minus ? start - 3 : start + 3,
                        is_minus ? stop - 3 : stop + 3,
                        is_minus);
 
     CCleanup::SetCodeBreakLocation(*cb, 3, cds);
-    x_CheckIntervalLoc(cb->GetLoc(), 
+    x_CheckIntervalLoc(cb->GetLoc(),
         is_minus ? start - 6 : start + 6,
         is_minus ? stop - 6 : stop + 6,
         is_minus);
 
     CCleanup::SetCodeBreakLocation(*cb, 4, cds);
-    x_CheckIntervalLoc(cb->GetLoc(), 
+    x_CheckIntervalLoc(cb->GetLoc(),
         is_minus ? 0 : start + 9,
         is_minus ? stop - 9 : 11,
         is_minus);
@@ -1761,7 +1761,7 @@ BOOST_AUTO_TEST_CASE(Test_SetCodeBreakLocation)
     l1->SetInt().SetId().SetLocal().SetStr("nuc1");
     l1->SetInt().SetFrom(0);
     l1->SetInt().SetTo(1);
-    
+
     l2->SetInt().SetId().SetLocal().SetStr("nuc1");
     l2->SetInt().SetFrom(5);
     l2->SetInt().SetTo(13);
@@ -1924,7 +1924,7 @@ void CheckTaxnameChange(const string& orig, const string& fixed)
         }
     }
     BOOST_CHECK_EQUAL(found_taxname_change, true);
-    
+
     for (auto it : entry->GetSeq().GetDescr().Get()) {
         if (it->IsSource()) {
             BOOST_CHECK_EQUAL(it->GetSource().GetOrg().GetTaxname(), fixed);
@@ -1984,7 +1984,7 @@ void CheckFields(const CUser_field& f1, const CUser_field& f2)
             BOOST_CHECK_EQUAL(*it1, *it2);
             it1++;
             it2++;
-        }    
+        }
         BOOST_CHECK(it1 == f1.GetData().GetStrs().end());
         BOOST_CHECK(it2 == f2.GetData().GetStrs().end());
     } else {
@@ -2024,7 +2024,7 @@ void CheckCleanupAndCleanupOfUserObject(const CUser_object& obj)
             CheckFields(**s1, **s2);
             s1++;
             s2++;
-        }    
+        }
         BOOST_CHECK(s1 == direct_obj->GetData().end());
         BOOST_CHECK(s2 == ud->GetUser().GetData().end());
     }
@@ -2350,7 +2350,7 @@ BOOST_AUTO_TEST_CASE(Test_SQD_4536)
 
     // now fixing even if more than one initial
     CheckAuthNameSingleInitialFix("", "M.E.", "M", "M.E.");
-    
+
 }
 
 

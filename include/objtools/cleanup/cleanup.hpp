@@ -65,7 +65,7 @@ class CSeq_feat_Handle;
 class CCleanupChange;
 class IObjtoolsListener;
 
-class NCBI_CLEANUP_EXPORT CCleanup : public CObject 
+class NCBI_CLEANUP_EXPORT CCleanup : public CObject
 {
 public:
 
@@ -88,24 +88,24 @@ public:
     ~CCleanup();
 
     void SetScope(CScope* scope);
-    
+
     // BASIC CLEANUP
-    
+
     CConstRef<CCleanupChange> BasicCleanup(CSeq_entry& se,  Uint4 options = 0);
-    /// Cleanup a Seq-submit. 
+    /// Cleanup a Seq-submit.
     CConstRef<CCleanupChange> BasicCleanup(CSeq_submit& ss,  Uint4 options = 0);
-    /// Cleanup a Bioseq. 
+    /// Cleanup a Bioseq.
     CConstRef<CCleanupChange> BasicCleanup(CBioseq& bs,     Uint4 ooptions = 0);
     /// Cleanup a Bioseq_set.
     CConstRef<CCleanupChange> BasicCleanup(CBioseq_set& bss, Uint4 options = 0);
     /// Cleanup a Seq-Annot.
     CConstRef<CCleanupChange> BasicCleanup(CSeq_annot& sa,  Uint4 options = 0);
-    /// Cleanup a Seq-feat. 
+    /// Cleanup a Seq-feat.
     CConstRef<CCleanupChange> BasicCleanup(CSeq_feat& sf,   Uint4 options = 0);
-    /// Cleanup a BioSource. 
+    /// Cleanup a BioSource.
     CConstRef<CCleanupChange> BasicCleanup(CBioSource& src,   Uint4 options = 0);
-	// Cleanup a Submit-block
-	CConstRef<CCleanupChange> BasicCleanup(CSubmit_block& block, Uint4 options = 0);
+    // Cleanup a Submit-block
+    CConstRef<CCleanupChange> BasicCleanup(CSubmit_block& block, Uint4 options = 0);
     // Cleanup descriptors
     CConstRef<CCleanupChange> BasicCleanup(CSeqdesc& desc, Uint4 options = 0);
     CConstRef<CCleanupChange> BasicCleanup(CSeq_descr & desc, Uint4 options = 0);
@@ -116,11 +116,11 @@ public:
     CConstRef<CCleanupChange> BasicCleanup(CBioseq_set_Handle& bssh, Uint4 options = 0);
     CConstRef<CCleanupChange> BasicCleanup(CSeq_annot_Handle& sak, Uint4 options = 0);
     CConstRef<CCleanupChange> BasicCleanup(CSeq_feat_Handle& sfh,  Uint4 options = 0);
-    
+
     // Extended Cleanup
-        /// Cleanup a Seq-entry. 
+        /// Cleanup a Seq-entry.
     CConstRef<CCleanupChange> ExtendedCleanup(CSeq_entry& se,  Uint4 options = 0);
-    /// Cleanup a Seq-submit. 
+    /// Cleanup a Seq-submit.
     CConstRef<CCleanupChange> ExtendedCleanup(CSeq_submit& ss, Uint4 options = 0);
     /// Cleanup a Seq-Annot.
     CConstRef<CCleanupChange> ExtendedCleanup(CSeq_annot& sa,  Uint4 options = 0);
@@ -171,7 +171,7 @@ public:
 
 
 /// Repairs non-reciprocal xref pairs for specified feature if xrefs between
-/// subtypes are permitted and feature with missing xref does not have an 
+/// subtypes are permitted and feature with missing xref does not have an
 /// xref to a different feature of the same subtype
 /// @param f Seq-feat to edit [in]
 /// @param tse top-level Seq-entry in which to search for the other half of the xref pair
@@ -179,7 +179,7 @@ public:
     static bool RepairXrefs(const CSeq_feat& f, const CTSE_Handle& tse);
 
 /// Repairs non-reciprocal xref pairs for specified feature pair if xrefs between
-/// subtypes are permitted and feature with missing xref does not have an 
+/// subtypes are permitted and feature with missing xref does not have an
 /// xref to a different feature of the same subtype
 /// @param f Seq-feat to edit [in]
 /// @param tse top-level Seq-entry in which to search for the other half of the xref pair
@@ -258,8 +258,8 @@ public:
     static bool SetBestFrame(CSeq_feat& cds, CScope& scope);
 
 /// Chooses best frame based on location
-/// 1.	If the location is 5' complete, then the frame must be one.
-/// 2.	If the location is 5' partial and 3' complete, select a frame using the
+/// 1.  If the location is 5' complete, then the frame must be one.
+/// 2.  If the location is 5' partial and 3' complete, select a frame using the
 ///      value of the location length modulo 3.
 /// @param cdregion Coding Region in which to set frame
 /// @param loc      Location to use for setting frame
@@ -442,7 +442,7 @@ public:
 /// @param seh Seq-entry to edit
 /// @return bool indicates whether any changes were made
     static bool ConvertPubFeatsToPubDescs(CSeq_entry_Handle seh);
-    
+
 /// Rescue pubs from Site-ref features
 /// @param seh Seq-entry to edit
 /// @return bool indicates whether any changes were made
@@ -507,10 +507,10 @@ public:
 /// @param str  string from which to parse code break
 /// @param scope scope in which to find sequences referenced (used for location comparisons)
 /// @return bool indicates string was successfully parsed and code break was added
-    static bool ParseCodeBreak(const CSeq_feat& feat, 
-            CCdregion& cds, 
-            const CTempString& str, 
-            CScope& scope, 
+    static bool ParseCodeBreak(const CSeq_feat& feat,
+            CCdregion& cds,
+            const CTempString& str,
+            CScope& scope,
             IObjtoolsListener* pMessageListener=nullptr);
 
 /// Parses all valid transl_except Gb-quals into code-breaks for cdregion,
@@ -533,19 +533,19 @@ public:
 /// From GB-7563
 /// An action has been requested that will do the following:
 ///    1. This action should be limited to protein sequences where the product
-///       is an exact match to a specified text (the usual string constraint 
+///       is an exact match to a specified text (the usual string constraint
 ///       is not needed).
-///    2. Protein sequences for which the coding region is 5' partial should 
+///    2. Protein sequences for which the coding region is 5' partial should
 ///       not be affected.
 ///    3. When the protein name matches, the following actions should be taken
 ///       if and only if the first amino acid of the protein sequence is not
 ///       M (methionine):
-///     a. The first amino acid of the protein sequence should be changed to 
+///     a. The first amino acid of the protein sequence should be changed to
 ///       methionine.
-///     b. The coding region should have the text "RNA editing" added to 
+///     b. The coding region should have the text "RNA editing" added to
 ///       Seq-feat.except_text (separated from any existing text by a semicolon).
 ///       If Seq-feat.except is not already true, it should be set to true.
-///     c. A code-break should be added to Cdregion.code-break where the 
+///     c. A code-break should be added to Cdregion.code-break where the
 ///       Code-break.loc is the location of the first codon of the coding region
 ///       and Code-break.aa is ncbieaa 'M' (Indexers will refer to "code-breaks"
 ///       as "translation exceptions" because these appear in the flatfile as a
@@ -558,21 +558,21 @@ public:
     static bool FixRNAEditingCodingRegion(CSeq_feat& cds);
 
     /// utility function for setting code break location given offset
-    /// pos is the position of the amino acid where the translation exception 
+    /// pos is the position of the amino acid where the translation exception
     /// occurs (starts with 1)
     static void SetCodeBreakLocation(CCode_break& cb, size_t pos, const CSeq_feat& cds);
 
     static bool IsMethionine(const CCode_break& cb);
 
     /// utility function for finding the code break for a given amino acid position
-    /// pos is the position of the amino acid where the translation exception 
+    /// pos is the position of the amino acid where the translation exception
     /// occurs (starts with 1)
     static CConstRef<CCode_break> GetCodeBreakForLocation(size_t pos, const CSeq_feat& cds);
-    
-    // From the request in GB-7166, we want to be able to move /gene 
+
+    // From the request in GB-7166, we want to be able to move /gene
     // qualifiers that have been added to the coding region but not the
     // parent gene to the parent gene.
-    // If the coding region also has /locus_tag qualifier which is different 
+    // If the coding region also has /locus_tag qualifier which is different
     // from the one on the parent gene features, do not move the qualifier.
     // If there are two coding regions that are mapped to the same gene,
     // do not move the qualifier.

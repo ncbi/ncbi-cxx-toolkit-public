@@ -133,7 +133,7 @@ BOOST_AUTO_TEST_CASE(Test_USAAndStateAbbreviations1)
     BOOST_CHECK(modified);
     BOOST_CHECK_EQUAL(affil.GetStd().GetSub(), "WI");
 }
- 
+
 
 BOOST_AUTO_TEST_CASE(Test_USAAndStateAbbreviations2)
 {
@@ -222,7 +222,7 @@ BOOST_AUTO_TEST_CASE(Test_CapitalizationFunctions)
     FindReplaceString_CountryFixes(str_test);
     FixShortWordsInElement(str_test);
     BOOST_CHECK_EQUAL(str_test, string("Region: Dubai in UAE"));
-    
+
     str_test.assign("country: noplace");
     FindReplaceString_CountryFixes(str_test);
     BOOST_CHECK_EQUAL(str_test, string("country: noplace"));
@@ -287,7 +287,7 @@ BOOST_AUTO_TEST_CASE(Test_FixOrgnames)
     title.assign("Unpublished (DIPNOI)");
     FixOrgNames(seh, title);
     BOOST_CHECK_EQUAL(title, "Unpublished (Dipnoi)");
-   
+
     title.assign("Unpublished DIPNOI");
     FixOrgNames(seh, title);
     BOOST_CHECK_EQUAL(title, "Unpublished Dipnoi");
@@ -461,5 +461,5 @@ Seq-entry ::= set {\
             length 20,\
             topology circular,\
             seq-data iupacna \"AAAATTTTGGGGCCCCAAAA\" } } } } \
-}";       
+}";
 

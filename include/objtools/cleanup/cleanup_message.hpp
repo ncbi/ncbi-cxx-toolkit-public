@@ -66,6 +66,6 @@ private:
 };
 
 END_SCOPE(objects)
-END_NCBI_SCOPE    
+END_NCBI_SCOPE
 
 #endif // _CLEANUP_MESSAGE_HPP_

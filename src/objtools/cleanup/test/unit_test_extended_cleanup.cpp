@@ -109,15 +109,15 @@ BOOST_AUTO_TEST_CASE(Test_RemoveOldName)
     cleanup.SetScope (scope);
     changes = cleanup.ExtendedCleanup (entry);
     // look for expected change flags
-	vector<string> changes_str = changes->GetAllDescriptions();
-	if (changes_str.size() == 0) {
+    vector<string> changes_str = changes->GetAllDescriptions();
+    if (changes_str.size() == 0) {
         BOOST_CHECK_EQUAL("missing cleanup", "change orgmod");
-	} else {
+    } else {
         BOOST_CHECK_EQUAL (changes_str[0], "Change Orgmod");
         for (int i = 1; i < changes_str.size(); i++) {
             BOOST_CHECK_EQUAL("unexpected cleanup", changes_str[i]);
         }
-	}
+    }
     // make sure change was actually made
     FOR_EACH_DESCRIPTOR_ON_SEQENTRY (dit, entry) {
         if ((*dit)->IsSource()) {
@@ -140,7 +140,7 @@ BOOST_AUTO_TEST_CASE(Test_RemoveOldName)
 
     cleanup.SetScope (scope);
     changes = cleanup.ExtendedCleanup (entry);
-	changes_str = changes->GetAllDescriptions();
+    changes_str = changes->GetAllDescriptions();
     for (int i = 1; i < changes_str.size(); i++) {
         BOOST_CHECK_EQUAL("unexpected cleanup", changes_str[i]);
     }
@@ -193,15 +193,15 @@ BOOST_AUTO_TEST_CASE(Test_RemoveRedundantMapQuals)
     cleanup.SetScope (scope);
     changes = cleanup.ExtendedCleanup (*entry);
     // look for expected change flags
-	vector<string> changes_str = changes->GetAllDescriptions();
-	if (changes_str.size() == 0) {
+    vector<string> changes_str = changes->GetAllDescriptions();
+    if (changes_str.size() == 0) {
         BOOST_CHECK_EQUAL("missing cleanup", "remove qualifier");
-	} else {
+    } else {
         BOOST_CHECK_EQUAL (changes_str[0], "Remove Qualifier");
         for (int i = 1; i < changes_str.size(); i++) {
             BOOST_CHECK_EQUAL("unexpected cleanup", changes_str[i]);
         }
-	}
+    }
     // make sure change was actually made
     CFeat_CI feat (seh);
     while (feat) {
@@ -229,8 +229,8 @@ BOOST_AUTO_TEST_CASE(Test_RemoveRedundantMapQuals)
         for (int i = 1; i < changes_str.size(); i++) {
             BOOST_CHECK_EQUAL("unexpected cleanup", changes_str[i]);
         }
-	}
- 
+    }
+
     // make sure qual is still there
     CFeat_CI feat2(seh);
     while (feat2) {
@@ -262,8 +262,8 @@ BOOST_AUTO_TEST_CASE(Test_RemoveRedundantMapQuals)
         for (int i = 1; i < changes_str.size(); i++) {
             BOOST_CHECK_EQUAL("unexpected cleanup", changes_str[i]);
         }
-	}
- 
+    }
+
     // make sure qual is still there
     CFeat_CI feat3(seh);
     while (feat3) {
@@ -292,8 +292,8 @@ BOOST_AUTO_TEST_CASE(Test_RemoveRedundantMapQuals)
         for (int i = 1; i < changes_str.size(); i++) {
             BOOST_CHECK_EQUAL("unexpected cleanup", changes_str[i]);
         }
-	}
- 
+    }
+
     // make sure qual is still there
     CFeat_CI feat4(seh);
     while (feat4) {
@@ -373,7 +373,7 @@ void s_ReportUnexpected(const vector<string>& observed, const vector<string>& ex
     while (oi != observed.end()) {
         BOOST_CHECK_EQUAL("unexpected cleanup", *oi);
         oi++;
-	}
+    }
     while (ei != expected.end()) {
         BOOST_CHECK_EQUAL("missing expected cleanup", *ei);
         ei++;
@@ -399,7 +399,7 @@ BOOST_AUTO_TEST_CASE(Test_AddMetaGenomesAndEnvSample)
     cleanup.SetScope (scope);
     changes = cleanup.ExtendedCleanup (*entry, CCleanup::eClean_NoNcbiUserObjects);
     // look for expected change flags
-	vector<string> changes_str = changes->GetAllDescriptions();
+    vector<string> changes_str = changes->GetAllDescriptions();
     vector<string> expected;
     expected.push_back("Change Subsource");
     expected.push_back("Move Descriptor");
@@ -595,7 +595,7 @@ void s_CheckXrefs(CSeq_entry_Handle seh, size_t num)
 }
 
 
-CRef<CSeq_feat> s_AddRna(CRef<CSeq_entry> entry, const string& locus_tag) 
+CRef<CSeq_feat> s_AddRna(CRef<CSeq_entry> entry, const string& locus_tag)
 {
     CRef<CSeq_feat> rna = BuildGoodFeat();
     rna->SetData().SetRna().SetType(CRNA_ref::eType_ncRNA);
@@ -717,7 +717,6 @@ BOOST_AUTO_TEST_CASE(Test_ExtendToStop)
         CCleanup::ExtendToStopIfShortAndNotPartial(*replace, bsh, true);
         ++cds_it;
     }
-    
 }
 
 
@@ -1189,10 +1188,10 @@ BOOST_AUTO_TEST_CASE(Test_MatPeptidePartial)
 
 
 CRef<CSeq_entry> BuildInfluenzaSegment
-(const string& taxname, 
- const string& strain, 
+(const string& taxname,
+ const string& strain,
  const string& serotype,
- size_t segment, 
+ size_t segment,
  bool partial,
  bool is_seq = false)
 {
@@ -1248,16 +1247,16 @@ bool make_seq = false)
         ChangeNucProtSetProteinId(seg, pid);
     }
     set.SetSeq_set().push_back(seg);
-    id_offset++;    
+    id_offset++;
 }
 
 
 void AddInfluenzaSegments
-(CBioseq_set& set, 
+(CBioseq_set& set,
  size_t num_segments,
  size_t& id_offset,
- const string& taxname, 
- const string& strain, 
+ const string& taxname,
+ const string& strain,
  const string& serotype = kEmptyStr)
 {
     for (size_t i = 0; i < num_segments; i++) {
@@ -1527,31 +1526,31 @@ BOOST_AUTO_TEST_CASE(Test_RW_492)
 
 BOOST_AUTO_TEST_CASE(Test_VR_782)
 {
-	CRef<CSeq_entry> entry = BuildGoodNucProtSet();
-	CRef<CSeq_entry> prot = GetProteinSequenceFromGoodNucProtSet(entry);
-	CRef<CSeq_feat> pfeat = prot->SetSeq().SetAnnot().front()->SetData().SetFtable().front();
-	CRef<CSeq_feat> mfeat(new CSeq_feat());
-	mfeat->Assign(*pfeat);
-	mfeat->SetData().SetProt().ResetName();
-	mfeat->SetData().SetProt().SetProcessed(CProt_ref::eProcessed_mature);
-	prot->SetSeq().SetAnnot().front()->SetData().SetFtable().push_back(mfeat);
-	pfeat->SetPartial(true);
-	mfeat->SetPartial(true);
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_entry> prot = GetProteinSequenceFromGoodNucProtSet(entry);
+    CRef<CSeq_feat> pfeat = prot->SetSeq().SetAnnot().front()->SetData().SetFtable().front();
+    CRef<CSeq_feat> mfeat(new CSeq_feat());
+    mfeat->Assign(*pfeat);
+    mfeat->SetData().SetProt().ResetName();
+    mfeat->SetData().SetProt().SetProcessed(CProt_ref::eProcessed_mature);
+    prot->SetSeq().SetAnnot().front()->SetData().SetFtable().push_back(mfeat);
+    pfeat->SetPartial(true);
+    mfeat->SetPartial(true);
 
-	CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
-	CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
-	entry->Parentize();
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+    entry->Parentize();
 
-	CCleanup cleanup;
-	CConstRef<CCleanupChange> changes;
+    CCleanup cleanup;
+    CConstRef<CCleanupChange> changes;
 
-	cleanup.SetScope(scope);
-	changes = cleanup.ExtendedCleanup(*entry);
-	prot = GetProteinSequenceFromGoodNucProtSet(entry);
-	pfeat = prot->SetSeq().SetAnnot().front()->SetData().SetFtable().front();
-	mfeat = prot->SetSeq().SetAnnot().front()->SetData().SetFtable().back();
-	// BOOST_CHECK_EQUAL(pfeat->GetPartial(), false);
-	BOOST_CHECK_EQUAL(mfeat->IsSetPartial(), false);
+    cleanup.SetScope(scope);
+    changes = cleanup.ExtendedCleanup(*entry);
+    prot = GetProteinSequenceFromGoodNucProtSet(entry);
+    pfeat = prot->SetSeq().SetAnnot().front()->SetData().SetFtable().front();
+    mfeat = prot->SetSeq().SetAnnot().front()->SetData().SetFtable().back();
+    // BOOST_CHECK_EQUAL(pfeat->GetPartial(), false);
+    BOOST_CHECK_EQUAL(mfeat->IsSetPartial(), false);
 }
 
 
@@ -1871,7 +1870,6 @@ BOOST_AUTO_TEST_CASE(Test_SQD_4592)
     prot = seh.GetCompleteSeq_entry()->GetSet().GetSeq_set().back()->GetAnnot().back()->GetData().GetFtable().back();
     BOOST_CHECK_EQUAL(prot->GetData().GetProt().GetEc().back(), "1.14.14.87");
 
-    
 }
 
 

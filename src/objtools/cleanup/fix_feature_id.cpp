@@ -68,7 +68,7 @@ void CFixFeatureId::s_UpdateFeatureIds(const CSeq_entry_Handle& entry, map<CSeq_
     unordered_set<int> new_existing_ids; // id's which were left unchanged in the current seq-entry
     unordered_set<int>  current_ids; //  newly created (mapped) ids in the current seq-entry
     CFeat_CI feat_it(entry);
-    for ( ; feat_it; ++feat_it ) 
+    for ( ; feat_it; ++feat_it )
     {
         bool modified = false;
         CRef<CSeq_feat> edited;
@@ -83,7 +83,7 @@ void CFixFeatureId::s_UpdateFeatureIds(const CSeq_entry_Handle& entry, map<CSeq_
             edited->Assign(feat_it->GetOriginalFeature());
         }
 
-        if (edited->IsSetId() && edited->GetId().IsLocal() && edited->GetId().GetLocal().IsId())        
+        if (edited->IsSetId() && edited->GetId().IsLocal() && edited->GetId().GetLocal().IsId())
         {
             int id = edited->GetId().GetLocal().GetId();
             if (existing_ids.find(id) != existing_ids.end() ||
@@ -99,7 +99,7 @@ void CFixFeatureId::s_UpdateFeatureIds(const CSeq_entry_Handle& entry, map<CSeq_
                     FindNextOffset(existing_ids, new_existing_ids, current_ids, offset); // find id which does not exist among either of the 3 sets
                     remapped_ids[id] = offset;
                 }
-                edited->SetId().SetLocal().SetId(offset);  
+                edited->SetId().SetLocal().SetId(offset);
                 current_ids.insert(offset);
                 modified = true;
             }
@@ -116,7 +116,7 @@ void CFixFeatureId::s_UpdateFeatureIds(const CSeq_entry_Handle& entry, map<CSeq_
     existing_ids.insert(new_existing_ids.begin(), new_existing_ids.end());
     existing_ids.insert(current_ids.begin(), current_ids.end());
     feat_it.Rewind();
-    for ( ; feat_it; ++feat_it ) 
+    for ( ; feat_it; ++feat_it )
     {
         bool modified = false;
         CRef<CSeq_feat> edited;
@@ -130,7 +130,7 @@ void CFixFeatureId::s_UpdateFeatureIds(const CSeq_entry_Handle& entry, map<CSeq_
             edited.Reset(new CSeq_feat);
             edited->Assign(feat_it->GetOriginalFeature());
         }
-        
+
         if (edited->IsSetXref())
         {
             CSeq_feat::TXref::iterator xref_it = edited->SetXref().begin();
@@ -161,9 +161,9 @@ void CFixFeatureId::s_ApplyToSeqInSet(CSeq_entry_Handle tse, map<CSeq_feat_Handl
 {
     int offset = 0;
     unordered_set<int> existing_ids;
-    if (tse && tse.IsSet() && tse.GetSet().IsSetClass() && tse.GetSet().GetClass() == CBioseq_set::eClass_genbank) 
+    if (tse && tse.IsSet() && tse.GetSet().IsSetClass() && tse.GetSet().GetClass() == CBioseq_set::eClass_genbank)
     {
-        for(CSeq_entry_CI direct_child_ci( tse.GetSet(), CSeq_entry_CI::eNonRecursive ); direct_child_ci; ++direct_child_ci ) 
+        for(CSeq_entry_CI direct_child_ci( tse.GetSet(), CSeq_entry_CI::eNonRecursive ); direct_child_ci; ++direct_child_ci )
         {
             const CSeq_entry_Handle& entry = *direct_child_ci;
             s_UpdateFeatureIds(entry, changed_feats, existing_ids, offset);
@@ -185,7 +185,7 @@ void CFixFeatureId::s_MakeIDPairs(const CSeq_entry_Handle& entry, map<int,int> &
     }
 }
 
-// Create a map from the existing feature ids to the sequential ints 1,2,3... 
+// Create a map from the existing feature ids to the sequential ints 1,2,3...
 // and prepare a map from feature handles to the modified features with the reassigned ids both in the feature id and in the xrefs
 void CFixFeatureId::s_ReassignFeatureIds(const CSeq_entry_Handle& entry, map<CSeq_feat_Handle, CRef<CSeq_feat> > &changed_feats)
 {
@@ -194,7 +194,7 @@ void CFixFeatureId::s_ReassignFeatureIds(const CSeq_entry_Handle& entry, map<CSe
     map<int,int> id_pairs;
     CFixFeatureId::s_MakeIDPairs(entry, id_pairs);
 
-    for ( CFeat_CI feat_it(entry); feat_it; ++feat_it ) 
+    for ( CFeat_CI feat_it(entry); feat_it; ++feat_it )
     {
         bool modified = false;
         CRef<CSeq_feat> edited;
@@ -209,10 +209,10 @@ void CFixFeatureId::s_ReassignFeatureIds(const CSeq_entry_Handle& entry, map<CSe
             edited->Assign(feat_it->GetOriginalFeature());
         }
 
-        if (edited->IsSetId() && edited->GetId().IsLocal() && edited->GetId().GetLocal().IsId())        
+        if (edited->IsSetId() && edited->GetId().IsLocal() && edited->GetId().GetLocal().IsId())
         {
             int id = id_pairs[edited->GetId().GetLocal().GetId()];
-            edited->SetId().SetLocal().SetId(id);  
+            edited->SetId().SetLocal().SetId(id);
             modified = true;
         }
        if (edited->IsSetXref())
