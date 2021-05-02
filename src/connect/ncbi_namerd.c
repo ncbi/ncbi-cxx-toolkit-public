@@ -311,7 +311,7 @@ static TNCBI_Time x_ParseExpires(const char* expires, time_t utc,
     struct tm tm_exp, tm_now;
     time_t exp, now;
     char   exp_zulu;
-    double tzdiff;
+    long   tzdiff;
     int    n;
 
     assert(utc);
@@ -352,9 +352,9 @@ static TNCBI_Time x_ParseExpires(const char* expires, time_t utc,
     /* Adjust for time diff between local and UTC, which should
        correspond to 3600 x (number of time zones from UTC),
        i.e. diff between current TZ (UTC-12 to UTC+14) and UTC */
-    tzdiff = difftime(utc, now);
-    assert(-12.0 * 3600.0 <= tzdiff  &&  tzdiff <= 14.0 * 3600.0);
-    exp += tzdiff;
+    tzdiff = (long)(utc - now);
+    assert(-12 * 3600 <= tzdiff  &&  tzdiff <= 14 * 3600);
+    exp += (time_t) tzdiff;
     if (exp < utc) {
         CORE_LOGF_X(eNSub_Json, eLOG_Error,
                     ("[%s]  Unexpected JSON {\"addrs[" FMT_SIZE_T
