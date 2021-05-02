@@ -867,6 +867,7 @@ void NcbiDeleteMbedTlsCertCredentials(NCBI_CRED cred)
     if (cred->type / 100 == eNcbiCred_MbedTls / 100  &&  !(cred->type % 100)) {
         mbedtls_x509_crt_free((mbedtls_x509_crt*)  ((void**) cred->data)[0]);
         mbedtls_pk_free      ((mbedtls_pk_context*)((void**) cred->data)[1]);
+        memset(cred->data, 0, 2 * sizeof(void*));
     } else {
         char who[80];
         switch (cred->type / 100) {
