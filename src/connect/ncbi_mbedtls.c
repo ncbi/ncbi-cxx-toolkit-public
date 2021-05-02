@@ -38,6 +38,9 @@
 #include <connect/ncbi_tls.h>
 #include <stdlib.h>
 
+#define NCBI_USE_ERRCODE_X   Connect_TLS
+
+
 #if defined(HAVE_LIBMBEDTLS)  ||  defined(NCBI_CXX_TOOLKIT)
 
 #  ifdef HAVE_LIBMBEDTLS /* external */
@@ -69,9 +72,6 @@
 #  else
 #    define NCBI_NOTSUPPORTED  EINVAL
 #  endif
-
-#define NCBI_USE_ERRCODE_X   Connect_TLS
-
 
 #  if defined(MBEDTLS_THREADING_ALT)  &&  defined(NCBI_THREADS)
 #    ifdef MBEDTLS_THREADING_PTHREAD
@@ -802,9 +802,7 @@ static const char* s_MbedTlsError(void* session/*unused*/, int error,
     return buf;
 }
 
-
 #else
-
 
 /*ARGSUSED*/
 static EIO_Status s_MbedTlsInit(FSSLPull unused_pull, FSSLPush unused_push)
@@ -812,7 +810,6 @@ static EIO_Status s_MbedTlsInit(FSSLPull unused_pull, FSSLPush unused_push)
     CORE_LOG_X(7, eLOG_Critical, "Unavailable feature MBEDTLS");
     return eIO_NotSupported;
 }
-
 
 #endif /*HAVE_LIBMBEDTLS || NCBI_CXX_TOOLKIT*/
 

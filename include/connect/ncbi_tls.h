@@ -1,5 +1,5 @@
-#ifndef CONNECT___NCBI_SSL__H
-#define CONNECT___NCBI_SSL__H
+#ifndef CONNECT___NCBI_TLS__H
+#define CONNECT___NCBI_TLS__H
 
 /* $Id$
  * ===========================================================================
@@ -153,4 +153,4 @@ void NcbiDeleteTlsCertCredentials(NCBI_CRED cred);
 
 /* @} */
 
-#endif /* CONNECT___NCBI_SSL_H */
+#endif /* CONNECT___NCBI_TLS_H */

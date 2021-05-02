@@ -854,9 +854,7 @@ static const char* s_GnuTlsError(void* session, int error,
         : gnutls_strerror(error);
 }
 
-
 #else
-
 
 /*ARGSUSED*/
 static EIO_Status s_GnuTlsInit(FSSLPull unused_pull, FSSLPush unused_push)
@@ -864,7 +862,6 @@ static EIO_Status s_GnuTlsInit(FSSLPull unused_pull, FSSLPush unused_push)
     CORE_LOG_X(28, eLOG_Critical, "Unavailable feature GNUTLS");
     return eIO_NotSupported;
 }
-
 
 #endif /*HAVE_LIBGNUTLS*/
 
