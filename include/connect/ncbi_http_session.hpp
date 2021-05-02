@@ -229,7 +229,7 @@ private:
     // be set safely.
     bool x_IsReservedHeader(CTempString name) const;
 
-    THeaders            m_Headers;
+    THeaders m_Headers;
 
 public:
     /// Parse headers from the string (usually provided by a stream callback).
@@ -639,7 +639,7 @@ public:
     enum EProtocol {
         eHTTP_10, ///< HTTP/1.0
         eHTTP_11, ///< HTTP/1.1
-        eHTTP_2,  ///< HTTP/2
+        eHTTP_2   ///< HTTP/2
     };
 
     /// Get protocol version.
