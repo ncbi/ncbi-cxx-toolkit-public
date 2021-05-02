@@ -14,6 +14,7 @@ fi
 
 if [ -r $NCBI_TEST_DATA/x.509/test_ncbi_http_get ]; then
   .     $NCBI_TEST_DATA/x.509/test_ncbi_http_get
+  test "`expr '(' $$ / 10 ')' '%' 2`" = "0"  &&  unset TEST_NCBI_HTTP_GET_CLIENT_CERT
 fi
 
 if [ -z "$CONN_HTTP11" -a "`expr $$ '%' 2`" = "1" ]; then

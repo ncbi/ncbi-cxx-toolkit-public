@@ -676,8 +676,18 @@ static EIO_Status x_InitLocking(void)
 }
 
 
-static void x_FreeLocking(void)
+static void x_MbedTlsExit(void)
 {
+    s_Push = 0;
+    s_Pull = 0;
+
+    mbedtls_ctr_drbg_free(&s_MbedTlsCtrDrbg);
+    mbedtls_entropy_free(&s_MbedTlsEntropy);
+    mbedtls_ssl_config_free(&s_MbedTlsConf);
+    mbedtls_debug_set_threshold(s_MbedTlsLogLevel = 0);
+    memset(&s_MbedTlsCtrDrbg, 0, sizeof(s_MbedTlsCtrDrbg));
+    memset(&s_MbedTlsEntropy, 0, sizeof(s_MbedTlsEntropy));
+    memset(&s_MbedTlsConf,    0, sizeof(s_MbedTlsConf));
 #  if defined(MBEDTLS_THREADING_ALT)  &&  defined(NCBI_THREADS)
     mbedtls_threading_free_alt();
 #  endif /*MBEDTLS_THREADING_ALT && NCBI_THREADS*/
@@ -707,10 +717,10 @@ static EIO_Status s_MbedTlsInit(FSSLPull pull, FSSLPush push)
         assert(0);
     }
 
+    CORE_TRACE("MbedTlsInit(): Enter");
+
     if (!pull  ||  !push)
         return eIO_InvalidArg;
-
-    CORE_TRACE("MbedTlsInit(): Enter");
 
     mbedtls_ssl_config_init(&s_MbedTlsConf);
     mbedtls_ssl_config_defaults(&s_MbedTlsConf,
@@ -759,7 +769,7 @@ static EIO_Status s_MbedTlsInit(FSSLPull pull, FSSLPush push)
 
     if (mbedtls_ctr_drbg_seed(&s_MbedTlsCtrDrbg, mbedtls_entropy_func,
                               &s_MbedTlsEntropy, 0, 0) != 0) {
-        s_MbedTlsExit();
+        x_MbedTlsExit();
         return eIO_Unknown;
     }
     mbedtls_ssl_conf_rng(&s_MbedTlsConf,
@@ -780,17 +790,7 @@ static void s_MbedTlsExit(void)
     CORE_DEBUG_ARG(if (s_MbedTlsLogLevel))
         CORE_TRACE("MbedTlsExit(): Enter");
 
-    s_Push = 0;
-    s_Pull = 0;
-
-    mbedtls_ctr_drbg_free(&s_MbedTlsCtrDrbg);
-    mbedtls_entropy_free(&s_MbedTlsEntropy);
-    mbedtls_ssl_config_free(&s_MbedTlsConf);
-    mbedtls_debug_set_threshold(s_MbedTlsLogLevel = 0);
-    memset(&s_MbedTlsCtrDrbg, 0, sizeof(s_MbedTlsCtrDrbg));
-    memset(&s_MbedTlsEntropy, 0, sizeof(s_MbedTlsEntropy));
-    memset(&s_MbedTlsConf,    0, sizeof(s_MbedTlsConf));
-    x_FreeLocking();
+    x_MbedTlsExit();
 
     CORE_TRACE("MbedTlsExit(): Leave");
 }
@@ -887,6 +887,7 @@ void NcbiDeleteMbedTlsCertCredentials(NCBI_CRED cred)
         assert(0);
     }
     cred->type = (ENcbiCred) 0;
+    cred->data = 0;
     free(cred);
 }
 

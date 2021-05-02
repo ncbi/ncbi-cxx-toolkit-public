@@ -173,12 +173,12 @@ extern void NcbiDeleteTlsCertCredentials(NCBI_CRED cred)
 #if defined(HAVE_LIBMBEDTLS)  ||  defined(NCBI_CXX_TOOLKIT)
     case eNcbiCred_MbedTls / 100:
         NcbiDeleteMbedTlsCertCredentials(cred);
-        break;
+        return;
 #endif /*HAVE_LIBMBEDTLS || NCBI_CXX_TOOLKIT*/
 #ifdef HAVE_LIBGNUTLS
     case eNcbiCred_GnuTls / 100:
         NcbiDeleteGnuTlsCertCredentials (cred);
-        break;
+        return;
 #endif /*HAVE_LIBGNUTLS*/
     default:
         break;
@@ -202,5 +202,6 @@ extern void NcbiDeleteTlsCertCredentials(NCBI_CRED cred)
                 ("Deleting unknown certificate credentials (%s/%u)",
                  who, cred->type % 100));
     cred->type = (ENcbiCred) 0;
+    cred->data = 0;
     free(cred);
 }

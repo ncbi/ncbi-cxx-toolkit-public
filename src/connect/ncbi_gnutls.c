@@ -725,6 +725,7 @@ static EIO_Status s_GnuTlsInit(FSSLPull pull, FSSLPush push)
     gnutls_anon_client_credentials_t acred;
     gnutls_certificate_credentials_t xcred;
     const char* version;
+    int/*bool*/ inited;
     EIO_Status status;
     const char* val;
     char buf[32];
@@ -775,6 +776,7 @@ static EIO_Status s_GnuTlsInit(FSSLPull pull, FSSLPush push)
     CORE_DEBUG_ARG(if (s_GnuTlsLogLevel))
         CORE_TRACE("GnuTlsInit(): Go-on");
 
+    inited = 0/*false*/;
     if ((status = x_InitLocking()) != eIO_Success)
         goto out;
 
@@ -783,6 +785,7 @@ static EIO_Status s_GnuTlsInit(FSSLPull pull, FSSLPush push)
         status = eIO_NotSupported;
         goto out;
     }
+    inited = 1/*true*/;
     if (gnutls_anon_allocate_client_credentials(&acred) != 0) {
         gnutls_global_deinit();
         status = eIO_Unknown;
@@ -809,6 +812,8 @@ static EIO_Status s_GnuTlsInit(FSSLPull pull, FSSLPush push)
  out:
     gnutls_global_set_log_level(s_GnuTlsLogLevel = 0);
     gnutls_global_set_log_function(0);
+    if (inited)
+        gnutls_global_deinit();
     return status;
 }
 
@@ -922,7 +927,6 @@ void NcbiDeleteGnuTlsCertCredentials(NCBI_CRED cred)
         if (cred->data) {
             gnutls_certificate_free_credentials
                 ((gnutls_certificate_credentials_t) cred->data);
-            cred->data = 0;
         }
     } else {
         char who[80];
@@ -943,6 +947,7 @@ void NcbiDeleteGnuTlsCertCredentials(NCBI_CRED cred)
         assert(0);
     }
     cred->type = (ENcbiCred) 0;
+    cred->data = 0;
     free(cred);
 }
 
@@ -973,6 +978,7 @@ NCBI_CRED NcbiCreateGnuTlsCertCredentials(const void* cert,
     if (err) {
         CORE_LOG_ERRNO_EXX(32, eLOG_Error, err, gnutls_strerror(err),
                            "GNUTLS cannot allocate certificate credentials");
+        *gtls_xcred = 0;
         goto out;
     }
 
