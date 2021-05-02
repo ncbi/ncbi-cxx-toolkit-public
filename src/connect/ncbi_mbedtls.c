@@ -43,7 +43,7 @@
 
 #if defined(HAVE_LIBMBEDTLS)  ||  defined(NCBI_CXX_TOOLKIT)
 
-#  ifdef HAVE_LIBMBEDTLS /* external */
+#  ifdef HAVE_LIBMBEDTLS  /* external */
 #    include <mbedtls/ctr_drbg.h>
 #    include <mbedtls/debug.h>
 #    include <mbedtls/entropy.h>
@@ -53,7 +53,7 @@
 #    include <mbedtls/ssl.h>
 #    include <mbedtls/threading.h>
 #    include <mbedtls/version.h>
-#  else
+#  else                   /* embedded */
 #    include "mbedtls/mbedtls/ctr_drbg.h"
 #    include "mbedtls/mbedtls/debug.h"
 #    include "mbedtls/mbedtls/entropy.h"
@@ -339,7 +339,7 @@ static void* s_MbedTlsCreate(ESOCK_Side side, SNcbiSSLctx* ctx, int* error)
     if (end == MBEDTLS_SSL_IS_SERVER) {
         CORE_LOG_X(2, eLOG_Critical,
                    "Server-side SSL not yet supported with MBEDTLS");
-        *error = 0;
+        *error = NCBI_NOTSUPPORTED;
         return 0;
     }
 
@@ -351,7 +351,7 @@ static void* s_MbedTlsCreate(ESOCK_Side side, SNcbiSSLctx* ctx, int* error)
                          ctx->cred->type != eNcbiCred_MbedTls
                          ? "Foreign"
                          : "Empty"));
-            *error = 0;
+            *error = EINVAL;
             return 0;
         }
         xcred = ctx->cred->data;
@@ -595,6 +595,7 @@ static EIO_Status s_MbedTlsWrite(void* session, const void* data,
 }
 
 
+/*ARGSUSED*/
 static EIO_Status s_MbedTlsClose(void* session, int how/*unused*/, int* error)
 {
     int x_error;
