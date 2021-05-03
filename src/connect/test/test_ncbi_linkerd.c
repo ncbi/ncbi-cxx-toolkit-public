@@ -274,29 +274,26 @@ static int run_a_test(size_t test_idx, const char *svc, const char *sch,
 static const char * p_json_object_dotget_string(x_JSON_Object *obj,
                                                 const char *path)
 {
-#define PLATFORM_BUFLEN 200
-    char        platform_buf[PLATFORM_BUFLEN+1];
+    char        platform_buf[256];
     const char  *platform = NULL;
     const char  *val;
 
-#if defined(NCBI_OS_MSWIN)
+#if   defined(NCBI_OS_MSWIN)
     platform = "win";
 #elif defined(NCBI_OS_UNIX)
     platform = "nix";
 #endif
     if (platform) {
-        if (strlen(path) + strlen(platform) + 1 > PLATFORM_BUFLEN) {
-            strncpy(platform_buf, path, PLATFORM_BUFLEN);
-            platform_buf[PLATFORM_BUFLEN] = NIL;
+        if (strlen(path) + 1 + strlen(platform) > sizeof(platform_buf) - 1) {
+            strncpy0(platform_buf, path, sizeof(platform_buf) - 1);
             CORE_LOGF(eLOG_Error, ("Overlong path: '%s'...", platform_buf));
-        }
-        sprintf(platform_buf, "%s_%s", path, platform);
+        } else
+            sprintf(platform_buf, "%s_%s", path, platform);
         val = x_json_object_dotget_string(obj, platform_buf);
         if (val)
             return val;
     }
     return x_json_object_dotget_string(obj, path);
-#undef PLATFORM_BUFLEN
 }
 
 

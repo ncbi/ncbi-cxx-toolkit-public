@@ -267,7 +267,7 @@ static void s_MakeFrom(char* buf, size_t size, const char* from,
 
 
 static STimeout       s_MxTimeout;
-static char           s_MxHost[256];
+static char           s_MxHost[CONN_HOST_LEN + 1];
 static unsigned short s_MxPort;
 
 
@@ -658,7 +658,7 @@ extern const char* CORE_SendMailEx(const char*          to,
             const char* error = "Custom header write error";
             assert(status != eIO_Timeout);
             if (status != eIO_Success)
-                strncpy0(buffer, IO_StatusStr(status), sizeof(buffer) - 1);
+                strcpy(buffer, IO_StatusStr(status));
             else if (SENDMAIL_READ_RESPONSE(0, buffer))
                 error = "Spurious response while writing custom header";
             SENDMAIL_RETURN2(22, error, buffer);
@@ -705,7 +705,7 @@ extern const char* CORE_SendMailEx(const char*          to,
             const char* error = "Message body write error";
             assert(status == eIO_Timeout);
             if (status != eIO_Success)
-                strncpy0(buffer, IO_StatusStr(status), sizeof(buffer) - 1);
+                strcpy(buffer, IO_StatusStr(status));
             else if (SENDMAIL_READ_RESPONSE(0, buffer))
                 error = "Spurious response while writing message body";
             SENDMAIL_RETURN2(26, error, buffer);

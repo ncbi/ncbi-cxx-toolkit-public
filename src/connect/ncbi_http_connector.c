@@ -419,7 +419,7 @@ static int/*bool*/ x_RedirectOK(EBURLScheme    scheme_to,
     if ((ip1 = SOCK_gethostbyname(host_from)) == (unsigned int)(-1))
         ip1 = 0;
     if (!ip1  ||  !SOCK_gethostbyaddr(ip1, buf1, sizeof(buf1)))
-        strncpy0(buf1, host_from, sizeof(buf1)-1);
+        strncpy0(buf1, host_from, sizeof(buf1) - 1);
     else if (strcasecmp(buf1, host_to) == 0)
         return 1/*true*/;
     if ((ip2 = SOCK_gethostbyname(host_to)) == (unsigned int)(-1))
@@ -427,7 +427,7 @@ static int/*bool*/ x_RedirectOK(EBURLScheme    scheme_to,
     if (ip1/*&&  ip2*/  &&  ip1 == ip2)
         return 1/*true*/;
     if (!ip2  ||  !SOCK_gethostbyaddr(ip2, buf2, sizeof(buf2)))
-        strncpy0(buf2, host_to, sizeof(buf2)-1);
+        strncpy0(buf2, host_to, sizeof(buf2) - 1);
     return strcasecmp(buf1, buf2) == 0 ? 1/*true*/ : 0/*false*/;
 }
 
@@ -1645,7 +1645,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
                 if (http_code > 0)
                     sprintf(text, "%d", http_code);
                 else
-                    strncpy0(text, "occurred", sizeof(text) - 1);
+                    strcpy(text, "occurred");
                 CORE_LOGF_X(22, eLOG_Error,
                             ("[HTTP%s%s]  Fatal error %s",
                              url ? "; " : "",

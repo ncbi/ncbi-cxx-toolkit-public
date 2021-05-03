@@ -405,7 +405,7 @@ EIO_Status s_FakeReadAnnouncementWithErrorFromLBOS(CONN             conn,
     static_cast<SLBOS_UserData*>(CONN_GetUserData(conn))
         ->http_status_mesage = strdup("LBOS STATUS");
     const char* error = "Those lbos errors are scaaary";
-    strncpy(static_cast<char*>(line), error, size - 1);
+    strncpy0(static_cast<char*>(line), error, size - 1);
     *n_read = strlen(error);
     return eIO_Closed;
 }
@@ -422,7 +422,7 @@ EIO_Status s_FakeReadAnnouncementSuccessWithCorruptOutputFromLBOS
     static_cast<SLBOS_UserData*>(CONN_GetUserData(conn))
         ->http_response_code = 200;
     const char* error = "Corrupt output";
-    strncpy(static_cast<char*>(line), error, size - 1);
+    strncpy0(static_cast<char*>(line), error, size - 1);
     *n_read = strlen(error);
     return eIO_Closed;
 }
@@ -458,7 +458,7 @@ EIO_Status s_FakeReadAnnouncement(CONN           conn,
                                 strangely to template parameter in equations */
     if (s_CallCounter++ < localscope_lines) {
         const char* buf = "1.2.3.4:5";
-        strncat(static_cast<char*>(line), buf, size-1);
+        strncat(static_cast<char*>(line), buf, size - 1);
         *n_read = strlen(buf);
         return eIO_Success;
     } else {
@@ -913,7 +913,7 @@ EIO_Status s_FakeReadDiscovery(CONN            conn,
         static_cast<SLBOS_UserData*>(CONN_GetUserData(conn))
             ->http_response_code = 200;
         int length_before = strlen(static_cast<char*>(line));
-        strncat(static_cast<char*>(line), buf.c_str() + bytesSent, size-1);
+        strncat(static_cast<char*>(line), buf.c_str() + bytesSent, size - 1);
         int length_after = strlen(static_cast<char*>(line));
         *n_read = length_after - length_before + 1;
         bytesSent += *n_read-1;
@@ -964,7 +964,7 @@ EIO_Status s_FakeReadDiscoveryEmptyExtra(CONN            conn,
         static_cast<SLBOS_UserData*>(CONN_GetUserData(conn))
             ->http_response_code = 200;
         int length_before = strlen(static_cast<char*>(line));
-        strncat(static_cast<char*>(line), buf.c_str() + bytesSent, size-1);
+        strncat(static_cast<char*>(line), buf.c_str() + bytesSent, size - 1);
         int length_after = strlen(static_cast<char*>(line));
         *n_read = length_after - length_before + 1;
         bytesSent += *n_read-1;
@@ -1030,7 +1030,7 @@ EIO_Status s_FakeReadDiscoveryExtra(CONN            conn,
         static_cast<SLBOS_UserData*>(CONN_GetUserData(conn))
             ->http_response_code = 200;
         int length_before = strlen(static_cast<char*>(line));
-        strncat(static_cast<char*>(line), buf.c_str() + bytesSent, size-1);
+        strncat(static_cast<char*>(line), buf.c_str() + bytesSent, size - 1);
         int length_after = strlen(static_cast<char*>(line));
         *n_read = length_after - length_before + 1;
         bytesSent += *n_read-1;
@@ -1087,7 +1087,7 @@ EIO_Status s_FakeReadDiscoveryEmptyServInfoPart(CONN            conn,
         static_cast<SLBOS_UserData*>(CONN_GetUserData(conn))
             ->http_response_code = 200;
         int length_before = strlen(static_cast<char*>(line));
-        strncat(static_cast<char*>(line), buf.c_str() + bytesSent, size-1);
+        strncat(static_cast<char*>(line), buf.c_str() + bytesSent, size - 1);
         int length_after = strlen(static_cast<char*>(line));
         *n_read = length_after - length_before + 1;
         bytesSent += *n_read-1;

@@ -473,7 +473,7 @@ int main(int argc, char* argv[])
         assert(!xcred);
         if (!ConnNetInfo_GetValue(0, GNUTLS_PKCS12_TYPE, type, sizeof(type), 0)
             ||  !*type) {
-            strncpy0(type, "PEM", sizeof(type));
+            strcpy(type, "PEM");
         }
         pass = x_GetPkcs12Pass(GNUTLS_PKCS12_PASS, blk, sizeof(blk));
         assert(!pass  ||  !*pass  ||  pass == blk);
