@@ -1008,7 +1008,7 @@ NCBI_CRED NcbiCreateGnuTlsCertCredentials(const void* cert,
                                           &gtls_cert, 1, gtls_pkey);
     if (err) {
         CORE_LOG_ERRNO_EXX(35, eLOG_Error, err, gnutls_strerror(err),
-                           "GNUTLS cannot setup certificate credentials");
+                           "GNUTLS certificate credentials setup failure");
         goto out;
     }
 
