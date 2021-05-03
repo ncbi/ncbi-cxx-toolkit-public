@@ -114,11 +114,12 @@ SOCKSSL NcbiSetupTls(void);
  *  otherwise.
  *
  * @note that the size value ("certsz" / "pkeysz"), when expliciltly specified,
- * MUST include the terminating '\0' byte for PEM formatted buffers.  It MUST
- * always be specified precisely for DER formatted buffers.
+ * MUST account for the terminating '\0' byte for PEM formatted buffers.  It
+ * MUST always be specified exact for DER formatted buffers.
  *
  * @warning Calling free() on the returned handle will cause memory leaks;  so
- * always use NcbiDeleteTlsCertCredentials() when the handle is no longer used.
+ * always use NcbiDeleteTlsCertCredentials() when the handle is no longer
+ * needed.
  *
  * @sa
  *  NcbiDeleteTlsCertCredentials
@@ -133,7 +134,8 @@ NCBI_CRED NcbiCreateTlsCertCredentials(const void* cert,
 
 /** Delete a NCBI_CRED handle created by NcbiCreateTlsCertCredentials().
  *
- * @warning Do not use this call while the handle can be potentially in use.
+ * @warning Do not call this routine while the handle can be potentially in
+ * use.
  *
  * @note This routine can be safely used for handles returned by
  * NcbiCredMbedTls() and NcbiCredGnuTls(), to avoid having to delete the
