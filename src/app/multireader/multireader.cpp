@@ -1240,68 +1240,82 @@ void CMultiReaderApp::xSetFormat(
     CNcbiIstream& istr )
 //  ----------------------------------------------------------------------------
 {
-    m_uFormat = CFormatGuess::eUnknown;
+    m_uFormat = CFormatGuess::eUnknown;    
     string format = args["format"].AsString();
     const string& strProgramName = GetProgramDisplayName();
-
+    
     if (NStr::StartsWith(strProgramName, "wig") || format == "wig" ||
         format == "wiggle") {
         m_uFormat = CFormatGuess::eWiggle;
+        return;
     }
     if (NStr::StartsWith(strProgramName, "bed") || format == "bed") {
         m_uFormat = CFormatGuess::eBed;
+        return;
     }
     if (NStr::StartsWith(strProgramName, "b15") || format == "bed15" ||
         format == "microarray") {
         m_uFormat = CFormatGuess::eBed15;
+        return;
     }
     if (NStr::StartsWith(strProgramName, "gtf") || format == "gtf") {
         m_uFormat = CFormatGuess::eGtf;
+        return;
     }
     if (NStr::StartsWith(strProgramName, "gtf") || format == "augustus") {
         m_uFormat = CFormatGuess::eGffAugustus;
+        return;
     }
-    if (NStr::StartsWith(strProgramName, "gff") ||
-        format == "gff3" || format == "gff2") {
+    if (NStr::StartsWith(strProgramName, "gff3") || format == "gff3") {
         m_uFormat = CFormatGuess::eGff3;
+        return;
+    }
+    if (NStr::StartsWith(strProgramName, "gff2") || format =="gff2") {
+        m_uFormat = CFormatGuess::eGff2;
+        return;
     }
     if (NStr::StartsWith(strProgramName, "agp")) {
         m_uFormat = CFormatGuess::eAgp;
+        return;
     }
 
-    if (NStr::StartsWith(strProgramName, "newick") ||
-        format == "newick" || format == "tree" || format == "tre") {
+    if (NStr::StartsWith(strProgramName, "newick") || 
+            format == "newick" || format == "tree" || format == "tre") {
         m_uFormat = CFormatGuess::eNewick;
+        return;
     }
     if (NStr::StartsWith(strProgramName, "gvf") || format == "gvf") {
         m_uFormat = CFormatGuess::eGvf;
+        return;
     }
     if (NStr::StartsWith(strProgramName, "aln") || format == "align" ||
-        format == "aln") {
+            format == "aln") {
         m_uFormat = CFormatGuess::eAlignment;
+        return;
     }
-    if (NStr::StartsWith(strProgramName, "hgvs") ||
-        format == "hgvs") {
+    if (NStr::StartsWith(strProgramName, "hgvs") ||  format == "hgvs") {
         m_uFormat = CFormatGuess::eHgvs;
+        return;
     }
-    if( NStr::StartsWith(strProgramName, "fasta") ||
-        format == "fasta" ) {
-            m_uFormat = CFormatGuess::eFasta;
+    if( NStr::StartsWith(strProgramName, "fasta") ||  format == "fasta" ) {
+        m_uFormat = CFormatGuess::eFasta;
+        return;
     }
-    if( NStr::StartsWith(strProgramName, "feattbl") ||
-        format == "5colftbl" ) {
-            m_uFormat = CFormatGuess::eFiveColFeatureTable;
+    if( NStr::StartsWith(strProgramName, "feattbl") || format == "5colftbl" ) {
+        m_uFormat = CFormatGuess::eFiveColFeatureTable;
+        return;
     }
     if( NStr::StartsWith(strProgramName, "vcf") || format == "vcf" ) {
-            m_uFormat = CFormatGuess::eVcf;
+        m_uFormat = CFormatGuess::eVcf;
+        return;
     }
-    if( NStr::StartsWith(strProgramName, "ucsc") ||
-        format == "ucsc" ) {
-            m_uFormat = CFormatGuess::eUCSCRegion;
+    if( NStr::StartsWith(strProgramName, "ucsc")  ||  format == "ucsc" ) {
+        m_uFormat = CFormatGuess::eUCSCRegion;
+        return;
     }
-    if ( NStr::StartsWith(strProgramName, "psl") ||
-        format == "psl" ) {
-            m_uFormat = CFormatGuess::ePsl;
+    if ( NStr::StartsWith(strProgramName, "psl")  ||  format == "psl" ) {
+        m_uFormat = CFormatGuess::ePsl;
+        return;
     }
     if (m_uFormat == CFormatGuess::eUnknown) {
         m_uFormat = CFormatGuess::Format(istr);
