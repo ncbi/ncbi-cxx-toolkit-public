@@ -42,6 +42,7 @@
 #include <algo/blast/blastinput/magicblast_args.hpp>
 #include <algo/blast/api/objmgr_query_data.hpp>
 #include <algo/blast/format/blast_format.hpp>
+#include <objtools/align_format/align_format_util.hpp>
 #include "../blast/blast_app_util.hpp"
 
 #include <algo/blast/api/objmgrfree_query_data.hpp>
@@ -473,16 +474,14 @@ void CMagicBlastApp::x_LogBlastSearchInfo(CBlastUsageReport & report,
 {
 	if (report.IsEnabled()) {
 		report.AddParam(CBlastUsageReport::eProgram, (string)"magicblast");
-		EProgram task = options.GetProgram();
-		string task_str =  EProgramToTaskName(task);
-		report.AddParam(CBlastUsageReport::eTask, task_str);
 		report.AddParam(CBlastUsageReport::eOutputFmt,
                         fmt_args->GetFormattedOutputChoice());
 
-        report.AddParam(CBlastUsageReport::eNumSubjects, num_db_sequences);
-        report.AddParam(CBlastUsageReport::eSubjectsLength, db_size);
-
         if (db_adapter->IsBlastDb()) {
+
+                report.AddParam(CBlastUsageReport::eDBNumSeqs, num_db_sequences);
+                report.AddParam(CBlastUsageReport::eDBLength, db_size);
+
             CRef<CSearchDatabase> db = db_adapter->GetSearchDatabase();
 			if(db.NotEmpty()){
                 string dir = kEmptyStr;
@@ -522,8 +521,16 @@ void CMagicBlastApp::x_LogBlastSearchInfo(CBlastUsageReport & report,
                         report.AddParam(CBlastUsageReport::eNegIPGList, true);
                     }
 				}
+                // report database date
+                vector<CAlignFormatUtil::SDbInfo> dbinfo;
+                CAlignFormatUtil::GetBlastDbInfo(dbinfo, db->GetDatabaseName(),
+                                                 false, -1, false);
+                report.AddParam(CBlastUsageReport::eDBDate, dbinfo[0].date);
 			}
             
+        } else {
+            report.AddParam(CBlastUsageReport::eNumSubjects, num_db_sequences);
+            report.AddParam(CBlastUsageReport::eSubjectsLength, db_size);
         }
     }
 }
