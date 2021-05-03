@@ -73,6 +73,13 @@
 #    define NCBI_NOTSUPPORTED  EINVAL
 #  endif
 
+
+struct SNcbiMbedTlsCred {
+    mbedtls_x509_crt*   cert;
+    mbedtls_pk_context* pkey;
+};
+
+
 #  if defined(MBEDTLS_THREADING_ALT)  &&  defined(NCBI_THREADS)
 #    ifdef MBEDTLS_THREADING_PTHREAD
 #      error "MBEDTLS_THREADING_ALT and MBEDTLS_THREADING_PTHREAD conflict"
@@ -332,8 +339,8 @@ static void* s_MbedTlsCreate(ESOCK_Side side, SNcbiSSLctx* ctx, int* error)
     int end = (side == eSOCK_Client
                ? MBEDTLS_SSL_IS_CLIENT
                : MBEDTLS_SSL_IS_SERVER);
+    struct SNcbiMbedTlsCred* xcred;
     mbedtls_ssl_context* session;
-    void** xcred;
     int err;
 
     if (end == MBEDTLS_SSL_IS_SERVER) {
@@ -354,7 +361,7 @@ static void* s_MbedTlsCreate(ESOCK_Side side, SNcbiSSLctx* ctx, int* error)
             *error = EINVAL;
             return 0;
         }
-        xcred = ctx->cred->data;
+        xcred = (struct SNcbiMbedTlsCred*) ctx->cred->data;
     } else
         xcred = 0;
 
@@ -372,9 +379,7 @@ static void* s_MbedTlsCreate(ESOCK_Side side, SNcbiSSLctx* ctx, int* error)
          &&  (err = mbedtls_ssl_set_hostname(session, ctx->host)) != 0)  ||
         (xcred
          &&  (err = mbedtls_ssl_set_hs_own_cert
-              (session,
-               (mbedtls_x509_crt*)   xcred[0],
-               (mbedtls_pk_context*) xcred[1])) != 0)) {
+              (session, xcred->cert, xcred->pkey))                != 0)) {
         mbedtls_ssl_free(session);
         free(session);
         *error = err;
@@ -838,22 +843,28 @@ extern SOCKSSL NcbiSetupMbedTls(void)
 }
 
 
+#define ALIGN2(s, a)  ((((s) + ((a) - 1)) / (a)) * (a))
+#define ALIGN(s)      ALIGN2(s, sizeof(double))
+
+
 extern NCBI_CRED NcbiCredMbedTls(void* xcert, void* xpkey)
 {
-    struct SNcbiCred* cred;
-    size_t size = sizeof(*cred);
+    struct SNcbiCred*        cred;
+    struct SNcbiMbedTlsCred* xcred;
+    size_t size = ALIGN(sizeof(*cred));
     if (xcert  &&  xpkey) {
         size <<= 1;
-        size  += 2 * sizeof(void*);
+        size  += sizeof(*xcred);
     }
     cred = (NCBI_CRED) calloc(1, size);
     if (cred) {
         cred->type = eNcbiCred_MbedTls;
         if (xcert  &&  xpkey) {
-            void** data = (void**)((char*) cred + 2 * sizeof(*cred));
-            data[0]     = xcert;
-            data[1]     = xpkey;
-            cred->data  = data;
+            xcred = (struct SNcbiMbedTlsCred*)
+                ((char*) cred + 2*ALIGN(sizeof(*cred)));
+            xcred->cert = (mbedtls_x509_crt*)   xcert;
+            xcred->pkey = (mbedtls_pk_context*) xpkey;
+            cred->data  = xcred;
         }
     }
     return cred;
@@ -865,9 +876,10 @@ extern NCBI_CRED NcbiCredMbedTls(void* xcert, void* xpkey)
 void NcbiDeleteMbedTlsCertCredentials(NCBI_CRED cred)
 {
     if (cred->type / 100 == eNcbiCred_MbedTls / 100  &&  !(cred->type % 100)) {
-        mbedtls_x509_crt_free((mbedtls_x509_crt*)  ((void**) cred->data)[0]);
-        mbedtls_pk_free      ((mbedtls_pk_context*)((void**) cred->data)[1]);
-        memset(cred->data, 0, 2 * sizeof(void*));
+        struct SNcbiMbedTlsCred* xcred = (struct SNcbiMbedTlsCred*) cred->data;
+        mbedtls_x509_crt_free(xcred->cert);
+        mbedtls_pk_free      (xcred->pkey);
+        memset(xcred, 0, sizeof(*xcred));
     } else {
         char who[80];
         switch (cred->type / 100) {
@@ -897,15 +909,14 @@ NCBI_CRED NcbiCreateMbedTlsCertCredentials(const void* cert,
                                            const void* pkey,
                                            size_t      pkeysz)
 {
-    struct SNcbiCred*   ncbi_cred;
-    mbedtls_x509_crt*   mtls_cert;
-    mbedtls_pk_context* mtls_pkey;
-    size_t size = (2 * sizeof(*ncbi_cred) +
-                   2 * sizeof(void*)      +
-                   sizeof(*mtls_cert) + sizeof(*mtls_pkey));
+    struct SNcbiCred*    ncbi_cred;
+    struct SNcbiMbedTlsCred* xcred;
+    const size_t size = (2*ALIGN(sizeof(*ncbi_cred))
+                         + ALIGN(sizeof(*xcred))
+                         + ALIGN(sizeof(*xcred->cert))
+                         +       sizeof(*xcred->pkey));
     CORE_DEBUG_ARG(char tmp[1024];)
     char   errbuf[80];
-    void** data;
     int    err;
 
     if (!(ncbi_cred = (NCBI_CRED) calloc(1, size))) {
@@ -915,22 +926,20 @@ NCBI_CRED NcbiCreateMbedTlsCertCredentials(const void* cert,
         return 0;
     }
 
-    data = (void**)
-        ((char*) ncbi_cred + 2 * sizeof(*ncbi_cred));
-    mtls_cert = (mbedtls_x509_crt*)
-        ((char*) data      + 2 * sizeof(void*));
-    mtls_pkey = (mbedtls_pk_context*)
-        ((char*) mtls_cert + sizeof(*mtls_cert));
-    data[0] = mtls_cert;
-    data[1] = mtls_pkey;
+    xcred = (struct SNcbiMbedTlsCred*)
+        ((char*) ncbi_cred   + 2*ALIGN(sizeof(*ncbi_cred)));
+    xcred->cert = (mbedtls_x509_crt*)
+        ((char*)     xcred   +   ALIGN(sizeof(*xcred)));
+    xcred->pkey = (mbedtls_pk_context*)
+        ((char*) xcred->cert +   ALIGN(sizeof(*xcred->cert)));
     ncbi_cred->type = eNcbiCred_MbedTls;
-    ncbi_cred->data = data;
+    ncbi_cred->data = xcred;
 
     /* these are not technically necessary as they just zero the memory */
-    mbedtls_x509_crt_init(mtls_cert);
-    mbedtls_pk_init      (mtls_pkey);
+    mbedtls_x509_crt_init(xcred->cert);
+    mbedtls_pk_init      (xcred->pkey);
 
-    err = mbedtls_x509_crt_parse(mtls_cert,
+    err = mbedtls_x509_crt_parse(xcred->cert,
                                  (const unsigned char*) cert, certsz ? certsz
                                  : strlen((const char*) cert) + 1);
     if (err) {
@@ -940,12 +949,12 @@ NCBI_CRED NcbiCreateMbedTlsCertCredentials(const void* cert,
         goto out;
     }
     CORE_DEBUG_ARG(err = mbedtls_x509_crt_info(tmp, sizeof(tmp),
-                                               "", mtls_cert));
+                                               "", xcred->cert));
     CORE_TRACEF(("Certificate loaded%s%s",
                  err > 0 ? ":\n" : "",
                  err > 0 ? tmp   : ""));
 
-    err = mbedtls_pk_parse_key(mtls_pkey,
+    err = mbedtls_pk_parse_key(xcred->pkey,
                                (const unsigned char*) pkey, pkeysz ? pkeysz
                                : strlen((const char*) pkey) + 1, 0, 0);
     if (err) {
@@ -955,7 +964,7 @@ NCBI_CRED NcbiCreateMbedTlsCertCredentials(const void* cert,
         goto out;
     }
     CORE_TRACEF(("Private key loaded: %s",
-                 mbedtls_pk_get_name(mtls_pkey)));
+                 mbedtls_pk_get_name(xcred->pkey)));
 
     return ncbi_cred;
 
