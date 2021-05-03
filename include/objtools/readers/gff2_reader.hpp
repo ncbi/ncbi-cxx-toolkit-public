@@ -123,7 +123,11 @@ public:
     //
     virtual void xGetData(
         ILineReader&,
-        TReaderData&);
+        TReaderData&) override;
+
+    virtual void xProcessData(
+        const TReaderData&,
+        CSeq_annot&) override;
 
     bool IsInGenbankMode() const;
 

@@ -628,12 +628,15 @@ CGff2Reader::xIsCurrentDataType(
 
 //  ----------------------------------------------------------------------------
 bool CGff2Reader::xUpdateAnnotFeature(
-    const CGff2Record&,
-    CSeq_annot&,
+    const CGff2Record& record,
+    CSeq_annot& annot,
     ILineErrorListener*)
 //  ----------------------------------------------------------------------------
 {
-    return false;
+    CRef<CSeq_feat> pFeat(new CSeq_feat);
+    record.InitializeFeature(m_iFlags, pFeat);
+    xAddFeatureToAnnot(pFeat, annot);
+    return true;
 }
 
 
@@ -1471,6 +1474,27 @@ bool CGff2Reader::xIsFastaMarker(
     string lineLowerCase(line);
     NStr::ToLower(lineLowerCase);
     return NStr::StartsWith(lineLowerCase, "##fasta");
+}
+
+//  ----------------------------------------------------------------------------
+void
+CGff2Reader::xProcessData(
+    const TReaderData& readerData,
+    CSeq_annot& annot) 
+//  ----------------------------------------------------------------------------
+{
+    for (const auto& lineData: readerData) {
+        const auto& line = lineData.mData;
+        if (xParseStructuredComment(line)) {
+            continue;
+        }
+        if (xParseBrowserLine(line, annot)) {
+            continue;
+        }
+        if (xParseFeature(line, annot, nullptr)) {
+            continue;
+        }
+    }
 }
 
 

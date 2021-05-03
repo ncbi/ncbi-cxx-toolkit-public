@@ -256,7 +256,7 @@ bool CGff2Record::AssignFromGff(
     }
 
     if ( columns[5] != "." ) {
-        m_pdScore = new double( NStr::StringToDouble( columns[5] ) );
+        m_pdScore = new double( NStr::StringToDouble( columns[5], NStr::fAllowLeadingSpaces ) );
     }
 
     enum ENa_strand strand;
