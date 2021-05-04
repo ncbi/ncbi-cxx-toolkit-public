@@ -2313,13 +2313,13 @@ try_even_more_suffix:
 
 // A maximal double precision used in the double to string conversion
 #if defined(NCBI_OS_MSWIN)
-static const int kMaxDoublePrecision = 200;
+    const int kMaxDoublePrecision = 200;
 #else
-static const int kMaxDoublePrecision = 308;
+    const int kMaxDoublePrecision = 308;
 #endif
 // A maximal size of a double value in a string form.
 // Exponent size + sign + dot + ending '\0' + max.precision
-static const int kMaxDoubleStringSize = 308 + 3 + kMaxDoublePrecision;
+const int kMaxDoubleStringSize = 308 + 3 + kMaxDoublePrecision;
 
 
 void NStr::DoubleToString(string& out_str, double value,
