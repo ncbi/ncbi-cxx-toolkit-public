@@ -1087,7 +1087,7 @@ public:
     ///   Size of buffer, "buf".
     /// @return
     ///   The number of bytes written into "buf".
-    static SIZE_TYPE DoubleToStringPosix(double value,unsigned int precision,
+    static SIZE_TYPE DoubleToStringPosix(double value, unsigned int precision,
                                          char* buf, SIZE_TYPE buf_size);
 
 
@@ -1095,7 +1095,7 @@ public:
     /// 
     /// The result consists of three parts: significant digits, exponent and sign.
     /// For example, input value -12345.67 will produce
-    /// buf = "1234567" , *dec = 4, and *sign = -1.
+    /// buf = "1234567", *dec = 4, and *sign = -1.
     /// NOTE:
     ///   The output character buffer is NOT zero-terminated.
     ///   The buffer is NOT padded with zeros.
@@ -1120,7 +1120,7 @@ public:
     ///   Sign of the value
     /// @return
     ///   The number of bytes written into "buf".
-    static SIZE_TYPE DoubleToString_Ecvt(double value,unsigned int precision,
+    static SIZE_TYPE DoubleToString_Ecvt(double value, unsigned int precision,
                                          char* buf, SIZE_TYPE buf_size,
                                          int* dec, int* sign);
 

@@ -2313,13 +2313,13 @@ try_even_more_suffix:
 
 // A maximal double precision used in the double to string conversion
 #if defined(NCBI_OS_MSWIN)
-    const int kMaxDoublePrecision = 200;
+static const int kMaxDoublePrecision = 200;
 #else
-    const int kMaxDoublePrecision = 308;
+static const int kMaxDoublePrecision = 308;
 #endif
 // A maximal size of a double value in a string form.
 // Exponent size + sign + dot + ending '\0' + max.precision
-const int kMaxDoubleStringSize = 308 + 3 + kMaxDoublePrecision;
+static const int kMaxDoubleStringSize = 308 + 3 + kMaxDoublePrecision;
 
 
 void NStr::DoubleToString(string& out_str, double value,
@@ -2425,18 +2425,18 @@ SIZE_TYPE NStr::DoubleToString(double value, unsigned int precision,
 }
 
 
-char* s_ncbi_append_int2str(char* buffer, unsigned int value, size_t digits, bool zeros)
+static char* s_ncbi_append_int2str(char* buffer, unsigned int value, size_t digits, bool zeros)
 {
     char* buffer_start = buffer;
     char* buffer_end = (buffer += digits-1);
     if (zeros) {
         do {
-            *buffer-- = (char)(48 + (value % 10));
+            *buffer-- = (char)('0' + (value % 10));
             value /= 10;
         } while (--digits);
     } else {
         do {
-            *buffer-- = (char)(48 + (value % 10));
+            *buffer-- = (char)('0' + (value % 10));
         } while (value /= 10);
 
         if (++buffer != buffer_start) {
@@ -2468,8 +2468,8 @@ SIZE_TYPE NStr::DoubleToString_Ecvt(double val, unsigned int precision,
             *buffer='0';
             return 1;
         }
-        *buffer='-';
-        *(++buffer)='0';
+        *buffer++='-';
+        *buffer='0';
         *sign = -1;
         return 2;
     }
@@ -2488,7 +2488,7 @@ SIZE_TYPE NStr::DoubleToString_Ecvt(double val, unsigned int precision,
 
     if (exp_positive) {
         while (value>=__NLG(1.e256))
-            {value/=__NLG(1.e256); exp+=256;}
+            {value*=__NLG(1.e-256); exp+=256;}
         if (value >= __NLG(1.e16)) {
             if      (value>=__NLG(1.e240)) {value*=__NLG(1.e-240); exp+=240;}
             else if (value>=__NLG(1.e224)) {value*=__NLG(1.e-224); exp+=224;}
@@ -2646,10 +2646,8 @@ SIZE_TYPE NStr::DoubleToString_Ecvt(double val, unsigned int precision,
     for (pos = digits_len; pos-- > 0 && digits[pos] == '0';)
         --digits_len;
 
-    *dec = (int)exp;
-    if (!exp_positive) {
-        *dec = -*dec;
-    }
+    *dec = (int)(exp_positive ? exp : -exp);
+
     if (!use_ext_buffer) {
         if (digits_len <= bufsize) {
             strncpy(buffer,digits,digits_len);
