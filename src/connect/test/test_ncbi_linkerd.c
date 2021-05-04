@@ -30,6 +30,7 @@
  *
  */
 
+#include "../ncbi_ansi_ext.h"
 #include "../ncbi_priv.h"               /* CORE logging facilities */
 #include "../parson.h"
 
