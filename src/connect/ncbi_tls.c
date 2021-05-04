@@ -127,7 +127,7 @@ extern NCBI_CRED NcbiCreateTlsCertCredentials(const void* cert,
         return 0;
     }
     ssltype = 0;
-    if (!(sslname = SOCK_SSLName())) {
+    if (!(sslname = SOCK_SSLName())  ||  !*sslname) {
         FSSLSetup setup = x_NcbiSetupTls();
 #if defined(HAVE_LIBMBEDTLS)  ||  defined(NCBI_CXX_TOOLKIT)
         if (setup == NcbiSetupMbedTls)
@@ -158,8 +158,11 @@ extern NCBI_CRED NcbiCreateTlsCertCredentials(const void* cert,
         return NcbiCreateGnuTlsCertCredentials (cert, certsz, pkey, pkeysz);
 #endif /*HAVE_LIBGNUTLS*/
     default:
-        CORE_LOG_X(46, eLOG_Critical,
-                   "Cannot build certificate credentials: no TLS configured");
+        CORE_LOGF_X(46, eLOG_Critical,
+                    ("Cannot build certificate credentials:"
+                     " %sTLS %sconfigured",
+                     !sslname ? "no " : "",
+                     !sslname ? ""    : "mis"));
         break;
     }
     return 0;
