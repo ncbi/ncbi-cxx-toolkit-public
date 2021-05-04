@@ -73,12 +73,21 @@
 #    define NCBI_NOTSUPPORTED  EINVAL
 #  endif
 
+#else
+
+#  define mbedtls_x509_crt    void
+#  define mbedtls_pk_context  void
+
+#endif /*HAVE_LIBMBEDTLS || NCBI_CXX_TOOLKIT*/
+
 
 struct SNcbiMbedTlsCred {
     mbedtls_x509_crt*   cert;
     mbedtls_pk_context* pkey;
 };
 
+
+#if defined(HAVE_LIBMBEDTLS)  ||  defined(NCBI_CXX_TOOLKIT)
 
 #  if defined(MBEDTLS_THREADING_ALT)  &&  defined(NCBI_THREADS)
 #    ifdef MBEDTLS_THREADING_PTHREAD
