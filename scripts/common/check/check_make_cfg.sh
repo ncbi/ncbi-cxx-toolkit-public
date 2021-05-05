@@ -335,6 +335,9 @@ fi
 BOOST_TEST_CATCH_SYSTEM_ERRORS=no
 export BOOST_TEST_CATCH_SYSTEM_ERRORS
 
+BOOST_TEST_COLOR_OUTPUT=no
+export BOOST_TEST_COLOR_OUTPUT
+
 # Check on linkerd and set backup
 echo test | nc -w 1 linkerd 4142 > /dev/null 2>&1
 if test \$? -ne 0;  then

@@ -373,6 +373,9 @@ export TSAN_OPTIONS
 BOOST_TEST_CATCH_SYSTEM_ERRORS=no
 export BOOST_TEST_CATCH_SYSTEM_ERRORS
 
+BOOST_TEST_COLOR_OUTPUT=no
+export BOOST_TEST_COLOR_OUTPUT
+
 # Export some global vars
 top_srcdir="\$root_dir"
 export top_srcdir
