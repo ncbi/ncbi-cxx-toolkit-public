@@ -12,12 +12,12 @@
 # Use as: ${MONGOCXX_LIBPATH} ${MONGOCXX_LIBRARIES} ${BSONCXX_LIBRARIES}
 
 find_package(libbsoncxx REQUIRED
-             PATHS $ENV{NCBI}/mongodb-3.4.0/ 
+             PATHS $ENV{NCBI}/mongodb-3.6.3/
              NO_DEFAULT_PATH
 )
 
 find_package(libmongocxx REQUIRED
-             PATHS $ENV{NCBI}/mongodb-3.4.0/
+             PATHS $ENV{NCBI}/mongodb-3.6.3/
              NO_DEFAULT_PATH
 )
 

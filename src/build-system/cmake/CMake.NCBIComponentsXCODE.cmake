@@ -34,7 +34,7 @@ set(NCBI_ThirdParty_BACKWARD   ${NCBI_TOOLS_ROOT}/backward-cpp-1.3.20180206-44ae
 set(NCBI_ThirdParty_LMDB       ${NCBI_TOOLS_ROOT}/lmdb-0.9.18 CACHE PATH "LMDB root")
 set(NCBI_ThirdParty_LZO        ${NCBI_TOOLS_ROOT}/lzo-2.05 CACHE PATH "LZO root")
 set(NCBI_ThirdParty_SQLITE3    ${NCBI_TOOLS_ROOT}/sqlite-3.26.0-ncbi1 CACHE PATH "SQLITE2 root")
-set(NCBI_ThirdParty_Boost      ${NCBI_TOOLS_ROOT}/boost-1.62.0-ncbi1 CACHE PATH "Boost root")
+set(NCBI_ThirdParty_Boost      ${NCBI_TOOLS_ROOT}/boost-1.76.0-ncbi1 CACHE PATH "Boost root")
 set(NCBI_ThirdParty_BerkeleyDB ${NCBI_TOOLS_ROOT}/BerkeleyDB CACHE PATH "BerkeleyDB root")
 #set(NCBI_ThirdParty_VDB        "/Volumes/trace_software/vdb/vdb-versions/2.11.0")
 set(NCBI_ThirdParty_VDB        "/net/snowman/vol/projects/trace_software/vdb/vdb-versions/2.11.0" CACHE PATH "VDB root")

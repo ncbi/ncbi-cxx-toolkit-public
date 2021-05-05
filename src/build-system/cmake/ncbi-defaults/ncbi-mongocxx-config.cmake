@@ -20,8 +20,8 @@ endif()
 ## Module-specific checks
 ##
 
-set(_MONGODB_VERSION "mongodb-3.4.0")
-set(_MONGO_C_DRIVER_VERSION "mongo-c-driver-1.14.0")
+set(_MONGODB_VERSION "mongodb-3.6.3")
+set(_MONGO_C_DRIVER_VERSION "mongo-c-driver-1.17.5")
 
 get_filename_component(MONGOCXX_CMAKE_DIR "$ENV{NCBI}/${_MONGODB_VERSION}" REALPATH)
 string(REGEX REPLACE ".*-([0-9].*)" "\\1" MONGOCXX_VERSION_STRING "${MONGOCXX_CMAKE_DIR}")
