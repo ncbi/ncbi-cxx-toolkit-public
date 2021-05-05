@@ -5,7 +5,7 @@ if (BUILD_SHARED_LIBS)
     set(Boost_USE_STATIC_RUNTIME    OFF)
 else()
     set(Boost_USE_STATIC_LIBS       ON)
-    set(Boost_USE_STATIC_RUNTIME    ON)
+    # set(Boost_USE_STATIC_RUNTIME    ON)
 endif()
 set(Boost_USE_MULTITHREADED     ON)
 
@@ -13,7 +13,8 @@ if(EXISTS "${NCBI_ThirdParty_Boost}")
     set(BOOST_ROOT ${NCBI_ThirdParty_Boost})
 #    set(BOOST_LIBRARYDIR ${NCBI_ThirdParty_Boost}/lib)
     set(_foo_CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH})
-    find_package(Boost 1.62.0 EXACT OPTIONAL_COMPONENTS
+    find_package(Boost ${NCBI_ThirdParty_Boost_VERSION} EXACT
+        OPTIONAL_COMPONENTS
         unit_test_framework system thread filesystem iostreams
 #        coroutine program_options prg_exec_monitor test_exec_monitor
         context chrono date_time regex serialization timer
