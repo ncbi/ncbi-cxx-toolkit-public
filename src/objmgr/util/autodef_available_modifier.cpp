@@ -243,6 +243,7 @@ unsigned int CAutoDefAvailableModifier::GetRank() const
 string CAutoDefAvailableModifier::GetSubSourceLabel (CSubSource::ESubtype st)
 {
     string label;
+    try {
     switch (st) {
         case CSubSource::eSubtype_endogenous_virus_name:
             label = "endogenous virus";
@@ -344,6 +345,8 @@ string CAutoDefAvailableModifier::GetSubSourceLabel (CSubSource::ESubtype st)
             label = "";
             break;
     }
+    } catch (CException) {
+    }
     return label;
 }
 
@@ -351,6 +354,7 @@ string CAutoDefAvailableModifier::GetSubSourceLabel (CSubSource::ESubtype st)
 string CAutoDefAvailableModifier::GetOrgModLabel(COrgMod::ESubtype st)
 {
     string label;
+    try {
     switch (st) {
         case COrgMod::eSubtype_nat_host:
             label = "specific host";
@@ -382,6 +386,8 @@ string CAutoDefAvailableModifier::GetOrgModLabel(COrgMod::ESubtype st)
         default:
             label = COrgMod::GetSubtypeName(st);
             break;
+    }
+    } catch (CException) {
     }
     return label;
 }
