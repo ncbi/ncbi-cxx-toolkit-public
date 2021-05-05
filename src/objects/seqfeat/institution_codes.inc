@@ -2241,7 +2241,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "FSCL\ts\tFlorida Southern College, Biology Department\t\t\t",
 "FSFRL\ts\tFar Seas Fisheries Research Laboratory\t\t\t",
 "FSIU\ts\tLaboratory of Fisheries, Department of Oceanography\t\t\t",
-"FSL\ts\tCollections de la Faculte des Sciences de Lyon\t\t\t",
+"FSL\tsc\tCollections de la Faculte des Sciences de Lyon\t\t\t",
 "FSLF\ts\tRocky Mountain Forest and Range Experiment Station\t\t\t",
 "FSMC\ts\tFlorida State Museum\tFSM\t\t",
 "FSNRS\ts\tUSDA/FS, Northern Research Station\t\t\t",

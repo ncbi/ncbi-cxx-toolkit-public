@@ -2208,7 +2208,7 @@ FSCA	s	Florida State Collection of Arthropods, Florida Department of  Agricultur
 FSCL	s	Florida Southern College, Biology Department			
 FSFRL	s	Far Seas Fisheries Research Laboratory			
 FSIU	s	Laboratory of Fisheries, Department of Oceanography			
-FSL	s	Collections de la Faculte des Sciences de Lyon			
+FSL	sc	Collections de la Faculte des Sciences de Lyon			
 FSLF	s	Rocky Mountain Forest and Range Experiment Station			
 FSMC	s	Florida State Museum	FSM		
 FSNRS	s	USDA/FS, Northern Research Station			
