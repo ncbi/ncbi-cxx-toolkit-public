@@ -504,8 +504,32 @@ void CPSGS_AnnotProcessor::x_RequestBlobProp(int32_t  sat, int32_t  sat_key,
         return;
     }
 
+    bool    added_to_exclude_cache = false;
+    if (!m_AnnotRequest->m_ClientId.empty()) {
+        bool        completed = true;
+        auto        cache_result = app->GetExcludeBlobCache()->AddBlobId(
+                        m_AnnotRequest->m_ClientId,
+                        blob_id.m_Sat, blob_id.m_SatKey, completed);
+        if (cache_result == ePSGS_AlreadyInCache && m_AnnotRequest->m_AutoBlobSkipping) {
+            if (completed)
+                IPSGS_Processor::m_Reply->PrepareBlobExcluded(
+                        blob_id.ToString(), GetName(), ePSGS_BlobSent);
+            else
+                IPSGS_Processor::m_Reply->PrepareBlobExcluded(
+                        blob_id.ToString(), GetName(), ePSGS_BlobInProgress);
+            m_Completed = true;
+            SignalFinishProcessing();
+            return;
+        }
+
+        if (cache_result == ePSGS_Added)
+            added_to_exclude_cache = true;
+    }
+
+
     unique_ptr<CCassBlobFetch>  fetch_details;
     fetch_details.reset(new CCassBlobFetch(*m_AnnotRequest, blob_id));
+    fetch_details->SetExcludeBlobCacheUpdated(added_to_exclude_cache);
 
     unique_ptr<CBlobRecord> blob_record(new CBlobRecord);
     CPSGCache               psg_cache(IPSGS_Processor::m_Request,
@@ -539,6 +563,8 @@ void CPSGS_AnnotProcessor::x_RequestBlobProp(int32_t  sat, int32_t  sat_key,
                 IPSGS_Processor::m_Reply->SendTrace(
                     trace_msg, IPSGS_Processor::m_Request->GetStartTimestamp());
             }
+
+            fetch_details->RemoveFromExcludeBlobCache();
 
             m_Completed = true;
             SignalFinishProcessing();
@@ -754,6 +780,15 @@ void CPSGS_AnnotProcessor::x_Peek(bool  need_wait)
         // soon as they are available
         if (IPSGS_Processor::m_Reply->IsOutputReady())
             IPSGS_Processor::m_Reply->Flush(false);
+
+        if (AreAllFinishedRead()) {
+            for (auto &  details: m_FetchDetails) {
+                if (details) {
+                    // Update the cache records where needed
+                    details->SetExcludeBlobCacheCompleted();
+                }
+            }
+        }
     } else {
         // Ready packets needs to be send only once when everything is finished
         if (overall_final_state) {

@@ -427,14 +427,6 @@ struct SPSGS_BlobRequestBase : public SPSGS_RequestBase
     // is populated
     SPSGS_BlobId            m_BlobId;
 
-    // Processing fields: they are not coming from the client and used while
-    // the request is in process.
-    // Helps to avoid unnecessery cache updates;
-    // - only the one who added will remove
-    // - only the one who added will set completed once
-    bool                    m_ExcludeBlobCacheAdded;
-    bool                    m_ExcludeBlobCacheCompleted;
-
     SPSGS_BlobRequestBase(EPSGS_TSEOption  tse_option,
                           EPSGS_CacheAndDbUse  use_cache,
                           const string &  client_id,
@@ -450,17 +442,13 @@ struct SPSGS_BlobRequestBase : public SPSGS_RequestBase
         m_TSEOption(tse_option),
         m_UseCache(use_cache),
         m_ClientId(client_id),
-        m_SendBlobIfSmall(send_blob_if_small),
-        m_ExcludeBlobCacheAdded(false),
-        m_ExcludeBlobCacheCompleted(false)
+        m_SendBlobIfSmall(send_blob_if_small)
     {}
 
     SPSGS_BlobRequestBase() :
         m_TSEOption(ePSGS_UnknownTSE),
         m_UseCache(ePSGS_UnknownUseCache),
-        m_SendBlobIfSmall(0),
-        m_ExcludeBlobCacheAdded(false),
-        m_ExcludeBlobCacheCompleted(false)
+        m_SendBlobIfSmall(0)
     {}
 
     SPSGS_BlobRequestBase(const SPSGS_BlobRequestBase &) = default;
@@ -583,6 +571,7 @@ struct SPSGS_AnnotRequest : public SPSGS_BlobRequestBase
                        int  seq_id_type,
                        vector<string> &  names,
                        EPSGS_CacheAndDbUse  use_cache,
+                       bool  auto_blob_skipping,
                        const string &  client_id,
                        SPSGS_BlobRequestBase::EPSGS_TSEOption  tse_option,
                        int  send_blob_if_small,
@@ -598,12 +587,14 @@ struct SPSGS_AnnotRequest : public SPSGS_BlobRequestBase
         m_SeqId(seq_id),
         m_SeqIdType(seq_id_type),
         m_Names(move(names)),
+        m_AutoBlobSkipping(auto_blob_skipping),
         m_Lock(false),
         m_ProcessedBioseqInfo(kUnknownPriority)
     {}
 
     SPSGS_AnnotRequest() :
         m_SeqIdType(-1),
+        m_AutoBlobSkipping(true),
         m_Lock(false),
         m_ProcessedBioseqInfo(kUnknownPriority)
     {}
@@ -651,6 +642,7 @@ public:
     string                                      m_SeqId;
     int                                         m_SeqIdType;
     vector<string>                              m_Names;
+    bool                                        m_AutoBlobSkipping;
 
 private:
     // A list of names which have been already processed by some processors

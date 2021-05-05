@@ -101,6 +101,7 @@ enum EPSGS_DbFetchType {
     ePSGS_BlobBySeqIdFetch,
     ePSGS_BlobBySatSatKeyFetch,
     ePSGS_AnnotationFetch,
+    ePSGS_AnnotationBlobFetch,
     ePSGS_TSEChunkFetch,
     ePSGS_BioseqInfoFetch,
     ePSGS_Si2csiFetch,

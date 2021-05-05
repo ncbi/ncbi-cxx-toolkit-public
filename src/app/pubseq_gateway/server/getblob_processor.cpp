@@ -124,24 +124,21 @@ void CPSGS_GetBlobProcessor::Process(void)
         return;
     }
 
-    if (m_BlobRequest->m_TSEOption != SPSGS_BlobRequestBase::ePSGS_NoneTSE) {
-        if (!m_BlobRequest->m_ClientId.empty()) {
-            // Adding to exclude blob cache is unconditional however skipping
-            // is only for the blobs identified by seq_id/seq_id_type
-            bool        completed = true;
-            auto        cache_result =
-                app->GetExcludeBlobCache()->AddBlobId(
-                        m_BlobRequest->m_ClientId,
-                        m_BlobId.m_Sat,
-                        m_BlobId.m_SatKey,
-                        completed);
-            if (cache_result == ePSGS_Added)
-                m_BlobRequest->m_ExcludeBlobCacheAdded = true;
-        }
+    bool    added_to_exclude_cache = false;
+    if (!m_BlobRequest->m_ClientId.empty()) {
+        // Adding to exclude blob cache is unconditional;
+        // Skipping is only for the blobs identified by seq_id/seq_id_type
+        bool        completed = true;
+        auto        cache_result = app->GetExcludeBlobCache()->AddBlobId(
+                    m_BlobRequest->m_ClientId,
+                    m_BlobId.m_Sat, m_BlobId.m_SatKey, completed);
+        if (cache_result == ePSGS_Added)
+            added_to_exclude_cache = true;
     }
 
     unique_ptr<CCassBlobFetch>  fetch_details;
     fetch_details.reset(new CCassBlobFetch(*m_BlobRequest, m_BlobId));
+    fetch_details->SetExcludeBlobCacheUpdated(added_to_exclude_cache);
 
     unique_ptr<CBlobRecord> blob_record(new CBlobRecord);
     CPSGCache               psg_cache(IPSGS_Processor::m_Request,
@@ -184,17 +181,7 @@ void CPSGS_GetBlobProcessor::Process(void)
             IPSGS_Processor::m_Reply->PrepareBlobPropCompletion(item_id,
                                                                 GetName(),
                                                                 2);
-
-            if (m_BlobRequest->m_ExcludeBlobCacheAdded &&
-                !m_BlobRequest->m_ClientId.empty()) {
-                app->GetExcludeBlobCache()->Remove(
-                        m_BlobRequest->m_ClientId,
-                        m_BlobId.m_Sat,
-                        m_BlobId.m_SatKey);
-
-                // To prevent SetCompleted() later
-                m_BlobRequest->m_ExcludeBlobCacheAdded = false;
-            }
+            fetch_details->RemoveFromExcludeBlobCache();
 
             // Finished without reaching cassandra
             UpdateOverallStatus(ret_status);
@@ -376,19 +363,11 @@ void CPSGS_GetBlobProcessor::x_Peek(bool  need_wait)
 
     // Blob specific: deal with exclude blob cache
     if (AreAllFinishedRead()) {
-        // Get the reference to the blob base request
-        auto &      blob_request =
-                IPSGS_Processor::m_Request->GetRequest<SPSGS_BlobRequestBase>();
-
-        if (blob_request.m_ExcludeBlobCacheAdded &&
-            ! blob_request.m_ExcludeBlobCacheCompleted &&
-            ! blob_request.m_ClientId.empty()) {
-            auto *  app = CPubseqGatewayApp::GetInstance();
-            app->GetExcludeBlobCache()->SetCompleted(
-                                            blob_request.m_ClientId,
-                                            m_BlobId.m_Sat,
-                                            m_BlobId.m_SatKey, true);
-            blob_request.m_ExcludeBlobCacheCompleted = true;
+        for (auto &  details: m_FetchDetails) {
+            if (details) {
+                // Update the cache records where needed
+                details->SetExcludeBlobCacheCompleted();
+            }
         }
     }
 

@@ -34,6 +34,59 @@
 
 #include "cass_fetch.hpp"
 #include "psgs_reply.hpp"
+#include "pubseq_gateway.hpp"
+
+
+
+void CCassFetch::RemoveFromExcludeBlobCache(void)
+{
+    // Remove the requested blob from cache if necessary
+
+    if (!IsBlobFetch())
+        return;
+
+    if (m_ClientId.empty())
+        return;
+
+    if (m_ExcludeBlobCacheUpdated) {
+        auto *  app = CPubseqGatewayApp::GetInstance();
+        app->GetExcludeBlobCache()->Remove(m_ClientId,
+                                           m_BlobId.m_Sat,
+                                           m_BlobId.m_SatKey);
+        // To prevent any updates
+        m_ExcludeBlobCacheUpdated = false;
+    }
+}
+
+
+EPSGS_CacheAddResult CCassFetch::AddToExcludeBlobCache(bool &  completed)
+{
+    auto *      app = CPubseqGatewayApp::GetInstance();
+    auto        cache_result = app->GetExcludeBlobCache()->AddBlobId(
+                    m_ClientId, m_BlobId.m_Sat, m_BlobId.m_SatKey, completed);
+    if (cache_result == ePSGS_Added)
+        m_ExcludeBlobCacheUpdated = true;
+    return cache_result;
+}
+
+
+void CCassFetch::SetExcludeBlobCacheCompleted(void)
+{
+    if (!IsBlobFetch())
+        return;
+
+    if (m_ClientId.empty())
+        return;
+
+    if (m_ExcludeBlobCacheUpdated) {
+        auto *  app = CPubseqGatewayApp::GetInstance();
+        app->GetExcludeBlobCache()->SetCompleted(m_ClientId,
+                                                 m_BlobId.m_Sat,
+                                                 m_BlobId.m_SatKey, true);
+        // To prevent any updates
+        m_ExcludeBlobCacheUpdated = false;
+    }
+}
 
 
 void CCassNamedAnnotFetch::ResetCallbacks(void)

@@ -1339,6 +1339,11 @@ public:
         m_TcpDaemon->StopListening();
     }
 
+    uv_loop_t *  GetUVLoop(void)
+    {
+        return m_TcpDaemon->loop.Handle();
+    }
+
 private:
     std::unique_ptr<TSL::CTcpDaemon<CHttpProto<P>,
                                     CHttpConnection<P>,

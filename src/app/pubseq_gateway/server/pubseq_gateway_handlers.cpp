@@ -763,6 +763,22 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
         if (send_blob_if_small < 0)
             return 0;
 
+        bool                auto_blob_skipping = true;  // default
+        SRequestParameter   auto_blob_skipping_param = x_GetParam(req, kAutoBlobSkippingParam);
+        if (auto_blob_skipping_param.m_Found) {
+            if (!x_IsBoolParamValid(kAutoBlobSkippingParam,
+                                    auto_blob_skipping_param.m_Value,
+                                    err_msg)) {
+                m_Counters.Increment(CPSGSCounters::ePSGS_MalformedArgs);
+                x_SendMessageAndCompletionChunks(reply, err_msg,
+                                                 CRequestStatus::e400_BadRequest,
+                                                 ePSGS_MalformedParameter,
+                                                 eDiag_Error);
+                x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
+                return 0;
+            }
+            auto_blob_skipping = auto_blob_skipping_param.m_Value == "yes";
+        }
 
         // Parameters processing has finished
         m_Counters.Increment(CPSGSCounters::ePSGS_GetNamedAnnotations);
@@ -770,6 +786,7 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
             req(new SPSGS_AnnotRequest(
                         string(seq_id.data(), seq_id.size()),
                         seq_id_type, names, use_cache,
+                        auto_blob_skipping,
                         string(client_id_param.m_Value.data(),
                                client_id_param.m_Value.size()),
                         tse_option, send_blob_if_small,

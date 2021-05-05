@@ -105,6 +105,7 @@ void CPSGS_CassProcessorBase::CancelLoaders(void)
         if (loader) {
             if (!loader->ReadFinished()) {
                 loader->Cancel();
+                loader->RemoveFromExcludeBlobCache();
 
                 // Imitate the Cassandra data ready event. This will eventually
                 // lead to a pending operation Peek() call which in turn calls

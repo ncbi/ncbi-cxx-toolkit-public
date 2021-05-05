@@ -135,8 +135,7 @@ private:
     };
 
     EPSGS_BlobCacheCheckResult
-    x_CheckExcludeBlobCache(CCassBlobFetch *  fetch_details,
-                            SPSGS_BlobRequestBase &  blob_request);
+    x_CheckExcludeBlobCache(CCassBlobFetch *  fetch_details);
     void x_OnBlobPropNotFound(CCassBlobFetch *  fetch_details);
     bool x_ParseId2Info(CCassBlobFetch *  fetch_details,
                         CBlobRecord const &  blob);
@@ -160,7 +159,6 @@ private:
                               int  err_code,
                               EDiagSev  severity);
     void x_PrepareBlobExcluded(CCassBlobFetch *  fetch_details,
-                               const string &  blob_id,
                                EPSGS_BlobSkipReason  skip_reason);
 
 protected:

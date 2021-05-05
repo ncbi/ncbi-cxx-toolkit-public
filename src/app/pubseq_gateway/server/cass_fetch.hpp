@@ -36,6 +36,7 @@
 #include "pubseq_gateway_types.hpp"
 #include "psgs_request.hpp"
 #include "cass_blob_id.hpp"
+#include "exclude_blob_cache.hpp"
 
 #include <objtools/pubseq_gateway/impl/cassandra/blob_task/load_blob.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/nannot_task/fetch.hpp>
@@ -56,11 +57,25 @@ public:
     CCassFetch() :
         m_FinishedRead(false),
         m_FetchType(ePSGS_UnknownFetch),
-        m_Cancelled(false)
+        m_Cancelled(false),
+        m_AutoBlobSkipping(false),
+        m_ExcludeBlobCacheUpdated(false)
+    {}
+
+    CCassFetch(const string &  client_id,
+               bool  auto_blob_skipping,
+               const SCass_BlobId &  blob_id) :
+        m_FinishedRead(false),
+        m_FetchType(ePSGS_UnknownFetch),
+        m_Cancelled(false),
+        m_ClientId(client_id),
+        m_AutoBlobSkipping(auto_blob_skipping),
+        m_BlobId(blob_id),
+        m_ExcludeBlobCacheUpdated(false)
     {}
 
     virtual ~CCassFetch()
-    {}
+    { RemoveFromExcludeBlobCache(); }
 
     virtual void ResetCallbacks(void) = 0;
     virtual string Serialize(void) const = 0;
@@ -91,6 +106,33 @@ public:
         }
     }
 
+    bool IsBlobFetch(void) const
+    {
+        return m_FetchType == ePSGS_BlobBySeqIdFetch ||
+               m_FetchType == ePSGS_BlobBySatSatKeyFetch ||
+               m_FetchType == ePSGS_AnnotationBlobFetch;
+    }
+
+    SCass_BlobId GetBlobId(void) const
+    { return m_BlobId; }
+
+    bool GetAutoBlobSkipping(void) const
+    { return m_AutoBlobSkipping; }
+
+    void SetAutoBlobSkipping(bool  value)
+    { m_AutoBlobSkipping = value; }
+
+    string GetClientId(void) const
+    { return m_ClientId; }
+
+    void RemoveFromExcludeBlobCache(void);
+    EPSGS_CacheAddResult AddToExcludeBlobCache(bool &  completed);
+
+    void SetExcludeBlobCacheUpdated(bool  value)
+    { m_ExcludeBlobCacheUpdated = value; }
+
+    void SetExcludeBlobCacheCompleted(void);
+
 protected:
     // There are multiple types of the loaders stored here:
     // - CCassBlobTaskLoadBlob to load a blob
@@ -109,6 +151,12 @@ protected:
     EPSGS_DbFetchType               m_FetchType;
 
     bool                            m_Cancelled;
+
+    // These fields are only for the blob fetches IsBlobFetches() == true
+    string                          m_ClientId;
+    bool                            m_AutoBlobSkipping;
+    SCass_BlobId                    m_BlobId;
+    bool                            m_ExcludeBlobCacheUpdated;
 };
 
 
@@ -149,9 +197,9 @@ class CCassBlobFetch : public CCassFetch
 public:
     CCassBlobFetch(const SPSGS_BlobBySeqIdRequest &  blob_request,
                    const SCass_BlobId &  blob_id) :
-        m_BlobId(blob_id),
+        CCassFetch(blob_request.m_ClientId,
+                   blob_request.m_AutoBlobSkipping, blob_id),
         m_TSEOption(blob_request.m_TSEOption),
-        m_ClientId(blob_request.m_ClientId),
         m_BlobPropSent(false),
         m_UserProvidedBlobId(false),
         m_TotalSentBlobChunks(0),
@@ -163,9 +211,8 @@ public:
 
     CCassBlobFetch(const SPSGS_BlobBySatSatKeyRequest &  blob_request,
                    const SCass_BlobId &  blob_id) :
-        m_BlobId(blob_id),
+        CCassFetch(blob_request.m_ClientId, false, blob_id),
         m_TSEOption(blob_request.m_TSEOption),
-        m_ClientId(blob_request.m_ClientId),
         m_BlobPropSent(false),
         m_UserProvidedBlobId(true),
         m_TotalSentBlobChunks(0),
@@ -177,9 +224,9 @@ public:
 
     CCassBlobFetch(const SPSGS_AnnotRequest &  blob_request,
                    const SCass_BlobId &  blob_id) :
-        m_BlobId(blob_id),
+        CCassFetch(blob_request.m_ClientId,
+                   blob_request.m_AutoBlobSkipping, blob_id),
         m_TSEOption(blob_request.m_TSEOption),
-        m_ClientId(blob_request.m_ClientId),
         m_BlobPropSent(false),
         m_UserProvidedBlobId(true),
         m_TotalSentBlobChunks(0),
@@ -188,7 +235,7 @@ public:
     {
         // Note: this constructor is for the case when a blob is retrieved for
         // an annotation after an annotation record is received.
-        m_FetchType = ePSGS_BlobBySatSatKeyFetch;
+        m_FetchType = ePSGS_AnnotationBlobFetch;
     }
 
     virtual string Serialize(void) const
@@ -205,9 +252,8 @@ public:
     //   case the blob props are not found.
     CCassBlobFetch(const SPSGS_TSEChunkRequest &  chunk_request,
                    const SCass_BlobId &  tse_id) :
-        m_BlobId(tse_id),
+        CCassFetch("", false, tse_id),
         m_TSEOption(SPSGS_BlobRequestBase::ePSGS_UnknownTSE),
-        m_ClientId(""),
         m_BlobPropSent(false),
         m_UserProvidedBlobId(false),
         m_TotalSentBlobChunks(0),
@@ -230,17 +276,14 @@ public:
     {}
 
 public:
-    string GetClientId(void) const
-    { return m_ClientId; }
+    // string GetClientId(void) const
+    // { return m_ClientId; }
 
     SPSGS_BlobRequestBase::EPSGS_TSEOption GetTSEOption(void) const
     { return m_TSEOption; }
 
     bool GetUserProvidedBlobId(void) const
     { return m_UserProvidedBlobId; }
-
-    SCass_BlobId GetBlobId(void) const
-    { return m_BlobId; }
 
     int32_t GetTotalSentBlobChunks(void) const
     { return m_TotalSentBlobChunks; }
@@ -272,10 +315,7 @@ public:
     virtual void ResetCallbacks(void);
 
 private:
-    SCass_BlobId                            m_BlobId;
     SPSGS_BlobRequestBase::EPSGS_TSEOption  m_TSEOption;
-    string                                  m_ClientId;
-
     bool                                    m_BlobPropSent;
 
     // There are three cases when a blob is requested and depending on which
