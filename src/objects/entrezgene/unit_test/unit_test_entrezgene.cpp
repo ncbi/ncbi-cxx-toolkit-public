@@ -64,7 +64,7 @@ static void s_GetObject(const string& gene_id, CEntrezgene& eg_obj)
         istr >> MSerial_AsnText >> eg_obj;
     } catch(...) {
         // simple retry, only retry once
-        SleepMilliSec(5000); // maybe enough time, maybe not
+        SleepMilliSec(30000); // maybe enough time, maybe not
         req.Read(&eg_str);
         CNcbiIstrstream istr(eg_str);
         istr >> MSerial_AsnText >> eg_obj;
