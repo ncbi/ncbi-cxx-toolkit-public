@@ -54,6 +54,7 @@
 #include <objects/submit/Seq_submit.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seq/Bioseq.hpp>
+#include <objects/seqalign/Seq_align_set.hpp>
 
 //#include <objtools/hgvs/hgvs_parser.hpp>
 #include <objtools/readers/gff3_reader.hpp>
@@ -79,6 +80,7 @@ set<TTypeInfo> CFormatGuessEx::sDefaultRecognizedGenbankObjectTypes = {
     CType<CBioseq>().GetTypeInfo(),
     CType<CBioseq_set>().GetTypeInfo(),
     CType<CSeq_align>().GetTypeInfo(),
+    CType<CSeq_align_set>().GetTypeInfo(),
     CType<CSeq_annot>().GetTypeInfo(),
     CType<CSeq_entry>().GetTypeInfo(),
     CType<CSeq_submit>().GetTypeInfo(),
