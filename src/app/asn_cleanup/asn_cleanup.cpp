@@ -197,13 +197,13 @@ void CCleanupApp::Init()
             &( *new CArgAllow_Strings, "any", "seq-entry", "bioseq", "bioseq-set", "seq-submit" ) );
 
         // path
-        arg_desc->AddOptionalKey("p", "path", "Path to files", CArgDescriptions::eDirectory);
+        arg_desc->AddOptionalKey("indir", "path", "Path to files", CArgDescriptions::eDirectory);
 
         // suffix
         arg_desc->AddDefaultKey("x", "suffix", "File Selection Suffix", CArgDescriptions::eString, ".ent");
 
         // results
-        arg_desc->AddOptionalKey("r", "results", "Path for Results", CArgDescriptions::eDirectory);
+        arg_desc->AddOptionalKey("outdir", "results", "Path for Results", CArgDescriptions::eDirectory);
 
     }}
 
@@ -280,8 +280,8 @@ void CCleanupApp::Init()
             "Do not create Ncbi_cleanup object");
 
         // remote
-        arg_desc->AddFlag("gbload", "Use CGBDataLoader");
-        arg_desc->AddFlag("R", "Remote fetching");
+        arg_desc->AddFlag("genbank", "Use CGBDataLoader");
+        arg_desc->AddFlag("r", "Remote fetching");
         // show progress
         arg_desc->AddFlag("showprogress",
             "List ID for which cleanup is occuring");
@@ -583,8 +583,8 @@ void CCleanupApp::x_ProcessOneFile(const string& filename)
     // need to set output if -o not specified
     bool opened_output = false;
 
-    if (!args["o"] && args["r"]) {
-        x_OpenOStream(filename, args["r"].AsString(), true);
+    if (!args["o"] && args["outdir"]) {
+        x_OpenOStream(filename, args["outdir"].AsString(), true);
         opened_output = true;
     }
 
@@ -663,7 +663,7 @@ int CCleanupApp::Run()
     }
 
     m_Scope.Reset(new CScope(*m_Objmgr));
-    if (args["gbload"] || args["R"] || args["id"]) {
+    if (args["genbank"] || args["r"] || args["id"]) {
 #ifdef HAVE_PUBSEQ_OS
         // we may require PubSeqOS readers at some point, so go ahead and make
         // sure they are properly registered
@@ -688,8 +688,8 @@ int CCleanupApp::Run()
         string abs_output_path = CDirEntry::CreateAbsolutePath(args["o"].AsString());
         if (args["i"]) {
             string fname = args["i"].AsString();
-            if (args["p"]) {
-                fname = CDirEntry::MakePath(args["p"].AsString(), fname);
+            if (args["indir"]) {
+                fname = CDirEntry::MakePath(args["indir"].AsString(), fname);
             }
             if (abs_output_path == CDirEntry::CreateAbsolutePath(fname)) {
                 ERR_POST("Input and output files should be different");
@@ -697,10 +697,10 @@ int CCleanupApp::Run()
             }
         }
         x_OpenOStream(args["o"].AsString(),
-                      args["r"] ? args["r"].AsString() : kEmptyStr,
+                      args["outdir"] ? args["outdir"].AsString() : kEmptyStr,
                       false);
         opened_output = true;
-    } else if (!args["r"] || args["id"]) {
+    } else if (!args["outdir"] || args["id"]) {
         x_OpenOStream(kEmptyStr);
         opened_output = true;
     }
@@ -710,12 +710,12 @@ int CCleanupApp::Run()
         HandleSeqID(seqID);
     } else if (args["i"]) {
         string fname = args["i"].AsString();
-        if (args["p"]) {
-            fname = CDirEntry::MakePath(args["p"].AsString(), fname);
+        if (args["indir"]) {
+            fname = CDirEntry::MakePath(args["indir"].AsString(), fname);
         }
         x_ProcessOneFile(fname);
-    } else if (args["r"]) {
-        x_ProcessOneDirectory(args["p"].AsString(), args["x"].AsString());
+    } else if (args["outdir"]) {
+        x_ProcessOneDirectory(args["indir"].AsString(), args["x"].AsString());
     } else {
         x_ProcessOneFile(kEmptyStr);
     }
@@ -1327,5 +1327,39 @@ USING_NCBI_SCOPE;
 
 int main(int argc, const char** argv)
 {
+    // scan and replace deprecated arguments; RW-1324
+    for (int i = 1; i < argc; ++i)
+    {
+        string a = argv[i];
+        if (a == "-r")
+        {
+            if ((i+1) < argc)
+            {
+                string param = argv[i+1];
+                if (!param.empty() && param[0] != '-')
+                {
+                    argv[i] = "-outdir";
+                    ++i; // skip parameter
+                    cerr << "Warning: deprecated use of -r argument. Please use -outdir instead." << endl;
+                }
+            }
+        }
+        else if (a == "-p")
+        {
+            argv[i] = "-indir";
+            cerr << "Warning: argument -p is deprecated. Please use -indir instead." << endl;
+        }
+        else if (a == "-R")
+        {
+            argv[i] = "-r";
+            cerr << "Warning: argument -R is deprecated. Please use -r instead." << endl;
+        }
+        else if (a == "-gbload")
+        {
+            argv[i] = "-genbank";
+            cerr << "Warning: argument -gbload is deprecated. Please use -genbank instead." << endl;
+        }
+    }
+
     return CCleanupApp().AppMain(argc, argv);
 }
