@@ -204,7 +204,7 @@ private:
     class CSeqDBAtlas & m_Atlas;
 
     /// If this is true, this thread owns the atlas lock.
-    bool m_Locked;
+    volatile bool m_Locked;
 };
 
 

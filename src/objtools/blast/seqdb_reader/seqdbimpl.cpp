@@ -256,6 +256,7 @@ void CSeqDBImpl::x_GetOidList(CSeqDBLockHold & locked)
         }
         //DebugDumpText(cerr, "CSeqDBImpl after m_OIDList initialization", 10);
         //ft->Print();
+        m_Atlas.Unlock(locked);
     }
 }
 
