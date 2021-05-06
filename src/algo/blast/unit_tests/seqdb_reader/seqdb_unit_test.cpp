@@ -2763,7 +2763,7 @@ BOOST_AUTO_TEST_CASE(SeqIdList)
 
     const char * str[] =
         { "BAR77217.1",
-          "1P85_G",
+          "2J28_I",
           "P66272",
           "WP_003405746.1",
           "NP_200967.1",
