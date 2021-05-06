@@ -1581,8 +1581,8 @@ void CMakeProfileDBApp::x_UpdateDelta(CRPS_DbInfo & rpsDbInfo, vector<string> & 
 
     list<Int4> FreqOffsets;
     list<Int4> ObsrOffsets;
-    Int4 CurrFreqOffset;
-    Int4 CurrObsrOffset;
+    Int4 CurrFreqOffset = 0;
+    Int4 CurrObsrOffset= 0;
 
 	for(unsigned int seq_index=0; seq_index < smpFilenames.size(); seq_index++)
 	{
