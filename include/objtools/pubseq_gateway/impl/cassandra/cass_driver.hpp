@@ -605,7 +605,7 @@ class CCassQueryCbRef: public std::enable_shared_from_this<CCassQueryCbRef>
         }
     }
 
-    static void s_OnFutureCb(CassFuture* future, void* data)
+    static void s_OnFutureCb(CassFuture*, void* data)
     {
         try {
             shared_ptr<CCassQueryCbRef> self(static_cast<CCassQueryCbRef*>(data)->shared_from_this());

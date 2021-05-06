@@ -24,11 +24,11 @@ public:
     ICassQueryListConsumer& operator=(ICassQueryListConsumer&&) = delete;
     virtual ~ICassQueryListConsumer() = default;
     virtual bool Start(shared_ptr<CCassQuery> query, CCassQueryList& list, size_t query_idx) = 0;
-    virtual bool Finish(shared_ptr<CCassQuery> query, CCassQueryList& list, size_t query_idx) {
+    virtual bool Finish(shared_ptr<CCassQuery>, CCassQueryList&, size_t /*query_idx*/) {
         return true;
     }
     virtual bool ProcessRow(shared_ptr<CCassQuery> query, CCassQueryList& list, size_t query_idx) = 0;
-    virtual void Reset(shared_ptr<CCassQuery> query, CCassQueryList& list, size_t query_idx) {}
+    virtual void Reset(shared_ptr<CCassQuery>, CCassQueryList&, size_t /*query_idx*/) {}
     virtual void Failed(shared_ptr<CCassQuery> query, CCassQueryList& list, size_t query_idx, const exception* e) = 0;
 };
 
@@ -138,13 +138,13 @@ public:
     CCassOneExecConsumer(CCassOneExecConsumer&&) = delete;
     CCassOneExecConsumer& operator=(const CCassOneExecConsumer&) = delete;
     CCassOneExecConsumer& operator=(CCassOneExecConsumer&&) = delete;
-    virtual bool Start(shared_ptr<CCassQuery> query, CCassQueryList& list, size_t qry_index) override {
+    virtual bool Start(shared_ptr<CCassQuery> query, CCassQueryList& list, size_t /*qry_index*/) override {
         assert(!m_is_started);
         assert(!m_is_finished);
         m_is_started = true;
         return m_cb(*query, list);
     }
-    virtual bool Finish(shared_ptr<CCassQuery> query, CCassQueryList& list, size_t qry_index) {
+    virtual bool Finish(shared_ptr<CCassQuery> query, CCassQueryList& list, size_t /*qry_index*/) {
         assert(m_is_started);
         assert(!m_is_finished);
         m_is_finished = true;
@@ -152,13 +152,13 @@ public:
             m_finish_cb(*query, list, !m_is_failed);
         return true;
     }
-    virtual bool ProcessRow(shared_ptr<CCassQuery> query, CCassQueryList& list, size_t qry_index) {
+    virtual bool ProcessRow(shared_ptr<CCassQuery>, CCassQueryList&, size_t /*qry_index*/) {
         assert(false);
         return true;
     }
-    virtual void Reset(shared_ptr<CCassQuery> query, CCassQueryList& list, size_t qry_index) {
+    virtual void Reset(shared_ptr<CCassQuery>, CCassQueryList&, size_t /*qry_index*/) {
     }
-    virtual void Failed(shared_ptr<CCassQuery> query, CCassQueryList& list, size_t qry_index, const exception* e) {
+    virtual void Failed(shared_ptr<CCassQuery>, CCassQueryList&, size_t /*qry_index*/, const exception*) {
         m_is_failed = true;
     }
 private:

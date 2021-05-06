@@ -272,7 +272,7 @@ private:
 	static void LogPost(const string& str) {
 		LogPost(str.c_str(), str.size());
 	}
-	static void DoLog(unsigned int level, const char* msg, int len = - 1, bool eol = false) {
+	static void DoLog(unsigned int level, const char* msg, int len = - 1, bool /*eol*/ = false) {
 		if (level <= m_loglevelfile) {
 			if (m_IsNcbiAppLog)
 				LogPush(lkInfo, msg);

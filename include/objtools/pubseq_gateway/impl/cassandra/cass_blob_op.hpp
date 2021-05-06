@@ -245,7 +245,7 @@ class CCassBlobWaiter
         return false;
     }
 
-    bool CanRestart(shared_ptr<CCassQuery> qry, unsigned int restart_count) const
+    bool CanRestart(shared_ptr<CCassQuery>, unsigned int restart_count) const
     {
         bool    is_timedout = IsTimedOut();
         bool    is_out_of_retries = (m_MaxRetries > 0) &&

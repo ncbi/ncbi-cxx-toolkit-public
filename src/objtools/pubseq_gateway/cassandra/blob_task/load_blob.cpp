@@ -283,7 +283,7 @@ void CCassBlobTaskLoadBlob::Wait1()
             case eBeforeLoadingChunks:
                 if (!m_ChunkCallback && m_LoadChunks) {
                     m_ChunkCallback =
-                        [this] (CBlobRecord const & blob, const unsigned char * data, unsigned int size, int chunk_no) {
+                        [this] (CBlobRecord const &, const unsigned char * data, unsigned int size, int chunk_no) {
                             if (chunk_no >= 0) {
                                 this->m_Blob->InsertBlobChunk(chunk_no, CBlobRecord::TBlobChunk(data, data + size));
                             }

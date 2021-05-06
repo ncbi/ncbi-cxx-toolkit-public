@@ -156,7 +156,7 @@ template<> void ValueToCassTupleItem<string>(const string& value, CassTuple* des
 
 
 template<size_t N, typename... T>
-void TupleToCassTupleImpl(const std::tuple<T...>& t, CassTuple* dest, char)
+void TupleToCassTupleImpl(const std::tuple<T...>&, CassTuple*, char)
 {
 }
 

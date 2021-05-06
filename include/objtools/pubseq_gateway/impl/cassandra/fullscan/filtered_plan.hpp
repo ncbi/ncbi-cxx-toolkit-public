@@ -80,9 +80,22 @@ class CCassandraFilteredPlan: public CCassandraFullscanPlan
                 }
             }
 
+            /*for (auto range : filtered_ranges) {
+                cout << "Filtered range: " << range.first << ":" << range.second << endl;
+            }*/
+
             swap(ranges, filtered_ranges);
         }
     }
+
+    /*TQueryPtr GetNextQuery() override
+    {
+        auto query = CCassandraFullscanPlan::GetNextQuery();
+        if (query) {
+            cout << query->ToString() << endl;
+        }
+        return query;
+    }*/
 
  private:
     CCassConnection::TTokenRanges m_Filter;
