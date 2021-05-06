@@ -10,8 +10,8 @@ APP = asn_cleanup
 SRC = asn_cleanup read_hooks bigfile_processing
 LIB =  xvalidate $(OBJEDIT_LIBS) $(XFORMAT_LIBS) xalnmgr xobjutil \
        valerr taxon1 tables xregexp \
-      ncbi_xdbapi_ftds dbapi $(ncbi_xreader_pubseqos2) $(FTDS_LIB) \
-      $(ncbi_xloader_wgs) $(SRAREAD_LIBS) $(OBJMGR_LIBS) $(PCRE_LIB)
+      data_loaders_util ncbi_xdbapi_ftds dbapi $(FTDS_LIB) \
+      $(SRAREAD_LIBS) $(OBJMGR_LIBS) $(PCRE_LIB)
 
 LIBS = $(GENBANK_THIRD_PARTY_LIBS) \
        $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(PCRE_LIBS) $(FTDS_LIBS) \

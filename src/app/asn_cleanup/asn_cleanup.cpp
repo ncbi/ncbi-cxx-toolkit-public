@@ -56,6 +56,7 @@
 #endif
 #include <objtools/data_loaders/genbank/readers.hpp>
 #include <dbapi/driver/drivers.hpp>
+#include <misc/data_loaders_util/data_loaders_util.hpp>
 
 #include <objtools/format/flat_file_config.hpp>
 #include <objtools/format/flat_file_generator.hpp>
@@ -272,14 +273,15 @@ void CCleanupApp::Init()
         arg_desc->AddFlag("noobj",
             "Do not create Ncbi_cleanup object");
 
-        // remote
-        arg_desc->AddFlag("genbank", "Use CGBDataLoader");
-        arg_desc->AddFlag("r", "Remote fetching");
         // show progress
         arg_desc->AddFlag("showprogress",
             "List ID for which cleanup is occuring");
         arg_desc->AddFlag("debug", "Save before.sqn");
     }}
+
+    // remote
+    CDataLoadersUtil::AddArgumentDescriptions(*arg_desc, CDataLoadersUtil::fGenbank|CDataLoadersUtil::fVDB);
+
     SetupArgDescriptions(arg_desc.release());
 }
 
@@ -655,24 +657,8 @@ int CCleanupApp::Run()
         NCBI_THROW(CFlatException, eInternal, "Could not create object manager");
     }
 
+    CDataLoadersUtil::SetupObjectManager(args, *m_Objmgr, CDataLoadersUtil::fGenbank|CDataLoadersUtil::fVDB);
     m_Scope.Reset(new CScope(*m_Objmgr));
-    if (args["genbank"] || args["r"] || args["id"]) {
-#ifdef HAVE_PUBSEQ_OS
-        // we may require PubSeqOS readers at some point, so go ahead and make
-        // sure they are properly registered
-        GenBankReaders_Register_Pubseq();
-        GenBankReaders_Register_Pubseq2();
-        DBAPI_RegisterDriver_FTDS();
-#endif
-
-        CGBDataLoader::RegisterInObjectManager(*m_Objmgr);
-#ifdef HAVE_NCBI_VDB
-        CWGSDataLoader::RegisterInObjectManager(*m_Objmgr,
-                                            CObjectManager::eDefault,
-                                            88);
-#endif
-
-    }
     m_Scope->AddDefaults();
 
     // need to set output (-o) if specified, if not -o and not -r need to use standard output
