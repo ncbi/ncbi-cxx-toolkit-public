@@ -62,13 +62,6 @@
 #include <objtools/format/flat_expt.hpp>
 #include <objects/seqset/gb_release_file.hpp>
 
-#include <objects/entrez2/Entrez2_boolean_element.hpp>
-#include <objects/entrez2/Entrez2_boolean_reply.hpp>
-#include <objects/entrez2/Entrez2_boolean_exp.hpp>
-#include <objects/entrez2/Entrez2_eval_boolean.hpp>
-#include <objects/entrez2/Entrez2_id_list.hpp>
-#include <objects/entrez2/entrez2_client.hpp>
-
 #include <objtools/cleanup/cleanup.hpp>
 #include <objtools/edit/autodef_with_tax.hpp>
 #include <objtools/validator/tax_validation_and_cleanup.hpp>
