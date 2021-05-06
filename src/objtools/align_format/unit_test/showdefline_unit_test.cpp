@@ -46,8 +46,6 @@
 #include "blast_test_util.hpp"
 #define NCBI_BOOST_NO_AUTO_TEST_MAIN
 #include <corelib/test_boost.hpp>
-#include <boost/test/auto_unit_test.hpp>
-#include <boost/test/floating_point_comparison.hpp>
 
 using namespace std;
 using namespace ncbi;

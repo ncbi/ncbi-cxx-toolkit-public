@@ -65,11 +65,7 @@
 #endif
 
 #include <boost/version.hpp>
-#if BOOST_VERSION >= 107000
-#  include <boost/test/unit_test.hpp>
-#else 
-#  include <boost/test/auto_unit_test.hpp>
-#endif
+#include <boost/test/unit_test.hpp>
 #if BOOST_VERSION >= 105900
 #  include <boost/test/tools/floating_point_comparison.hpp>
 #else

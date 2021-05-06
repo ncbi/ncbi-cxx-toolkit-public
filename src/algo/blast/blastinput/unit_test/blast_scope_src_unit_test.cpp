@@ -33,7 +33,6 @@
 #include <ncbi_pch.hpp>
 #define NCBI_BOOST_NO_AUTO_TEST_MAIN
 #include <corelib/test_boost.hpp>
-#include <boost/test/auto_unit_test.hpp>
 #include <algo/blast/blastinput/blast_scope_src.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objmgr/util/seq_loc_util.hpp>

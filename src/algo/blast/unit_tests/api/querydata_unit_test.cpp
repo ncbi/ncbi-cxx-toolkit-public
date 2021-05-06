@@ -634,7 +634,7 @@ BOOST_AUTO_TEST_CASE(ObjMgr_QueryFactory_RemoteData_SingleBioseqFromTSeqLocVecto
     unique_ptr<SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(qid));
     queries.push_back(*sl);
     CRef<IQueryFactory> query_factory(new CObjMgr_QueryFactory(queries));
-    CSequenceDataTester(query_factory, GI_CONST(kGi))();
+    CSequenceDataTester(query_factory, GI_FROM(int, kGi))();
 }
 
 BOOST_AUTO_TEST_CASE(ObjMgr_QueryFactory_RemoteData_SingleBioseqFromBlastQueryVector) {
@@ -649,7 +649,7 @@ BOOST_AUTO_TEST_CASE(ObjMgr_QueryFactory_RemoteData_SingleBioseqFromBlastQueryVe
     queries->AddQuery(sq);
     
     CRef<IQueryFactory> query_factory(new CObjMgr_QueryFactory(*queries));
-    CSequenceDataTester(query_factory, GI_CONST(kGi))();
+    CSequenceDataTester(query_factory, GI_FROM(int, kGi))();
 }
 
 BOOST_AUTO_TEST_CASE(ObjMgr_QueryFactory_EmptyTSeqLocVector) {

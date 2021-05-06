@@ -56,8 +56,6 @@
 // This header must be included before all Boost.Test headers if there are any
 #include <corelib/test_boost.hpp>
 
-#include <boost/test/floating_point_comparison.hpp>
-
 #ifndef SKIP_DOXYGEN_PROCESSING
 
 USING_NCBI_SCOPE;

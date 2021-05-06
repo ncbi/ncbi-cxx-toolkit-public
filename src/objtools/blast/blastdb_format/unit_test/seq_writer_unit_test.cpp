@@ -37,7 +37,6 @@
 #include <corelib/ncbifile.hpp>
 #define NCBI_BOOST_NO_AUTO_TEST_MAIN
 #include <corelib/test_boost.hpp>
-#include <boost/test/auto_unit_test.hpp>
 
 USING_NCBI_SCOPE;
 

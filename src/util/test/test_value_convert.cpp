@@ -35,7 +35,6 @@
 
 #include <util/value_convert.hpp>
 #include <corelib/test_boost.hpp>
-#include <boost/test/floating_point_comparison.hpp>
 #include <common/test_assert.h>  /* This header must go last */
 
 // Tolerances in percentage units, for use with BOOST_CHECK_CLOSE.
