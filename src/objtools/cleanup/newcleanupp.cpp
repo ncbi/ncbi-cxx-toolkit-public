@@ -8765,6 +8765,10 @@ void CNewCleanup_imp::x_SortSeqDescs( CSeq_entry & seq_entry )
 
 
 
+void CNewCleanup_imp::x_RemoveDupBioSource( CBioseq & bioseq )
+{
+}
+
 void CNewCleanup_imp::x_RemoveDupBioSource( CBioseq_set & bioseq_set )
 {
     if (!bioseq_set.IsSetDescr() || !bioseq_set.IsSetSeq_set()) {
@@ -8786,7 +8790,6 @@ struct SMatchSrc {
         return (desc->IsSource() && desc->GetSource().Equals(m_Src));
     }
 };
-
 void CNewCleanup_imp::x_RemoveDupBioSource(CSeq_entry& se, const CBioSource& src)
 {
     if (se.IsSetDescr()) {
@@ -8814,16 +8817,14 @@ void CNewCleanup_imp::x_RemoveDupPubs(CSeq_descr & descr)
     }
 }
 
-void CNewCleanup_imp::x_FixStructuredCommentKeywords(CSeq_descr& descr)
+void CNewCleanup_imp::x_FixStructuredCommentKeywords( CBioseq & bioseq )
 {
-    if (!descr.IsSet()) {
-        return;
-    }   
-
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(bioseq);
+    CBioseq_EditHandle beh(bsh);
+    vector<string> controlled_keywords = CComment_rule::GetKeywordList();
     vector<string> original_keywords;
-    vector<string> controlled_keywords = CComment_rule::GetKeywordList(); 
 
-    auto& dset = descr.Set();
+    auto& dset = beh.SetDescr().Set();
     if (!dset.empty()) {
         CBioseq::TDescr::Tdata::iterator it = dset.begin();
         while (it != dset.end()) {
@@ -8854,11 +8855,9 @@ void CNewCleanup_imp::x_FixStructuredCommentKeywords(CSeq_descr& descr)
     }
 
     vector<string> new_keywords;
-    for (auto pDesc : dset) {
-        if (!pDesc || !pDesc->IsUser()) {
-            continue;
-        }
-        const CUser_object& usr = pDesc->GetUser();
+
+    for (CSeqdesc_CI di(bsh, CSeqdesc::e_User); di; ++di) {
+        const CUser_object& usr = di->GetUser();
         if ( ! CComment_rule::IsStructuredComment (usr) ) continue;
         string prefix = CComment_rule::GetStructuredCommentPrefix (usr);
         if (!prefix.empty()) {
@@ -8878,8 +8877,6 @@ void CNewCleanup_imp::x_FixStructuredCommentKeywords(CSeq_descr& descr)
             }
         }
     }
-
-
     vector<string> final_keywords;
     if (new_keywords.size() > 0) {
         CGB_block *gb_block = NULL;
@@ -8891,7 +8888,7 @@ void CNewCleanup_imp::x_FixStructuredCommentKeywords(CSeq_descr& descr)
         if (! gb_block) {
             CRef<CSeqdesc> new_desc ( new CSeqdesc );
             gb_block = &(new_desc->SetGenbank());
-            descr.Set().push_back( new_desc );
+            bioseq.SetDescr().Set().push_back( new_desc );
         }
         if (gb_block->IsSetKeywords()) {
             FOR_EACH_KEYWORD_ON_GENBANKBLOCK (k_itr, *gb_block) {
@@ -8918,6 +8915,9 @@ void CNewCleanup_imp::x_FixStructuredCommentKeywords(CSeq_descr& descr)
     }
     if (any_change) {
         ChangeMade(CCleanupChange::eChangeKeywords);
+    }
+    if (dset.empty()) {
+        beh.ResetDescr();
     }
 }
 
@@ -9493,12 +9493,9 @@ void CNewCleanup_imp::x_CleanupGenbankBlock(CGB_block& gb, bool is_patent, CCons
 
 void CNewCleanup_imp::x_CleanupGenbankBlock(CBioseq& seq)
 {
-    if (!seq.IsSetDescr() ||
-        !seq.GetDescr().IsSet()) {
+    if (!seq.IsSetDescr()) {
         return;
     }
-    auto& data = seq.SetDescr().Set();
-
     x_SetMolInfoTechFromGenBankBlock(seq.SetDescr());
     bool is_patent = false;
     ITERATE(CBioseq::TId, id, seq.GetId()) {
@@ -9506,21 +9503,16 @@ void CNewCleanup_imp::x_CleanupGenbankBlock(CBioseq& seq)
             is_patent = true;
         }
     }
-    //CBioseq_Handle b = m_Scope->GetBioseqHandle(seq);
-    CConstRef<CBioSource> biosrc(nullptr);
-    auto src_it = find_if(data.begin(), data.end(), 
-            [](CRef<CSeqdesc> pDesc) { return pDesc && pDesc->IsSource(); });
-    //CSeqdesc_CI src(b, CSeqdesc::e_Source);
-    if (src_it != data.end()) {
-        biosrc.Reset(&((*src_it)->GetSource()));
+    CBioseq_Handle b = m_Scope->GetBioseqHandle(seq);
+    CConstRef<CBioSource> biosrc(NULL);
+    CSeqdesc_CI src(b, CSeqdesc::e_Source);
+    if (src) {
+        biosrc.Reset(&(src->GetSource()));
     }
     CMolInfo::TTech tech = CMolInfo::eTech_unknown;
-    auto molinfo_it = find_if(data.begin(), data.end(),
-            [](CRef<CSeqdesc> pDesc) { return pDesc && 
-                                              pDesc->IsMolinfo() &&
-                                              pDesc->GetMolinfo().IsSetTech(); });
-    if (molinfo_it != data.end()) {
-        tech = (*molinfo_it)->GetMolinfo().GetTech();
+    CSeqdesc_CI molinfo(b, CSeqdesc::e_Molinfo);
+    if (molinfo && molinfo->GetMolinfo().IsSetTech()) {
+        tech = molinfo->GetMolinfo().GetTech();
     }
 
     EDIT_EACH_SEQDESC_ON_SEQDESCR(descr_iter, seq.SetDescr()) {
@@ -10830,7 +10822,6 @@ void CNewCleanup_imp::x_RemovePopPhyBioSource(CBioseq_set& set)
             }
             d = dset.erase(d);
             ChangeMade(CCleanupChange::eRemoveDescriptor);
-
         } else {
             ++d;
         }
@@ -12143,29 +12134,25 @@ void CNewCleanup_imp::MoveCitationQuals(CBioseq& seq)
 
 }
 
-void CNewCleanup_imp::x_RemoveUnseenTitles(CSeq_descr& descr)
-{
-    if (!descr.IsSet()) {
-        return;
-    }
 
-    auto& data = descr.Set();
-    CSeq_descr::Tdata::iterator previous_title = data.end();
-    bool removed = false;
-    for(auto it = data.begin(); it != data.end(); ++it) {
-        if ((*it)->IsTitle()) {
-            if (previous_title != data.end()) {
-                data.erase(previous_title);
-                removed = true;
-            }
-            previous_title = it;
-        }
-    }  
-    if (removed) {
+void CNewCleanup_imp::x_RemoveUnseenTitles(CBioseq& seq)
+{
+    CBioseq_Handle b = m_Scope->GetBioseqHandle(seq);
+    CBioseq_EditHandle beh(b);
+    if (CCleanup::RemoveUnseenTitles(beh)) {
         ChangeMade(CCleanupChange::eRemoveDescriptor);
     }
 }
 
+
+void CNewCleanup_imp::x_RemoveUnseenTitles(CBioseq_set& set)
+{
+    CBioseq_set_Handle bh = m_Scope->GetBioseq_setHandle(set);
+    CBioseq_set_EditHandle beh(bh);
+    if (CCleanup::RemoveUnseenTitles(beh)) {
+        ChangeMade(CCleanupChange::eRemoveDescriptor);
+    }
+}
 
 
 struct SLaterDate {
@@ -12318,9 +12305,6 @@ void CNewCleanup_imp::x_ExtendedCleanupExtra(CSeq_entry_Handle seh)
     if (CCleanup::RepackageProteins(seh)) {
         ChangeMade(CCleanupChange::eChangeOther);
     }
-
-    CFixFeatureId::s_ApplyToSeqInSet(seh);
-    /*
     // as requested in RW-726, uniquify feature IDs
     map<CSeq_feat_Handle, CRef<CSeq_feat> > changed_feats;
     CFixFeatureId::s_ApplyToSeqInSet(seh, changed_feats);
@@ -12331,7 +12315,6 @@ void CNewCleanup_imp::x_ExtendedCleanupExtra(CSeq_entry_Handle seh)
         CSeq_feat_EditHandle feh(orig_feat);
         feh.Replace(*new_feat);
     }
-    */
 }
 
 

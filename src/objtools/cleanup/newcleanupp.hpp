@@ -323,7 +323,8 @@ private:
     void x_SetPartialsForProtein(CBioseq& prot, bool partial5, bool partial3, bool feat_partial);
     void RemoveBadProteinTitle(CBioseq& seq);
     void MoveCitationQuals(CBioseq& seq);
-    void x_RemoveUnseenTitles(CSeq_descr& seq_descr);
+    void x_RemoveUnseenTitles(CBioseq& seq);
+    void x_RemoveUnseenTitles(CBioseq_set& set);
     void KeepLatestDateDesc(CSeq_descr & seq_descr);
     void x_SingleSeqSetToSeq(CBioseq_set& set);
     void x_MergeDupBioSources(CSeq_descr & seq_descr);
@@ -507,9 +508,10 @@ private:
 private:
     void x_SortSeqDescs( CSeq_entry & seq_entry );
 
-    void x_FixStructuredCommentKeywords(CSeq_descr& descr);
+    void x_FixStructuredCommentKeywords( CBioseq & bioseq );
 
     void x_RemoveDupBioSource( CBioseq_set & bioseq_set );
+    void x_RemoveDupBioSource(CBioseq & bioseq);
     void x_RemoveDupBioSource(CSeq_entry& se, const CBioSource& src);
 
     void x_RemoveDupPubs(CSeq_descr & descr);
