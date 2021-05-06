@@ -439,6 +439,11 @@ void SNetServiceXSiteAPI::AllowXSiteConnections()
 {
     const auto local_ip = CSocketAPI::GetLocalHostAddress();
     const auto local_domain = GetDomain(local_ip);
+
+    if (!local_domain) {
+        NCBI_THROW(CNetSrvConnException, eLBNameNotFound, "Cannot determine local domain");
+    }
+
     m_LocalDomain.store(local_domain);
     m_AllowXSiteConnections.store(true);
 }
@@ -560,11 +565,6 @@ int SNetServiceXSiteAPI::GetDomain(unsigned int ip)
     SNcbiDomainInfo info;
     NcbiIsLocalIPEx(&addr, &info);
 
-    if (!info.num) {
-        NCBI_THROW(CNetSrvConnException, eLBNameNotFound,
-                   "Cannot determine local domain");
-    }
-    
     return info.num;
 }
 
@@ -572,7 +572,8 @@ bool SNetServiceXSiteAPI::IsForeignAddr(unsigned int ip)
 {
     if (!IsUsingXSiteProxy()) return false;
 
-    return m_LocalDomain != GetDomain(ip);
+    const auto d = GetDomain(ip);
+    return d && (d != m_LocalDomain);
 }
 
 atomic<int> SNetServiceXSiteAPI::m_LocalDomain{0};
