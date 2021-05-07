@@ -1134,6 +1134,7 @@ GetSubjectEncoding(EBlastProgramType program)
     case eBlastTypeBlastp: 
     case eBlastTypeBlastx:
     case eBlastTypePsiBlast:
+    case eBlastTypePhiBlastp:
         retval = eBlastEncodingProtein; 
         break;
 
