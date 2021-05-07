@@ -39,7 +39,11 @@
 #include <objmgr/seq_loc_mapper.hpp>
 
 
-#include <boost/test/output_test_stream.hpp>
+#if BOOST_VERSION >= 105900
+#  include <boost/test/tools/output_test_stream.hpp>
+#else
+#  include <boost/test/output_test_stream.hpp>
+#endif
 using boost::test_tools::output_test_stream;
 
 USING_NCBI_SCOPE;

@@ -27,7 +27,11 @@
 #include <ncbi_pch.hpp>
 
 #include <corelib/test_boost.hpp>
-#include <boost/test/output_test_stream.hpp>
+#if BOOST_VERSION >= 105900
+#  include <boost/test/tools/output_test_stream.hpp>
+#else
+#  include <boost/test/output_test_stream.hpp>
+#endif
 
 #include <serial/iterator.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
