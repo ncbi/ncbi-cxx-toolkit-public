@@ -5485,6 +5485,116 @@ list<string>& NStr::Justify(const CTempString  str,
 }
 
 
+string NStr::Dedent(const CTempString str, TDedentFlags flags)
+{
+    if (str.empty()) {
+        return str;
+    }
+    list<CTempString> lines;
+    NStr::Split(str, "\n", lines);
+
+    // Find common whitespace prefix
+
+    CTempString prefix;         // common prefix
+    SIZE_TYPE   prefix_len = 0; // common prefix length
+    bool first_line = true;
+
+    for (auto& line : lines) {
+        SIZE_TYPE len = line.length();
+        if (first_line) {
+            first_line = false;
+            if (flags & fDedent_IgnoreFirstLine) {
+                continue;
+            }
+            if (flags & fDedent_IgnoreFirstLineSpaces) {
+                if (len  &&  isspace((unsigned char)line[0])) {
+                    continue;
+                }
+            }
+        }
+        if (!len) {
+            // Skip empty lines
+            continue;
+        }
+        SIZE_TYPE pos = 0;
+        while (isspace((unsigned char)line[pos])) {
+            if (++pos == len) {
+                break;
+            }
+        }
+        if (!pos) {
+            // No whitespaces on the current line, cannot proceed
+            return str;
+        }
+        if (pos == len  &&  (flags & fDedent_NormalizeEmptyLines)) {
+            // Line have whitespaces -- exclude from computing common prefix
+            continue;
+        }
+        // Update length of the common prefix
+        if (!prefix_len || prefix_len > pos) {
+            prefix_len = pos;
+            prefix.assign(line, 0, pos);
+        }
+    }
+
+    if (!prefix_len) {
+        // No common whitespace prefix, cannot proceed
+        return str;
+    }
+
+    // Trim common prefix
+
+    string result;
+    result.reserve(str.size());
+    first_line = true;
+
+    for (auto& line : lines) {
+        SIZE_TYPE len = line.length();
+        if (first_line) {
+            first_line = false;
+            if (flags & fDedent_IgnoreFirstLine) {
+                // Skip first line from result
+                continue;
+            }
+            if (flags & fDedent_IgnoreFirstLineSpaces) {
+                if (len  &&  !isspace((unsigned char)line[0])) {
+                    continue;
+                }
+                // Save first line as is
+                result += line;
+                result += '\n';
+                continue;
+            }
+        }
+        if (!len) {
+            result += '\n';
+            // Skip empty lines
+            continue;
+        }
+        if (flags & fDedent_NormalizeEmptyLines) {
+            SIZE_TYPE pos = 0;
+            while (isspace((unsigned char)line[pos])) {
+                if (++pos == len) {
+                    break;
+                }
+            }
+            if (pos == len) {
+                // Whitespace only lines normalization
+                result += '\n';
+                continue;
+            }
+        }
+        // Trim common prefix
+        NStr::TrimPrefixInPlace(line, prefix);
+        result += line;
+        result += '\n';
+    }
+
+    return result;
+}
+
+
+
 #if !defined(HAVE_STRDUP)
 extern char* strdup(const char* str)
 {

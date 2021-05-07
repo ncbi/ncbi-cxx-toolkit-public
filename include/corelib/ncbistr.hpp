@@ -3383,6 +3383,52 @@ public:
                                  const CTempString  pfx,
                                  const CTempString  pfx1);
 
+    /// Flags for Dedent() method 
+    enum EDedentFlags {
+        fDedent_NormalizeEmptyLines    = 1 << 0,  ///< Lines containing only whitespaces will be normalized to 
+                                                  ///< a single newline character in the output.
+        // Next flags can be useful for processing RAW multi-line literals "R(...)"
+        fDedent_IgnoreFirstLine        = 1 << 1,  ///< Ignore first line and skip it from the result. 
+        fDedent_IgnoreFirstLineSpaces  = 1 << 2   ///< Don't use whitespaces on the first line to compute common prefix.
+    };
+    typedef int TDedentFlags; ///< Bitwise OR of EDedentFlags
+
+    /// Dedent multi-line string, removing common whitespace prefix for each line.
+    ///
+    /// @param str
+    ///   String to be dedented.
+    /// @param flags
+    ///   Optional flags to tune up how to dedent string.
+    /// @return 
+    ///   String with removed common whitespace indentation. 
+    /// @note
+    ///    Empty lines, and lines containing whitespaces only with fDedent_NormalizeEmptyLines flag,
+    ///    are not used in computing common whitespaces prefix.
+    /// @note
+    ///   Assume that whitespace prefixes are the same on each line, in other words, 
+    ///   if a common prefix have a mix of spaces and tabulation characters, it should
+    ///   be the same for each line. Or you can use Replace() first to replace tabulations
+    ///   and make whitespaces consistent across lines.
+    /// @sa
+    ///   Replace, DedentR
+    static string Dedent(const CTempString str, TDedentFlags flags = 0);
+
+    /// Dedent multi-line string, removing common whitespace prefix for each line.
+    ///
+    /// Version for RAW multi-line literals "R(...)", embedded into the C++ code.
+    /// @example
+    ///
+    /// make_request(NStr::DedentR(R"(
+    ///     {
+    ///         "param1": some_val,
+    ///         "param2": another_val,
+    ///         "param3": "These lines are easy-to-read ",
+    ///         "param4": "and don't interrupt the flow of indentation."
+    ///     }
+    ///     )");
+    /// @sa
+    ///   Dedent
+    static string DedentR(const CTempString str);
 
     /// Search for a field.
     ///
@@ -5512,6 +5558,11 @@ list<string>& NStr::Justify(const CTempString str, SIZE_TYPE width,
     return Justify(str, width, par, &pfx, &pfx1);
 }
 
+inline
+string NStr::DedentR(const CTempString str)
+{
+    return NStr::Dedent(str, NStr::fDedent_IgnoreFirstLine);
+}
 
 
 /////////////////////////////////////////////////////////////////////////////
