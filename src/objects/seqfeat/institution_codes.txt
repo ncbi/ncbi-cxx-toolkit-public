@@ -7322,6 +7322,7 @@ UCM<ESP>	s	Universidad Complutense Madrid
 UCM<UKR>	c	Ukrainian Collection of Microorganisms, Zabolotny Institute of Microbiology and Virology			
 UCM<USA-CO>	s	University of Colorado Museum of Natural History			
 UCM<USA-CO>:Bird	s	University of Colorado Museum of Natural History, University of Colorado Museum Bird Collection		
+UCM<USA-CO>:Egg	s	University of Colorado Museum of Natural History, University of Colorado Museum Egg collection	
 UCM<USA-CO>:Fish	s	University of Colorado Museum of Natural History, University of Colorado Museum Fish collection		
 UCM<USA-CO>:Herp	s	University of Colorado Museum of Natural History, University of Colorado Museum Amplibian and Reptile collection		
 UCM<USA-CO>:Mamm	s	University of Colorado Museum of Natural History, University of Colorado Museum Mammal Collection		

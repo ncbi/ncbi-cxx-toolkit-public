@@ -7355,6 +7355,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "UCM<UKR>\tc\tUkrainian Collection of Microorganisms, Zabolotny Institute of Microbiology and Virology\t\t\t",
 "UCM<USA-CO>\ts\tUniversity of Colorado Museum of Natural History\t\t\t",
 "UCM<USA-CO>:Bird\ts\tUniversity of Colorado Museum of Natural History, University of Colorado Museum Bird Collection\t\t",
+"UCM<USA-CO>:Egg\ts\tUniversity of Colorado Museum of Natural History, University of Colorado Museum Egg collection\t",
 "UCM<USA-CO>:Fish\ts\tUniversity of Colorado Museum of Natural History, University of Colorado Museum Fish collection\t\t",
 "UCM<USA-CO>:Herp\ts\tUniversity of Colorado Museum of Natural History, University of Colorado Museum Amplibian and Reptile collection\t\t",
 "UCM<USA-CO>:Mamm\ts\tUniversity of Colorado Museum of Natural History, University of Colorado Museum Mammal Collection\t\t",
