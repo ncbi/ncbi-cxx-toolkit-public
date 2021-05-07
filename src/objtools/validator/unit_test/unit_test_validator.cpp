@@ -20894,7 +20894,6 @@ BOOST_AUTO_TEST_CASE(Test_USAStateCleanup)
 
 BOOST_AUTO_TEST_CASE(Test_NewFixCountry)
 {
-    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("United States"), "USA");
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Russia, Tatarstan, Kazan"), "Russia: Tatarstan, Kazan");
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Egypt: Red Sea, Ras Mohamed, Sinai"), "Egypt: Red Sea, Ras Mohamed, Sinai");
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Kenya."), "Kenya");
@@ -20968,6 +20967,18 @@ BOOST_AUTO_TEST_CASE(Test_NewFixCountry)
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Guam", true), "USA: Guam");
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("American Samoa", true), "USA: American Samoa");
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Virgin Islands", true), "USA: US Virgin Islands");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("puerto rico"), "Puerto Rico");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("puerto rico", true), "USA: Puerto Rico");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("guam"), "Guam");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("guam", true), "USA: Guam");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("United States: Georgia"), "USA: Georgia");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("United States: Georgia", true), "USA: Georgia");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("United States: Guam"), "USA: Guam");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("United States: Guam", true), "USA: Guam");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Georgia"), "Georgia");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Georgia", true), "Georgia");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Georgia: Tbilisi"), "Georgia: Tbilisi");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Georgia: Tbilisi", true), "Georgia: Tbilisi");
 }
 
 

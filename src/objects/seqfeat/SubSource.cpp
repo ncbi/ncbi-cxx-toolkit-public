@@ -3631,9 +3631,58 @@ static const SStaticPair<const char*, const char*> s_map_subregion_fixes[] = {
 DEFINE_STATIC_ARRAY_MAP(TCStringPairsMap,k_subregion_fixes, s_map_subregion_fixes);
 
 
-// to be expanded to include other states
 static const char* s_USAStates[] = {
-    "Hawaii"
+    "Alabama",
+    "Alaska",
+    "Arizona",
+    "Arkansas",
+    "California",
+    "Colorado",
+    "Connecticut",
+    "Delaware",
+    "District of Columbia",
+    "Florida",
+    "Georgia",
+    "Hawaii",
+    "Idaho",
+    "Illinois",
+    "Indiana",
+    "Iowa",
+    "Kansas",
+    "Kentucky",
+    "Louisiana",
+    "Maine",
+    "Maryland",
+    "Massachusetts",
+    "Michigan",
+    "Minnesota",
+    "Mississippi",
+    "Missouri",
+    "Montana",
+    "Nebraska",
+    "Nevada",
+    "New Hampshire",
+    "New Jersey",
+    "New Mexico",
+    "New York",
+    "North Carolina",
+    "North Dakota",
+    "Ohio",
+    "Oklahoma",
+    "Oregon",
+    "Pennsylvania",
+    "Rhode Island",
+    "South Carolina",
+    "South Dakota",
+    "Tennessee",
+    "Texas",
+    "Utah",
+    "Vermont",
+    "Virginia",
+    "Washington",
+    "West Virginia",
+    "Wisconsin",
+    "Wyoming"
 };
 
 string CCountries::CapitalizeFirstLetterOfEveryWord (const string &phrase)
@@ -4467,6 +4516,16 @@ string CCountries::NewFixCountry (const string& test, bool us_territories)
         NStr::TruncateSpacesInPlace(input);
     }
 
+    string usa1,usa2;
+    NStr::SplitInTwo(input, ":", usa1, usa2);
+    if (!usa1.empty() && !usa2.empty()) {
+        NStr::TruncateSpacesInPlace(usa1);
+        NStr::TruncateSpacesInPlace(usa2);
+        if (NStr::EqualNocase(usa1, "U.S.A.") || NStr::EqualNocase(usa1, "United States") || NStr::EqualNocase(usa1, "United States of America")) {
+            input = "USA: " + usa2;
+        }
+    }
+
     auto old_name_fix = k_old_country_name_fixes.find(input.c_str());
     if (old_name_fix != k_old_country_name_fixes.end()) {
         input = old_name_fix->second;
@@ -4474,13 +4533,15 @@ string CCountries::NewFixCountry (const string& test, bool us_territories)
     }
 
     if (us_territories) {
-        if ( NStr::StartsWith( input, "Puerto Rico") || NStr::StartsWith( input, "Guam") || NStr::StartsWith( input, "American Samoa") ) {
+        if ( NStr::StartsWith( input, "Puerto Rico", NStr::eNocase) || NStr::StartsWith( input, "Guam", NStr::eNocase) || NStr::StartsWith( input, "American Samoa", NStr::eNocase) ) {
             input = "USA: " + input;
             CCountries::ChangeExtraColonsToCommas(input);
+            input = CCountries::USAStateCleanup(input);
             return input;
-        } else if ( NStr::StartsWith( input, "Virgin Islands") ) {
+        } else if ( NStr::StartsWith( input, "Virgin Islands", NStr::eNocase) ) {
             input = "USA: US " + input;
             CCountries::ChangeExtraColonsToCommas(input);
+            input = CCountries::USAStateCleanup(input);
             return input;
         }
     }
