@@ -264,8 +264,8 @@ blast_sra_input needs $(SOBJMGR_LIBS)
 blast_sra_input needs $(SRAREAD_LIBS)
 blast_unit_test_util needs $(BLAST_LIBS)
 blast_unit_test_util needs $(OBJMGR_LIBS)
+blast_unit_test_util needs test_boost
 blast_unit_test_util needs3party $(BLAST_THIRD_PARTY_LIBS)
-blast_unit_test_util needs3party $(BOOST_TEST_LIBS)
 blast_unit_test_util needs3party $(GENBANK_THIRD_PARTY_LIBS)
 blastapi needs3party blast
 blastapi needs3party ncbitool
@@ -298,10 +298,10 @@ bson-1.0 needs3party $(ORIG_LIBS)
 bsoncxx needs3party $(ORIG_LIBS)
 bsoncxx needs3party bson-1.0
 build_config needs aligndb_reader
+build_config needs bacterial_pipeline_proc
 build_config needs build_config_base
 build_config needs gcaccess_utils
 build_config needs gpipe_xmlutil
-build_config needs refseq_ctl
 build_config needs reftrack_access
 build_config needs simple_asm
 build_config needs xgencoll
@@ -741,7 +741,7 @@ gpr needs3party absl_time
 gpr needs3party absl_time_zone
 gpxapi needs general
 gpxapi needs xconnect
-gpxlib needs gpipe_objutil
+gpxlib needs gpipe_attr
 gpxlib needs gpxapi
 gpxlib needs xgp_manifest
 grid_wrapper needs gpipe_common
@@ -992,7 +992,6 @@ mongoc-1.0 needs3party $(SASL2_LIBS)
 mongoc-1.0 needs3party $(Z_LIBS)
 mongoc-1.0 needs3party bson-1.0
 mongocache needs eclib
-mongocache needs3party $(BOOST_SYSTEM_LIBS)
 mongocache needs3party $(KRB5_LIBS)
 mongocache needs3party $(MONGODB3_LIBS)
 mongocache needs3party $(OPENSSL_LIBS)
