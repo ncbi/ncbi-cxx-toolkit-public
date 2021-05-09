@@ -280,7 +280,7 @@ void CCleanupApp::Init()
     }}
 
     // remote
-    CDataLoadersUtil::AddArgumentDescriptions(*arg_desc, CDataLoadersUtil::fGenbank|CDataLoadersUtil::fVDB);
+    CDataLoadersUtil::AddArgumentDescriptions(*arg_desc, CDataLoadersUtil::fGenbank|CDataLoadersUtil::fGenbankOffByDefault|CDataLoadersUtil::fVDB);
 
     SetupArgDescriptions(arg_desc.release());
 }
@@ -657,7 +657,7 @@ int CCleanupApp::Run()
         NCBI_THROW(CFlatException, eInternal, "Could not create object manager");
     }
 
-    CDataLoadersUtil::SetupObjectManager(args, *m_Objmgr, CDataLoadersUtil::fGenbank|CDataLoadersUtil::fVDB);
+    CDataLoadersUtil::SetupObjectManager(args, *m_Objmgr, CDataLoadersUtil::fGenbank|CDataLoadersUtil::fGenbankOffByDefault|CDataLoadersUtil::fVDB);
     m_Scope.Reset(new CScope(*m_Objmgr));
     m_Scope->AddDefaults();
 
