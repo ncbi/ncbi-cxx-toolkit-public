@@ -188,7 +188,6 @@ an_euk_pipeline needs reftrack_access
 an_euk_pipeline needs simple_asm
 an_euk_pipeline needs xgencoll
 an_euk_pipeline needs3party $(BOOST_FILESYSTEM_LIBS)
-an_euk_pipeline needs3party $(BOOST_SYSTEM_LIBS)
 an_prok_pipeline needs gpipe_an_base
 an_prok_pipeline needs gpipe_fileutils
 an_prok_pipeline needs gpipe_kmer_metadata_cache
@@ -264,8 +263,8 @@ blast_sra_input needs $(SOBJMGR_LIBS)
 blast_sra_input needs $(SRAREAD_LIBS)
 blast_unit_test_util needs $(BLAST_LIBS)
 blast_unit_test_util needs $(OBJMGR_LIBS)
-blast_unit_test_util needs test_boost
 blast_unit_test_util needs3party $(BLAST_THIRD_PARTY_LIBS)
+blast_unit_test_util needs3party $(BOOST_TEST_LIBS)
 blast_unit_test_util needs3party $(GENBANK_THIRD_PARTY_LIBS)
 blastapi needs3party blast
 blastapi needs3party ncbitool
@@ -287,9 +286,7 @@ blastxml2 needs xser
 bob_g needs splitdbasn_g
 bob_g needs xncbi
 bob_g needs3party netblast
-boost_filesystem-gcc73-mt-d-64 needs3party $(BOOST_SYSTEM_LIBS)
 boost_filesystem-gcc73-mt-d-64 needs3party $(ORIG_LIBS)
-boost_system-gcc73-mt-d-64 needs3party $(ORIG_LIBS)
 boost_unit_test_framework-gcc73-mt-d-64 needs3party $(ORIG_LIBS)
 boringcrypto needs3party $(ORIG_LIBS)
 boringssl needs3party $(ORIG_LIBS)
