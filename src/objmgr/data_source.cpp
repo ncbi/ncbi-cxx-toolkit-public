@@ -1924,6 +1924,7 @@ void CDataSource::x_SetLoadLock(CTSE_LoadLock& load, CTSE_Lock& lock)
     load.m_Info->m_LockCounter.Add(1);
     if ( !IsLoaded(*load) ) {
         _ASSERT(load->m_LoadMutex);
+        load.m_LoadLockOwner = true;
         load.m_LoadLock.Reset(new CTSE_LoadLockGuard(this, load->m_LoadMutex));
         if ( IsLoaded(*load) ) {
             load.ReleaseLoadLock();
@@ -1944,6 +1945,7 @@ void CDataSource::x_SetLoadLock(CTSE_LoadLock& load,
     load.m_Info.Reset(&tse);
     if ( !IsLoaded(tse) ) {
         _ASSERT(load_mutex);
+        load.m_LoadLockOwner = true;
         load.m_LoadLock.Reset(new CTSE_LoadLockGuard(this, load_mutex));
         if ( IsLoaded(tse) ) {
             load.ReleaseLoadLock();
@@ -1987,6 +1989,7 @@ CTSE_LoadLock& CTSE_LoadLock::operator=(const CTSE_LoadLock& lock)
         Reset();
         m_Info = lock.m_Info;
         m_DataSource = lock.m_DataSource;
+        m_LoadLockOwner = false;
         m_LoadLock = lock.m_LoadLock;
         if ( *this ) {
             TSE_LOCK_TRACE("TSE_LoadLock("<<&*lock<<") "<<this<<" lock");
@@ -2033,9 +2036,10 @@ void CTSE_LoadLock::Reset(void)
 void CTSE_LoadLock::ReleaseLoadLock(void)
 {
     if ( m_LoadLock ) {
-        if ( IsLoaded() ) {
+        if ( m_LoadLockOwner && IsLoaded() ) {
             x_GetGuard().Release();
         }
+        m_LoadLockOwner = false;
         m_LoadLock.Reset();
     }
 }
