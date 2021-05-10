@@ -84,96 +84,24 @@ public:
   void ExtendedCleanupSeqFeat( CSeq_feat & arg0_raw );
 
 private: 
-  void x_ExtendedCleanupSeqFeat_xref_E_E_data_data_biosrc_biosrc_org_org_orgname_orgname_lineage_ETC( std::string & arg0 );
-  void x_ExtendedCleanupSeqFeat_xref_E_E_data_data_biosrc_biosrc_org_org_orgname_E1798_ETC( COrgName & arg0 );
-  void x_ExtendedCleanupSeqFeat_xref_E_E_data_data_biosrc_biosrc_org_org_orgname_orgname_name_hybrid_hybrid_E( COrgName & arg0 );
-  template< typename Tcontainer_ncbi_cref_corgname_ >
-void x_ExtendedCleanupSeqFeat_xref_E_E_data_data_biosrc_biosrc_org_org_orgname_orgname_name_hybrid_hybrid( Tcontainer_ncbi_cref_corgname_ & arg0 );
-  void x_ExtendedCleanupSeqFeat_xref_E_E_data_data_biosrc_biosrc_org_org_orgname_orgname_name_hybrid( CMultiOrgName & arg0 );
-  void x_ExtendedCleanupSeqFeat_xref_E_E_data_data_biosrc_biosrc_org_org_orgname_orgname_name( COrgName::C_Name & arg0 );
-  void x_ExtendedCleanupSeqFeat_xref_E_E_data_data_biosrc_biosrc_org_org_orgname_orgname1799_ETC( COrgName & arg0 );
-  void x_ExtendedCleanupSeqFeat_xref_E_E_data_data_biosrc_biosrc_org_org_orgname_ETC( COrgName & arg0 );
-  void x_ExtendedCleanupSeqFeat_xref_E_E_data_data_biosrc_biosrc_org_org_ETC( COrg_ref & arg0 );
-  void x_ExtendedCleanupSeqFeat_xref_E_E_data_data_biosrc_biosrc_org_ETC( COrg_ref & arg0 );
-  void x_ExtendedCleanupSeqFeat_xref_E_E_data_data_biosrc_biosrc_ETC( CBioSource & arg0 );
-  void x_ExtendedCleanupSeqFeat_xref_E_E_data_data_biosrc_ETC( CBioSource & arg0 );
-  void x_ExtendedCleanupSeqFeat_data_data_gene_gene( CGene_ref & arg0 );
-  void x_ExtendedCleanupSeqFeat_data_data_gene( CGene_ref & arg0 );
-  void x_ExtendedCleanupSeqFeat_xref_E_E_data_data_imp_imp_ETC( CImp_feat & arg0 );
-  void x_ExtendedCleanupSeqFeat_xref_E_E_data_data_imp_ETC( CImp_feat & arg0 );
-  void x_ExtendedCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_protein_E_E_ETC( CProt_ref & arg0 );
-  void x_ExtendedCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_protein_E_ETC( CProt_ref & arg0 );
-  void x_ExtendedCleanupSeqFeat_xref_E_E_data_data_pub_pub_ETC( CPubdesc & arg0 );
-  void x_ExtendedCleanupSeqFeat_xref_E_E_data_data_pub_ETC( CPubdesc & arg0 );
-  void x_ExtendedCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_gene_E_E_ETC( CGene_ref & arg0 );
-  void x_ExtendedCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_gene_E_ETC( CGene_ref & arg0 );
-  template< typename Tcontainer_ncbi_cref_cgene_ref_ >
-void x_ExtendedCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_gene_ETC( Tcontainer_ncbi_cref_cgene_ref_ & arg0 );
-  template< typename Tcontainer_ncbi_cref_cprot_ref_ >
-void x_ExtendedCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_protein_ETC( Tcontainer_ncbi_cref_cprot_ref_ & arg0 );
-  void x_ExtendedCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_ETC( CTxinit & arg0 );
-  void x_ExtendedCleanupSeqFeat_xref_E_E_data_data_txinit_ETC( CTxinit & arg0 );
-  void x_ExtendedCleanupSeqFeat_data_data( CSeqFeatData & arg0 );
-  void x_ExtendedCleanupSeqFeat_data( CSeqFeatData & arg0 );
-  void x_ExtendedCleanupSeqFeat_except_text_ETC( std::string & arg0 );
-  void x_ExtendedCleanupSeqFeat_xref_E_E_data_data_ETC( CSeqFeatData & arg0 );
-  void x_ExtendedCleanupSeqFeat_xref_E_E_data_ETC( CSeqFeatData & arg0 );
-  void x_ExtendedCleanupSeqFeat_xref_E_E_ETC( CSeqFeatXref & arg0 );
-  void x_ExtendedCleanupSeqFeat_xref_E_ETC( CSeqFeatXref & arg0 );
-  template< typename Tcontainer_ncbi_cref_cseqfeatxref_ >
-void x_ExtendedCleanupSeqFeat_xref_ETC( Tcontainer_ncbi_cref_cseqfeatxref_ & arg0 );
-  void x_ExtendedCleanupSeqAnnot_data_ftable_E( CSeq_feat & arg0 );
-  template< typename Tcontainer_ncbi_cref_cseq_feat_ >
-void x_ExtendedCleanupSeqAnnot_data_ftable( Tcontainer_ncbi_cref_cseq_feat_ & arg0 );
-  void x_ExtendedCleanupSeqAnnot_data( CSeq_annot::C_Data & arg0 );
-  void x_ExtendedCleanupBioseqSet_annot_E_E_desc_desc_E_E_ETC( CAnnotdesc & arg0 );
-  void x_ExtendedCleanupBioseqSet_annot_E_E_desc_desc_E_ETC( CAnnotdesc & arg0 );
-  template< typename Tcontainer_ncbi_cref_cannotdesc_ >
-void x_ExtendedCleanupBioseqSet_annot_E_E_desc_desc_ETC( Tcontainer_ncbi_cref_cannotdesc_ & arg0 );
-  void x_ExtendedCleanupBioseqSet_annot_E_E_desc_ETC( CAnnot_descr & arg0 );
-  void x_ExtendedCleanupBioseq_annot_E( CSeq_annot & arg0 );
-  template< typename Tcontainer_ncbi_cref_cseq_annot_ >
-void x_ExtendedCleanupBioseq_annot( Tcontainer_ncbi_cref_cseq_annot_ & arg0 );
-  void x_ExtendedCleanupBioseqSet_seq_set_E_E_seq_seq_descr_descr_E_E_genbank_genbank_ETC( CGB_block & arg0 );
-  void x_ExtendedCleanupBioseqSet_seq_set_E_E_seq_seq_descr_descr_E_E_genbank_ETC( CGB_block & arg0 );
-  void x_ExtendedCleanupBioseqSet_seq_set_E_E_seq_seq_descr_descr_E_E_ETC( CSeqdesc & arg0 );
-  void x_ExtendedCleanupBioseqSet_seq_set_E_E_seq_seq_descr_descr_E_ETC( CSeqdesc & arg0 );
-  template< typename Tcontainer_ncbi_cref_cseqdesc_ >
-void x_ExtendedCleanupBioseqSet_seq_set_E_E_seq_seq_descr_descr_ETC( Tcontainer_ncbi_cref_cseqdesc_ & arg0 );
-  void x_ExtendedCleanupBioseqSet_seq_set_E_E_seq_seq_descr_ETC( CSeq_descr & arg0 );
-  void x_ExtendedCleanupBioseq_inst_inst_ext_ext_map_map_E( CSeq_feat & arg0 );
-  template< typename Tcontainer_ncbi_cref_cseq_feat_ >
-void x_ExtendedCleanupBioseq_inst_inst_ext_ext_map_map( Tcontainer_ncbi_cref_cseq_feat_ & arg0 );
-  void x_ExtendedCleanupBioseq_inst_inst_ext_ext_map( CMap_ext & arg0 );
-  void x_ExtendedCleanupBioseq_inst_inst_ext_ext( CSeq_ext & arg0 );
-  void x_ExtendedCleanupBioseq_inst_inst_ext( CSeq_ext & arg0 );
-  void x_ExtendedCleanupBioseq_inst_inst( CSeq_inst & arg0 );
+  void x_ExtendedCleanupOrgName( COrgName & arg0 );
+  void x_ExtendedCleanupOrgRef( COrg_ref & arg0 );
+  void x_ExtendedCleanupBioSource( CBioSource & arg0 );
+  void x_ExtendedCleanupImpFeat( CImp_feat & arg0 );
+  void x_ExtendedCleanupProtRef( CProt_ref & arg0 );
+  void x_ExtendedCleanupPubDesc( CPubdesc & arg0 );
+  void x_ExtendedCleanupGeneRef( CGene_ref & arg0 );
+  void x_ExtendedCleanupTxinit( CTxinit & arg0 );
+  void x_ExtendedCleanupSeqFeatData( CSeqFeatData & arg0 );
+  void x_ExtendedCleanupSeqFeatXref(CSeqFeatXref & arg0);
+  void ExtendedCleanupSeqAnnotDescr( CAnnot_descr & arg0 );
+    
+  template<typename TSeqAnnotContainer>
+  void x_ExtendedCleanupSeqAnnots(TSeqAnnotContainer& annots);
+  void x_ExtendedCleanupGBBlock( CGB_block & arg0 );
+  void x_ExtendedCleanupSeqdesc( CSeqdesc & arg0 );
+  void x_ExtendedCleanupSeqdescr( CSeq_descr & arg0 );
   void x_ExtendedCleanupBioseq_inst( CSeq_inst & arg0 );
-  void x_ExtendedCleanupSeqEntry_seq( CBioseq & arg0 );
-  void x_ExtendedCleanupSeqEntry_set_set_annot_E( CSeq_annot & arg0 );
-  template< typename Tcontainer_ncbi_cref_cseq_annot_ >
-void x_ExtendedCleanupSeqEntry_set_set_annot( Tcontainer_ncbi_cref_cseq_annot_ & arg0 );
-  void x_ExtendedCleanupSeqEntry_set_set_seq_set_E( CSeq_entry & arg0 );
-  template< typename Tcontainer_ncbi_cref_cseq_entry_ >
-void x_ExtendedCleanupSeqEntry_set_set_seq_set( Tcontainer_ncbi_cref_cseq_entry_ & arg0 );
-  void x_ExtendedCleanupSeqEntry_set_set_ETC( CBioseq_set & arg0 );
-  void x_ExtendedCleanupSeqEntry_set( CBioseq_set & arg0 );
-  void x_ExtendedCleanupSeqSubmit_data_annots_E( CSeq_annot & arg0 );
-  template< typename Tcontainer_ncbi_cref_cseq_annot_ >
-void x_ExtendedCleanupSeqSubmit_data_annots( Tcontainer_ncbi_cref_cseq_annot_ & arg0 );
-  void x_ExtendedCleanupSeqSubmit_data_entrys_E( CSeq_entry & arg0 );
-  template< typename Tcontainer_ncbi_cref_cseq_entry_ >
-void x_ExtendedCleanupSeqSubmit_data_entrys( Tcontainer_ncbi_cref_cseq_entry_ & arg0 );
-  void x_ExtendedCleanupSeqSubmit_data( CSeq_submit::C_Data & arg0 );
-  void x_ExtendedCleanupBioseqSet_annot_E( CSeq_annot & arg0 );
-  template< typename Tcontainer_ncbi_cref_cseq_annot_ >
-void x_ExtendedCleanupBioseqSet_annot( Tcontainer_ncbi_cref_cseq_annot_ & arg0 );
-  void x_ExtendedCleanupBioseqSet_seq_set_E_E_seq( CBioseq & arg0 );
-  void x_ExtendedCleanupBioseqSet_seq_set_E_E_set( CBioseq_set & arg0 );
-  void x_ExtendedCleanupBioseqSet_seq_set_E_E( CSeq_entry & arg0 );
-  void x_ExtendedCleanupBioseqSet_seq_set_E( CSeq_entry & arg0 );
-  template< typename Tcontainer_ncbi_cref_cseq_entry_ >
-void x_ExtendedCleanupBioseqSet_seq_set( Tcontainer_ncbi_cref_cseq_entry_ & arg0 );
 
   CScope & m_Scope;
   CNewCleanup_imp & m_NewCleanup;
