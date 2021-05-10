@@ -16,6 +16,10 @@ disabled() {
     return 0;
 }
 
+# test readers of native GenBank loader (not PSG)
+GENBANK_LOADER_PSG=0
+export GENBANK_LOADER_PSG
+
 if test "$1" = "-id2"; then
     shift
     methods="ID2"
