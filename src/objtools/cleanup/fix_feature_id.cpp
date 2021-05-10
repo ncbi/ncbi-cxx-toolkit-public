@@ -65,7 +65,7 @@ static void FindNextOffset(const CFixFeatureId::TIdSet &existing_ids,
             current_ids.find(offset) != current_ids.end());
 }
 
-
+/*
 bool CFixFeatureId::UpdateFeatureIds(CSeq_feat& feat,
         SFeatIdManager& id_manager)
 {
@@ -130,7 +130,6 @@ bool CFixFeatureId::UpdateFeatureIds(CSeq_feat& feat,
     }
     return true;
 }
-
 
 bool CFixFeatureId::UpdateFeatureIds(CSeq_entry_Handle entry_handle, 
         TIdSet& existing_ids, 
@@ -212,6 +211,7 @@ bool CFixFeatureId::UpdateFeatureIds(CSeq_entry_Handle entry_handle,
     // Forgot to update existing ids!!
     return any_changes;
 }
+*/
 
 void CFixFeatureId::s_UpdateFeatureIds(const CSeq_entry_Handle& entry, map<CSeq_feat_Handle, CRef<CSeq_feat> > &changed_feats, 
         TIdSet &existing_ids, TId &offset)

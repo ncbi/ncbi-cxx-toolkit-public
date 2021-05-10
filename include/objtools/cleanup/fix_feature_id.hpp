@@ -41,7 +41,7 @@
 #include <unordered_map>
 
 BEGIN_NCBI_SCOPE
-
+/*
 struct NCBI_CLEANUP_EXPORT SFeatIdManager
 {
     using TId = objects::CFeat_id::TLocal::TId;
@@ -51,12 +51,12 @@ struct NCBI_CLEANUP_EXPORT SFeatIdManager
     unordered_set<TId> unchanged_ids;
     unordered_set<TId> new_ids;
 };
-
+*/
 
 class NCBI_CLEANUP_EXPORT CFixFeatureId
 {
 public:
-    using TId = SFeatIdManager::TId;
+    using TId = objects::CFeat_id::TLocal::TId;
     using TIdSet = unordered_set<TId>;
     using TFeatMap = map<objects::CSeq_feat_Handle, CRef<objects::CSeq_feat>>;
 
@@ -64,11 +64,11 @@ public:
     static void s_ApplyToSeqInSet(objects::CSeq_entry_Handle tse, TFeatMap& changed_feats);
     static void s_ApplyToSeqInSet(objects::CSeq_entry_Handle tse);
     static void s_ReassignFeatureIds(const objects::CSeq_entry_Handle& entry, TFeatMap& changed_feats);
-    static bool UpdateFeatureIds(objects::CSeq_feat& feature, SFeatIdManager& id_manager);
+//    static bool UpdateFeatureIds(objects::CSeq_feat& feature, SFeatIdManager& id_manager);
 private:
     static void s_MakeIDPairs(const objects::CSeq_entry_Handle& entry, map<TId,TId> &id_pairs);
     static void s_UpdateFeatureIds(const objects::CSeq_entry_Handle& entry, TFeatMap &changed_feats, TIdSet &existing_ids, TId &offset);
-    static bool UpdateFeatureIds(objects::CSeq_entry_Handle entry_handle, TIdSet& existing_ids, TId& offset);
+ //   static bool UpdateFeatureIds(objects::CSeq_entry_Handle entry_handle, TIdSet& existing_ids, TId& offset);
 };
 
 
