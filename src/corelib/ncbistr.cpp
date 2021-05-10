@@ -5490,6 +5490,8 @@ string NStr::Dedent(const CTempString str, TDedentFlags flags)
     if (str.empty()) {
         return str;
     }
+#if !defined(NCBI_OS_MSWIN)
+#endif
     list<CTempString> lines;
     NStr::Split(str, "\n", lines);
 
@@ -5503,13 +5505,9 @@ string NStr::Dedent(const CTempString str, TDedentFlags flags)
         SIZE_TYPE len = line.length();
         if (first_line) {
             first_line = false;
-            if (flags & fDedent_IgnoreFirstLine) {
+            if ((flags & fDedent_SkipFirstLine)  ||
+               ((flags & fDedent_SkipEmptyFirstLine)  &&  !len) ) {
                 continue;
-            }
-            if (flags & fDedent_IgnoreFirstLineSpaces) {
-                if (len  &&  isspace((unsigned char)line[0])) {
-                    continue;
-                }
             }
         }
         if (!len) {
@@ -5527,7 +5525,7 @@ string NStr::Dedent(const CTempString str, TDedentFlags flags)
             return str;
         }
         if (pos == len  &&  (flags & fDedent_NormalizeEmptyLines)) {
-            // Line have whitespaces -- exclude from computing common prefix
+            // Line have whitespaces only -- exclude from computing common prefix
             continue;
         }
         // Update length of the common prefix
@@ -5552,17 +5550,9 @@ string NStr::Dedent(const CTempString str, TDedentFlags flags)
         SIZE_TYPE len = line.length();
         if (first_line) {
             first_line = false;
-            if (flags & fDedent_IgnoreFirstLine) {
+            if ((flags & fDedent_SkipFirstLine)  ||
+               ((flags & fDedent_SkipEmptyFirstLine)  &&  !len) ) {
                 // Skip first line from result
-                continue;
-            }
-            if (flags & fDedent_IgnoreFirstLineSpaces) {
-                if (len  &&  !isspace((unsigned char)line[0])) {
-                    continue;
-                }
-                // Save first line as is
-                result += line;
-                result += '\n';
                 continue;
             }
         }

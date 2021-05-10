@@ -3385,11 +3385,11 @@ public:
 
     /// Flags for Dedent() method 
     enum EDedentFlags {
-        fDedent_NormalizeEmptyLines    = 1 << 0,  ///< Lines containing only whitespaces will be normalized to 
-                                                  ///< a single newline character in the output.
+        fDedent_NormalizeEmptyLines  = 1 << 0,  ///< Lines containing only whitespaces will be normalized to 
+                                                ///< a single newline character in the output.
         // Next flags can be useful for processing RAW multi-line literals "R(...)"
-        fDedent_IgnoreFirstLine        = 1 << 1,  ///< Ignore first line and skip it from the result. 
-        fDedent_IgnoreFirstLineSpaces  = 1 << 2   ///< Don't use whitespaces on the first line to compute common prefix.
+        fDedent_SkipFirstLine        = 1 << 1,  ///< Ignore first line and skip it from the result. 
+        fDedent_SkipEmptyFirstLine   = 1 << 2,  ///< Ignore first line and skip it from the result, if it is empty only.
     };
     typedef int TDedentFlags; ///< Bitwise OR of EDedentFlags
 
@@ -5561,7 +5561,7 @@ list<string>& NStr::Justify(const CTempString str, SIZE_TYPE width,
 inline
 string NStr::DedentR(const CTempString str)
 {
-    return NStr::Dedent(str, NStr::fDedent_IgnoreFirstLine);
+    return NStr::Dedent(str, NStr::fDedent_SkipEmptyFirstLine);
 }
 
 
