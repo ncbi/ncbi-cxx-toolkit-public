@@ -79,7 +79,12 @@ public:
 
         eAccessionMismatch,
         eVersionMismatch,
-        eSeqIdMismatch
+        eSeqIdMismatch,
+
+        eInvalidPollInit,
+        eInvalidPollStart,
+        eInvalidTimerInit,
+        eInvalidTimerStart
     };
 
     virtual const char *  GetErrCodeString(void) const;

@@ -594,6 +594,8 @@ protected:
     static constexpr const char IPC_PIPE_NAME[] = "tcp_daemon_startup_rpc";
 
 public:
+    CUvLoop         loop;
+
     CTcpDaemon(const std::string &  Address, unsigned short  Port,
                unsigned short  NumWorkers, unsigned short  BackLog,
                unsigned short  MaxConnections) :
@@ -654,8 +656,6 @@ public:
 
         CTcpWorkersList<P, U, D>    workers(this);
         {{
-            CUvLoop         loop;
-
             CUvSignal       sigint(loop.Handle());
             sigint.Start(SIGINT, s_OnMainSigInt);
 

@@ -262,6 +262,8 @@ public:
         return m_Counters;
     }
 
+uv_loop_t *  GetUVLoop(void) { return m_TcpDaemon->GetUVLoop(); }
+
 private:
     struct SRequestParameter
     {
