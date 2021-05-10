@@ -58,6 +58,8 @@
 
 #if defined(HAVE_PSG_LOADER)
 
+#define LOCK4GET 1
+
 BEGIN_NCBI_SCOPE
 
 //#define NCBI_USE_ERRCODE_X   PSGLoader
@@ -968,7 +970,7 @@ CPSGDataLoader_Impl::GetRecords(CDataSource* data_source,
     }
     request->IncludeData(inc_data);
     auto reply = x_ProcessRequest(request);
-    CTSE_Lock tse_lock = x_ProcessBlobReply(reply, data_source, idh, true).lock;
+    CTSE_Lock tse_lock = x_ProcessBlobReply(reply, data_source, idh, true, true).lock;
 
     if (!tse_lock) {
         // FIXME: Exception?
@@ -1039,15 +1041,25 @@ CTSE_Lock CPSGDataLoader_Impl::GetBlobById(CDataSource* data_source, const CPsgB
     if ( GetGetBlobByIdShouldFail() ) {
         _TRACE("GetBlobById("<<blob_id.ToPsgId()<<") should fail");
     }
+#ifdef LOCK4GET
+    CDataLoader::TBlobId dl_blob_id = CDataLoader::TBlobId(&blob_id);
+    CTSE_LoadLock load_lock = data_source->GetTSE_LoadLock(dl_blob_id);
+    if ( load_lock.IsLoaded() ) {
+        _TRACE("GetBlobById() already loaded " << blob_id.ToPsgId());
+        return load_lock;
+    }
+#else
+    CTSE_LoadLock load_lock;
     {{
         CDataLoader::TBlobId dl_blob_id = CDataLoader::TBlobId(&blob_id);
-        CTSE_LoadLock load_lock = data_source->GetTSE_LoadLock(dl_blob_id);
-        if ( load_lock.IsLoaded() ) {
+        CTSE_LoadLock load_lock = data_source->GetTSE_LoadLockIfLoaded(dl_blob_id);
+        if ( load_lock && load_lock.IsLoaded() ) {
             _TRACE("GetBlobById() already loaded " << blob_id.ToPsgId());
             return load_lock;
         }
     }}
-
+#endif
+    
     CTSE_Lock ret;
     if ( x_IsLocalCDDEntryId(blob_id) ) {
         if ( s_GetDebugLevel() >= 5 ) {
@@ -1064,7 +1076,7 @@ CTSE_Lock CPSGDataLoader_Impl::GetBlobById(CDataSource* data_source, const CPsgB
         auto request = make_shared<CPSG_Request_Blob>(bid, context);
         request->IncludeData(m_NoSplit ? CPSG_Request_Biodata::eOrigTSE : CPSG_Request_Biodata::eSmartTSE);
         auto reply = x_ProcessRequest(request);
-        ret = x_ProcessBlobReply(reply, data_source, CSeq_id_Handle(), true).lock;
+        ret = x_ProcessBlobReply(reply, data_source, CSeq_id_Handle(), true, false, &load_lock).lock;
     }
     if (!ret) {
         _TRACE("Failed to load blob for " << blob_id.ToPsgId());
@@ -1083,14 +1095,37 @@ public:
         CPSG_TaskGroup& group,
         const CSeq_id_Handle& idh,
         CDataSource* data_source,
-        CPSGDataLoader_Impl& loader)
+        CPSGDataLoader_Impl& loader,
+        bool lock_asap = false,
+        CTSE_LoadLock* load_lock = nullptr)
         : CPSG_Task(reply, group),
         m_Id(idh),
         m_DataSource(data_source),
-        m_Loader(loader)
-    {}
+        m_Loader(loader),
+        m_LockASAP(lock_asap)  
+    {
+        if ( load_lock ) {
+            m_LoadLock = *load_lock;
+        }
+    }
 
     ~CPSG_Blob_Task(void) override {}
+
+    struct SAutoReleaseLock {
+        SAutoReleaseLock(CTSE_LoadLock& lock)
+            : m_WasLocked(lock), m_Lock(lock)
+            {
+            }
+        ~SAutoReleaseLock()
+            {
+                if ( !m_WasLocked ) {
+                    m_Lock.Reset();
+                }
+            }
+
+        bool m_WasLocked;
+        CTSE_LoadLock& m_Lock;
+    };
 
     typedef pair<shared_ptr<CPSG_BlobInfo>, shared_ptr<CPSG_BlobData>> TBlobSlot;
     typedef map<string, TBlobSlot> TTSEBlobMap; // by PSG blob_id
@@ -1105,7 +1140,8 @@ public:
     const TBlobSlot* GetChunkSlot(const string& id2_info, TChunkId chunk_id) const;
     const TBlobSlot* GetBlobSlot(const CPSG_DataId& id) const;
     TBlobSlot* SetBlobSlot(const CPSG_DataId& id);
-    
+    void GetLoadLock();
+    bool GotBlobData(const string& psg_blob_id) const;
     CPSGDataLoader_Impl::SReplyResult WaitForSkipped(void);
 
     void Finish(void) override
@@ -1139,6 +1175,8 @@ protected:
 private:
     CDataSource* m_DataSource;
     CPSGDataLoader_Impl& m_Loader;
+    bool m_LockASAP;
+    CTSE_LoadLock m_LoadLock;
     TTSEBlobMap m_TSEBlobMap;
     TChunkBlobMap m_ChunkBlobMap;
     map<string, CDataLoader::TBlobId> m_BlobIdMap;
@@ -1194,11 +1232,82 @@ CPSG_Blob_Task::TBlobSlot* CPSG_Blob_Task::SetBlobSlot(const CPSG_DataId& id)
     return 0;
 }
 
+
+bool CPSG_Blob_Task::GotBlobData(const string& psg_blob_id) const
+{
+    const TBlobSlot* main_blob_slot = GetTSESlot(psg_blob_id);
+    if ( !main_blob_slot || !main_blob_slot->first ) {
+        // no TSE blob props yet
+        if ( s_GetDebugLevel() >= 6 ) {
+            LOG_POST("GotBlobData("<<psg_blob_id<<"): no TSE blob props");
+        }
+        return false;
+    }
+    if ( main_blob_slot->second ) {
+        // got TSE blob data
+        if ( s_GetDebugLevel() >= 6 ) {
+            LOG_POST("GotBlobData("<<psg_blob_id<<"): got TSE blob data");
+        }
+        return true;
+    }
+    auto id2_info = main_blob_slot->first->GetId2Info();
+    if ( id2_info.empty() ) {
+        // TSE doesn't have split info
+        if ( s_GetDebugLevel() >= 6 ) {
+            LOG_POST("GotBlobData("<<psg_blob_id<<"): not split");
+        }
+        return false;
+    }
+    const TBlobSlot* split_blob_slot = GetChunkSlot(id2_info, kSplitInfoChunkId);
+    if ( !split_blob_slot || !split_blob_slot->second ) {
+        // no split info blob data yet
+        if ( s_GetDebugLevel() >= 6 ) {
+            LOG_POST("GotBlobData("<<psg_blob_id<<"): no split blob data");
+        }
+        return false;
+    }
+    else {
+        // got split info blob data
+        if ( s_GetDebugLevel() >= 6 ) {
+            LOG_POST("GotBlobData("<<psg_blob_id<<"): got split blob data");
+        }
+        return true;
+    }
+}
+
+
+void CPSG_Blob_Task::GetLoadLock()
+{
+    if ( !m_LockASAP ) {
+        // load lock is not requested
+        return;
+    }
+    if ( m_LoadLock ) {
+        // load lock already obtained
+        return;
+    }
+    if ( m_ReplyResult.blob_id.empty() ) {
+        // blob id is not known yet
+        return;
+    }
+    if ( !GotBlobData(m_ReplyResult.blob_id) ) {
+        return;
+    }
+    if ( s_GetDebugLevel() >= 6 ) {
+        LOG_POST("GetLoadLock("<<m_ReplyResult.blob_id<<"): getting load lock");
+    }
+    m_LoadLock = m_DataSource->GetTSE_LoadLock(GetDLBlobId(m_ReplyResult.blob_id));
+    if ( s_GetDebugLevel() >= 6 ) {
+        LOG_POST("GetLoadLock("<<m_ReplyResult.blob_id<<"): obtained load lock");
+    }
+}
+
     
 void CPSG_Blob_Task::DoExecute(void)
 {
     _TRACE("CPSG_Blob_Task::DoExecute()");
     if (!CheckReplyStatus()) return;
+    SAutoReleaseLock lock_guard(m_LoadLock);
     ReadReply();
     if (m_Status == eFailed) return;
     if (m_Skipped) {
@@ -1223,9 +1332,6 @@ void CPSG_Blob_Task::DoExecute(void)
     }
 
     _TRACE("tse_id="<<m_ReplyResult.blob_id);
-    CDataLoader::TBlobId dl_blob_id = GetDLBlobId(m_ReplyResult.blob_id);
-
-    CTSE_LoadLock load_lock;
 
     const TBlobSlot* main_blob_slot = GetTSESlot(m_ReplyResult.blob_id);
     if ( !main_blob_slot || !main_blob_slot->first ) {
@@ -1262,7 +1368,14 @@ void CPSG_Blob_Task::DoExecute(void)
         m_Status = eFailed;
         return;
     }
-    load_lock = m_DataSource->GetTSE_LoadLock(dl_blob_id);
+    CDataLoader::TBlobId dl_blob_id = GetDLBlobId(m_ReplyResult.blob_id);
+    CTSE_LoadLock load_lock;
+    if ( m_LoadLock && m_LoadLock->GetBlobId() == dl_blob_id ) {
+        load_lock = m_LoadLock;
+    }
+    else {
+        load_lock = m_DataSource->GetTSE_LoadLock(dl_blob_id);
+    }
     if (!load_lock) {
         _TRACE("Cannot get TSE load lock for tse_id="<<m_ReplyResult.blob_id);
         m_Status = eFailed;
@@ -1353,6 +1466,7 @@ void CPSG_Blob_Task::ProcessReplyItem(shared_ptr<CPSG_ReplyItem> item)
         // Only one bioseq-info is allowed per reply.
         shared_ptr<CPSG_BioseqInfo> bioseq_info = static_pointer_cast<CPSG_BioseqInfo>(item);
         m_ReplyResult.blob_id = bioseq_info->GetBlobId().GetId();
+        GetLoadLock();
         m_Loader.m_BioseqCache->Add(*bioseq_info, m_Id);
         break;
     }
@@ -1362,6 +1476,7 @@ void CPSG_Blob_Task::ProcessReplyItem(shared_ptr<CPSG_ReplyItem> item)
         _TRACE("Blob info: "<<blob_info->GetId()->Repr());
         if ( auto slot = SetBlobSlot(*blob_info->GetId()) ) {
             slot->first = blob_info;
+            GetLoadLock();
         }
         break;
     }
@@ -1371,6 +1486,7 @@ void CPSG_Blob_Task::ProcessReplyItem(shared_ptr<CPSG_ReplyItem> item)
         _TRACE("Blob data: "<<data->GetId()->Repr());
         if ( auto slot = SetBlobSlot(*data->GetId()) ) {
             slot->second = data;
+            GetLoadLock();
         }
         break;
     }
@@ -1401,15 +1517,25 @@ CPSGDataLoader_Impl::SReplyResult CPSG_Blob_Task::WaitForSkipped(void)
     CPSG_SkippedBlob::EReason skip_reason = m_Skipped->GetReason();
     switch (skip_reason) {
     case CPSG_SkippedBlob::eInProgress:
-    {
         // Try to wait for the blob to be loaded.
-        load_lock = m_DataSource->GetLoadedTSE_Lock(dl_blob_id, CTimeout::eInfinite);
+        load_lock = m_DataSource->GetLoadedTSE_Lock(dl_blob_id, CTimeout(1));
+        if ( !load_lock && s_GetDebugLevel() >= 6 ) {
+            LOG_POST("CPSGDataLoader: 'in progress' blob is not loaded: "<<dl_blob_id.ToString());
+        }
         break;
-    }
-    case CPSG_SkippedBlob::eExcluded:
     case CPSG_SkippedBlob::eSent:
+        // Try to wait for the blob to be loaded.
+        load_lock = m_DataSource->GetLoadedTSE_Lock(dl_blob_id, CTimeout(.2));
+        if ( !load_lock && s_GetDebugLevel() >= 6 ) {
+            LOG_POST("CPSGDataLoader: 'sent' blob is not loaded: "<<dl_blob_id.ToString());
+        }
+        break;
+    case CPSG_SkippedBlob::eExcluded:
         // Check if the blob is already loaded, force loading if necessary.
-        load_lock = m_DataSource->GetTSE_LoadLock(dl_blob_id);
+        load_lock = m_DataSource->GetTSE_LoadLockIfLoaded(dl_blob_id);
+        if ( !load_lock && s_GetDebugLevel() >= 6 ) {
+            LOG_POST("CPSGDataLoader: 'excluded' blob is not loaded: "<<dl_blob_id.ToString());
+        }
         break;
     default: // unknown
         return ret;
@@ -1687,7 +1813,7 @@ bool CPSGDataLoader_Impl::x_ReadCDDChunk(CDataSource* data_source,
                                          const CPSG_BlobData& blob_data)
 {
     _ASSERT(chunk->GetChunkId() == kDelayedMain_ChunkId);
-    const CPsgBlobId& blob_id = dynamic_cast<const CPsgBlobId&>(*chunk->GetBlobId());
+    _DEBUG_ARG(const CPsgBlobId& blob_id = dynamic_cast<const CPsgBlobId&>(*chunk->GetBlobId()));
     _ASSERT(x_IsLocalCDDEntryId(blob_id));
     _ASSERT(!chunk->IsLoaded());
     
@@ -2207,12 +2333,37 @@ shared_ptr<CPSG_Reply> CPSGDataLoader_Impl::x_ProcessRequest(shared_ptr<CPSG_Req
 CPSGDataLoader_Impl::SReplyResult
 CPSGDataLoader_Impl::x_RetryBlobRequest(const string& blob_id, CDataSource* data_source, CSeq_id_Handle req_idh)
 {
+#ifdef LOCK4GET
+    CDataLoader::TBlobId dl_blob_id(new CPsgBlobId(blob_id));
+    CTSE_LoadLock load_lock = data_source->GetTSE_LoadLock(dl_blob_id);
+    if ( load_lock.IsLoaded() ) {
+        _TRACE("x_RetryBlobRequest() already loaded " << blob_id);
+        SReplyResult ret;
+        ret.lock = load_lock;
+        ret.blob_id = blob_id;
+        return ret;
+    }
+#else
+    CTSE_LoadLock load_lock;
+    {{
+        CDataLoader::TBlobId dl_blob_id(new CPsgBlobId(blob_id));
+        CTSE_LoadLock load_lock = data_source->GetTSE_LoadLockIfLoaded(dl_blob_id);
+        if ( load_lock && load_lock.IsLoaded() ) {
+            _TRACE("x_RetryBlobRequest() already loaded " << blob_id);
+            SReplyResult ret;
+            ret.lock = load_lock;
+            ret.blob_id = blob_id;
+            return ret;
+        }
+    }}
+#endif
+    
     CPSG_BlobId req_blob_id(blob_id);
     auto context = make_shared<CPsgClientContext>();
     auto blob_request = make_shared<CPSG_Request_Blob>(req_blob_id, context);
     blob_request->IncludeData(m_NoSplit ? CPSG_Request_Biodata::eOrigTSE : CPSG_Request_Biodata::eSmartTSE);
     auto blob_reply = x_ProcessRequest(blob_request);
-    return x_ProcessBlobReply(blob_reply, data_source, req_idh, false);
+    return x_ProcessBlobReply(blob_reply, data_source, req_idh, false, false, &load_lock);
 }
 
 
@@ -2220,7 +2371,9 @@ CPSGDataLoader_Impl::SReplyResult CPSGDataLoader_Impl::x_ProcessBlobReply(
     shared_ptr<CPSG_Reply> reply,
     CDataSource* data_source,
     CSeq_id_Handle req_idh,
-    bool retry)
+    bool retry,
+    bool lock_asap,
+    CTSE_LoadLock* load_lock)
 {
     SReplyResult ret;
 
@@ -2231,7 +2384,7 @@ CPSGDataLoader_Impl::SReplyResult CPSGDataLoader_Impl::x_ProcessBlobReply(
 
     CPSG_TaskGroup group(*m_ThreadPool);
     CRef<CPSG_Blob_Task> task(
-        new CPSG_Blob_Task(reply, group, req_idh, data_source, *this));
+        new CPSG_Blob_Task(reply, group, req_idh, data_source, *this, lock_asap, load_lock));
     CPSG_Task_Guard guard(*task);
     group.AddTask(task);
     group.WaitAll();

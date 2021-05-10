@@ -35,7 +35,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
-#include <objtools/pubseq_gateway/client/psg_client.hpp>
+#include <objtools/pubseq_gateway/client/psg_client.hpp> // for HAVE_PSG_CLIENT
 
 
 #if defined(HAVE_PSG_LOADER) && !defined(HAVE_PSG_CLIENT)
