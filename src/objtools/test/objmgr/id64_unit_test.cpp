@@ -270,7 +270,7 @@ void s_CheckIds(const SBioseqInfo& info, CScope* scope)
                     req_ids, ids, true);
 
     CBioseq_Handle bh = scope->GetBioseqHandle(idh);
-    BOOST_CHECK(bh);
+    BOOST_REQUIRE(bh);
     //s_Print("Actual ", bh.GetId());
     s_CompareIdSets("get-ids with Bioseq",
                     ids, s_Normalize(bh.GetId()), true);
@@ -281,7 +281,7 @@ void s_CheckSequence(const SBioseqInfo& info, CScope* scope)
 {
     CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(info.m_RequestId);
     CBioseq_Handle bh = scope->GetBioseqHandle(idh);
-    BOOST_CHECK(bh);
+    BOOST_REQUIRE(bh);
     TSeqPos len = bh.GetBioseqLength();
     BOOST_CHECK(len >= info.m_MinLength);
     BOOST_CHECK(len <= info.m_MaxLength);
@@ -725,7 +725,7 @@ BOOST_AUTO_TEST_CASE(CheckExtCDD)
     SAnnotSelector sel(CSeqFeatData::eSubtype_region);
     sel.SetResolveAll().SetAdaptiveDepth();
     sel.AddNamedAnnots("CDD");
-    s_CheckFeat(sel, "NP_090000.1");
+    s_CheckFeat(sel, "QTV22642.1");
 }
 
 
@@ -740,7 +740,7 @@ BOOST_AUTO_TEST_CASE(CheckExtCDD2)
     SAnnotSelector sel(CSeqFeatData::eSubtype_region);
     sel.SetResolveAll().SetAdaptiveDepth();
     sel.AddNamedAnnots("CDD");
-    s_CheckFeat(sel, "AAC73113.1");
+    s_CheckFeat(sel, "QTV22642.1");
 }
 
 #if 0
@@ -1657,8 +1657,28 @@ BOOST_AUTO_TEST_CASE(TestGetBlobById)
 }
 #endif
 
+NCBITEST_INIT_CMDLINE(arg_descrs)
+{
+    arg_descrs->AddFlag("psg",
+        "Update all test cases to current reader code (dangerous).",
+        true );
+    arg_descrs->AddOptionalKey("id2-service", "ID2Service",
+                               "Service name for ID2 connection.",
+                               CArgDescriptions::eString);
+}
+
+
 NCBITEST_INIT_TREE()
 {
+    auto app = CNcbiApplication::Instance();
+    const CArgs& args = app->GetArgs();
+    if ( args["psg"] ) {
+        app->GetConfig().Set("genbank", "loader_psg", "1");
+    }
+    if ( args["id2-service"] ) {
+        app->GetConfig().Set("genbank/id2", "service", args["id2-service"].AsString());
+    }
+
     NCBITEST_DISABLE(CheckAll);
     /*
     NCBITEST_DISABLE(CheckExtHPRD);

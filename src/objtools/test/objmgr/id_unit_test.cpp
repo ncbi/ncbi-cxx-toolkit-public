@@ -284,7 +284,7 @@ void s_CheckIds(const SBioseqInfo& info, CScope* scope)
                     req_ids, ids, true);
 
     CBioseq_Handle bh = scope->GetBioseqHandle(idh);
-    BOOST_CHECK(bh);
+    BOOST_REQUIRE(bh);
     //s_Print("Actual ", bh.GetId());
     s_CompareIdSets("get-ids with Bioseq",
                     ids, s_Normalize(bh.GetId()), true);
@@ -295,7 +295,7 @@ void s_CheckSequence(const SBioseqInfo& info, CScope* scope)
 {
     CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(info.m_RequestId);
     CBioseq_Handle bh = scope->GetBioseqHandle(idh);
-    BOOST_CHECK(bh);
+    BOOST_REQUIRE(bh);
     TSeqPos len = bh.GetBioseqLength();
     BOOST_CHECK(len >= info.m_MinLength);
     BOOST_CHECK(len <= info.m_MaxLength);
