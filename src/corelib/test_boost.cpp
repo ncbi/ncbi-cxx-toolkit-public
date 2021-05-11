@@ -2282,7 +2282,9 @@ main(int argc, char* argv[])
         }
 #endif
         framework::run();
+#if BOOST_VERSION < 106700
         results_reporter::make_report();
+#endif
         made_report = true;
 
         if (
