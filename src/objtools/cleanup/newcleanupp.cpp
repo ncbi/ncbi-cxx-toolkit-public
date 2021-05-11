@@ -8725,10 +8725,8 @@ void CNewCleanup_imp::x_RememberPubOldLabel( CPub &pub )
     m_OldLabelToPubMap.insert( TOldLabelToPubMap::value_type(old_label, CRef<CPub>(&pub)) );
 }
 
-void CNewCleanup_imp::x_RememberMuidThatMightBeConvertibleToPmid( int &muid, CPub &pub )
+void CNewCleanup_imp::x_RememberMuidThatMightBeConvertibleToPmid(CPub &pub)
 {
-    // ignore the "muid" arg; it's just so we only add muid pubs to the container
-
     m_MuidPubContainer.push_back( CRef<CPub>(&pub) );
 }
 
@@ -12312,9 +12310,11 @@ void CNewCleanup_imp::x_ExtendedCleanupExtra(CSeq_entry_Handle seh)
     if (CCleanup::RenormalizeNucProtSets(seh)) {
         ChangeMade(CCleanupChange::eCollapseSet);
     }
+/*
     if (CCleanup::RepairXrefs(seh)) {
         ChangeMade(CCleanupChange::eAddSeqFeatXref);
     }
+    */
     if (CCleanup::RepackageProteins(seh)) {
         ChangeMade(CCleanupChange::eChangeOther);
     }

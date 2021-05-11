@@ -499,7 +499,7 @@ private:
     void x_NotePubdescOrAnnotPubs_RecursionHelper(
         const CPub_equiv &pub_equiv, int &muid, int &pmid );
     void x_RememberPubOldLabel( CPub &pub );
-    void x_RememberMuidThatMightBeConvertibleToPmid( int &muid, CPub &pub );
+    void x_RememberMuidThatMightBeConvertibleToPmid(CPub &pub );
     void x_RememberSeqFeatCitPubs( CPub &pub );
 
     void x_DecodeXMLMarkChanged( std::string & str );

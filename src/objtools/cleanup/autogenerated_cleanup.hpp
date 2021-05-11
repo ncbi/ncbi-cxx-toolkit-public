@@ -273,7 +273,6 @@ void x_BasicCleanupSeqFeat_cit_cit_pub_E_E_equiv_equiv( Tcontainer_ncbi_cref_cpu
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_pub_pub_gen_ETC( CCit_gen & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_pub_pub_man_man_ETC( CCit_let & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_pub_pub_man_ETC( CCit_let & arg0 );
-  void x_BasicCleanupSeqFeat_cit_cit_pub_E_E_muid( int & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_pub_pub_sub_sub_ETC( CCit_sub & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_pub_pub_sub_ETC( CCit_sub & arg0 );
   void x_BasicCleanupSeqFeat_cit_cit_pub_E_E_ETC( CPub & arg0 );
