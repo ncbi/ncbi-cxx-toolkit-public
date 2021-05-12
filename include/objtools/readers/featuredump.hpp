@@ -41,7 +41,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 enum FeatureDefs {
-    eMaxSeqidLen = 20,
+    eMaxSeqidLen = 40,
     eFeatureLen = 60
 };
 
