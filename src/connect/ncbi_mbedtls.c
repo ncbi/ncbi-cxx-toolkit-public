@@ -668,16 +668,17 @@ static EIO_Status x_InitLocking(void)
 #  ifdef MBEDTLS_THREADING_PTHREAD
     status = eIO_Success;
 #  elif defined(MBEDTLS_THREADING_ALT)  &&  defined(NCBI_THREADS)
-    MT_LOCK lk = CORE_GetLOCK();
-    if (MT_LOCK_Do(lk, eMT_Lock) != -1) {
+    int locked;
+    MT_LOCK lock = CORE_GetLOCK();
+    if ((locked = MT_LOCK_Do(lock, eMT_Lock)) > 0) {
         mbedtls_threading_set_alt(mbtls_user_mutex_init,
                                   mbtls_user_mutex_deinit,
                                   mbtls_user_mutex_lock,
                                   mbtls_user_mutex_unlock);
-        MT_LOCK_Do(lk, eMT_Unlock);
+        MT_LOCK_Do(lock, eMT_Unlock);
         status = eIO_Success;
     } else
-        status = lk ? eIO_Success : eIO_NotSupported;
+        status = !locked ? eIO_Unknown : lock ? eIO_Success : eIO_NotSupported;
 #  elif !defined(NCBI_NO_THREADS)  &&  defined(_MT)
     CORE_LOG_X(4, eLOG_Critical,
                "MBEDTLS locking uninited: Unknown threading model");

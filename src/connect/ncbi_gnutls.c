@@ -687,14 +687,15 @@ static EIO_Status x_InitLocking(void)
         ? eIO_Success
         : eIO_NotSupported;
 #      elif defined(NCBI_THREADS)
-    MT_LOCK lk = CORE_GetLOCK();
-    if (MT_LOCK_Do(lk, eMT_Lock) != -1) {
+    int locked;
+    MT_LOCK lock = CORE_GetLOCK();
+    if ((locked = MT_LOCK_Do(lock, eMT_Lock)) > 0) {
         status = gcry_control(GCRYCTL_SET_THREAD_CBS, &gcry_threads_user) == 0
             ? eIO_Success
             : eIO_NotSupported;
-        MT_LOCK_Do(lk, eMT_Unlock);
+        MT_LOCK_Do(lock, eMT_Unlock);
     } else
-        status = lk ? eIO_Success : eIO_NotSupported;
+        status = !locked ? eIO_Unknown : lock ? eIO_Success : eIO_NotSupported;
 #      elif !defined(NCBI_NO_THREADS)  &&  defined(_MT)
     CORE_LOG_X(24, eLOG_Critical,
                "LIBGCRYPT uninitialized: Unknown threading model");
@@ -702,15 +703,16 @@ static EIO_Status x_InitLocking(void)
 #      endif /*NCBI_POSIX_THREADS*/
 #    endif /*HAVE_LIBGCRYPT*/
 #  elif defined(NCBI_THREADS)
-    MT_LOCK lk = CORE_GetLOCK();
-    if (MT_LOCK_Do(lk, eMT_Lock) != -1) {
+    int locked;
+    MT_LOCK lock = CORE_GetLOCK();
+    if ((locked = MT_LOCK_Do(lock, eMT_Lock)) > 0) {
         /* NB: calls global_deinit/global_init internally */
         gnutls_global_set_mutex(gtls_user_mutex_init, gtls_user_mutex_deinit,
                                 gtls_user_mutex_lock, gtls_user_mutex_unlock);
-        MT_LOCK_Do(lk, eMT_Unlock);
+        MT_LOCK_Do(lock, eMT_Unlock);
         status = eIO_Success;
     } else
-        status = lk ? eIO_Success : eIO_NotSupported;
+        status = !locked ? eIO_Unknown : lock ? eIO_Success : eIO_NotSupported;
 #  elif !defined(NCBI_NO_THREADS)  &&  defined(_MT)
     CORE_LOG_X(25, eLOG_Critical,
                "GNUTLS locking uninited: Unknown threading model");
@@ -784,8 +786,8 @@ static EIO_Status s_GnuTlsInit(FSSLPull pull, FSSLPush push)
     if ((status = x_InitLocking()) != eIO_Success)
         goto out;
 
-    if (!gnutls_check_version(LIBGNUTLS_VERSION)  ||
-        gnutls_global_init() != GNUTLS_E_SUCCESS/*0*/) {
+    if (!gnutls_check_version(LIBGNUTLS_VERSION)
+        ||  gnutls_global_init() != GNUTLS_E_SUCCESS/*0*/) {
         status = eIO_NotSupported;
         goto out;
     }
