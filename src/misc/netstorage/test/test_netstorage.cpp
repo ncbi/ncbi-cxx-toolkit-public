@@ -333,7 +333,7 @@ private:
 
             typedef numeric_limits<char> limits;
             uniform_int_distribution<short> range(limits::min(), limits::max());
-            auto random_char = bind(range, generator);
+            auto random_char = [&]() { return static_cast<char>(range(generator)); };
 
             const size_t size = DataSize + shift;
             data.reserve(size);
@@ -943,7 +943,7 @@ struct CAttributes
                 numeric_limits<char>::min(),
                 numeric_limits<char>::max());
         auto name_char = [&]()->char { return name_chars[name_indexes(generator)]; };
-        auto value_char = bind(value_chars, generator);
+        auto value_char = [&]() { return static_cast<char>(value_chars(generator)); };
 
         // Number of attributes
         uniform_int_distribution<size_t> attr_number(3, 10);
