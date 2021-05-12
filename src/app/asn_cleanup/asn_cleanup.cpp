@@ -77,6 +77,9 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
+CDataLoadersUtil::TLoaders default_loaders =
+  CDataLoadersUtil::fGenbank | CDataLoadersUtil::fGenbankOffByDefault | CDataLoadersUtil::fVDB;
+
 enum EProcessingMode
 {
     eModeRegular,
@@ -198,7 +201,6 @@ void CCleanupApp::Init()
 
         // results
         arg_desc->AddOptionalKey("outdir", "results", "Path for Results", CArgDescriptions::eDirectory);
-
     }}
 
     // batch processing
@@ -225,7 +227,6 @@ void CCleanupApp::Init()
 
     // report
     {{
-
         // html
         arg_desc->AddFlag("html", "Produce HTML output");
     }}
@@ -280,7 +281,7 @@ void CCleanupApp::Init()
     }}
 
     // remote
-    CDataLoadersUtil::AddArgumentDescriptions(*arg_desc, CDataLoadersUtil::fGenbank|CDataLoadersUtil::fGenbankOffByDefault|CDataLoadersUtil::fVDB);
+    CDataLoadersUtil::AddArgumentDescriptions(*arg_desc, default_loaders);
 
     SetupArgDescriptions(arg_desc.release());
 }
@@ -657,7 +658,7 @@ int CCleanupApp::Run()
         NCBI_THROW(CFlatException, eInternal, "Could not create object manager");
     }
 
-    CDataLoadersUtil::SetupObjectManager(args, *m_Objmgr, CDataLoadersUtil::fGenbank|CDataLoadersUtil::fGenbankOffByDefault|CDataLoadersUtil::fVDB);
+    CDataLoadersUtil::SetupObjectManager(args, *m_Objmgr, default_loaders);
     m_Scope.Reset(new CScope(*m_Objmgr));
     m_Scope->AddDefaults();
 
@@ -1261,9 +1262,7 @@ void CCleanupApp::x_OpenOStream(const string& filename, const string& dir, bool 
     } else if (!NStr::IsBlank(dir)) {
         string base = filename;
         if (remove_orig_dir) {
-            char buf[2];
-            buf[1] = 0;
-            buf[0] = CDirEntry::GetPathSeparator();
+            const char buf[2] = { CDirEntry::GetPathSeparator(), 0 };
             size_t pos = NStr::Find(base, buf, NStr::eCase, NStr::eReverseSearch);
             if (pos != string::npos) {
                 base = base.substr(pos + 1);
