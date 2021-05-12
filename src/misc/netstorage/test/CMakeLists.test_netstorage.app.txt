@@ -1,6 +1,10 @@
 # $Id$
 
 NCBI_begin_app(test_netstorage)
+  if(WIN32)
+      add_compile_options(/experimental:preprocessor /Zc:preprocessor /wd5105)
+  endif(WIN32)
+
   NCBI_sources(test_netstorage)
   NCBI_requires(Boost.Test.Included)
   NCBI_uses_toolkit_libraries(netstorage test_boost)
