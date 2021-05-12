@@ -135,16 +135,16 @@ if [ ! -z "${NAME}" ]; then
         fi
     fi
 
-    esummary -db taxonomy -mode json < $OUTPUT > $TMP
+    esummary -mode json < $OUTPUT > $TMP
 
     if [ $? -ne 0 ]; then
         error_exit "esummary error" $?
     fi
         
-    sed -i 's/,\|{/\n/g' $TMP 
-    grep 'uid\|rank\|division\|scientificname\|commonname' $TMP | \
+    cat $TMP | tr ',|{' '\n' | \
+    grep 'uid\|rank\|division\|scientificname\|commonname' | \
     grep -v "uids\|genbankdivision" | tr  '"\|,'  " " | tr -s ' ' | \
-    sed 's/uid/\nTaxid/g;s/name/ name/g' > $OUTPUT
+    sed 's/ uid/Taxid/g;s/name/ name/g' | awk '/Taxid/{print ""}1' > $OUTPUT
 
     echo -e "\n$NUM_RESULTS matche(s) found.\n" >> $OUTPUT
 fi
