@@ -12310,11 +12310,11 @@ void CNewCleanup_imp::x_ExtendedCleanupExtra(CSeq_entry_Handle seh)
     if (CCleanup::RenormalizeNucProtSets(seh)) {
         ChangeMade(CCleanupChange::eCollapseSet);
     }
-/*
+
     if (CCleanup::RepairXrefs(seh)) {
         ChangeMade(CCleanupChange::eAddSeqFeatXref);
     }
-    */
+
     if (CCleanup::RepackageProteins(seh)) {
         ChangeMade(CCleanupChange::eChangeOther);
     }
