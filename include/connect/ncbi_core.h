@@ -261,9 +261,9 @@ extern NCBI_XCONNECT_EXPORT MT_LOCK MT_LOCK_Delete(MT_LOCK lk);
  *  Whether to lock (and how: read, write) or to unlock
  * @return
  *  Value returned by the lock handler ("handler" in MT_LOCK_Create()).
- * If lock handler is not specified then always return "-1".
+ *  If the lock handler is not specified then always return "-1" (noop).
  * @note
- *  Use MT_LOCK_Do to avoid overhead!
+ *  Use MT_LOCK_Do() to avoid overhead!
  * @sa
  *  MT_LOCK_Create, FMT_LOCK_Handler, EMT_Lock
  */

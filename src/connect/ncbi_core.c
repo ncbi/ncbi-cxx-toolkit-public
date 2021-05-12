@@ -124,7 +124,7 @@ static int/*bool*/ s_CORE_MT_Lock_default_handler(void*    unused,
         pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
         pthread_mutex_init(&sx_Mutex, &attr);
         pthread_mutexattr_destroy(&attr);
-        sx_Inited = 1; /*go*/
+        sx_Inited = 1; /*go!*/
     } else while (!sx_Inited)
         CORE_Msdelay(1/*ms*/); /*spin*/
 #    endif /*!NCBI_RECURSIVE_MUTEX_INIT*/
@@ -149,7 +149,7 @@ static int/*bool*/ s_CORE_MT_Lock_default_handler(void*    unused,
 
     if (!InterlockedCompareExchange(&sx_Init, 1, 0)) {
         InitializeCriticalSection(&sx_Crit);
-        sx_Inited = 1; /*go*/
+        sx_Inited = 1; /*go!*/
     } else while (!sx_Inited)
         CORE_Msdelay(1/*ms*/); /*spin*/
 

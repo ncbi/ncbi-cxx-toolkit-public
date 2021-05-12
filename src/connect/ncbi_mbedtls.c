@@ -100,7 +100,7 @@ static void mbtls_user_mutex_init(MT_LOCK* lock)
 }
 static void mbtls_user_mutex_deinit(MT_LOCK* lock)
 {
-    if (lock) {
+    if (lock  &&  *lock) {
         g_CORE_MT_Lock = MT_LOCK_Delete(*lock);
         *lock = 0;
     }
@@ -108,7 +108,7 @@ static void mbtls_user_mutex_deinit(MT_LOCK* lock)
 static int mbtls_user_mutex_lock(MT_LOCK* lock)
 {
     if (lock) {
-        switch (MT_LOCK_Do((MT_LOCK)(*lock), eMT_Lock)) {
+        switch (MT_LOCK_Do(*lock, eMT_Lock)) {
         case -1:
             return MBEDTLS_ERR_THREADING_FEATURE_UNAVAILABLE;
         case  0:
@@ -124,7 +124,7 @@ static int mbtls_user_mutex_lock(MT_LOCK* lock)
 static int mbtls_user_mutex_unlock(MT_LOCK* lock)
 {
     if (lock) {
-        switch (MT_LOCK_Do((MT_LOCK)(*lock), eMT_Unlock)) {
+        switch (MT_LOCK_Do(*lock, eMT_Unlock)) {
         case -1:
             return MBEDTLS_ERR_THREADING_FEATURE_UNAVAILABLE;
         case  0:

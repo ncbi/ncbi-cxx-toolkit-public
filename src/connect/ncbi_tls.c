@@ -80,19 +80,22 @@ static FSSLSetup x_NcbiSetupTls(void)
 {
     static FSSLSetup s_Setup = (FSSLSetup)(-1L);
     if (s_Setup == (FSSLSetup)(-1L)) {
+        int/*bool*/ none;
         char str[32];
         ConnNetInfo_GetValueInternal(0, "USESSL", str, sizeof(str), 0);
         if      (strcasecmp(str, "MBEDTLS") == 0)
             s_Setup = NcbiSetupMbedTls;
         else if (strcasecmp(str, "GNUTLS")  == 0)
             s_Setup = NcbiSetupGnuTls;
-        else if (ConnNetInfo_Boolean(str)  ||  !*str) {
+        else if (!(none = strcasecmp(str, "none") == 0 ? 1/*T*/ : 0/*F*/)
+                 &&  (ConnNetInfo_Boolean(str)  ||  !*str)) {
             s_Setup = NcbiSetupDefaultTls;
             if (!s_Setup) {
                 CORE_LOG_X(44, eLOG_Critical,
                            "No TLS support included in this build");
             }
-        } else if (strcmp    (str, "0")     == 0  ||
+        } else if (none                           ||
+                   strcmp    (str, "0")     == 0  ||
                    strcasecmp(str, "no")    == 0  ||
                    strcasecmp(str, "off")   == 0  ||
                    strcasecmp(str, "false") == 0) {

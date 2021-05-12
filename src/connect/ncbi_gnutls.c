@@ -81,8 +81,10 @@ static int gcry_user_mutex_init(void** lock)
 }
 static int gcry_user_mutex_destroy(void** lock)
 {
-    g_CORE_MT_Lock = MT_LOCK_Delete(*((MT_LOCK*) lock));
-    *lock = 0;
+    if (*lock) {
+        g_CORE_MT_Lock = MT_LOCK_Delete(*((MT_LOCK*) lock));
+        *lock = 0;
+    }
     return 0;
 }
 static int gcry_user_mutex_lock(void** lock)
@@ -91,7 +93,7 @@ static int gcry_user_mutex_lock(void** lock)
 }
 static int gcry_user_mutex_unlock(void** lock)
 {
-    return MT_LOCK_Do((MT_LOCK)(*lock), eMT_Unlock)!=0 ? 0 : NCBI_NOTSUPPORTED;
+    return MT_LOCK_Do((MT_LOCK)(*lock), eMT_Unlock)>0 ? 0 : NCBI_NOTSUPPORTED;
 }
 static struct gcry_thread_cbs gcry_threads_user = {
     GCRY_THREAD_OPTION_USER, NULL/*gcry_user_init*/,
@@ -116,8 +118,10 @@ static int gtls_user_mutex_init(void** lock)
 }
 static int gtls_user_mutex_deinit(void** lock)
 {
-    g_CORE_MT_Lock = MT_LOCK_Delete((MT_LOCK)(*lock));
-    *lock = 0;
+    if (*lock) {
+        g_CORE_MT_Lock = MT_LOCK_Delete((MT_LOCK)(*lock));
+        *lock = 0;
+    }
     return 0;
 }
 static int gtls_user_mutex_lock(void** lock)
@@ -126,7 +130,7 @@ static int gtls_user_mutex_lock(void** lock)
 }
 static int gtls_user_mutex_unlock(void** lock)
 {
-    return MT_LOCK_Do((MT_LOCK)(*lock), eMT_Unlock)!=0 ? 0 : NCBI_NOTSUPPORTED;
+    return MT_LOCK_Do((MT_LOCK)(*lock), eMT_Unlock)>0 ? 0 : NCBI_NOTSUPPORTED;
 }
 #    ifdef __cplusplus
 }
