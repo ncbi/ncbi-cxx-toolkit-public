@@ -101,12 +101,12 @@ NCBI_C_DEFINE_ERRCODE_X(Connect_SMTP,          306,  33);
 NCBI_C_DEFINE_ERRCODE_X(Connect_HTTP,          307,  26);
 NCBI_C_DEFINE_ERRCODE_X(Connect_Service,       308,  10);
 NCBI_C_DEFINE_ERRCODE_X(Connect_HeapMgr,       309,  34);
-NCBI_C_DEFINE_ERRCODE_X(Connect_LBOS,          310, 600); /*safe upper bound*/
+NCBI_C_DEFINE_ERRCODE_X(Connect_TLS,           310,  47);
 NCBI_C_DEFINE_ERRCODE_X(Connect_Mghbn,         311,  16);
 NCBI_C_DEFINE_ERRCODE_X(Connect_Crypt,         312,   5);
 NCBI_C_DEFINE_ERRCODE_X(Connect_LocalIP,       313,   5);
 NCBI_C_DEFINE_ERRCODE_X(Connect_NamerdLinkerd, 314,  14);
-NCBI_C_DEFINE_ERRCODE_X(Connect_TLS,           319,  47);
+NCBI_C_DEFINE_ERRCODE_X(Connect_LBOS,          319, 600); /*safe upper bound*/
 
 
 /** Make one identifier from 2 parts */
@@ -291,7 +291,7 @@ extern NCBI_XCONNECT_EXPORT int g_NCBI_CoreCheckUnlock(void);
 
 extern NCBI_XCONNECT_EXPORT REG g_CORE_Registry;
 
-/* Always use the following macros and functions to access "g_CORE_Registry",
+/* Always use the following macros to access "g_CORE_Registry",
  * do not access/change it directly!
  */
 
@@ -300,7 +300,6 @@ extern NCBI_XCONNECT_EXPORT REG g_CORE_Registry;
     
 #define CORE_REG_SET(section, name, value, storage)                 \
     g_CORE_RegistrySET(section, name, value, storage)
-
 
 /* (private, to be used exclusively by the above macro CORE_REG_GET) */
 extern NCBI_XCONNECT_EXPORT const char* g_CORE_RegistryGET
@@ -356,7 +355,7 @@ extern NCBI_XCONNECT_EXPORT FNcbiGetAppName g_CORE_GetAppName;
 /******************************************************************************
  *  NCBI request ID support (return "as is" to the user)
  *  Return NULL on error;  otherwise, the returned ID is a non-empty string
- *  allocated on the heap, and must be free()'d when no longer needed.
+ *  allocated on heap, and must be free()'d when no longer needed.
  */
 
 typedef char* (*FNcbiGetRequestID)(ENcbiRequestID);

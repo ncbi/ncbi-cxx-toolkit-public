@@ -2646,7 +2646,7 @@ SIZE_TYPE NStr::DoubleToString_Ecvt(double val, unsigned int precision,
     for (pos = digits_len; pos-- > 0 && digits[pos] == '0';)
         --digits_len;
 
-    *dec = (int)(exp_positive ? exp : -exp);
+    *dec = exp_positive ? int(exp) : -int(exp);
 
     if (!use_ext_buffer) {
         if (digits_len <= bufsize) {

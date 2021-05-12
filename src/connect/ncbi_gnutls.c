@@ -918,7 +918,7 @@ extern NCBI_CRED NcbiCredGnuTls(void* xcred)
 static gnutls_x509_crt_fmt_t x_GnuTlsX509Format(const gnutls_datum_t* data)
 {
     assert(data);
-    /* A la the logic in MbedTLS */
+    /* a la logic in mbedTLS */
     if (data->size  &&  data->data  &&  !data->data[data->size - 1]
         &&  strstr((const char*) data->data, "-----BEGIN ")) {
         return GNUTLS_X509_FMT_PEM;
