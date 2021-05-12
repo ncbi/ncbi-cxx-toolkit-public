@@ -446,7 +446,7 @@ int main(int argc, char* argv[])
                 CORE_LOG(eLOG_Fatal, "Cannot create NCBI_CRED");
             }
 #    ifdef HAVE_LIBGNUTLS
-            /* only for debugging -- not really necessary in general */
+            /* only for debugging -- not really necessary, in general */
             if (cred->type == eNcbiCred_GnuTls) {
                 xcred = (gnutls_certificate_credentials_t) cred->data;
                 if (net_info->debug_printout == eDebugPrintout_Data) {
