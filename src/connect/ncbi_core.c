@@ -225,8 +225,8 @@ extern MT_LOCK MT_LOCK_AddRef(MT_LOCK lk)
             ++lk->count;
             MT_LOCK_Do(lk, eMT_Unlock);
             // CORE_TRACEF(("MT_LOCK_AddRef(%p) = %u", lk, count));
-        }
-    }
+        } // CORE_DEBUG_ARG(else CORE_TRACE("MT_LOCK_AddRef(DEFAULT)");)
+    } // CORE_DEBUG_ARG(else CORE_TRACE("MT_LOCK_AddRef(NULL)");)
     return lk;
 }
 
@@ -251,8 +251,8 @@ extern MT_LOCK MT_LOCK_Delete(MT_LOCK lk)
                 free(lk);
                 lk = 0;
             }
-        }
-    }
+        } // CORE_DEBUG_ARG(else CORE_TRACE("MT_LOCK_Delete(DEFAULT)");)
+    } // CORE_DEBUG_ARG(else CORE_TRACE("MT_LOCK_Delete(NULL)");)
     return lk;
 }
 

@@ -95,15 +95,13 @@ struct SNcbiMbedTlsCred {
 #    endif /*MBEDTLS_THREADING_PTHREAD*/
 static void mbtls_user_mutex_init(MT_LOCK* lock)
 {
-    if (lock)
-        *lock = MT_LOCK_AddRef(g_CORE_MT_Lock);
+    *lock = MT_LOCK_AddRef(g_CORE_MT_Lock);
 }
 static void mbtls_user_mutex_deinit(MT_LOCK* lock)
 {
-    if (lock  &&  *lock) {
-        g_CORE_MT_Lock = MT_LOCK_Delete(*lock);
-        *lock = 0;
-    }
+    g_CORE_MT_Lock = MT_LOCK_Delete(*lock);
+    assert(g_CORE_MT_Lock);
+    *lock = 0;
 }
 static int mbtls_user_mutex_lock(MT_LOCK* lock)
 {

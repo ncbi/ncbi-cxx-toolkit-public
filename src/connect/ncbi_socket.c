@@ -8705,10 +8705,16 @@ extern void SOCK_SetupSSL(FSSLSetup setup)
 }
 
 
+EIO_Status SOCK_SetupSSLInternalEx(FSSLSetup setup, int/*bool*/ init)
+{
+    SOCK_SetupSSLInternal(setup, init);
+    return setup ? s_InitAPI(1/*secure*/) : eIO_Success;
+}
+
+
 extern EIO_Status SOCK_SetupSSLEx(FSSLSetup setup)
 {
-    SOCK_SetupSSLInternal(setup, 0/*false*/);
-    return setup ? s_InitAPI(1/*secure*/) : eIO_Success;
+    return SOCK_SetupSSLInternalEx(setup, 0/*false*/);
 }
 
 

@@ -647,7 +647,11 @@ static void s_Init(const IRWRegistry* reg  = 0,
         set |= eCORE_SetREG;
     }
     if (!(g_CORE_Set & eCORE_SetSSL)) {
-        SOCK_SetupSSLInternal(ssl, 1/*init*/);
+        EIO_Status status = SOCK_SetupSSLInternalEx(ssl, 1/*init*/);
+        if (status != eIO_Success) {
+            ERR_POST_X(10, Critical << "Failed to initialize SSL: "
+                       << IO_StatusStr(status));
+        }
         set |= ssl ? eCORE_SetSSL : 0;
     }
     g_CORE_Set &= ~set;
@@ -658,7 +662,7 @@ static void s_Init(const IRWRegistry* reg  = 0,
             = (unsigned int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
         srand(g_NCBI_ConnectRandomSeed);
         if (atexit(s_Fini) != 0)
-            ERR_POST_X(9, "Failed to register exit handler");
+            ERR_POST_X(9, Critical << "Failed to register exit handler");
     }
 
     g_CORE_GetAppName     = s_GetAppName;

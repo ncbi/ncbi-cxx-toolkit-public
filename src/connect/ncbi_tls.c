@@ -130,18 +130,8 @@ extern NCBI_CRED NcbiCreateTlsCertCredentials(const void* cert,
         return 0;
     }
     ssltype = 0;
-    if (!(sslname = SOCK_SSLName())  ||  !*sslname) {
-        FSSLSetup setup = x_NcbiSetupTls();
-#if defined(HAVE_LIBMBEDTLS)  ||  defined(NCBI_CXX_TOOLKIT)
-        if (setup == NcbiSetupMbedTls)
-            ssltype = eNcbiCred_MbedTls;
-#endif /*HAVE_LIBMBEDTLS || NCBI_CXX_TOOLKIT*/
-#ifdef HAVE_LIBGNUTLS
-        if (setup == NcbiSetupGnuTls)
-            ssltype = eNcbiCred_GnuTls;
-#endif /*HAVE_LIBGNUTLS*/
-        (void) setup;
-    } else {
+    sslname = SOCK_SSLName();
+    if (sslname  &&  *sslname) {
 #if defined(HAVE_LIBMBEDTLS)  ||  defined(NCBI_CXX_TOOLKIT)
         if (strcmp(sslname, "MBEDTLS") == 0)
             ssltype = eNcbiCred_MbedTls;

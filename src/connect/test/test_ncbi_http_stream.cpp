@@ -147,6 +147,14 @@ void CNCBITestHttpStreamApp::Init(void)
                           "Test NCBI HTTP stream");
     SetupArgDescriptions(args.release());
 
+    // Init the library explicitly (this sets up the registry)
+    {
+        class CInPlaceConnIniter : protected CConnIniter
+        {
+        } conn_initer;  /*NCBI_FAKE_WARNING*/
+    }
+    // NB: CONNECT_Init() can be used alternatively for applications
+
     const string certfile = s_CertFile.Get();
     const string pkeyfile = s_PkeyFile.Get();
     if (!certfile.empty()  &&  !pkeyfile.empty()) {
@@ -167,6 +175,9 @@ void CNCBITestHttpStreamApp::Init(void)
             NCBI_THROW(CCoreException, eInvalidArg,
                        "Failed to build NCBI_CRED from provided data");
         }
+        LOG_POST(Info << "NCBI_CRED loaded from \""
+                 + certfile + "\" and \""
+                 + pkeyfile + '"');
     }
 }
 

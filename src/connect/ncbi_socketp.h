@@ -404,7 +404,10 @@ const char* SOCK_StringToHostPortEx(const char*     str,
                                     int/*bool*/     flag);
 
 
+/* See: SOCK_SetupSSL[Ex] */
 void SOCK_SetupSSLInternal(FSSLSetup setup, int/*bool*/ init);
+
+EIO_Status SOCK_SetupSSLInternalEx(FSSLSetup setup, int/*bool*/ init);
 
 
 #ifdef __cplusplus

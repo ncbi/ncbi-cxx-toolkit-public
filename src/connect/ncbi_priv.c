@@ -77,6 +77,8 @@ extern unsigned int g_NCBI_ConnectSrandAddend(void)
 
 #ifdef _DEBUG
 
+/* NB: Can only track the most recent lock / unlock;  cannot handle nested! */
+
 static MT_LOCK s_CoreLock = 0;
 
 extern int g_NCBI_CoreCheckLock(void)
@@ -85,7 +87,6 @@ extern int g_NCBI_CoreCheckLock(void)
     s_CoreLock = g_CORE_MT_Lock;
     return 1/*success*/;
 }
-
 
 extern int g_NCBI_CoreCheckUnlock(void)
 {
