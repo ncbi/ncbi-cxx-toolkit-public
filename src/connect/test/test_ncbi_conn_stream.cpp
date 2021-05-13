@@ -116,13 +116,13 @@ CNCBITestConnStreamApp::CNCBITestConnStreamApp(void)
 
 void CNCBITestConnStreamApp::Init(void)
 {
-    // Init the library explicitly (this sets up the registry)
+    // Explicitly init the CONNECT library (this also sets up the registry)
     {
         class CInPlaceConnIniter : protected CConnIniter
         {
         } conn_initer;  /*NCBI_FAKE_WARNING*/
     }
-    // NB: CONNECT_Init() can be used alternatively for applications
+    // NB: Alternatively, CONNECT_Init() can be used for applications
     
     // Create and populate test registry
     CNcbiRegistry& reg = GetRWConfig();
@@ -130,7 +130,7 @@ void CNCBITestConnStreamApp::Init(void)
     reg.Set("ID1",    DEF_CONN_REG_SECTION "_" REG_CONN_PATH, DEF_CONN_PATH);
     reg.Set("ID1",    DEF_CONN_REG_SECTION "_" REG_CONN_ARGS, DEF_CONN_ARGS);
     reg.Set("bounce", DEF_CONN_REG_SECTION "_" REG_CONN_PATH, DEF_CONN_PATH);
-    reg.Set("bounce", DEF_CONN_REG_SECTION "_" REG_CONN_DEBUG_PRINTOUT, "DATA");
+    reg.Set("bounce", DEF_CONN_REG_SECTION "_" REG_CONN_DEBUG_PRINTOUT,"DATA");
     reg.Set(DEF_CONN_REG_SECTION, REG_CONN_PORT,           "443");
     reg.Set(DEF_CONN_REG_SECTION, REG_CONN_PATH,      "/Service/bounce.cgi");
     reg.Set(DEF_CONN_REG_SECTION, REG_CONN_ARGS,           "arg1+arg2+arg3");

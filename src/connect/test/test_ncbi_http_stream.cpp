@@ -177,7 +177,7 @@ void CNCBITestHttpStreamApp::Init(void)
         {
         } conn_initer;  /*NCBI_FAKE_WARNING*/
     }
-    // NB: Alternlatively, CONNECT_Init() can be used for applications
+    // NB: Alternatively, CONNECT_Init() can be used for applications
 
     size_t certsize = (x_X509DataType(certfile, cert) == eX509_PEM
                        ? 0 /*cert.size() + 1*/
