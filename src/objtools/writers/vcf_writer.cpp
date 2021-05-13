@@ -375,16 +375,16 @@ bool CVcfWriter::x_WriteFeature(
     list<int> alt_types;
     switch(vr.GetData().Which())
     {
-    case  CVariation_Base::C_Data::e_Instance : x_GetTypeRefAlt(vr.GetData().GetInstance(),type,ref,alt_types, alt); break;
-    case  CVariation_Base::C_Data::e_Set :
+    case CVariation_ref::C_Data::e_Instance:
+        x_GetTypeRefAlt(vr.GetData().GetInstance(), type, ref, alt_types, alt);
+        break;
+    case CVariation_ref::C_Data::e_Set:
         for (CVariation_ref::TData::TSet::TVariations::const_iterator inst = vr.GetData().GetSet().GetVariations().begin(); inst != vr.GetData().GetSet().GetVariations().end(); ++inst)
         {
-
             if ( (*inst)->IsSetData() && (*inst)->GetData().IsInstance() ) {
                 x_GetTypeRefAlt((*inst)->GetData().GetInstance(), type, ref, alt_types, alt);
             }
         }
-
         break;
     default:
         break;
