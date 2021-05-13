@@ -103,7 +103,8 @@ static void mbtls_user_mutex_deinit(MT_LOCK* lock)
         g_CORE_MT_Lock = MT_LOCK_Delete(*lock);
         assert(g_CORE_MT_Lock);
         *lock = 0;
-    }
+    } else
+        CORE_LOG_X(50, eLOG_Warning, "NULL MT_LOCK deinit in MBEDTLS");
 }
 static int mbtls_user_mutex_lock(MT_LOCK* lock)
 {

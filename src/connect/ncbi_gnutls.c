@@ -85,7 +85,8 @@ static int gcry_user_mutex_destroy(void** lock)
         g_CORE_MT_Lock = MT_LOCK_Delete(*((MT_LOCK*) lock));
         assert(g_CORE_MT_Lock);
         *lock = 0;
-    }
+    } else
+        CORE_LOG_X(49, eLOG_Warning, "NULL MT_LOCK deinit in GCRYPT");
     return g_CORE_MT_Lock ? 0 : EINVAL;
 }
 static int gcry_user_mutex_lock(void** lock)
@@ -123,7 +124,8 @@ static int gtls_user_mutex_deinit(void** lock)
         g_CORE_MT_Lock = MT_LOCK_Delete((MT_LOCK)(*lock));
         assert(g_CORE_MT_Lock);
         *lock = 0;
-    }
+    } else
+        CORE_LOG_X(49, eLOG_Warning, "NULL MT_LOCK deinit in GNUTLS");
     return g_CORE_MT_Lock ? 0 : EINVAL;
 }
 static int gtls_user_mutex_lock(void** lock)
