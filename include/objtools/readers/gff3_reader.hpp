@@ -50,8 +50,8 @@ public:
     CGff3ReadRecord() {};
     ~CGff3ReadRecord() {};
 
-    virtual bool AssignFromGff(
-        const string& );
+    bool AssignFromGff(
+        const string& ) override;
 
 protected:
     string x_NormalizedAttributeKey(
@@ -102,32 +102,32 @@ public:
 
     virtual ~CGff3Reader();
 
-    virtual CRef<CSeq_annot>
+    CRef<CSeq_annot>
     ReadSeqAnnot(
         ILineReader& lr,
-        ILineErrorListener* pErrors=nullptr);
+        ILineErrorListener* pErrors=nullptr) override;
 
     TSeqPos SequenceSize() const;
 
 protected:
-    virtual void xProcessData(
+    void xProcessData(
         const TReaderData&,
-        CSeq_annot&);
+        CSeq_annot&) override;
 
-    virtual CGff3ReadRecord* x_CreateRecord() { return new CGff3ReadRecord(); };
+    CGff3ReadRecord* x_CreateRecord() override { return new CGff3ReadRecord(); };
 
     virtual bool xInitializeFeature(
         const CGff2Record&,
         CRef<CSeq_feat> );
 
-    virtual bool xUpdateAnnotFeature(
+    bool xUpdateAnnotFeature(
         const CGff2Record&,
         CSeq_annot&,
-        ILineErrorListener*);
+        ILineErrorListener*) override;
 
-    virtual bool xAddFeatureToAnnot(
+    bool xAddFeatureToAnnot(
         CRef< CSeq_feat >,
-        CSeq_annot& );
+        CSeq_annot& ) override;
 
     virtual bool xUpdateAnnotExon(
         const CGff2Record&,
@@ -184,7 +184,7 @@ protected:
         const string&,
         CRef<CSeq_feat>);
 
-    virtual bool xReadInit();
+    bool xReadInit() override;
 
     static string xNextGenericId();
 
@@ -195,8 +195,8 @@ protected:
         const string&,
         const CGff2Record&);
 
-    virtual bool xIsIgnoredFeatureType(
-        const string&);
+    bool xIsIgnoredFeatureType(
+        const string&) override;
 
     virtual void xAddPendingExon(
         const string&,
@@ -206,22 +206,22 @@ protected:
         const string&,
         list<CGff2Record>&);
 
-    virtual void xPostProcessAnnot(
-        CSeq_annot&);
+    void xPostProcessAnnot(
+        CSeq_annot&) override;
 
     void xProcessAlignmentData(
         CSeq_annot& pAnnot);
 
-    virtual bool xParseFeature(
+    bool xParseFeature(
         const string&,
         CSeq_annot&,
-        ILineErrorListener*);
+        ILineErrorListener*) override;
 
     virtual bool xParseAlignment(
         const string& strLine);
 
-    virtual void xProcessSequenceRegionPragma(
-        const string& pragma);
+    void xProcessSequenceRegionPragma(
+        const string& pragma) override;
 
     // Data:
     map<string, string> mCdsParentMap;

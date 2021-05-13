@@ -89,24 +89,24 @@ public:
     CRef< CSeq_entry >
     ReadSeqEntry(
         ILineReader&,
-        ILineErrorListener* =nullptr);
+        ILineErrorListener* =nullptr) override;
 
-    virtual CRef< CSerialObject >
+    CRef< CSerialObject >
     ReadObject(
         ILineReader&,
-        ILineErrorListener* =nullptr);
+        ILineErrorListener* =nullptr) override;
 
-    virtual void
+    void
     ReadSeqAnnots(
         TAnnotList&,
         CNcbiIstream&,
-        ILineErrorListener* =nullptr);
+        ILineErrorListener* =nullptr) override;
 
-    virtual void
+    void
     ReadSeqAnnots(
         TAnnotList&,
         ILineReader&,
-        ILineErrorListener* =nullptr);
+        ILineErrorListener* =nullptr) override;
 
     bool
     AtSequenceData() const { return mAtSequenceData; };
@@ -121,11 +121,11 @@ public:
     //
     //  new stuff:
     //
-    virtual void xGetData(
+    void xGetData(
         ILineReader&,
         TReaderData&) override;
 
-    virtual void xProcessData(
+    void xProcessData(
         const TReaderData&,
         CSeq_annot&) override;
 
@@ -142,8 +142,8 @@ public:
     virtual bool xIsCurrentDataType(
         const string&);
 
-    virtual void xPostProcessAnnot(
-        CSeq_annot&);
+    void xPostProcessAnnot(
+        CSeq_annot&) override;
 
     virtual void xAssignAnnotId(
         CSeq_annot&,

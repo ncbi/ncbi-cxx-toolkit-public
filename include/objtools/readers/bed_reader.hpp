@@ -137,16 +137,16 @@ public:
     /// @param pErrors
     ///   pointer to optional error container object.
     ///
-    virtual CRef< CSeq_annot >
+    CRef< CSeq_annot >
     ReadSeqAnnot(
         ILineReader& lr,
-        ILineErrorListener* pErrors=0 );
+        ILineErrorListener* pErrors=nullptr ) override;
 
     virtual bool
     ReadTrackData(
         ILineReader&,
         CRawBedTrack&,
-        ILineErrorListener* =0 );
+        ILineErrorListener* =nullptr );
 
     virtual bool
     SetAutoSql(
@@ -157,22 +157,22 @@ public:
         CNcbiIstream&);
 
 protected:
-    virtual CRef<CSeq_annot> xCreateSeqAnnot();
+    CRef<CSeq_annot> xCreateSeqAnnot() override;
 
-    virtual void xGetData(
+    void xGetData(
         ILineReader&,
-        TReaderData&);
+        TReaderData&) override;
 
-    virtual void xProcessData(
+    void xProcessData(
         const TReaderData&,
-        CSeq_annot&);
+        CSeq_annot&) override;
 
     virtual bool xDetermineLikelyColumnCount(
         CLinePreBuffer&,
         ILineErrorListener*);
 
-    virtual bool xParseTrackLine(
-        const string&);
+    bool xParseTrackLine(
+        const string&) override;
 
     bool xParseFeature(
         const SReaderLine&,
@@ -332,8 +332,8 @@ protected:
         CRef<CSeq_feat>&,
         const CBedColumnData&);
 
-    virtual void xPostProcessAnnot(
-        CSeq_annot&);
+    void xPostProcessAnnot(
+        CSeq_annot&) override;
 
     bool
     xReadBedDataRaw(

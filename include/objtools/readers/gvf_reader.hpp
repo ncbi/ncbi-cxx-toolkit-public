@@ -53,21 +53,21 @@ class CGvfReadRecord
 public:
     CGvfReadRecord(
         unsigned int lineNumber,
-        ILineErrorListener* pEC = 0):
+        ILineErrorListener* pEC = nullptr):
         mLineNumber(lineNumber),
         mpMessageListener(pEC)
     {};
     ~CGvfReadRecord() {};
 
-    virtual bool AssignFromGff(
-        const string& );
+    bool AssignFromGff(
+        const string& ) override;
 
     bool SanityCheck() const;
 
 protected:
-    virtual bool xAssignAttributesFromGff(
+    bool xAssignAttributesFromGff(
         const string&,
-        const string& );
+        const string& ) override;
 
     unsigned int mLineNumber;
     ILineErrorListener* mpMessageListener;
@@ -87,30 +87,30 @@ public:
 
     virtual ~CGvfReader();
 
-    virtual CRef<CSeq_annot>
+    CRef<CSeq_annot>
     ReadSeqAnnot(
         ILineReader&,
-        ILineErrorListener* = nullptr );
+        ILineErrorListener* = nullptr ) override;
 
 protected:
-    virtual void xGetData(
+    void xGetData(
         ILineReader&,
-        TReaderData&);
+        TReaderData&) override;
 
-    virtual void xProcessData(
+    void xProcessData(
         const TReaderData&,
-        CSeq_annot&);
+        CSeq_annot&) override;
 
-    virtual bool xParseStructuredComment(
-        const string&);
+    bool xParseStructuredComment(
+        const string&) override;
 
     bool xParseFeature(
         const string&,
         CSeq_annot&,
-        ILineErrorListener*);
+        ILineErrorListener*) override;
 
-    virtual void xPostProcessAnnot(
-        CSeq_annot&);
+    void xPostProcessAnnot(
+        CSeq_annot&) override;
 
     CRef<CSeq_annot> x_GetAnnotById(
         TAnnots& annots,
@@ -226,7 +226,7 @@ protected:
         const CGvfReadRecord&,
         CVariation_ref&);
 
-    virtual CGff3ReadRecord* x_CreateRecord() { return new CGvfReadRecord(m_uLineNumber); };
+    CGff3ReadRecord* x_CreateRecord() override { return new CGvfReadRecord(m_uLineNumber); };
 
     bool xIsDbvarCall(
         const string& nameAttr) const;

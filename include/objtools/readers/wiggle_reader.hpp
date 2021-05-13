@@ -265,16 +265,16 @@ public:
     };
     typedef int TFlags;
 
-    virtual CRef< CSeq_annot >
+    CRef< CSeq_annot >
     ReadSeqAnnot(
         ILineReader&,
-        ILineErrorListener* =0 );
+        ILineErrorListener* =nullptr ) override;
 
     virtual bool
     ReadTrackData(
         ILineReader&,
         CRawWiggleTrack&,
-        ILineErrorListener* =0 );
+        ILineErrorListener* =nullptr );
 
     //
     //  helpers:
@@ -282,22 +282,22 @@ public:
 protected:
     void xGetData(
         ILineReader&,
-        TReaderData&);
+        TReaderData&) override;
 
     void xProcessData(
         const TReaderData&,
-        CSeq_annot&);
+        CSeq_annot&) override;
 
     void xPostProcessAnnot(
-        CSeq_annot&);
+        CSeq_annot&) override;
 
     bool
     xParseBrowserLine(
-        const string&);
+        const string&) override;
 
     bool
     xParseTrackLine(
-        const string&);
+        const string&) override;
 
     bool
     xProcessFixedStepData(

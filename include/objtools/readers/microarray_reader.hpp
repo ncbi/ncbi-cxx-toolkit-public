@@ -61,21 +61,21 @@ public:
 
     virtual ~CMicroArrayReader();
 
-    virtual CRef<CSeq_annot>
+    CRef<CSeq_annot>
     ReadSeqAnnot(
         ILineReader&,
-        ILineErrorListener* = nullptr );
+        ILineErrorListener* = nullptr ) override;
 
 protected:
-    virtual CRef<CSeq_annot> xCreateSeqAnnot();
+    CRef<CSeq_annot> xCreateSeqAnnot() override;
 
-    virtual void xGetData(
+    void xGetData(
         ILineReader&,
-        TReaderData&);
+        TReaderData&) override;
 
-    virtual void xProcessData(
+    void xProcessData(
         const TReaderData&,
-        CSeq_annot&);
+        CSeq_annot&) override;
 
     virtual bool xProcessTrackLine(
         const string&);

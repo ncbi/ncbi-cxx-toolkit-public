@@ -53,11 +53,11 @@ public:
     CUCSCRegionReader(unsigned int = fNormal);
     virtual ~CUCSCRegionReader();
 
-    virtual CRef<CSeq_annot> ReadSeqAnnot(ILineReader& lr, ILineErrorListener* pEC);
-    virtual CRef< CSerialObject >
+    CRef<CSeq_annot> ReadSeqAnnot(ILineReader& lr, ILineErrorListener* pEC) override;
+    CRef< CSerialObject >
     ReadObject(
         ILineReader& lr,
-        ILineErrorListener* pErrors=0);
+        ILineErrorListener* pErrors=nullptr) override;
 
 protected:
 

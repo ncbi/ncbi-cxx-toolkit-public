@@ -161,28 +161,28 @@ public:
     //  object interface:
     //
 public:
-    virtual CRef< CSeq_annot >
+    CRef< CSeq_annot >
     ReadSeqAnnot(
         ILineReader&,
-        ILineErrorListener* =0 );
+        ILineErrorListener* =nullptr ) override;
 
     //
     //  helpers:
     //
 protected:
-    virtual CRef<CSeq_annot> xCreateSeqAnnot();
+    CRef<CSeq_annot> xCreateSeqAnnot() override;
 
-    virtual void xGetData(
+    void xGetData(
         ILineReader&,
-        TReaderData&);
+        TReaderData&) override;
 
-    virtual void xProcessData(
+    void xProcessData(
         const TReaderData&,
-        CSeq_annot&);
+        CSeq_annot&) override;
 
-    virtual bool
+    bool
     xIsCommentLine(
-        const CTempString& );
+        const CTempString& ) override;
 
     virtual bool
     xProcessTrackLine(
@@ -307,12 +307,12 @@ protected:
     xParseData(
         const string&,
         CVcfData&,
-        ILineErrorListener* =0);
+        ILineErrorListener* =nullptr);
 
     virtual bool
     xNormalizeData(
         CVcfData&,
-        ILineErrorListener* =0);
+        ILineErrorListener* =nullptr);
 
     //
     //  data:
