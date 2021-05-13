@@ -77,7 +77,7 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
-CDataLoadersUtil::TLoaders default_loaders =
+static const CDataLoadersUtil::TLoaders default_loaders =
   CDataLoadersUtil::fGenbank | CDataLoadersUtil::fGenbankOffByDefault | CDataLoadersUtil::fVDB;
 
 enum EProcessingMode
@@ -568,11 +568,12 @@ void CCleanupApp::x_ProcessOneFile(unique_ptr<CObjectIStream>& is, EProcessingMo
 void CCleanupApp::x_ProcessOneFile(const string& filename)
 {
     const CArgs& args = GetArgs();
+    _ASSERT(!NStr::IsBlank(filename));
 
     // open file
     unique_ptr<CObjectIStream> is(x_OpenIStream(args, filename));
     if (!is) {
-        string msg = NStr::IsBlank(filename) ? "Unable to read data from stdin" : "Unable to open input file" + filename;
+        string msg = "Unable to open input file " + filename;
         NCBI_THROW(CFlatException, eInternal, msg);
     }
 
@@ -662,7 +663,7 @@ int CCleanupApp::Run()
     m_Scope.Reset(new CScope(*m_Objmgr));
     m_Scope->AddDefaults();
 
-    // need to set output (-o) if specified, if not -o and not -r need to use standard output
+    // need to set output (-o) if specified, if not -o and not -outdir need to use standard output
     bool opened_output = false;
     if (args["o"]) {
         string abs_output_path = CDirEntry::CreateAbsolutePath(args["o"].AsString());
@@ -697,7 +698,7 @@ int CCleanupApp::Run()
     } else if (args["outdir"]) {
         x_ProcessOneDirectory(args["indir"].AsString(), args["x"].AsString());
     } else {
-        x_ProcessOneFile(kEmptyStr);
+        cerr << "stdin is no longer supported; please use -i" << endl;
     }
 
     if (opened_output) {
@@ -1203,14 +1204,9 @@ CObjectIStream* CCleanupApp::x_OpenIStream(const CArgs& args, const string& file
         }
     }
 
-    // make sure of the underlying input stream. If -i was given on the command line
-    // then the input comes from a file. Otherwise, it comes from stdin:
-    CNcbiIstream* pInputStream = &NcbiCin;
-    bool bDeleteOnClose = false;
-    if (!NStr::IsBlank(filename)) {
-        pInputStream = new CNcbiIfstream(filename, ios::binary);
-        bDeleteOnClose = true;
-    }
+    // make sure of the underlying input stream. -i must be given on the command line
+    // then the input comes from a file.
+    CNcbiIstream* pInputStream = new CNcbiIfstream(filename, ios::binary);
 
     // if -c was specified then wrap the input stream into a gzip decompressor before
     // turning it into an object stream:
@@ -1223,7 +1219,7 @@ CObjectIStream* CCleanupApp::x_OpenIStream(const CArgs& args, const string& file
         pI = CObjectIStream::Open( serial, *pUnzipStream, eTakeOwnership );
     }
     else {
-        pI = CObjectIStream::Open( serial, *pInputStream, bDeleteOnClose ? eTakeOwnership : eNoOwnership );
+        pI = CObjectIStream::Open( serial, *pInputStream, eTakeOwnership );
     }
 
     if ( pI ) {
