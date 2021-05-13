@@ -101,7 +101,7 @@ NCBI_C_DEFINE_ERRCODE_X(Connect_SMTP,          306,  33);
 NCBI_C_DEFINE_ERRCODE_X(Connect_HTTP,          307,  26);
 NCBI_C_DEFINE_ERRCODE_X(Connect_Service,       308,  10);
 NCBI_C_DEFINE_ERRCODE_X(Connect_HeapMgr,       309,  34);
-NCBI_C_DEFINE_ERRCODE_X(Connect_TLS,           310,  47);
+NCBI_C_DEFINE_ERRCODE_X(Connect_TLS,           310,  48);
 NCBI_C_DEFINE_ERRCODE_X(Connect_Mghbn,         311,  16);
 NCBI_C_DEFINE_ERRCODE_X(Connect_Crypt,         312,   5);
 NCBI_C_DEFINE_ERRCODE_X(Connect_LocalIP,       313,   5);

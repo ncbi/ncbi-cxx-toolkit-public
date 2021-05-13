@@ -131,7 +131,22 @@ extern NCBI_CRED NcbiCreateTlsCertCredentials(const void* cert,
     }
     ssltype = 0;
     sslname = SOCK_SSLName();
-    if (sslname  &&  *sslname) {
+    if (!sslname  ||  !*sslname) {
+        FSSLSetup setup = x_NcbiSetupTls();
+#if defined(HAVE_LIBMBEDTLS)  ||  defined(NCBI_CXX_TOOLKIT)
+        if (setup == NcbiSetupMbedTls) {
+            ssltype = eNcbiCred_MbedTls;
+            CORE_LOG_X(48, eLOG_Warning,
+                       "Building MBEDTLS certificate credentials may not"
+                       " work correctly prior to proper SSL setup/init");
+        }
+#endif /*HAVE_LIBMBEDTLS || NCBI_CXX_TOOLKIT*/
+#ifdef HAVE_LIBGNUTLS
+        if (setup == NcbiSetupGnuTls)
+            ssltype = eNcbiCred_GnuTls;
+#endif /*HAVE_LIBGNUTLS*/
+        (void) setup;
+    } else {
 #if defined(HAVE_LIBMBEDTLS)  ||  defined(NCBI_CXX_TOOLKIT)
         if (strcmp(sslname, "MBEDTLS") == 0)
             ssltype = eNcbiCred_MbedTls;
