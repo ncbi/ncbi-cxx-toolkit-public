@@ -26,7 +26,7 @@
 
 /* Define to 1 if building plugins as bundles, as Mac OS X traditionally
    required. */
-#undef NCBI_USE_BUNDLES
+/* #undef NCBI_USE_BUNDLES */
 
 /* Define to 1 to indicate that the generated build version header is present */
 #define HAVE_COMMON_NCBI_BUILD_VER_H 1
@@ -273,7 +273,7 @@
 #cmakedefine HAVE_GETADDRINFO 1
 
 /* Define to 1 if you have the `getgrouplist' function. */
-#undef HAVE_GETGROUPLIST
+/* #undef HAVE_GETGROUPLIST */
 
 /* If you have the `gethostbyaddr_r' function, define to the number of
    arguments it takes (normally 7 or 8). */
@@ -664,7 +664,7 @@
 #cmakedefine HAVE_VSNPRINTF 1
 
 /* Define to 1 if your C compiler supports SIMD vector calculations. */
-#undef HAVE_VECTOR_MATH
+/* #undef HAVE_VECTOR_MATH */
 
 /* Define to 1 if you have the <wchar.h> header file. */
 #cmakedefine HAVE_WCHAR_H 1
@@ -673,7 +673,7 @@
 #cmakedefine HAVE_WINDOWS_H 1
 
 /* Define to 1 if you have the <winternl.h> header file. */
-#undef HAVE_WINTERNL_H
+/* #undef HAVE_WINTERNL_H */
 
 /* Define to 1 if you have the `writev' function. */
 #cmakedefine HAVE_WRITEV 1
@@ -881,7 +881,7 @@
 #cmakedefine HAVE_LIBFTGL 1
 
 /* Define to 1 if libgcrypt is available. */
-#cmakedefine HAVE_LIBGCRYPT
+#cmakedefine HAVE_LIBGCRYPT 1
 
 /* Define to 1 if you have the <libgen.h> header file. */
 #cmakedefine HAVE_LIBGEN_H 1
@@ -900,7 +900,7 @@
 #cmakedefine HAVE_LIBGNUTLS 1
 
 /* Define to 1 if libgsoapssl++ is available. */
-#undef HAVE_LIBGSOAP
+#cmakedefine HAVE_LIBGSOAP 1
 
 /* Define to 1 if libhdf5_cpp is available. */
 #define HAVE_LIBHDF5 1
@@ -929,7 +929,7 @@
 #define HAVE_LIBMIMETIC 1
 
 /* Define to 1 if libmongoclient is available. */
-#undef HAVE_LIBMONGODB
+/* #undef HAVE_LIBMONGODB */
 
 /* Define to 1 if libmuparser is available. */
 #define HAVE_LIBMUPARSER 1
@@ -1075,13 +1075,13 @@
 #cmakedefine HAVE_XERCES 1
 
 /* Define to 1 if Zorba is available. */
-#undef HAVE_ZORBA
+/* #undef HAVE_ZORBA */
 
 /* Rename DBLIB symbols in FTDS to avoid name clash with Sybase DBLIB. */
 #define NCBI_FTDS_RENAME_SYBDB 1
 
 /* Define to 1 if building Java Native Interface bindings. */
-#undef NCBI_JNI
+/* #undef NCBI_JNI */
 
 /* Define to 1 if SQLColAttribute's last argument is an SQLLEN * */
 #define NCBI_SQLCOLATTRIBUTE_SQLLEN 1
