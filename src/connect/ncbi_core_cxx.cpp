@@ -624,11 +624,11 @@ static void s_Init(const IRWRegistry* reg  = 0,
                    TConnectInitFlags  flag = 0,
                    EConnectInit       how  = eConnectInit_Weak)
 {
-    _TRACE("CONNECT::s_Init("
-           + NStr::PtrToString(reg)                         + ", "
-           + NStr::PtrToString((void*) ssl)                 + "(), "
-           + NStr::PtrToString(lock)                        + ", 0x"
-           + NStr::UIntToString((unsigned int) flag, 0, 16) + ", "
+    _TRACE("CONNECT::s_Init(reg="
+           + NStr::PtrToString(reg)                         + ", ssl="
+           + NStr::PtrToString((void*) ssl)                 + "(), lock="
+           + NStr::PtrToString(lock)                        + ", flag=0x"
+           + NStr::UIntToString((unsigned int) flag, 0, 16) + ", how="
            + NStr::IntToString(int(how))                    + ')');
     _ASSERT(how != eConnectInit_Intact);
 
@@ -687,10 +687,10 @@ extern void CONNECT_Init(const IRWRegistry* reg,
                          FSSLSetup          ssl)
 {
     CFastMutexGuard guard(s_ConnectInitMutex);
-    _TRACE("CONNECT_Init("
-           + NStr::PtrToString(reg)                         + ", "
-           + NStr::PtrToString(lock)                        + ", 0x"
-           + NStr::UIntToString((unsigned int) flag, 0, 16) + ", "
+    _TRACE("CONNECT_Init(reg="
+           + NStr::PtrToString(reg)                         + ", lock="
+           + NStr::PtrToString(lock)                        + ", flag=0x"
+           + NStr::UIntToString((unsigned int) flag, 0, 16) + ", ssl="
            + NStr::PtrToString((void*) ssl)                 + "())");
     try {
         g_CORE_Set = 0;
