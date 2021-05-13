@@ -99,9 +99,11 @@ static void mbtls_user_mutex_init(MT_LOCK* lock)
 }
 static void mbtls_user_mutex_deinit(MT_LOCK* lock)
 {
-    g_CORE_MT_Lock = MT_LOCK_Delete(*lock);
-    assert(g_CORE_MT_Lock);
-    *lock = 0;
+    if (*lock) {
+        g_CORE_MT_Lock = MT_LOCK_Delete(*lock);
+        assert(g_CORE_MT_Lock);
+        *lock = 0;
+    }
 }
 static int mbtls_user_mutex_lock(MT_LOCK* lock)
 {
