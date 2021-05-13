@@ -2819,7 +2819,7 @@ static EIO_Status s_IsConnected_(SOCK                  sock,
                             free(desc);
                     }
                 } else
-                    *what = "SSL hello";
+                    *what = "SSL handshake";
             } else
                 status = eIO_NotSupported;
         } else
@@ -3865,7 +3865,7 @@ static EIO_Status s_Shutdown(SOCK                  sock,
                         CORE_LOGF_ERRNO_EXX(127, eLOG_Trace,
                                             error, strerr ? strerr : "",
                                             ("%s[SOCK::%s] "
-                                             " Failed SSL bye",
+                                             " Failed SSL teardown",
                                              s_ID(sock, _id),
                                              dir & eIO_ReadWrite
                                              ? "Shutdown" : "Close"));
