@@ -49,8 +49,7 @@ BEGIN_NCBI_SCOPE
 
 // Forward declarations for shortcut functions.
 class CHttpResponse;
-class CHttpHeaders;
-
+class CTlsCertCredentials;
 
 // Default retries value.
 struct SGetHttpDefaultRetries
@@ -58,71 +57,9 @@ struct SGetHttpDefaultRetries
     unsigned short operator()(void) const;
 };
 
+
 /// Nullable retries for CHttpRequest
 typedef CNullable<unsigned short, SGetHttpDefaultRetries> THttpRetries;
-
-
-/// Shortcut for GET request. Each request uses a separate session,
-/// no data like cookies is shared between multiple requests.
-/// @sa CHttpSession::Get()
-NCBI_XCONNECT_EXPORT
-CHttpResponse g_HttpGet(const CUrl&     url,
-                        const CTimeout& timeout = CTimeout(CTimeout::eDefault),
-                        THttpRetries    retries = null);
-
-/// Shortcut for GET request with custom headers. Each request uses a separate
-/// session, no data like cookies is shared between multiple requests.
-/// @sa CHttpSession::Get()
-NCBI_XCONNECT_EXPORT
-CHttpResponse g_HttpGet(const CUrl&         url,
-                        const CHttpHeaders& headers,
-                        const CTimeout&     timeout = CTimeout(CTimeout::eDefault),
-                        THttpRetries        retries = null);
-
-/// Shortcut for POST request. Each request uses a separate session,
-/// no data like cookies is shared between multiple requests.
-/// @sa CHttpSession::Post()
-NCBI_XCONNECT_EXPORT
-CHttpResponse g_HttpPost(const CUrl&     url,
-                         CTempString     data,
-                         CTempString     content_type = CTempString(),
-                         const CTimeout& timeout = CTimeout(CTimeout::eDefault),
-                         THttpRetries    retries = null);
-
-/// Shortcut for POST request with custom headers. Each request uses a separate
-/// session, no data like cookies is shared between multiple requests.
-/// @sa CHttpSession::Post()
-NCBI_XCONNECT_EXPORT
-CHttpResponse g_HttpPost(const CUrl&         url,
-                         const CHttpHeaders& headers,
-                         CTempString         data,
-                         CTempString         content_type = CTempString(),
-                         const CTimeout&     timeout = CTimeout(CTimeout::eDefault),
-                         THttpRetries        retries = null);
-
-/// Shortcut for PUT request. Each request uses a separate session,
-/// no data like cookies is shared between multiple requests.
-/// @sa CHttpSession::Put()
-NCBI_XCONNECT_EXPORT
-CHttpResponse g_HttpPut(const CUrl&     url,
-                        CTempString     data,
-                        CTempString     content_type = CTempString(),
-                        const CTimeout& timeout = CTimeout(CTimeout::eDefault),
-                        THttpRetries    retries = null);
-
-/// Shortcut for PUT request with custom headers. Each request uses a separate
-/// session, no data like cookies is shared between multiple requests.
-/// @sa CHttpSession::Put()
-NCBI_XCONNECT_EXPORT
-CHttpResponse g_HttpPut(const CUrl&         url,
-                        const CHttpHeaders& headers,
-                        CTempString         data,
-                        CTempString         content_type = CTempString(),
-                        const CTimeout&     timeout = CTimeout(CTimeout::eDefault),
-                        THttpRetries        retries = null);
-
-class CHttpSession_Base;
-
 
 class NCBI_XCONNECT_EXPORT CHttpHeaders : public CObject
 {
@@ -245,6 +182,122 @@ public:
     /// Get string representation of the given name.
     static const char* GetHeaderName(EHeaderName name);
 };
+
+
+/// CHttpSession and CHttpRequest parameters.
+class NCBI_XCONNECT_EXPORT CHttpParam
+{
+public:
+    CHttpParam(void);
+
+    /// Add all HTTP headers to request.
+    CHttpParam& SetHeaders(const CHttpHeaders& headers);
+    /// Set or replace a single HTTP header, @sa CHttpHeaders::SetValue().
+    CHttpParam& SetHeader(CHttpHeaders::EHeaderName header, CTempString value);
+    /// Add a single HTTP header, @sa CHttpHeaders::AddValue().
+    CHttpParam& AddHeader(CHttpHeaders::EHeaderName header, CTempString value);
+
+    CHttpParam& SetTimeout(const CTimeout& timeout);
+
+    CHttpParam& SetRetries(THttpRetries retries);
+
+    CHttpParam& SetCredentials(shared_ptr<CTlsCertCredentials> credentials);
+
+    const CHttpHeaders& GetHeaders(void) const { return *m_Headers; }
+    const CTimeout& GetTimeout(void) const { return m_Timeout; }
+    THttpRetries GetRetries(void) const { return m_Retries; }
+    shared_ptr<CTlsCertCredentials> GetCredentials(void) const { return m_Credentials; }
+
+private:
+    CRef<CHttpHeaders>              m_Headers;
+    CTimeout                        m_Timeout;
+    THttpRetries                    m_Retries;
+    shared_ptr<CTlsCertCredentials> m_Credentials;
+};
+
+
+/// Shortcut for GET request. Each request uses a separate session,
+/// no data like cookies is shared between multiple requests.
+/// @sa CHttpSession::Get()
+NCBI_XCONNECT_EXPORT
+CHttpResponse g_HttpGet(const CUrl& url, const CHttpParam& param);
+
+/// Shortcut for GET request. Each request uses a separate session,
+/// no data like cookies is shared between multiple requests.
+/// @sa CHttpSession::Get()
+NCBI_XCONNECT_EXPORT
+CHttpResponse g_HttpGet(const CUrl&     url,
+                        const CTimeout& timeout = CTimeout(CTimeout::eDefault),
+                        THttpRetries    retries = null);
+
+/// Shortcut for GET request with custom headers. Each request uses a separate
+/// session, no data like cookies is shared between multiple requests.
+/// @sa CHttpSession::Get()
+NCBI_XCONNECT_EXPORT
+CHttpResponse g_HttpGet(const CUrl&         url,
+                        const CHttpHeaders& headers,
+                        const CTimeout&     timeout = CTimeout(CTimeout::eDefault),
+                        THttpRetries        retries = null);
+
+/// Shortcut for POST request. Each request uses a separate session,
+/// no data like cookies is shared between multiple requests.
+/// @sa CHttpSession::Post()
+NCBI_XCONNECT_EXPORT
+CHttpResponse g_HttpPost(const CUrl&       url,
+                         CTempString       data,
+                         const CHttpParam& param = CHttpParam());
+
+/// Shortcut for POST request. Each request uses a separate session,
+/// no data like cookies is shared between multiple requests.
+/// @sa CHttpSession::Post()
+NCBI_XCONNECT_EXPORT
+CHttpResponse g_HttpPost(const CUrl&     url,
+                         CTempString     data,
+                         CTempString     content_type,
+                         const CTimeout& timeout = CTimeout(CTimeout::eDefault),
+                         THttpRetries    retries = null);
+
+/// Shortcut for POST request with custom headers. Each request uses a separate
+/// session, no data like cookies is shared between multiple requests.
+/// @sa CHttpSession::Post()
+NCBI_XCONNECT_EXPORT
+CHttpResponse g_HttpPost(const CUrl&         url,
+                         const CHttpHeaders& headers,
+                         CTempString         data,
+                         CTempString         content_type = CTempString(),
+                         const CTimeout&     timeout = CTimeout(CTimeout::eDefault),
+                         THttpRetries        retries = null);
+
+/// Shortcut for PUT request. Each request uses a separate session,
+/// no data like cookies is shared between multiple requests.
+/// @sa CHttpSession::Put()
+NCBI_XCONNECT_EXPORT
+CHttpResponse g_HttpPut(const CUrl&       url,
+                        CTempString       data,
+                        const CHttpParam& param);
+
+/// Shortcut for PUT request. Each request uses a separate session,
+/// no data like cookies is shared between multiple requests.
+/// @sa CHttpSession::Put()
+NCBI_XCONNECT_EXPORT
+CHttpResponse g_HttpPut(const CUrl&     url,
+                        CTempString     data,
+                        CTempString     content_type,
+                        const CTimeout& timeout = CTimeout(CTimeout::eDefault),
+                        THttpRetries    retries = null);
+
+/// Shortcut for PUT request with custom headers. Each request uses a separate
+/// session, no data like cookies is shared between multiple requests.
+/// @sa CHttpSession::Put()
+NCBI_XCONNECT_EXPORT
+CHttpResponse g_HttpPut(const CUrl&         url,
+                        const CHttpHeaders& headers,
+                        CTempString         data,
+                        CTempString         content_type = CTempString(),
+                        const CTimeout&     timeout = CTimeout(CTimeout::eDefault),
+                        THttpRetries        retries = null);
+
+class CHttpSession_Base;
 
 
 /// Interface for custom form data providers.
@@ -435,6 +488,34 @@ private:
 };
 
 
+/// Wrapper class for NCBI_CRED
+class NCBI_XCONNECT_EXPORT CTlsCertCredentials : virtual protected CConnIniter
+{
+public:
+    /// Initialize credentials. The arguments are passed to NcbiCreateTlsCertCredentials.
+    /// @sa
+    ///  NcbiCreateTlsCertCredentials
+    CTlsCertCredentials(const void* cert, size_t certsz, const void* pkey, size_t pkeysz);
+    ~CTlsCertCredentials(void);
+
+    NCBI_CRED GetNcbiCred(void) const { return m_Cred; }
+    void* GetCert(void) const { return m_Cert; }
+    size_t GetCertSize(void) const { return m_CertSize; }
+    void* GetKey(void) const { return m_Key; }
+    size_t GetKeySize(void) const { return m_KeySize; }
+
+private:
+    CTlsCertCredentials(const CTlsCertCredentials&);
+    CTlsCertCredentials& operator=(const CTlsCertCredentials&);
+
+    void* m_Cert;
+    size_t m_CertSize;
+    void* m_Key;
+    size_t m_KeySize;
+    NCBI_CRED m_Cred;
+};
+
+
 /// HTTP request
 class NCBI_XCONNECT_EXPORT CHttpRequest
 {
@@ -565,6 +646,8 @@ private:
     CTimeout            m_Deadline;
     ESwitch             m_RetryProcessing;
     CRef<CAdjustUrlCallback_Base> m_AdjustUrl;
+    // Store credentials so that they are not destroyed while request is being executed.
+    shared_ptr<CTlsCertCredentials> m_Credentials;
 };
 
 
@@ -654,6 +737,11 @@ public:
     /// @sa GetHttpFlags
     void SetHttpFlags(THTTP_Flags flags) { m_HttpFlags = flags; }
 
+    /// Set TLS credentials.
+    /// @sa CTlsCertCredentials
+    void SetCredentials(shared_ptr<CTlsCertCredentials> cred);
+    shared_ptr<CTlsCertCredentials> GetCredentials(void) const { return m_Credentials; }
+
     CHttpSession_Base(void);
     virtual ~CHttpSession_Base(void) {}
 
@@ -673,6 +761,7 @@ private:
     EProtocol    m_Protocol;
     THTTP_Flags  m_HttpFlags;
     CHttpCookies m_Cookies;
+    shared_ptr<CTlsCertCredentials> m_Credentials;
 };
 
 

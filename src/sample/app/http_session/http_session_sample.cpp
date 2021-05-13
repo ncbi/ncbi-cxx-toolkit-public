@@ -60,11 +60,14 @@ public:
 
 private:
     void SetupRequest(CHttpRequest& request);
+    CHttpParam SetupParam(void);
+    void LoadCredentials(CNcbiIstream& cert_str, CNcbiIstream& pkey_str);
 
     bool m_PrintHeaders;
     bool m_PrintCookies;
     bool m_PrintBody;
     int m_Errors;
+    shared_ptr<CTlsCertCredentials> m_Credentials;
 };
 
 
@@ -92,6 +95,61 @@ void CHttpSessionApp::SetupRequest(CHttpRequest& request)
     if ( args["retry-processing"] ) {
         request.SetRetryProcessing(args["retry-processing"].AsBoolean() ? eOn : eOff);
     }
+}
+
+
+CHttpParam CHttpSessionApp::SetupParam(void)
+{
+    const CArgs& args = GetArgs();
+    CHttpParam ret;
+    if (args["timeout"]) {
+        ret.SetTimeout(CTimeout(args["timeout"].AsDouble()));
+    }
+    if (args["retries"]) {
+        ret.SetRetries((unsigned short)args["retries"].AsInteger());
+    }
+    if (m_Credentials) {
+        ret.SetCredentials(m_Credentials);
+    }
+    return ret;
+}
+
+
+static void* LoadFile(CNcbiIstream& str, size_t& size)
+{
+    char* buf;
+    str.seekg(0, ios_base::end);
+    size = (size_t)str.tellg() + 1;
+    if ( !(buf = (char*)malloc(size)) ) {
+        return nullptr;
+    }
+    try {
+        str.seekg(0);
+        str.read(buf, size - 1);
+    }
+    catch (...) {
+        ERR_POST("Error loading credentials");
+        free(buf);
+        return nullptr;
+    }
+    buf[size - 1] = '\0';
+    if (!strstr(buf, "-----BEGIN "))
+        size--;
+    return buf;
+}
+
+
+void CHttpSessionApp::LoadCredentials(CNcbiIstream& cert_str, CNcbiIstream& pkey_str)
+{
+    void  *cert, *pkey;
+    size_t certsz, pkeysz;
+    cert = LoadFile(cert_str, certsz);
+    pkey = LoadFile(pkey_str, pkeysz);
+    if (cert && pkey) {
+        m_Credentials = make_shared<CTlsCertCredentials>(cert, certsz, pkey, pkeysz);
+    }
+    if (cert) free(cert);
+    if (pkey) free(pkey);
 }
 
 
@@ -159,6 +217,11 @@ void CHttpSessionApp::Init()
     arg_desc->AddOptionalKey("retry-processing", "bool", "Whether to wait for actual response",
         CArgDescriptions::eBoolean);
 
+    arg_desc->AddOptionalKey("cert-file", "file", "Certificate file", CArgDescriptions::eInputFile, CArgDescriptions::fBinary);
+    arg_desc->AddOptionalKey("pkey-file", "file", "Private key file", CArgDescriptions::eInputFile, CArgDescriptions::fBinary);
+    arg_desc->SetDependency("cert-file", CArgDescriptions::eRequires, "pkey-file");
+    arg_desc->SetDependency("pkey-file", CArgDescriptions::eRequires, "cert-file");
+
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
 }
@@ -188,6 +251,11 @@ int CHttpSessionApp::Run(void)
 
     } else if ( args["http-2"] ) {
         session.SetProtocol(CHttpSession::eHTTP_2);
+    }
+
+    if (args["cert-file"]) {
+        LoadCredentials(args["cert-file"].AsInputFile(), args["pkey-file"].AsInputFile());
+        session.SetCredentials(m_Credentials);
     }
 
     bool skip_defaults = false;
@@ -285,6 +353,14 @@ int CHttpSessionApp::Run(void)
     }}
 
     {{
+        // GET using shortcut
+            cout << "GET (shortcut) " << sample_url << endl;
+            CHttpResponse response = g_HttpGet(url, SetupParam());
+            if (!PrintResponse(0, response)) m_Errors++;
+            cout << "-------------------------------------" << endl << endl;
+    }}
+
+    {{
         CUrl url_with_args(sample_url);
         // GET request with arguments
         cout << "GET (with args) " << sample_url << endl;
@@ -332,7 +408,7 @@ int CHttpSessionApp::Run(void)
     {{
         // POST using shortcut
         cout << "POST (shortcut) " << sample_url << endl;
-        CHttpResponse response = g_HttpPost(url, "message=POST%20shortcut%20data");
+        CHttpResponse response = g_HttpPost(url, "message=POST%20shortcut%20data", SetupParam());
         if (!PrintResponse(0, response)) m_Errors++;
         cout << "-------------------------------------" << endl << endl;
     }}
@@ -368,7 +444,7 @@ int CHttpSessionApp::Run(void)
     {{
         // Service request
         cout << "GET service (shortcut): test" << endl;
-        CHttpResponse response = g_HttpGet(CUrl("test"));
+        CHttpResponse response = g_HttpGet(CUrl("test"), SetupParam());
         if (!PrintResponse(0, response)) m_Errors++;
         cout << "-------------------------------------" << endl << endl;
     }}

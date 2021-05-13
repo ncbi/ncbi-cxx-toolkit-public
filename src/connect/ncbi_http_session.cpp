@@ -519,6 +519,30 @@ void CHttpResponse::x_Update(CHttpHeaders::THeaders headers, int status_code, st
 
 
 ///////////////////////////////////////////////////////
+//  CTlsCertCredentials::
+//
+
+
+CTlsCertCredentials::CTlsCertCredentials(const void* cert, size_t certsz, const void* pkey, size_t pkeysz)
+{
+    m_CertSize = certsz;
+    m_Cert = malloc(m_CertSize);
+    memcpy(m_Cert, cert, m_CertSize);
+    m_KeySize = pkeysz;
+    m_Key = malloc(m_KeySize);
+    memcpy(m_Key, pkey, m_KeySize);
+    m_Cred = NcbiCreateTlsCertCredentials(m_Cert, m_CertSize, m_Key, m_KeySize);
+}
+
+CTlsCertCredentials::~CTlsCertCredentials(void)
+{
+    if (m_Cred) NcbiDeleteTlsCertCredentials(m_Cred);
+    if (m_Cert) free(m_Cert);
+    if (m_Key) free(m_Key);
+}
+
+
+///////////////////////////////////////////////////////
 //  CHttpRequest::
 //
 
@@ -555,7 +579,8 @@ CHttpRequest::CHttpRequest(CHttpSession_Base& session,
       m_Timeout(CTimeout::eDefault),
       m_Deadline(CTimeout::eDefault),
       m_RetryProcessing(ESwitch::eDefault),
-      m_AdjustUrl(0)
+      m_AdjustUrl(0),
+      m_Credentials(session.GetCredentials())
 {
 }
 
@@ -806,6 +831,9 @@ void CHttpRequest::x_InitConnection(bool use_form_data)
     }
     if ( !m_Retries.IsNull() ) {
         net_info->max_try = x_RetriesToMaxtry(m_Retries);
+    }
+    if ( m_Credentials ) {
+        net_info->credentials = m_Credentials->GetNcbiCred();
     }
 
     m_Response.Reset(new CHttpResponse(*m_Session, m_Url));
@@ -1071,7 +1099,7 @@ DEFINE_STATIC_FAST_MUTEX(s_SessionMutex);
 
 
 void CHttpSession_Base::x_SetCookies(const CHttpHeaders::THeaderValues& cookies,
-                                const CUrl*                        url)
+                                     const CUrl*                        url)
 {
     CFastMutexGuard lock(s_SessionMutex);
     ITERATE(CHttpHeaders::THeaderValues, it, cookies) {
@@ -1095,6 +1123,76 @@ string CHttpSession_Base::x_GetCookies(const CUrl& url) const
 }
 
 
+void CHttpSession_Base::SetCredentials(shared_ptr<CTlsCertCredentials> cred)
+{
+    if (m_Credentials) {
+        NCBI_THROW(CHttpSessionException, eOther,
+            "Session credentials already set.");
+    }
+    m_Credentials = cred;
+}
+
+
+CHttpParam::CHttpParam(void)
+    : m_Headers(new CHttpHeaders), m_Timeout(CTimeout::eDefault)
+{
+}
+
+
+CHttpParam& CHttpParam::SetHeaders(const CHttpHeaders& headers)
+{
+    m_Headers->Assign(headers);
+    return *this;
+}
+
+
+CHttpParam& CHttpParam::SetHeader(CHttpHeaders::EHeaderName header, CTempString value)
+{
+    m_Headers->SetValue(header, value);
+    return *this;
+}
+
+
+CHttpParam& CHttpParam::AddHeader(CHttpHeaders::EHeaderName header, CTempString value)
+{
+    m_Headers->AddValue(header, value);
+    return *this;
+}
+
+
+CHttpParam& CHttpParam::SetTimeout(const CTimeout& timeout)
+{
+    m_Timeout = timeout;
+    return *this;
+}
+
+
+CHttpParam& CHttpParam::SetRetries(THttpRetries retries)
+{
+    m_Retries = retries;
+    return *this;
+}
+
+
+CHttpParam& CHttpParam::SetCredentials(shared_ptr<CTlsCertCredentials> credentials)
+{
+    m_Credentials = credentials;
+    return *this;
+}
+
+
+CHttpResponse g_HttpGet(const CUrl& url, const CHttpParam& param)
+{
+    CRef<CHttpSession> session(new CHttpSession);
+    session->SetCredentials(param.GetCredentials());
+    CHttpRequest req = session->NewRequest(url, CHttpSession::eGet);
+    req.SetTimeout(param.GetTimeout());
+    req.SetRetries(param.GetRetries());
+    req.Headers().Merge(param.GetHeaders());
+    return req.Execute();
+}
+
+
 CHttpResponse g_HttpGet(const CUrl&     url,
                         const CTimeout& timeout,
                         THttpRetries    retries)
@@ -1114,6 +1212,34 @@ CHttpResponse g_HttpGet(const CUrl&         url,
     req.SetTimeout(timeout);
     req.SetRetries(retries);
     req.Headers().Merge(headers);
+    return req.Execute();
+}
+
+
+CHttpResponse g_HttpPost(const CUrl& url,
+    CTempString       data,
+    const CHttpParam& param)
+{
+    CRef<CHttpSession> session(new CHttpSession);
+    session->SetCredentials(param.GetCredentials());
+    CHttpRequest req = session->NewRequest(url, CHttpSession::ePost);
+    req.SetTimeout(param.GetTimeout());
+    req.SetRetries(param.GetRetries());
+    req.Headers().Merge(param.GetHeaders());
+
+    if (param.GetHeaders().HasValue(CHttpHeaders::eContentType)) {
+        req.Headers().SetValue(CHttpHeaders::eContentType,
+            param.GetHeaders().GetValue(CHttpHeaders::eContentType));
+    }
+    else {
+        req.Headers().SetValue(CHttpHeaders::eContentType,
+            kContentType_FormUrlEnc);
+    }
+
+    if (!data.empty()) {
+        req.ContentStream() << data;
+    }
+
     return req.Execute();
 }
 
@@ -1157,6 +1283,34 @@ CHttpResponse g_HttpPost(const CUrl&         url,
     }
 
     if ( !data.empty() ) {
+        req.ContentStream() << data;
+    }
+
+    return req.Execute();
+}
+
+
+CHttpResponse g_HttpPut(const CUrl&       url,
+                        CTempString       data,
+                        const CHttpParam& param)
+{
+    CRef<CHttpSession> session(new CHttpSession);
+    session->SetCredentials(param.GetCredentials());
+    CHttpRequest req = session->NewRequest(url, CHttpSession::ePut);
+    req.SetTimeout(param.GetTimeout());
+    req.SetRetries(param.GetRetries());
+    req.Headers().Merge(param.GetHeaders());
+
+    if (param.GetHeaders().HasValue(CHttpHeaders::eContentType)) {
+        req.Headers().SetValue(CHttpHeaders::eContentType,
+            param.GetHeaders().GetValue(CHttpHeaders::eContentType));
+    }
+    else {
+        req.Headers().SetValue(CHttpHeaders::eContentType,
+            kContentType_FormUrlEnc);
+    }
+
+    if (!data.empty()) {
         req.ContentStream() << data;
     }
 
