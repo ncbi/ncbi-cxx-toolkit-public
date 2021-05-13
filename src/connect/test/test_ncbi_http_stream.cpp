@@ -147,38 +147,40 @@ void CNCBITestHttpStreamApp::Init(void)
                           "Test NCBI HTTP stream");
     SetupArgDescriptions(args.release());
 
-    // Init the library explicitly (this sets up the registry)
+    const string certfile = s_CertFile.Get();
+    const string pkeyfile = s_PkeyFile.Get();
+    if (certfile.empty()  ||  pkeyfile.empty())
+        return;
+
+    string cert = x_LoadX509File(certfile);
+    if (cert.empty()) {
+        NCBI_THROW(CCoreException, eInvalidArg,
+                   "Failed to load certificate from \"" + certfile + '"');
+    }
+    string pkey = x_LoadX509File(pkeyfile);
+    if (pkey.empty()) {
+        NCBI_THROW(CCoreException, eInvalidArg,
+                   "Failed to load private key from \"" + pkeyfile + '"');
+    }
+
+    // Explicitly init the CONNECT library (this also sets up the registry)
     {
         class CInPlaceConnIniter : protected CConnIniter
         {
         } conn_initer;  /*NCBI_FAKE_WARNING*/
     }
-    // NB: CONNECT_Init() can be used alternatively for applications
+    // NB: Alternlatively, CONNECT_Init() can be used for applications
 
-    const string certfile = s_CertFile.Get();
-    const string pkeyfile = s_PkeyFile.Get();
-    if (!certfile.empty()  &&  !pkeyfile.empty()) {
-        string cert = x_LoadX509File(certfile);
-        if (cert.empty()) {
-            NCBI_THROW(CCoreException, eInvalidArg,
-                       "Failed to load certificate from \"" + certfile + '"');
-        }
-        string pkey = x_LoadX509File(pkeyfile);
-        if (pkey.empty()) {
-            NCBI_THROW(CCoreException, eInvalidArg,
-                       "Failed to load private key from \"" + pkeyfile + '"');
-        }
-        if (!(m_Cred = NcbiCreateTlsCertCredentials(cert.data(),
-                                                    cert.size(),
-                                                    pkey.data(),
-                                                    pkey.size()))) {
-            NCBI_THROW(CCoreException, eInvalidArg,
-                       "Failed to build NCBI_CRED from provided data");
-        }
-        LOG_POST(Info << "NCBI_CRED loaded from \""
-                 + certfile + "\" and \""
-                 + pkeyfile + '"');
+    if (!(m_Cred = NcbiCreateTlsCertCredentials(cert.data(),
+                                                cert.size(),
+                                                pkey.data(),
+                                                pkey.size()))) {
+        NCBI_THROW(CCoreException, eInvalidArg,
+                   "Failed to build NCBI_CRED from provided data");
     }
+    LOG_POST(Info << "NCBI_CRED loaded from \""
+             + certfile + "\" and \""
+             + pkeyfile + '"');
 }
 
 
