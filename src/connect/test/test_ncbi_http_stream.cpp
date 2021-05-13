@@ -84,13 +84,13 @@ static void s_Interrupt(int /*signo*/)
 
 
 NCBI_PARAM_DECL  (string, CONN, TEST_NCBI_HTTP_GET_CLIENT_CERT);
-NCBI_PARAM_DEF_EX(string, CONN, TEST_NCBI_HTTP_GET_CLIENT_CERT,
-                  "", eParam_Default, CONN_TEST_NCBI_HTTP_GET_CLIENT_CERT);
+NCBI_PARAM_DEF_EX(string, CONN, TEST_NCBI_HTTP_GET_CLIENT_CERT, "",
+                  eParam_Default, CONN_TEST_NCBI_HTTP_GET_CLIENT_CERT);
 static NCBI_PARAM_TYPE(CONN, TEST_NCBI_HTTP_GET_CLIENT_CERT) s_CertFile;
 
 NCBI_PARAM_DECL  (string, CONN, TEST_NCBI_HTTP_GET_CLIENT_PKEY);
-NCBI_PARAM_DEF_EX(string, CONN, TEST_NCBI_HTTP_GET_CLIENT_PKEY,
-                  "", eParam_Default, CONN_TEST_NCBI_HTTP_GET_CLIENT_PKEY);
+NCBI_PARAM_DEF_EX(string, CONN, TEST_NCBI_HTTP_GET_CLIENT_PKEY, "",
+                  eParam_Default, CONN_TEST_NCBI_HTTP_GET_CLIENT_PKEY);
 static NCBI_PARAM_TYPE(CONN, TEST_NCBI_HTTP_GET_CLIENT_PKEY) s_PkeyFile;
 
 
@@ -105,7 +105,15 @@ public:
     int  Run (void);
 
 protected:
-    string x_LoadX509File(const string& filename);
+    string x_LoadFile(const string& filename);
+
+    typedef enum {
+        eX509_DER,
+        eX509_PEM
+    } EX509DataType;
+
+    EX509DataType x_X509DataType(const string& filename,
+                                 const string& contents);
 
 private:
     NCBI_CRED m_Cred;
@@ -152,12 +160,12 @@ void CNCBITestHttpStreamApp::Init(void)
     if (certfile.empty()  ||  pkeyfile.empty())
         return;
 
-    string cert = x_LoadX509File(certfile);
+    string cert = x_LoadFile(certfile);
     if (cert.empty()) {
         NCBI_THROW(CCoreException, eInvalidArg,
                    "Failed to load certificate from \"" + certfile + '"');
     }
-    string pkey = x_LoadX509File(pkeyfile);
+    string pkey = x_LoadFile(pkeyfile);
     if (pkey.empty()) {
         NCBI_THROW(CCoreException, eInvalidArg,
                    "Failed to load private key from \"" + pkeyfile + '"');
@@ -171,10 +179,14 @@ void CNCBITestHttpStreamApp::Init(void)
     }
     // NB: Alternlatively, CONNECT_Init() can be used for applications
 
-    if (!(m_Cred = NcbiCreateTlsCertCredentials(cert.data(),
-                                                cert.size(),
-                                                pkey.data(),
-                                                pkey.size()))) {
+    size_t certsize = (x_X509DataType(certfile, cert) == eX509_PEM
+                       ? 0 /*cert.size() + 1*/
+                       : cert.size());
+    size_t pkeysize = (x_X509DataType(pkeyfile, pkey) == eX509_PEM
+                       ? 0 /*pkey.size() + 1*/
+                       : pkey.size());
+    if (!(m_Cred = NcbiCreateTlsCertCredentials(cert.c_str(), certsize,
+                                                pkey.c_str(), pkeysize))) {
         NCBI_THROW(CCoreException, eInvalidArg,
                    "Failed to build NCBI_CRED from provided data");
     }
@@ -184,18 +196,23 @@ void CNCBITestHttpStreamApp::Init(void)
 }
 
 
-string CNCBITestHttpStreamApp::x_LoadX509File(const string& filename)
+string CNCBITestHttpStreamApp::x_LoadFile(const string& filename)
 {
     ifstream ifs(filename.c_str(), ios::binary);
     if (!ifs)
         return kEmptyStr;
     string cont;
     size_t size = NcbiStreamToString(&cont, ifs);
-    if (!size)
-        return kEmptyStr;
-    if (NStr::Find(cont, "-----BEGIN ") != NPOS)
-        cont.resize(cont.size() + 1);
-    return cont;
+    return ifs.eof()  &&  size ? cont : kEmptyStr;
+}
+
+
+CNCBITestHttpStreamApp::EX509DataType CNCBITestHttpStreamApp::x_X509DataType
+(const string& /*filename*/, const string& contents)
+{
+    /* NB: the real case scenario should know what type of credentials *
+     *     there is, and not use the heuristics like below...          */
+    return NStr::Find(contents, "-----BEGIN ") != NPOS ? eX509_PEM : eX509_DER;
 }
 
 
