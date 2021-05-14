@@ -196,14 +196,14 @@ void CNCBITestHttpStreamApp::Init(void)
 }
 
 
-string CNCBITestHttpStreamApp::x_LoadFile(const string& filename)
+string CNCBITestHttpStreamApp::x_LoadFile(const string& file)
 {
-    ifstream ifs(filename.c_str(), ios::binary);
+    ifstream ifs(file.c_str(), ios::binary);
     if (!ifs)
         return kEmptyStr;
-    string cont;
-    size_t size = NcbiStreamToString(&cont, ifs);
-    return ifs.eof()  &&  size ? cont : kEmptyStr;
+    string data;
+    size_t size = NcbiStreamToString(&data, ifs);
+    return ifs.eof()  &&  size ? data : kEmptyStr;
 }
 
 
