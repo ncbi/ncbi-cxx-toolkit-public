@@ -43,8 +43,8 @@ CBlob_id::CBlob_id(CTempString str_id)
     string ssat, ssatkey;
     if (!NStr::SplitInTwo(str_id, ".", ssat, ssatkey)) return;
     try {
-        Uint8 sat = NStr::StringToNumeric<Uint8>(ssat);
-        Uint8 satkey = NStr::StringToNumeric<Uint8>(ssatkey);
+        TSat sat = NStr::StringToNumeric<TSat>(ssat);
+        TSatKey satkey = NStr::StringToNumeric<TSatKey>(ssatkey);
         SetSat(sat);
         SetSatKey(satkey);
     }
@@ -83,9 +83,9 @@ string CBlob_id::ToPsgId(void) const
 /* static */
 CBlob_id* CBlob_id::CreateFromString(const string& str)
 {
-    int sat = -1;
-    int sat_key = 0;
-    int sub_sat = 0;
+    TSat sat = -1;
+    TSatKey sat_key = 0;
+    TSubSat sub_sat = 0;
     if (str.find(",sub=") != string::npos) {
         if( sscanf(str.c_str(), "Blob(%d,%d,sub=%d)", &sat, &sat_key, &sub_sat) != 3)
             NCBI_THROW(CLoaderException, eOtherError,

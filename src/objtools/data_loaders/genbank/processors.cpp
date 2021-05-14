@@ -2220,7 +2220,7 @@ void CProcessor_ExtAnnot::Process(CReaderRequestResult& result,
         setter.GetTSE_LoadLock()->SetName(name);
     }
 
-    TGi gi = ConvertGiToOM(GI_FROM(TIntId, blob_id.GetSatKey()));
+    TGi gi = ConvertGiToOM(GI_FROM(Uint4, Uint4(blob_id.GetSatKey())));
     CSeq_id_Handle gih = CSeq_id_Handle::GetGiHandle(gi);
     CSeq_id seq_id;
     seq_id.SetGeneral().SetDb(db_name);

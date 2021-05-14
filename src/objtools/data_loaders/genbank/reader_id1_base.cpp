@@ -145,5 +145,44 @@ CId1ReaderBase::ESat CId1ReaderBase::GetAnnotSat(int subsat)
 }
 
 
+void CId1ReaderBase::CreateExtAnnotBlob_ids(TBlobIds& blob_ids, TIntId gi, int ext_feat)
+{
+    while ( int bit = GetNextExtAnnotBit(ext_feat) ) {
+        CRef<CBlob_id> blob_id(new CBlob_id);
+        SetExtAnnotBlob_id(*blob_id, gi, bit);
+        blob_ids.push_back(CBlob_Info(blob_id, fBlobHasExtAnnot));
+    }
+}
+
+
+int CId1ReaderBase::GetNextExtAnnotBit(int& ext_feat)
+{
+    int bits = ext_feat;
+    int bit = bits & ~(bits-1);
+    ext_feat = bits - bit;
+    return bit;
+}
+
+
+void CId1ReaderBase::SetExtAnnotBlob_id(CBlob_id& blob_id, TIntId gi, int bit)
+{
+    blob_id.SetSat(GetAnnotSat(bit));
+    blob_id.SetSatKey(Int4(gi));
+    blob_id.SetSubSat(Int4((gi>>32)<<16)|(bit&0xffff));
+}
+
+
+TIntId CId1ReaderBase::GetExtAnnotGi(const CBlob_id& blob_id)
+{
+    return (TIntId(blob_id.GetSubSat()>>16)<<32)|Uint4(blob_id.GetSatKey());
+}
+
+
+int CId1ReaderBase::GetExtAnnotSubSat(const CBlob_id& blob_id)
+{
+    return blob_id.GetSubSat()&0xffff;
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE

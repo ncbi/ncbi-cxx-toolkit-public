@@ -41,7 +41,7 @@ CSeqref::CSeqref(void)
 }
 
 
-CSeqref::CSeqref(TGi gi, int sat, TIntId satkey)
+CSeqref::CSeqref(TGi gi, TSat sat, TSatKey satkey)
     : m_Flags(fBlobHasAllLocal),
       m_Gi(gi), m_Sat(sat), m_SubSat(eSubSat_main), m_SatKey(satkey),
       m_Version(0)
@@ -49,7 +49,7 @@ CSeqref::CSeqref(TGi gi, int sat, TIntId satkey)
 }
 
 
-CSeqref::CSeqref(TGi gi, int sat, TIntId satkey, TSubSat subsat, TFlags flags)
+CSeqref::CSeqref(TGi gi, TSat sat, TSatKey satkey, TSubSat subsat, TFlags flags)
     : m_Flags(flags),
       m_Gi(gi), m_Sat(sat), m_SubSat(subsat), m_SatKey(satkey),
       m_Version(0)

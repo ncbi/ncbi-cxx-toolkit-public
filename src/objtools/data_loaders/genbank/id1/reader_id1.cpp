@@ -421,13 +421,17 @@ bool CId1Reader::LoadSeq_idBlob_ids(CReaderRequestResult& result,
                 TBlobIds blob_ids;
                 CRef<CBlob_id> blob_id(new CBlob_id);
                 ESat sat = iter->second.first;
-                Int8 sat_key = num;
+                Int4 sat_key = Int4(num);
+                Int4 sub_sat = iter->second.second;
                 if ( sat == eSat_ANNOT_CDD || sat == eSat_ANNOT ) {
-                    sat_key = GI_TO(Int8, CProcessor::ConvertGiFromOM(GI_FROM(TIntId, sat_key)));
+                    num = GI_TO(Int8, CProcessor::ConvertGiFromOM(GI_FROM(Int8, num)));
+                    // pack gi into sat_key and sub_sat
+                    sat_key = Int4(num);
+                    sub_sat |= Int4((num>>32)<<16);
                 }
                 blob_id->SetSat(sat);
                 blob_id->SetSatKey(sat_key);
-                blob_id->SetSubSat(iter->second.second);
+                blob_id->SetSubSat(sub_sat);
                 blob_ids.push_back(CBlob_Info(blob_id, fBlobHasAllLocal));
                 ids.SetLoadedBlob_ids(CFixedBlob_ids(eTakeOwnership, blob_ids));
                 return true;
@@ -534,16 +538,7 @@ bool CId1Reader::LoadGiBlob_ids(CReaderRequestResult& result,
             blob_ids.push_back(CBlob_Info(blob_id, fBlobHasAllLocal));
         }}
         if ( info.IsSetExtfeatmask() ) {
-            int ext_feat = info.GetExtfeatmask();
-            while ( ext_feat ) {
-                int bit = ext_feat & ~(ext_feat-1);
-                ext_feat -= bit;
-                CRef<CBlob_id> blob_id(new CBlob_id);
-                blob_id->SetSat(GetAnnotSat(bit));
-                blob_id->SetSatKey(GI_TO(TIntId, CProcessor::ConvertGiFromOM(gi)));
-                blob_id->SetSubSat(bit);
-                blob_ids.push_back(CBlob_Info(blob_id, fBlobHasExtAnnot));
-            }
+            CreateExtAnnotBlob_ids(blob_ids, CProcessor::ConvertGiFromOM(gi), info.GetExtfeatmask());
         }
     }
     else {
@@ -697,17 +692,16 @@ void CId1Reader::x_SetBlobRequest(CID1server_request& request,
 void CId1Reader::x_SetParams(CID1server_maxcomplex& params,
                              const CBlob_id& blob_id)
 {
-    int bits = (~blob_id.GetSubSat() & 0xffff) << 4;
-    params.SetMaxplex(eEntry_complexities_entry | bits);
-    params.SetGi(ZERO_GI);
-    params.SetEnt(blob_id.GetSatKey());
-    int sat = blob_id.GetSat();
-    if ( IsAnnotSat(sat) ) {
-        params.SetMaxplex(eEntry_complexities_entry); // TODO: TEMP: remove
-        params.SetSat("ANNOT:"+NStr::IntToString(blob_id.GetSubSat()));
+    if ( IsAnnotSat(blob_id.GetSat()) ) {
+        params.SetMaxplex(eEntry_complexities_entry);
+        params.SetSat("ANNOT:"+NStr::NumericToString(GetExtAnnotSubSat(blob_id)));
+        params.SetGi(GI_FROM(TIntId, GetExtAnnotGi(blob_id)));
     }
     else {
-        params.SetSat(NStr::IntToString(sat));
+        params.SetMaxplex(eEntry_complexities_entry | 0xffff0); // exclude ext annots
+        params.SetSat(NStr::NumericToString(blob_id.GetSat()));
+        params.SetEnt(blob_id.GetSatKey());
+        params.SetGi(ZERO_GI);
     }
 }
 

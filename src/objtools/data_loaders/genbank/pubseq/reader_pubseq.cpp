@@ -335,11 +335,20 @@ namespace {
     {
         string str = rpc;
         str += " ";
-        str += NStr::NumericToString(blob_id.GetSatKey());
-        str += ",";
-        str += NStr::IntToString(blob_id.GetSat());
-        str += ",";
-        str += NStr::IntToString(blob_id.GetSubSat());
+        if ( CPubseqReader::IsAnnotSat(blob_id.GetSat()) ) {
+            str += NStr::NumericToString(CPubseqReader::GetExtAnnotGi(blob_id));
+            str += ",";
+            str += NStr::NumericToString(blob_id.GetSat());
+            str += ",";
+            str += NStr::NumericToString(CPubseqReader::GetExtAnnotSubSat(blob_id));
+        }
+        else {
+            str += NStr::NumericToString(blob_id.GetSatKey());
+            str += ",";
+            str += NStr::NumericToString(blob_id.GetSat());
+            str += ",";
+            str += NStr::NumericToString(blob_id.GetSubSat());
+        }
         AutoPtr<I_BaseCmd> cmd(db_conn->LangCmd(str));
         cmd->Send();
         return cmd.release();
@@ -696,7 +705,7 @@ bool CPubseqReader::LoadSeq_idInfo(CReaderRequestResult& result,
             while ( dbr->Fetch() ) {
                 TGi gi = ZERO_GI;
                 CDB_Int satGot;
-                TIntId sat_key = 0;
+                CDB_Int sat_keyGot;
                 CDB_Int extFeatGot;
                 CDB_Int namedAnnotsGot;
 
@@ -715,8 +724,8 @@ bool CPubseqReader::LoadSeq_idInfo(CReaderRequestResult& result,
                         _TRACE("sat: "<<satGot.Value());
                     }
                     else if(name == "sat_key") {
-                        sat_key = sx_GetIntId(*dbr, pos);
-                        _TRACE("sat_key: "<<sat_key);
+                        dbr->GetItem(&sat_keyGot);
+                        _TRACE("sat_key: "<<sat_keyGot.Value());
                     }
                     else if(name == "extra_feat" || name == "ext_feat") {
                         dbr->GetItem(&extFeatGot);
@@ -742,6 +751,7 @@ bool CPubseqReader::LoadSeq_idInfo(CReaderRequestResult& result,
                 }
 
                 int sat = satGot.Value();
+                int sat_key = sat_keyGot.Value();
                 
                 if ( GetDebugLevel() >= 5 ) {
                     CDebugPrinter s(conn, "CPubseqReader");
@@ -778,17 +788,7 @@ bool CPubseqReader::LoadSeq_idInfo(CReaderRequestResult& result,
                     blob_id->SetSatKey(sat_key);
                     blob_ids.push_back(CBlob_Info(blob_id, fBlobHasAllLocal));
                     if ( !extFeatGot.IsNULL() ) {
-                        int ext_feat = extFeatGot.Value();
-                        while ( ext_feat ) {
-                            int bit = ext_feat & ~(ext_feat-1);
-                            ext_feat -= bit;
-                            blob_id = new CBlob_id;
-                            blob_id->SetSat(GetAnnotSat(bit));
-                            blob_id->SetSatKey(GI_TO(TIntId, CProcessor::ConvertGiFromOM(gi)));
-                            blob_id->SetSubSat(bit);
-                            blob_ids.push_back(CBlob_Info(blob_id,
-                                                          fBlobHasExtAnnot));
-                        }
+                        CreateExtAnnotBlob_ids(blob_ids, CProcessor::ConvertGiFromOM(gi), extFeatGot.Value());
                     }
                 }
                 else {
@@ -827,7 +827,7 @@ bool CPubseqReader::LoadSeq_idInfo(CReaderRequestResult& result,
                 while ( dbr->Fetch() ) {
                     TGi gi = ZERO_GI;
                     CDB_Int satGot;
-                    TIntId satKeyGot = 0;
+                    CDB_Int satKeyGot;
                     CDB_Int typeGot;
                     CDB_VarChar nameGot;
                     for ( unsigned pos = 0; pos < dbr->NofItems(); ++pos ) {
@@ -843,8 +843,8 @@ bool CPubseqReader::LoadSeq_idInfo(CReaderRequestResult& result,
                             _TRACE("nsat: "<<satGot.Value());
                         }
                         else if(name == "sat_key") {
-                            satKeyGot = sx_GetIntId(*dbr, pos);
-                            _TRACE("nsat_key: "<<satKeyGot);
+                            dbr->GetItem(&satKeyGot);
+                            _TRACE("nsat_key: "<<satKeyGot.Value());
                         }
                         else if(name == "type") {
                             dbr->GetItem(&typeGot);
@@ -860,7 +860,7 @@ bool CPubseqReader::LoadSeq_idInfo(CReaderRequestResult& result,
                     }
                     CRef<CBlob_id> blob_id(new CBlob_id);
                     blob_id->SetSat(satGot.Value());
-                    blob_id->SetSatKey(satKeyGot);
+                    blob_id->SetSatKey(satKeyGot.Value());
                     CBlob_Info info(blob_id, fBlobHasNamedFeat);
                     CRef<CBlob_Annot_Info> annot_info(new CBlob_Annot_Info);
                     annot_info->AddNamedAnnotName(nameGot.Value());
@@ -1178,11 +1178,23 @@ I_BaseCmd* CPubseqReader::x_SendRequest(const CBlob_id& blob_id,
 {
     _TRACE("x_SendRequest: "<<blob_id.ToString());
     AutoPtr<CDB_RPCCmd> cmd(db_conn->RPC(rpc));
-    sx_SetIntId(*cmd, "@sat_key", blob_id.GetSatKey());
-    CDB_SmallInt satIn(blob_id.GetSat());
-    cmd->SetParam("@sat", &satIn);
-    CDB_Int ext_feat(blob_id.GetSubSat());
-    cmd->SetParam("@ext_feat", &ext_feat);
+    if ( IsAnnotSat(blob_id.GetSat()) ) {
+        // extract actual GI from sat_key and sub_sat fields
+        CDB_BigInt idIn(GetExtAnnotGi(blob_id));
+        cmd->SetParam("@gi", &idIn);
+        CDB_SmallInt satIn(blob_id.GetSat());
+        cmd->SetParam("@sat", &satIn);
+        CDB_Int ext_feat(GetExtAnnotSubSat(blob_id));
+        cmd->SetParam("@ext_feat", &ext_feat);
+    }
+    else {
+        CDB_SmallInt satIn(blob_id.GetSat());
+        cmd->SetParam("@sat", &satIn);
+        CDB_Int satKeyIn(blob_id.GetSatKey());
+        cmd->SetParam("@sat_key", &satKeyIn);
+        CDB_Int ext_feat(blob_id.GetSubSat());
+        cmd->SetParam("@ext_feat", &ext_feat);
+    }
     cmd->Send();
     return cmd.release();
 }

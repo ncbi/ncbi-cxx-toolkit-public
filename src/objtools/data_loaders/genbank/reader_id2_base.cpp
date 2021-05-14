@@ -2715,7 +2715,7 @@ void CId2ReaderBase::x_ProcessGetBlobId(
             if ( seq_id.IsGeneral() ) {
                 const CObject_id& obj_id = seq_id.GetGeneral().GetTag();
                 if ( obj_id.IsId() &&
-                     obj_id.GetId() == blob_id.GetSatKey() ) {
+                     obj_id.GetId8() == Uint4(blob_id.GetSatKey()) ) {
                     mask |= fBlobHasAllLocal;
                 }
                 else {

@@ -42,8 +42,6 @@ BEGIN_SCOPE(objects)
 class NCBI_XREADER_EXPORT CSeqref : public CObject
 {
 public:
-    typedef pair<pair<int, int>, TIntId> TKeyByTSE;
-
     enum EBlobFlags {
         fPossible    = 1 << 16,
         fPrivate     = 1 << 17
@@ -71,37 +69,41 @@ public:
         eSubSat_microRNA = 1<<8,
         eSubSat_Exon = 1<<9
     };
-    typedef int TSubSat;
+    typedef Int4 TSat;
+    typedef Int4 TSubSat;
+    typedef Int4 TSatKey;
+    typedef Int4 TVersion;
 
     CSeqref(void);
-    CSeqref(TGi gi, int sat, TIntId satkey);
-    CSeqref(TGi gi, int sat, TIntId satkey, TSubSat subsat, TFlags flags);
+    CSeqref(TGi gi, TSat sat, TSatKey satkey);
+    CSeqref(TGi gi, TSat sat, TSatKey satkey, TSubSat subsat, TFlags flags);
     virtual ~CSeqref(void);
     
     const string print(void)    const;
     const string printTSE(void) const;
+    typedef pair<pair<TSat, TSubSat>, TSatKey> TKeyByTSE;
     static const string printTSE(const TKeyByTSE& key);
 
     TGi GetGi() const
         {
             return m_Gi;
         }
-    int GetSat() const
+    TSat GetSat() const
         {
             return m_Sat;
         }
-    int GetSubSat() const
+    TSubSat GetSubSat() const
         {
             return m_SubSat;
         }
-    TIntId GetSatKey() const
+    TSatKey GetSatKey() const
         {
             return m_SatKey;
         }
 
     TKeyByTSE GetKeyByTSE(void) const
         {
-            return TKeyByTSE(pair<int, int>(m_Sat, m_SubSat), m_SatKey);
+            return TKeyByTSE(pair<TSat, TSubSat>(m_Sat, m_SubSat), m_SatKey);
         }
 
     bool SameTSE(const CSeqref& seqRef) const
@@ -160,11 +162,11 @@ public:
             return (GetFlags() & fBlobHasCore) != 0;
         }
 
-    int GetVersion(void) const
+    TVersion GetVersion(void) const
         {
             return m_Version;
         }
-    void SetVersion(int version)
+    void SetVersion(TVersion version)
         {
             m_Version = version;
         }
@@ -173,10 +175,10 @@ protected:
     TFlags  m_Flags;
 
     TGi m_Gi;
-    int m_Sat;
-    int m_SubSat; // external features mask
-    TIntId m_SatKey;
-    int m_Version;
+    TSat m_Sat;
+    TSubSat m_SubSat; // external features mask
+    TSatKey m_SatKey;
+    TVersion m_Version;
 };
 
 

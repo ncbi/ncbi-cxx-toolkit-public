@@ -49,15 +49,19 @@ public:
     
     explicit CBlob_id(CTempString str_id);
 
-    int GetSat() const
+    typedef Int4 TSat;
+    typedef Int4 TSubSat;
+    typedef Int4 TSatKey;
+    
+    TSat GetSat() const
         {
             return m_Sat;
         }
-    int GetSubSat() const
+    TSubSat GetSubSat() const
         {
             return m_SubSat;
         }
-    TIntId GetSatKey() const
+    TSatKey GetSatKey() const
         {
             return m_SatKey;
         }
@@ -98,23 +102,23 @@ public:
             return m_SubSat == 0;
         }
 
-    void SetSat(int v)
+    void SetSat(TSat v)
         {
             m_Sat = v;
         }
-    void SetSubSat(int v)
+    void SetSubSat(TSubSat v)
         {
             m_SubSat = v;
         }
-    void SetSatKey(TIntId v)
+    void SetSatKey(TSatKey v)
         {
             m_SatKey = v;
         }
 
 protected:
-    int m_Sat;
-    int m_SubSat;
-    TIntId m_SatKey;
+    TSat m_Sat;
+    TSubSat m_SubSat;
+    TSatKey m_SatKey;
 };
 
 

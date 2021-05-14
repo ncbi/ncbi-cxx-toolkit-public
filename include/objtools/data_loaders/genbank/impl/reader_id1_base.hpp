@@ -96,6 +96,13 @@ public:
 
     static bool IsAnnotSat(int sat);
     static ESat GetAnnotSat(int subsat);
+
+    // External annotation blob-id manupulation methods
+    static void CreateExtAnnotBlob_ids(TBlobIds& blob_ids, TIntId gi, int ext_feat);
+    static int GetNextExtAnnotBit(int& ext_feat);
+    static void SetExtAnnotBlob_id(CBlob_id& blob_id, TIntId gi, int bit);
+    static TIntId GetExtAnnotGi(const CBlob_id& blob_id);
+    static int GetExtAnnotSubSat(const CBlob_id& blob_id);
 };
 
 
