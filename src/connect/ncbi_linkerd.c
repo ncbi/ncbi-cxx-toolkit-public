@@ -311,6 +311,8 @@ static int/*tri-state bool*/ x_SetupFromNamerd(SERV_ITER iter, int* do_namerd)
     if ( ! (info = iter->op->GetNextInfo(iter, 0))) {
         CORE_LOGF_X(eLSub_Message, eLOG_Trace,
                     ("[%s]  Failed to look up in NAMERD", iter->name));
+        if (iter->types == data->types)
+            *do_namerd = 0/*false*/;
         goto err;
     }
     progress = 0/*failure*/;
@@ -404,13 +406,13 @@ static int/*bool*/ x_SetupConnectionParams(SERV_ITER iter, int* do_namerd)
               (*do_namerd < 0  &&  !(*do_namerd
                                      = SERV_IsMapperConfiguredInternal
                                      (iter->name, REG_CONN_NAMERD_ENABLE))))) {
-            retval =  x_SetupFromNamerd(iter, do_namerd);
+            retval  = x_SetupFromNamerd(iter, do_namerd);
             if (!retval)
                 return 0/*failed*/;
         } else
-            retval = -1;
-        if (retval <  0) {
-            if (iter->arglen) {
+            retval  = 0;
+        if (retval <= 0) {
+            if (!retval  &&  iter->arglen) {
                 assert(iter->arg);
                 CORE_LOGF_X(eLSub_BadData, eLOG_Warning,
                             ("[%s]  LINKERD does not support argument affinity"
