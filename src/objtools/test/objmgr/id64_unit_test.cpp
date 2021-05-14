@@ -717,6 +717,12 @@ struct SInvertVDB_CDD {
         }
     SInvertVDB_CDD(const SInvertVDB_CDD&) = delete;
     void operator=(const SInvertVDB_CDD&) = delete;
+
+
+    static bool IsPossible()
+        {
+            return !CGBDataLoader::IsUsingPSGLoader() && s_HaveID2(eExcludePubseqos2);
+        }
 };
 
 BOOST_AUTO_TEST_CASE(CheckExtCDD)
@@ -731,8 +737,8 @@ BOOST_AUTO_TEST_CASE(CheckExtCDD)
 
 BOOST_AUTO_TEST_CASE(CheckExtCDD2)
 {
-    if ( !s_HaveID2() || CGBDataLoader::IsUsingPSGLoader() ) {
-        LOG_POST("Skipping ExtAnnot second CDD without ID2");
+    if ( !SInvertVDB_CDD::IsPossible() ) {
+        LOG_POST("Skipping ExtAnnot second CDD without OSG ID2");
         return;
     }
     SInvertVDB_CDD invert;
@@ -756,8 +762,8 @@ BOOST_AUTO_TEST_CASE(CheckExtCDDonWGS)
 
 BOOST_AUTO_TEST_CASE(CheckExtCDD2onWGS)
 {
-    if ( !s_HaveID2() || CGBDataLoader::IsUsingPSGLoader() ) {
-        LOG_POST("Skipping ExtAnnot second CDD on WGS sequence without ID2");
+    if ( !SInvertVDB_CDD::IsPossible() ) {
+        LOG_POST("Skipping ExtAnnot second CDD on WGS sequence without OSG ID2");
         return;
     }
     SInvertVDB_CDD invert;
