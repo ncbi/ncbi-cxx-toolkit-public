@@ -23,14 +23,23 @@ export GENBANK_LOADER_PSG
 if test "$1" = "-id2"; then
     shift
     methods="ID2"
-elif disabled PubSeqOS; then
-    echo "Skipping PUBSEQOS loader test (loader unavailable)"
-    methods="ID1 ID2"
-elif disabled in-house-resources; then
-    echo "Skipping PUBSEQOS loader test (in-house resources unavailable)"
-    methods="ID1 ID2"
 else
-    methods="PUBSEQOS ID1 ID2"
+    if disabled PubSeqOS; then
+	echo "Skipping PUBSEQOS loader test (loader unavailable)"
+	m1=""
+    elif disabled in-house-resources; then
+	echo "Skipping PUBSEQOS loader test (in-house resources unavailable)"
+	m1=""
+    else
+	m1="PUBSEQOS PUBSEQOS2"
+    fi
+    if test "$1" = "-no-id1"; then
+	shift
+	m2="ID2"
+    else
+	m2="ID1 ID2"
+    fi
+    methods="$m1 $m2"
 fi
 if disabled DLL_BUILD; then
     # enable dll plugins for ftds and bdb
