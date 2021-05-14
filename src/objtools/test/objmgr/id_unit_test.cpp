@@ -776,7 +776,7 @@ BOOST_AUTO_TEST_CASE(CheckExtCDDonWGS)
 BOOST_AUTO_TEST_CASE(CheckExtCDD2onWGS)
 {
     if ( !SInvertVDB_CDD::IsPossible() ) {
-        LOG_POST("Skipping ExtAnnot second CDD on WGS sequence without ID2");
+        LOG_POST("Skipping ExtAnnot second CDD on WGS sequence without OSG ID2");
         return;
     }
     SInvertVDB_CDD invert;
