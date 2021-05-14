@@ -100,7 +100,7 @@ public:
    void SetMaxMlaAttempts(int max);
 
    NCBI_DEPRECATED void UpdateOrgFromTaxon(FLogger /*f_logger*/, CSeq_entry& entry);
-   void UpdateOrgFromTaxon(FLogger f_logger, CSeq_entry_EditHandle& obj);
+   NCBI_DEPRECATED void UpdateOrgFromTaxon(FLogger f_logger, CSeq_entry_EditHandle& obj);
    NCBI_DEPRECATED void UpdateOrgFromTaxon(FLogger f_logger, CSeqdesc& obj);
 
    void UpdateOrgFromTaxon(CSeq_entry& entry);
@@ -120,7 +120,7 @@ public:
 private:
    void xUpdatePubReferences(CSeq_entry& entry);
    void xUpdatePubReferences(CSeq_descr& descr);
-   void xUpdateOrgTaxname(FLogger f_logger, COrg_ref& org);
+   NCBI_DEPRECATED void xUpdateOrgTaxname(FLogger f_logger, COrg_ref& org);
    void xUpdateOrgTaxname(COrg_ref& org);
    bool xUpdatePubPMID(list<CRef<CPub>>& pubs, TEntrezId id);
 
