@@ -351,11 +351,6 @@ if(NCBITEST_HAVE_UPTIME)
     string(REGEX REPLACE "[, ][, ]*"               " "  _uptime ${_uptime})
 endif()
 
-# Result can have an error description, not a numeric exist code, so for such cases set it always to 1.
-if (NOT ${_result} MATCHES "[0-9]+$")
-    set(_result 1)
-endif()
-
 
 # ---------------------------------------------------------------------------
 # Add header/footer into output
@@ -419,6 +414,11 @@ if(IS_AUTOMATED)
         if("${_times}" MATCHES "^real [0-9].* user [0-9].* sys [0-9]")
             set(_test_times "${_times}")
         endif()
+    endif()
+    # Result can have an error description, not a numeric exist code, so for such cases
+    # set it always to 1 before writing to .rep file
+    if (NOT ${_result} MATCHES "[0-9]+$")
+        set(_result 1)
     endif()
 
     string(APPEND _info "${_status}\n")
