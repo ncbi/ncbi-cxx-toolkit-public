@@ -897,7 +897,7 @@ BOOST_AUTO_TEST_CASE(TestCase_GINumberString)
     BOOST_CHECK_EQUAL(Result->GetInt().GetId().GetSeqIdString(true), "NC_018264.1"); 
 }
 
-
+/*
 BOOST_AUTO_TEST_CASE(TestCaseUcscToRefSeqMapping_ForSlowCat)
 {
     // Fetch Gencoll
@@ -953,6 +953,7 @@ BOOST_AUTO_TEST_CASE(TestCaseUcscToRefSeqMapping_ForSlowCat_Down)
     // Check that Map results meet expectations
     BOOST_CHECK(Result->Equals(Expected));
 }
+*/
 
 
 // Fix-up Bacteria chromosome names
