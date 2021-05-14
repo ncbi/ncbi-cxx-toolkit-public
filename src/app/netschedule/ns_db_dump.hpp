@@ -59,7 +59,7 @@ BEGIN_NCBI_SCOPE
 #pragma pack(push, 1)
 struct SCommonDumpHeader
 {
-    Int4        magic;
+    Uint4       magic;
     Uint4       storage_ver_major;
     Uint4       storage_ver_minor;
     Uint4       storage_ver_patch;

@@ -260,24 +260,24 @@ void  CQueueDataBase::x_Open(bool  reinit)
                         .Print("info", "load_from_dump")
                         .Print("records", records);
                 } catch (const exception &  ex) {
-                    ERR_POST(ex.what());
+                    ERR_POST(Warning << ex.what());
                     last_queue_load_error = ex.what();
                     ++queue_load_error_count;
                 } catch (...) {
                     last_queue_load_error = "Unknown error loading queue " +
                                             k->first + " from dump";
-                    ERR_POST(last_queue_load_error);
+                    ERR_POST(Warning << last_queue_load_error);
                     ++queue_load_error_count;
                 }
             }
         }
     } catch (const exception &  ex) {
-        ERR_POST(ex.what());
+        ERR_POST(Warning << ex.what());
         last_queue_load_error = ex.what();
         ++queue_load_error_count;
     } catch (...) {
         last_queue_load_error = "Unknown error loading queues from dump";
-        ERR_POST(last_queue_load_error);
+        ERR_POST(Warning << last_queue_load_error);
         ++queue_load_error_count;
     }
 
@@ -297,7 +297,7 @@ void  CQueueDataBase::x_Open(bool  reinit)
                                 "There were error(s) loading the previous "
                                 "instance dump. Number of errors: " +
                                 to_string(queue_load_error_count) +
-                                ". See log for all the loading errors. "
+                                ". See log for all the loading errors.\n"
                                 "Last error: " + last_queue_load_error);
         if (!m_Diskless)
             x_BackupDump();

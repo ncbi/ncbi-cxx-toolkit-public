@@ -37,9 +37,14 @@
 #include "ns_db_dump.hpp"
 #include "ns_types.hpp"
 #include "netschedule_version.hpp"
+#include "ns_server.hpp"
 
 
 BEGIN_NCBI_SCOPE
+
+
+vector<Uint4>    kOldDumpMagic { 0xD0D0D0D0, 0xE0E0E0E0 };
+
 
 SCommonDumpHeader::SCommonDumpHeader() :
     magic(kDumpMagic),
@@ -85,8 +90,16 @@ int SJobDumpHeader::Read(FILE *  f)
         throw runtime_error("Unknown dump file header reading error");
     }
 
-    if (common_header.magic != kDumpMagic)
+    if (common_header.magic != kDumpMagic) {
+        for (auto m: kOldDumpMagic) {
+            if (common_header.magic == m)
+                throw runtime_error("Dump file header magic does not match the current one. "
+                                    "It is an older NetSchedule dump file and cannot be used. "
+                                    "The old dump files will be deleted.");
+        }
+
         throw runtime_error("Dump file header magic does not match");
+    }
     return 0;
 }
 
@@ -118,8 +131,16 @@ int SOneStructDumpHeader::Read(FILE *  f)
         throw runtime_error("Unknown dump file header reading error");
     }
 
-    if (common_header.magic != kDumpMagic)
+    if (common_header.magic != kDumpMagic) {
+        for (auto m: kOldDumpMagic) {
+            if (common_header.magic == m)
+                throw runtime_error("Dump file header magic does not match the current one. "
+                                    "It is an older NetSchedule dump file and cannot be used. "
+                                    "The old dump files will be deleted.");
+        }
+
         throw runtime_error("Dump file header magic does not match");
+    }
     return 0;
 }
 
@@ -173,15 +194,36 @@ int SJobDump::Read(FILE *  f,
         }
     }
 
-    if (client_ip_size > kMaxClientIpSize)
-        throw runtime_error("Job client ip size is more "
-                            "than max allowed");
-    if (client_sid_size > kMaxSessionIdSize)
-        throw runtime_error("Job client session id size is more "
-                            "than max allowed");
-    if (ncbi_phid_size > kMaxHitIdSize)
-        throw runtime_error("Job page hit id size is more "
-                            "than max allowed");
+    if (client_ip_size > kMaxClientIpSize) {
+        string  msg = "Client IP has been stripped from " +
+                      to_string(client_ip_size) + " to " +
+                      to_string(kMaxClientIpSize) + ": " +
+                      string(client_ip, kMaxClientIpSize) +
+                      " (job id " + to_string(id) + ")";
+        ERR_POST(Warning << msg);
+        CNetScheduleServer::GetInstance()->RegisterAlert(
+            eDumpLoadError, msg);
+    }
+    if (client_sid_size > kMaxSessionIdSize) {
+        string  msg = "Client session id has been stripped from " +
+                      to_string(client_sid_size) + " to " +
+                      to_string(kMaxSessionIdSize) + ": " +
+                      string(client_sid, kMaxSessionIdSize) +
+                      " (job id " + to_string(id) + ")";
+        ERR_POST(Warning << msg);
+        CNetScheduleServer::GetInstance()->RegisterAlert(
+            eDumpLoadError, msg);
+    }
+    if (ncbi_phid_size > kMaxHitIdSize) {
+        string  msg = "PHID has been stripped from " +
+                      to_string(ncbi_phid_size) + " to " +
+                      to_string(kMaxHitIdSize) + ": " +
+                      string(ncbi_phid, kMaxHitIdSize) +
+                      " (job id " + to_string(id) + ")";
+        ERR_POST(Warning << msg);
+        CNetScheduleServer::GetInstance()->RegisterAlert(
+            eDumpLoadError, msg);
+    }
     if (progress_msg_size > kNetScheduleMaxDBDataSize)
         throw runtime_error("Job progress message size is more "
                             "than max allowed");

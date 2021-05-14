@@ -97,7 +97,8 @@ static string   kNewLine("\n");
 // Some swap first two bytes with the last two bytes
 // Some reverse the signature byte by byte. So the magic is selected to be
 // visible the same way everywhere.
-const Int4      kDumpMagic(0xE0E0E0E0);
+// See kOldDumpMagic as well in ns_db_dump.cpp
+const Uint4     kDumpMagic(0xF0F0F0F0);
 
 
 // An empty bit vector is returned in quite a few places
@@ -105,7 +106,7 @@ const TNSBitVector  kEmptyBitVector;
 
 // A few limits
 const unsigned kMaxQueueNameSize           = 64;
-const unsigned kMaxHitIdSize               = 64;
+const unsigned kMaxHitIdSize               = 128; // 64 -> 128 See CXX-11914
 const unsigned kMaxClientIpSize            = 48;  // 64 -> 48 See CXX-3449
 const unsigned kMaxSessionIdSize           = 48;  // 64 -> 48 See CXX-3449
 const unsigned kLinkedSectionValueNameSize = 8192;

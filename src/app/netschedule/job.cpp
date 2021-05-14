@@ -778,11 +778,17 @@ void CJob::Dump(FILE *  jobs_file) const
     job_dump.number_of_events = m_Events.size();
 
     job_dump.client_ip_size = m_ClientIP.size();
-    memcpy(job_dump.client_ip, m_ClientIP.data(), m_ClientIP.size());
+    memcpy(job_dump.client_ip, m_ClientIP.data(),
+           min(static_cast<size_t>(kMaxClientIpSize),
+               m_ClientIP.size()));
     job_dump.client_sid_size = m_ClientSID.size();
-    memcpy(job_dump.client_sid, m_ClientSID.data(), m_ClientSID.size());
+    memcpy(job_dump.client_sid, m_ClientSID.data(),
+           min(static_cast<size_t>(kMaxSessionIdSize),
+               m_ClientSID.size()));
     job_dump.ncbi_phid_size = m_NCBIPHID.size();
-    memcpy(job_dump.ncbi_phid, m_NCBIPHID.data(), m_NCBIPHID.size());
+    memcpy(job_dump.ncbi_phid, m_NCBIPHID.data(),
+           min(static_cast<size_t>(kMaxHitIdSize),
+               m_NCBIPHID.size()));
 
     try {
         job_dump.Write(jobs_file, m_ProgressMsg.data());
@@ -870,9 +876,12 @@ bool CJob::LoadFromDump(FILE *  jobs_file,
     m_Mask = job_dump.mask;
     m_GroupId = job_dump.group_id;
     m_LastTouch = CNSPreciseTime(job_dump.last_touch);
-    m_ClientIP = string(job_dump.client_ip, job_dump.client_ip_size);
-    m_ClientSID = string(job_dump.client_sid, job_dump.client_sid_size);
-    m_NCBIPHID = string(job_dump.ncbi_phid, job_dump.ncbi_phid_size);
+    m_ClientIP = string(job_dump.client_ip, min(job_dump.client_ip_size,
+                                                kMaxClientIpSize));
+    m_ClientSID = string(job_dump.client_sid, min(job_dump.client_sid_size,
+                                                  kMaxSessionIdSize));
+    m_NCBIPHID = string(job_dump.ncbi_phid, min(job_dump.ncbi_phid_size,
+                                                kMaxHitIdSize));
 
     // Read the job events
     m_Events.clear();
