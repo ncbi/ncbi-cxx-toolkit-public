@@ -167,7 +167,7 @@ private:
         const CArgs& );
     CObjectIStream* xInitInputStream(
         const CArgs& args,
-        CFormatGuess::EFormat inFormat);
+        CFileContentInfo& contentInfo);
     CWriterBase* xInitWriter(
         const CArgs&,
         CNcbiOstream* );
@@ -211,11 +211,6 @@ private:
     void xTweakAnnotSelector(
         const CArgs&,
         SAnnotSelector&);
-
-    static void xAnalyseInputData(
-        const CArgs&,
-        CFormatGuess::EFormat& inFormat,
-        CFileContentInfo& contentInfo);
 
     static void xReadObject(
         CObjectIStream& istr, 
@@ -502,22 +497,6 @@ bool CAnnotWriterApp::xTryProcessInputIdList(
 
 
 //  -----------------------------------------------------------------------------
-void CAnnotWriterApp::xAnalyseInputData(
-    const CArgs& args,
-    CFormatGuess::EFormat& inFormat,
-    CFileContentInfo& contentInfo)
-//  -----------------------------------------------------------------------------
-{
-    CNcbiIfstream inStr(args["i"].AsString().c_str(), ios::binary);
-    CFormatGuessEx FG(inStr);
-    FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eBinaryASN);
-    FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eTextASN);
-    FG.GetFormatHints().DisableAllNonpreferred();
-    inFormat = FG.GuessFormatAndContent(contentInfo);
-}
-
-
-//  -----------------------------------------------------------------------------
 bool CAnnotWriterApp::xTryProcessInputFile(
     const CArgs& args)
 //  -----------------------------------------------------------------------------
@@ -526,12 +505,9 @@ bool CAnnotWriterApp::xTryProcessInputFile(
         return false;
     }
 
-    CFormatGuess::EFormat inFormat;
     CFileContentInfo contentInfo;
-    xAnalyseInputData(args, inFormat, contentInfo);
+    unique_ptr<CObjectIStream> pIs(xInitInputStream(args, contentInfo));
     string genbankType = contentInfo.mInfoGenbank.mObjectType;
-
-    unique_ptr<CObjectIStream> pIs(xInitInputStream(args, inFormat));
     auto& instr(*pIs);
 
     while (!instr.EndOfData()) {
@@ -745,9 +721,23 @@ bool CAnnotWriterApp::xProcessInputObject(
 //  -----------------------------------------------------------------------------
 CObjectIStream* CAnnotWriterApp::xInitInputStream( 
     const CArgs& args,
-    CFormatGuess::EFormat inFormat)
+    CFileContentInfo& contentInfo)
 //  -----------------------------------------------------------------------------
 {
+    CNcbiIstream* pInputStream = &NcbiCin;
+    bool bDeleteOnClose = false;
+    if (args["i"]) {
+    	const char* infile = args["i"].AsString().c_str();
+        pInputStream = new CNcbiIfstream(infile, ios::binary);
+        bDeleteOnClose = true;
+    }
+
+    CFormatGuessEx FG(*pInputStream);
+    FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eBinaryASN);
+    FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eTextASN);
+    FG.GetFormatHints().DisableAllNonpreferred();
+    CFormatGuess::EFormat inFormat = FG.GuessFormatAndContent(contentInfo);;
+
     ESerialDataFormat serial = eSerial_AsnText;
     switch(inFormat) {
     default:
@@ -759,14 +749,6 @@ CObjectIStream* CAnnotWriterApp::xInitInputStream(
     case CFormatGuess::eBinaryASN:
         serial = eSerial_AsnBinary;
         break;
-    }
-
-    CNcbiIstream* pInputStream = &NcbiCin;
-    bool bDeleteOnClose = false;
-    if (args["i"]) {
-    	const char* infile = args["i"].AsString().c_str();
-        pInputStream = new CNcbiIfstream(infile, ios::binary);
-        bDeleteOnClose = true;
     }
 
     CObjectIStream* pI = CObjectIStream::Open( 
