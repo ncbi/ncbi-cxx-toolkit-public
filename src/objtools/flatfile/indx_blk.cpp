@@ -96,7 +96,8 @@ static const char *embl_accpref[] = {
     "FB", "FM", "FN", "FO", "FP", "FQ", "FR", "GM", "GN", "HA", "HB", "HC",
     "HD", "HE", "HF", "HG", "HH", "HI", "JA", "JB", "JC", "JD", "JE", "LK",
     "LL", "LM", "LN", "LO", "LP", "LQ", "LR", "LS", "LT", "MP", "MQ", "MR",
-    "MS", "OA", "OB", "OC", "OD", "OE", NULL
+    "MS", "OA", "OB", "OC", "OD", "OE", "OU", "OV", "OW", "OX", "OY", "OZ",
+    NULL
 };
 
 static const char *lanl_accpref[] = {
@@ -141,7 +142,7 @@ static const char *ncbi_accpref[] = {
     "JY", "JZ", "KA", "KB", "KC", "KD", "KE", "KF", "KG", "KH", "KI", "KJ",
     "KK", "KL", "KM", "KN", "KO", "KP", "KQ", "KR", "KS", "KT", "KU", "KV",
     "KX", "KY", "KZ", "MF", "MG", "MH", "MI", "MJ", "MK", "ML", "MM", "MN",
-    "MO", "MT", "MU", "MV", "MX", "MY", NULL
+    "MO", "MT", "MU", "MV", "MX", "MY", "OK", "OL", "OM", "ON", "OT", NULL
 };
 
 static const char *refseq_accpref[] = {
