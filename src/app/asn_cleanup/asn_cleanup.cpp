@@ -68,9 +68,6 @@
 #include <objtools/validator/tax_validation_and_cleanup.hpp>
 #include <objtools/validator/dup_feats.hpp>
 
-#include <util/compress/zlib.hpp>
-#include <util/compress/stream.hpp>
-
 #include "read_hooks.hpp"
 #include "bigfile_processing.hpp"
 
@@ -207,7 +204,7 @@ void CCleanupApp::Init()
     {{
         arg_desc->AddFlag("batch", "Process NCBI release file");
         // compression
-        arg_desc->AddFlag("c", "Compressed file");
+        arg_desc->AddFlag("c", "Obsolete - do not use");
 
         // imitate limitation of C Toolkit version
         arg_desc->AddFlag("firstonly", "Process only first element");
@@ -1212,11 +1209,7 @@ CObjectIStream* CCleanupApp::x_OpenIStream(const CArgs& args, const string& file
     // turning it into an object stream:
     CObjectIStream* pI = nullptr;
     if ( args["c"] ) {
-        CZipStreamDecompressor* pDecompressor = new CZipStreamDecompressor(
-            512, 512, kZlibDefaultWbits, CZipCompression::fCheckFileHeader );
-        CCompressionIStream* pUnzipStream = new CCompressionIStream(
-            *pInputStream, pDecompressor, CCompressionIStream::fOwnProcessor );
-        pI = CObjectIStream::Open( serial, *pUnzipStream, eTakeOwnership );
+        cerr << "Compressed files no longer supported" << endl;
     }
     else {
         pI = CObjectIStream::Open( serial, *pInputStream, eTakeOwnership );
