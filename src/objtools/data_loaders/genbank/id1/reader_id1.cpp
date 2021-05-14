@@ -538,7 +538,7 @@ bool CId1Reader::LoadGiBlob_ids(CReaderRequestResult& result,
             blob_ids.push_back(CBlob_Info(blob_id, fBlobHasAllLocal));
         }}
         if ( info.IsSetExtfeatmask() ) {
-            CreateExtAnnotBlob_ids(blob_ids, CProcessor::ConvertGiFromOM(gi), info.GetExtfeatmask());
+            CreateExtAnnotBlob_ids(blob_ids, GI_TO(TIntId, CProcessor::ConvertGiFromOM(gi)), info.GetExtfeatmask());
         }
     }
     else {

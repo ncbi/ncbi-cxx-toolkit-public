@@ -788,7 +788,7 @@ bool CPubseqReader::LoadSeq_idInfo(CReaderRequestResult& result,
                     blob_id->SetSatKey(sat_key);
                     blob_ids.push_back(CBlob_Info(blob_id, fBlobHasAllLocal));
                     if ( !extFeatGot.IsNULL() ) {
-                        CreateExtAnnotBlob_ids(blob_ids, CProcessor::ConvertGiFromOM(gi), extFeatGot.Value());
+                        CreateExtAnnotBlob_ids(blob_ids, GI_TO(TIntId, CProcessor::ConvertGiFromOM(gi)), extFeatGot.Value());
                     }
                 }
                 else {
