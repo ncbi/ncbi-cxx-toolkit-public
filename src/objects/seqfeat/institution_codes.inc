@@ -4386,6 +4386,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "MFUM\ts\tMuseum of Ferdowsi University of Mashhad\t\t\t",
 "MFUW\ts\tChinzombo Research Station, Chinzombo Wildlife Research Station\t\t\t",
 "MFW\ts\tMuseum Freriks\t\t\t",
+"MG-ZV-M\ts\tMuseo Gallardo-Zoologia Vertebrados-Mamiferos\t\t\t",
 "MG<BRA>\ts\tMuseu Paraense Emilio Goeldi, Departamento de Botanica\t\t\t",
 "MG<CHN>\ts\tMuseum of Zoology\t\t\t",
 "MGA\ts\tInstituto Pedagogico de Varones\t\t\t",

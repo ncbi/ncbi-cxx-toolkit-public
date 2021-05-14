@@ -4353,6 +4353,7 @@ MFU	s	Museo Friulano di Storia Naturale
 MFUM	s	Museum of Ferdowsi University of Mashhad			
 MFUW	s	Chinzombo Research Station, Chinzombo Wildlife Research Station			
 MFW	s	Museum Freriks			
+MG-ZV-M	s	Museo Gallardo-Zoologia Vertebrados-Mamiferos			
 MG<BRA>	s	Museu Paraense Emilio Goeldi, Departamento de Botanica			
 MG<CHN>	s	Museum of Zoology			
 MGA	s	Instituto Pedagogico de Varones			
