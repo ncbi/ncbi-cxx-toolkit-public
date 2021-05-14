@@ -495,23 +495,19 @@ public:
     /// Initialize credentials. The arguments are passed to NcbiCreateTlsCertCredentials.
     /// @sa
     ///  NcbiCreateTlsCertCredentials
-    CTlsCertCredentials(const void* cert, size_t certsz, const void* pkey, size_t pkeysz);
+    CTlsCertCredentials(CTempString cert, CTempString pkey);
     ~CTlsCertCredentials(void);
 
     NCBI_CRED GetNcbiCred(void) const { return m_Cred; }
-    void* GetCert(void) const { return m_Cert; }
-    size_t GetCertSize(void) const { return m_CertSize; }
-    void* GetKey(void) const { return m_Key; }
-    size_t GetKeySize(void) const { return m_KeySize; }
+    const string& GetCert(void) const { return m_Cert; }
+    const string& GetKey(void) const { return m_Key; }
 
 private:
     CTlsCertCredentials(const CTlsCertCredentials&);
     CTlsCertCredentials& operator=(const CTlsCertCredentials&);
 
-    void* m_Cert;
-    size_t m_CertSize;
-    void* m_Key;
-    size_t m_KeySize;
+    string m_Cert;
+    string m_Key;
     NCBI_CRED m_Cred;
 };
 

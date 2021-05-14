@@ -523,22 +523,15 @@ void CHttpResponse::x_Update(CHttpHeaders::THeaders headers, int status_code, st
 //
 
 
-CTlsCertCredentials::CTlsCertCredentials(const void* cert, size_t certsz, const void* pkey, size_t pkeysz)
+CTlsCertCredentials::CTlsCertCredentials(CTempString cert, CTempString pkey)
+    : m_Cert(cert), m_Key(pkey)
 {
-    m_CertSize = certsz;
-    m_Cert = malloc(m_CertSize);
-    memcpy(m_Cert, cert, m_CertSize);
-    m_KeySize = pkeysz;
-    m_Key = malloc(m_KeySize);
-    memcpy(m_Key, pkey, m_KeySize);
-    m_Cred = NcbiCreateTlsCertCredentials(m_Cert, m_CertSize, m_Key, m_KeySize);
+    m_Cred = NcbiCreateTlsCertCredentials(m_Cert.data(), m_Cert.size(), m_Key.data(), m_Key.size());
 }
 
 CTlsCertCredentials::~CTlsCertCredentials(void)
 {
     if (m_Cred) NcbiDeleteTlsCertCredentials(m_Cred);
-    if (m_Cert) free(m_Cert);
-    if (m_Key) free(m_Key);
 }
 
 

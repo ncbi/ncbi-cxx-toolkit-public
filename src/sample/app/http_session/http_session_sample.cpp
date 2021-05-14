@@ -115,41 +115,23 @@ CHttpParam CHttpSessionApp::SetupParam(void)
 }
 
 
-static void* LoadFile(CNcbiIstream& str, size_t& size)
+static string LoadFile(CNcbiIstream& str)
 {
-    char* buf;
-    str.seekg(0, ios_base::end);
-    size = (size_t)str.tellg() + 1;
-    if ( !(buf = (char*)malloc(size)) ) {
-        return nullptr;
-    }
-    try {
-        str.seekg(0);
-        str.read(buf, size - 1);
-    }
-    catch (...) {
-        ERR_POST("Error loading credentials");
-        free(buf);
-        return nullptr;
-    }
-    buf[size - 1] = '\0';
-    if (!strstr(buf, "-----BEGIN "))
-        size--;
-    return buf;
+    string content;
+    size_t size = NcbiStreamToString(&content, str);
+    if (!size) return kEmptyStr;
+    if (NStr::Find(content, "-----BEGIN ") != NPOS) content.push_back('\0');
+    return content;
 }
 
 
 void CHttpSessionApp::LoadCredentials(CNcbiIstream& cert_str, CNcbiIstream& pkey_str)
 {
-    void  *cert, *pkey;
-    size_t certsz, pkeysz;
-    cert = LoadFile(cert_str, certsz);
-    pkey = LoadFile(pkey_str, pkeysz);
-    if (cert && pkey) {
-        m_Credentials = make_shared<CTlsCertCredentials>(cert, certsz, pkey, pkeysz);
+    string cert = LoadFile(cert_str);
+    string pkey = LoadFile(pkey_str);
+    if (!cert.empty() && !pkey.empty()) {
+        m_Credentials = make_shared<CTlsCertCredentials>(cert, pkey);
     }
-    if (cert) free(cert);
-    if (pkey) free(pkey);
 }
 
 
