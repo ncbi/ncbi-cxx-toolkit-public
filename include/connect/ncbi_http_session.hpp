@@ -498,7 +498,7 @@ public:
     CTlsCertCredentials(const CTempString cert, const CTempString pkey);
     ~CTlsCertCredentials(void);
 
-    NCBI_CRED GetNcbiCred(void) const { return m_Cred; }
+    NCBI_CRED GetNcbiCred(void) const;
     const string& GetCert(void) const { return m_Cert; }
     const string& GetKey(void) const { return m_Key; }
 
@@ -508,7 +508,7 @@ private:
 
     string m_Cert;
     string m_Key;
-    NCBI_CRED m_Cred;
+    mutable NCBI_CRED m_Cred = nullptr;
 };
 
 

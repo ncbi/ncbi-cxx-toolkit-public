@@ -526,12 +526,22 @@ void CHttpResponse::x_Update(CHttpHeaders::THeaders headers, int status_code, st
 CTlsCertCredentials::CTlsCertCredentials(const CTempString cert, const CTempString pkey)
     : m_Cert(cert), m_Key(pkey)
 {
-    m_Cred = NcbiCreateTlsCertCredentials(m_Cert.data(), m_Cert.size(), m_Key.data(), m_Key.size());
 }
 
 CTlsCertCredentials::~CTlsCertCredentials(void)
 {
-    if (m_Cred) NcbiDeleteTlsCertCredentials(m_Cred);
+    if ( m_Cred ) {
+        NcbiDeleteTlsCertCredentials(m_Cred);
+    }
+}
+
+
+NCBI_CRED CTlsCertCredentials::GetNcbiCred(void) const
+{
+    if ( !m_Cred ) {
+        m_Cred = NcbiCreateTlsCertCredentials(m_Cert.data(), m_Cert.size(), m_Key.data(), m_Key.size());
+    }
+    return m_Cred;
 }
 
 
