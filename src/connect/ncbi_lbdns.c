@@ -293,18 +293,18 @@ static void x_DumpHdr(const HEADER* hdr, const unsigned short count[4])
 }
 
 
-static void x_DumpRR(const ns_rr* rr, const char* abbr, unsigned short n)
+static void x_DumpRR(const ns_rr* rr, const char* part, unsigned short n)
 {
     char clbuf[40], tybuf[40], ttlbuf[40], szbuf[40];
-    if (abbr) {
+    if (part) {
         sprintf(ttlbuf, " %lu", (unsigned long) ns_rr_ttl(*rr));
         sprintf(szbuf, " (%u)", ns_rr_rdlen(*rr));
     } else 
         *ttlbuf = *szbuf = '\0';
     CORE_LOGF(eLOG_Note,
               ("%s%s %2hu: %s%s %s %s%s",
-               abbr ? abbr  : "QN",
-               abbr ? " RR" : "   ", n,
+               part ? part  : "QD",
+               part ? " RR" : "   ", n,
                ns_rr_name(*rr), ttlbuf,
                x_ClassStr(ns_rr_class(*rr), clbuf),
                x_TypeStr(ns_rr_type(*rr), tybuf), szbuf));
@@ -312,10 +312,10 @@ static void x_DumpRR(const ns_rr* rr, const char* abbr, unsigned short n)
 
 
 static int unpack_rr(const unsigned char* msg, const unsigned char* eom,
-                     const unsigned char* ptr, ns_rr* rr, int/*bool*/ qn,
+                     const unsigned char* ptr, ns_rr* rr, int/*bool*/ qd,
                      ELOG_Level level)
 {
-    const char* what = qn ? "QN" : "RR";
+    const char* what = qd ? "QD" : "RR";
     int len, size;
 
     memset(rr, 0, sizeof(*rr));
@@ -324,7 +324,7 @@ static int unpack_rr(const unsigned char* msg, const unsigned char* eom,
         return -1;
     }
     ptr += len;
-    size = qn ? NS_QFIXEDSZ : NS_RRFIXEDSZ;
+    size = qd ? NS_QFIXEDSZ : NS_RRFIXEDSZ;
     if (ptr + size > eom) {
         CORE_LOGF(level, ("DNS %s overrun", what));
         return -1;
@@ -333,7 +333,7 @@ static int unpack_rr(const unsigned char* msg, const unsigned char* eom,
     assert(NS_RRFIXEDSZ == NS_INT16SZ*2 + NS_INT32SZ + NS_INT16SZ);
     NS_GET16(rr->type,     ptr);
     NS_GET16(rr->rr_class, ptr);
-    if (!qn) {
+    if (!qd) {
         char buf[40];
         NS_GET32(rr->ttl,      ptr);
         NS_GET16(rr->rdlength, ptr);
@@ -355,9 +355,9 @@ static int unpack_rr(const unsigned char* msg, const unsigned char* eom,
 
 
 static int skip_rr(const unsigned char* ptr, const unsigned char* eom,
-                   int/*bool*/ qn)
+                   int/*bool*/ qd)
 {
-    const char* what = qn ? "QN" : "RR";
+    const char* what = qd ? "QD" : "RR";
     int len, size;
 
     if ((len = dn_skipname(ptr, eom)) <= 0) {
@@ -365,12 +365,12 @@ static int skip_rr(const unsigned char* ptr, const unsigned char* eom,
         return -1;
     }
     ptr += len;
-    size = qn ? NS_QFIXEDSZ : NS_RRFIXEDSZ;
+    size = qd ? NS_QFIXEDSZ : NS_RRFIXEDSZ;
     if (ptr + size > eom) {
         CORE_LOGF(eLOG_Error, ("DNS %s overrun", what));
         return -1;
     }
-    if (!qn) {
+    if (!qd) {
         unsigned short rdlen;
         ptr += NS_INT16SZ*2 + NS_INT32SZ;
         NS_GET16(rdlen, ptr);
@@ -387,10 +387,10 @@ static int skip_rr(const unsigned char* ptr, const unsigned char* eom,
 static const unsigned char* x_DumpMsg(const unsigned char* msg,
                                       const unsigned char* eom)
 {
-    static const char* kSecAbbr[] = { 0, "AN", "NS", "AR" };
+    static const char* kPart[] = { 0/*QD*/, "AN", "NS", "AR" };
     const unsigned char* ptr = msg + NS_HFIXEDSZ;
     const HEADER* hdr = (const HEADER*) msg;
-    unsigned short count[4];
+    unsigned short count[SizeOf(kPart)];
     size_t n;
 
     assert(sizeof(*hdr) == NS_HFIXEDSZ);
@@ -409,7 +409,7 @@ static const unsigned char* x_DumpMsg(const unsigned char* msg,
             int rv = unpack_rr(msg, eom, ptr, &rr, !n, eLOG_Trace);
             if (rv < 0)
                 return ptr;
-            x_DumpRR(&rr, kSecAbbr[n], ++c);
+            x_DumpRR(&rr, kPart[n], ++c);
             ptr += rv;
         }
     }
@@ -576,11 +576,16 @@ static double x_RoundUp(double rate)
 }
 
 
-typedef struct ns_rr_srv {
+struct ns_rr_srv_ {
     unsigned short priority;
     unsigned short weight;
     unsigned short port;
-} ns_rr_srv;
+}
+#ifdef __GNUC__
+__attribute__((packed))
+#endif /*__GNUC__*/
+;
+typedef struct ns_rr_srv_ ns_rr_srv;
 
 
 static int/*bool*/ dns_srv(SERV_ITER iter, const unsigned char* msg,
@@ -593,7 +598,7 @@ static int/*bool*/ dns_srv(SERV_ITER iter, const unsigned char* msg,
     ns_rr_srv srv;
     int rv;
 
-    if (rdlen <= sizeof(ns_rr_srv)) {
+    if (rdlen <= sizeof(srv)) {
         CORE_LOGF(eLOG_Error,
                   ("DNS SRV RR RDATA too short: %hu", rdlen));
         return 0/*false*/;
@@ -903,7 +908,7 @@ static const unsigned char* x_VerifyReply(const char* fqdn,
     const HEADER* hdr = (const HEADER*) msg;
     const unsigned char* ptr;
     char buf[40];
-    ns_rr qn;
+    ns_rr qd;
     int rv;
 
     assert(eom - msg >= NS_HFIXEDSZ);
@@ -939,25 +944,25 @@ static const unsigned char* x_VerifyReply(const char* fqdn,
         CORE_LOG(eLOG_Error, "DNS reply has no records");
         return 0/*failed*/;
     }
-    rv = unpack_rr(msg, eom, ptr, &qn, 1/*QN*/, eLOG_Error);
+    rv = unpack_rr(msg, eom, ptr, &qd, 1/*QD*/, eLOG_Error);
     if (rv < 0)
         return 0/*failed*/;
-    if (ns_rr_class(qn) != ns_c_in) {
+    if (ns_rr_class(qd) != ns_c_in) {
         CORE_LOGF(eLOG_Error,
                   ("DNS reply for unsupported class: %s",
-                   x_ClassStr(ns_rr_class(qn), buf)));
+                   x_ClassStr(ns_rr_class(qd), buf)));
         return 0/*failed*/;
     }
-    if (ns_rr_type(qn) != ns_t_any) {
+    if (ns_rr_type(qd) != ns_t_any) {
         CORE_LOGF(eLOG_Error,
                   ("DNS reply for unmatching type: %s vs. ANY queried",
-                   x_TypeStr(ns_rr_type(qn), buf)));
+                   x_TypeStr(ns_rr_type(qd), buf)));
         return 0/*failed*/;
     }
-    if (!same_domain(ns_rr_name(qn), fqdn)) {
+    if (!same_domain(ns_rr_name(qd), fqdn)) {
         CORE_LOGF(eLOG_Error,
                   ("DNS reply for unmatching name: \"%s\" vs. \"%s\" queried",
-                   ns_rr_name(qn), fqdn));
+                   ns_rr_name(qd), fqdn));
         return 0/*failed*/;
     }
     ptr += rv;
@@ -987,7 +992,7 @@ static int/*bool*/ x_NoDataReply(const char* fqdn, ns_type type,
         return 0/*false*/;
     /* Check question */
     ptr = msg + NS_HFIXEDSZ;
-    if ((rv = unpack_rr(msg, eom, ptr, &rr, 1/*QN*/, eLOG_Trace)) < 0)
+    if ((rv = unpack_rr(msg, eom, ptr, &rr, 1/*QD*/, eLOG_Trace)) < 0)
         return 0/*false*/;
     if (ns_rr_class(rr) != ns_c_in  ||  ns_rr_type(rr) != type)
         return 0/*false*/;
@@ -1236,7 +1241,7 @@ static void x_Finalize(SERV_ITER iter)
             data->n_cand = 1;
         }
     }
-    CORE_TRACEF(("LBDNS ready-made result-set for \"%s\": %lu",
+    CORE_TRACEF(("LBDNS made ready result-set for \"%s\": %lu",
                  iter->name, (unsigned long) data->n_cand));
 }
 
@@ -1606,13 +1611,13 @@ const SSERV_VTable* SERV_LBDNS_Open(SERV_ITER iter, SSERV_Info** info)
     }
     assert(!data->host == !data->port);
     CORE_LOGF(data->debug ? eLOG_Note : eLOG_Trace,
-              ("LBDNS using domain name \"%s\"", data->domain));
+              ("LBDNS using domain = \"%s\"", data->domain));
 
     if (s_Resolve(iter)) {
         /* call GetNextInfo subsequently if info is actually needed */
         if (info)
             *info = 0;
-        CORE_TRACEF(("LBDNS open(\"%s\") okay", iter->name));
+        CORE_TRACEF(("LBDNS open(\"%s\"): okay", iter->name));
         return &kLbdnsOp;
     }
 
@@ -1620,7 +1625,7 @@ const SSERV_VTable* SERV_LBDNS_Open(SERV_ITER iter, SSERV_Info** info)
     s_Reset(iter);
     s_Close(iter);
  err:
-    CORE_TRACEF(("LBDNS open(\"%s\") failed", iter->name));
+    CORE_TRACEF(("LBDNS open(\"%s\"): fail", iter->name));
     return 0/*failure*/;
 }
 
