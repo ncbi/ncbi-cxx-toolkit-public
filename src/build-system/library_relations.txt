@@ -1814,6 +1814,11 @@ xid_estsub needs taxon1
 xid_estsub needs xid_pubseqos
 xid_estsub needs xid_utils
 xid_estsub needs xregexp
+xid_increment needs $(OBJMGR_LIBS)
+xid_increment needs taxon1
+xid_increment needs xid_pubseqos
+xid_increment needs xid_utils
+xid_increment needs3party $(GENBANK_THIRD_PARTY_LIBS)
 xid_mapper needs $(SOBJMGR_LIBS)
 xid_pubseqos needs $(COMPRESS_LIBS)
 xid_pubseqos needs $(CONNEXT)
@@ -1822,6 +1827,9 @@ xid_pubseqos needs xcgi
 xid_pubseqos needs xmlwrapp
 xid_pubseqos needs xobjutil
 xid_pubseqos needs xslt_libxml
+xid_stream_cass needs $(COMPRESS_LIBS)
+xid_stream_cass needs psg_cassandra
+xid_stream_cass needs xutil
 xid_utils needs $(COMPRESS_LIBS)
 xid_utils needs $(CONNEXT)
 xid_utils needs dbapi_driver
