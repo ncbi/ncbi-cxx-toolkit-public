@@ -605,7 +605,14 @@ void CFlatFileGenerator::Generate
 void CFlatFileGenerator::Generate
 (const CSeq_entry_Handle& entry,
  CFlatItemOStream& item_os,
- bool useSeqEntryIndexing)
+ bool useSeqEntryIndexing,
+ CNcbiOstream* m_Os,
+ CNcbiOstream* m_On,
+ CNcbiOstream* m_Og,
+ CNcbiOstream* m_Or,
+ CNcbiOstream* m_Op,
+ CNcbiOstream* m_Ou
+ )
 {
     // useSeqEntryIndexing argument also set by relevant flags in CFlatFileConfig
     if ( m_Ctx->GetConfig().UseSeqEntryIndexer() ) {
@@ -688,16 +695,9 @@ void CFlatFileGenerator::Generate
             }});
     }
 
-    CRef<CFlatItemOStream> pItemOS( & item_os );
     // If there is a ICancel callback, wrap the item_os so
     // that every call checks it.
-    const ICanceled * pCanceled = 
-        cfg.GetCanceledCallback();
-    if( pCanceled ) {
-        pItemOS.Reset( 
-            new CCancelableFlatItemOStreamWrapper(
-            item_os, pCanceled) );
-    }
+    const ICanceled * pCanceled = cfg.GetCanceledCallback();
 
     /// archive a copy of the annot selector before we generate!
     SAnnotSelector sel = m_Ctx->SetAnnotSelector();
@@ -772,15 +772,111 @@ void CFlatFileGenerator::Generate
         NCBI_THROW(CFlatException, eInternal, "Unable to initialize formatter");
     }
     formatter->SetContext(*m_Ctx);
-    pItemOS->SetFormatter(formatter);
 
-    CRef<CFlatGatherer> gatherer(CFlatGatherer::New(format));
-    if ( !gatherer ) {
-        NCBI_THROW(CFlatException, eInternal, "Unable to initialize gatherer");
+    // internal Bioseq iterator loop moved up from x_GatherSeqEntry
+    for (CBioseq_CI bioseq_it(entry);  bioseq_it;  ++bioseq_it) {
+        CBioseq_Handle bsh = *bioseq_it;
+        if (! bsh) continue;
+        const CSeq_entry_Handle ent = bsh.GetSeq_entry_Handle();
+        CConstRef<CBioseq> bsr = bsh.GetCompleteBioseq();
+
+        CNcbiOstream* flatfile_os = nullptr;
+
+        bool is_genomic = false;
+        bool is_RNA = false;
+
+        CConstRef<CSeqdesc> closest_molinfo = bsr->GetClosestDescriptor(CSeqdesc::e_Molinfo);
+        if (closest_molinfo) {
+            const CMolInfo& molinf = closest_molinfo->GetMolinfo();
+            CMolInfo::TBiomol biomol = molinf.GetBiomol();
+            switch (biomol) {
+                case NCBI_BIOMOL(genomic):
+                case NCBI_BIOMOL(other_genetic):
+                case NCBI_BIOMOL(genomic_mRNA):
+                case NCBI_BIOMOL(cRNA):
+                    is_genomic = true;
+                    break;
+                case NCBI_BIOMOL(pre_RNA):
+                case NCBI_BIOMOL(mRNA):
+                case NCBI_BIOMOL(rRNA):
+                case NCBI_BIOMOL(tRNA):
+                case NCBI_BIOMOL(snRNA):
+                case NCBI_BIOMOL(scRNA):
+                case NCBI_BIOMOL(snoRNA):
+                case NCBI_BIOMOL(transcribed_RNA):
+                case NCBI_BIOMOL(ncRNA):
+                case NCBI_BIOMOL(tmRNA):
+                    is_RNA = true;
+                    break;
+                case NCBI_BIOMOL(other):
+                    {
+                        CBioseq_Handle::TMol mol = bsh.GetSequenceType();
+                        switch (mol) {
+                             case CSeq_inst::eMol_dna:
+                                is_genomic = true;
+                                break;
+                            case CSeq_inst::eMol_rna:
+                                is_RNA = true;
+                                break;
+                            case CSeq_inst::eMol_na:
+                                is_genomic = true;
+                                break;
+                            default:
+                                break;
+                       }
+                   }
+                   break;
+                default:
+                    break;
+            }
+        }
+
+        if ( m_Os ) {
+            flatfile_os = m_Os;
+        } else if ( bsh.IsNa() ) {
+            if ( m_On ) {
+                flatfile_os = m_On;
+            } else if ( (is_genomic || ! closest_molinfo) && m_Og ) {
+                flatfile_os = m_Og;
+            } else if ( is_RNA && m_Or ) {
+                flatfile_os = m_Or;
+            } else {
+                continue;
+            }
+        } else if ( bsh.IsAa() ) {
+            if ( m_Op ) {
+                flatfile_os = m_Op;
+            }
+        } else {
+            if ( m_Ou ) {
+                flatfile_os = m_Ou;
+            } else if ( m_On ) {
+                flatfile_os = m_On;
+            } else {
+                continue;
+            }
+        }
+
+        if ( !flatfile_os ) continue;
+
+        CRef<CFlatItemOStream> newitem_os(new CFormatItemOStream(new COStreamTextOStream(*flatfile_os)));
+
+        CRef<CFlatItemOStream> pItemOS( newitem_os );
+        if( pCanceled ) {
+            pItemOS.Reset( 
+                new CCancelableFlatItemOStreamWrapper(
+                *newitem_os, pCanceled) );
+        }
+
+        pItemOS->SetFormatter(formatter);
+
+        CRef<CFlatGatherer> gatherer(CFlatGatherer::New(format));
+        if ( !gatherer ) {
+            NCBI_THROW(CFlatException, eInternal, "Unable to initialize gatherer");
+        }
+
+        gatherer->Gather(*m_Ctx, *pItemOS, ent, bsh, useSeqEntryIndexing, doNuc, doProt);
     }
-
-    // this version of Gather calls method with internal Bioseq iterator
-    gatherer->Gather(*m_Ctx, *pItemOS, entry, useSeqEntryIndexing, doNuc, doProt);
 
     /// reset the context, but preserve our selector
     /// we do this a bit oddly since resetting the context erases the selector;
@@ -800,13 +896,20 @@ void CFlatFileGenerator::Generate
 void CFlatFileGenerator::Generate
 (const CBioseq_Handle& bsh,
  CNcbiOstream& os,
- bool useSeqEntryIndexing)
+ bool useSeqEntryIndexing,
+ CNcbiOstream* m_Os,
+ CNcbiOstream* m_On,
+ CNcbiOstream* m_Og,
+ CNcbiOstream* m_Or,
+ CNcbiOstream* m_Op,
+ CNcbiOstream* m_Ou
+ )
 {
     CRef<CFlatItemOStream>
         item_os(new CFormatItemOStream(new COStreamTextOStream(os)));
 
     const CSeq_entry_Handle entry = bsh.GetSeq_entry_Handle();
-    Generate(entry, *item_os, useSeqEntryIndexing);
+    Generate(entry, *item_os, useSeqEntryIndexing, m_Os, m_On, m_Og, m_Or, m_Op, m_Ou);
 
 }
 
@@ -889,19 +992,33 @@ void CFlatFileGenerator::Generate
 void CFlatFileGenerator::Generate
 (const CSeq_entry_Handle& entry,
  CNcbiOstream& os,
- bool useSeqEntryIndexing)
+ bool useSeqEntryIndexing,
+ CNcbiOstream* m_Os,
+ CNcbiOstream* m_On,
+ CNcbiOstream* m_Og,
+ CNcbiOstream* m_Or,
+ CNcbiOstream* m_Op,
+ CNcbiOstream* m_Ou
+ )
 {
     CRef<CFlatItemOStream> 
         item_os(new CFormatItemOStream(new COStreamTextOStream(os)));
 
-    Generate(entry, *item_os, useSeqEntryIndexing);
+    Generate(entry, *item_os, useSeqEntryIndexing, m_Os, m_On, m_Og, m_Or, m_Op, m_Ou);
 }
 
 void CFlatFileGenerator::Generate
 (const CSeq_loc& loc,
  CScope& scope,
  CNcbiOstream& os,
- bool useSeqEntryIndexing)
+ bool useSeqEntryIndexing,
+ CNcbiOstream* m_Os,
+ CNcbiOstream* m_On,
+ CNcbiOstream* m_Og,
+ CNcbiOstream* m_Or,
+ CNcbiOstream* m_Op,
+ CNcbiOstream* m_Ou
+ )
 {
     CBioseq_Handle bsh = GetBioseqFromSeqLoc(loc, scope);
     if (!bsh) {
@@ -920,7 +1037,7 @@ void CFlatFileGenerator::Generate
         cfg.SetStyleMaster();
     }
 
-    Generate(entry, os, useSeqEntryIndexing);
+    Generate(entry, os, useSeqEntryIndexing, m_Os, m_On, m_Og, m_Or, m_Op, m_Ou);
 }
 
 

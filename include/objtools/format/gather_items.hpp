@@ -65,7 +65,7 @@ public:
     virtual void Gather(CFlatFileContext& ctx, CFlatItemOStream& os,
                         bool doNuc = true, bool doProt = true) const;
     virtual void Gather(CFlatFileContext& ctx, CFlatItemOStream& os,
-                        const CSeq_entry_Handle& entry, bool useSeqEntryIndexing,
+                        const CSeq_entry_Handle& entry, CBioseq_Handle bsh, bool useSeqEntryIndexing,
                         bool doNuc = true, bool doProt = true) const;
 
     virtual void SetCanceledCallback(const ICanceled* pCanceledCallback) {
@@ -89,7 +89,7 @@ protected:
         CRef<CTopLevelSeqEntryContext> topLevelSeqEntryContext = CRef<CTopLevelSeqEntryContext>(),
         bool doNuc = true, bool doProt = true ) const;
     virtual void x_GatherSeqEntry(CFlatFileContext& ctx,
-        const CSeq_entry_Handle& entry, bool useSeqEntryIndexing,
+        const CSeq_entry_Handle& entry, CBioseq_Handle bsh, bool useSeqEntryIndexing,
         CRef<CTopLevelSeqEntryContext> topLevelSeqEntryContext = CRef<CTopLevelSeqEntryContext>(),
         bool doNuc = true, bool doProt = true ) const;
 

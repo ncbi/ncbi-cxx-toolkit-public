@@ -230,7 +230,7 @@ void CFlatGatherer::Gather(CFlatFileContext& ctx, CFlatItemOStream& os, bool doN
 }
 
 
-void CFlatGatherer::Gather(CFlatFileContext& ctx, CFlatItemOStream& os, const CSeq_entry_Handle& entry, bool useSeqEntryIndexing, bool doNuc, bool doProt) const
+void CFlatGatherer::Gather(CFlatFileContext& ctx, CFlatItemOStream& os, const CSeq_entry_Handle& entry, CBioseq_Handle bsh, bool useSeqEntryIndexing, bool doNuc, bool doProt) const
 {
     m_ItemOS.Reset(&os);
     m_Context.Reset(&ctx);
@@ -248,7 +248,7 @@ void CFlatGatherer::Gather(CFlatFileContext& ctx, CFlatItemOStream& os, const CS
     CConstRef<IFlatItem> item;
     item.Reset( new CStartItem() );
     os << item;
-    x_GatherSeqEntry(ctx, entry, useSeqEntryIndexing, topLevelSeqEntryContext, doNuc, doProt);
+    x_GatherSeqEntry(ctx, entry, bsh, useSeqEntryIndexing, topLevelSeqEntryContext, doNuc, doProt);
     item.Reset( new CEndItem() );
     os << item;
 }
@@ -265,6 +265,7 @@ CFlatGatherer::~CFlatGatherer(void)
 
 void CFlatGatherer::x_GatherSeqEntry(CFlatFileContext& ctx,
     const CSeq_entry_Handle& entry,
+    CBioseq_Handle bsh,
     bool useSeqEntryIndexing,
     CRef<CTopLevelSeqEntryContext> topLevelSeqEntryContext,
     bool doNuc, bool doProt) const
@@ -276,7 +277,11 @@ void CFlatGatherer::x_GatherSeqEntry(CFlatFileContext& ctx,
         m_Feat_Tree.Reset (new feature::CFeatTree (iter));
     }
 
+    if (( bsh.IsNa() && doNuc ) || ( bsh.IsAa() && doProt )) {
+        x_GatherBioseq(bsh, bsh, bsh, topLevelSeqEntryContext);
+    }
 
+    /*
     // visit bioseqs in the entry (excluding segments)
     // CGather_Iter seq_iter(m_TopSEH, Config());
     CBioseq_Handle prev_seq;
@@ -310,6 +315,7 @@ void CFlatGatherer::x_GatherSeqEntry(CFlatFileContext& ctx,
             x_GatherBioseq(this_seq, next_seq, CBioseq_Handle(), topLevelSeqEntryContext);
         }
     }
+    */
 } 
 
 

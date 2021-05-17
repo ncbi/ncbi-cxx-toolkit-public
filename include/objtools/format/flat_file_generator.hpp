@@ -101,10 +101,18 @@ public:
         ENa_strand strand, CScope& scope, CFlatItemOStream& item_os);
 
     // Versions that loop through Bioseq components
-    void Generate(const CSeq_entry_Handle& entry, CNcbiOstream& os, bool useSeqEntryIndexing);
-    void Generate(const CBioseq_Handle& bsh, CNcbiOstream& os, bool useSeqEntryIndexing);
-    void Generate(const CSeq_entry_Handle& entry, CFlatItemOStream& item_os, bool useSeqEntryIndexing);
-    void Generate(const CSeq_loc& loc, CScope& scope, CNcbiOstream& os, bool useSeqEntryIndexing);
+    void Generate(const CSeq_entry_Handle& entry, CNcbiOstream& os, bool useSeqEntryIndexing,
+                  CNcbiOstream* m_Os = 0, CNcbiOstream* m_On = 0, CNcbiOstream* m_Og = 0,
+                  CNcbiOstream* m_Or = 0, CNcbiOstream* m_Op = 0, CNcbiOstream* m_Ou = 0);
+    void Generate(const CBioseq_Handle& bsh, CNcbiOstream& os, bool useSeqEntryIndexing,
+                  CNcbiOstream* m_Os = 0, CNcbiOstream* m_On = 0, CNcbiOstream* m_Og = 0,
+                  CNcbiOstream* m_Or = 0, CNcbiOstream* m_Op = 0, CNcbiOstream* m_Ou = 0);
+    void Generate(const CSeq_entry_Handle& entry, CFlatItemOStream& item_os, bool useSeqEntryIndexing,
+                  CNcbiOstream* m_Os = 0, CNcbiOstream* m_On = 0, CNcbiOstream* m_Og = 0,
+                  CNcbiOstream* m_Or = 0, CNcbiOstream* m_Op = 0, CNcbiOstream* m_Ou = 0);
+    void Generate(const CSeq_loc& loc, CScope& scope, CNcbiOstream& os, bool useSeqEntryIndexing,
+                  CNcbiOstream* m_Os = 0, CNcbiOstream* m_On = 0, CNcbiOstream* m_Og = 0,
+                  CNcbiOstream* m_Or = 0, CNcbiOstream* m_Op = 0, CNcbiOstream* m_Ou = 0);
 
     // for use when generating a range of a Seq-submit
     void SetSubmit(const CSubmit_block& sub) { m_Ctx->SetSubmit(sub); }
