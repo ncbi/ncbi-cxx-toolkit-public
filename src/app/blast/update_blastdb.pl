@@ -165,6 +165,43 @@ if ($location =~ /aws|gcp/i and not defined $curl) {
 
 my $ftp;
 
+sub validate_metadata_file
+{
+    my $json = shift;
+    my $url = shift;
+    my $metadata = decode_json($json);
+    unless (exists($$metadata{version}) and ($$metadata{version} eq BLASTDB_MANIFEST_VERSION)) {
+        print STDERR "ERROR: Invalid version in manifest file $url, please report to blast-help\@ncbi.nlm.nih.gov\n";
+        exit(EXIT_FAILURE);
+    }
+}
+
+sub showall_from_metadata_file
+{
+    my $json = shift;
+    my $url = shift;
+    &validate_metadata_file($json, $url);
+    my $metadata = decode_json($json);
+    my $print_header = 1;
+    foreach my $db (sort keys %$metadata) {
+        next if ($db =~ /^version$/);
+        if ($opt_showall =~ /tsv/i) {
+            printf("%s\t%s\t%9.4f\t%s\n", $db, $$metadata{$db}{description}, 
+                $$metadata{$db}{size}, $$metadata{$db}{last_updated});
+        } elsif ($opt_showall =~ /pretty/i) {
+            if ($print_header) {
+                printf("%-60s %-120s %-11s %15s\n", "BLASTDB", 
+                    "DESCRIPTION", "SIZE (GB)", "LAST_UPDATED");
+                $print_header = 0;
+            }
+            printf("%-60s %-120s %9.4f %15s\n", $db, $$metadata{$db}{description}, 
+                $$metadata{$db}{size}, $$metadata{$db}{last_updated});
+        } else {
+            print "$db\n";
+        }
+    }
+}
+
 if ($location ne "NCBI") {
     die "Only BLASTDB version 5 is supported at GCP and AWS\n" if (defined $opt_blastdb_ver and $opt_blastdb_ver != 5);
     my $latest_dir = &get_latest_dir($location);
@@ -174,30 +211,10 @@ if ($location ne "NCBI") {
         exit(EXIT_FAILURE);
     }
     print "Connected to $location\n" if $opt_verbose;
+    &validate_metadata_file($json, $url);
     my $metadata = decode_json($json);
-    unless (exists($$metadata{version}) and ($$metadata{version} eq BLASTDB_MANIFEST_VERSION)) {
-        print STDERR "ERROR: Invalid version in manifest file $url, please report to blast-help\@ncbi.nlm.nih.gov\n";
-        exit(EXIT_FAILURE);
-    }
     if (defined($opt_showall)) {
-        my $print_header = 1;
-        foreach my $db (sort keys %$metadata) {
-            next if ($db =~ /^version$/);
-            if ($opt_showall =~ /tsv/i) {
-                printf("%s\t%s\t%9.4f\t%s\n", $db, $$metadata{$db}{description}, 
-                    $$metadata{$db}{size}, $$metadata{$db}{last_updated});
-            } elsif ($opt_showall =~ /pretty/i) {
-                if ($print_header) {
-                    printf("%-60s %-120s %-11s %15s\n", "BLASTDB", 
-                        "DESCRIPTION", "SIZE (GB)", "LAST_UPDATED");
-                    $print_header = 0;
-                }
-                printf("%-60s %-120s %9.4f %15s\n", $db, $$metadata{$db}{description}, 
-                    $$metadata{$db}{size}, $$metadata{$db}{last_updated});
-            } else {
-                print "$db\n";
-            }
-        }
+        &showall_from_metadata_file($json, $url);
     } else {
         my @files2download;
         for my $requested_db (@ARGV) {
@@ -255,7 +272,12 @@ if ($location ne "NCBI") {
     # Connect and download files
     $ftp = &connect_to_ftp();
     if (defined $opt_showall) {
-        print "$_\n" foreach (sort(&get_available_databases($ftp->ls())));
+        my ($json, $url) = &get_blastdb_metadata($location, '');
+        unless (length($json)) {
+            print "$_\n" foreach (sort(&get_available_databases($ftp->ls())));
+        } else {
+            &showall_from_metadata_file($json, $url)
+        }
     } else {
         my @files = sort(&get_files_to_download());
         my @files2decompress;
@@ -535,6 +557,7 @@ sub get_blastdb_metadata
     my $latest_dir = shift;
     my $url = GCS_URL . "/" . GCP_BUCKET . "/$latest_dir/" . BLASTDB_MANIFEST;
     $url = AWS_URL . "/" . AWS_BUCKET . "/$latest_dir/" . BLASTDB_MANIFEST if ($source eq "AWS");
+    $url = 'ftp://' . NCBI_FTP . "/blast/db/" . BLASTDB_MANIFEST if ($source eq 'NCBI');
     my $cmd = "curl -sf $url";
     print "$cmd\n" if DEBUG;
     chomp(my $retval = `$cmd`);
