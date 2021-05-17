@@ -773,9 +773,11 @@ EIO_Status CConn_Streambuf::Fetch(const STimeout* timeout)
 
         if (!synced) {
             _ASSERT(m_Status != eIO_Success);
-            ERR_POST_X(15, x_Message("Fetch",
-                                     "Failed to flush",
-                                     m_Status, timeout));
+            ERR_POST_X(15, (m_Status != eIO_Timeout  ||  !timeout  ||
+                            (timeout->sec | timeout->usec) ? Error : Trace)
+                       << x_Message("Fetch",
+                                    "Failed to flush",
+                                    m_Status, timeout));
         }
     }
 
@@ -786,7 +788,8 @@ EIO_Status CConn_Streambuf::Fetch(const STimeout* timeout)
     // now wait for some input
     EIO_Status status = CONN_Wait(m_Conn, eIO_Read, timeout);
     if (status != eIO_Success) {
-        ERR_POST_X(16, (status == eIO_Timeout ? Warning : Error)
+        ERR_POST_X(16, (status != eIO_Timeout  ||  !timeout ? Error :
+                        (timeout->sec | timeout->usec) ? Warning : Trace)
                    << x_Message("Fetch",
                                 "CONN_Wait() failed",
                                 status, timeout));
