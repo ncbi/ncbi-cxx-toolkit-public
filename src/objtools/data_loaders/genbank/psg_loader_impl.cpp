@@ -601,6 +601,17 @@ public:
         return ret;
     }
 
+    void CancelAll(void)
+    {
+        {
+            CFastMutexGuard guard(m_Mutex);
+            for (CRef<CPSG_Task> task : m_Tasks) {
+                task->RequestToCancel();
+            }
+        }
+        WaitAll();
+    }
+
 private:
     typedef set<CRef<CPSG_Task>> TTasks;
 
@@ -973,8 +984,6 @@ CPSGDataLoader_Impl::GetRecords(CDataSource* data_source,
     CTSE_Lock tse_lock = x_ProcessBlobReply(reply, data_source, idh, true, true).lock;
 
     if (!tse_lock) {
-        // FIXME: Exception?
-        return locks;
         NCBI_THROW(CLoaderException, eLoaderFailed,
             "error loading blob for " + idh.AsString());
     }
@@ -1574,7 +1583,8 @@ void CPSGDataLoader_Impl::GetBlobs(CDataSource* data_source, TTSE_LockSets& tse_
         guards.push_back(make_shared<CPSG_Task_Guard>(*task));
         if (task->GetStatus() == CThreadPool_Task::eFailed) {
             _TRACE("Failed to get blob for " << task->m_Id.AsString());
-            continue;
+            group.CancelAll();
+            NCBI_THROW(CLoaderException, eLoaderFailed, "failed to load blobs");
         }
         if (task->m_Skipped) {
             skipped_tasks.push_back(task);
