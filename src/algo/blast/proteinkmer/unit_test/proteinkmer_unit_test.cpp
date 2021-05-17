@@ -283,6 +283,7 @@ BOOST_AUTO_TEST_CASE(KmerResultsSetPushBack)
 	}
 }
 
+/* Test subset??
 BOOST_AUTO_TEST_CASE(SearchWithBadQuery)
 {
 	CBioseq bioseq;
@@ -307,33 +308,7 @@ BOOST_AUTO_TEST_CASE(SearchWithBadQuery)
 	BOOST_REQUIRE((*results)[0].HasErrors() == false);
 	BOOST_REQUIRE((*results)[0].HasWarnings() == true);
 }
-
-BOOST_AUTO_TEST_CASE(SearchWithAllXQuery)
-{
-	CBioseq bioseq;
-	CNcbiIfstream i_file("data/allX.asn");
-	unique_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_AsnText, i_file));
-	
-	*is >> bioseq;
-	CRef<CScope> scope(CSimpleOM::NewScope(false));
-	scope->AddBioseq(bioseq);
-	CRef<CSeq_loc> loc(new CSeq_loc);
-    	loc->SetWhole().Assign(*(bioseq.GetId().front()));
-
-	unique_ptr<SSeqLoc> ssl(new SSeqLoc(*loc, *scope));
-	TSeqLocVector query_vector;
-	query_vector.push_back(*ssl);
-	CRef<CSeqDB> db(new CSeqDB("data/nr_test", CSeqDB::eProtein));
-	CRef<CBlastKmerOptions> options(new CBlastKmerOptions());
-
-	CBlastKmer kmersearch(query_vector, options, db);
-
-	CRef<CBlastKmerResultsSet> results = kmersearch.Run();
-	BOOST_REQUIRE((*results)[0].HasErrors() == false);
-	BOOST_REQUIRE((*results)[0].HasWarnings() == true);
-	
-	
-}
+*/
 
 BOOST_AUTO_TEST_CASE(SearchWithBadDatabase)
 {
@@ -355,136 +330,7 @@ BOOST_AUTO_TEST_CASE(SearchWithBadDatabase)
 }
 
 
-BOOST_AUTO_TEST_CASE(SearchWithSSeqLocQuery)
-{
-	CBioseq bioseq;
-	CNcbiIfstream i_file("data/129295.stdaa");
-	unique_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_AsnText, i_file));
-	
-	*is >> bioseq;
-	CRef<CScope> scope(CSimpleOM::NewScope(false));
-	scope->AddBioseq(bioseq);
-	CRef<CSeq_loc> loc(new CSeq_loc);
-    	loc->SetWhole().Assign(*(bioseq.GetId().front()));
-
-	SSeqLoc ssl(*loc, *scope);
-	CRef<CBlastKmerOptions> options(new CBlastKmerOptions());
-
-	string dbname("data/nr_test");
-	CBlastKmer kmersearch(ssl, options, dbname);	
-	CRef<CBlastKmerResultsSet> results = kmersearch.Run();
-
-	const TBlastKmerScoreVector& scores = (*results)[0].GetScores();
-	BOOST_REQUIRE_EQUAL(scores.size(), 5);
-}
-
-BOOST_AUTO_TEST_CASE(NcbieaaSearch)
-{
-	CBioseq bioseq;
-	CNcbiIfstream i_file("data/129295.ncbieaa");
-	unique_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_AsnText, i_file));
-	
-	*is >> bioseq;
-	CRef<CScope> scope(CSimpleOM::NewScope(false));
-	scope->AddBioseq(bioseq);
-	CRef<CSeq_loc> loc(new CSeq_loc);
-    	loc->SetWhole().Assign(*((bioseq).GetId().front()));
-
-	unique_ptr<SSeqLoc> ssl(new SSeqLoc(*loc, *scope));
-	TSeqLocVector query_vector;
-	query_vector.push_back(*ssl);
-	CRef<CSeqDB> db(new CSeqDB("data/nr_test", CSeqDB::eProtein));
-	CRef<CBlastKmerOptions> options(new CBlastKmerOptions());
-
-	CBlastKmer kmersearch(query_vector, options, db);	
-	CRef<CBlastKmerResultsSet> results = kmersearch.Run();
-
-	const TBlastKmerScoreVector& scores = (*results)[0].GetScores();
-	BOOST_REQUIRE_EQUAL(scores.size(), 5);
-	CConstRef<CSeq_id> seqid = (*results)[0].GetSeqId();
-	string label;
-	seqid->GetLabel(&label, CSeq_id::eContent);
- 	BOOST_REQUIRE(label == "1");
-}
-
-BOOST_AUTO_TEST_CASE(MultipleQuerySearch)
-{
-	CRef<CBioseq> bioseq(new CBioseq);
-	CNcbiIfstream i_file("data/129295.ncbieaa");
-	unique_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_AsnText, i_file));
-	
-	*is >> *bioseq;
-	CRef<CScope> scope(CSimpleOM::NewScope(false));
-	scope->AddBioseq(*bioseq);
-	CRef<CSeq_loc> loc(new CSeq_loc);
-    	loc->SetWhole().Assign(*((*bioseq).GetId().front()));
-
-	unique_ptr<SSeqLoc> ssl(new SSeqLoc(*loc, *scope));
-	TSeqLocVector query_vector;
-	query_vector.push_back(*ssl);
-
-	CNcbiIfstream i_file2("data/129296.ncbieaa");
-	unique_ptr<CObjectIStream> is2(CObjectIStream::Open(eSerial_AsnText, i_file2));
-	
-	CRef<CBioseq> bioseq2(new CBioseq);
-	*is2 >> *bioseq2;
-	CRef<CScope> scope2(CSimpleOM::NewScope(false));
-	scope2->AddBioseq(*bioseq2);
-	CRef<CSeq_loc> loc2(new CSeq_loc);
-    	loc2->SetWhole().Assign(*((*bioseq2).GetId().front()));
-
-	unique_ptr<SSeqLoc> ssl2(new SSeqLoc(*loc2, *scope2));
-	query_vector.push_back(*ssl2);
-
-	CRef<CSeqDB> db(new CSeqDB("data/nr_test", CSeqDB::eProtein));
-	CRef<CBlastKmerOptions> options(new CBlastKmerOptions());
-
-	CBlastKmer kmersearch(query_vector, options, db);	
-	CRef<CBlastKmerResultsSet> resultSet = kmersearch.RunSearches();
-
-	// Retrieval of first result with array like access
-	CBlastKmerResults results = (*resultSet)[0];
-	const TBlastKmerScoreVector& scores = results.GetScores();
-	BOOST_REQUIRE_EQUAL(scores.size(), 5);
-
-	CConstRef<CSeq_id> seqid = results.GetSeqId();
-
-	// Retrieval of first result via CSeq_id
-	CRef<CBlastKmerResults> results1 = (*resultSet)[*seqid];
-	const TBlastKmerScoreVector& scores1 = results1->GetScores();
-	BOOST_REQUIRE_EQUAL(scores1.size(), 5);
-
-	// Retrieval of second result with array like access
-	CBlastKmerResults results2 = (*resultSet)[1];
-	const TBlastKmerScoreVector& scores2 = results2.GetScores();
-	BOOST_REQUIRE_EQUAL(scores2.size(), 5);
-}
-
-BOOST_AUTO_TEST_CASE(IupacaaSearch)
-{
-	CBioseq bioseq;
-	CNcbiIfstream i_file("data/129295.iupacaa");
-	unique_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_AsnText, i_file));
-	
-	*is >> bioseq;
-	CRef<CScope> scope(CSimpleOM::NewScope(false));
-	scope->AddBioseq(bioseq);
-	CRef<CSeq_loc> loc(new CSeq_loc);
-    	loc->SetWhole().Assign(*(bioseq.GetId().front()));
-
-	unique_ptr<SSeqLoc> ssl(new SSeqLoc(*loc, *scope));
-	TSeqLocVector query_vector;
-	query_vector.push_back(*ssl);
-	CRef<CSeqDB> db(new CSeqDB("data/nr_test", CSeqDB::eProtein));
-	CRef<CBlastKmerOptions> options(new CBlastKmerOptions());
-
-	CBlastKmer kmersearch(query_vector, options, db);	
-	CRef<CBlastKmerResultsSet> results = kmersearch.Run();
-
-	const TBlastKmerScoreVector& scores = (*results)[0].GetScores();
-	BOOST_REQUIRE_EQUAL(scores.size(), 5);
-}
-
+/* smaller test??
 BOOST_AUTO_TEST_CASE(GIListLimitSearch)
 {
 	CBioseq bioseq;
@@ -515,7 +361,9 @@ BOOST_AUTO_TEST_CASE(GIListLimitSearch)
 	const TBlastKmerScoreVector& scores = (*results)[0].GetScores();
 	BOOST_REQUIRE_EQUAL(scores.size(), 2);
 }
+*/
 
+/*
 BOOST_AUTO_TEST_CASE(NegativeGIListLimitSearch)
 {
 	CBioseq bioseq;
@@ -547,57 +395,7 @@ BOOST_AUTO_TEST_CASE(NegativeGIListLimitSearch)
 	const TBlastKmerScoreVector& scores = results.GetScores();
 	BOOST_REQUIRE_EQUAL(scores.size(), 3);
 }
-
-BOOST_AUTO_TEST_CASE(GIListLimitSearch_NoMatches)
-{
-	CBioseq bioseq;
-	CNcbiIfstream i_file("data/129295.iupacaa");
-	unique_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_AsnText, i_file));
-	
-	*is >> bioseq;
-	CRef<CScope> scope(CSimpleOM::NewScope(false));
-	scope->AddBioseq(bioseq);
-	CRef<CSeq_loc> loc(new CSeq_loc);
-    	loc->SetWhole().Assign(*(bioseq.GetId().front()));
-
-	unique_ptr<SSeqLoc> ssl(new SSeqLoc(*loc, *scope));
-	TSeqLocVector query_vector;
-	query_vector.push_back(*ssl);
-	CRef<CSeqDB> db(new CSeqDB("data/nr_test", CSeqDB::eProtein));
-	CRef<CBlastKmerOptions> options(new CBlastKmerOptions());
-
-	CBlastKmer kmersearch(query_vector, options, db);	
-	CRef<CSeqDBGiList> seqdb_gilist(new CSeqDBGiList());
-	seqdb_gilist->AddGi(3091);
-	kmersearch.SetGiListLimit(seqdb_gilist);
-	CRef<CBlastKmerResultsSet> results = kmersearch.Run();
-
-	const TBlastKmerScoreVector& scores = (*results)[0].GetScores();
-	BOOST_REQUIRE_EQUAL(scores.size(), 0);
-}
-
-BOOST_AUTO_TEST_CASE(NoMatches)
-{
-	TGi query_gi(1945387);
-	CRef<CSeq_id> id(new CSeq_id(CSeq_id::e_Gi, query_gi));
-	CRef<CScope> scope(CSimpleOM::NewScope(true));
-	
-	CRef<CSeq_loc> loc(new CSeq_loc());
-    	loc->SetWhole(*id);
-
-	unique_ptr<SSeqLoc> ssl(new SSeqLoc(loc, scope));
-	TSeqLocVector query_vector;
-	query_vector.push_back(*ssl);
-
-	CRef<CSeqDB> db(new CSeqDB("data/nr_test", CSeqDB::eProtein));
-	CRef<CBlastKmerOptions> options(new CBlastKmerOptions());
-
-	CBlastKmer kmersearch(query_vector, options, db);	
-	CRef<CBlastKmerResultsSet> results = kmersearch.Run();
-
-	const TBlastKmerScoreVector& scores = (*results)[0].GetScores();
-	BOOST_REQUIRE_EQUAL(scores.size(), 0);
-}
+*/
 
 void s_GetRandomNumbers(uint32_t* a, uint32_t* b, int numHashes)
 {
@@ -936,19 +734,6 @@ BOOST_AUTO_TEST_CASE(BuildIndex10letterVersion3)
 	BOOST_REQUIRE_EQUAL(150, chunkSize);
 }
 
-BOOST_AUTO_TEST_CASE(CheckVerify_nr_test)
-{
-	// Build this index, then run BlastKmerVerifyIndex on it.
-	// The index should pass
-        CRef<CSeqDB> seqdb(new CSeqDB("data/nr_test", CSeqDB::eProtein));
-
-	string error_msg="";
-	int status  = BlastKmerVerifyIndex(seqdb, error_msg);
-
-	BOOST_REQUIRE_EQUAL(0, status);
-	BOOST_REQUIRE_EQUAL(0, error_msg.size());
-}
-
 BOOST_AUTO_TEST_CASE(CheckEmptyIndexName)
 {
 
@@ -1009,6 +794,9 @@ BOOST_AUTO_TEST_CASE(CheckOptionValidation)
 
 BOOST_AUTO_TEST_CASE(BadOptionsThrow)
 {
+
+        CRef<CSeqDB> seqdb(new CSeqDB("data/nr_test", CSeqDB::eProtein));
+
 	CBioseq bioseq;
 	CNcbiIfstream i_file("data/129295.stdaa");
 	unique_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_AsnText, i_file));
@@ -1028,129 +816,5 @@ BOOST_AUTO_TEST_CASE(BadOptionsThrow)
 	BOOST_REQUIRE_THROW(CBlastKmer kmersearch(query_vector, options, db), CException);	
 }
 
-BOOST_AUTO_TEST_CASE(BlastKmerSearch)
-{
-	CBioseq bioseq;
-	CNcbiIfstream i_file("data/129295.stdaa");
-	unique_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_AsnText, i_file));
-	
-	*is >> bioseq;
-	CRef<CScope> scope(CSimpleOM::NewScope(false));
-	scope->AddBioseq(bioseq);
-	CRef<CSeq_loc> loc(new CSeq_loc);
-    	loc->SetWhole().Assign(*(bioseq.GetId().front()));
-	unique_ptr<SSeqLoc> ssl(new SSeqLoc(*loc, *scope));
-	TSeqLocVector query_vector;
-	query_vector.push_back(*ssl);
-	CRef<IQueryFactory> qf(new CObjMgr_QueryFactory(query_vector));
-
-	CRef<CBlastpKmerOptionsHandle> blOpts(new CBlastpKmerOptionsHandle());
-
-	CSearchDatabase search_db("data/nr_test", CSearchDatabase::eBlastDbIsProtein);
-	CRef<CLocalDbAdapter> ldb(new CLocalDbAdapter(search_db));
-	CRef<CBlastKmerSearch> search(new CBlastKmerSearch(qf, blOpts, ldb));
-	CRef<CSearchResultSet> results = search->Run();
-	BOOST_REQUIRE(results->GetNumQueries() == 1);
-	BOOST_REQUIRE(results->GetNumResults() == 1);
-}
-
-
-BOOST_AUTO_TEST_CASE(BlastKmerMultipleQuerySearch)
-{
-	CRef<CScope> scope(CSimpleOM::NewScope(false));
-	TSeqLocVector query_vector;
-
-	CNcbiIfstream i_file("data/allX.asn");
-	unique_ptr<CObjectIStream> is(CObjectIStream::Open(eSerial_AsnText, i_file));
-	CRef<CBioseq> bioseq(new CBioseq);
-	*is >> *bioseq;
-	scope->AddBioseq(*bioseq);
-	CRef<CSeq_loc> loc(new CSeq_loc);
-    	loc->SetWhole().Assign(*((*bioseq).GetId().front()));
-	unique_ptr<SSeqLoc> ssl(new SSeqLoc(*loc, *scope));
-	query_vector.push_back(*ssl);
-
-	CNcbiIfstream i_file2("data/129296.ncbieaa");
-	unique_ptr<CObjectIStream> is2(CObjectIStream::Open(eSerial_AsnText, i_file2));
-	CRef<CBioseq> bioseq2(new CBioseq);
-	*is2 >> *bioseq2;
-	scope->AddBioseq(*bioseq2);
-	CRef<CSeq_loc> loc2(new CSeq_loc);
-    	loc2->SetWhole().Assign(*((*bioseq2).GetId().front()));
-	unique_ptr<SSeqLoc> ssl2(new SSeqLoc(*loc2, *scope));
-	query_vector.push_back(*ssl2);
-
-	CNcbiIfstream i_file3("data/129295.ncbieaa");
-	unique_ptr<CObjectIStream> is3(CObjectIStream::Open(eSerial_AsnText, i_file3));
-	CRef<CBioseq> bioseq3(new CBioseq);
-	*is3 >> *bioseq3;
-	scope->AddBioseq(*bioseq3);
-	CRef<CSeq_loc> loc3(new CSeq_loc);
-    	loc3->SetWhole().Assign(*((*bioseq3).GetId().front()));
-	unique_ptr<SSeqLoc> ssl3(new SSeqLoc(*loc3, *scope));
-	query_vector.push_back(*ssl3);
-	CRef<IQueryFactory> qf(new CObjMgr_QueryFactory(query_vector));
-
-	CSearchDatabase search_db("data/nr_test", CSearchDatabase::eBlastDbIsProtein);
-	CRef<CLocalDbAdapter> ldb(new CLocalDbAdapter(search_db));
-	CRef<CBlastpKmerOptionsHandle> blOpts(new CBlastpKmerOptionsHandle());
-	CRef<CBlastKmerSearch> search(new CBlastKmerSearch(qf, blOpts, ldb));
-	CRef<CSearchResultSet> results = search->Run();
-	BOOST_REQUIRE(results->GetNumQueries() == 3);
-	BOOST_REQUIRE(results->GetNumResults() == 3);
-	BOOST_REQUIRE((*results)[0].HasAlignments() == false);
-	BOOST_REQUIRE((*results)[1].HasAlignments() == true);
-	BOOST_REQUIRE((*results)[2].HasAlignments() == true);
-}
-
-BOOST_AUTO_TEST_CASE(BlastKmerNoQueryCtor)
-{
-	CRef<CScope> scope(CSimpleOM::NewScope(false));
-
-	TSeqLocVector query_vector1;
-	CNcbiIfstream i_file1("data/129296.ncbieaa");
-	unique_ptr<CObjectIStream> is1(CObjectIStream::Open(eSerial_AsnText, i_file1));
-	CRef<CBioseq> bioseq1(new CBioseq);
-	*is1 >> *bioseq1;
-	scope->AddBioseq(*bioseq1);
-	CRef<CSeq_loc> loc1(new CSeq_loc);
-    	loc1->SetWhole().Assign(*((*bioseq1).GetId().front()));
-	unique_ptr<SSeqLoc> ssl1(new SSeqLoc(*loc1, *scope));
-	query_vector1.push_back(*ssl1);
-	CRef<IQueryFactory> qf1(new CObjMgr_QueryFactory(query_vector1));
-
-	TSeqLocVector query_vector2;
-	CNcbiIfstream i_file2("data/129295.ncbieaa");
-	unique_ptr<CObjectIStream> is2(CObjectIStream::Open(eSerial_AsnText, i_file2));
-	CRef<CBioseq> bioseq2(new CBioseq);
-	*is2 >> *bioseq2;
-	scope->AddBioseq(*bioseq2);
-	CRef<CSeq_loc> loc2(new CSeq_loc);
-    	loc2->SetWhole().Assign(*((*bioseq2).GetId().front()));
-	unique_ptr<SSeqLoc> ssl2(new SSeqLoc(*loc2, *scope));
-	query_vector2.push_back(*ssl2);
-	CRef<IQueryFactory> qf2(new CObjMgr_QueryFactory(query_vector2));
-
-	CSearchDatabase search_db("data/nr_test", CSearchDatabase::eBlastDbIsProtein);
-	CRef<CLocalDbAdapter> ldb(new CLocalDbAdapter(search_db));
-	CRef<CBlastpKmerOptionsHandle> blOpts(new CBlastpKmerOptionsHandle());
-	CRef<CBlastKmerSearch> search(new CBlastKmerSearch(blOpts, ldb));
-
-        search->SetQuery(qf1);
-	CRef<CSearchResultSet> results = search->Run();
-	BOOST_REQUIRE(results->GetNumQueries() == 1);
-	BOOST_REQUIRE(results->GetNumResults() == 1);
-	BOOST_REQUIRE((*results)[0].HasAlignments() == true);
-	string idstr = (*results)[0].GetSeqId()->AsFastaString();
-	BOOST_REQUIRE(idstr.find("lcl|2") != std::string::npos);
-
-        search->SetQuery(qf2);
-	CRef<CSearchResultSet> results2 = search->Run();
-	BOOST_REQUIRE(results2->GetNumQueries() == 1);
-	BOOST_REQUIRE(results2->GetNumResults() == 1);
-	BOOST_REQUIRE((*results2)[0].HasAlignments() == true);
-	idstr = (*results2)[0].GetSeqId()->AsFastaString();
-	BOOST_REQUIRE(idstr.find("lcl|1") != std::string::npos);
-}
 
 BOOST_AUTO_TEST_SUITE_END()
