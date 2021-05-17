@@ -59,6 +59,7 @@ CGffBaseColumns::CGffBaseColumns():
     m_uSeqStop(0),
     m_strSource(""),
     m_strType(""),
+    m_strNormalizedType(""),
     m_pdScore(nullptr),
     m_peStrand(nullptr),
     m_pePhase(nullptr)
@@ -74,6 +75,7 @@ CGffBaseColumns::CGffBaseColumns(
     m_uSeqStop(rhs.m_uSeqStop),
     m_strSource(rhs.m_strSource),
     m_strType(rhs.m_strType),
+    m_strNormalizedType(rhs.m_strNormalizedType),
     m_pdScore(nullptr),
     m_peStrand(nullptr),
     m_pePhase(nullptr)

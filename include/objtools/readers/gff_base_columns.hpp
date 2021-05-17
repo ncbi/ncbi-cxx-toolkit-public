@@ -75,6 +75,11 @@ public:
         return m_strType;
     };
 
+    const string& NormalizedType() const {
+        return m_strNormalizedType;
+    };
+
+
     double Score() const {
         return IsSetScore() ? *m_pdScore : 0.0;
     };
@@ -120,6 +125,12 @@ public:
         m_uSeqStop = seqStop;
     }
 
+    virtual void SetType(
+        const string& recType) {
+        m_strType = m_strNormalizedType =recType;
+        NStr::ToLower(m_strNormalizedType);
+    }
+
     virtual bool xInitFeatureId(
         int, //flags
         CRef<CSeq_feat> ) const;
@@ -149,6 +160,7 @@ protected:
     TSeqPos m_uSeqStop;
     string m_strSource;
     string m_strType;
+    string m_strNormalizedType;
     double* m_pdScore;
     ENa_strand* m_peStrand;
     TFrame* m_pePhase;

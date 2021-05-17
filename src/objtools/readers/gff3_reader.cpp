@@ -77,8 +77,7 @@ string CGff3Reader::xMakeRecordId(
     record.GetAttribute("ID", id);
     record.GetAttribute("Parent", parentId);
 
-    auto recordType = record.Type();
-    NStr::ToLower(recordType);
+    auto recordType = record.NormalizedType();
     if (recordType == "cds") {
         string cdsId = parentId;
         if (cdsId.empty()) {
@@ -117,36 +116,36 @@ bool CGff3ReadRecord::AssignFromGff(
         m_Attributes["ID"] = CGff3Reader::xNextGenericId();
     }
     if (m_strType == "pseudogene") {
-        m_strType = "gene";
+        SetType("gene");
         m_Attributes["pseudo"] = "true";
         return true;
     }
     if (m_strType == "pseudogenic_transcript") {
-        m_strType = "transcript";
+        SetType("transcript");
         m_Attributes["pseudo"] = "true";
         return true;
     }
     if (m_strType == "pseudogenic_tRNA") {
-        m_strType = "tRNA";
+        SetType("tRNA");
         m_Attributes["pseudo"] = "true";
         return true;
     }
     if (m_strType == "pseudogenic_rRNA") {
-        m_strType = "rRNA";
+        SetType("rRNA");
         m_Attributes["pseudo"] = "true";
         return true;
     }
     if (m_strType == "pseudogenic_exon") {
-        m_strType = "exon";
+        SetType("exon");
         return true;
     }
     if (m_strType == "pseudogenic_CDS") {
-        m_strType = "CDS";
+        SetType("CDS");
         m_Attributes["pseudo"] = "true";
         return true;
     }
     if (m_strType == "transcript") {
-        m_strType = "misc_RNA";
+        SetType("misc_RNA");
         return true;
     }
     return true;
@@ -389,8 +388,7 @@ bool CGff3Reader::xUpdateAnnotFeature(
     //    }
     //}
 
-    auto recType = gffRecord.Type();
-    NStr::ToLower(recType);
+    auto recType = gffRecord.NormalizedType();
     if (recType != "cds") {
         mpLocations->AddRecord(gffRecord);
     }

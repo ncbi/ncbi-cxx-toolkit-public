@@ -232,10 +232,12 @@ bool CGff2Record::AssignFromGff(
     columns[0].Copy(mSeqId, 0, CTempString::npos);
     columns[1].Copy(m_strSource, 0, CTempString::npos);
     columns[2].Copy(m_strType, 0, CTempString::npos);
+    m_strNormalizedType = m_strType;
+    NStr::ToLower(m_strNormalizedType);
 
     try {
-    m_uSeqStart = NStr::StringToUInt( columns[3] ) - 1;
-    m_uSeqStop = NStr::StringToUInt( columns[4] ) - 1;
+        m_uSeqStart = NStr::StringToUInt( columns[3] ) - 1;
+        m_uSeqStop = NStr::StringToUInt( columns[4] ) - 1;
     }
     catch (const CException&) {
         string message = "Bad data line: Both \"start\" and \"stop\" must be positive integers.";
@@ -523,8 +525,7 @@ bool CGff2Record::UpdateFeature(
     //  ----------------------------------------------------------------------------
 {
     auto subtype = pFeature->GetData().GetSubtype();
-    auto recType = Type();
-    NStr::ToLower(recType);
+    auto recType = NormalizedType();
     CRef<CSeq_loc> pAddLoc = GetSeqLoc(flags, seqidresolve);
 
     pFeature->SetLocation().SetMix().AddSeqLoc(*pAddLoc);
@@ -632,8 +633,7 @@ bool CGff2Record::xMigrateAttributes(
 
     it = attrs_left.find("Name");
     if (it != attrs_left.end()) {
-        auto soType = Type();
-        NStr::ToLower(soType);
+        auto soType = NormalizedType();
         string gbKey;
         GetAttribute("gbkey", gbKey);
         if (soType == "cds"  ||  soType == "mrna"  ||  soType == "biological_region"  ||
@@ -1132,8 +1132,7 @@ bool CGff2Record::xInitFeatureData(
     CRef<CSeq_feat> pFeature ) const
 //  ----------------------------------------------------------------------------
 {
-    auto recognizedType = Type();
-    NStr::ToLower(recognizedType);
+    auto recognizedType = NormalizedType();
 
     if (recognizedType == "region"  ||  recognizedType == "biological_region") {
         string gbkey;

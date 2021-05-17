@@ -48,8 +48,7 @@ CGff3LocationRecord::CGff3LocationRecord(
     mStart = static_cast<TSeqPos>(record.SeqStart());
     mStop  = static_cast<TSeqPos>(record.SeqStop());
     mStrand = (record.IsSetStrand() ? record.Strand() : eNa_strand_plus);
-    mType = record.Type();
-    NStr::ToLower(mType);
+    mType = record.NormalizedType();
     mPartNum = 0;
     string recordPart;
     if (record.GetAttribute("part", recordPart)) {
@@ -148,8 +147,7 @@ bool CGff3LocationMerger::xGetLocationIds(
     list<string>& ids)
 //  ============================================================================
 {
-    string recordType = record.Type();
-    NStr::ToLower(recordType);
+    string recordType = record.NormalizedType();
 
     if (NStr::EndsWith(recordType, "rna")) {
         return false;

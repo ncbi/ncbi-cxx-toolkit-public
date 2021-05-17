@@ -96,8 +96,7 @@ CGtfLocationRecord::GetRecordType(
     const CGtfReadRecord& record)
 //  ----------------------------------------------------------------------------
 {
-    auto recType = record.Type();
-    NStr::ToLower(recType);
+    auto recType = record.NormalizedType();
     auto typeIt = msTypeOrder.find(recType);
     if (typeIt == msTypeOrder.end()) {
         return TYPE_unspecified;
@@ -192,8 +191,7 @@ CGtfLocationMerger::GetFeatureIdFor(
 
     auto prefix = prefixOverride;
     if (prefixOverride.empty()) {
-        prefix = record.Type();
-        NStr::ToLower(prefix);
+        prefix = record.NormalizedType();
         if (std::find(cdsTypes.begin(), cdsTypes.end(), prefix) != cdsTypes.end()) {
             prefix = "cds";
         }
@@ -430,32 +428,6 @@ CGtfLocationMerger::MergeLocationForTranscript(
 //  ============================================================================
 {
     return MergeLocationDefault(locations);
-}
-
-//  =============================================================================
-void
-CGtfLocationMerger::GetNextElementOfType(
-    const LOCATIONS& locations,
-    const string& recType,
-    LOCATIONS::const_iterator& locIt)
-//  =============================================================================
-{
-    if (locIt == locations.end()) {
-        return;
-    }
-
-    string lookupTypeStr(recType);
-    NStr::ToLower(lookupTypeStr);
-    auto typeIt = CGtfLocationRecord::msTypeOrder.find(lookupTypeStr);
-    if (typeIt == CGtfLocationRecord::msTypeOrder.end()) {
-        return;
-    } //!!!
-    while (locIt != locations.end()) {
-        if (locIt->mType == typeIt->second) {
-            return;
-        }
-        locIt++;
-    }
 }
 
 END_SCOPE(objects)

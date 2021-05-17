@@ -711,8 +711,7 @@ bool CGvfReader::xFeatureSetVariation(
 //  ----------------------------------------------------------------------------
 {
     CRef<CVariation_ref> pVariation(new CVariation_ref);
-    string strType = record.Type();
-    NStr::ToLower( strType );
+    string strType = record.NormalizedType();
 
     string nameAttr;
     xGetNameAttribute(record, nameAttr);
@@ -901,8 +900,7 @@ bool CGvfReader::xVariationMakeCNV(
     string nameAttr;
     xGetNameAttribute(record, nameAttr);
 
-    string strType = record.Type();
-    NStr::ToLower( strType );
+    string strType = record.NormalizedType();
     if ( strType == "cnv" ||
         strType == "copy_number_variation" ) {
         variation.SetCNV();

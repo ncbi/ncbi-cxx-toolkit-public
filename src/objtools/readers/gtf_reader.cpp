@@ -188,8 +188,7 @@ bool CGtfReader::xUpdateAnnotFeature(
 //  ----------------------------------------------------------------------------
 {
     const CGtfReadRecord& gff = dynamic_cast<const CGtfReadRecord&>(record);
-    auto recType = gff.Type();
-    NStr::ToLower(recType);
+    auto recType = gff.NormalizedType();
 
     using TYPEHANDLER = bool (CGtfReader::*)(const CGtfReadRecord&, CSeq_annot&);
     using HANDLERMAP = map<string, TYPEHANDLER>;
@@ -237,8 +236,6 @@ bool CGtfReader::xUpdateAnnotCds(
 //  ----------------------------------------------------------------------------
 {
     auto featId = mpLocations->GetFeatureIdFor(gff, "cds");
-    auto gffType = gff.Type();
-    NStr::ToLower(gffType);
     mpLocations->AddRecordForId(featId, gff) ;
     return (xFindFeatById(featId)  ||  xCreateParentCds(gff, annot));
  }
