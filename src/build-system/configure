@@ -31881,10 +31881,10 @@ if test "$with_cassandra" != "no"; then
     CASSANDRA_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
  fi
        fi
-       CASSANDRA_LIBS="$CASSANDRA_LIBPATH -lcassandra $LIBSSH2_LIBS $LIBUV_LIBS"
+       CASSANDRA_LIBS="$CASSANDRA_LIBPATH -lcassandra $LIBSSH2_LIBS $LIBUV_LIBS $KRB5_LIBS"
     else
        CASSANDRA_INCLUDE=""
-       CASSANDRA_LIBS="-lcassandra $LIBSSH2_LIBS $LIBUV_LIBS"
+       CASSANDRA_LIBS="-lcassandra $LIBSSH2_LIBS $LIBUV_LIBS $KRB5_LIBS"
        in_path=
     fi
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for libcassandra$in_path" >&5
@@ -31937,7 +31937,7 @@ $as_echo "#define HAVE_LIBCASSANDRA 1" >>confdefs.h
 
 if test "$with_cassandra" != no -a \
      -f "$CASSANDRA_PATH/lib/libcassandra_static.a"; then
-    CASSANDRA_STATIC_LIBS="-L$CASSANDRA_PATH/lib -lcassandra_static $LIBSSH2_STATIC_LIBS $LIBUV_STATIC_LIBS"
+    CASSANDRA_STATIC_LIBS="-L$CASSANDRA_PATH/lib -lcassandra_static $LIBSSH2_STATIC_LIBS $LIBUV_STATIC_LIBS $KRB5_LIBS"
 else
     CASSANDRA_STATIC_LIBS=$CASSANDRA_LIBS
 fi

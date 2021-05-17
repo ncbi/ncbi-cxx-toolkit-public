@@ -8272,10 +8272,10 @@ fi
 NCBI_CHECK_THIRD_PARTY_LIB(cassandra,
    [AC_LANG_PROGRAM([[@%:@include <cassandra.h>]],
       [[CassCluster* c = cass_cluster_new();]])],
-   [$LIBSSH2_LIBS $LIBUV_LIBS])
+   [$LIBSSH2_LIBS $LIBUV_LIBS $KRB5_LIBS])
 if test "$with_cassandra" != no -a \
      -f "$CASSANDRA_PATH/lib/libcassandra_static.a"; then
-    CASSANDRA_STATIC_LIBS="-L$CASSANDRA_PATH/lib -lcassandra_static $LIBSSH2_STATIC_LIBS $LIBUV_STATIC_LIBS"
+    CASSANDRA_STATIC_LIBS="-L$CASSANDRA_PATH/lib -lcassandra_static $LIBSSH2_STATIC_LIBS $LIBUV_STATIC_LIBS $KRB5_LIBS"
 else
     CASSANDRA_STATIC_LIBS=$CASSANDRA_LIBS
 fi
