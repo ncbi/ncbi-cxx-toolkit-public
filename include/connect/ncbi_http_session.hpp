@@ -500,14 +500,14 @@ public:
 
     NCBI_CRED GetNcbiCred(void) const;
     const string& GetCert(void) const { return m_Cert; }
-    const string& GetKey(void) const { return m_Key; }
+    const string& GetPKey(void) const { return m_PKey; }
 
 private:
     CTlsCertCredentials(const CTlsCertCredentials&);
     CTlsCertCredentials& operator=(const CTlsCertCredentials&);
 
     string m_Cert;
-    string m_Key;
+    string m_PKey;
     mutable NCBI_CRED m_Cred = nullptr;
 };
 

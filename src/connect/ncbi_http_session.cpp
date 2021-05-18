@@ -524,10 +524,10 @@ void CHttpResponse::x_Update(CHttpHeaders::THeaders headers, int status_code, st
 
 
 CTlsCertCredentials::CTlsCertCredentials(const CTempStringEx& cert, const CTempStringEx& pkey)
-    : m_Cert(cert), m_Key(pkey)
+    : m_Cert(cert), m_PKey(pkey)
 {
     if (cert.HasZeroAtEnd()) m_Cert.push_back('\0');
-    if (pkey.HasZeroAtEnd()) m_Key.push_back('\0');
+    if (pkey.HasZeroAtEnd()) m_PKey.push_back('\0');
 }
 
 CTlsCertCredentials::~CTlsCertCredentials(void)
@@ -541,7 +541,7 @@ CTlsCertCredentials::~CTlsCertCredentials(void)
 NCBI_CRED CTlsCertCredentials::GetNcbiCred(void) const
 {
     if ( !m_Cred ) {
-        m_Cred = NcbiCreateTlsCertCredentials(m_Cert.data(), m_Cert.size(), m_Key.data(), m_Key.size());
+        m_Cred = NcbiCreateTlsCertCredentials(m_Cert.data(), m_Cert.size(), m_PKey.data(), m_PKey.size());
     }
     return m_Cred;
 }
