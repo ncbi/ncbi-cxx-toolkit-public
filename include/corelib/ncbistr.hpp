@@ -3385,8 +3385,9 @@ public:
 
     /// Flags for Dedent() method 
     enum EDedentFlags {
-        fDedent_NormalizeEmptyLines  = 1 << 0,  ///< Lines containing only whitespaces will be normalized to 
-                                                ///< a single newline character in the output.
+        fDedent_NormalizeEmptyLines  = 1 << 0,  ///< Each line containing only whitespaces will be normalized
+                                                ///< to a single newline character in the output. Such lines 
+                                                ///< are excluded from detecting common whitespace prefix.
         // Next flags can be useful for processing RAW multi-line literals "R(...)"
         fDedent_SkipFirstLine        = 1 << 1,  ///< Ignore first line and skip it from the result. 
         fDedent_SkipEmptyFirstLine   = 1 << 2,  ///< Ignore first line and skip it from the result, if it is empty only.
@@ -3405,10 +3406,11 @@ public:
     ///    Empty lines, and lines containing whitespaces only with fDedent_NormalizeEmptyLines flag,
     ///    are not used in computing common whitespaces prefix.
     /// @note
-    ///   Assume that whitespace prefixes are the same on each line, in other words, 
+    ///   Assumes that whitespace prefixes are the same on each line, in other words, 
     ///   if a common prefix have a mix of spaces and tabulation characters, it should
-    ///   be the same for each line. Or you can use Replace() first to replace tabulations
-    ///   and make whitespaces consistent across lines.
+    ///   be the same for each line. Or this method can works incorrectly.
+    ///   Also, you can use Replace() first to replace tabulations and make whitespaces
+    ///   consistent across lines.
     /// @sa
     ///   Replace, DedentR
     static string Dedent(const CTempString str, TDedentFlags flags = 0);

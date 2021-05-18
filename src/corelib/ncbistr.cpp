@@ -5492,23 +5492,19 @@ string NStr::Dedent(const CTempString str, TDedentFlags flags)
     }
 #if !defined(NCBI_OS_MSWIN)
 #endif
-    list<CTempString> lines;
+    vector<CTempString> lines;
     NStr::Split(str, "\n", lines);
 
     // Find common whitespace prefix
 
-    CTempString prefix;         // common prefix
-    SIZE_TYPE   prefix_len = 0; // common prefix length
-    bool first_line = true;
+    CTempString prefix; // common prefix
 
-    for (auto& line : lines) {
-        SIZE_TYPE len = line.length();
-        if (first_line) {
-            first_line = false;
-            if ((flags & fDedent_SkipFirstLine)  ||
-               ((flags & fDedent_SkipEmptyFirstLine)  &&  !len) ) {
-                continue;
-            }
+    for (SIZE_TYPE i = 0; i < lines.size(); i++) {
+        auto& line = lines[i];
+        SIZE_TYPE len = line.size();
+        if (i == 0  &&  (flags & fDedent_SkipFirstLine) ) {
+            // Skip first line
+            continue;
         }
         if (!len) {
             // Skip empty lines
@@ -5521,35 +5517,30 @@ string NStr::Dedent(const CTempString str, TDedentFlags flags)
             }
         }
         if (!pos) {
-            // No whitespaces on the current line, cannot proceed
-            return str;
+            // No whitespaces on the current line, no common empty prefix
+            break;
         }
         if (pos == len  &&  (flags & fDedent_NormalizeEmptyLines)) {
-            // Line have whitespaces only -- exclude from computing common prefix
+            // Line have whitespaces only -- exclude this line from a common prefix computing 
             continue;
         }
         // Update length of the common prefix
-        if (!prefix_len || prefix_len > pos) {
-            prefix_len = pos;
+        if (prefix.empty() || prefix.size() > pos) {
             prefix.assign(line, 0, pos);
         }
     }
 
-    if (!prefix_len) {
-        // No common whitespace prefix, cannot proceed
-        return str;
-    }
-
-    // Trim common prefix
+    // Trim common prefix (if any), do necessary processing requested by flags 
 
     string result;
     result.reserve(str.size());
-    first_line = true;
 
-    for (auto& line : lines) {
-        SIZE_TYPE len = line.length();
-        if (first_line) {
-            first_line = false;
+    for (SIZE_TYPE i = 0; i < lines.size(); i++) {
+        auto& line = lines[i];
+        SIZE_TYPE len = line.size();
+        bool last_line = (i == lines.size()-1);
+
+        if (i == 0) {
             if ((flags & fDedent_SkipFirstLine)  ||
                ((flags & fDedent_SkipEmptyFirstLine)  &&  !len) ) {
                 // Skip first line from result
@@ -5557,8 +5548,10 @@ string NStr::Dedent(const CTempString str, TDedentFlags flags)
             }
         }
         if (!len) {
-            result += '\n';
             // Skip empty lines
+            if (!last_line) {
+                result += '\n';
+            }
             continue;
         }
         if (flags & fDedent_NormalizeEmptyLines) {
@@ -5569,17 +5562,22 @@ string NStr::Dedent(const CTempString str, TDedentFlags flags)
                 }
             }
             if (pos == len) {
-                // Whitespace only lines normalization
-                result += '\n';
+                // Normalize whitespace only lines
+                if (!last_line) {
+                    result += '\n';
+                }
                 continue;
             }
         }
-        // Trim common prefix
-        NStr::TrimPrefixInPlace(line, prefix);
+        // Trim common prefix, if any
+        if ( prefix.size() ) {
+            NStr::TrimPrefixInPlace(line, prefix);
+        }
         result += line;
-        result += '\n';
+        if (!last_line) {
+            result += '\n';
+        }
     }
-
     return result;
 }
 

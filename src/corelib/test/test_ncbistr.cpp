@@ -2817,6 +2817,119 @@ BOOST_AUTO_TEST_CASE(s_Sanitize)
 }
 
 
+struct SDedent {
+    const char*        str;
+    const char*        expected;
+    NStr::TDedentFlags flags;
+};
+
+static const SDedent s_DedentTest[] =
+{
+    // Default flags
+
+    { "A"             , "A"       , 0 },
+    { "A\nB"          , "A\nB"    , 0 },
+    { " A\n  B"       , "A\n B"   , 0 },
+    { ""              , ""        , 0 },
+    { "\n"            , "\n"      , 0 },
+    { "\n  "          , "\n"      , 0 },
+    { "  "            , ""        , 0 },
+    { "  \n"          , "\n"      , 0 },
+    { "  \n  "        , "\n"      , 0 },
+    { "  A"           , "A"       , 0 },
+    { "  A\n"         , "A\n"     , 0 },
+    { "  A\n  "       , "A\n"     , 0 },
+    { "  A  "         , "A  "     , 0 },
+    { "\n  A"         , "\nA"     , 0 },
+    { "\nA"           , "\nA"     , 0 },
+    { "\nA\n"         , "\nA\n"   , 0 },
+    { "\nA\n  "       , "\nA\n  " , 0 },
+    { "\t \n\tA\n\tB" , " \nA\nB" , 0 },
+
+    // fDedent_NormalizeEmptyLines
+
+    { "A"             , "A"       , NStr::fDedent_NormalizeEmptyLines },
+    { "A\nB"          , "A\nB"    , NStr::fDedent_NormalizeEmptyLines },
+    { " A\n  B"       , "A\n B"   , NStr::fDedent_NormalizeEmptyLines },
+    { ""              , ""        , NStr::fDedent_NormalizeEmptyLines },
+    { "\n"            , "\n"      , NStr::fDedent_NormalizeEmptyLines },
+    { "\n  "          , "\n"      , NStr::fDedent_NormalizeEmptyLines },
+    { "  "            , ""        , NStr::fDedent_NormalizeEmptyLines },
+    { "  \n"          , "\n"      , NStr::fDedent_NormalizeEmptyLines },
+    { "  \n  "        , "\n"      , NStr::fDedent_NormalizeEmptyLines },
+    { "  A"           , "A"       , NStr::fDedent_NormalizeEmptyLines },
+    { "  A\n"         , "A\n"     , NStr::fDedent_NormalizeEmptyLines },
+    { "  A\n  "       , "A\n"     , NStr::fDedent_NormalizeEmptyLines },
+    { "  A  "         , "A  "     , NStr::fDedent_NormalizeEmptyLines },
+    { "\n  A"         , "\nA"     , NStr::fDedent_NormalizeEmptyLines },
+    { "\nA"           , "\nA"     , NStr::fDedent_NormalizeEmptyLines },
+    { "\nA\n"         , "\nA\n"   , NStr::fDedent_NormalizeEmptyLines },
+    { "\nA\n  "       , "\nA\n"   , NStr::fDedent_NormalizeEmptyLines },
+    { "\t \n\tA\n\tB" , "\nA\nB"  , NStr::fDedent_NormalizeEmptyLines },
+
+    // fDedent_SkipFirstLine
+
+    { "A"             ,  ""       , NStr::fDedent_SkipFirstLine },
+    { "A\nB"          ,  "B"      , NStr::fDedent_SkipFirstLine },
+    { " A\n  B"       ,  "B"      , NStr::fDedent_SkipFirstLine },
+    { ""              ,  ""       , NStr::fDedent_SkipFirstLine },
+    { "\n"            ,  ""       , NStr::fDedent_SkipFirstLine },
+    { "\n  "          ,  ""       , NStr::fDedent_SkipFirstLine },
+    { "  "            ,  ""       , NStr::fDedent_SkipFirstLine },
+    { "  \n"          ,  ""       , NStr::fDedent_SkipFirstLine },
+    { "  \n  "        ,  ""       , NStr::fDedent_SkipFirstLine },
+    { "  A"           ,  ""       , NStr::fDedent_SkipFirstLine },
+    { "  A\n"         ,  ""       , NStr::fDedent_SkipFirstLine },
+    { "  A\n  "       ,  ""       , NStr::fDedent_SkipFirstLine },
+    { "  A  "         ,  ""       , NStr::fDedent_SkipFirstLine },
+    { "\n  A"         ,  "A"      , NStr::fDedent_SkipFirstLine },
+    { "\nA"           ,  "A"      , NStr::fDedent_SkipFirstLine },
+    { "\nA\n"         ,  "A\n"    , NStr::fDedent_SkipFirstLine },
+    { "\nA\n  "       ,  "A\n  "  , NStr::fDedent_SkipFirstLine },
+    { "\t \n\tA\n\tB" ,  "A\nB"   , NStr::fDedent_SkipFirstLine },
+
+    // DedentR -- fDedent_SkipEmptyFirstLine
+
+    { "A"             , "A"       , NStr::fDedent_SkipEmptyFirstLine },
+    { "A\nB"          , "A\nB"    , NStr::fDedent_SkipEmptyFirstLine },
+    { " A\n  B"       , "A\n B"   , NStr::fDedent_SkipEmptyFirstLine },
+    { ""              , ""        , NStr::fDedent_SkipEmptyFirstLine },
+    { "\n"            , ""        , NStr::fDedent_SkipEmptyFirstLine },
+    { "\n  "          , ""        , NStr::fDedent_SkipEmptyFirstLine },
+    { "  "            , ""        , NStr::fDedent_SkipEmptyFirstLine },
+    { "  \n"          , "\n"      , NStr::fDedent_SkipEmptyFirstLine },
+    { "  \n  "        , "\n"      , NStr::fDedent_SkipEmptyFirstLine },
+    { "  A"           , "A"       , NStr::fDedent_SkipEmptyFirstLine },
+    { "  A\n"         , "A\n"     , NStr::fDedent_SkipEmptyFirstLine },
+    { "  A\n  "       , "A\n"     , NStr::fDedent_SkipEmptyFirstLine },
+    { "  A  "         , "A  "     , NStr::fDedent_SkipEmptyFirstLine },
+    { "\n  A"         , "A"       , NStr::fDedent_SkipEmptyFirstLine },
+    { "\nA"           , "A"       , NStr::fDedent_SkipEmptyFirstLine },
+    { "\nA\n"         , "A\n"     , NStr::fDedent_SkipEmptyFirstLine },
+    { "\nA\n  "       , "A\n  "   , NStr::fDedent_SkipEmptyFirstLine },
+    { "\t \n\tA\n\tB" , " \nA\nB" , NStr::fDedent_SkipEmptyFirstLine }
+};
+
+BOOST_AUTO_TEST_CASE(s_Dedent)
+{
+    size_t count = (sizeof(s_DedentTest) / sizeof(s_DedentTest[0]));
+
+    for (size_t i = 0; i < count; ++i) 
+    {
+        const SDedent& test = s_DedentTest[i];
+        CTempString_Storage storage;
+        string result = NStr::Dedent(test.str, test.flags);
+        if (result != test.expected) {
+            cout << i << ". " 
+                 << "str = '" << NStr::PrintableString(test.str) << "', "
+                 << "res = '" << NStr::PrintableString(result) << "', "
+                 << "expected = '" << NStr::PrintableString(test.expected) << "'" << endl;
+        }
+        BOOST_CHECK_EQUAL(result, test.expected);
+    }
+}
+
+
 //----------------------------------------------------------------------------
 // NStr::CEncode|CParse()
 //----------------------------------------------------------------------------
@@ -3038,28 +3151,23 @@ static const SStrCompare s_StrCompare[] = {
 
 BOOST_AUTO_TEST_CASE(s_Compare)
 {
-    const SStrCompare* rec;
     const size_t count = sizeof(s_StrCompare) / sizeof(s_StrCompare[0]);
 
-    for (size_t i = 0;  i < count;  i++) {
-        rec = &s_StrCompare[i];
+    for (size_t i = 0;  i < count;  i++) 
+    {
+        const SStrCompare* rec = &s_StrCompare[i];
 
         string s1 = rec->s1;
         s_CompareStr(NStr::Compare(s1, rec->s2, NStr::eCase), rec->case_res);
-        s_CompareStr(NStr::Compare(s1, rec->s2, NStr::eNocase),
-                     rec->nocase_res);
-        s_CompareStr(NStr::Compare(s1, 0, rec->n, rec->s2, NStr::eCase),
-                     rec->n_case_res);
-        s_CompareStr(NStr::Compare(s1, 0, rec->n, rec->s2, NStr::eNocase),
-                     rec->n_nocase_res);
+        s_CompareStr(NStr::Compare(s1, rec->s2, NStr::eNocase), rec->nocase_res);
+        s_CompareStr(NStr::Compare(s1, 0, rec->n, rec->s2, NStr::eCase), rec->n_case_res);
+        s_CompareStr(NStr::Compare(s1, 0, rec->n, rec->s2, NStr::eNocase), rec->n_nocase_res);
 
         string s2 = rec->s2;
         s_CompareStr(NStr::Compare(s1, s2, NStr::eCase), rec->case_res);
         s_CompareStr(NStr::Compare(s1, s2, NStr::eNocase), rec->nocase_res);
-        s_CompareStr(NStr::Compare(s1, 0, rec->n, s2, NStr::eCase),
-                     rec->n_case_res);
-        s_CompareStr(NStr::Compare(s1, 0, rec->n, s2, NStr::eNocase),
-                     rec->n_nocase_res);
+        s_CompareStr(NStr::Compare(s1, 0, rec->n, s2, NStr::eCase), rec->n_case_res);
+        s_CompareStr(NStr::Compare(s1, 0, rec->n, s2, NStr::eNocase), rec->n_nocase_res);
     }
 
     BOOST_CHECK(NStr::Compare("0123", 0, 2, "12") <  0);
@@ -3084,28 +3192,23 @@ BOOST_AUTO_TEST_CASE(s_Compare)
 
 BOOST_AUTO_TEST_CASE(s_XCompare)
 {
-    const SStrCompare* rec;
     const size_t count = sizeof(s_StrCompare) / sizeof(s_StrCompare[0]);
 
-    for (size_t i = 0;  i < count;  i++) {
-        rec = &s_StrCompare[i];
+    for (size_t i = 0;  i < count;  i++)
+    {
+        const SStrCompare* rec = &s_StrCompare[i];
 
         string s1 = rec->s1;
-        s_CompareStr(XStr::Compare(s1, rec->s2, XStr::eCase),   rec->case_res);
-        s_CompareStr(XStr::Compare(s1, rec->s2, XStr::eNocase),
-                     rec->nocase_res);
-        s_CompareStr(XStr::Compare(s1, 0, rec->n, rec->s2, XStr::eCase),
-                     rec->n_case_res);
-        s_CompareStr(XStr::Compare(s1, 0, rec->n, rec->s2, XStr::eNocase),
-                     rec->n_nocase_res);
+        s_CompareStr(XStr::Compare(s1, rec->s2, XStr::eCase), rec->case_res);
+        s_CompareStr(XStr::Compare(s1, rec->s2, XStr::eNocase), rec->nocase_res);
+        s_CompareStr(XStr::Compare(s1, 0, rec->n, rec->s2, XStr::eCase), rec->n_case_res);
+        s_CompareStr(XStr::Compare(s1, 0, rec->n, rec->s2, XStr::eNocase), rec->n_nocase_res);
 
         string s2 = rec->s2;
         s_CompareStr(XStr::Compare(s1, s2, XStr::eCase), rec->case_res);
         s_CompareStr(XStr::Compare(s1, s2, XStr::eNocase), rec->nocase_res);
-        s_CompareStr(XStr::Compare(s1, 0, rec->n, s2, XStr::eCase),
-                     rec->n_case_res);
-        s_CompareStr(XStr::Compare(s1, 0, rec->n, s2, XStr::eNocase),
-                     rec->n_nocase_res);
+        s_CompareStr(XStr::Compare(s1, 0, rec->n, s2, XStr::eCase), rec->n_case_res);
+        s_CompareStr(XStr::Compare(s1, 0, rec->n, s2, XStr::eNocase), rec->n_nocase_res);
     }
 
     BOOST_CHECK(XStr::Compare("0123", 0, 2, "12") <  0);
@@ -3274,7 +3377,8 @@ BOOST_AUTO_TEST_CASE(s_Split_Flags)
 
     size_t count = (sizeof(s_SplitTest) / sizeof(s_SplitTest[0]));
 
-    for (size_t i = 0; i < count; i++) {
+    for (size_t i = 0; i < count; i++) 
+    {
         const SSplit& data = s_SplitTest[i];
 
         CTempString_Storage storage;
@@ -3366,7 +3470,8 @@ BOOST_AUTO_TEST_CASE(s_SplitInTwo)
     CTempStringEx str1, str2;
     size_t count = (sizeof(s_SplitInTwoTest) / sizeof(s_SplitInTwoTest[0]));
 
-    for (size_t i = 0; i < count; i++) {
+    for (size_t i = 0; i < count; i++) 
+    {
         const SSplitInTwo& data = s_SplitInTwoTest[i];
         CTempString_Storage storage;
         bool result = NStr::SplitInTwo(data.str, data.delim, str1, str2,
@@ -3429,10 +3534,8 @@ BOOST_AUTO_TEST_CASE(s_SplitByPattern)
         NStr::SplitByPattern(s_SplitPatternStr[i], pattern, split); // default
         split.push_back(stopper);
     }
-
     size_t j = 0;
-    ITERATE(vector<string>, it, split)
-    {
+    ITERATE(vector<string>, it, split) {
         BOOST_REQUIRE(j < sizeof(s_SplitPatternRes) / sizeof(s_SplitPatternRes[0]));
         BOOST_CHECK(NStr::Compare(*it, s_SplitPatternRes[j++]) == 0);
     }
@@ -3769,7 +3872,7 @@ BOOST_AUTO_TEST_CASE(s_Find)
     {
         const size_t count = sizeof(s_FindStrTest) / sizeof(s_FindStrTest[0]);
         for (size_t i = 0; i < count; i++) {
-            SFindStr t = s_FindStrTest[i];
+            const SFindStr& t = s_FindStrTest[i];
             BOOST_CHECK_EQUAL(NStr::Find(t.str, t.pattern, t.use_case, t.direction, t.occurence), t.result);
             /*
             if (NStr::Find(t.str, t.pattern, t.use_case, t.direction, t.occurence) != t.result) {
@@ -4269,9 +4372,9 @@ BOOST_AUTO_TEST_CASE(s_TruncateSpaces)
     BOOST_CHECK_EQUAL( NStr::TruncateSpaces_Unsafe(tsEmpty,     NStr::eTrunc_Begin), tsEmpty    );
     BOOST_CHECK_EQUAL( NStr::TruncateSpaces_Unsafe(tsEmpty,     NStr::eTrunc_End  ), tsEmpty    );
     BOOST_CHECK_EQUAL( NStr::TruncateSpaces_Unsafe(tsEmpty,     NStr::eTrunc_Both ), tsEmpty    );
-    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(sEmpty,      NStr::eTrunc_Begin), sEmpty     );
-    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(sEmpty,      NStr::eTrunc_End  ), sEmpty     );
-    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(sEmpty,      NStr::eTrunc_Both ), sEmpty     );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(sEmpty,             NStr::eTrunc_Begin), sEmpty     );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(sEmpty,             NStr::eTrunc_End  ), sEmpty     );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(sEmpty,             NStr::eTrunc_Both ), sEmpty     );
 
     BOOST_CHECK_EQUAL( NStr::TruncateSpaces_Unsafe(szSpaces,    NStr::eTrunc_Begin), tsEmpty    );
     BOOST_CHECK_EQUAL( NStr::TruncateSpaces_Unsafe(szSpaces,    NStr::eTrunc_End  ), tsEmpty    );
@@ -4279,9 +4382,9 @@ BOOST_AUTO_TEST_CASE(s_TruncateSpaces)
     BOOST_CHECK_EQUAL( NStr::TruncateSpaces_Unsafe(tsSpaces,    NStr::eTrunc_Begin), tsEmpty    );
     BOOST_CHECK_EQUAL( NStr::TruncateSpaces_Unsafe(tsSpaces,    NStr::eTrunc_End  ), tsEmpty    );
     BOOST_CHECK_EQUAL( NStr::TruncateSpaces_Unsafe(tsSpaces,    NStr::eTrunc_Both ), tsEmpty    );
-    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(sSpaces,     NStr::eTrunc_Begin), sEmpty     );
-    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(sSpaces,     NStr::eTrunc_End  ), sEmpty     );
-    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(sSpaces,     NStr::eTrunc_Both ), sEmpty     );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(sSpaces,            NStr::eTrunc_Begin), sEmpty     );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(sSpaces,            NStr::eTrunc_End  ), sEmpty     );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(sSpaces,            NStr::eTrunc_Both ), sEmpty     );
 
     BOOST_CHECK_EQUAL( NStr::TruncateSpaces_Unsafe(szTrunc,     NStr::eTrunc_Begin), tsTrunc    );
     BOOST_CHECK_EQUAL( NStr::TruncateSpaces_Unsafe(szTrunc,     NStr::eTrunc_End  ), tsTrunc    );
@@ -4289,9 +4392,9 @@ BOOST_AUTO_TEST_CASE(s_TruncateSpaces)
     BOOST_CHECK_EQUAL( NStr::TruncateSpaces_Unsafe(tsTrunc,     NStr::eTrunc_Begin), tsTrunc    );
     BOOST_CHECK_EQUAL( NStr::TruncateSpaces_Unsafe(tsTrunc,     NStr::eTrunc_End  ), tsTrunc    );
     BOOST_CHECK_EQUAL( NStr::TruncateSpaces_Unsafe(tsTrunc,     NStr::eTrunc_Both ), tsTrunc    );
-    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(sTrunc,      NStr::eTrunc_Begin), sTrunc     );
-    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(sTrunc,      NStr::eTrunc_End  ), sTrunc     );
-    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(sTrunc,      NStr::eTrunc_Both ), sTrunc     );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(sTrunc,             NStr::eTrunc_Begin), sTrunc     );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(sTrunc,             NStr::eTrunc_End  ), sTrunc     );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(sTrunc,             NStr::eTrunc_Both ), sTrunc     );
 
     BOOST_CHECK_EQUAL( NStr::TruncateSpaces_Unsafe(szBegSpace,  NStr::eTrunc_Begin), tsTrunc    );
     BOOST_CHECK_EQUAL( NStr::TruncateSpaces_Unsafe(szBegSpace,  NStr::eTrunc_End  ), tsBegSpace );
@@ -4299,9 +4402,9 @@ BOOST_AUTO_TEST_CASE(s_TruncateSpaces)
     BOOST_CHECK_EQUAL( NStr::TruncateSpaces_Unsafe(tsBegSpace,  NStr::eTrunc_Begin), tsTrunc    );
     BOOST_CHECK_EQUAL( NStr::TruncateSpaces_Unsafe(tsBegSpace,  NStr::eTrunc_End  ), tsBegSpace );
     BOOST_CHECK_EQUAL( NStr::TruncateSpaces_Unsafe(tsBegSpace,  NStr::eTrunc_Both ), tsTrunc    );
-    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(sBegSpace,   NStr::eTrunc_Begin), sTrunc     );
-    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(sBegSpace,   NStr::eTrunc_End  ), sBegSpace  );
-    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(sBegSpace,   NStr::eTrunc_Both ), sTrunc     );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(sBegSpace,          NStr::eTrunc_Begin), sTrunc     );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(sBegSpace,          NStr::eTrunc_End  ), sBegSpace  );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(sBegSpace,          NStr::eTrunc_Both ), sTrunc     );
 
     BOOST_CHECK_EQUAL( NStr::TruncateSpaces_Unsafe(szEndSpace,  NStr::eTrunc_Begin), tsEndSpace );
     BOOST_CHECK_EQUAL( NStr::TruncateSpaces_Unsafe(szEndSpace,  NStr::eTrunc_End  ), tsTrunc    );
@@ -4309,9 +4412,9 @@ BOOST_AUTO_TEST_CASE(s_TruncateSpaces)
     BOOST_CHECK_EQUAL( NStr::TruncateSpaces_Unsafe(tsEndSpace,  NStr::eTrunc_Begin), tsEndSpace );
     BOOST_CHECK_EQUAL( NStr::TruncateSpaces_Unsafe(tsEndSpace,  NStr::eTrunc_End  ), tsTrunc    );
     BOOST_CHECK_EQUAL( NStr::TruncateSpaces_Unsafe(tsEndSpace,  NStr::eTrunc_Both ), tsTrunc    );
-    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(sEndSpace,   NStr::eTrunc_Begin), sEndSpace  );
-    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(sEndSpace,   NStr::eTrunc_End  ), sTrunc     );
-    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(sEndSpace,   NStr::eTrunc_Both ), sTrunc     );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(sEndSpace,          NStr::eTrunc_Begin), sEndSpace  );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(sEndSpace,          NStr::eTrunc_End  ), sTrunc     );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(sEndSpace,          NStr::eTrunc_Both ), sTrunc     );
 
     BOOST_CHECK_EQUAL( NStr::TruncateSpaces_Unsafe(szBothSpace, NStr::eTrunc_Begin), tsEndSpace );
     BOOST_CHECK_EQUAL( NStr::TruncateSpaces_Unsafe(szBothSpace, NStr::eTrunc_End  ), tsBegSpace );
@@ -4319,9 +4422,9 @@ BOOST_AUTO_TEST_CASE(s_TruncateSpaces)
     BOOST_CHECK_EQUAL( NStr::TruncateSpaces_Unsafe(tsBothSpace, NStr::eTrunc_Begin), tsEndSpace );
     BOOST_CHECK_EQUAL( NStr::TruncateSpaces_Unsafe(tsBothSpace, NStr::eTrunc_End  ), tsBegSpace );
     BOOST_CHECK_EQUAL( NStr::TruncateSpaces_Unsafe(tsBothSpace, NStr::eTrunc_Both ), tsTrunc    );
-    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(sBothSpace,  NStr::eTrunc_Begin), sEndSpace  );
-    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(sBothSpace,  NStr::eTrunc_End  ), sBegSpace  );
-    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(sBothSpace,  NStr::eTrunc_Both ), sTrunc     );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(sBothSpace,         NStr::eTrunc_Begin), sEndSpace  );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(sBothSpace,         NStr::eTrunc_End  ), sBegSpace  );
+    BOOST_CHECK_EQUAL( NStr::TruncateSpaces(sBothSpace,         NStr::eTrunc_Both ), sTrunc     );
 
 // http://unicode.org/charts/uca/chart_Whitespace.html
 // http://en.wikipedia.org/wiki/Whitespace_character
@@ -4656,10 +4759,8 @@ BOOST_AUTO_TEST_CASE(s_SQLEncode)
     CStringUTF8      upperHalf( CUtf8::AsUTF8(CTempString((char*)s_UpperHalf, 128),eEncoding_ISO8859_1 ));
     CStringUTF8      expected( CUtf8::AsUTF8( CTempString((char*)s_Expected, 130),eEncoding_ISO8859_1 ));
 
-    BOOST_CHECK_EQUAL(NStr::SQLEncode(upperHalf, NStr::eSqlEnc_Plain),
-                      expected);
-    BOOST_CHECK_EQUAL(NStr::SQLEncode(upperHalf, NStr::eSqlEnc_TagNonASCII),
-                      'N' + expected);
+    BOOST_CHECK_EQUAL(NStr::SQLEncode(upperHalf, NStr::eSqlEnc_Plain), expected);
+    BOOST_CHECK_EQUAL(NStr::SQLEncode(upperHalf, NStr::eSqlEnc_TagNonASCII), 'N' + expected);
 }
 
 
