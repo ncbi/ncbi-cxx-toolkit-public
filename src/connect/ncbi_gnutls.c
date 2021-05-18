@@ -82,7 +82,9 @@ static int gcry_user_mutex_init(void** lock)
 static int gcry_user_mutex_destroy(void** lock)
 {
     if (*lock) {
-        g_CORE_MT_Lock = MT_LOCK_Delete(*((MT_LOCK*) lock));
+        *lock = MT_LOCK_Delete((MT_LOCK)(*lock));
+        /* NB: Do not use CORE_SetLOCK() here! */
+        g_CORE_MT_Lock = *lock ? *lock : &g_CORE_MT_Lock_default;
         assert(g_CORE_MT_Lock);
         *lock = 0;
     } else
@@ -121,7 +123,9 @@ static int gtls_user_mutex_init(void** lock)
 static int gtls_user_mutex_deinit(void** lock)
 {
     if (*lock) {
-        g_CORE_MT_Lock = MT_LOCK_Delete((MT_LOCK)(*lock));
+        *lock = MT_LOCK_Delete((MT_LOCK)(*lock));
+        /* NB: Do not use CORE_SetLOCK() here! */
+        g_CORE_MT_Lock = *lock ? *lock : &g_CORE_MT_Lock_default;
         assert(g_CORE_MT_Lock);
         *lock = 0;
     } else
