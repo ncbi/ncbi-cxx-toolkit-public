@@ -833,6 +833,8 @@ void CFlatFileGenerator::Generate
 
         if ( m_Os ) {
             flatfile_os = m_Os;
+            if ( bsh.IsNa() && ! doNuc ) continue;
+            if ( bsh.IsAa() && ! doProt ) continue;
         } else if ( bsh.IsNa() ) {
             if ( m_On ) {
                 flatfile_os = m_On;
