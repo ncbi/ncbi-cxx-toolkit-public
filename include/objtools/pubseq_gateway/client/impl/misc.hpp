@@ -381,6 +381,9 @@ typedef NCBI_PARAM_TYPE(PSG, wr_buf_size) TPSG_WrBufSize;
 NCBI_PARAM_DECL(unsigned, PSG, max_concurrent_streams);
 typedef NCBI_PARAM_TYPE(PSG, max_concurrent_streams) TPSG_MaxConcurrentStreams;
 
+NCBI_PARAM_DECL(unsigned, PSG, max_sessions);
+typedef NCBI_PARAM_TYPE(PSG, max_sessions) TPSG_MaxSessions;
+
 NCBI_PARAM_DECL(unsigned, PSG, num_io);
 typedef NCBI_PARAM_TYPE(PSG, num_io) TPSG_NumIo;
 

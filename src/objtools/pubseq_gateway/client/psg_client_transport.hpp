@@ -644,8 +644,10 @@ private:
         io->OnQueue(handle);
     }
 
+    using TSessions = deque<SUvNgHttp2_Session<SPSG_IoSession>>;
+
     SPSG_Servers::TTS& m_Servers;
-    deque<pair<SUvNgHttp2_Session<SPSG_IoSession>, double>> m_Sessions;
+    deque<pair<TSessions, double>> m_Sessions;
     pair<uniform_real_distribution<>, default_random_engine> m_Random;
 };
 

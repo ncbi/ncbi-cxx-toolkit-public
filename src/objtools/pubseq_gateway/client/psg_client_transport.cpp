@@ -59,6 +59,7 @@ BEGIN_NCBI_SCOPE
 NCBI_PARAM_DEF(unsigned, PSG, rd_buf_size,            64 * 1024);
 NCBI_PARAM_DEF(size_t,   PSG, wr_buf_size,            64 * 1024);
 NCBI_PARAM_DEF(unsigned, PSG, max_concurrent_streams, 200);
+NCBI_PARAM_DEF(unsigned, PSG, max_sessions,           40);
 NCBI_PARAM_DEF(unsigned, PSG, num_io,                 6);
 NCBI_PARAM_DEF(unsigned, PSG, reader_timeout,         12);
 NCBI_PARAM_DEF(double,   PSG, rebalance_time,         10.0);
@@ -791,8 +792,10 @@ void SPSG_IoImpl::OnShutdown(uv_async_t*)
 {
     queue.Close();
 
-    for (auto& session : m_Sessions) {
-        session.first.Reset("Shutdown is in process");
+    for (auto& server_sessions : m_Sessions) {
+        for (auto& session : server_sessions.first) {
+            session.Reset("Shutdown is in process");
+        }
     }
 }
 
@@ -816,20 +819,23 @@ void SPSG_IoImpl::AddNewServers(size_t servers_size, size_t sessions_size, uv_as
 
     for (auto new_servers = servers_size - sessions_size; new_servers; --new_servers) {
         auto& server = servers[servers_size - new_servers];
-        auto session_params = forward_as_tuple(server, queue, handle->loop);
-        m_Sessions.emplace_back(piecewise_construct, move(session_params), forward_as_tuple(0.0));
+        m_Sessions.emplace_back(TSessions(), 0.0);
+        m_Sessions.back().first.emplace_back(server, queue, handle->loop);
         _DEBUG_ARG(const auto& server_name = server.address.AsString());
         PSG_IO_TRACE("Session for server '" << server_name << "' was added");
     }
 }
 
-void SPSG_IoImpl::OnQueue(uv_async_t*)
+void SPSG_IoImpl::OnQueue(uv_async_t* handle)
 {
     size_t sessions = 0;
 
-    for (auto& session : m_Sessions) {
-        auto& server = session.first.server;
-        auto& rate = session.second;
+    for (auto& server_sessions : m_Sessions) {
+        // There is always at least one session per server
+        _ASSERT(server_sessions.first.size());
+
+        auto& server = server_sessions.first.front().server;
+        auto& rate = server_sessions.second;
         rate = server.throttling.Active() ? 0.0 : server.rate.load();
 
         if (rate) {
@@ -853,18 +859,26 @@ void SPSG_IoImpl::OnQueue(uv_async_t*)
                 next_i();
             }
 
+            // There is always at least one session per server
+            _ASSERT(i->first.size());
+
             // These references depend on i and can only be used if it stays the same
-            auto& session = i->first;
-            auto& server = session.server;
+            auto& server_sessions = i->first;
+            auto& server = server_sessions.front().server;
             auto& session_rate = i->second;
 
             _DEBUG_ARG(const auto& server_name = server.address.AsString());
 
-            // Session has no room for a request
-            if (session.IsFull()) {
+            auto session = server_sessions.begin();
+
+            // Skip all full sessions
+            for (; (session != server_sessions.end()) && session->IsFull(); ++session);
+
+            // All existing sessions are full and no new sessions are allowed
+            if ((session == server_sessions.end()) && (server_sessions.size() >= TPSG_MaxSessions::GetDefault())) {
                 PSG_IO_TRACE("Server '" << server_name << "' has no room for a request");
 
-            // Session is available
+            // Session is available or can be created
             } else {
                 rate -= session_rate;
 
@@ -885,8 +899,15 @@ void SPSG_IoImpl::OnQueue(uv_async_t*)
 
                     space->NotifyOne();
 
+                    // All existing sessions are full
+                    if (session == server_sessions.end()) {
+                        server_sessions.emplace_back(server, queue, handle->loop);
+                        session = (server_sessions.rbegin() + 1).base();
+                        PSG_IO_TRACE("Additional session for server '" << server_name << "' was added");
+                    }
+
                     _DEBUG_ARG(const auto req_id = req->reply->debug_printout.id);
-                    bool result = session.ProcessRequest(req);
+                    bool result = session->ProcessRequest(req);
 
                     if (result) {
                         PSG_IO_TRACE("Server '" << server_name << "' will get request '" <<
@@ -1070,8 +1091,10 @@ void SPSG_DiscoveryImpl::OnTimer(uv_timer_t* handle)
 
 void SPSG_IoImpl::OnTimer(uv_timer_t*)
 {
-    for (auto& session : m_Sessions) {
-        session.first.CheckRequestExpiration();
+    for (auto& server_sessions : m_Sessions) {
+        for (auto& session : server_sessions.first) {
+            session.CheckRequestExpiration();
+        }
     }
 
     if (m_Servers.GetMTSafe().fail_requests) {
