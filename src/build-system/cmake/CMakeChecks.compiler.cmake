@@ -21,6 +21,10 @@ endif()
 
 # ---------------------------------------------------------------------------
 # compilation features
+if(NOT "${NCBI_PTBCFG_PROJECT_FEATURES}" STREQUAL "")
+    string(REPLACE "," ";" NCBI_PTBCFG_PROJECT_FEATURES ${NCBI_PTBCFG_PROJECT_FEATURES})
+endif()
+
 set(NCBI_PTBCFG_INSTALL_SUFFIX "")
 if(Int8GI IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
     add_definitions(-DNCBI_INT8_GI)
