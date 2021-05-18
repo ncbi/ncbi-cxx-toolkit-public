@@ -2962,6 +2962,7 @@ IBF	s	Tiroler Landesmuseum Ferdinandeum
 IBGE	s	Reserva Ecologica do IBGE			
 IBH	s	Universidad Nacional Autonoma de Mexico, Instituto de Biologia			
 IBI	s	Instituto Biologico, Laboratorio de Micologia			
+IBIGEO	s	Instituto de Bio y Geociencias del NOA			
 IBIR	s	Institutul Agronomic			
 IBIW	s	I. D. Papanin Institute for Biology of Inland Waters			
 IBK	s	Guangxi Institute of Botany			

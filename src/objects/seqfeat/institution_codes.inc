@@ -2995,6 +2995,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "IBGE\ts\tReserva Ecologica do IBGE\t\t\t",
 "IBH\ts\tUniversidad Nacional Autonoma de Mexico, Instituto de Biologia\t\t\t",
 "IBI\ts\tInstituto Biologico, Laboratorio de Micologia\t\t\t",
+"IBIGEO\ts\tInstituto de Bio y Geociencias del NOA\t\t\t",
 "IBIR\ts\tInstitutul Agronomic\t\t\t",
 "IBIW\ts\tI. D. Papanin Institute for Biology of Inland Waters\t\t\t",
 "IBK\ts\tGuangxi Institute of Botany\t\t\t",
