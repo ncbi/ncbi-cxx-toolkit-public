@@ -331,7 +331,7 @@ typedef enum {
 } ECORE_Set;
 typedef unsigned int TCORE_Set;
 
-
+/* Track settings modified from the user-land */
 extern TCORE_Set g_CORE_Set;
 
 

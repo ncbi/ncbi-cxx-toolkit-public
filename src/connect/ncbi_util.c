@@ -97,7 +97,7 @@ static char* x_getenv(const char* name)
 extern void CORE_SetLOCK(MT_LOCK lk)
 {
     MT_LOCK old_lk = g_CORE_MT_Lock;
-    g_CORE_MT_Lock = lk;
+    g_CORE_MT_Lock = lk ? lk : &g_CORE_MT_Lock_default;
     g_CORE_Set |= eCORE_SetLOCK;
     if (old_lk  &&  old_lk != lk)
         MT_LOCK_Delete(old_lk);
