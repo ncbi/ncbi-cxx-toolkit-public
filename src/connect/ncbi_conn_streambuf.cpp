@@ -95,6 +95,7 @@ string CConn_Streambuf::x_Message(const char*     method,
     result += ": ";
     if (status == eIO_Success)
         status  = m_Status;
+    _ASSERT(status != eIO_Success);
     result += IO_StatusStr(status);
     if (status == eIO_Timeout  &&  timeout  &&  timeout != kDefaultTimeout) {
         char tmo[40];
