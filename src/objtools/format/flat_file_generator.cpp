@@ -859,9 +859,13 @@ void CFlatFileGenerator::Generate
             }
         }
 
-        if ( !flatfile_os ) continue;
-
-        CRef<CFlatItemOStream> newitem_os(new CFormatItemOStream(new COStreamTextOStream(*flatfile_os)));
+        CRef<CFlatItemOStream> newitem_os;
+        if (flatfile_os == nullptr) {
+            newitem_os.Reset(&item_os);
+        } else {
+            newitem_os.Reset(
+                new CFormatItemOStream(new COStreamTextOStream(*flatfile_os)));
+        }
 
         CRef<CFlatItemOStream> pItemOS( newitem_os );
         if( pCanceled ) {
