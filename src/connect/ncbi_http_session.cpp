@@ -523,9 +523,11 @@ void CHttpResponse::x_Update(CHttpHeaders::THeaders headers, int status_code, st
 //
 
 
-CTlsCertCredentials::CTlsCertCredentials(const CTempString cert, const CTempString pkey)
+CTlsCertCredentials::CTlsCertCredentials(const CTempStringEx& cert, const CTempStringEx& pkey)
     : m_Cert(cert), m_Key(pkey)
 {
+    if (cert.HasZeroAtEnd()) m_Cert.push_back('\0');
+    if (pkey.HasZeroAtEnd()) m_Key.push_back('\0');
 }
 
 CTlsCertCredentials::~CTlsCertCredentials(void)

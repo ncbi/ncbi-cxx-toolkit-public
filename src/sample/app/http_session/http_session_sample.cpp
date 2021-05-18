@@ -119,6 +119,7 @@ static string LoadFile(CNcbiIstream& str)
 {
     string content;
     size_t size = NcbiStreamToString(&content, str);
+    return size ? content : kEmptyStr;
     if (!size) return kEmptyStr;
     if (NStr::Find(content, "-----BEGIN ") != NPOS) content.push_back('\0');
     return content;

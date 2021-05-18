@@ -495,7 +495,7 @@ public:
     /// Initialize credentials. The arguments are passed to NcbiCreateTlsCertCredentials.
     /// @sa
     ///  NcbiCreateTlsCertCredentials
-    CTlsCertCredentials(const CTempString cert, const CTempString pkey);
+    CTlsCertCredentials(const CTempStringEx& cert, const CTempStringEx& pkey);
     ~CTlsCertCredentials(void);
 
     NCBI_CRED GetNcbiCred(void) const;
