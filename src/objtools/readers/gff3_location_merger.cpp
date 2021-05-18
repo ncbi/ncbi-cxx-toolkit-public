@@ -33,6 +33,7 @@
 #include <corelib/ncbistr.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include "gff3_location_merger.hpp"
+#include "reader_message_handler.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
@@ -105,11 +106,53 @@ CGff3LocationMerger::CGff3LocationMerger(
 }
 
 //  ============================================================================
+void
+CGff3LocationMerger::VerifyRecordLocation(
+    const CGff2Record& record)
+//  ============================================================================
+{
+    auto seqSizeIt = mSequenceSizes.find(record.Id());
+    if (seqSizeIt == mSequenceSizes.end()) {
+        return;
+    }
+    auto seqSize = seqSizeIt->second;
+    if (seqSize == 0) {
+        return; //pragma just gave ID, no size, hence useless here
+    }
+
+    // (1) in point better be less then seqSize:
+    if (record.SeqStart() >= seqSize) {
+        string message = "Bad data line: ";
+        message += "feature in-point is outside the containing sequence.";
+        CReaderMessage error(
+            eDiag_Error,
+            0,
+            message);
+        throw error;
+    }
+    // (2) no longer than sequence itself:
+    if (record.SeqStop() - record.SeqStart() >= seqSize) {
+        string message = "Bad data line: ";
+        message += "feature is longer than the entire containing sequence.";
+        CReaderMessage error(
+            eDiag_Error,
+            0,
+            message);
+        throw error;
+    }
+}
+
+//  ============================================================================
 bool
 CGff3LocationMerger::AddRecord(
     const CGff2Record& record)
 //  ============================================================================
 {
+    if (record.NormalizedType() == "cds") {
+        VerifyRecordLocation(record);
+        return true;
+    }
+
     list<string> ids;
     if (!CGff3LocationMerger::xGetLocationIds(record, ids)) {
         return false;
@@ -128,6 +171,8 @@ CGff3LocationMerger::AddRecordForId(
     const CGff2Record& record)
 //  ============================================================================
 {
+    VerifyRecordLocation(record);
+    
     auto existingEntry = mMapIdToLocations.find(id);
     if (existingEntry == mMapIdToLocations.end()) {
         existingEntry = mMapIdToLocations.emplace(id, LOCATIONS()).first;

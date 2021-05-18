@@ -388,13 +388,11 @@ bool CGff3Reader::xUpdateAnnotFeature(
     //    }
     //}
 
-    auto recType = gffRecord.NormalizedType();
-    if (recType != "cds") {
-        mpLocations->AddRecord(gffRecord);
-    }
+    mpLocations->AddRecord(gffRecord);
 
     CRef< CSeq_feat > pFeature(new CSeq_feat);
 
+    auto recType = gffRecord.NormalizedType();
     if (recType == "exon" || recType == "five_prime_utr" || recType == "three_prime_utr") {
         return xUpdateAnnotExon(gffRecord, pFeature, annot, pEC);
     }

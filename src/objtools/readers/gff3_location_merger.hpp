@@ -99,6 +99,9 @@ public:
         const string&,
         const CGff2Record&);
 
+    void VerifyRecordLocation(
+        const CGff2Record&);
+
     LOCATION_MAP& LocationMap() { return mMapIdToLocations; }
 
     void GetLocation(
