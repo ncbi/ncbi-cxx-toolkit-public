@@ -648,8 +648,8 @@ extern EIO_Status CONN_Wait
         ELOG_Level level;
         switch (status) {
         case eIO_Timeout:
-            if (!timeout)
-                level = eLOG_Error; /*impossible*/
+            if (!timeout/*impossible*/)
+                level = eLOG_Error;
             else if (timeout->sec | timeout->usec)
                 level = eLOG_Trace;
             else
@@ -726,7 +726,7 @@ static EIO_Status s_CONN_Write
             ELOG_Level level;
             if (status != eIO_Timeout  ||  conn->w_timeout == kDefaultTimeout)
                 level = eLOG_Error;
-            else if (timeout  &&  (timeout->sec | timeout->usec))
+            else if (!timeout/*impossible*/ || (timeout->sec | timeout->usec))
                 level = eLOG_Warning;
             else
                 level = eLOG_Trace;
@@ -928,7 +928,7 @@ static EIO_Status s_CONN_Read
             ELOG_Level level;
             if (status != eIO_Timeout  ||  conn->r_timeout == kDefaultTimeout)
                 level = eLOG_Error;
-            else if (timeout  &&  (timeout->sec | timeout->usec))
+            else if (!timeout/*impossible*/ || (timeout->sec | timeout->usec))
                 level = eLOG_Warning;
             else
                 level = eLOG_Trace;
