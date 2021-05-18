@@ -42,6 +42,7 @@
 #include <objects/seq/Map_ext.hpp>
 #include <objects/seqfeat/Rsite_ref.hpp>
 
+#include <objmgr/annot_ci.hpp>
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/seq_map_ci.hpp>
 #include <objmgr/seqdesc_ci.hpp>
@@ -3847,17 +3848,61 @@ string CDeflineGenerator::GenerateDefline (
         while (desc && desc->GetUser().GetObjectType() != CUser_object::eObjectType_AutodefOptions) {
             ++desc;
         }
+        bool ok = true;
+        bool listAllFeatures = false;
         if (desc) {
-            try {
-                CAutoDef autodef;
-                autodef.SetOptionsObject(desc->GetUser());
-                CAutoDefModifierCombo mod_combo;
-                CAutoDefOptions options;
-                options.InitFromUserObject(desc->GetUser());
-                mod_combo.SetOptions(options);
-                m_MainTitle = autodef.GetOneDefLine(&mod_combo, bsh);
-                s_TrimMainTitle (m_MainTitle);
-            } catch ( const exception&  ) {
+            const CUser_object& uo = desc->GetUser();
+            if( uo.IsSetData() ) {
+                ITERATE( CUser_object::TData, field_iter, uo.GetData() ) {
+                    const CUser_field &field = **field_iter;
+                    if( ! field.IsSetData() || ! field.GetData().IsStr() ||
+                        ! field.IsSetLabel() || ! field.GetLabel().IsStr() ) {
+                        continue;
+                    }
+                    if( field.GetLabel().GetStr() == "FeatureListType" && 
+                        field.GetData().GetStr() == "List All Features" ) 
+                    {
+                        listAllFeatures = true;
+                    }
+                }
+            }
+        }
+        if (listAllFeatures) {
+            int numGenes = 0;
+            int numCDSs = 0;
+            CSeq_annot_CI annot_ci(bsh);
+            for (; annot_ci; ++annot_ci) {
+                const CSeq_annot_Handle& annt = *annot_ci;
+                CConstRef<CSeq_annot> pAnnot = annt.GetCompleteSeq_annot();
+                const CSeq_annot& antx = *pAnnot;
+                FOR_EACH_SEQFEAT_ON_SEQANNOT (feat_it, antx) {
+                    const CSeq_feat& sft = **feat_it;
+                    const CSeqFeatData& data = sft.GetData();
+                    CSeqFeatData::ESubtype subtype = data.GetSubtype();
+                    if (subtype == CSeqFeatData::eSubtype_gene) {
+                        numGenes++;
+                    } else if (subtype == CSeqFeatData::eSubtype_cdregion) {
+                        numCDSs++;
+                    }
+                }
+            }
+            if (numGenes + numCDSs > 20) {
+                ok = false;
+            }
+        }
+        if (desc) {
+            if (ok) {
+                try {
+                    CAutoDef autodef;
+                    autodef.SetOptionsObject(desc->GetUser());
+                    CAutoDefModifierCombo mod_combo;
+                    CAutoDefOptions options;
+                    options.InitFromUserObject(desc->GetUser());
+                    mod_combo.SetOptions(options);
+                    m_MainTitle = autodef.GetOneDefLine(&mod_combo, bsh);
+                    s_TrimMainTitle (m_MainTitle);
+                } catch ( const exception&  ) {
+                }
             }
         }
     }
