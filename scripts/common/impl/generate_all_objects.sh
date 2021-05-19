@@ -97,8 +97,12 @@ done
 splitdb_dir=src/internal/blast/SplitDB/asn
 if [ -f $splitdb_dir/Makefile.asntool ]; then
     top_srcdir=`pwd`
-    builddir=`ls -dt $top_srcdir/*/build $top_srcdir/.[A-Z]??*/build | head -1`
-    [ -d "$builddir" ] || builddir=$NCBI/c++.metastable/Release/build
+    builds=`ls -dt $top_srcdir/*/build $top_srcdir/.[A-Z]??*/build 2>/dev/null`
+    for builddir in $builds $NCBI/c++.metastable/Release/build; do
+        if [ -f $builddir/Makefile.mk ]; then
+            break
+        fi
+    done
     make_asntool="${MAKE-make} -f Makefile.asntool sources top_srcdir=$top_srcdir builddir=$builddir"
     if $force || [ ! -f ${splitdb_dir}gendefs/objGendefs.c ]; then
         (cd ${splitdb_dir}gendefs && $make_asntool) || failed="$failed asngendefs-C"
