@@ -447,16 +447,18 @@ bool CFormatGuessEx::x_TryGff2()
 }
 
 
-string CFormatGuessEx::xGuessGenbankObjectType(
+CObjectTypeInfo CFormatGuessEx::xGuessGenbankObjectType(
     CFormatGuess::EFormat baseFormat)
 {
     unique_ptr<CObjectIStream> pObjStream;
     m_LocalBuffer.clear();
     m_LocalBuffer.seekg(0);
 
+    CObjectTypeInfo invalidInfo;
+
     switch(baseFormat) {
     default:
-        return "unknown";
+        return invalidInfo;
     case CFormatGuess::eTextASN:
         pObjStream.reset(new CObjectIStreamAsn(m_LocalBuffer, eNoOwnership));
         break;
@@ -471,14 +473,14 @@ string CFormatGuessEx::xGuessGenbankObjectType(
         break;
     }
     if( !pObjStream.get() ) {
-        return "unknown";
+        return invalidInfo;
     }
 
     set<TTypeInfo> types = pObjStream->GuessDataType(m_EffectiveRecognizedGenbankObjectTypes);
     if ( types.size() != 1 ) {
-        return "unknown";
+        return invalidInfo;
     }
-    return (*types.begin())->GetName();
+    return *types.begin();
 }
 
 void CFormatGuessEx::SetRecognizedGenbankTypes(
@@ -500,7 +502,11 @@ CFormatGuess::EFormat CFormatGuessEx::GuessFormatAndContent(
     case CFormatGuess::eXml:
     case CFormatGuess::eJSON:
         new(&contentInfo.mInfoGenbank) CFileContentInfoGenbank();
-        contentInfo.mInfoGenbank.mObjectType = xGuessGenbankObjectType(baseFormat);
+        contentInfo.mInfoGenbank.mTypeInfo = xGuessGenbankObjectType(baseFormat);
+        if (contentInfo.mInfoGenbank.mTypeInfo.Valid()) {
+            contentInfo.mInfoGenbank.mObjectType = 
+                contentInfo.mInfoGenbank.mTypeInfo.GetName();
+        }
         break;
     case CFormatGuess::eGff3:
         new(&contentInfo.mInfoGff3) CFileContentInfoGff3();

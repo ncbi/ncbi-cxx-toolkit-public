@@ -34,6 +34,7 @@
  */
 
 #include <corelib/ncbistd.hpp>
+#include <serial/typeinfo.hpp>
 #include <bitset>
 #include <util/format_guess.hpp>
 #include <sstream>
@@ -50,9 +51,13 @@ struct CFileContentInfoNone
 struct CFileContentInfoGenbank
 //  ============================================================================
 {
-    CFileContentInfoGenbank(): mObjectType("unknown") {};
+    CFileContentInfoGenbank(): 
+        mTypeInfo(CObjectTypeInfo()), 
+        mObjectType("unknown") 
+    {};
 
     string mObjectType;
+    CObjectTypeInfo mTypeInfo;
 };
 
 //  ============================================================================
@@ -158,7 +163,7 @@ protected:
     bool x_TryGff2();
     //  bool x_TryHgvs();
 
-    string xGuessGenbankObjectType(
+    CObjectTypeInfo xGuessGenbankObjectType(
         CFormatGuess::EFormat baseFormat);
 };
 
