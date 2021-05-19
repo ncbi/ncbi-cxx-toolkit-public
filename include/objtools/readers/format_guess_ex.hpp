@@ -34,7 +34,7 @@
  */
 
 #include <corelib/ncbistd.hpp>
-#include <serial/typeinfo.hpp>
+#include <serial/objectinfo.hpp>
 #include <bitset>
 #include <util/format_guess.hpp>
 #include <sstream>
