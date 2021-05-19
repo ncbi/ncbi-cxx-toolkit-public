@@ -1350,6 +1350,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CNC:Nematoda\ts\tCanadian National Collection of Insects, Arachnids, and Nematodes, Nematoda (Roundworms)\t\t",
 "CNCI\ts\tCanadian National Collection Insects\tCNC\t\t",
 "CNCM\tc\tCollection Nationale de Cultures de Microorganismes\t\t\t",
+"CNCRU\tc\tColeccion Nacional de Cepas de Rhizobium\t\t\t",
 "CNCTC\tc\tCzech National Collection of Type Cultures\t\t\t",
 "CNE\ts\tVictoria Jubilee Museum\t\t\t",
 "CNEN-LABPC\tc\tLaboratorio de Pocos de Caldas\t\t\t",

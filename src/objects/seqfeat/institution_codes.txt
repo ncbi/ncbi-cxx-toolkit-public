@@ -1317,6 +1317,7 @@ CNC:Miscellaneous	s	Canadian National Collection of Insects, Arachnids, and Nema
 CNC:Nematoda	s	Canadian National Collection of Insects, Arachnids, and Nematodes, Nematoda (Roundworms)		
 CNCI	s	Canadian National Collection Insects	CNC		
 CNCM	c	Collection Nationale de Cultures de Microorganismes			
+CNCRU	c	Coleccion Nacional de Cepas de Rhizobium			
 CNCTC	c	Czech National Collection of Type Cultures			
 CNE	s	Victoria Jubilee Museum			
 CNEN-LABPC	c	Laboratorio de Pocos de Caldas			
