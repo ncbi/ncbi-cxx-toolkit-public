@@ -62,6 +62,7 @@ if (HAVE_WCHAR_H)
     set(HAVE_WSTRING 1)
 endif (HAVE_WCHAR_H)
 check_include_file(windows.h HAVE_WINDOWS_H)
+check_include_file(winternl.h HAVE_WINTERNL_H)
 check_include_file(sys/epoll.h HAVE_SYS_EPOLL_H)
 
 include(CheckIncludeFileCXX)

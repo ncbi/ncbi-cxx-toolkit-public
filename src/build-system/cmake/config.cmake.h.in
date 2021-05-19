@@ -673,7 +673,7 @@
 #cmakedefine HAVE_WINDOWS_H 1
 
 /* Define to 1 if you have the <winternl.h> header file. */
-/* #undef HAVE_WINTERNL_H */
+#cmakedefine HAVE_WINTERNL_H 1
 
 /* Define to 1 if you have the `writev' function. */
 #cmakedefine HAVE_WRITEV 1
