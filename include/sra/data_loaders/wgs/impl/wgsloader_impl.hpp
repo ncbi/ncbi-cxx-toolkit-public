@@ -41,6 +41,9 @@
 #include <util/limited_size_map.hpp>
 
 BEGIN_NCBI_SCOPE
+
+class CThreadNonStop;
+
 BEGIN_SCOPE(objects)
 
 class CDataLoader;
@@ -199,6 +202,8 @@ private:
     CVDBMgr m_Mgr;
     string  m_WGSVolPath;
     CRef<CWGSResolver> m_Resolver;
+    unsigned m_UpdateDelay;
+    CRef<CThreadNonStop> m_UpdateThread;
     TFixedFiles m_FixedFiles;
     TFoundFiles m_FoundFiles;
     bool m_AddWGSMasterDescr;

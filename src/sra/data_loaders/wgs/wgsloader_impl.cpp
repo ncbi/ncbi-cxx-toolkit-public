@@ -56,6 +56,7 @@
 #include <corelib/plugin_manager_store.hpp>
 #include <serial/objistr.hpp>
 #include <serial/serial.hpp>
+#include <util/thread_nonstop.hpp>
 
 #include <sra/error_codes.hpp>
 #include <sra/readers/ncbi_traces_path.hpp>
@@ -72,7 +73,7 @@
 BEGIN_NCBI_SCOPE
 
 #define NCBI_USE_ERRCODE_X   WGSLoader
-NCBI_DEFINE_ERR_SUBCODE_X(16);
+NCBI_DEFINE_ERR_SUBCODE_X(20);
 
 BEGIN_SCOPE(objects)
 
@@ -191,6 +192,18 @@ static bool GetKeepReplacedParam(void)
 }
 
 
+NCBI_PARAM_DECL(unsigned, WGS_LOADER, INDEX_UPDATE_TIME);
+NCBI_PARAM_DEF(unsigned, WGS_LOADER, INDEX_UPDATE_TIME, 600);
+
+
+static unsigned GetUpdateTime(void)
+{
+    static unsigned value =
+        NCBI_PARAM_TYPE(WGS_LOADER, INDEX_UPDATE_TIME)::GetDefault();
+    return value;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CWGSBlobId
 /////////////////////////////////////////////////////////////////////////////
@@ -285,6 +298,60 @@ bool CWGSBlobId::operator==(const CBlobId& id) const
 
 
 /////////////////////////////////////////////////////////////////////////////
+// resolver update thread
+
+BEGIN_LOCAL_NAMESPACE;
+
+
+class CIndexUpdateThread : public CThreadNonStop
+{
+public:
+    CIndexUpdateThread(unsigned update_delay,
+                       CRef<CWGSResolver> resolver)
+        : CThreadNonStop(update_delay),
+          m_FirstRun(true),
+          m_Resolver(resolver)
+        {
+        }
+
+protected:
+    virtual void DoJob(void) {
+        if ( m_FirstRun ) {
+            // CThreadNonStop runs first iteration immediately, ignore it
+            m_FirstRun = false;
+            return;
+        }
+        try {
+            if ( m_Resolver->Update() ) {
+                if ( GetDebugLevel() >= 1 ) {
+                    LOG_POST_X(18, Info<<"CWGSDataLoader: updated WGS index");
+                }
+            }
+        }
+        catch ( CException& exc ) {
+            if ( GetDebugLevel() >= 1 ) {
+                ERR_POST_X(20, "ID2WGS: "
+                           "Exception while updating WGS index: "<<exc);
+            }
+        }
+        catch ( exception& exc ) {
+            if ( GetDebugLevel() >= 1 ) {
+                ERR_POST_X(20, "ID2WGS: "
+                           "Exception while updating WGS index: "<<exc.what());
+            }
+        }
+    }
+
+private:
+    bool m_FirstRun;
+    CRef<CWGSResolver> m_Resolver;
+};
+
+
+END_LOCAL_NAMESPACE;
+
+
+/////////////////////////////////////////////////////////////////////////////
 // CWGSDataLoader_Impl
 /////////////////////////////////////////////////////////////////////////////
 
@@ -314,6 +381,10 @@ CWGSDataLoader_Impl::CWGSDataLoader_Impl(
 
 CWGSDataLoader_Impl::~CWGSDataLoader_Impl(void)
 {
+    if ( m_UpdateThread ) {
+        m_UpdateThread->RequestStop();
+        m_UpdateThread->Join();
+    }
 }
 
 
@@ -323,6 +394,10 @@ CWGSResolver& CWGSDataLoader_Impl::GetResolver(void)
         CMutexGuard guard(m_Mutex);
         if ( !m_Resolver ) {
             m_Resolver = CWGSResolver::CreateResolver(m_Mgr);
+        }
+        if ( m_Resolver && !m_UpdateThread ) {
+            m_UpdateThread = new CIndexUpdateThread(GetUpdateTime(), m_Resolver);
+            m_UpdateThread->Run();
         }
     }
     return *m_Resolver;
