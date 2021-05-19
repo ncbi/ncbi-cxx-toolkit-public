@@ -68,6 +68,8 @@
 #include <objtools/validator/tax_validation_and_cleanup.hpp>
 #include <objtools/validator/dup_feats.hpp>
 
+#include <objtools/readers/format_guess_ex.hpp>
+
 #include "read_hooks.hpp"
 #include "bigfile_processing.hpp"
 
@@ -1188,8 +1190,13 @@ template<typename T>void CCleanupApp::x_WriteToFile(const T& obj)
 CObjectIStream* CCleanupApp::x_OpenIStream(const CArgs& args, const string& filename)
 {
     // determine the file serialization format.
+    ESerialDataFormat serial = eSerial_None;
+
     // default for batch files is binary, otherwise text.
-    ESerialDataFormat serial = args["batch"] ? eSerial_AsnBinary : eSerial_AsnText;
+    if (args["batch"]) {
+        serial = eSerial_AsnBinary;
+    }
+
     if ( args["serial"] ) {
         const string& val = args["serial"].AsString();
         if ( val == "text" ) {
@@ -1204,6 +1211,31 @@ CObjectIStream* CCleanupApp::x_OpenIStream(const CArgs& args, const string& file
     // make sure of the underlying input stream. -i must be given on the command line
     // then the input comes from a file.
     CNcbiIstream* pInputStream = new CNcbiIfstream(filename, ios::binary);
+    if (!pInputStream)
+        return nullptr;
+
+    // autodetect
+    if (serial == eSerial_None) {
+        CFormatGuessEx fg(*pInputStream);
+        auto& fh(fg.GetFormatHints());
+        fh.AddPreferredFormat(CFormatGuess::eTextASN);
+        fh.AddPreferredFormat(CFormatGuess::eBinaryASN);
+        fh.AddPreferredFormat(CFormatGuess::eXml);
+        fh.DisableAllNonpreferred();
+
+        switch (fg.GuessFormat()) {
+            default:
+            case CFormatGuess::eTextASN:
+                serial = eSerial_AsnText;
+                break;
+            case CFormatGuess::eBinaryASN:
+                serial = eSerial_AsnBinary;
+                break;
+            case CFormatGuess::eXml:
+                serial = eSerial_Xml;
+                break;
+        }
+    }
 
     // if -c was specified then wrap the input stream into a gzip decompressor before
     // turning it into an object stream:
