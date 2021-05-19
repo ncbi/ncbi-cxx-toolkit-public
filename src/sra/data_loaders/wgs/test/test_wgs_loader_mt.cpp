@@ -193,6 +193,99 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr)
 }
 
 
+BOOST_AUTO_TEST_CASE(CheckWGSMasterDescrProt)
+{
+    LOG_POST("Checking WGS master sequence descriptors on proteins");
+    CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr);
+
+    CRandom r(1);
+    const size_t NQ = 12;
+    const size_t NS = 2000;
+    const char* accs[] = {
+        "BART01",
+        "BARU01",
+        "BARG01",
+        "BASA01",
+        "BARW01",
+        "BASC01",
+        "BARV01",
+        "BASE01",
+        "BASF01",
+        "BASG01",
+        "BASJ01",
+        "BASL01",
+        "BASN01",
+        "BASR01",
+        "BASS01",
+    };
+    vector<vector<string>> ids(NQ);
+    {{
+        CVDBMgr mgr;
+        for ( size_t k = 0; k < NQ; ++k ) {
+            CWGSDb wgs(mgr, accs[k]);
+            for ( CWGSProteinIterator it(wgs); it && ids[k].size() < NS; ++it ) {
+                ids[k].push_back(it.GetAccession());
+            }
+            LOG_POST("WGS "<<accs[k]<<" testing "<<ids[k].size()<<" proteins");
+        }
+    }}
+    vector<thread> tt(NQ);
+    for ( size_t i = 0; i < NQ; ++i ) {
+        tt[i] =
+            thread([&](const vector<string>& ids)
+                   {
+                       CScope scope(*CObjectManager::GetInstance());
+                       scope.AddDefaults();
+                       for ( auto& id : ids ) {
+                           try {
+                               CBioseq_Handle bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle(id));
+                               BOOST_REQUIRE_MT_SAFE(bh);
+                               int desc_mask = 0;
+                               map<string, int> user_count;
+                               int comment_count = 0;
+                               int pub_count = 0;
+                               for ( CSeqdesc_CI it(bh); it; ++it ) {
+                                   desc_mask |= 1<<it->Which();
+                                   switch ( it->Which() ) {
+                                   case CSeqdesc::e_Comment:
+                                       ++comment_count;
+                                       break;
+                                   case CSeqdesc::e_Pub:
+                                       ++pub_count;
+                                       break;
+                                   case CSeqdesc::e_User:
+                                       ++user_count[it->GetUser().GetType().GetStr()];
+                                       break;
+                                   default:
+                                       break;
+                                   }
+                               }
+                               BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_Title));
+                               BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_Source));
+                               BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_Molinfo));
+                               BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_Pub));
+                               BOOST_CHECK_MT_SAFE(pub_count == 2 || pub_count == 3);
+                               //BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_Genbank));
+                               BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_Create_date));
+                               BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_Update_date));
+                               BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_User));
+                               BOOST_CHECK_EQUAL_MT_SAFE(user_count.size(), 2u);
+                               BOOST_CHECK_EQUAL_MT_SAFE(user_count["StructuredComment"], 1);
+                               BOOST_CHECK_EQUAL_MT_SAFE(user_count["DBLink"], 1);
+                           }
+                           catch (...) {
+                               ERR_POST("Failed id: "<<id);
+                               throw;
+                           }
+                       }
+                   }, ids[i]);
+    }
+    for ( size_t i = 0; i < NQ; ++i ) {
+        tt[i].join();
+    }
+}
+
+
 BEGIN_LOCAL_NAMESPACE;
 
 static string get_cip(size_t index)
