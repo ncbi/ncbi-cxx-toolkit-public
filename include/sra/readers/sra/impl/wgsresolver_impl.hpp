@@ -115,11 +115,13 @@ protected:
     void Put(CRef<SGiIdxTableCursor>& curs, TIntId gi = 0);
     void Put(CRef<SAccIdxTableCursor>& curs);
 
+    void x_Close(); // unguarded
     bool x_Update();
     
 private:
     CVDBMgr m_Mgr;
-    CMutex m_Mutex; // for update
+    typedef CRWLock TDBMutex;
+    TDBMutex m_DBMutex; // for update
     string m_WGSIndexPath;
     string m_WGSIndexResolvedPath;
     CTime m_Timestamp;

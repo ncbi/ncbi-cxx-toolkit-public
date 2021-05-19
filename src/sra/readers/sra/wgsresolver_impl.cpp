@@ -406,7 +406,13 @@ CRef<CWGSResolver> CWGSResolver_VDB::CreateResolver(const CVDBMgr& mgr)
 
 void CWGSResolver_VDB::Close(void)
 {
-    CMutexGuard guard(m_Mutex);
+    TDBMutex::TWriteLockGuard guard(m_DBMutex);
+    x_Close();
+}
+
+
+void CWGSResolver_VDB::x_Close()
+{
     m_Mgr.Close();
     m_Db.Close();
     m_GiIdxTable.Close();
@@ -458,8 +464,8 @@ void CWGSResolver_VDB::Open(const CVDBMgr& mgr, const string& acc_or_path)
     string path = s_ResolveAccOrPath(mgr, acc_or_path);
 
     // open VDB file
-    CMutexGuard guard(m_Mutex);
-    Close();
+    TDBMutex::TWriteLockGuard guard(m_DBMutex);
+    x_Close();
     m_Mgr = mgr;
     try {
         m_Db = CVDB(m_Mgr, path);
@@ -542,7 +548,6 @@ bool CWGSResolver_VDB::x_Update(void)
 inline
 CRef<CWGSResolver_VDB::SGiIdxTableCursor> CWGSResolver_VDB::GiIdx(TIntId row)
 {
-    CMutexGuard guard(m_Mutex);
     CRef<SGiIdxTableCursor> curs = m_GiIdxCursorCache.Get(row);
     if ( !curs ) {
         curs = new SGiIdxTableCursor(GiIdxTable());
@@ -554,7 +559,6 @@ CRef<CWGSResolver_VDB::SGiIdxTableCursor> CWGSResolver_VDB::GiIdx(TIntId row)
 inline
 CRef<CWGSResolver_VDB::SAccIdxTableCursor> CWGSResolver_VDB::AccIdx(void)
 {
-    CMutexGuard guard(m_Mutex);
     CRef<SAccIdxTableCursor> curs = m_AccIdxCursorCache.Get();
     if ( !curs ) {
         curs = new SAccIdxTableCursor(AccIdxTable());
@@ -566,7 +570,6 @@ CRef<CWGSResolver_VDB::SAccIdxTableCursor> CWGSResolver_VDB::AccIdx(void)
 inline
 void CWGSResolver_VDB::Put(CRef<SGiIdxTableCursor>& curs, TIntId row)
 {
-    CMutexGuard guard(m_Mutex);
     if ( curs->m_Table == GiIdxTable() ) {
         m_GiIdxCursorCache.Put(curs, row);
     }
@@ -576,7 +579,6 @@ void CWGSResolver_VDB::Put(CRef<SGiIdxTableCursor>& curs, TIntId row)
 inline
 void CWGSResolver_VDB::Put(CRef<SAccIdxTableCursor>& curs)
 {
-    CMutexGuard guard(m_Mutex);
     if ( curs->m_Table == AccIdxTable() ) {
         m_AccIdxCursorCache.Put(curs);
     }
@@ -585,15 +587,16 @@ void CWGSResolver_VDB::Put(CRef<SAccIdxTableCursor>& curs)
 
 CWGSResolver::TWGSPrefixes CWGSResolver_VDB::GetPrefixes(TGi gi)
 {
+    TDBMutex::TReadLockGuard guard(m_DBMutex);
     TWGSPrefixes ret;
     if ( s_DebugEnabled(eDebug_resolve) ) {
-        ERR_POST_X(24, "CWGSResolver_VDB("<<GetWGSIndexPath()<<"): Resolving "<<gi);
+        LOG_POST_X(24, "CWGSResolver_VDB("<<GetWGSIndexPath()<<"): Resolving "<<gi);
     }
     CRef<SGiIdxTableCursor> cur = GiIdx();
     CVDBStringValue value = cur->WGS_PREFIX(GI_TO(TVDBRowId, gi), CVDBValue::eMissing_Allow);
     if ( !value.empty() ) {
         if ( s_DebugEnabled(eDebug_resolve) ) {
-            ERR_POST_X(25, "CWGSResolver_VDB("<<GetWGSIndexPath()<<"): WGS prefix "<<*value);
+            LOG_POST_X(25, "CWGSResolver_VDB("<<GetWGSIndexPath()<<"): WGS prefix "<<*value);
         }
         ret.push_back(*value);
     }
@@ -628,16 +631,17 @@ static inline bool s_SplitAccIndex(string& uacc, Uint2& key_num)
 
 CWGSResolver::TWGSPrefixes CWGSResolver_VDB::GetPrefixes(const string& acc)
 {
+    TDBMutex::TReadLockGuard guard(m_DBMutex);
     TWGSPrefixes ret;
     if ( s_DebugEnabled(eDebug_resolve) ) {
-        ERR_POST_X(26, "CWGSResolver_VDB("<<GetWGSIndexPath()<<"): Resolving "<<acc);
+        LOG_POST_X(26, "CWGSResolver_VDB("<<GetWGSIndexPath()<<"): Resolving "<<acc);
     }
     string uacc = acc;
     SAccIdxTableCursor::acc_range_number_t key_num = 0;
     if ( m_AccIndexIsPrefix ) {
         if ( !s_SplitAccIndex(uacc, key_num) ) {
             if ( s_DebugEnabled(eDebug_resolve) ) {
-                ERR_POST_X(27, "CWGSResolver_VDB("<<GetWGSIndexPath()<<"): invalid accession");
+                LOG_POST_X(27, "CWGSResolver_VDB("<<GetWGSIndexPath()<<"): invalid accession");
             }
             return ret;
         }
@@ -649,7 +653,7 @@ CWGSResolver::TWGSPrefixes CWGSResolver_VDB::GetPrefixes(const string& acc)
         range = m_AccIndex.Find(uacc);
     }}
     if ( s_DebugEnabled(eDebug_resolve) ) {
-        ERR_POST_X(27, "CWGSResolver_VDB("<<GetWGSIndexPath()<<"): "
+        LOG_POST_X(27, "CWGSResolver_VDB("<<GetWGSIndexPath()<<"): "
                    "range "<<range.first<<"-"<<range.second);
     }
     if ( range.second ) {
@@ -672,7 +676,7 @@ CWGSResolver::TWGSPrefixes CWGSResolver_VDB::GetPrefixes(const string& acc)
             PROFILE(sw_WGSPrefix);
             CTempString prefix = *cur->WGS_PREFIX(row_id);
             if ( s_DebugEnabled(eDebug_resolve) ) {
-                ERR_POST_X(27, "CWGSResolver_VDB("<<GetWGSIndexPath()<<"): WGS prefix "<<prefix);
+                LOG_POST_X(27, "CWGSResolver_VDB("<<GetWGSIndexPath()<<"): WGS prefix "<<prefix);
             }
             ret.push_back(prefix);
         }
@@ -887,19 +891,19 @@ CWGSResolver::TWGSPrefixes CWGSResolver_DL::GetPrefixes(const CSeq_id& id)
 {
     TWGSPrefixes prefixes;
     if ( s_DebugEnabled(eDebug_resolve) ) {
-        ERR_POST_X(10, "CWGSResolver_DL: "
+        LOG_POST_X(10, "CWGSResolver_DL: "
                    "Asking DataLoader for ids of "<<id.AsFastaString());
     }
     CDataLoader::TIds ids;
     m_Loader->GetIds(CSeq_id_Handle::GetHandle(id), ids);
     ITERATE ( CDataLoader::TIds, rit, ids ) {
         if ( s_DebugEnabled(eDebug_resolve) ) {
-            ERR_POST_X(11, "CWGSResolver_DL: Parsing Seq-id "<<*rit);
+            LOG_POST_X(11, "CWGSResolver_DL: Parsing Seq-id "<<*rit);
         }
         string prefix = ParseWGSPrefix(*rit->GetSeqId());
         if ( !prefix.empty() ) {
             if ( s_DebugEnabled(eDebug_resolve) ) {
-                ERR_POST_X(12, "CWGSResolver_DL: WGS prefix: "<<prefix);
+                LOG_POST_X(12, "CWGSResolver_DL: WGS prefix: "<<prefix);
             }
             prefixes.push_back(prefix);
             break;
@@ -939,19 +943,19 @@ CWGSResolver::TWGSPrefixes CWGSResolver_Proc::GetPrefixes(const CSeq_id& id)
 {
     TWGSPrefixes prefixes;
     if ( s_DebugEnabled(eDebug_resolve) ) {
-        ERR_POST_X(13, "CWGSResolver_Proc: "
+        LOG_POST_X(13, "CWGSResolver_Proc: "
                    "Asking GB for ids of "<<id.AsFastaString());
     }
     CID2ProcessorResolver::TIds ids = m_Resolver->GetIds(id);
     ITERATE ( CID2ProcessorResolver::TIds, rit, ids ) {
         if ( s_DebugEnabled(eDebug_resolve) ) {
-            ERR_POST_X(14, "CWGSResolver_Proc: "
+            LOG_POST_X(14, "CWGSResolver_Proc: "
                        "Parsing Seq-id "<<(*rit)->AsFastaString());
         }
         string prefix = ParseWGSPrefix(**rit);
         if ( !prefix.empty() ) {
             if ( s_DebugEnabled(eDebug_resolve) ) {
-                ERR_POST_X(15, "CWGSResolver_Proc: WGS prefix: "<<prefix);
+                LOG_POST_X(15, "CWGSResolver_Proc: WGS prefix: "<<prefix);
             }
             prefixes.push_back(prefix);
             break;
@@ -1035,20 +1039,20 @@ CWGSResolver::TWGSPrefixes CWGSResolver_ID2::GetPrefixes(const CSeq_id& id)
     req.SetSeq_id().SetSeq_id(const_cast<CSeq_id&>(id));
     req.SetSeq_id_type(req.eSeq_id_type_general);
     if ( s_DebugEnabled(eDebug_resolve) ) {
-        ERR_POST_X(16, "CWGSResolver_ID2: "
+        LOG_POST_X(16, "CWGSResolver_ID2: "
                    "Asking ID2 for ids of "<<id.AsFastaString());
     }
     m_ID2Client->AskGet_seq_id(req);
     const CID2Client::TReplies& replies = m_ID2Client->GetAllReplies();
     ITERATE ( CID2Client::TReplies, rit, replies ) {
         if ( s_DebugEnabled(eDebug_resolve) ) {
-            ERR_POST_X(17, "CWGSResolver_ID2: "
+            LOG_POST_X(17, "CWGSResolver_ID2: "
                        "Parsing ID2 reply "<<MSerial_AsnText<<**rit);
         }
         string prefix = ParseWGSPrefix(**rit);
         if ( !prefix.empty() ) {
             if ( s_DebugEnabled(eDebug_resolve) ) {
-                ERR_POST_X(18, "CWGSResolver_ID2: WGS prefix: "<<prefix);
+                LOG_POST_X(18, "CWGSResolver_ID2: WGS prefix: "<<prefix);
             }
             prefixes.push_back(prefix);
             break;
