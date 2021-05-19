@@ -249,6 +249,24 @@ static const SBioseqInfo s_BioseqInfos[] = {
         30432563,
         30432563
     },
+    {
+        "2500000205",
+        "gi|2500000205;ref|NG_073896.1",
+        1767,
+        1767
+    },
+    {
+        "NM_001393667",
+        "gi|2500000206;ref|NM_001393667.1",
+        9061,
+        9061
+    },
+    {
+        "2500000207",
+        "gi|2500000207;ref|NP_001380596.1",
+        870,
+        870
+    },
 };
 
 
@@ -1175,13 +1193,13 @@ BOOST_AUTO_TEST_CASE(CheckExtGetAllTSEs)
     }
     BOOST_CHECK(size > 0);
 }
-
+#endif
 
 BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr)
 {
-    LOG_POST("Checking WGS master sequence descriptors");
+    LOG_POST("Checking WGS master sequence descriptors 1");
     CRef<CScope> scope = s_InitScope();
-    CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetHandle("BASL01000795.1"));
+    CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetHandle("JAFLJK010000001"));
     BOOST_REQUIRE(bh);
     int desc_mask = 0;
     map<string, int> user_count;
@@ -1206,23 +1224,22 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr)
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Title));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Source));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Molinfo));
-    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Pub));
-    BOOST_CHECK_EQUAL(pub_count, 3);
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Genbank));
-    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Create_date));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Update_date));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Create_date));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Pub));
+    BOOST_CHECK_EQUAL(pub_count, 1);
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_User));
-    BOOST_CHECK_EQUAL(user_count.size(), 2u);
-    BOOST_CHECK_EQUAL(user_count["StructuredComment"], 1);
+    BOOST_CHECK_EQUAL(user_count.size(), 1u);
     BOOST_CHECK_EQUAL(user_count["DBLink"], 1);
 }
 
 
 BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr2)
 {
-    LOG_POST("Checking WGS master sequence descriptors with duplicates");
+    LOG_POST("Checking WGS master sequence descriptors 2");
     CRef<CScope> scope = s_InitScope();
-    CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetHandle("NZ_JJPX01000174.1"));
+    CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetHandle("2500000191"));
     BOOST_REQUIRE(bh);
     int desc_mask = 0;
     map<string, int> user_count;
@@ -1244,30 +1261,26 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr2)
             break;
         }
     }
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Title));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Source));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Molinfo));
-    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Pub));
-    BOOST_CHECK_EQUAL(pub_count, 2);
-    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Comment));
-    BOOST_CHECK_EQUAL(comment_count, 1);
-    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Create_date));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Genbank));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Update_date));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Create_date));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Pub));
+    BOOST_CHECK_EQUAL(pub_count, 1);
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_User));
-    BOOST_CHECK_EQUAL(user_count.size(), 4u);
-    if ( !s_HaveID1() ) { // TODO: ID1 returns 1 StructuredComment
-        BOOST_CHECK_EQUAL(user_count["StructuredComment"], 2);
-    }
+    BOOST_CHECK_EQUAL(user_count.size(), 1u);
     BOOST_CHECK_EQUAL(user_count["DBLink"], 1);
-    BOOST_CHECK_EQUAL(user_count["RefGeneTracking"], 1);
-    BOOST_CHECK_EQUAL(user_count["FeatureFetchPolicy"], 1);
 }
 
 
-BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr3)
+BOOST_AUTO_TEST_CASE(CheckWGSScaffold)
 {
-    LOG_POST("Checking WGS master sequence descriptors with duplicates");
+    LOG_POST("Checking WGS scaffold");
     CRef<CScope> scope = s_InitScope();
-    CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetHandle("NZ_JJPX01000091.1"));
+    CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetHandle("CM029356"));
+    //auto core = SerialClone(*bh.GetObjectCore());
     BOOST_REQUIRE(bh);
     int desc_mask = 0;
     map<string, int> user_count;
@@ -1289,25 +1302,27 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr3)
             break;
         }
     }
-    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Source));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Title));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Molinfo));
-    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Pub));
-    BOOST_CHECK_EQUAL(pub_count, 2);
-    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Comment));
-    BOOST_CHECK_EQUAL(comment_count, 1);
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Genbank));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Create_date));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Source));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Pub));
+    BOOST_CHECK_EQUAL(pub_count, 1);
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Update_date));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_User));
-    BOOST_CHECK_EQUAL(user_count.size(), 4u);
-    BOOST_CHECK_EQUAL(user_count["StructuredComment"], 2);
+    BOOST_CHECK_EQUAL(user_count.size(), 1u);
     BOOST_CHECK_EQUAL(user_count["DBLink"], 1);
-    BOOST_CHECK_EQUAL(user_count["RefGeneTracking"], 1);
-    if ( !s_HaveID1() ) { // TODO: ID1 returns 2 FeatureFetchPolicy
-        BOOST_CHECK_EQUAL(user_count["FeatureFetchPolicy"], 1);
-    }
+    BOOST_CHECK_EQUAL(CFeat_CI(bh).GetSize(), 4u);
+    BOOST_CHECK_EQUAL(CFeat_CI(bh, SAnnotSelector().SetResolveAll()).GetSize(), 4u);
+    TSeqPos len = bh.GetBioseqLength();
+    BOOST_CHECK(bh.GetSeqVector().CanGetRange(0, len));
+    string data;
+    bh.GetSeqVector().GetSeqData(0, len, data);
+    BOOST_CHECK_EQUAL(data.size(), len);
 }
 
-
+#if 0
 BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr4)
 {
     LOG_POST("Checking WGS master sequence descriptors 4+9");
@@ -1473,7 +1488,7 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr7)
     BOOST_CHECK_EQUAL(user_count["StructuredComment"], 1);
     BOOST_CHECK_EQUAL(user_count["Unverified"], 1);
 }
-
+#endif
 
 enum EInstType {
     eInst_ext, // inst.ext is set, inst.seq-data is not set
@@ -1500,6 +1515,7 @@ static void s_CheckSplitSeqData(CScope& scope, const string& seq_id, EInstType t
     BOOST_CHECK_EQUAL(bh.GetBioseqCore()->GetInst().IsSetExt(), type == eInst_ext);
 }
 
+
 BOOST_AUTO_TEST_CASE(CheckSplitSeqData)
 {
     if ( !s_HaveID2() ) {
@@ -1508,15 +1524,40 @@ BOOST_AUTO_TEST_CASE(CheckSplitSeqData)
     }
     LOG_POST("Checking split Seq-data access");
     CRef<CScope> scope = s_InitScope();
-    s_CheckSplitSeqData(*scope, "NC_000001.11", eInst_ext);
-    s_CheckSplitSeqData(*scope, "568815361", eInst_ext);
-    s_CheckSplitSeqData(*scope, "24210292", eInst_ext);
-    s_CheckSplitSeqData(*scope, "499533515", eInst_data);
-    s_CheckSplitSeqData(*scope, "10086043", eInst_split_data);
-    s_CheckSplitSeqData(*scope, "8894296", eInst_split_data);
+    s_CheckSplitSeqData(*scope, "CM029356", eInst_ext);
 }
 
 
+template<class ObjectType, class Root>
+size_t s_CountObjects(const Root& root)
+{
+    size_t count = 0;
+    for ( CTypeConstIterator<ObjectType> it(Begin(root)); it; ++it ) {
+        ++count;
+    }
+    return count;
+}
+
+
+BOOST_AUTO_TEST_CASE(CheckSplitNucProtSet)
+{
+    if ( !s_HaveID2() ) {
+        LOG_POST("Skipping check of split nuc-prot set without ID2");
+        return;
+    }
+    LOG_POST("Checking split nuc-prot set");
+    CRef<CScope> scope = s_InitScope();
+    CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetHandle("CP071864"));
+    auto core = bh.GetTopLevelEntry().GetObjectCore();
+    BOOST_CHECK_EQUAL(s_CountObjects<CSeqdesc>(*core), 350u);
+    BOOST_CHECK_EQUAL(s_CountObjects<CSeq_feat>(*core), 0u);
+    auto complete = bh.GetTopLevelEntry().GetCompleteObject();
+    BOOST_CHECK_EQUAL(s_CountObjects<CSeqdesc>(*complete), 527u);
+    BOOST_CHECK_EQUAL(s_CountObjects<CSeq_feat>(*complete), 625u);
+}
+
+
+#if 0
 #if defined(RUN_MT_TESTS) && defined(NCBI_THREADS)
 BOOST_AUTO_TEST_CASE(MTCrash1)
 {
@@ -1686,6 +1727,7 @@ NCBITEST_INIT_TREE()
     }
 
     NCBITEST_DISABLE(CheckAll);
+    NCBITEST_DISABLE(CheckExtCDD2);
     /*
     NCBITEST_DISABLE(CheckExtHPRD);
     NCBITEST_DISABLE(CheckExtMGC);
