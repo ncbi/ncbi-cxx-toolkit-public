@@ -48,6 +48,7 @@ util/cache$
 util/impl$
 util/lmdb$
 util/lmdbxx$
+util/profile$
 objtools$
 objtools/alnmgr$
 objtools/readers$
