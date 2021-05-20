@@ -388,13 +388,15 @@ BOOST_AUTO_TEST_CASE(SNPImplicitSNP)
     string seq_id = "NC_000001.11";
     TSeqPos range_from = 0;
     TSeqPos range_to = 100000;
-    size_t snp_count = 23474; // new PTIS version - NA000193272.8#17
+    size_t snp_count = 29766; // new PTIS version - NA000305581.1#17
+    // old was NA000193272.8#17 and had 23474 SNPs in this case
     // old was NA000193272.7#17 and had 17889 SNPs in this case
     
     string seq_id2 = "NC_000007";
     TSeqPos range_from2 = 1000000;
     TSeqPos range_to2 = 1100000;
-    size_t snp_count2 = 44657; // new PTIS version - NA000193272.8#17
+    size_t snp_count2 = 49002; // new PTIS version - NA000305581.1#17
+    // old was NA000193272.8#17 and had 44657 SNPs in this case
     // old was NA000193272.7#17 and had 34431 SNPs in this case
     
     CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetHandle(seq_id));
