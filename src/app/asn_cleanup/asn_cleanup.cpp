@@ -86,6 +86,15 @@ enum EProcessingMode
     eModeBigfile
 };
 
+enum class EAsnType
+{
+    eAny,
+    eSeqEntry,
+    eBioseq,
+    eBioseqSet,
+    eSeqSubmit,
+};
+
 class CCleanupApp : public CNcbiApplication, public CGBReleaseFile::ISeqEntryHandler, public ISubmitBlockHandler, IProcessorCallback
 {
 public:
@@ -118,8 +127,8 @@ private:
     void x_OpenOStream(const string& filename, const string& dir = kEmptyStr, bool remove_orig_dir = true);
     void x_CloseOStream();
     bool x_ProcessSeqSubmit(unique_ptr<CObjectIStream>& is);
-    bool x_ProcessBigFile(unique_ptr<CObjectIStream>& is, const string& asn_type);
-    void x_ProcessOneFile(unique_ptr<CObjectIStream>& is, EProcessingMode mode, const string& asn_type, bool first_only);
+    bool x_ProcessBigFile(unique_ptr<CObjectIStream>& is, EAsnType asn_type);
+    void x_ProcessOneFile(unique_ptr<CObjectIStream>& is, EProcessingMode mode, EAsnType asn_type, bool first_only);
     void x_ProcessOneFile(const string& filename);
     void x_ProcessOneDirectory(const string& dirname, const string& suffix);
 
@@ -444,19 +453,19 @@ bool CCleanupApp::x_ProcessSeqSubmit(unique_ptr<CObjectIStream>& is)
     return true;
 }
 
-bool CCleanupApp::x_ProcessBigFile(unique_ptr<CObjectIStream>& is, const string& asn_type)
+bool CCleanupApp::x_ProcessBigFile(unique_ptr<CObjectIStream>& is, EAsnType asn_type)
 {
-    _ASSERT(asn_type != "bioseq" && asn_type != "any");
+    _ASSERT(asn_type != EAsnType::eBioseq && asn_type != EAsnType::eAny);
 
     bool ret = false;
     EBigFileContentType content_type = eContentUndefined;
-    if (asn_type == "seq-entry") {
+    if (asn_type == EAsnType::eSeqEntry) {
         content_type = eContentSeqEntry;
     }
-    else if (asn_type == "bioseq-set") {
+    else if (asn_type == EAsnType::eBioseqSet) {
         content_type = eContentBioseqSet;
     }
-    else if (asn_type == "seq-submit") {
+    else if (asn_type == EAsnType::eSeqSubmit) {
         content_type = eContentSeqSubmit;
     }
 
@@ -467,7 +476,7 @@ bool CCleanupApp::x_ProcessBigFile(unique_ptr<CObjectIStream>& is, const string&
     return ret;
 }
 
-void CCleanupApp::x_ProcessOneFile(unique_ptr<CObjectIStream>& is, EProcessingMode mode, const string& asn_type, bool first_only)
+void CCleanupApp::x_ProcessOneFile(unique_ptr<CObjectIStream>& is, EProcessingMode mode, EAsnType asn_type, bool first_only)
 {
     if (mode == eModeBatch) {
         CGBReleaseFile in(*is.release());
@@ -484,7 +493,7 @@ void CCleanupApp::x_ProcessOneFile(unique_ptr<CObjectIStream>& is, EProcessingMo
         while (proceed) {
             CRef<CSeq_entry> se(new CSeq_entry);
 
-            if (asn_type == "seq-entry") {
+            if (asn_type == EAsnType::eSeqEntry) {
                 //
                 //  Straight through processing: Read a seq_entry, then process
                 //  a seq_entry:
@@ -495,7 +504,7 @@ void CCleanupApp::x_ProcessOneFile(unique_ptr<CObjectIStream>& is, EProcessingMo
                     HandleSeqEntry(se);
                     x_WriteToFile(*se);
                 }
-            } else if (asn_type == "bioseq") {
+            } else if (asn_type == EAsnType::eBioseq) {
                 //
                 //  Read object as a bioseq, wrap it into a seq_entry, then process
                 //  the wrapped bioseq as a seq_entry:
@@ -505,7 +514,7 @@ void CCleanupApp::x_ProcessOneFile(unique_ptr<CObjectIStream>& is, EProcessingMo
                     HandleSeqEntry(se);
                     x_WriteToFile(se->GetSeq());
                 }
-            } else if (asn_type == "bioseq-set") {
+            } else if (asn_type == EAsnType::eBioseqSet) {
                 //
                 //  Read object as a bioseq_set, wrap it into a seq_entry, then
                 //  process the wrapped bioseq_set as a seq_entry:
@@ -516,10 +525,10 @@ void CCleanupApp::x_ProcessOneFile(unique_ptr<CObjectIStream>& is, EProcessingMo
                     HandleSeqEntry(se);
                     x_WriteToFile(se->GetSet());
                 }
-            } else if (asn_type == "seq-submit") {  // submission
+            } else if (asn_type == EAsnType::eSeqSubmit) {
                 proceed = x_ProcessSeqSubmit(is);
             }
-            else if (asn_type == "any") {
+            else if (asn_type == EAsnType::eAny) {
 
                 CNcbiStreampos start = is->GetStreamPos();
                 //
@@ -569,6 +578,22 @@ void CCleanupApp::x_ProcessOneFile(const string& filename)
     const CArgs& args = GetArgs();
     _ASSERT(!NStr::IsBlank(filename));
 
+    EAsnType asn_type = EAsnType::eAny;
+    if (args["type"]) {
+        string s = args["type"].AsString();
+        if (s == "any") {
+            asn_type = EAsnType::eAny;
+        } else if (s == "seq-entry") {
+            asn_type = EAsnType::eSeqEntry;
+        } else if (s == "bioseq") {
+            asn_type = EAsnType::eBioseq;
+        } else if (s == "bioseq-set") {
+            asn_type = EAsnType::eBioseqSet;
+        } else if (s == "seq-submit") {
+            asn_type = EAsnType::eSeqSubmit;
+        }
+    }
+
     // open file
     unique_ptr<CObjectIStream> is(x_OpenIStream(args, filename));
     if (!is) {
@@ -585,14 +610,11 @@ void CCleanupApp::x_ProcessOneFile(const string& filename)
     }
 
     EProcessingMode mode = eModeRegular;
-    string asn_type = args["type"].AsString();
-
     if (args["batch"]) {
         mode = eModeBatch;
     }
     else if (args["bigfile"]) {
-
-        if (asn_type != "any" && asn_type != "bioseq") {
+        if (asn_type != EAsnType::eAny && asn_type != EAsnType::eBioseq) {
             mode = eModeBigfile;
         }
     }
