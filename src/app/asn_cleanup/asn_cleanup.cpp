@@ -123,7 +123,7 @@ public:
 private:
     // types
 
-    CObjectIStream* x_OpenIStream(const CArgs& args, const string& filename);
+    CObjectIStream* x_OpenIStream(const CArgs& args, const string& filename, EAsnType& asn_type);
     void x_OpenOStream(const string& filename, const string& dir = kEmptyStr, bool remove_orig_dir = true);
     void x_CloseOStream();
     bool x_ProcessSeqSubmit(unique_ptr<CObjectIStream>& is);
@@ -491,6 +491,13 @@ void CCleanupApp::x_ProcessOneFile(unique_ptr<CObjectIStream>& is, EProcessingMo
         size_t num_cleaned = 0;
 
         while (proceed) {
+
+            // clean exit
+            if (is->EndOfData()) {
+                is->SetFailFlags(CObjectIStream::eEOF);
+                break;
+            }
+
             CRef<CSeq_entry> se(new CSeq_entry);
 
             if (asn_type == EAsnType::eSeqEntry) {
@@ -498,7 +505,6 @@ void CCleanupApp::x_ProcessOneFile(unique_ptr<CObjectIStream>& is, EProcessingMo
                 //  Straight through processing: Read a seq_entry, then process
                 //  a seq_entry:
                 //
-
                 proceed = ObtainSeqEntryFromSeqEntry(is, se);
                 if (proceed) {
                     HandleSeqEntry(se);
@@ -520,42 +526,14 @@ void CCleanupApp::x_ProcessOneFile(unique_ptr<CObjectIStream>& is, EProcessingMo
                 //  process the wrapped bioseq_set as a seq_entry:
                 //
                 proceed = ObtainSeqEntryFromBioseqSet(is, se);
-
                 if (proceed) {
                     HandleSeqEntry(se);
                     x_WriteToFile(se->GetSet());
                 }
             } else if (asn_type == EAsnType::eSeqSubmit) {
                 proceed = x_ProcessSeqSubmit(is);
-            }
-            else if (asn_type == EAsnType::eAny) {
-
-                CNcbiStreampos start = is->GetStreamPos();
-                //
-                //  Try the first three in turn:
-                //
-                string strNextTypeName = is->PeekNextTypeName();
-                if (ObtainSeqEntryFromSeqEntry(is, se)) {
-                    HandleSeqEntry(se);
-                    x_WriteToFile(*se);
-                } else {
-                    is->SetStreamPos(start);
-                    if (ObtainSeqEntryFromBioseqSet(is, se)) {
-                        HandleSeqEntry(se);
-                        x_WriteToFile(se->GetSet());
-                    } else {
-                        is->SetStreamPos(start);
-                        if (ObtainSeqEntryFromBioseq(is, se)) {
-                            HandleSeqEntry(se);
-                            x_WriteToFile(se->GetSeq());
-                        } else {
-                            is->SetStreamPos(start);
-                            if (!x_ProcessSeqSubmit(is)) {
-                                proceed = false;
-                            }
-                        }
-                    }
-                }
+            } else {
+                proceed = false;
             }
 
             if (proceed) {
@@ -595,7 +573,7 @@ void CCleanupApp::x_ProcessOneFile(const string& filename)
     }
 
     // open file
-    unique_ptr<CObjectIStream> is(x_OpenIStream(args, filename));
+    unique_ptr<CObjectIStream> is(x_OpenIStream(args, filename, asn_type));
     if (!is) {
         string msg = "Unable to open input file " + filename;
         NCBI_THROW(CFlatException, eInternal, msg);
@@ -1209,7 +1187,7 @@ template<typename T>void CCleanupApp::x_WriteToFile(const T& obj)
 }
 
 
-CObjectIStream* CCleanupApp::x_OpenIStream(const CArgs& args, const string& filename)
+CObjectIStream* CCleanupApp::x_OpenIStream(const CArgs& args, const string& filename, EAsnType& asn_type)
 {
     // determine the file serialization format.
     ESerialDataFormat serial = eSerial_None;
@@ -1233,11 +1211,9 @@ CObjectIStream* CCleanupApp::x_OpenIStream(const CArgs& args, const string& file
     // make sure of the underlying input stream. -i must be given on the command line
     // then the input comes from a file.
     CNcbiIstream* pInputStream = new CNcbiIfstream(filename, ios::binary);
-    if (!pInputStream)
-        return nullptr;
 
     // autodetect
-    if (serial == eSerial_None) {
+    if (serial == eSerial_None || asn_type == EAsnType::eAny) {
         CFormatGuessEx fg(*pInputStream);
         auto& fh(fg.GetFormatHints());
         fh.AddPreferredFormat(CFormatGuess::eTextASN);
@@ -1245,17 +1221,39 @@ CObjectIStream* CCleanupApp::x_OpenIStream(const CArgs& args, const string& file
         fh.AddPreferredFormat(CFormatGuess::eXml);
         fh.DisableAllNonpreferred();
 
-        switch (fg.GuessFormat()) {
-            default:
-            case CFormatGuess::eTextASN:
-                serial = eSerial_AsnText;
-                break;
-            case CFormatGuess::eBinaryASN:
-                serial = eSerial_AsnBinary;
-                break;
-            case CFormatGuess::eXml:
-                serial = eSerial_Xml;
-                break;
+        CFormatGuess::EFormat inFormat;
+        if (asn_type == EAsnType::eAny) {
+            CFileContentInfo contentInfo;
+            inFormat = fg.GuessFormatAndContent(contentInfo);
+            string genbankType = contentInfo.mInfoGenbank.mObjectType;
+            if (genbankType == "Seq-entry") {
+                asn_type = EAsnType::eSeqEntry;
+            } else if (genbankType == "Bioseq") {
+                asn_type = EAsnType::eBioseq;
+            } else if (genbankType == "Bioseq-set") {
+                asn_type = EAsnType::eBioseqSet;
+            } else if (genbankType == "Seq-submit") {
+                asn_type = EAsnType::eSeqSubmit;
+            } else {
+                asn_type = EAsnType::eSeqSubmit; // ?
+            }
+        } else {
+            inFormat = fg.GuessFormat();
+        }
+
+        if (serial == eSerial_None) {
+            switch (inFormat) {
+                default:
+                case CFormatGuess::eTextASN:
+                    serial = eSerial_AsnText;
+                    break;
+                case CFormatGuess::eBinaryASN:
+                    serial = eSerial_AsnBinary;
+                    break;
+                case CFormatGuess::eXml:
+                    serial = eSerial_Xml;
+                    break;
+            }
         }
     }
 
