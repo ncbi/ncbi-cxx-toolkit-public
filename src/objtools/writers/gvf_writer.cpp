@@ -41,24 +41,6 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 //  ----------------------------------------------------------------------------
-bool s_ExtractPragma(
-    const CUser_object& pragmas,
-    const string& key,
-    string& pragma )
-//  ----------------------------------------------------------------------------
-{
-    if ( ! pragmas.HasField( key ) ) {
-        return false;
-    }
-    try {
-        pragma = pragmas.GetField( key ).GetData().GetStr();
-        return true;
-    }
-    catch( ... ) {};
-    return false;
-}
-
-//  ----------------------------------------------------------------------------
 CGvfWriter::CGvfWriter(
     CScope& scope,
     CNcbiOstream& ostr,
