@@ -932,6 +932,20 @@ public:
     shared_ptr<CPSG_Reply> GetNextReply(CDeadline deadline);
 
 
+    /// Push request into the queue and get corresponding reply.
+    /// @param request
+    ///  The request to send.
+    /// @param deadline
+    ///  For how long to try to push the request into the queue.
+    /// @return
+    ///  - Reply object from which you can obtain particular items.
+    ///  - On expired timeout, the returned pointer will be empty (nullptr).
+    /// @throw  CPSG_Exception
+    ///  If any (non-timeout) error condition occures.
+    shared_ptr<CPSG_Reply> SendRequestAndGetReply(shared_ptr<CPSG_Request> request,
+                                                  CDeadline                deadline);
+
+
     /// Stop accepting new requests.
     /// All already accepted requests will be processed as usual.
     /// No requests are accepted after the stop.

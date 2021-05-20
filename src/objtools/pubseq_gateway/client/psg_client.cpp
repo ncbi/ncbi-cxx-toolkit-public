@@ -564,8 +564,9 @@ void CPSG_Request_Chunk::x_GetAbsPathRef(ostream& os) const
     os << "/ID/get_tse_chunk?" << m_ChunkId;
 }
 
-bool CPSG_Queue::SImpl::SendRequest(shared_ptr<const CPSG_Request> user_request, const CDeadline& deadline)
+shared_ptr<CPSG_Reply> CPSG_Queue::SImpl::SendRequestAndGetReply(shared_ptr<CPSG_Request> r, CDeadline deadline)
 {
+    auto user_request = const_pointer_cast<const CPSG_Request>(r);
     auto& ioc = m_Service.ioc;
     auto& params = ioc.params;
 
@@ -581,6 +582,15 @@ bool CPSG_Queue::SImpl::SendRequest(shared_ptr<const CPSG_Request> user_request,
         user_reply->m_Impl->reply = move(reply);
         user_reply->m_Impl->user_reply = user_reply;
         user_reply->m_Request = move(user_request);
+        return user_reply;
+    }
+
+    return {};
+}
+
+bool CPSG_Queue::SImpl::SendRequest(shared_ptr<CPSG_Request> request, CDeadline deadline)
+{
+    if (auto user_reply = SendRequestAndGetReply(move(request), move(deadline))) {
         Push(move(user_reply));
         return true;
     }
@@ -1137,7 +1147,7 @@ CPSG_Queue::CPSG_Queue(const string& service) :
 bool CPSG_Queue::SendRequest(shared_ptr<CPSG_Request> request, CDeadline deadline)
 {
     _ASSERT(m_Impl);
-    return m_Impl->SendRequest(const_pointer_cast<const CPSG_Request>(request), deadline);
+    return m_Impl->SendRequest(move(request), move(deadline));
 }
 
 shared_ptr<CPSG_Reply> CPSG_Queue::GetNextReply(CDeadline deadline)
@@ -1147,6 +1157,12 @@ shared_ptr<CPSG_Reply> CPSG_Queue::GetNextReply(CDeadline deadline)
     shared_ptr<CPSG_Reply> rv;
     m_Impl->Pop(rv, deadline);
     return rv;
+}
+
+shared_ptr<CPSG_Reply> CPSG_Queue::SendRequestAndGetReply(shared_ptr<CPSG_Request> request, CDeadline deadline)
+{
+    _ASSERT(m_Impl);
+    return m_Impl->SendRequestAndGetReply(move(request), move(deadline));
 }
 
 void CPSG_Queue::Stop()
