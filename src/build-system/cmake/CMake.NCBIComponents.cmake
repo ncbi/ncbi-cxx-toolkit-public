@@ -110,7 +110,7 @@ endif()
 
 #############################################################################
 # local_lbsm
-if(WIN32 OR CYGWIN OR NCBI_COMPONENT_local_lbsm_DISABLED)
+if(WIN32 OR NCBI_COMPONENT_local_lbsm_DISABLED)
     set(NCBI_COMPONENT_local_lbsm_FOUND NO)
 else()
     if (EXISTS ${NCBITK_SRC_ROOT}/connect/ncbi_lbsm.c)
