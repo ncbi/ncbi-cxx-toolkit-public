@@ -6900,7 +6900,8 @@ SYRF	s	State University of New York
 SYS	s	Sun Yatsen University, Biology Department			
 SYS:Z	s	Sun Yatsen University, Biology Department, Zoology Collection		
 SYSBM	s	The Museum of Biology Sun Yat-sen University			
-SYSU	sc	National Sun Yat-Sen University, Department of Biological Sciences			
+SYSU	c	Sun Yat-Sen University culture collection of microorganisms			
+SYSU	s	National Sun Yat-Sen University			
 SYT	s	Stonyhurst College			
 SZ	s	Sichuan University, Biological Department			
 SZB	s	Haus der Natur			
