@@ -84,86 +84,11 @@ public:
         const string& /*str*/) const {return false;};
 
 protected:
-    virtual bool x_AssignType(
-        const CMappedFeat&,
-        unsigned int =0 );
-    virtual bool x_AssignStart(
-        const CMappedFeat& );
-    virtual bool x_AssignStop(
-        const CMappedFeat& );
-
-    virtual bool x_AssignAttributes(
-        const CMappedFeat&,
-        unsigned int =0);
-    virtual bool x_AssignAttributesFromAsnCore(
-        const CMappedFeat& );
-    virtual bool x_AssignAttributesFromAsnExtended(
-        const CMappedFeat& );
-    virtual bool x_AssignAttributesExtraQuals(
-        const CMappedFeat& );
-
-    virtual bool x_AssignAttributesMrna(
-        const CMappedFeat& );
-    virtual bool x_AssignAttributesTrna(
-        const CMappedFeat& );
-    virtual bool x_AssignAttributesCds(
-        const CMappedFeat& );
-    virtual bool x_AssignAttributesMiscFeature(
-        const CMappedFeat& );
-    virtual bool x_AssignAttributesGene(
-        const CMappedFeat& );
-
-    virtual bool x_AssignAttributeGene(
-        const CMappedFeat& );
-    virtual bool x_AssignAttributeGeneDesc(
-        const CMappedFeat& );
-    virtual bool x_AssignAttributeMapLoc(
-        const CMappedFeat& );
-    virtual bool x_AssignAttributeNote(
-        const CMappedFeat& );
-    virtual bool x_AssignAttributePartial(
-        const CMappedFeat& );
-    virtual bool x_AssignAttributePseudo(
-        const CMappedFeat& );
-    virtual bool x_AssignAttributeDbXref(
-        const CMappedFeat& );
-    virtual bool x_AssignAttributeGeneSynonym(
-        const CMappedFeat& );
-    virtual bool x_AssignAttributeLocusTag(
-        const CMappedFeat& );
-    virtual bool x_AssignAttributeProduct(
-        const CMappedFeat& );
-    virtual bool x_AssignAttributeCodonStart(
-        const CMappedFeat& );
-    virtual bool x_AssignAttributeEvidence(
-        const CMappedFeat& );
-    virtual bool x_AssignAttributeException(
-        const CMappedFeat& );
-    virtual bool x_AssignAttributeModelEvidence(
-        const CMappedFeat& );
-    virtual bool x_AssignAttributeTranscriptId(
-        const CMappedFeat& );
-    virtual bool x_AssignAttributeProteinId(
-        const CMappedFeat& );
-    virtual bool x_AssignAttributeExonNumber(
-        const CMappedFeat& );
-    virtual bool x_AssignAttributeTranslationTable(
-        const CMappedFeat& );
-    virtual bool x_AssignAttributeCodeBreak(
-        const CMappedFeat& );
-    virtual bool x_AssignAttributeOldLocusTag(
-        const CMappedFeat& );
-    virtual bool x_AssignAttributeName(
-        const CMappedFeat& );
-    virtual bool x_AssignAttributeIsOrdered(
-        const CMappedFeat& );
-
     virtual void x_StrAttributesAppendValueGff3(
         const string&,
         map<string, vector<string> >&,
         string& ) const;
 
-protected:
     CRef<CSeq_loc> m_pLoc;
 
     static const char* ATTR_SEPARATOR;
