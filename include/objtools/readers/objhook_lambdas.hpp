@@ -1,6 +1,6 @@
-#ifndef __NCBI_LAMBDA_HOOKS_HPP__
-#define __NCBI_LAMBDA_HOOKS_HPP__
-/*
+#ifndef OBJTOOLS_READERS_OBJHOOK_LAMBDAS_HPP
+#define OBJTOOLS_READERS_OBJHOOK_LAMBDAS_HPP
+/*  $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -39,8 +39,7 @@ class CLambdaReadHook : public CReadObjectHook
 {
 public:
     CLambdaReadHook(_T _lambda) : m_lambda{ _lambda } {};
-
-    virtual void ReadObject(CObjectIStream& in, const CObjectInfo& object) override
+    void ReadObject(CObjectIStream& in, const CObjectInfo& object) override
     {
         m_lambda(in, object);
     }
@@ -53,7 +52,7 @@ class CLambaReadMemberHook : public CReadClassMemberHook
 {
 public:
     CLambaReadMemberHook(_T _lambda) : m_lambda{ _lambda } {};
-    virtual void ReadClassMember(CObjectIStream& str, const CObjectInfoMI& obj) override
+    void ReadClassMember(CObjectIStream& str, const CObjectInfoMI& obj) override
     {
         m_lambda(str, obj);
     }
@@ -66,8 +65,7 @@ class CLambdaSkipHook : public CSkipObjectHook
 {
 public:
     CLambdaSkipHook(_T _lambda) : m_lambda{ _lambda } {};
-
-    virtual void SkipObject(CObjectIStream& stream, const CObjectTypeInfo& type) override
+    void SkipObject(CObjectIStream& stream, const CObjectTypeInfo& type) override
     {
         m_lambda(stream, type);
     }
@@ -80,7 +78,7 @@ class CLambaSkipMemberHook : public CSkipClassMemberHook
 {
 public:
     CLambaSkipMemberHook(_T _lambda) : m_lambda{ _lambda } {};
-    virtual void SkipClassMember(CObjectIStream& stream, const CObjectTypeInfoMI& member) override
+    void SkipClassMember(CObjectIStream& stream, const CObjectTypeInfoMI& member) override
     {
         m_lambda(stream, member);
     }
@@ -93,8 +91,7 @@ class CLambdaCopyHook : public CCopyObjectHook
 {
 public:
     CLambdaCopyHook(_T _lambda) : m_lambda{ _lambda } {};
-
-    virtual void CopyObject(CObjectStreamCopier& copier, const CObjectTypeInfo& type) override
+    void CopyObject(CObjectStreamCopier& copier, const CObjectTypeInfo& type) override
     {
         m_lambda(copier, type);
     }
@@ -107,9 +104,35 @@ class CLambaCopyMemberHook : public CCopyClassMemberHook
 {
 public:
     CLambaCopyMemberHook(_T _lambda) : m_lambda{ _lambda } {};
-    virtual void CopyClassMember(CObjectStreamCopier& copier, const CObjectTypeInfoMI& member) override
+    void CopyClassMember(CObjectStreamCopier& copier, const CObjectTypeInfoMI& member) override
     {
         m_lambda(copier, member);
+    }
+
+    _T m_lambda;
+};
+
+template<typename _T>
+class CLambdaWriteHook : public CWriteObjectHook
+{
+public:
+    CLambdaWriteHook(_T _lambda) : m_lambda{ _lambda } {};
+    void WriteObject(CObjectOStream& out, const CConstObjectInfo& object) override
+    {
+        m_lambda(out, object);
+    }
+
+    _T m_lambda;
+};
+
+template<typename _T>
+class CLambaWriteMemberHook : public CWriteClassMemberHook
+{
+public:
+    CLambaWriteMemberHook(_T _lambda) : m_lambda{ _lambda } {};
+    void WriteClassMember(CObjectOStream& out, const CConstObjectInfoMI& member) override
+    {
+        m_lambda(out, member);
     }
 
     _T m_lambda;
@@ -119,7 +142,6 @@ template<typename _Func>
 void SetLocalReadHook(const CObjectTypeInfo& obj_type_info, CObjectIStream& ostr, _Func _func)
 {
     auto hook = Ref(new CLambdaReadHook<_Func>(_func));
-
     obj_type_info.SetLocalReadHook(ostr, hook);
 }
 
@@ -140,7 +162,6 @@ template<typename _Func>
 void SetLocalSkipHook(const CObjectTypeInfo& obj_type_info, CObjectIStream& istr, _Func _func)
 {
     auto hook = Ref(new CLambdaSkipHook<_Func>(_func));
-
     obj_type_info.SetLocalSkipHook(istr, hook);
 }
 
@@ -161,7 +182,6 @@ template<typename _Func>
 void SetLocalCopyHook(const CObjectTypeInfo& obj_type_info, CObjectStreamCopier& copier, _Func _func)
 {
     auto hook = Ref(new CLambdaCopyHook<_Func>(_func));
-
     obj_type_info.SetLocalCopyHook(copier, hook);
 }
 
@@ -178,6 +198,25 @@ void SetLocalCopyHook(const CObjectTypeInfoMI& member_info, CObjectStreamCopier&
     member_info.SetLocalCopyHook(copier, hook);
 }
 
+template<typename _Func>
+void SetLocalWriteHook(const CObjectTypeInfo& obj_type_info, CObjectOStream& ostr, _Func _func)
+{
+    auto hook = Ref(new CLambdaWriteHook<_Func>(_func));
+    obj_type_info.SetLocalWriteHook(ostr, hook);
+}
+
+template<typename _Func>
+void SetLocalWriteHook(TTypeInfo type_info, CObjectOStream& ostr, _Func _func)
+{
+    SetLocalWriteHook(CObjectTypeInfo(type_info), ostr, _func);
+}
+
+template<typename _Func>
+void SetLocalWriteHook(const CObjectTypeInfoMI& member_info, CObjectOStream& ostr, _Func _func)
+{
+    auto hook = Ref(new CLambaWriteMemberHook<_Func>(_func));
+    member_info.SetLocalWriteHook(ostr, hook);
+}
 
 END_NCBI_SCOPE
 
