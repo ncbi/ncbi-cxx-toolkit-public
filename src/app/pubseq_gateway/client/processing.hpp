@@ -147,15 +147,13 @@ private:
 
     struct BatchResolve
     {
-        static void Submitter(TInputQueue& input, CPSG_Queue& output, const CArgs& args);
+        static void Submitter(TInputQueue& input, CPSG_Queue& queue, TReplyQueue& output, const CArgs& args);
         static void Reporter(TReplyQueue& input, SJsonOut& output);
     };
 
-    static void Retriever(CPSG_Queue& input, TReplyQueue& output);
-
     struct Interactive
     {
-        static void Submitter(TInputQueue& input, CPSG_Queue& output, SJsonOut& json_out, bool echo);
+        static void Submitter(TInputQueue& input, CPSG_Queue& queue, TReplyQueue& output, SJsonOut& json_out, bool echo);
         static void Reporter(TReplyQueue& input, SJsonOut& output);
     };
 

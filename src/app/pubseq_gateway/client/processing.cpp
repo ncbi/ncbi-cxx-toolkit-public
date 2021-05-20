@@ -538,9 +538,7 @@ int CProcessing::OneRequest(const string& service, shared_ptr<CPSG_Request> requ
     CPSG_Queue queue(service);
     SJsonOut json_out;
 
-    queue.SendRequest(request, CDeadline::eInfinite);
-    auto reply = queue.GetNextReply(CDeadline::eInfinite);
-
+    auto reply = queue.SendRequestAndGetReply(request, CDeadline::eInfinite);
     _ASSERT(reply);
 
     const CTimeout kTryTimeout(0.1);
@@ -613,7 +611,7 @@ CParallelProcessing::CParallelProcessing(const string& service, bool pipe, const
     m_PsgQueue(service),
     m_JsonOut(pipe)
 {
-    enum EType : size_t { eReporter, eRetriever, eSubmitter };
+    enum EType : size_t { eReporter, eSubmitter };
     vector<CTempString> threads;
     NStr::Split(args["worker-threads"].AsString(), ":", threads);
 
@@ -633,15 +631,11 @@ CParallelProcessing::CParallelProcessing(const string& service, bool pipe, const
         }
     }
 
-    for (size_t n = threads_number(eRetriever, 2); n; --n) {
-        m_Threads.emplace_back([&]{ Retriever(m_PsgQueue, m_ReplyQueue); });
-    }
-
-    for (size_t n = threads_number(eSubmitter, 2); n; --n) {
+    for (size_t n = threads_number(eSubmitter, 3); n; --n) {
         if (batch_resolve) {
-            m_Threads.emplace_back(&BatchResolve::Submitter, ref(m_InputQueue), ref(m_PsgQueue), cref(args));
+            m_Threads.emplace_back(&BatchResolve::Submitter, ref(m_InputQueue), ref(m_PsgQueue), ref(m_ReplyQueue), cref(args));
         } else {
-            m_Threads.emplace_back(&Interactive::Submitter, ref(m_InputQueue), ref(m_PsgQueue), ref(m_JsonOut), echo);
+            m_Threads.emplace_back(&Interactive::Submitter, ref(m_InputQueue), ref(m_PsgQueue), ref(m_ReplyQueue), ref(m_JsonOut), echo);
         }
     }
 }
@@ -651,7 +645,7 @@ CParallelProcessing::~CParallelProcessing()
     m_InputQueue.Stop(m_InputQueue.eDrain);
 }
 
-void CParallelProcessing::BatchResolve::Submitter(TInputQueue& input, CPSG_Queue& output, const CArgs& args)
+void CParallelProcessing::BatchResolve::Submitter(TInputQueue& input, CPSG_Queue& queue, TReplyQueue& output, const CArgs& args)
 {
     static atomic_size_t instances(0);
     instances++;
@@ -670,17 +664,18 @@ void CParallelProcessing::BatchResolve::Submitter(TInputQueue& input, CPSG_Queue
 
         request->IncludeInfo(include_info);
 
-        if (!output.SendRequest(move(request), CDeadline::eInfinite)) {
-            _TROUBLE;
-        }
+        auto reply = queue.SendRequestAndGetReply(move(request), CDeadline::eInfinite);
+        _ASSERT(reply);
+
+        output.Push(move(reply));
     }
 
     if (--instances == 0) {
-        output.Stop();
+        output.Stop(output.eDrain);
     }
 }
 
-void CParallelProcessing::Interactive::Submitter(TInputQueue& input, CPSG_Queue& output, SJsonOut& json_out, bool echo)
+void CParallelProcessing::Interactive::Submitter(TInputQueue& input, CPSG_Queue& queue, TReplyQueue& output, SJsonOut& json_out, bool echo)
 {
     static atomic_size_t instances(0);
     instances++;
@@ -714,29 +709,13 @@ void CParallelProcessing::Interactive::Submitter(TInputQueue& input, CPSG_Queue&
             auto request_context = new_request_start.Clone();
 
             if (auto request = SRequestBuilder::Build(method, params.GetObject(), move(user_context), move(request_context))) {
-                if (!output.SendRequest(move(request), CDeadline::eInfinite)) {
-                    _TROUBLE;
-                }
+                auto reply = queue.SendRequestAndGetReply(move(request), CDeadline::eInfinite);
+                _ASSERT(reply);
+
+                output.Push(move(reply));
             }
         }
     }
-
-    if (--instances == 0) {
-        output.Stop();
-    }
-}
-
-void CParallelProcessing::Retriever(CPSG_Queue& input, TReplyQueue& output)
-{
-    static atomic_size_t instances(0);
-    instances++;
-
-    do {
-        if (auto reply = input.GetNextReply(CDeadline::eInfinite)) {
-            output.Push(move(reply));
-        }
-    }
-    while (!input.IsEmpty());
 
     if (--instances == 0) {
         output.Stop(output.eDrain);
@@ -938,25 +917,18 @@ int CProcessing::Performance(const string& service, size_t user_threads, double 
 
             if (i <= 0) break;
 
-            // Submit
-            {
-                auto& request = requests[requests.size() - i];
-                auto metrics = request->GetUserContext<SMetrics>();
+            // Submit and get response
+            auto& request = requests[requests.size() - i];
+            auto metrics = request->GetUserContext<SMetrics>();
 
-                metrics->Set(SMetricType::eStart);
-                _VERIFY(queue->SendRequest(request, CDeadline::eInfinite));
-                metrics->Set(SMetricType::eSubmit);
-            }
+            metrics->Set(SMetricType::eStart);
+            auto reply = queue->SendRequestAndGetReply(request, CDeadline::eInfinite);
+            metrics->Set(SMetricType::eSubmit);
 
-            // Response
-            auto reply = queue->GetNextReply(CDeadline::eInfinite);
             _ASSERT(reply);
 
             // Store the reply for now to prevent internal metrics from being written to cout (affects performance)
             replies.emplace_back(reply);
-
-            auto request = reply->GetRequest();
-            auto metrics = request->GetUserContext<SMetrics>();
 
             metrics->Set(SMetricType::eReply);
             bool success = reply->GetStatus(CDeadline::eInfinite) == EPSG_Status::eSuccess;
@@ -1141,15 +1113,8 @@ int CProcessing::Testing(const string& service)
         auto expected_result = request->GetUserContext<STestingContext>();
         const auto& request_id = *expected_result;
 
-        _VERIFY(queue.SendRequest(request, deadline));
-
-        auto reply = queue.GetNextReply(deadline);
-
+        auto reply = queue.SendRequestAndGetReply(request, deadline);
         _ASSERT(reply);
-
-        auto received_request = reply->GetRequest();
-
-        _ASSERT(request.get() == received_request.get());
 
         const bool expect_errors = expected_result->expected == STestingContext::eFailure;
         auto reply_status = reply->GetStatus(deadline);
@@ -1367,11 +1332,8 @@ void SIoWorker::Do()
 
     // Submit requests and receive response
     while (m_Context.Work()) {
-        // Submit
-        _VERIFY(queue.SendRequest(request, kInfinite));
-
-        // Response
-        auto reply = queue.GetNextReply(kInfinite);
+        // Submit and get response
+        auto reply = queue.SendRequestAndGetReply(request, kInfinite);
         _ASSERT(reply);
 
         // Store the reply for now to prevent internal metrics from being written to cout (affects performance)
