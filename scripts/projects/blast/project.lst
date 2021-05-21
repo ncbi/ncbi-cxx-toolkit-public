@@ -64,6 +64,7 @@ objtools/cleanup$
 objtools/edit$
 objtools/eutils$
 objtools/eutils/api$
+objtools/eutils/uilist$
 objtools/format$
 objtools/format/items$
 objtools/align_format
