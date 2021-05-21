@@ -62,6 +62,7 @@ objtools/blast/blastdb_format
 objtools/blast/seqdb_writer
 objtools/cleanup$
 objtools/edit$
+objtools/eutils$
 objtools/format$
 objtools/format/items$
 objtools/align_format
@@ -69,7 +70,6 @@ objtools/pubseq_gateway$
 objtools/pubseq_gateway/client
 dbapi$
 dbapi/driver$
-dbapi/cache$
 dbapi/driver/impl$
 dbapi/driver/odbc$
 dbapi/driver/odbc/unix_odbc$
