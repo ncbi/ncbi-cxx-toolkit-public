@@ -280,7 +280,8 @@ void s_TestPTIS(const string& descr,
         sel.AddNamedAnnots("SNP");
         CFeat_CI feat_it(bh, CRange<TSeqPos>(range_from, range_to), sel);
         BOOST_CHECK(feat_it);
-        BOOST_CHECK_EQUAL(feat_it.GetSize(), snp_count);
+        BOOST_CHECK_GE(feat_it.GetSize(), snp_count);
+        BOOST_CHECK_LT(feat_it.GetSize(), snp_count*2);
         s_CheckSource(descr, source, feat_it);
     }
     if ( 1 ) { // check coverage graphs
