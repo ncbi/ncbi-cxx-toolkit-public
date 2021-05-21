@@ -764,9 +764,11 @@ CFlatFileConfig::EPolicy x_GetPolicy(const CArgs& args)
 }
 
 
-CFlatFileConfig::EFlags x_GetFlags(const CArgs& args)
+static
+CFlatFileConfig::TFlags x_GetFlags(const CArgs& args)
 {
-    int flags = args["flags"].AsInteger();
+    CFlatFileConfig::TFlags flags = (unsigned)args["flags"].AsInteger();
+
     if (args["html"]) {
         flags |= CFlatFileConfig::fDoHTML;
     }
@@ -838,8 +840,8 @@ CFlatFileConfig::EFlags x_GetFlags(const CArgs& args)
             TFlagDescr(CFlatFileConfig::fShowSeqSpans,
                        "CFlatFileConfig::fShowSeqSpans")
         };
-        static size_t kArraySize = sizeof(kDescrTable) / sizeof(TFlagDescr);
-        for (size_t i = 0;  i < kArraySize;  ++i) {
+        static const size_t kArraySize = ArraySize(kDescrTable);
+        for (size_t i = 0; i < kArraySize; ++i) {
             if (flags & kDescrTable[i].first) {
                 LOG_POST(Error << "flag: "
                          << std::left << setw(40) << kDescrTable[i].second
@@ -850,15 +852,15 @@ CFlatFileConfig::EFlags x_GetFlags(const CArgs& args)
         }
     }
 
-    return (CFlatFileConfig::EFlags)flags;
+    return flags;
 }
 
-
-CFlatFileConfig::ECustom x_GetCustom(const CArgs& args)
+static
+CFlatFileConfig::TCustom x_GetCustom(const CArgs& args)
 {
-    int custom = args["custom"].AsInteger();
+    CFlatFileConfig::TCustom custom = (unsigned)args["custom"].AsInteger();
 
-    return (CFlatFileConfig::ECustom)custom;
+    return custom;
 }
 
 
@@ -916,28 +918,24 @@ void CFlatFileConfig::FromArguments(const CArgs& args)
     CFlatFileConfig::EFormat        format         = x_GetFormat(args);
     CFlatFileConfig::EMode          mode           = x_GetMode(args);
     CFlatFileConfig::EStyle         style          = x_GetStyle(args);
-    CFlatFileConfig::EFlags         flags          = x_GetFlags(args);
+    CFlatFileConfig::TFlags         flags          = x_GetFlags(args);
     CFlatFileConfig::EView          view           = x_GetView(args);
-    CFlatFileConfig::EPolicy        policy          = x_GetPolicy(args);
+    CFlatFileConfig::EPolicy        policy         = x_GetPolicy(args);
     CFlatFileConfig::TGenbankBlocks genbank_blocks = x_GetGenbankBlocks(args);
-    CFlatFileConfig::ECustom        custom         = x_GetCustom(args);
+    CFlatFileConfig::TCustom        custom         = x_GetCustom(args);
 
     // ID-5865 : Set the "show SNP" and "show CDD" bits based on the value of the
     // "enable-external" flag.
     if (args["no-external"]) {
-        int flg = (int) flags;
-        flg |= CFlatFileConfig::fHideCDDFeatures;
-        flg |= CFlatFileConfig::fHideSNPFeatures;
-        flags = (CFlatFileConfig::EFlags) flg;
+        flags |= CFlatFileConfig::fHideCDDFeatures;
+        flags |= CFlatFileConfig::fHideSNPFeatures;
     } else if (args["enable-external"] || args["policy"].AsString() == "external") {
-        int cust = (int) custom;
         if ((flags & CFlatFileConfig::fHideCDDFeatures) == 0) {
-            cust |= CFlatFileConfig::fShowCDDFeatures;
+            custom |= CFlatFileConfig::fShowCDDFeatures;
         }
         if ((flags & CFlatFileConfig::fHideSNPFeatures) == 0) {
-            cust |= CFlatFileConfig::fShowSNPFeatures;
+            custom |= CFlatFileConfig::fShowSNPFeatures;
         }
-        custom = (CFlatFileConfig::ECustom) cust;
     }
 
     SetFormat(format);
