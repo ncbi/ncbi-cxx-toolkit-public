@@ -64,6 +64,14 @@ objtools/cleanup$
 objtools/edit$
 objtools/eutils$
 objtools/eutils/api$
+objtools/eutils/egquery$
+objtools/eutils/ehistory$
+objtools/eutils/einfo$
+objtools/eutils/elink$
+objtools/eutils/epost$
+objtools/eutils/esearch$
+objtools/eutils/espell$
+objtools/eutils/esummary$
 objtools/eutils/uilist$
 objtools/format$
 objtools/format/items$
