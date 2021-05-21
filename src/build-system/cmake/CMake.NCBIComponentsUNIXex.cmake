@@ -163,8 +163,10 @@ if(NCBI_COMPONENT_BACKWARD_FOUND)
         set(NCBI_COMPONENT_BACKWARD_LIBS ${NCBI_COMPONENT_BACKWARD_LIBS} ${LIBDW_LIBS})
     endif()
 endif()
-NCBI_define_Xcomponent(NAME UNWIND MODULE libunwind LIB unwind)
-list(REMOVE_ITEM NCBI_ALL_COMPONENTS UNWIND)
+if(NOT CYGWIN OR (DEFINED NCBI_COMPONENT_UNWIND_DISABLED AND NOT NCBI_COMPONENT_UNWIND_DISABLED))
+    NCBI_define_Xcomponent(NAME UNWIND MODULE libunwind LIB unwind)
+    list(REMOVE_ITEM NCBI_ALL_COMPONENTS UNWIND)
+endif()
 
 ############################################################################
 # Kerberos 5 (via GSSAPI)
