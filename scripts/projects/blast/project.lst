@@ -63,6 +63,7 @@ objtools/blast/seqdb_writer
 objtools/cleanup$
 objtools/edit$
 objtools/eutils$
+objtools/eutils/api$
 objtools/format$
 objtools/format/items$
 objtools/align_format
