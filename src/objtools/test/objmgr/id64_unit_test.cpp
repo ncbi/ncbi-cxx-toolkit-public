@@ -1322,6 +1322,98 @@ BOOST_AUTO_TEST_CASE(CheckWGSScaffold)
     BOOST_CHECK_EQUAL(data.size(), len);
 }
 
+BOOST_AUTO_TEST_CASE(CheckWGSProt1)
+{
+    if ( !CGBDataLoader::IsUsingPSGLoader() && !s_HaveID2(eExcludePubseqos2) ) {
+        LOG_POST("Skipping VDB WGS nuc-prot set test without PSG/OSG");
+        return;
+    }
+    LOG_POST("Checking VDB WGS nuc-prot set by GI");
+    CRef<CScope> scope = s_InitScope();
+    CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetGiHandle(2500000217));
+    BOOST_REQUIRE(bh);
+    int desc_mask = 0;
+    map<string, int> user_count;
+    int comment_count = 0;
+    int pub_count = 0;
+    for ( CSeqdesc_CI it(bh); it; ++it ) {
+        desc_mask |= 1<<it->Which();
+        switch ( it->Which() ) {
+        case CSeqdesc::e_Comment:
+            ++comment_count;
+            break;
+        case CSeqdesc::e_Pub:
+            ++pub_count;
+            break;
+        case CSeqdesc::e_User:
+            ++user_count[it->GetUser().GetType().GetStr()];
+            break;
+        default:
+            break;
+        }
+    }
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Title));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Molinfo));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Create_date));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Source));
+    BOOST_CHECK_EQUAL(pub_count, 0);
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Update_date));
+    BOOST_CHECK_EQUAL(user_count.size(), 0u);
+    BOOST_CHECK_EQUAL(CFeat_CI(bh).GetSize(), 1u);
+    BOOST_CHECK_EQUAL(CFeat_CI(bh, SAnnotSelector().SetResolveAll()).GetSize(), 1u);
+    TSeqPos len = bh.GetBioseqLength();
+    BOOST_CHECK(bh.GetSeqVector().CanGetRange(0, len));
+    string data;
+    bh.GetSeqVector().GetSeqData(0, len, data);
+    BOOST_CHECK_EQUAL(data.size(), len);
+}
+
+BOOST_AUTO_TEST_CASE(CheckWGSProt2)
+{
+    if ( !CGBDataLoader::IsUsingPSGLoader() && !s_HaveID2(eExcludePubseqos2) ) {
+        LOG_POST("Skipping VDB WGS nuc-prot set test without PSG/OSG");
+        return;
+    }
+    LOG_POST("Checking VDB WGS nuc-prot set by acc");
+    CRef<CScope> scope = s_InitScope();
+    CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetHandle("KAG5512581"));
+    BOOST_REQUIRE(bh);
+    int desc_mask = 0;
+    map<string, int> user_count;
+    int comment_count = 0;
+    int pub_count = 0;
+    for ( CSeqdesc_CI it(bh); it; ++it ) {
+        desc_mask |= 1<<it->Which();
+        switch ( it->Which() ) {
+        case CSeqdesc::e_Comment:
+            ++comment_count;
+            break;
+        case CSeqdesc::e_Pub:
+            ++pub_count;
+            break;
+        case CSeqdesc::e_User:
+            ++user_count[it->GetUser().GetType().GetStr()];
+            break;
+        default:
+            break;
+        }
+    }
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Title));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Molinfo));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Create_date));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Source));
+    BOOST_CHECK_EQUAL(pub_count, 0);
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Update_date));
+    BOOST_CHECK_EQUAL(user_count.size(), 0u);
+    BOOST_CHECK_EQUAL(CFeat_CI(bh).GetSize(), 1u);
+    BOOST_CHECK_EQUAL(CFeat_CI(bh, SAnnotSelector().SetResolveAll()).GetSize(), 1u);
+    TSeqPos len = bh.GetBioseqLength();
+    BOOST_CHECK(bh.GetSeqVector().CanGetRange(0, len));
+    string data;
+    bh.GetSeqVector().GetSeqData(0, len, data);
+    BOOST_CHECK_EQUAL(data.size(), len);
+}
+
 #if 0
 BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr4)
 {
