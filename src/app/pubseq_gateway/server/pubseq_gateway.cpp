@@ -497,6 +497,12 @@ int CPubseqGatewayApp::Run(void)
                 return OnGetNA(req, reply);
             }, &get_parser, nullptr);
     http_handler.emplace_back(
+            "/ID/accession_blob_history",
+            [this](CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply)->int
+            {
+                return OnAccessionBlobHistory(req, reply);
+            }, &get_parser, nullptr);
+    http_handler.emplace_back(
             "/health",
             [this](CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply)->int
             {

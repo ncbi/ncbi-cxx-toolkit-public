@@ -126,28 +126,6 @@ CJsonNode CPSGS_Request::Serialize(void) const
 }
 
 
-string CPSGS_Request::x_RequestTypeToString(EPSGS_Type  type) const
-{
-    switch (type) {
-        case ePSGS_ResolveRequest:
-            return "ResolveRequest";
-        case ePSGS_BlobBySeqIdRequest:
-            return "BlobBySeqIdRequest";
-        case ePSGS_BlobBySatSatKeyRequest:
-            return "BlobBySatSatKeyRequest";
-        case ePSGS_AnnotationRequest:
-            return "AnnotationRequest";
-        case ePSGS_TSEChunkRequest:
-            return "TSEChunkRequest";
-        case ePSGS_UnknownRequest:
-            return "UnknownRequest";
-        default:
-            break;
-    }
-    return "???";
-}
-
-
 CJsonNode SPSGS_ResolveRequest::Serialize(void) const
 {
     CJsonNode       json(CJsonNode::NewObjectNode());
@@ -218,6 +196,20 @@ CJsonNode SPSGS_AnnotRequest::Serialize(void) const
         names.AppendString(name);
     }
     json.SetByKey("names", names);
+
+    return json;
+}
+
+
+CJsonNode SPSGS_AccessionBlobHistoryRequest::Serialize(void) const
+{
+    CJsonNode       json(CJsonNode::NewObjectNode());
+
+    json.SetString("name", GetName());
+    json.SetString("seq id", m_SeqId);
+    json.SetInteger("seq id type", m_SeqIdType);
+    json.SetBoolean("trace", m_Trace);
+    json.SetBoolean("use cache", m_UseCache);
 
     return json;
 }

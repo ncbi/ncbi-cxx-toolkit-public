@@ -152,6 +152,7 @@ public:
     int OnResolve(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
     int OnGetTSEChunk(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
     int OnGetNA(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
+    int OnAccessionBlobHistory(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
     int OnHealth(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
     int OnConfig(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
     int OnInfo(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);

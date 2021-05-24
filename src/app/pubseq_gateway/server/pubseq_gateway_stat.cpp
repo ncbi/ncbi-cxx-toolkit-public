@@ -155,6 +155,11 @@ CPSGSCounters::CPSGSCounters()
             "GetNamedAnnotationsCount", "Named annotations requests counter",
             "Number of times a client requested named annotations",
             true, false, true);
+    m_Counters[ePSGS_AccessionBlobHistory] =
+        new SCounterInfo(
+            "AccessionBlobHistoryCount", "Accession blob history requests counter",
+            "Number of times a client requested accession blob history",
+            true, false, true);
     m_Counters[ePSGS_TestIORequest] =
         new SCounterInfo(
             "TestIORequestCount", "Test input/output requests counter",

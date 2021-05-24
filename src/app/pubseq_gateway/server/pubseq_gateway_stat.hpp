@@ -65,6 +65,7 @@ class CPSGSCounters
             ePSGS_GetBlobBySeqIdRequest,
             ePSGS_GetBlobBySatSatKeyRequest,
             ePSGS_GetNamedAnnotations,
+            ePSGS_AccessionBlobHistory,
             ePSGS_TestIORequest,
             ePSGS_GetTSEChunk,
             ePSGS_HealthRequest,

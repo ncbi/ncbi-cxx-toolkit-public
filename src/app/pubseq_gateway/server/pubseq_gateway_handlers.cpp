@@ -815,6 +815,83 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
 }
 
 
+int CPubseqGatewayApp::OnAccessionBlobHistory(CHttpRequest &  req,
+                                              shared_ptr<CPSGS_Reply>  reply)
+{
+    auto                    now = chrono::high_resolution_clock::now();
+    CRequestContextResetter context_resetter;
+    CRef<CRequestContext>   context = x_CreateRequestContext(req);
+
+    if (x_IsShuttingDown(reply)) {
+        x_PrintRequestStop(context, CRequestStatus::e503_ServiceUnavailable);
+        return 0;
+    }
+
+    int     hops;
+    if (!x_GetHops(req, reply, hops)) {
+        x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
+        return 0;
+    }
+
+    try {
+        CTempString                             seq_id;
+        int                                     seq_id_type;
+        SPSGS_RequestBase::EPSGS_CacheAndDbUse  use_cache = SPSGS_RequestBase::ePSGS_CacheAndDb;
+
+        if (!x_ProcessCommonGetAndResolveParams(req, reply, seq_id,
+                                                seq_id_type, use_cache)) {
+            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
+            return 0;
+        }
+
+        SPSGS_RequestBase::EPSGS_Trace  trace = SPSGS_RequestBase::ePSGS_NoTracing;
+        string                          err_msg;
+        if (!x_GetTraceParameter(req, kTraceParam, trace, err_msg)) {
+            x_SendMessageAndCompletionChunks(reply, err_msg,
+                                             CRequestStatus::e400_BadRequest,
+                                             ePSGS_MalformedParameter,
+                                             eDiag_Error);
+            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
+            return 0;
+        }
+
+        vector<string>      enabled_processors;
+        vector<string>      disabled_processors;
+        if (!x_GetEnabledAndDisabledProcessors(req, reply, enabled_processors,
+                                               disabled_processors))
+            return 0;
+
+        // Parameters processing has finished
+        m_Counters.Increment(CPSGSCounters::ePSGS_AccessionBlobHistory);
+        unique_ptr<SPSGS_RequestBase>
+            req(new SPSGS_AccessionBlobHistoryRequest(
+                        string(seq_id.data(), seq_id.size()),
+                        seq_id_type, use_cache, hops, trace,
+                        enabled_processors, disabled_processors,
+                        now));
+        shared_ptr<CPSGS_Request>
+            request(new CPSGS_Request(move(req), context));
+
+        x_DispatchRequest(request, reply);
+    } catch (const exception &  exc) {
+        string      msg = "Exception when handling an accession_blob_history request: " +
+                          string(exc.what());
+        x_SendMessageAndCompletionChunks(reply, msg,
+                                         CRequestStatus::e500_InternalServerError,
+                                         ePSGS_UnknownError, eDiag_Error);
+        x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError);
+    } catch (...) {
+        string      msg = "Unknown exception when handling an accession_blob_history request";
+        x_SendMessageAndCompletionChunks(reply, msg,
+                                         CRequestStatus::e500_InternalServerError,
+                                         ePSGS_UnknownError, eDiag_Error);
+        x_PrintRequestStop(context, CRequestStatus::e500_InternalServerError);
+    }
+
+    return 0;
+}
+
+
 int CPubseqGatewayApp::OnHealth(CHttpRequest &  req,
                                 shared_ptr<CPSGS_Reply>  reply)
 {
