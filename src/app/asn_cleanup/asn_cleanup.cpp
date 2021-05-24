@@ -180,10 +180,8 @@ void CCleanupApp::Init()
             "Input file name", CArgDescriptions::eInputFile);
 
         // input file serial format (AsnText\AsnBinary\XML, default: AsnText)
-        arg_desc->AddOptionalKey("serial", "SerialFormat", "Input file format",
+        arg_desc->AddOptionalKey("serial", "SerialFormat", "Obsolete; Input file format is now autodetected",
             CArgDescriptions::eString);
-        arg_desc->SetConstraint("serial", &(*new CArgAllow_Strings,
-            "text", "binary", "XML"));
 
         // output file serial format (AsnText\AsnBinary\XML, default: AsnText)
         arg_desc->AddOptionalKey("outformat", "OutputSerialFormat", "Output file format",
@@ -196,10 +194,8 @@ void CCleanupApp::Init()
             "Specific ID to display", CArgDescriptions::eString);
 
         // input type:
-        arg_desc->AddDefaultKey( "type", "AsnType", "ASN.1 object type",
+        arg_desc->AddDefaultKey( "type", "AsnType", "Obsolete; ASN.1 object type is now autodetected",
             CArgDescriptions::eString, "any" );
-        arg_desc->SetConstraint( "type",
-            &( *new CArgAllow_Strings, "any", "seq-entry", "bioseq", "bioseq-set", "seq-submit" ) );
 
         // path
         arg_desc->AddOptionalKey("indir", "path", "Path to files", CArgDescriptions::eDirectory);
@@ -558,21 +554,6 @@ void CCleanupApp::x_ProcessOneFile(const string& filename)
 
     ESerialDataFormat serial = eSerial_None;
     EAsnType asn_type = EAsnType::eAny;
-
-    if (args["type"]) {
-        string s = args["type"].AsString();
-        if (s == "any") {
-            asn_type = EAsnType::eAny;
-        } else if (s == "seq-entry") {
-            asn_type = EAsnType::eSeqEntry;
-        } else if (s == "bioseq") {
-            asn_type = EAsnType::eBioseq;
-        } else if (s == "bioseq-set") {
-            asn_type = EAsnType::eBioseqSet;
-        } else if (s == "seq-submit") {
-            asn_type = EAsnType::eSeqSubmit;
-        }
-    }
 
     // open file
     unique_ptr<CObjectIStream> is(x_OpenIStream(args, filename, serial, asn_type));
@@ -1199,23 +1180,12 @@ CObjectIStream* CCleanupApp::x_OpenIStream(const CArgs& args, const string& file
         serial = eSerial_AsnBinary;
     }
 
-    if ( args["serial"] ) {
-        const string& val = args["serial"].AsString();
-        if ( val == "text" ) {
-            serial = eSerial_AsnText;
-        } else if ( val == "binary" ) {
-            serial = eSerial_AsnBinary;
-        } else if ( val == "XML" ) {
-            serial = eSerial_Xml;
-        }
-    }
-
     // make sure of the underlying input stream. -i must be given on the command line
     // then the input comes from a file.
     CNcbiIstream* pInputStream = new CNcbiIfstream(filename, ios::binary);
 
     // autodetect
-    if (serial == eSerial_None || asn_type == EAsnType::eAny) {
+    if (pInputStream) {
         CFormatGuessEx fg(*pInputStream);
         auto& fh(fg.GetFormatHints());
         fh.AddPreferredFormat(CFormatGuess::eTextASN);
@@ -1224,23 +1194,19 @@ CObjectIStream* CCleanupApp::x_OpenIStream(const CArgs& args, const string& file
         fh.DisableAllNonpreferred();
 
         CFormatGuess::EFormat inFormat;
-        if (asn_type == EAsnType::eAny) {
-            CFileContentInfo contentInfo;
-            inFormat = fg.GuessFormatAndContent(contentInfo);
-            string genbankType = contentInfo.mInfoGenbank.mObjectType;
-            if (genbankType == "Seq-entry") {
-                asn_type = EAsnType::eSeqEntry;
-            } else if (genbankType == "Bioseq") {
-                asn_type = EAsnType::eBioseq;
-            } else if (genbankType == "Bioseq-set") {
-                asn_type = EAsnType::eBioseqSet;
-            } else if (genbankType == "Seq-submit") {
-                asn_type = EAsnType::eSeqSubmit;
-            } else {
-                asn_type = EAsnType::eSeqSubmit; // ?
-            }
+        CFileContentInfo contentInfo;
+        inFormat = fg.GuessFormatAndContent(contentInfo);
+        const string& genbankType = contentInfo.mInfoGenbank.mObjectType;
+        if (genbankType == "Seq-entry") {
+            asn_type = EAsnType::eSeqEntry;
+        } else if (genbankType == "Bioseq") {
+            asn_type = EAsnType::eBioseq;
+        } else if (genbankType == "Bioseq-set") {
+            asn_type = EAsnType::eBioseqSet;
+        } else if (genbankType == "Seq-submit") {
+            asn_type = EAsnType::eSeqSubmit;
         } else {
-            inFormat = fg.GuessFormat();
+            asn_type = EAsnType::eSeqSubmit; // ?
         }
 
         if (serial == eSerial_None) {
