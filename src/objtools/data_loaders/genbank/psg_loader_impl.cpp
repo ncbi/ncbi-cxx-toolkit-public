@@ -984,10 +984,15 @@ CPSGDataLoader_Impl::GetRecords(CDataSource* data_source,
     CTSE_Lock tse_lock = x_ProcessBlobReply(reply, data_source, idh, true, true).lock;
 
     if (!tse_lock) {
-        NCBI_THROW(CLoaderException, eLoaderFailed,
-            "error loading blob for " + idh.AsString());
+        // TODO: return correct state with CBlobStateException
+        if ( 0 ) {
+            NCBI_THROW(CLoaderException, eLoaderFailed,
+                       "error loading blob for " + idh.AsString());
+        }
     }
-    locks.insert(tse_lock);
+    else {
+        locks.insert(tse_lock);
+    }
     return locks;
 }
 
