@@ -318,7 +318,7 @@ public:
     void Init() override;
     int Run() override;
 
-    bool HandleSeqEntry(CRef<CSeq_entry>& se);
+    bool HandleSeqEntry(CRef<CSeq_entry>& se) override;
     bool HandleSeqEntry(const CSeq_entry_Handle& seh);
 
 protected:

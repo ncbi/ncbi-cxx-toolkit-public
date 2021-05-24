@@ -159,8 +159,8 @@ class CAnnotWriterApp : public CNcbiApplication
 //  ----------------------------------------------------------------------------
 {
 public:
-    void Init();
-    int Run();
+    void Init() override;
+    int Run() override;
 
 private:
     CNcbiOstream* xInitOutputStream(
