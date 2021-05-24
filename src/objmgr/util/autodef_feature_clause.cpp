@@ -55,7 +55,7 @@ using namespace sequence;
 
 CAutoDefFeatureClause::CAutoDefFeatureClause(CBioseq_Handle bh, const CSeq_feat& main_feat, const CSeq_loc& mapped_loc, const CAutoDefOptions& opts) 
                               : CAutoDefFeatureClause_Base(opts),
-                                m_MainFeat(main_feat),
+                                m_pMainFeat(&main_feat),
                                 m_BH(bh)
 {
     x_SetBiomol();
@@ -72,7 +72,7 @@ CAutoDefFeatureClause::CAutoDefFeatureClause(CBioseq_Handle bh, const CSeq_feat&
     m_ProductName = "";
     m_ProductNameChosen = false;
 
-    CSeqFeatData::ESubtype subtype = m_MainFeat.GetData().GetSubtype();
+    CSeqFeatData::ESubtype subtype = m_pMainFeat->GetData().GetSubtype();
 
     m_ClauseLocation = new CSeq_loc();
     m_ClauseLocation->Add(mapped_loc);
@@ -81,7 +81,7 @@ CAutoDefFeatureClause::CAutoDefFeatureClause(CBioseq_Handle bh, const CSeq_feat&
         m_SuppressSubfeatures = true;
     }
 
-    if (m_MainFeat.CanGetComment() && NStr::Find(m_MainFeat.GetComment(), "alternatively spliced") != NCBI_NS_STD::string::npos
+    if (m_pMainFeat->CanGetComment() && NStr::Find(m_pMainFeat->GetComment(), "alternatively spliced") != NCBI_NS_STD::string::npos
         && (subtype == CSeqFeatData::eSubtype_cdregion
         || subtype == CSeqFeatData::eSubtype_exon
         || IsNoncodingProductFeat())) {
@@ -97,16 +97,16 @@ CAutoDefFeatureClause::~CAutoDefFeatureClause()
 
 CSeqFeatData::ESubtype CAutoDefFeatureClause::GetMainFeatureSubtype() const
 {
-    if (IsLTR(m_MainFeat)) {
+    if (IsLTR(*m_pMainFeat)) {
         return CSeqFeatData::eSubtype_LTR;
     }
-    return m_MainFeat.GetData().GetSubtype();
+    return m_pMainFeat->GetData().GetSubtype();
 }
 
 
 bool CAutoDefFeatureClause::IsMobileElement() const
 {
-    if (m_MainFeat.GetData().GetSubtype() != CSeqFeatData::eSubtype_mobile_element) {
+    if (m_pMainFeat->GetData().GetSubtype() != CSeqFeatData::eSubtype_mobile_element) {
         return false;
     } else {
         return true;
@@ -116,8 +116,8 @@ bool CAutoDefFeatureClause::IsMobileElement() const
 
 bool CAutoDefFeatureClause::IsInsertionSequence() const
 {
-    if (m_MainFeat.GetData().GetSubtype() != CSeqFeatData::eSubtype_repeat_region
-        || NStr::IsBlank(m_MainFeat.GetNamedQual("insertion_seq"))) {
+    if (m_pMainFeat->GetData().GetSubtype() != CSeqFeatData::eSubtype_repeat_region
+        || NStr::IsBlank(m_pMainFeat->GetNamedQual("insertion_seq"))) {
         return false;
     } else {
         return true;
@@ -139,17 +139,17 @@ bool CAutoDefFeatureClause::IsControlRegion (const CSeq_feat& feat)
 
 bool CAutoDefFeatureClause::IsControlRegion() const
 {
-    return IsControlRegion(m_MainFeat);
+    return IsControlRegion(*m_pMainFeat);
 }
 
 
 bool CAutoDefFeatureClause::IsEndogenousVirusSourceFeature () const
 {
-    if (m_MainFeat.GetData().GetSubtype() != CSeqFeatData::eSubtype_biosrc
-        || !m_MainFeat.GetData().GetBiosrc().CanGetSubtype()) {
+    if (m_pMainFeat->GetData().GetSubtype() != CSeqFeatData::eSubtype_biosrc
+        || !m_pMainFeat->GetData().GetBiosrc().CanGetSubtype()) {
         return false;
     }
-    ITERATE (CBioSource::TSubtype, subSrcI, m_MainFeat.GetData().GetBiosrc().GetSubtype()) {
+    ITERATE (CBioSource::TSubtype, subSrcI, m_pMainFeat->GetData().GetBiosrc().GetSubtype()) {
         if ((*subSrcI)->GetSubtype() == CSubSource::eSubtype_endogenous_virus_name) {
              return true;
         }
@@ -160,7 +160,7 @@ bool CAutoDefFeatureClause::IsEndogenousVirusSourceFeature () const
 
 bool CAutoDefFeatureClause::IsGeneCluster () const
 {
-    return IsGeneCluster (m_MainFeat);
+    return IsGeneCluster (*m_pMainFeat);
 }
 
 
@@ -183,10 +183,10 @@ bool CAutoDefFeatureClause::IsGeneCluster (const CSeq_feat& feat)
 
 bool CAutoDefFeatureClause::IsRecognizedFeature() const
 {
-    CSeqFeatData::ESubtype subtype = m_MainFeat.GetData().GetSubtype();
+    CSeqFeatData::ESubtype subtype = m_pMainFeat->GetData().GetSubtype();
     if (subtype == CSeqFeatData::eSubtype_3UTR
         || subtype == CSeqFeatData::eSubtype_5UTR
-        || IsLTR(m_MainFeat)
+        || IsLTR(*m_pMainFeat)
         || subtype == CSeqFeatData::eSubtype_cdregion
         || subtype == CSeqFeatData::eSubtype_gene
         || subtype == CSeqFeatData::eSubtype_mRNA
@@ -250,7 +250,7 @@ bool CAutoDefFeatureClause::IsPseudo(const CSeq_feat& f)
 
 bool CAutoDefFeatureClause::x_IsPseudo() 
 {
-    return (m_GeneIsPseudo || IsPseudo(m_MainFeat));
+    return (m_GeneIsPseudo || IsPseudo(*m_pMainFeat));
 }
 
 
@@ -271,12 +271,12 @@ bool CAutoDefFeatureClause::x_GetFeatureTypeWord(string &typeword)
 {
     string qual, comment;
 
-    if (IsLTR(m_MainFeat)) {
+    if (IsLTR(*m_pMainFeat)) {
         typeword = "LTR repeat region";
         return true;
     }
   
-    CSeqFeatData::ESubtype subtype = m_MainFeat.GetData().GetSubtype();
+    CSeqFeatData::ESubtype subtype = m_pMainFeat->GetData().GetSubtype();
     switch (subtype) {
         case CSeqFeatData::eSubtype_exon:
             typeword = "exon";
@@ -308,7 +308,7 @@ bool CAutoDefFeatureClause::x_GetFeatureTypeWord(string &typeword)
                 typeword = "insertion sequence";
                 return true;
             }
-            qual = m_MainFeat.GetNamedQual("endogenous_virus");
+            qual = m_pMainFeat->GetNamedQual("endogenous_virus");
             if (!NStr::IsBlank(qual)) {
                 typeword = "endogenous virus";
                 return true;
@@ -321,8 +321,8 @@ bool CAutoDefFeatureClause::x_GetFeatureTypeWord(string &typeword)
             return true;
             break;
         case CSeqFeatData::eSubtype_misc_feature:
-            if (m_MainFeat.CanGetComment()) {
-                comment = m_MainFeat.GetComment();
+            if (m_pMainFeat->CanGetComment()) {
+                comment = m_pMainFeat->GetComment();
                 if (NStr::StartsWith(comment, "control region", NStr::eNocase)) {
                     typeword = "control region";
                     return true;
@@ -340,8 +340,8 @@ bool CAutoDefFeatureClause::x_GetFeatureTypeWord(string &typeword)
             }
             break;
         case CSeqFeatData::eSubtype_regulatory:
-            if (m_MainFeat.IsSetQual()) {
-                ITERATE(CSeq_feat::TQual, q, m_MainFeat.GetQual()) {
+            if (m_pMainFeat->IsSetQual()) {
+                ITERATE(CSeq_feat::TQual, q, m_pMainFeat->GetQual()) {
                     if ((*q)->IsSetQual() &&
                         NStr::Equal((*q)->GetQual(), "regulatory_class") &&
                         (*q)->IsSetVal() && !NStr::IsBlank((*q)->GetVal())) {
@@ -456,10 +456,10 @@ bool CAutoDefFeatureClause::x_FindNoncodingFeatureKeywordProduct (string comment
 bool CAutoDefFeatureClause::x_GetNoncodingProductFeatProduct (string &product_name) const
 {
     if (GetMainFeatureSubtype() != CSeqFeatData::eSubtype_misc_feature
-        || !m_MainFeat.CanGetComment()) {
+        || !m_pMainFeat->CanGetComment()) {
         return false;
     }
-    string comment = m_MainFeat.GetComment();
+    string comment = m_pMainFeat->GetComment();
     string::size_type start_pos = NStr::Find(comment, "nonfunctional ");
     if (start_pos != NCBI_NS_STD::string::npos) {
         string::size_type sep_pos = NStr::Find (comment, " due to ", start_pos);
@@ -486,9 +486,9 @@ bool CAutoDefFeatureClause::IsNoncodingProductFeat() const
 CAutoDefGeneClause::CAutoDefGeneClause(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc, const CAutoDefOptions& opts)
     : CAutoDefFeatureClause(bh, main_feat, mapped_loc, opts)
 {
-    m_GeneName = x_GetGeneName(m_MainFeat.GetData().GetGene(), GetSuppressLocusTag());
-    if (m_MainFeat.GetData().GetGene().CanGetAllele()) {
-        m_AlleleName = m_MainFeat.GetData().GetGene().GetAllele();
+    m_GeneName = x_GetGeneName(m_pMainFeat->GetData().GetGene(), GetSuppressLocusTag());
+    if (m_pMainFeat->GetData().GetGene().CanGetAllele()) {
+        m_AlleleName = m_pMainFeat->GetData().GetGene().GetAllele();
         if (!NStr::StartsWith(m_AlleleName, m_GeneName, NStr::eNocase)) {
             if (!NStr::StartsWith(m_AlleleName, "-")) {
                 m_AlleleName = "-" + m_AlleleName;
@@ -496,7 +496,7 @@ CAutoDefGeneClause::CAutoDefGeneClause(CBioseq_Handle bh, const CSeq_feat &main_
             m_AlleleName = m_GeneName + m_AlleleName;
         }
     }
-    m_GeneIsPseudo = IsPseudo(m_MainFeat);
+    m_GeneIsPseudo = IsPseudo(*m_pMainFeat);
     m_HasGene = true;
 }
 
@@ -506,7 +506,7 @@ bool CAutoDefGeneClause::x_IsPseudo()
     if (CAutoDefFeatureClause::x_IsPseudo()) {
         return true;
     }
-    const CGene_ref& gene = m_MainFeat.GetData().GetGene();
+    const CGene_ref& gene = m_pMainFeat->GetData().GetGene();
     if (gene.CanGetPseudo() && gene.IsSetPseudo()) {
         return true;
     }
@@ -520,10 +520,10 @@ bool CAutoDefGeneClause::x_IsPseudo()
 */
 bool CAutoDefGeneClause::x_GetProductName(string &product_name)
 {
-    if (m_MainFeat.GetData().GetGene().CanGetDesc()
-        && !NStr::Equal(m_MainFeat.GetData().GetGene().GetDesc(),
+    if (m_pMainFeat->GetData().GetGene().CanGetDesc()
+        && !NStr::Equal(m_pMainFeat->GetData().GetGene().GetDesc(),
         m_GeneName)) {
-        product_name = m_MainFeat.GetData().GetGene().GetDesc();
+        product_name = m_pMainFeat->GetData().GetGene().GetDesc();
         return true;
     } else {
         return false;
@@ -650,15 +650,15 @@ void s_UseCommentBeforeSemicolon(const CSeq_feat& feat, string& label)
  */
 bool CAutoDefFeatureClause::x_GetProductName(string &product_name)
 {
-    CSeqFeatData::ESubtype subtype = m_MainFeat.GetData().GetSubtype();
+    CSeqFeatData::ESubtype subtype = m_pMainFeat->GetData().GetSubtype();
     
     if (subtype == CSeqFeatData::eSubtype_misc_feature && x_GetNoncodingProductFeatProduct(product_name)) {
         return true;
     } else if (subtype == CSeqFeatData::eSubtype_cdregion 
-               && m_MainFeat.CanGetPseudo() 
-               && m_MainFeat.IsSetPseudo()
-               && m_MainFeat.CanGetComment()) {
-        string comment = m_MainFeat.GetComment();
+               && m_pMainFeat->CanGetPseudo() 
+               && m_pMainFeat->IsSetPseudo()
+               && m_pMainFeat->CanGetComment()) {
+        string comment = m_pMainFeat->GetComment();
         if (!NStr::IsBlank(comment)) {
             string::size_type pos = NStr::Find(comment, ";");
             if (pos != NCBI_NS_STD::string::npos) {
@@ -670,17 +670,17 @@ bool CAutoDefFeatureClause::x_GetProductName(string &product_name)
     } else if (subtype == CSeqFeatData::eSubtype_tmRNA) {
         product_name = "tmRNA";
         return true;
-    } else if (m_MainFeat.GetData().Which() == CSeqFeatData::e_Rna) {
-        product_name = m_MainFeat.GetData().GetRna().GetRnaProductName();
-        if (NStr::IsBlank(product_name) && m_MainFeat.IsSetComment()) {
-            product_name = m_MainFeat.GetComment();
+    } else if (m_pMainFeat->GetData().Which() == CSeqFeatData::e_Rna) {
+        product_name = m_pMainFeat->GetData().GetRna().GetRnaProductName();
+        if (NStr::IsBlank(product_name) && m_pMainFeat->IsSetComment()) {
+            product_name = m_pMainFeat->GetComment();
         }
         return true;
     } else if (subtype == CSeqFeatData::eSubtype_regulatory) {
         return true;
     } else if (subtype == CSeqFeatData::eSubtype_misc_recomb) {
-        if (m_MainFeat.IsSetQual()) {
-            ITERATE(CSeq_feat::TQual, q, m_MainFeat.GetQual()) {
+        if (m_pMainFeat->IsSetQual()) {
+            ITERATE(CSeq_feat::TQual, q, m_pMainFeat->GetQual()) {
                 if ((*q)->IsSetQual() && NStr::Equal((*q)->GetQual(), "recombination_class") &&
                     (*q)->IsSetVal() && !NStr::IsBlank((*q)->GetVal())) {
                     product_name = (*q)->GetVal();
@@ -688,21 +688,21 @@ bool CAutoDefFeatureClause::x_GetProductName(string &product_name)
                 }
             }
         }
-        s_UseCommentBeforeSemicolon(m_MainFeat, product_name);
+        s_UseCommentBeforeSemicolon(*m_pMainFeat, product_name);
         return true;
     } else if (subtype == CSeqFeatData::eSubtype_exon || subtype == CSeqFeatData::eSubtype_intron) {
         return x_GetExonDescription(product_name);
     } else {
         string label;
         
-        if (subtype == CSeqFeatData::eSubtype_cdregion && m_MainFeat.IsSetProduct() && !m_Opts.IsFeatureSuppressed(CSeqFeatData::eSubtype_mat_peptide_aa)) {
-            const CSeq_loc& product_loc = m_MainFeat.GetProduct();
+        if (subtype == CSeqFeatData::eSubtype_cdregion && m_pMainFeat->IsSetProduct() && !m_Opts.IsFeatureSuppressed(CSeqFeatData::eSubtype_mat_peptide_aa)) {
+            const CSeq_loc& product_loc = m_pMainFeat->GetProduct();
             CBioseq_Handle prot_h = m_BH.GetScope().GetBioseqHandle(product_loc);
             if (prot_h) {
                 CFeat_CI prot_f(prot_h, CSeqFeatData::eSubtype_prot);
                 if (prot_f) {
                     feature::GetLabel(*(prot_f->GetSeq_feat()), &label, feature::fFGL_Content);
-                    if (m_MainFeat.IsSetPartial() && m_MainFeat.GetPartial()) {
+                    if (m_pMainFeat->IsSetPartial() && m_pMainFeat->GetPartial()) {
                         // RW-1216 suppress mat-peptide region phrase if sig-peptide also present
                         CFeat_CI sig_pi(prot_h, CSeqFeatData::eSubtype_sig_peptide_aa);
                         if (!sig_pi) {
@@ -726,7 +726,7 @@ bool CAutoDefFeatureClause::x_GetProductName(string &product_name)
         }
         
         if (NStr::IsBlank(label)) {                    
-            feature::GetLabel(m_MainFeat, &label, feature::fFGL_Content);
+            feature::GetLabel(*m_pMainFeat, &label, feature::fFGL_Content);
         }
         if ((subtype == CSeqFeatData::eSubtype_cdregion && !NStr::Equal(label, "CDS"))
             || (subtype == CSeqFeatData::eSubtype_mRNA && !NStr::Equal(label, "mRNA"))
@@ -756,8 +756,8 @@ bool CAutoDefFeatureClause::x_GetProductName(string &product_name)
 
 bool CAutoDefFeatureClause::x_GetExonDescription(string &description)
 {
-    if (m_MainFeat.IsSetQual()) {
-        ITERATE(CSeq_feat::TQual, it, m_MainFeat.GetQual()) {
+    if (m_pMainFeat->IsSetQual()) {
+        ITERATE(CSeq_feat::TQual, it, m_pMainFeat->GetQual()) {
             if ((*it)->IsSetQual() && (*it)->IsSetVal()
                 && NStr::EqualNocase((*it)->GetQual(), "number")) {
                 description = (*it)->GetVal();
@@ -772,13 +772,13 @@ bool CAutoDefFeatureClause::x_GetExonDescription(string &description)
 
 bool CAutoDefFeatureClause::x_GetDescription(string &description)
 {
-    CSeqFeatData::ESubtype subtype = m_MainFeat.GetData().GetSubtype();
+    CSeqFeatData::ESubtype subtype = m_pMainFeat->GetData().GetSubtype();
 
     description = "";
     if (subtype == CSeqFeatData::eSubtype_exon || subtype == CSeqFeatData::eSubtype_intron) {
         return x_GetExonDescription(description);
     } else if (NStr::Equal(m_Typeword, "insertion sequence")) {
-        description = m_MainFeat.GetNamedQual("insertion_seq");
+        description = m_pMainFeat->GetNamedQual("insertion_seq");
         if (NStr::Equal(description, "unnamed")
             || NStr::IsBlank(description)) {
             description = "";
@@ -788,7 +788,7 @@ bool CAutoDefFeatureClause::x_GetDescription(string &description)
         }
     } else if (subtype == CSeqFeatData::eSubtype_repeat_region) {
         if (NStr::Equal(m_Typeword, "endogenous virus")) {
-            description = m_MainFeat.GetNamedQual("endogenous_virus");
+            description = m_pMainFeat->GetNamedQual("endogenous_virus");
             if (NStr::Equal(description, "unnamed")
                 || NStr::IsBlank(description)) {
                 description = "";
@@ -797,9 +797,9 @@ bool CAutoDefFeatureClause::x_GetDescription(string &description)
                 return true;
             }
         } else {
-            description = m_MainFeat.GetNamedQual("rpt_family");
-            if (NStr::IsBlank(description) && m_MainFeat.IsSetComment()) {
-                description = m_MainFeat.GetComment();
+            description = m_pMainFeat->GetNamedQual("rpt_family");
+            if (NStr::IsBlank(description) && m_pMainFeat->IsSetComment()) {
+                description = m_pMainFeat->GetComment();
                 if (IsLTR() && NStr::EndsWith(description, " LTR")) {
                     description = description.substr(0, description.length() - 4);
                 }
@@ -808,8 +808,8 @@ bool CAutoDefFeatureClause::x_GetDescription(string &description)
         }
     } else if (subtype == CSeqFeatData::eSubtype_biosrc
                && NStr::Equal(m_Typeword, "endogenous virus")) {
-        if (m_MainFeat.GetData().GetBiosrc().CanGetSubtype()) {
-            ITERATE (CBioSource::TSubtype, subSrcI, m_MainFeat.GetData().GetBiosrc().GetSubtype()) {
+        if (m_pMainFeat->GetData().GetBiosrc().CanGetSubtype()) {
+            ITERATE (CBioSource::TSubtype, subSrcI, m_pMainFeat->GetData().GetBiosrc().GetSubtype()) {
                 if ((*subSrcI)->GetSubtype() == CSubSource::eSubtype_endogenous_virus_name) {
                     description = (*subSrcI)->GetName();
                     if (NStr::Equal(description, "unnamed")
@@ -827,9 +827,9 @@ bool CAutoDefFeatureClause::x_GetDescription(string &description)
                || subtype == CSeqFeatData::eSubtype_3UTR
                || subtype == CSeqFeatData::eSubtype_5UTR) {
         return false;
-    } else if (IsLTR(m_MainFeat)) {
-        if (m_MainFeat.CanGetComment()) {
-            string comment = m_MainFeat.GetComment();
+    } else if (IsLTR(*m_pMainFeat)) {
+        if (m_pMainFeat->CanGetComment()) {
+            string comment = m_pMainFeat->GetComment();
             if (NStr::StartsWith(comment, "LTR ")) {
                 comment = comment.substr(4);
             } else if (NStr::EndsWith(comment, " LTR")) {
@@ -843,7 +843,7 @@ bool CAutoDefFeatureClause::x_GetDescription(string &description)
             return true;
         }
     } else if (subtype == CSeqFeatData::eSubtype_operon) {
-        description = m_MainFeat.GetNamedQual("operon");
+        description = m_pMainFeat->GetNamedQual("operon");
         return true;
     } else {
         if (!m_ProductNameChosen) {
@@ -868,7 +868,7 @@ bool CAutoDefFeatureClause::x_GetDescription(string &description)
 
 bool CAutoDefFeatureClause::IsSatelliteClause() const
 {
-    return IsSatellite(m_MainFeat);
+    return IsSatellite(*m_pMainFeat);
 }
 
 
@@ -884,13 +884,13 @@ bool CAutoDefFeatureClause::IsSatellite(const CSeq_feat& feat)
 
 bool CAutoDefFeatureClause::IsPromoter() const
 {
-    return IsPromoter(m_MainFeat);
+    return IsPromoter(*m_pMainFeat);
 }
 
 
 bool CAutoDefFeatureClause::IsLTR() const
 {
-    return IsLTR(m_MainFeat);
+    return IsLTR(*m_pMainFeat);
 }
 
 
@@ -1169,7 +1169,7 @@ bool CAutoDefFeatureClause::AddmRNA (CAutoDefFeatureClause_Base *mRNAClause)
         return false;
     }
     
-    CSeqFeatData::ESubtype subtype = m_MainFeat.GetData().GetSubtype();
+    CSeqFeatData::ESubtype subtype = m_pMainFeat->GetData().GetSubtype();
     sequence::ECompare loc_compare = mRNAClause->CompareLocation(*m_ClauseLocation);
     if (subtype == CSeqFeatData::eSubtype_cdregion) {
         adjust_partials = false;
@@ -1244,7 +1244,7 @@ bool CAutoDefFeatureClause::AddGene (CAutoDefFeatureClause_Base *gene_clause, bo
         // find overlapping gene for this feature    
         CAutoDefGeneClause *gene = dynamic_cast<CAutoDefGeneClause *>(gene_clause);
         bool suppress_locus_tag = gene ? gene->GetSuppressLocusTag() : false;
-        CConstRef <CSeq_feat> gene_for_feat = sequence::GetGeneForFeature(m_MainFeat, m_BH.GetScope());
+        CConstRef <CSeq_feat> gene_for_feat = sequence::GetGeneForFeature(*m_pMainFeat, m_BH.GetScope());
         if (gene_for_feat && NStr::Equal(x_GetGeneName(gene_for_feat->GetData().GetGene(), suppress_locus_tag), gene_clause->GetGeneName())) {
             used_gene = true;
             m_HasGene = true;
@@ -1278,7 +1278,7 @@ bool CAutoDefFeatureClause::OkToGroupUnderByType(const CAutoDefFeatureClause_Bas
     if (parent_clause == NULL) {
         return false;
     }
-    CSeqFeatData::ESubtype subtype = m_MainFeat.GetData().GetSubtype();
+    CSeqFeatData::ESubtype subtype = m_pMainFeat->GetData().GetSubtype();
     CSeqFeatData::ESubtype parent_subtype = parent_clause->GetMainFeatureSubtype();
 
     if (parent_subtype == CSeqFeatData::eSubtype_mobile_element) {
@@ -1329,7 +1329,7 @@ bool CAutoDefFeatureClause::OkToGroupUnderByType(const CAutoDefFeatureClause_Bas
         }
     } else if (subtype == CSeqFeatData::eSubtype_3UTR 
                || subtype == CSeqFeatData::eSubtype_5UTR
-               || IsLTR(m_MainFeat)) {
+               || IsLTR(*m_pMainFeat)) {
         if (parent_subtype == CSeqFeatData::eSubtype_cdregion
             || parent_subtype == CSeqFeatData::eSubtype_mRNA
             || parent_subtype == CSeqFeatData::eSubtype_gene
@@ -1395,7 +1395,7 @@ bool CAutoDefFeatureClause::OkToGroupUnderByLocation(const CAutoDefFeatureClause
         } else if (promoter_stop + 1 == parent_start) {
             return true;
         }
-    } else if (m_MainFeat.GetData().GetSubtype() == CSeqFeatData::eSubtype_intron
+    } else if (m_pMainFeat->GetData().GetSubtype() == CSeqFeatData::eSubtype_intron
                && parent_clause->GetMainFeatureSubtype() == CSeqFeatData::eSubtype_cdregion
                && parent_clause->SameStrand(*m_ClauseLocation)) {               
         CSeq_loc_CI seq_loc_it(*(parent_clause->GetLocation()));
@@ -1497,10 +1497,10 @@ bool CAutoDefFeatureClause::IsExonWithNumber() const
     bool rval = false;
 
     try {
-        if (m_MainFeat.IsSetData() &&
-            m_MainFeat.GetData().GetSubtype() == CSeqFeatData::eSubtype_exon &&
-            m_MainFeat.IsSetQual()) {
-            ITERATE(CSeq_feat::TQual, it, m_MainFeat.GetQual()) {
+        if (m_pMainFeat->IsSetData() &&
+            m_pMainFeat->GetData().GetSubtype() == CSeqFeatData::eSubtype_exon &&
+            m_pMainFeat->IsSetQual()) {
+            ITERATE(CSeq_feat::TQual, it, m_pMainFeat->GetQual()) {
                 if ((*it)->IsSetQual() &&
                     NStr::Equal((*it)->GetQual(), "number") &&
                     (*it)->IsSetVal() &&
@@ -1542,9 +1542,9 @@ bool CAutoDefNcRNAClause::x_GetProductName(string &product_name)
 {
     string ncrna_product;
     string ncrna_class;
-    if (m_MainFeat.IsSetData() && m_MainFeat.GetData().IsRna()
-        && m_MainFeat.GetData().GetRna().IsSetExt()) {
-        const CRNA_ref::TExt& ext = m_MainFeat.GetData().GetRna().GetExt();
+    if (m_pMainFeat->IsSetData() && m_pMainFeat->GetData().IsRna()
+        && m_pMainFeat->GetData().GetRna().IsSetExt()) {
+        const CRNA_ref::TExt& ext = m_pMainFeat->GetData().GetRna().GetExt();
         if (ext.IsName()) {
             ncrna_product = ext.GetName();
             if (NStr::EqualNocase(ncrna_product, "ncRNA")) {
@@ -1560,10 +1560,10 @@ bool CAutoDefNcRNAClause::x_GetProductName(string &product_name)
         }
     }
     if (NStr::IsBlank(ncrna_product)) {
-        ncrna_product = m_MainFeat.GetNamedQual("product");
+        ncrna_product = m_pMainFeat->GetNamedQual("product");
     }
     if (NStr::IsBlank(ncrna_class)) {
-        ncrna_class = m_MainFeat.GetNamedQual("ncRNA_class");
+        ncrna_class = m_pMainFeat->GetNamedQual("ncRNA_class");
     }
     if (NStr::EqualNocase(ncrna_class, "other")) {
         ncrna_class = "";
@@ -1571,8 +1571,8 @@ bool CAutoDefNcRNAClause::x_GetProductName(string &product_name)
     NStr::ReplaceInPlace(ncrna_class, "_", " ");
     
 	string ncrna_comment;
-    if (m_MainFeat.IsSetComment()) {
-        ncrna_comment = m_MainFeat.GetComment();
+    if (m_pMainFeat->IsSetComment()) {
+        ncrna_comment = m_pMainFeat->GetComment();
         if (!NStr::IsBlank(ncrna_comment)) {
             string::size_type pos = NStr::Find(ncrna_comment, ";");
             if (pos != NCBI_NS_STD::string::npos) {
@@ -1616,7 +1616,7 @@ static string mobile_element_keywords [] = {
 CAutoDefMobileElementClause::CAutoDefMobileElementClause(CBioseq_Handle bh, const CSeq_feat& main_feat, const CSeq_loc& mapped_loc, const CAutoDefOptions& opts)
                   : CAutoDefFeatureClause(bh, main_feat, mapped_loc, opts)
 {
-    string mobile_element_name = m_MainFeat.GetNamedQual("mobile_element_type");
+    string mobile_element_name = m_pMainFeat->GetNamedQual("mobile_element_type");
     if (NStr::StartsWith(mobile_element_name, "other:")) {
         mobile_element_name = mobile_element_name.substr(6);
     }
@@ -1720,7 +1720,7 @@ const char *kSatellite = "satellite";
 CAutoDefSatelliteClause::CAutoDefSatelliteClause(CBioseq_Handle bh, const CSeq_feat& main_feat, const CSeq_loc &mapped_loc, const CAutoDefOptions& opts)
                   : CAutoDefFeatureClause(bh, main_feat, mapped_loc, opts)
 {
-	string comment = m_MainFeat.GetNamedQual("satellite");
+	string comment = m_pMainFeat->GetNamedQual("satellite");
     string::size_type pos = NStr::Find(comment, ";");
     if (pos != NCBI_NS_STD::string::npos) {
         comment = comment.substr(0, pos);
@@ -1858,8 +1858,8 @@ CAutoDefIntergenicSpacerClause::CAutoDefIntergenicSpacerClause(CBioseq_Handle bh
 {
 
     string comment;
-    if (m_MainFeat.IsSetComment()) {
-        comment = m_MainFeat.GetComment();
+    if (m_pMainFeat->IsSetComment()) {
+        comment = m_pMainFeat->GetComment();
     }
 
     /* truncate at first semicolon */
@@ -2007,7 +2007,7 @@ CAutoDefGeneClusterClause::CAutoDefGeneClusterClause(CBioseq_Handle bh, const CS
 {
     m_Pluralizable = false;
     m_ShowTypewordFirst = false;
-    string comment = m_MainFeat.GetComment();
+    string comment = m_pMainFeat->GetComment();
     
     string::size_type pos = NStr::Find(comment, "gene cluster");
     if (pos == NCBI_NS_STD::string::npos) {
@@ -2044,8 +2044,8 @@ void CAutoDefGeneClusterClause::Label(bool suppress_allele)
 CAutoDefMiscCommentClause::CAutoDefMiscCommentClause(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc, const CAutoDefOptions& opts)
                   : CAutoDefFeatureClause(bh, main_feat, mapped_loc, opts)
 {
-    if (m_MainFeat.CanGetComment()) {
-        m_Description = m_MainFeat.GetComment();
+    if (m_pMainFeat->CanGetComment()) {
+        m_Description = m_pMainFeat->GetComment();
         string::size_type pos = NStr::Find(m_Description, ";");
         if (pos != NCBI_NS_STD::string::npos) {
             m_Description = m_Description.substr(0, pos);
@@ -2217,7 +2217,7 @@ CAutoDefFeatureClause::EClauseType CAutoDefFeatureClause::GetClauseType() const
 {
     CSeqFeatData::ESubtype subtype = GetMainFeatureSubtype();
     if (subtype == CSeqFeatData::eSubtype_repeat_region) {
-        if (!NStr::IsBlank(m_MainFeat.GetNamedQual("endogenous_virus"))) {
+        if (!NStr::IsBlank(m_pMainFeat->GetNamedQual("endogenous_virus"))) {
             return eEndogenousVirusRepeatRegion;
         }
     }

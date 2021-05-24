@@ -107,7 +107,7 @@ protected:
 
     void x_TypewordFromSequence();
    
-    const CSeq_feat& m_MainFeat;
+    CConstRef<CSeq_feat> m_pMainFeat;
     CRef<CSeq_loc> m_ClauseLocation;
     CMolInfo::TBiomol m_Biomol;
 
