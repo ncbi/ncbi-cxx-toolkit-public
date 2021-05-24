@@ -237,34 +237,31 @@ void CPSGS_GetProcessor::x_GetBlob(void)
     }
 
     auto *  app = CPubseqGatewayApp::GetInstance();
-    bool    added_to_exclude_cache = false;
 
+    // Note: checking only if the blob is in cache. The cache insert is done in
+    // a common code for the blob retrieval later (see
+    // CPSGS_CassBlobBase::x_CheckExcludeBlobCache)
     if (!m_BlobRequest->m_ClientId.empty()) {
-        // Adding to exclude blob cache is unconditional;
-        // Skipping is only for the blobs identified by seq_id/seq_id_type
-        bool        completed = true;
-        auto        cache_result = app->GetExcludeBlobCache()->AddBlobId(
-                    m_BlobRequest->m_ClientId,
-                    m_BlobId.m_Sat, m_BlobId.m_SatKey, completed);
-        if (cache_result == ePSGS_AlreadyInCache && m_BlobRequest->m_AutoBlobSkipping) {
-            if (completed)
-                IPSGS_Processor::m_Reply->PrepareBlobExcluded(
-                        m_BlobId.ToString(), GetName(), ePSGS_BlobSent);
-            else
-                IPSGS_Processor::m_Reply->PrepareBlobExcluded(
-                        m_BlobId.ToString(), GetName(), ePSGS_BlobInProgress);
-            m_Completed = true;
-            SignalFinishProcessing();
-            return;
+        if (m_BlobRequest->m_AutoBlobSkipping) {
+            bool        completed = true;
+            if (app->GetExcludeBlobCache()->IsInCache(
+                        m_BlobRequest->m_ClientId,
+                        m_BlobId.m_Sat, m_BlobId.m_SatKey, completed)) {
+                if (completed)
+                    IPSGS_Processor::m_Reply->PrepareBlobExcluded(
+                            m_BlobId.ToString(), GetName(), ePSGS_BlobSent);
+                else
+                    IPSGS_Processor::m_Reply->PrepareBlobExcluded(
+                            m_BlobId.ToString(), GetName(), ePSGS_BlobInProgress);
+                m_Completed = true;
+                SignalFinishProcessing();
+                return;
+            }
         }
-
-        if (cache_result == ePSGS_Added)
-            added_to_exclude_cache = true;
     }
 
     unique_ptr<CCassBlobFetch>  fetch_details;
     fetch_details.reset(new CCassBlobFetch(*m_BlobRequest, m_BlobId));
-    fetch_details->SetExcludeBlobCacheUpdated(added_to_exclude_cache);
 
     unique_ptr<CBlobRecord> blob_record(new CBlobRecord);
     CPSGCache               psg_cache(IPSGS_Processor::m_Request,
