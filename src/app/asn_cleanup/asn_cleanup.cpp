@@ -123,8 +123,8 @@ public:
 private:
     // types
 
-    CObjectIStream* x_OpenIStream(const CArgs& args, const string& filename, EAsnType& asn_type);
-    void x_OpenOStream(const string& filename, const string& dir = kEmptyStr, bool remove_orig_dir = true);
+    CObjectIStream* x_OpenIStream(const CArgs& args, const string& filename, ESerialDataFormat&, EAsnType&);
+    void x_OpenOStream(const string& filename, const string& dir = kEmptyStr, bool remove_orig_dir = true, bool binary = false);
     void x_CloseOStream();
     bool x_ProcessSeqSubmit(unique_ptr<CObjectIStream>& is);
     bool x_ProcessBigFile(unique_ptr<CObjectIStream>& is, EAsnType asn_type);
@@ -556,7 +556,9 @@ void CCleanupApp::x_ProcessOneFile(const string& filename)
     const CArgs& args = GetArgs();
     _ASSERT(!NStr::IsBlank(filename));
 
+    ESerialDataFormat serial = eSerial_None;
     EAsnType asn_type = EAsnType::eAny;
+
     if (args["type"]) {
         string s = args["type"].AsString();
         if (s == "any") {
@@ -573,7 +575,7 @@ void CCleanupApp::x_ProcessOneFile(const string& filename)
     }
 
     // open file
-    unique_ptr<CObjectIStream> is(x_OpenIStream(args, filename, asn_type));
+    unique_ptr<CObjectIStream> is(x_OpenIStream(args, filename, serial, asn_type));
     if (!is) {
         string msg = "Unable to open input file " + filename;
         NCBI_THROW(CFlatException, eInternal, msg);
@@ -583,7 +585,7 @@ void CCleanupApp::x_ProcessOneFile(const string& filename)
     bool opened_output = false;
 
     if (!args["o"] && args["outdir"]) {
-        x_OpenOStream(filename, args["outdir"].AsString(), true);
+        x_OpenOStream(filename, args["outdir"].AsString(), true, (serial==eSerial_AsnBinary));
         opened_output = true;
     }
 
@@ -1187,10 +1189,10 @@ template<typename T>void CCleanupApp::x_WriteToFile(const T& obj)
 }
 
 
-CObjectIStream* CCleanupApp::x_OpenIStream(const CArgs& args, const string& filename, EAsnType& asn_type)
+CObjectIStream* CCleanupApp::x_OpenIStream(const CArgs& args, const string& filename, ESerialDataFormat& serial, EAsnType& asn_type)
 {
     // determine the file serialization format.
-    ESerialDataFormat serial = eSerial_None;
+    serial = eSerial_None;
 
     // default for batch files is binary, otherwise text.
     if (args["batch"]) {
@@ -1275,7 +1277,7 @@ CObjectIStream* CCleanupApp::x_OpenIStream(const CArgs& args, const string& file
 }
 
 
-void CCleanupApp::x_OpenOStream(const string& filename, const string& dir, bool remove_orig_dir)
+void CCleanupApp::x_OpenOStream(const string& filename, const string& dir, bool remove_orig_dir, bool binary)
 {
     ESerialDataFormat outFormat = eSerial_AsnText;
 
@@ -1291,11 +1293,9 @@ void CCleanupApp::x_OpenOStream(const string& filename, const string& dir, bool 
             outFormat = eSerial_Json;
         }
     }
-    else if (args["serial"]) {
+    else if (binary && args["bigfile"]) {
         // Set the same format as the input one
-        if (args["serial"].AsString() == "binary" && args["bigfile"]) {
-            outFormat = eSerial_AsnBinary;
-        }
+        outFormat = eSerial_AsnBinary;
     }
 
     if (NStr::IsBlank(filename)) {
