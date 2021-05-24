@@ -106,7 +106,7 @@ fi
 if test "$with_src" = "no"; then
     install_dirs="$install_dirs src/build-system"
 else
-    install_dirs="$install_dirs src configure"
+    install_dirs="$install_dirs src configure cmake-configure cmake-configure.bat"
 fi
 if test "$with_doc" != "no" -a -d "$top_srcdir/doc"; then
     install_dirs="$install_dirs doc"
