@@ -298,6 +298,7 @@ static int/*tri-state bool*/ x_SetupFromNamerd(SERV_ITER iter, int* do_namerd)
         iter->types  = fSERV_Http;
     else
         iter->types &= fSERV_Http;
+    assert(iter->types);
 
     /* Try to open NAMERD on our own iterator */
     if ( ! (iter->op = SERV_NAMERD_Open(iter, data->net_info, 0))) {
@@ -339,7 +340,7 @@ static int/*tri-state bool*/ x_SetupFromNamerd(SERV_ITER iter, int* do_namerd)
     }
     if (net_info->req_method >=  eReqMethod_v1)
         net_info->req_method &= ~eReqMethod_v1;
-    if (!net_info->req_method) {
+    if (net_info->req_method ==  eReqMethod_Any/*0*/) {
         switch (info->type) {
         case fSERV_HttpGet:
             net_info->req_method = eReqMethod_Get;
@@ -348,7 +349,7 @@ static int/*tri-state bool*/ x_SetupFromNamerd(SERV_ITER iter, int* do_namerd)
             net_info->req_method = eReqMethod_Post;
             break;
         default:
-            /* leave ANY */
+            /* leave ANY in there alone */
             break;
         }
     }
@@ -491,15 +492,13 @@ extern const SSERV_VTable* SERV_LINKERD_Open(SERV_ITER           iter,
     if (iter->ismask)
         return 0/*LINKERD doesn't support masks*/;
     assert(iter->name  &&  *iter->name);
-    if (iter->reverse_dns)
-        return 0/*LINKERD cannot do that, either*/;
 
     types = iter->types & ~(fSERV_Stateless | fSERV_Firewall);
     if ( ! (net_info->scheme == eURL_Http   ||
             net_info->scheme == eURL_Https  ||
             net_info->scheme == eURL_Unspec)
          ||  (types  &&  !(types &= fSERV_Http))) {
-        return 0/*Unsupported scheme*/;
+        return 0/*Unsupported scheme/type*/;
     }
 
     CORE_TRACEF(("Enter SERV_LINKERD_Open(\"%s\")", iter->name));
@@ -519,8 +518,7 @@ extern const SSERV_VTable* SERV_LINKERD_Open(SERV_ITER           iter,
 
     if ( ! (data = (struct SLINKERD_Data*) calloc(1, sizeof(*data)))) {
         CORE_LOGF_X(eLSub_Alloc, eLOG_Critical,
-                    ("[%s]  Failed to allocate for SLINKERD_Data",
-                     iter->name));
+                    ("[%s]  Failed to allocate for SLINKERD_Data",iter->name));
         return 0;
     }
     iter->data = data;
