@@ -842,8 +842,6 @@ void CFlatFileGenerator::Generate
                 flatfile_os = m_Og;
             } else if ( is_RNA && m_Or ) {
                 flatfile_os = m_Or;
-            } else {
-                continue;
             }
         } else if ( bsh.IsAa() ) {
             if ( m_Op ) {
@@ -854,18 +852,23 @@ void CFlatFileGenerator::Generate
                 flatfile_os = m_Ou;
             } else if ( m_On ) {
                 flatfile_os = m_On;
-            } else {
-                continue;
             }
         }
 
         CRef<CFlatItemOStream> newitem_os;
         if (flatfile_os == nullptr) {
-            newitem_os.Reset(&item_os);
+            if (!m_Os && !m_On && !m_Og && !m_Or && !m_Op && !m_Ou) {
+                if ( bsh.IsNa() && ! doNuc ) continue;
+                if ( bsh.IsAa() && ! doProt ) continue;
+                newitem_os.Reset(&item_os);
+            } else {
+                continue;
+            }
         } else {
             newitem_os.Reset(
                 new CFormatItemOStream(new COStreamTextOStream(*flatfile_os)));
         }
+        if (newitem_os.Empty()) continue;
 
         CRef<CFlatItemOStream> pItemOS( newitem_os );
         if( pCanceled ) {
