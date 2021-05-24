@@ -39,6 +39,7 @@ echo USAGE:
 echo   %script_name% [OPTIONS]...
 echo SYNOPSIS:
 echo   Configure NCBI C++ toolkit for Visual Studio using CMake build system.
+echo   https://ncbi.github.io/cxx-toolkit/pages/ch_cmconfig#ch_cmconfig._Configure
 echo OPTIONS:
 echo   --help                   -- print Usage
 echo   --without-dll            -- build all libraries as static ones (default)

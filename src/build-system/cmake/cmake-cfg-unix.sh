@@ -34,7 +34,7 @@ fi
 # defaults
 BUILD_TYPE="Debug"
 BUILD_SHARED_LIBS="OFF"
-USE_CCACHE="ON"
+USE_CCACHE="OFF"
 USE_DISTCC="ON"
 SKIP_ANALYSIS="OFF"
 
@@ -51,6 +51,7 @@ USAGE:
   $script_name [compiler] [OPTIONS]...
 SYNOPSIS:
   Configure NCBI C++ toolkit using CMake build system.
+  https://ncbi.github.io/cxx-toolkit/pages/ch_cmconfig#ch_cmconfig._Configure
 OPTIONS:
   --help                     -- print Usage
   compiler                   -- compiler name and version
@@ -81,7 +82,9 @@ OPTIONS:
   --with-features="LIST"     -- specify compilation features
                     examples:   --with-features="StrictGI"
   --with-build-root=name     -- specify a non-default build directory name
+  --with-ccache              -- use ccache
   --without-ccache           -- do not use ccache
+  --with-distcc              -- use distcc
   --without-distcc           -- do not use distcc
   --without-analysis         -- skip source tree analysis
   --with-generator="X"       -- use generator X

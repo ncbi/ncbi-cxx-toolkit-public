@@ -44,6 +44,7 @@ USAGE:
   $script_name [OPTIONS]...
 SYNOPSIS:
   Configure NCBI C++ toolkit for XCode using CMake build system.
+  https://ncbi.github.io/cxx-toolkit/pages/ch_cmconfig#ch_cmconfig._Configure
 OPTIONS:
   --help                     -- print Usage
   --without-dll              -- build all libraries as static ones (default)
