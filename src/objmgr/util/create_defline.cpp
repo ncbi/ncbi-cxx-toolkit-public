@@ -3892,17 +3892,14 @@ string CDeflineGenerator::GenerateDefline (
         }
         if (desc) {
             if (ok) {
-                try {
-                    CAutoDef autodef;
-                    autodef.SetOptionsObject(desc->GetUser());
-                    CAutoDefModifierCombo mod_combo;
-                    CAutoDefOptions options;
-                    options.InitFromUserObject(desc->GetUser());
-                    mod_combo.SetOptions(options);
-                    m_MainTitle = autodef.GetOneDefLine(&mod_combo, bsh);
-                    s_TrimMainTitle (m_MainTitle);
-                } catch ( const exception&  ) {
-                }
+                CAutoDef autodef;
+                autodef.SetOptionsObject(desc->GetUser());
+                CAutoDefModifierCombo mod_combo;
+                CAutoDefOptions options;
+                options.InitFromUserObject(desc->GetUser());
+                mod_combo.SetOptions(options);
+                m_MainTitle = autodef.GetOneDefLine(&mod_combo, bsh);
+                s_TrimMainTitle (m_MainTitle);
             }
         }
     }
