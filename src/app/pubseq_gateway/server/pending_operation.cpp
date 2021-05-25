@@ -50,7 +50,7 @@ CPendingOperation::CPendingOperation(shared_ptr<CPSGS_Request>  user_request,
     m_UserRequest(user_request),
     m_Reply(reply),
     m_Started(false),
-    m_ConnectionCancelled(false),
+    m_ConnectionCanceled(false),
     m_Processor(unique_ptr<IPSGS_Processor>(processor)),
     m_InProcess(false)
 {
@@ -85,7 +85,7 @@ void CPendingOperation::Clear()
 
     m_Reply->Clear();
     m_Started = false;
-    m_ConnectionCancelled = false;
+    m_ConnectionCanceled = false;
     m_InProcess = false;
 }
 
@@ -111,8 +111,8 @@ void CPendingOperation::Start(void)
 
 void CPendingOperation::Peek(bool  need_wait)
 {
-    if (m_ConnectionCancelled) {
-        CPubseqGatewayApp::GetInstance()->SignalConnectionCancelled(
+    if (m_ConnectionCanceled) {
+        CPubseqGatewayApp::GetInstance()->SignalConnectionCanceled(
                                                             m_Processor.get());
 
         if (m_Reply->IsOutputReady() && !m_Reply->IsFinished()) {

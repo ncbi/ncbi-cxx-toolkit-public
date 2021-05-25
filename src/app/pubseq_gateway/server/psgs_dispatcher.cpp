@@ -114,7 +114,7 @@ CPSGS_Dispatcher::SignalStartProcessing(IPSGS_Processor *  processor)
     // Basically the Cancel() call needs to be invoked for each of the other
     // processors.
     size_t                      request_id = processor->GetRequest()->GetRequestId();
-    list<IPSGS_Processor *>     to_be_cancelled;    // To avoid calling Cancel()
+    list<IPSGS_Processor *>     to_be_canceled;     // To avoid calling Cancel()
                                                     // under the lock
 
 
@@ -139,10 +139,10 @@ CPSGS_Dispatcher::SignalStartProcessing(IPSGS_Processor *  processor)
         return IPSGS_Processor::ePSGS_Cancel;
     }
 
-    // The group found; check that the processor has not been cancelled yet
+    // The group found; check that the processor has not been canceled yet
     for (const auto &  proc: procs->second) {
         if (proc.m_Processor == processor) {
-            if (proc.m_DispatchStatus == ePSGS_Cancelled) {
+            if (proc.m_DispatchStatus == ePSGS_Canceled) {
                 // The other processor has already called Cancel() for this one
                 m_GroupsLock.unlock();
                 return IPSGS_Processor::ePSGS_Cancel;
@@ -156,20 +156,20 @@ CPSGS_Dispatcher::SignalStartProcessing(IPSGS_Processor *  processor)
     }
 
     // Everything looks OK; this is the first processor who started to send
-    // data to the client so the other processors should be cancelled
+    // data to the client so the other processors should be canceled
     for (auto &  proc: procs->second) {
         if (proc.m_Processor == processor)
             continue;
         if (proc.m_DispatchStatus == ePSGS_Up) {
-            proc.m_DispatchStatus = ePSGS_Cancelled;
-            to_be_cancelled.push_back(proc.m_Processor);
+            proc.m_DispatchStatus = ePSGS_Canceled;
+            to_be_canceled.push_back(proc.m_Processor);
         }
     }
 
     m_GroupsLock.unlock();
 
     // Call the other processor's Cancel() out of the lock
-    for (auto & proc: to_be_cancelled) {
+    for (auto & proc: to_be_canceled) {
 
         if (processor->GetRequest()->NeedTrace()) {
             processor->GetReply()->SendTrace(
@@ -225,7 +225,7 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor)
                 continue;
             }
 
-            // The status is already cancelled or finished which may mean that
+            // The status is already canceled or finished which may mean that
             // it is not the first time call. However it is possible that
             // during the first time the output was not ready so the final PSG
             // chunk has not been sent. Thus we should continue as usual.
@@ -238,8 +238,8 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor)
             case ePSGS_Up:
                 all_procs_finished = false;
                 break;
-            case ePSGS_Cancelled:
-                // Finished but the cancelled processor do not participate in
+            case ePSGS_Canceled:
+                // Finished but the canceled processor do not participate in
                 // the overall reply status
                 break;
         }
@@ -283,9 +283,9 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor)
 }
 
 
-void CPSGS_Dispatcher::SignalConnectionCancelled(IPSGS_Processor *  processor)
+void CPSGS_Dispatcher::SignalConnectionCanceled(IPSGS_Processor *  processor)
 {
-    // When a connection is cancelled there will be no possibility to
+    // When a connection is canceled there will be no possibility to
     // send anything over the connection. So basically what is needed to do is
     // to print request stop and delete the processors group.
     auto        request = processor->GetRequest();
@@ -302,7 +302,7 @@ void CPSGS_Dispatcher::SignalConnectionCancelled(IPSGS_Processor *  processor)
 
     if (request->GetRequestContext().NotNull()) {
         request->SetRequestContext();
-        PSG_MESSAGE("HTTP connection has been cancelled");
+        PSG_MESSAGE("HTTP connection has been canceled");
         CDiagContext::SetRequestContext(NULL);
     }
 

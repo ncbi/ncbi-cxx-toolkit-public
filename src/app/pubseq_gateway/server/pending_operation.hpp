@@ -67,7 +67,7 @@ public:
 
     void ConnectionCancel(void)
     {
-        m_ConnectionCancelled = true;
+        m_ConnectionCanceled = true;
     }
 
 public:
@@ -88,7 +88,7 @@ private:
     // reply. To avoid multiple Process() calls for a processor the flag below
     // is created.
     bool                                    m_Started;
-    bool                                    m_ConnectionCancelled;
+    bool                                    m_ConnectionCanceled;
 
     unique_ptr<IPSGS_Processor>             m_Processor;
     bool                                    m_InProcess;

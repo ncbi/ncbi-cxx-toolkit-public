@@ -60,12 +60,12 @@ public:
         SignalStartProcessing(IPSGS_Processor *  processor);
 
     /// The processor signals that it finished one way or another; including
-    /// when a processor is cancelled.
+    /// when a processor is canceled.
     void SignalFinishProcessing(IPSGS_Processor *  processor);
 
-    /// An http connection can be cancelled so this method will be invoked for
+    /// An http connection can be canceled so this method will be invoked for
     /// such a case
-    void SignalConnectionCancelled(IPSGS_Processor *  processor);
+    void SignalConnectionCanceled(IPSGS_Processor *  processor);
 
 private:
     void x_PrintRequestStop(shared_ptr<CPSGS_Request> request,
@@ -79,11 +79,11 @@ private:
     // From the dispatcher point of view each request corresponds to a group of
     // processors and each processor can be in one of the state:
     // - created and doing what it needs (Up)
-    // - the Cancel() was called for a processor (Cancelled)
+    // - the Cancel() was called for a processor (Canceled)
     // - a processor reported that it finished (Finished)
     enum EPSGS_ProcessorStatus {
         ePSGS_Up,
-        ePSGS_Cancelled,
+        ePSGS_Canceled,
         ePSGS_Finished
     };
 
