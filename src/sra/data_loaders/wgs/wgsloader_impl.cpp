@@ -396,8 +396,10 @@ CWGSResolver& CWGSDataLoader_Impl::GetResolver(void)
             m_Resolver = CWGSResolver::CreateResolver(m_Mgr);
         }
         if ( m_Resolver && !m_UpdateThread ) {
+#ifdef NCBI_THREADS
             m_UpdateThread = new CIndexUpdateThread(GetUpdateTime(), m_Resolver);
             m_UpdateThread->Run();
+#endif
         }
     }
     return *m_Resolver;
