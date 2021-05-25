@@ -242,6 +242,9 @@ set(NCBI_COMPONENT_TLS_FOUND YES)
 set(NCBI_COMPONENT_GNUTLS_FOUND NO)
 if(DEFINED NCBI_COMPONENT_GNUTLS_DISABLED AND NOT NCBI_COMPONENT_GNUTLS_DISABLED)
     NCBI_define_Wcomponent(GNUTLS libgnutls-30.lib)
+else()
+    set(NCBI_COMPONENT_GNUTLS_FOUND NO)
+    message("DISABLED GNUTLS")
 endif()
 
 #############################################################################
