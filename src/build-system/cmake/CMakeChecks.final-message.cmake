@@ -65,8 +65,9 @@ message("-----------------------------------------------------------------------
     message("DataTool Path:  ${NCBI_DATATOOL}")
     message("")
     message("Components:  ${NCBI_ALL_COMPONENTS}")
-    message("Other features:  ${NCBI_ALL_REQUIRES} ${NCBI_PTBCFG_PROJECT_FEATURES}")
-    message("Deprecated components:  ${NCBI_ALL_LEGACY}")
+    message("Requirements:  ${NCBI_ALL_REQUIRES}")
+    message("Deprecated Components:  ${NCBI_ALL_LEGACY}")
+    message("Compile Features:  ${NCBI_PTBCFG_PROJECT_FEATURES}")
 
     message("------------------------------------------------------------------------------")
     message("")
