@@ -57,6 +57,6 @@ Win64         : plain : static  64  ReleaseDLL <ENV>NCBI_CONFIG____ENABLEDUSERRE
 
 #IntelMAC            : gcc   : GCC.sh         --with-bin-release --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-ncbi-public --with-experimental=Int8GI --without-vdb --without-gnutls --without-gcrypt
 #IntelMAC            : clang : Clang.sh       --with-bin-release --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-ncbi-public --with-experimental=Int8GI --without-vdb --without-gnutls --without-gcrypt
-IntelMAC      : clang : Clang.sh  --without-dll --with-bin-release --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-ncbi-public --with-experimental=Int8GI --without-vdb --without-gnutls --without-gcrypt
+IntelMAC      : clang : Clang.sh  --without-dll --with-bin-release --without-debug --without-pcre --with-mt --without-openmp -with-flat-makefile --with-ncbi-public --with-experimental=Int8GI --without-vdb --without-gnutls --without-gcrypt
 
 USE_COMPONENTS
