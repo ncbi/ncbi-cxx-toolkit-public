@@ -1492,27 +1492,22 @@ bool CAutoDefFeatureClause::ShouldRemoveExons() const
     }
 }
 
+
 bool CAutoDefFeatureClause::IsExonWithNumber() const
 {
-    bool rval = false;
-
-    try {
-        if (m_pMainFeat->IsSetData() &&
-            m_pMainFeat->GetData().GetSubtype() == CSeqFeatData::eSubtype_exon &&
-            m_pMainFeat->IsSetQual()) {
-            ITERATE(CSeq_feat::TQual, it, m_pMainFeat->GetQual()) {
-                if ((*it)->IsSetQual() &&
-                    NStr::Equal((*it)->GetQual(), "number") &&
-                    (*it)->IsSetVal() &&
-                    !NStr::IsBlank((*it)->GetVal())) {
-                    rval = true;
-                    break;
-                }
+    if (m_pMainFeat->IsSetData() &&
+        m_pMainFeat->GetData().GetSubtype() == CSeqFeatData::eSubtype_exon &&
+        m_pMainFeat->IsSetQual()) {
+        ITERATE(CSeq_feat::TQual, it, m_pMainFeat->GetQual()) {
+            if ((*it)->IsSetQual() &&
+                NStr::Equal((*it)->GetQual(), "number") &&
+                (*it)->IsSetVal() &&
+                !NStr::IsBlank((*it)->GetVal())) {
+                return true;
             }
         }
-    } catch ( exception& ) {
     }
-    return rval;
+    return false;
 }
 
 
