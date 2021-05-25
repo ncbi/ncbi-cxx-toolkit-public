@@ -638,10 +638,10 @@ streamsize CConn_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
 }
 
 
-#define POLLING  CConn_IOStream::kZeroTimeout
-
 streamsize CConn_Streambuf::showmanyc(void)
 {
+#define POLLING  CConn_IOStream::kZeroTimeout
+
     _ASSERT(gptr() >= egptr());
 
     if (!x_CheckConn(m_Conn))
@@ -691,9 +691,9 @@ streamsize CConn_Streambuf::showmanyc(void)
     setg(m_ReadBuf, m_ReadBuf, m_ReadBuf + x_read);
     x_GPos += x_read;
     return x_read;
-}
 
 #undef POLLING
+}
 
 
 int CConn_Streambuf::sync(void)
