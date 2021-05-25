@@ -91,10 +91,15 @@ set(NCBI_ThirdParty_GNUTLS        ${NCBI_TOOLS_ROOT}/gnutls-3.4.0 CACHE PATH "GN
 
 #############################################################################
 # in-house-resources
-if(EXISTS "${NCBI_TOOLS_ROOT}/.ncbirc" AND EXISTS "/am/ncbiapdata/test_data")
-    set(NCBITEST_TESTDATA_PATH "/am/ncbiapdata/test_data")
-    set(NCBI_REQUIRE_in-house-resources_FOUND YES)
-    list(APPEND NCBI_ALL_REQUIRES in-house-resources)
+set(NCBI_REQUIRE_in-house-resources_FOUND NO)
+if (NCBI_COMPONENT_in-house-resources_DISABLED)
+    message("DISABLED in-house-resources")
+else()
+    if(EXISTS "${NCBI_TOOLS_ROOT}/.ncbirc" AND EXISTS "/am/ncbiapdata/test_data")
+        set(NCBITEST_TESTDATA_PATH "/am/ncbiapdata/test_data")
+        set(NCBI_REQUIRE_in-house-resources_FOUND YES)
+        list(APPEND NCBI_ALL_REQUIRES in-house-resources)
+    endif()
 endif()
 
 #############################################################################
