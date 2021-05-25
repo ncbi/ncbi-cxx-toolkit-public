@@ -1150,8 +1150,9 @@ static EIO_Status s_VT_Open(CONNECTOR connector, const STimeout* timeout)
         CONN_SET_METHOD    (meta, read,   uuu->meta.read,  uuu->meta.c_read);
         CONN_SET_METHOD    (meta, status, uuu->meta.status,uuu->meta.c_status);
 
-        if (uuu->meta.get_type
-            &&  (type = uuu->meta.get_type(uuu->meta.c_get_type)) != 0) {
+        type = uuu->meta.get_type
+            ? uuu->meta.get_type(uuu->meta.c_get_type) : 0;
+        if (type) {
             size_t slen = strlen(uuu->service);
             size_t tlen = strlen(type);
             char*  temp = (char*) malloc(slen + tlen + 2);
@@ -1177,7 +1178,7 @@ static EIO_Status s_VT_Open(CONNECTOR connector, const STimeout* timeout)
         }
         if (!stateless
             &&  (uuu->net_info->firewall  ||  info->type == fSERV_Firewall)
-            &&  uuu->type  &&  strcmp(uuu->type, g_kNcbiSockNameAbbr)) {
+            &&  type  &&  strcmp(type, g_kNcbiSockNameAbbr) == 0) {
             static const char kFWDLink[] = CONN_FWD_LINK;
             CORE_LOGF_X(6, eLOG_Error,
                         ("[%s]  %s connection failure (%s) usually"
