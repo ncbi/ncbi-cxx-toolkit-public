@@ -96,12 +96,14 @@ void CRPSBlastApp::Init()
 int CRPSBlastApp::Run(void)
 {
 	const CArgs& args = GetArgs();
-	if ((args[kArgMTMode].AsInteger() == 0)  || ( m_CmdLineArgs->GetNumThreads() <= 1)){
-		return x_RunMTBySplitDB();
-	}
-	else {
+	CMTArgs mt_args(args);
+	if ((mt_args.GetMTMode() == CMTArgs::eSplitByQueries) &&
+			(mt_args.GetNumThreads() > 1)){
 		m_UsageReport.AddParam(CBlastUsageReport::eMTMode, args[kArgMTMode].AsInteger());
 		return x_RunMTBySplitQuery();
+	}
+	else {
+		return x_RunMTBySplitDB();
 	}
 }
 
@@ -253,7 +255,7 @@ int CRPSBlastApp::x_RunMTBySplitQuery(void)
 	if (mt_query_batch_env) {
 		batch_size = NStr::StringToInt(mt_query_batch_env);
 	}
-	cerr << "Batch Size: " << batch_size << endl;
+	INFO_POST("Batch Size: " << batch_size);
     // Allow the fasta reader to complain on invalid sequence input
     SetDiagPostLevel(eDiag_Warning);
     SetDiagPostPrefix("rpsblast");
@@ -261,7 +263,6 @@ int CRPSBlastApp::x_RunMTBySplitQuery(void)
 
 	try {
     	const CArgs& args = GetArgs();
-    	const int kMaxNumOfThreads =  m_CmdLineArgs->GetNumThreads();
     	CRef<CBlastOptionsHandle> opts_hndl;
         if(RecoverSearchStrategy(args, m_CmdLineArgs)) {
         	opts_hndl.Reset(&*m_CmdLineArgs->SetOptionsForSavedStrategy(args));
@@ -274,6 +275,7 @@ int CRPSBlastApp::x_RunMTBySplitQuery(void)
        		return BLAST_EXIT_SUCCESS;
     	}
     	CNcbiOstream & out_stream = m_CmdLineArgs->GetOutputStream();
+    	const int kMaxNumOfThreads =  m_CmdLineArgs->GetNumThreads();
 		CBlastMasterNode master_node(out_stream, kMaxNumOfThreads);
    		int chunk_num = 0;
 
@@ -303,6 +305,9 @@ int CRPSBlastApp::x_RunMTBySplitQuery(void)
 			}
     	}
 
+		if(chunk_num < kMaxNumOfThreads){
+			CheckMTByQueries_QuerySize(opts_hndl->GetOptions().GetProgram(), batch_size);
+		}
 	} CATCH_ALL (status)
 
     if(!bah.GetMessages().empty()) {
