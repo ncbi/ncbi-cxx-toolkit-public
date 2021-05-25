@@ -1723,12 +1723,12 @@ static EIO_Status s_FTPExecute(SFTPConnector* xxx, const STimeout* timeout)
             xxx->rclr = 1/*true*/;
     }
     assert(xxx->cntl);
-    verify((size = BUF_Size(xxx->wbuf)) != 0);
+    size = BUF_Size(xxx->wbuf);
     if ((s = (char*) malloc(size + 1)) != 0
         &&  BUF_Read(xxx->wbuf, s, size) == size) {
         const char* c;
         assert(!memchr(s, '\n', size));
-        if (s[size - 1] == '\r')
+        if (size  &&  s[size - 1] == '\r')
             --size;
         s[size] = '\0';
         if (*s)
@@ -1738,10 +1738,13 @@ static EIO_Status s_FTPExecute(SFTPConnector* xxx, const STimeout* timeout)
         else
             size = (size_t)(c - s);
         assert(*c == ' '  ||  !*c);
-        if (size == 3  ||  size == 4) {
+        if (!size  ||  size == 3  ||  size == 4) {
             SOCK_SetTimeout(xxx->cntl, eIO_ReadWrite, timeout);
-            if         (size == 3  &&   strncasecmp(s, "REN",  3) == 0) {
-                /* special-case, non-standard command */
+            if (!size || (size == 4 && strncasecmp(s, "NOOP", 4) == 0 && !*c)){
+                /* Special, means to stop the current command and reach EOF */
+                status = x_FTPNoop(xxx);
+            } else if  (size == 3  &&   strncasecmp(s, "REN",  3) == 0) {
+                /* Special-case, non-standard command */
                 status = s_FTPRename(xxx, c + strspn(c, " \t"));
             } else if ((size == 3  ||  toupper((unsigned char) c[-4]) == 'X')
                        &&          (strncasecmp(c - 3, "CWD",  3) == 0  ||
@@ -1777,11 +1780,6 @@ static EIO_Status s_FTPExecute(SFTPConnector* xxx, const STimeout* timeout)
             } else if  (size == 4  &&  (strncasecmp(s, "FEAT", 4) == 0  ||
                                         strncasecmp(s, "OPTS", 4) == 0)) {
                 status = s_FTPNegotiate(xxx, s);
-            } else if  (size == 4  &&   strncasecmp(s, "NOOP", 4) == 0 && !*c){
-                /* Special, means to stop the current command and reach EOF */
-                *s = '\0';
-                xxx->what = 0;
-                status = x_FTPNoop(xxx);
             } else
                 status = eIO_NotSupported;
         } else
@@ -2014,52 +2012,63 @@ static EIO_Status s_VT_Write
                 x_FTPCloseData(xxx, eIO_Close/*silent close*/, 0);
             }
         }
-    } else if (size) {
-        size_t count;
-        const char* run = (const char*) memchr((const char*) buf, '\n', size);
-        *n_written = size; /* by default report the entire command consumed */
+        goto out;
+    }
+
+    if (size) {
+        const char* run = (const char*) memchr(buf, '\n', size);
+        *n_written = size; /* by default, report the entire output consumed */
         if (run  &&  run < (const char*) buf + --size) {
             /* reject multiple commands */
             BUF_Erase(xxx->wbuf);
-            return eIO_Unknown;
-        }
-        count = 0;
-        if (xxx->flag & fFTP_UncleanIAC) {
-            if (BUF_Write(&xxx->wbuf, buf, size))
-                count = size;
-        } else {
-            static const char kIAC[] = { '\377'/*IAC*/, '\377' };
-            const char* s = (const char*) buf;
-            while (count < size) {
-                /* Escaped IAC (Interpret As Command) character, per RFC854 */
-                const char* p;
-                size_t part;
-                if (count) {
-                    if (!BUF_Write(&xxx->wbuf, kIAC, sizeof(kIAC)))
-                        break;
-                    ++count;
-                    ++s;
-                }
-                if (!(p = (const char*) memchr(s, kIAC[0], size - count)))
-                    part = size - count;
-                else
-                    part = (size_t)(p - s);
-                if (!BUF_Write(&xxx->wbuf, s, part))
-                    break;
-                count += part;
-                s     += part;
-            }
-        }
-        if (count < size) {
-            /* short write */
-            *n_written = count;
             status = eIO_Unknown;
-        } else if (!run) {
-            status = eIO_Success;
-        } else
-            return s_FTPExecute(xxx, timeout);
+        } else {
+            size_t count = 0;
+            if (xxx->flag & fFTP_UncleanIAC) {
+                if (BUF_Write(&xxx->wbuf, buf, size))
+                    count = size;
+            } else {
+                static const char kIAC[] = { '\377'/*IAC*/, '\377' };
+                const char* s = (const char*) buf;
+                while (count < size) {
+                    const char* p;
+                    size_t part;
+                    if (count) {
+                        /* Escaped IAC (Interpret As Command) char, RFC854 */
+                        if (!BUF_Write(&xxx->wbuf, kIAC, sizeof(kIAC)))
+                            break;
+                        assert(*s == kIAC[0]);
+                        ++count;
+                        ++s;
+                    }
+                    if (!(p = (const char*) memchr(s, kIAC[0], size - count)))
+                        part = size - count;
+                    else
+                        part = (size_t)(p - s);
+                    if (!BUF_Write(&xxx->wbuf, s, part))
+                        break;
+                    count += part;
+                    s     += part;
+                }
+            }
+            if (count < size) {
+                /* short write */
+                *n_written = count;
+                status = eIO_Unknown;
+            } else if (!run) {
+                /* keep appending */
+                status = eIO_Success;
+            } else
+                return s_FTPExecute(xxx, timeout);
+        }
+        if (xxx->what  &&  status != eIO_Success) {
+            free((void*) xxx->what);
+            xxx->what = 0;
+        }
     } else
         status = eIO_Success;
+
+ out:
     xxx->w_status = status;
     return status;
 }

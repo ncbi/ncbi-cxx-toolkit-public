@@ -100,11 +100,10 @@ int main(int argc, char* argv[])
     }
     flag |= fFTP_UseFeatures;
 
-    if (TEST_PORT) {
+    if (TEST_PORT)
         sprintf(buf, ":%hu", TEST_PORT);
-    } else {
-        *buf = 0;
-    }
+    else
+        *buf = '\0';
     CORE_LOGF(eLOG_Note, ("Connecting to ftp://%s:%s@%s%s/",
                           TEST_USER, TEST_PASS, TEST_HOST, buf));
     /* Run the tests */
@@ -137,6 +136,10 @@ int main(int argc, char* argv[])
     if (CONN_Write(conn, "LIST\nSIZE", 9, &n, eIO_WritePlain) != eIO_Unknown)
         CORE_LOG(eLOG_Fatal, "Test failed to reject multiple commands");
     CORE_LOG(eLOG_Note, "Multiple commands correctly rejected");
+
+    if (CONN_Write(conn, "\n", 1, &n, eIO_WritePlain) != eIO_Success)
+        CORE_LOG(eLOG_Fatal, "Test failed to accept empty command");
+    CORE_LOG(eLOG_Note, "Empty command correctly accepted");
 
     status = CONN_Write(conn, "SIZE 1GB", 9, &n, eIO_WritePlain);
     if (status == eIO_Success) {

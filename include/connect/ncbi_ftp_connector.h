@@ -70,11 +70,16 @@ enum EFTP_Flag {
 typedef unsigned int TFTP_Flags;  /* bitwise OR of EFTP_Flag */
 
 
-/* FTP protocol implies the use of both control connection (to pass commands
- * and responses) and data connection (to pass file contents), so is a 4-way
+/*
+ *               I M P L E M E N T A T I O N      D E T A I L S
+ *
+ * FTP protocol implies the use of both a control connection (to pass commands
+ * and responses) and a data connection (to pass file contents), so is a 4-way
  * communication scheme.
+ *
  * CONN API supports only a two way scheme, which is why for FTP a special
  * discipline is required to communicate with the server.
+ *
  * User code interacts with FTP server by means of writing commands (most of
  * which are direct FTP commands, see below), and either reading responses or
  * file contents.  There is a special stop command to clear up any pending
@@ -114,21 +119,27 @@ typedef unsigned int TFTP_Flags;  /* bitwise OR of EFTP_Flag */
  * MLST[<SP>p]         Facts of curdir[or p]   Mach-readable path facts
  * FEAT                FEAT command            FEAT list as returned by server
  * OPTS<SP>opts        OPTS command            OPTS response as received
- * NOOP[<SP>anything]  Abort current download  <EOF>
+ * NOOP                NOOP command (*)        <EOF>
  * STOR<SP>f           Store file f on server
  * APPE<SP>f           Append/create file f
+ * <empty>             See NOOP
  *
  * All commands above must be terminated with LF('\n') to be executed
  * (otherwise, successive writes are causing the command to continue to
  * accumulate in the internal command buffer).  Only one command can be
- * executed at a time (i.e. writing "CDUP\nSYST\n" in a single write is
- * illegal).  Note that the codes are text strings each consisting of 3 chars
- * (not binary integers!) -- the "values" are chosen to be equivalent to FTP
- * response codes that the FTP servers are expected to generate upon successful
- * completion of the corresponding commands (per RFC959), but may not
- * necessarily be the actual codes as received from the server (connector is
- * somewhat flexible with accepting various codes noted in several different
- * implementation of FTP servers).
+ * executed at a time (i.g. writing something like "CDUP\nSYST..." in a single
+ * write is illegal).  Note that the codes are text strings each consisting of
+ * 3 chars (not binary integers!) -- the "values" are chosen to be equivalent
+ * to FTP response codes that the FTP servers are expected to generate upon
+ * successful completion of the corresponding commands (per RFC959), but may
+ * not necessarily be the actual codes as received from the server (connector
+ * is somewhat flexible with accepting various codes noted in several different
+ * implementation of FTP servers).  Just "\n" on its own encodes an empty
+ * string command, and is treated just the same as "NOOP\n".
+ *
+ * (*) Note that any subsequent command aborts any unfinished command (if any
+ * in progress), so even "NOOP" executed in that context can cause the server
+ * to terminate the current transfer (see below).
  *
  * <SP> denotes exactly one space character, a blank means any number of space
  * or tab characters.  Single filenames(f), directories(d), and paths(p) span
@@ -138,11 +149,12 @@ typedef unsigned int TFTP_Flags;  /* bitwise OR of EFTP_Flag */
  * spaces / tabs), or quoted FTP-style (enclosed in double quotes, with any
  * embedded double quote character doubled, e.g. """a""b" encodes the file
  * name "a"b).  Note that the filename a"b (no leading quote) does not require
- * any additional quoting.
+ * any additional quoting (but it still may be used as "a""b").
+ *
  * Some commands (e.g. NLST, MLSD, etc) allow an optional argument, which can
  * be either present or omitted (the optional part is shown in the square
- * brakets, which are not the elements of those commands).
- * UTC seconds can have a fraction portion preceded by a decimal point.
+ * brakets, which are not the elements of those commands).  The UTC seconds can
+ * have a fraction portion preceded by a decimal point.
  *
  * Current implementation forbids file names to contain '\0', '\r', or '\n'
  * (even though FTP takes special precautions how to deal with such names).
@@ -171,9 +183,9 @@ typedef unsigned int TFTP_Flags;  /* bitwise OR of EFTP_Flag */
  *
  * File size will be checked by the connector to see whether the download (or
  * upload, see below) was complete (sometimes, the information returned from
- * the server does not permit doing this check).  Any mismatch will result in
- * an error different from eIO_Closed.  (For buggy / noisy FTP servers, the
- * size checks can be suppressed via connector flags.)
+ * the server does not allow to perform this check).  Any mismatch will result
+ * in an error different from eIO_Closed.  (For buggy / noisy FTP servers, the
+ * size checks can be suppressed via the connector flags.)
  *
  * During file download, any command (legitimate or not) written to the
  * connection and triggered for execution will abort the data transfer (results
@@ -182,13 +194,13 @@ typedef unsigned int TFTP_Flags;  /* bitwise OR of EFTP_Flag */
  * distinguished from the remnants of the file data -- so such a method is not
  * very robust.
  *
- * There is a special NOOP command that can be written to abort the transfer:
- * it produces no output (just inserts eIO_Closed in data), and for it is to be
- * a legitimate command, it usually results in eIO_Success when inquired for
- * write status (the result may be different on a rare occasion if the server
- * has chosen to close control connection, for example).  Still, to be usable
- * again the connection must be drained out until eIO_Closed is received
- * by reading.
+ * There is a special empty command ("\n") that can be written to abort the
+ * transfer:  it gets converted to "NOOP" internally, produces no output (just
+ * inserts eIO_Closed in data), and for it is to be a legitimate command, it
+ * usually results in eIO_Success when inquired for write status (the result
+ * may be different on a rare occasion if the server has chosen to drop the
+ * control connection, for example).  Still, to be usable again the connection
+ * must be drained out until eIO_Closed is received by reading.
  *
  * Note that for commands, which return text codes, it is allowed not to read
  * the codes out, but rely solely on CONN_Status() responses.  Any pending
@@ -221,8 +233,8 @@ typedef unsigned int TFTP_Flags;  /* bitwise OR of EFTP_Flag */
  * SEND mode goes to file), but it is reading that will cause the cancellation.
  * So if a connection is in undetermined state, the recovery would be to do a
  * small quick read (e.g. for just 1 byte with a small timeout), then write the
- * "NOOP" command and cause an execution (e.g. writing "NOOP\n" does that),
- * then drain the connection by reading again until eIO_Closed.
+ * NOOP command and cause an execution (e.g. writing just "\n" does that), then
+ * drain the connection by reading again until eIO_Closed.
  *
  * Both downloads and uploads (but not file lists!) support restart mode (if
  * the server permits so).  The standard guarantees that the REST command
