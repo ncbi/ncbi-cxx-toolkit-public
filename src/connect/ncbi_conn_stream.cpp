@@ -47,6 +47,10 @@
 BEGIN_NCBI_SCOPE
 
 
+static const STimeout s_ZeroTimeout = { 0, 0 };
+const STimeout* CConn_IOStream::kZeroTimeout = &s_ZeroTimeout;
+
+
 CConn_IOStream::CConn_IOStream(const TConnector& connector,
                                const STimeout* timeout,
                                size_t buf_size, TConn_Flags flgs,
@@ -160,6 +164,13 @@ SOCK CConn_IOStream::GetSOCK(void)
     if (!conn  ||  CONN_GetSOCK(conn, &sock) != eIO_Success)
         sock = 0;
     return sock;
+}
+
+
+EIO_Status CConn_IOStream::Wait(EIO_Event event, const STimeout* timeout)
+{
+    CONN conn = GET_CONN(m_CSb);
+    return conn ? CONN_Wait(conn, event, timeout) : eIO_Closed;
 }
 
 
@@ -1203,7 +1214,7 @@ EIO_Status CConn_FtpStream::Drain(const STimeout* timeout)
         // Cause any upload-in-progress to abort
         CONN_Read(conn, sink, sizeof(sink), &n, eIO_ReadPlain);
         // Cause any command-in-progress to abort
-        CONN_Write(conn, "NOOP\n", 5, &n, eIO_WritePersist);
+        CONN_Write(conn, "\n", 1, &n, eIO_WritePersist);
     }
     clear();
     while (read(sink, sizeof(sink)))

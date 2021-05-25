@@ -124,6 +124,9 @@ class NCBI_XCONNECT_EXPORT CConn_IOStream : public            CNcbiIostream,
                                             virtual protected CConnIniter
 {
 public:
+    /// Polling timeout (non-NULL), with 0.0 time in it
+    static const STimeout* kZeroTimeout;
+
     /// The values must be compatible with TCONN_Flags.
     enum {
         fConn_Untie           = fCONN_Untie,///< do not flush before reading
@@ -254,9 +257,9 @@ public:
     /// Flush the stream and fetch the response (w/o extracting any user data).
     /// @return
     ///   eIO_Success if the operation was successful, and some input
-    ///   (including empty) will be available upon read.
+    ///   (including empty in case of EOF) will be available upon read.
     /// @note
-    ///   Status eIO_Closed does not necessarily mean proper EOF here. 
+    ///   Status eIO_Closed does not necessarily mean a proper EOF here. 
     EIO_Status         Fetch(const STimeout* timeout = kDefaultTimeout);
 
     /// Return the specified data "data" of size "size" into the underlying
@@ -305,6 +308,21 @@ public:
     /// @sa
     ///   CONN, ncbi_connection.h, CONN_GetFlags
     CONN               GetCONN(void) const;
+
+
+    /// Equivalent to CONN_Wait(GetCONN(), event, timeout)
+    /// @param event
+    ///   eIO_Read or eIO_Write
+    /// @param timeout
+    ///   Time to wait for the event (poll if zero time specified, and return
+    ///   immediately).
+    /// @return
+    ///   eIO_Success if the event is available, eIO_Timeout if the time has
+    ///   expired;  other code to signal other error condition.
+    /// @sa
+    ///   CONN_Wait
+    EIO_Status         Wait(EIO_Event event,
+                            const STimeout* timeout = kZeroTimeout);
 
 protected:
     void x_Destroy(void);
