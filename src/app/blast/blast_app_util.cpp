@@ -998,4 +998,57 @@ int GetMTByQueriesBatchSize(EProgram p, int num_threads)
 		return batch_size;
 }
 
+void CheckMTByQueries_DBSize(CRef<CLocalDbAdapter> & db_adapter, const CBlastOptions & opt)
+{
+	CRef<CSearchDatabase> sdb = db_adapter->GetSearchDatabase();
+	const CRef<CSeqDBGiList>&  gi = sdb->GetGiList();
+	const CRef<CSeqDBGiList>& n_gi = sdb->GetNegativeGiList();
+
+	if (gi.NotEmpty() || n_gi.NotEmpty()) {
+		return;
+	}
+
+	EProgram prog = opt.GetProgram();
+	CRef<CSeqDB> seqdb = sdb->GetSeqDb();
+	Uint8 total_length = seqdb->GetTotalLength();
+	Uint8 length_limit = 0;
+
+	if (db_adapter->IsProtein()) {
+		static const Uint8 kMaxProtTotalLength = 2000000000;
+		length_limit = kMaxProtTotalLength;
+	}
+	else {
+		static const Uint8 kMaxNuclTotalLength = 14000000000;
+		length_limit = kMaxNuclTotalLength;
+	}
+
+	if(total_length > length_limit) {
+		string warn = "This database is probably too large to benefit from -mt_mode=1. " \
+					  "We suggest using -mt_mode=1 only if the database is less than";
+		if (db_adapter->IsProtein()) {
+			warn += " 2 billion residues ";
+		}
+		else {
+			warn += " 14 billion bases ";
+		}
+       	ERR_POST(Warning <<   warn + "or if the search is limited by an option such as -taxids, -taxidlist or -gilist.");
+	}
+	return;
+}
+
+void CheckMTByQueries_QuerySize(EProgram prog, int batch_size)
+{
+	string warning = "This set of queries is too small to fully benefit from the -mt_mode=1 option. "\
+			         "The total number of letters should be at least ";
+	warning += NStr::IntToString(batch_size);
+	EBlastProgramType p = EProgramToEBlastProgramType(prog);
+	if (Blast_QueryIsProtein(p)) {
+		warning += " residues per thread.";
+	}
+	else {
+		warning += " bases per thread.";
+	}
+    ERR_POST(Warning << warning);
+}
+
 END_NCBI_SCOPE

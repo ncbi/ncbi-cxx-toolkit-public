@@ -107,6 +107,10 @@ CTblastnNode::Main()
         InitializeSubject(db_args, opts_hndl, m_CmdLineArgs->ExecuteRemotely(), db_adapter, scope);
         _ASSERT(db_adapter && scope);
 
+        if(GetNodeNum() == 0) {
+        	CheckMTByQueries_DBSize(db_adapter, opt);
+        }
+
         /*** Get the query sequence(s) or PSSM (these two options are mutually
          * exclusive) ***/
         CRef<CPssmWithParameters> pssm = m_CmdLineArgs->GetInputPssm();

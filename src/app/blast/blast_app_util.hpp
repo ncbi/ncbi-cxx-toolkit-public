@@ -321,6 +321,9 @@ void LogRPSCmdOptions(blast::CBlastUsageReport & report, const blast::CBlastAppA
 
 int GetMTByQueriesBatchSize(blast::EProgram p, int num_threads);
 
+void CheckMTByQueries_DBSize(CRef<blast::CLocalDbAdapter> & db_adapter, const blast::CBlastOptions & opt);
+void CheckMTByQueries_QuerySize(blast::EProgram prog, int batch_size);
+
 END_NCBI_SCOPE
 
 #endif /* APP__BLAST_APP_UTIL__HPP */

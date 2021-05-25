@@ -103,6 +103,10 @@ CBlastpNode::Main()
         InitializeSubject(db_args, opts_hndl, m_CmdLineArgs->ExecuteRemotely(), db_adapter, scope);
         _ASSERT(db_adapter && scope);
 
+        if(GetNodeNum() == 0) {
+        	CheckMTByQueries_DBSize(db_adapter, opt);
+        }
+
         /*** Get the query sequence(s) ***/
         CRef<CQueryOptionsArgs> query_opts =
             m_CmdLineArgs->GetQueryOptionsArgs();

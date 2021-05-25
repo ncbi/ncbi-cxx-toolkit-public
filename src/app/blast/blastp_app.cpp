@@ -293,6 +293,9 @@ int CBlastpApp::x_RunMTBySplitQuery()
 			}
     	}
 
+		if(chunk_num < kMaxNumOfThreads){
+			CheckMTByQueries_QuerySize(opts_hndl->GetOptions().GetProgram(), batch_size);
+		}
 	} CATCH_ALL (status)
 
     if(!bah.GetMessages().empty()) {
