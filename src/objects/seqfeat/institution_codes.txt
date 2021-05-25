@@ -460,6 +460,7 @@ BCCM/LMG	c	Belgian Coordinated Collections of Microorganisms/ LMG Bacteria Colle
 BCCM/MUCL	c	Belgian Coordinated Collections of Microorganisms / MUCL Agro-food & Environmental Fungal Collection	MUCL		
 BCCM/ULC	c	Belgian Coordinated Collections of Microorganisms / ULC Cyanobacteria Collection	ULC	https://bccm.belspo.be/catalogues/bm-details?accession_number=	
 BCCN	c	Brucella Culture Collection			
+BCCO	c	Biology Centre Collection of Organisms			
 BCCUSP	c	Brazilian Cyanobacteria Collection - University of Sao Paulo			
 BCF	s	Universitat de Barcelona, Laboratori de Botanica			
 BCFH	s	Bureau of Commercial Fisheries			
