@@ -405,23 +405,23 @@ extern int/*bool*/ ConnNetInfo_Boolean(const char* str)
             return 0/*false*/;
         break;
     case 2:
-        if (strcasecmp(str, "on") == 0)
+        if (strcasecmp(str, "ON") == 0)
             return 1/*true*/;
-        if (strcasecmp(str, "no") == 0)
+        if (strcasecmp(str, "NO") == 0)
             return 0/*false*/;
         break;
     case 3:
-        if (strcasecmp(str, "yes") == 0)
+        if (strcasecmp(str, "YES") == 0)
             return 1/*true*/;
-        if (strcasecmp(str, "off") == 0)
+        if (strcasecmp(str, "OFF") == 0)
             return 0/*false*/;
         break;
     case 4:
-        if (strcasecmp(str, "true") == 0)
+        if (strcasecmp(str, "TRUE") == 0)
             return 1/*true*/;
         break;
     case 5:
-        if (strcasecmp(str, "false") == 0)
+        if (strcasecmp(str, "FALSE") == 0)
             return 0/*false*/;
         break;
     default:
@@ -677,9 +677,9 @@ static SConnNetInfo* s_CreateNetInfo(const char* service, FStrNCmp strncompar)
     REG_VALUE(REG_CONN_DEBUG_PRINTOUT, str, DEF_CONN_DEBUG_PRINTOUT);
     if (!*str)
         info->debug_printout = eDebugPrintout_None;
-    else if (strcasecmp(str, "some") == 0)
+    else if (strcasecmp(str, "SOME") == 0)
         info->debug_printout = eDebugPrintout_Some;
-    else if (strcasecmp(str, "data") == 0  ||  strcasecmp(str, "all") == 0)
+    else if (strcasecmp(str, "DATA") == 0  ||  strcasecmp(str, "ALL") == 0)
         info->debug_printout = eDebugPrintout_Data;
     else {
         info->debug_printout = ConnNetInfo_Boolean(str)
