@@ -423,3 +423,73 @@ BOOST_AUTO_TEST_CASE(FetchWithSRR)
     s_CheckFast(*scope, seqid1, seq_len, vector<string>(1, nacc), false, false, &other_accs);
     s_VerifyGraphs(*scope, seqid1, seq_len, nacc);
 }
+
+
+BOOST_AUTO_TEST_CASE(CheckGI64VDBNAZoom)
+{
+    LOG_POST("Checking 64-bit GI VDB NA Tracks");
+    string id = "NC_054141.5";
+    string na_acc = "NA000300276.1";
+
+    for ( int t = 0; t < 4; ++t ) {
+        SAnnotSelector sel;
+        sel.SetSearchUnresolved();
+        sel.IncludeNamedAnnotAccession(na_acc, -1);
+        if ( t&1 ) {
+            sel.AddNamedAnnots(CombineWithZoomLevel(na_acc, -1));
+        }
+        if ( t&2 ) {
+            sel.AddNamedAnnots(na_acc);
+            sel.AddNamedAnnots(CombineWithZoomLevel(na_acc, 100));
+        }
+        sel.SetCollectNames();
+
+        CRef<CSeq_loc> loc(new CSeq_loc);
+        loc->SetWhole().Set(id);
+        set<int> tracks;
+        CRef<CScope> scope = s_MakeScope();
+        CGraph_CI it(*scope, *loc, sel);
+        ITERATE ( CGraph_CI::TAnnotNames, i, it.GetAnnotNames() ) {
+            if ( !i->IsNamed() ) {
+                continue;
+            }
+            int zoom;
+            string acc;
+            if ( !ExtractZoomLevel(i->GetName(), &acc, &zoom) ) {
+                continue;
+            }
+            if ( acc != na_acc ) {
+                continue;
+            }
+            tracks.insert(zoom);
+        }
+        BOOST_CHECK(tracks.count(100));
+    }
+}
+
+
+BOOST_AUTO_TEST_CASE(CheckGI64VDBNAZoom100)
+{
+    LOG_POST("Checking 64-bit GI NA VDB Graph Track");
+    string id = "NC_054141.5";
+    string na_acc = "NA000300276.1";
+
+    for ( int t = 0; t < 2; ++t ) {
+        SAnnotSelector sel;
+        sel.SetSearchUnresolved();
+        sel.IncludeNamedAnnotAccession(na_acc, 100);
+        if ( t&1 ) {
+            sel.AddNamedAnnots(CombineWithZoomLevel(na_acc, -1));
+        }
+        else {
+            sel.AddNamedAnnots(CombineWithZoomLevel(na_acc, 100));
+        }
+        
+        CRef<CScope> scope = s_MakeScope();
+        CRef<CSeq_id> seq_id(new CSeq_id(id));
+        CRef<CSeq_loc> loc(new CSeq_loc);
+        loc->SetWhole(*seq_id);
+
+        BOOST_CHECK(CGraph_CI(*scope, *loc, sel));
+    }
+}
