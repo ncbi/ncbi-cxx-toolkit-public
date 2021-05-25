@@ -154,10 +154,10 @@ do
       ;; 
     --with-max-debug)
       BUILD_TYPE=Debug 
-      PROJECT_FEATURES="$PROJECT_FEATURES;MaxDebug"
+      if [ -z "$PROJECT_FEATURES" ]; then PROJECT_FEATURES="MaxDebug"; else PROJECT_FEATURES="$PROJECT_FEATURES;MaxDebug"; fi
       ;; 
     --with-symbols)
-      PROJECT_FEATURES="$PROJECT_FEATURES;Symbols"
+      if [ -z "$PROJECT_FEATURES" ]; then PROJECT_FEATURES="Symbols"; else PROJECT_FEATURES="$PROJECT_FEATURES;Symbols"; fi
       ;; 
     --with-ccache)
       USE_CCACHE="ON"
@@ -205,7 +205,7 @@ do
       PROJECT_COMPONENTS=${arg#*=}
       ;; 
     --with-features=*)
-      PROJECT_FEATURES="$PROJECT_FEATURES;${arg#*=}"
+      if [ -z "$PROJECT_FEATURES" ]; then PROJECT_FEATURES="${arg#*=}"; else PROJECT_FEATURES="$PROJECT_FEATURES;${arg#*=}"; fi
       ;; 
     --with-build-root=*)
       BUILD_ROOT=${arg#*=}
