@@ -682,10 +682,10 @@ SUvNgHttp2_TlsImpl::SUvNgHttp2_TlsImpl(const TAddrNCred& addr_n_cred, size_t rd_
         return;
     }
 
-    auto oc_rv = mbedtls_ssl_set_hs_own_cert(&m_Ssl, &m_Cert, &m_Pkey);
+    auto oc_rv = mbedtls_ssl_conf_own_cert(&m_Conf, &m_Cert, &m_Pkey);
 
     if (oc_rv) {
-        NCBI_UVNGHTTP2_TLS_TRACE(this << " mbedtls_ssl_set_hs_own_cert: " << SUvNgHttp2_Error::MbedTlsStr(oc_rv));
+        NCBI_UVNGHTTP2_TLS_TRACE(this << " mbedtls_ssl_conf_own_cert: " << SUvNgHttp2_Error::MbedTlsStr(oc_rv));
         return;
     }
 }
