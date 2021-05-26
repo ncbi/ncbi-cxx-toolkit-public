@@ -602,7 +602,7 @@ void SNetServiceImpl::Init(CSynRegistry& registry, SRegSynonyms& sections, const
         class CInPlaceConnIniter : protected CConnIniter
         {
         public:
-            void NoOp() {};
+            void NoOp() {}
         } conn_initer;
         conn_initer.NoOp();
     }
