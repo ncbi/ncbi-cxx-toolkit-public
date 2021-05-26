@@ -82,6 +82,7 @@ CTL_RPCCmd::GetBindParams(void)
 
 bool CTL_RPCCmd::Send()
 {
+    DeleteResultInternal();
     Cancel();
 
     SetHasFailed(false);
@@ -134,6 +135,7 @@ CTL_RPCCmd::x_Close(void)
 {
     if (x_GetSybaseCmd()) {
 
+        DeleteResultInternal();
         Cancel();
 
         DropSybaseCmd();

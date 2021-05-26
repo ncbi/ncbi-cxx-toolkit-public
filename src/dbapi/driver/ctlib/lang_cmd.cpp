@@ -662,6 +662,7 @@ CTL_LRCmd::~CTL_LRCmd(void)
     try {
         // In test mode ... Mon Jul  9 15:20:21 EDT 2007
         // This call is supposed to cancel brocken resultset.
+        DeleteResultInternal();
         Cancel();
     }
     NCBI_CATCH_ALL_X( 5, NCBI_CURRENT_FUNCTION )
@@ -741,6 +742,7 @@ CTL_LRCmd::MakeResultInternal(void)
             // }
 
             SetHasFailed();
+            DeleteResultInternal();
             Cancel();
             SetWasSent(false);
 
@@ -756,6 +758,7 @@ CTL_LRCmd::MakeResultInternal(void)
             return NULL;
         case CS_FAIL:
             SetHasFailed();
+            DeleteResultInternal();
             Cancel();
             SetWasSent(false);
             DATABASE_DRIVER_ERROR( "ct_result failed." + GetDbgInfo(), 120013 );
@@ -763,6 +766,7 @@ CTL_LRCmd::MakeResultInternal(void)
 #ifdef FTDS_IN_USE
             if (GetConnection().m_AsyncCancelRequested) {
                 GUARD.reset();
+                DeleteResultInternal();
                 Cancel();
             }
 #endif
@@ -849,7 +853,6 @@ CTL_LRCmd::Cancel(void)
             return true;
         }
 #endif
-        DeleteResultInternal();
         return x_Cancel();
     } else {
         return true;
@@ -919,6 +922,7 @@ CTL_LRCmd::SendInternal(void)
         rc = Check(ct_send(x_GetSybaseCmd()));
     } catch (...) {
         SetHasFailed();
+        DeleteResultInternal();
         Cancel();
         throw;
     }
@@ -928,6 +932,7 @@ CTL_LRCmd::SendInternal(void)
         break;
     case CS_FAIL:
         SetHasFailed();
+        DeleteResultInternal();
         Cancel();
         // IsAlive digs deeper than IsDead, and sockets whose peers have
         // disconnected remain nominally open until their owners try to
@@ -973,6 +978,7 @@ bool CTL_LangCmd::Send()
 {
     EnsureActiveStatus();
 
+    DeleteResultInternal();
     Cancel();
 
     SetHasFailed(false);
@@ -1048,6 +1054,7 @@ CTL_LangCmd::Close(void)
     DetachInterface();
 
     try {
+        DeleteResultInternal();
         SetDead(!Cancel());
     } catch (...) {
         SetDead();
