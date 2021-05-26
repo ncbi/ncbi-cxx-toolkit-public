@@ -370,3 +370,7 @@ December 18, 2020
 version 4.9.0, CXX-11626
 Corrected generation of flat makefile on Unix.
 Corrected getting SVN revision and SC version.
+
+May 26, 2021
+version 4.9.1, CXX-11931
+Added PreferredToolArchitecture setting.
