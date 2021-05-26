@@ -52,7 +52,7 @@
 BEGIN_NCBI_SCOPE
 
 // This class also initializes CONNECT library in its constructor (via CConnIniter base)
-struct SSocketAddressImpl : CConnIniter
+struct SSocketAddressImpl : protected CConnIniter
 {
     // Do not make static (see above)
     unsigned GetHost(const string& name) const
@@ -120,7 +120,7 @@ bool operator< (const SSocketAddress& lhs, const SSocketAddress& rhs)
 }
 
 // This class also initializes CONNECT library in its constructor (via CConnIniter base)
-struct SServiceDiscoveryImpl : CConnIniter
+struct SServiceDiscoveryImpl : protected CConnIniter
 {
     // Do not make static (see above)
     shared_ptr<void> GetSingleServer(const string& service_name) const
