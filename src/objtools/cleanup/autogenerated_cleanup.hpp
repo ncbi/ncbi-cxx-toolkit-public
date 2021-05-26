@@ -212,7 +212,7 @@ private:
   void x_BasicCleanupAffil(CAffil & arg0);
   void x_BasicCleanupAuthor(CAuthor & arg0);
   void x_BasicCleanupAuthListNames( CAuth_list::C_Names & arg0 );
-  void x_BasicCleanupAuthList( CAuth_list & arg0 );
+  void x_BasicCleanupAuthList( CAuth_list & arg0, bool fix_initials=false);
   void x_BasicCleanupPubStatusDate(CPubStatusDate & arg0);
   void x_BasicCleanupPubStatusDateSet(CPubStatusDateSet & arg0);
   void x_BasicCleanupImprint(CImprint & arg0);
@@ -422,7 +422,7 @@ void x_BasicCleanupSeqAnnots( Tcontainer_ncbi_cref_cseq_annot_ & arg0 );
   template< typename Tcontainer_ncbi_cref_cseq_annot_ >
 void x_BasicCleanupSeqSubmit_data_annots( Tcontainer_ncbi_cref_cseq_annot_ & arg0 );
   void x_BasicCleanupSeqSubmit_data( CSeq_submit::C_Data & arg0 );
-  void x_BasicCleanupCitSub(CCit_sub & arg0);
+  void x_BasicCleanupCitSub(CCit_sub & arg0, bool in_submit_block=false);
   void x_BasicCleanupContactInfo( CContact_info & arg0 );
   void x_BasicCleanupSeqSubmit_sub( CSubmit_block & arg0 );
   void x_BasicCleanupSeqAnnotData( CSeq_annot::C_Data & arg0 );
