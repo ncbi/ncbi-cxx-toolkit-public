@@ -81,16 +81,8 @@ BEGIN_SCOPE(biosample_util)
 
 using namespace xml;
 
-void LibSSLInit()
-{
-    class CInPlaceConnIniter : protected CConnIniter
-    {
-    } conn_initer;  /*NCBI_FAKE_WARNING*/
-}
-
 string PrepareUrl(bool use_dev_server, const string &args)
 {
-    LibSSLInit();
     string host = use_dev_server ? "dev-api-int.ncbi.nlm.nih.gov" : "api-int.ncbi.nlm.nih.gov";
     string path = "/biosample/fetch/";
     string url = "https://" + host + path + "?" + args;
