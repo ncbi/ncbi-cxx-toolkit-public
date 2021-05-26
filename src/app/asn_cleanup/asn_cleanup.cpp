@@ -181,7 +181,7 @@ void CCleanupApp::Init()
 
         // input file serial format (AsnText\AsnBinary\XML, default: AsnText)
         arg_desc->AddOptionalKey("serial", "SerialFormat", "Obsolete; Input file format is now autodetected",
-            CArgDescriptions::eString);
+            CArgDescriptions::eString, CArgDescriptions::fHidden);
 
         // output file serial format (AsnText\AsnBinary\XML, default: AsnText)
         arg_desc->AddOptionalKey("outformat", "OutputSerialFormat", "Output file format",
@@ -194,8 +194,8 @@ void CCleanupApp::Init()
             "Specific ID to display", CArgDescriptions::eString);
 
         // input type:
-        arg_desc->AddDefaultKey( "type", "AsnType", "Obsolete; ASN.1 object type is now autodetected",
-            CArgDescriptions::eString, "any" );
+        arg_desc->AddOptionalKey("type", "AsnType", "Obsolete; ASN.1 object type is now autodetected",
+            CArgDescriptions::eString, CArgDescriptions::fHidden);
 
         // path
         arg_desc->AddOptionalKey("indir", "path", "Path to files", CArgDescriptions::eDirectory);
@@ -211,7 +211,8 @@ void CCleanupApp::Init()
     {{
         arg_desc->AddFlag("batch", "Process NCBI release file");
         // compression
-        arg_desc->AddFlag("c", "Obsolete - do not use");
+        arg_desc->AddFlag("c", "Obsolete - do not use",
+                          CArgDescriptions::eFlagHasValueIfSet, CArgDescriptions::fHidden);
 
         // imitate limitation of C Toolkit version
         arg_desc->AddFlag("firstonly", "Process only first element");
@@ -555,6 +556,10 @@ void CCleanupApp::x_ProcessOneFile(const string& filename)
     ESerialDataFormat serial = eSerial_None;
     EAsnType asn_type = EAsnType::eAny;
 
+    if (args["type"]) {
+        cerr << "Warning: -type argument should not be used; ASN.1 object type is now autodetected." << endl;
+    }
+
     // open file
     unique_ptr<CObjectIStream> is(x_OpenIStream(args, filename, serial, asn_type));
     if (!is) {
@@ -680,7 +685,7 @@ int CCleanupApp::Run()
     } else if (args["outdir"]) {
         x_ProcessOneDirectory(args["indir"].AsString(), args["x"].AsString());
     } else {
-        cerr << "stdin is no longer supported; please use -i" << endl;
+        cerr << "Error: stdin is no longer supported; please use -i" << endl;
     }
 
     if (opened_output) {
@@ -1180,6 +1185,10 @@ CObjectIStream* CCleanupApp::x_OpenIStream(const CArgs& args, const string& file
         serial = eSerial_AsnBinary;
     }
 
+    if (args["serial"]) {
+        cerr << "Warning: -serial argument should not be used; Input file format is now autodetected." << endl;
+    }
+
     // make sure of the underlying input stream. -i must be given on the command line
     // then the input comes from a file.
     CNcbiIstream* pInputStream = new CNcbiIfstream(filename, ios::binary);
@@ -1229,7 +1238,7 @@ CObjectIStream* CCleanupApp::x_OpenIStream(const CArgs& args, const string& file
     // turning it into an object stream:
     CObjectIStream* pI = nullptr;
     if ( args["c"] ) {
-        cerr << "Compressed files no longer supported" << endl;
+        cerr << "Error: Compressed files no longer supported" << endl;
     }
     else {
         pI = CObjectIStream::Open( serial, *pInputStream, eTakeOwnership );
