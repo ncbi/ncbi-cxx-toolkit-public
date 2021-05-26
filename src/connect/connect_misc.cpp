@@ -301,6 +301,9 @@ NCBI_EXPORT_FUNC_DEFINE(XCONNECT, mbedtls_ctr_drbg_seed);
 NCBI_EXPORT_FUNC_DEFINE(XCONNECT, mbedtls_entropy_free);
 NCBI_EXPORT_FUNC_DEFINE(XCONNECT, mbedtls_entropy_func);
 NCBI_EXPORT_FUNC_DEFINE(XCONNECT, mbedtls_entropy_init);
+NCBI_EXPORT_FUNC_DEFINE(XCONNECT, mbedtls_pk_free);
+NCBI_EXPORT_FUNC_DEFINE(XCONNECT, mbedtls_pk_init);
+NCBI_EXPORT_FUNC_DEFINE(XCONNECT, mbedtls_pk_parse_key);
 NCBI_EXPORT_FUNC_DEFINE(XCONNECT, mbedtls_ssl_close_notify);
 NCBI_EXPORT_FUNC_DEFINE(XCONNECT, mbedtls_ssl_conf_alpn_protocols);
 NCBI_EXPORT_FUNC_DEFINE(XCONNECT, mbedtls_ssl_conf_authmode);
@@ -316,8 +319,12 @@ NCBI_EXPORT_FUNC_DEFINE(XCONNECT, mbedtls_ssl_read);
 NCBI_EXPORT_FUNC_DEFINE(XCONNECT, mbedtls_ssl_session_reset);
 NCBI_EXPORT_FUNC_DEFINE(XCONNECT, mbedtls_ssl_set_bio);
 NCBI_EXPORT_FUNC_DEFINE(XCONNECT, mbedtls_ssl_set_hostname);
+NCBI_EXPORT_FUNC_DEFINE(XCONNECT, mbedtls_ssl_set_hs_own_cert);
 NCBI_EXPORT_FUNC_DEFINE(XCONNECT, mbedtls_ssl_setup);
 NCBI_EXPORT_FUNC_DEFINE(XCONNECT, mbedtls_ssl_write);
 NCBI_EXPORT_FUNC_DEFINE(XCONNECT, mbedtls_strerror);
+NCBI_EXPORT_FUNC_DEFINE(XCONNECT, mbedtls_x509_crt_free);
+NCBI_EXPORT_FUNC_DEFINE(XCONNECT, mbedtls_x509_crt_init);
+NCBI_EXPORT_FUNC_DEFINE(XCONNECT, mbedtls_x509_crt_parse);
 
 END_NCBI_SCOPE

@@ -469,7 +469,7 @@ template <class... TNgHttp2Cbs>
 SPSG_IoSession::SPSG_IoSession(SPSG_Server& s, SPSG_AsyncQueue& queue, uv_loop_t* loop, TNgHttp2Cbs&&... callbacks) :
     SUvNgHttp2_SessionBase(
             loop,
-            s.address,
+            TAddrNCred(s.address, SUvNgHttp2_Tls::TCred()),
             TPSG_RdBufSize::GetDefault(),
             TPSG_WrBufSize::GetDefault(),
             TPSG_Https::GetDefault(),

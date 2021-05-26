@@ -549,7 +549,7 @@ private:
 
 struct SUvNgHttp2_TlsImpl : SUvNgHttp2_Tls
 {
-    SUvNgHttp2_TlsImpl(const SSocketAddress& address, size_t rd_buf_size, size_t wr_buf_size, TGetWriteBuf get_write_buf);
+    SUvNgHttp2_TlsImpl(const TAddrNCred& addr_n_cred, size_t rd_buf_size, size_t wr_buf_size, TGetWriteBuf get_write_buf);
     ~SUvNgHttp2_TlsImpl() override;
 
     int Read(const char*& buf, ssize_t& nread) override;
@@ -599,6 +599,8 @@ private:
     mbedtls_ssl_config m_Conf;
     mbedtls_ctr_drbg_context m_CtrDrbg;
     mbedtls_entropy_context m_Entropy;
+    mbedtls_x509_crt m_Cert;
+    mbedtls_pk_context m_Pkey;
     array<const char*, 2> m_Protocols;
 };
 
@@ -607,7 +609,7 @@ bool s_WantReadOrWrite(int rv)
     return (rv == MBEDTLS_ERR_SSL_WANT_READ) || (rv == MBEDTLS_ERR_SSL_WANT_WRITE);
 }
 
-SUvNgHttp2_TlsImpl::SUvNgHttp2_TlsImpl(const SSocketAddress& address, size_t rd_buf_size, size_t wr_buf_size, TGetWriteBuf get_write_buf) :
+SUvNgHttp2_TlsImpl::SUvNgHttp2_TlsImpl(const TAddrNCred& addr_n_cred, size_t rd_buf_size, size_t wr_buf_size, TGetWriteBuf get_write_buf) :
     m_ReadBuffer(rd_buf_size),
     m_IncomingData(nullptr, nullptr),
     m_GetWriteBuf(get_write_buf),
@@ -629,6 +631,8 @@ SUvNgHttp2_TlsImpl::SUvNgHttp2_TlsImpl(const SSocketAddress& address, size_t rd_
     mbedtls_ssl_conf_authmode(&m_Conf, MBEDTLS_SSL_VERIFY_NONE);
     mbedtls_entropy_init(&m_Entropy);
     mbedtls_ctr_drbg_init(&m_CtrDrbg);
+    mbedtls_x509_crt_init(&m_Cert);
+    mbedtls_pk_init(&m_Pkey);
 
     auto d_rv = mbedtls_ctr_drbg_seed(&m_CtrDrbg, mbedtls_entropy_func, &m_Entropy, nullptr, 0);
 
@@ -648,7 +652,7 @@ SUvNgHttp2_TlsImpl::SUvNgHttp2_TlsImpl(const SSocketAddress& address, size_t rd_
         return;
     }
 
-    const auto host_name = address.GetHostName();
+    const auto host_name = addr_n_cred.first.GetHostName();
     auto h_rv = mbedtls_ssl_set_hostname(&m_Ssl, host_name.c_str());
 
     if (h_rv) {
@@ -657,10 +661,40 @@ SUvNgHttp2_TlsImpl::SUvNgHttp2_TlsImpl(const SSocketAddress& address, size_t rd_
     }
 
     mbedtls_ssl_set_bio(&m_Ssl, this, s_OnSend, s_OnRecv, nullptr);
+
+    const auto& cert = addr_n_cred.second.first;
+    const auto& pkey = addr_n_cred.second.second;
+
+    if (cert.empty() || pkey.empty()) {
+        return;
+    }
+
+    auto cp_rv = mbedtls_x509_crt_parse(&m_Cert, reinterpret_cast<const unsigned char*>(cert.data()), cert.size() + 1);
+
+    if (cp_rv) {
+        NCBI_UVNGHTTP2_TLS_TRACE(this << " mbedtls_x509_crt_parse: " << SUvNgHttp2_Error::MbedTlsStr(cp_rv));
+        return;
+    }
+
+    auto pk_rv = mbedtls_pk_parse_key(&m_Pkey, reinterpret_cast<const unsigned char*>(pkey.data()), pkey.size() + 1, nullptr, 0);
+
+    if (pk_rv) {
+        NCBI_UVNGHTTP2_TLS_TRACE(this << " mbedtls_pk_parse_key: " << SUvNgHttp2_Error::MbedTlsStr(pk_rv));
+        return;
+    }
+
+    auto oc_rv = mbedtls_ssl_set_hs_own_cert(&m_Ssl, &m_Cert, &m_Pkey);
+
+    if (oc_rv) {
+        NCBI_UVNGHTTP2_TLS_TRACE(this << " mbedtls_ssl_set_hs_own_cert: " << SUvNgHttp2_Error::MbedTlsStr(oc_rv));
+        return;
+    }
 }
 
 SUvNgHttp2_TlsImpl::~SUvNgHttp2_TlsImpl()
 {
+    mbedtls_x509_crt_free(&m_Cert);
+    mbedtls_pk_free(&m_Pkey);
     mbedtls_entropy_free(&m_Entropy);
     mbedtls_ctr_drbg_free(&m_CtrDrbg);
     mbedtls_ssl_config_free(&m_Conf);
@@ -802,10 +836,10 @@ int SUvNgHttp2_TlsImpl::OnSend(const unsigned char* buf, size_t len)
     return static_cast<int>(len);
 }
 
-SUvNgHttp2_Tls* SUvNgHttp2_Tls::Create(bool https, const SSocketAddress& address, size_t rd_buf_size, size_t wr_buf_size, TGetWriteBuf get_write_buf)
+SUvNgHttp2_Tls* SUvNgHttp2_Tls::Create(bool https, const TAddrNCred& addr_n_cred, size_t rd_buf_size, size_t wr_buf_size, TGetWriteBuf get_write_buf)
 {
     if (https) {
-        return new SUvNgHttp2_TlsImpl(address, rd_buf_size, wr_buf_size, get_write_buf);
+        return new SUvNgHttp2_TlsImpl(addr_n_cred, rd_buf_size, wr_buf_size, get_write_buf);
     }
 
     return new SUvNgHttp2_TlsNoOp(get_write_buf);

@@ -37,9 +37,10 @@
 BEGIN_NCBI_SCOPE
 
 
-SH2S_Request::SStart::SStart(EReqMethod m, CUrl u, CHttpHeaders::THeaders h) :
+SH2S_Request::SStart::SStart(EReqMethod m, CUrl u, SUvNgHttp2_Tls::TCred c, CHttpHeaders::THeaders h) :
     method(m),
     url(move(u)),
+    cred(move(c)),
     headers(move(h))
 {
 }
@@ -292,10 +293,10 @@ constexpr size_t kWriteBufSize = 64 * 1024;
 constexpr uint32_t kMaxStreams = 200;
 
 template <class... TNgHttp2Cbs>
-SH2S_Session::SH2S_Session(uv_loop_t* loop, const SSocketAddress& address, bool https, TH2S_SessionsByQueues& sessions_by_queues, TNgHttp2Cbs&&... callbacks) :
+SH2S_Session::SH2S_Session(uv_loop_t* loop, const TAddrNCred& addr_n_cred, bool https, TH2S_SessionsByQueues& sessions_by_queues, TNgHttp2Cbs&&... callbacks) :
     SUvNgHttp2_SessionBase(
             loop,
-            address,
+            addr_n_cred,
             kReadBufSize,
             kWriteBufSize,
             https,
@@ -532,7 +533,7 @@ void SH2S_IoCoordinator::Process()
                     H2S_IOC_TRACE(response_queue << " pop " << outgoing);
                     auto& request = outgoing.GetStart();
 
-                    if (auto new_session = NewSession(request.url)) {
+                    if (auto new_session = NewSession(request)) {
                         if (new_session->Request(move(outgoing))) {
                             continue;
                         }
@@ -593,8 +594,9 @@ void SH2S_IoCoordinator::Process()
     m_Loop.Run(UV_RUN_NOWAIT);
 }
 
-SH2S_Session* SH2S_IoCoordinator::NewSession(const CUrl& url)
+SH2S_Session* SH2S_IoCoordinator::NewSession(const SH2S_Request::SStart& request)
 {
+    const auto& url = request.url;
     auto scheme = url.GetScheme();
     auto port = url.GetPort();
 
@@ -608,9 +610,9 @@ SH2S_Session* SH2S_IoCoordinator::NewSession(const CUrl& url)
         }
     }
 
-    SSocketAddress address(url.GetHost(), port);
+    SH2S_Session::TAddrNCred addr_n_cred(SSocketAddress(url.GetHost(), port), request.cred);
     auto https = scheme == "https" || (scheme.empty() && (port == "443"));
-    auto range = m_Sessions.equal_range(address);
+    auto range = m_Sessions.equal_range(addr_n_cred);
 
     for (auto it = range.first; it != range.second; ++it) {
         if (!it->second.IsFull()) {
@@ -619,7 +621,7 @@ SH2S_Session* SH2S_IoCoordinator::NewSession(const CUrl& url)
     }
 
     // No such sessions yet or all are full
-    auto it = m_Sessions.emplace(piecewise_construct, forward_as_tuple(address), forward_as_tuple(&m_Loop, address, https, m_SessionsByQueues));
+    auto it = m_Sessions.emplace(piecewise_construct, forward_as_tuple(addr_n_cred), forward_as_tuple(&m_Loop, addr_n_cred, https, m_SessionsByQueues));
     return &it->second;
 }
 
@@ -647,7 +649,12 @@ void CHttpSessionImpl2::StartRequest(CHttpSession_Base::EProtocol protocol, CHtt
 
     auto update_response = [&](CHttpHeaders::THeaders headers) { UpdateResponse(req, move(headers)); };
     auto response_queue = make_shared<TH2S_ResponseQueue>();
-    TH2S_RequestEvent request(SH2S_Request::SStart(req.m_Method, req.m_Url, req.m_Headers->Get()), response_queue);
+
+    const auto& req_cred = req.m_Credentials;
+    SUvNgHttp2_Tls::TCred cred(req_cred ? req_cred->GetCert() : string(), req_cred ? req_cred->GetPKey() : string());
+
+    // Cannot just pass req itself (accessing private members here)
+    TH2S_RequestEvent request(SH2S_Request::SStart(req.m_Method, req.m_Url, move(cred), req.m_Headers->Get()), response_queue);
 
     unique_ptr<IReaderWriter> rw(new SH2S_ReaderWriter(move(update_response), move(response_queue), move(request)));
     auto stream = make_shared<CRWStream>(rw.release(), 0, nullptr, CRWStreambuf::fOwnAll);

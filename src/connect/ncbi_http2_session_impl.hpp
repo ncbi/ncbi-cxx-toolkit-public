@@ -128,9 +128,10 @@ struct SH2S_Request
     {
         EReqMethod method;
         CUrl url;
+        SUvNgHttp2_Tls::TCred cred;
         CHttpHeaders::THeaders headers;
 
-        SStart(EReqMethod m, CUrl u, CHttpHeaders::THeaders h);
+        SStart(EReqMethod m, CUrl u, SUvNgHttp2_Tls::TCred c, CHttpHeaders::THeaders h);
     };
 
     TH2S_WeakResponseQueue response_queue;
@@ -166,7 +167,7 @@ using TH2S_SessionsByQueues = map<TH2S_WeakResponseQueue, reference_wrapper<SH2S
 struct SH2S_Session : SUvNgHttp2_SessionBase
 {
     template <class... TNgHttp2Cbs>
-    SH2S_Session(uv_loop_t* loop, const SSocketAddress& address, bool https, TH2S_SessionsByQueues& sessions_by_queues, TNgHttp2Cbs&&... callbacks);
+    SH2S_Session(uv_loop_t* loop, const TAddrNCred& addr_n_cred, bool https, TH2S_SessionsByQueues& sessions_by_queues, TNgHttp2Cbs&&... callbacks);
 
     bool Request(TH2S_RequestEvent request);
 
@@ -236,10 +237,10 @@ struct SH2S_IoCoordinator
     void Process();
 
 private:
-    SH2S_Session* NewSession(const CUrl& url);
+    SH2S_Session* NewSession(const SH2S_Request::SStart& request);
 
     SUv_Loop m_Loop;
-    multimap<SSocketAddress, SUvNgHttp2_Session<SH2S_Session>> m_Sessions;
+    multimap<SH2S_Session::TAddrNCred, SUvNgHttp2_Session<SH2S_Session>> m_Sessions;
     TH2S_SessionsByQueues m_SessionsByQueues;
 };
 

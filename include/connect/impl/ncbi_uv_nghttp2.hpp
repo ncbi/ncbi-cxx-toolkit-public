@@ -413,6 +413,9 @@ private:
 
 struct NCBI_XXCONNECT2_EXPORT SUvNgHttp2_Tls
 {
+    using TCred = pair<string, string>;
+    using TAddrNCred = pair<SSocketAddress, TCred>;
+
     virtual ~SUvNgHttp2_Tls() {}
 
     virtual int Read(const char*& buf, ssize_t& nread) = 0;
@@ -423,13 +426,15 @@ struct NCBI_XXCONNECT2_EXPORT SUvNgHttp2_Tls
     virtual vector<char>& GetWriteBuffer() = 0;
 
     using TGetWriteBuf = function<vector<char>&()>;
-    static SUvNgHttp2_Tls* Create(bool https, const SSocketAddress& address, size_t rd_buf_size, size_t wr_buf_size, TGetWriteBuf get_write_buf);
+    static SUvNgHttp2_Tls* Create(bool https, const TAddrNCred& addr_n_cred, size_t rd_buf_size, size_t wr_buf_size, TGetWriteBuf get_write_buf);
 };
 
 struct NCBI_XXCONNECT2_EXPORT SUvNgHttp2_SessionBase
 {
+    using TAddrNCred = SUvNgHttp2_Tls::TAddrNCred;
+
     template <class ...TArgs>
-    SUvNgHttp2_SessionBase(uv_loop_t* loop, const SSocketAddress& address, size_t rd_buf_size, size_t wr_buf_size, bool https, TArgs&&... args);
+    SUvNgHttp2_SessionBase(uv_loop_t* loop, const TAddrNCred& addr_n_cred, size_t rd_buf_size, size_t wr_buf_size, bool https, TArgs&&... args);
 
     virtual ~SUvNgHttp2_SessionBase() {}
 
@@ -494,17 +499,17 @@ private:
 };
 
 template <class ...TArgs>
-SUvNgHttp2_SessionBase::SUvNgHttp2_SessionBase(uv_loop_t* loop, const SSocketAddress& address, size_t rd_buf_size, size_t wr_buf_size, bool https, TArgs&&... args) :
-    m_Authority(address.AsString()),
+SUvNgHttp2_SessionBase::SUvNgHttp2_SessionBase(uv_loop_t* loop, const TAddrNCred& addr_n_cred, size_t rd_buf_size, size_t wr_buf_size, bool https, TArgs&&... args) :
+    m_Authority(addr_n_cred.first.AsString()),
     m_Tcp(
             loop,
-            address,
+            addr_n_cred.first,
             rd_buf_size,
             wr_buf_size,
             BindThis(&SUvNgHttp2_SessionBase::OnConnect),
             BindThis(&SUvNgHttp2_SessionBase::OnRead),
             BindThis(&SUvNgHttp2_SessionBase::OnWrite)),
-    m_Tls(SUvNgHttp2_Tls::Create(https, address, rd_buf_size, wr_buf_size, [&]() -> vector<char>& { return m_Tcp.GetWriteBuffer(); })),
+    m_Tls(SUvNgHttp2_Tls::Create(https, addr_n_cred, rd_buf_size, wr_buf_size, [&]() -> vector<char>& { return m_Tcp.GetWriteBuffer(); })),
     m_Session(this, forward<TArgs>(args)...)
 {
 }
