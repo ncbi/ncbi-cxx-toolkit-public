@@ -265,10 +265,22 @@ void CValidError_bioseqset::ValidateNucProtSet
             const CBioseq& seq = (*se_list_it)->GetSeq();
 
 
+            bool hasMetaGenomeSource = false;
+            CConstRef<CSeqdesc> closest_biosource = seq.GetClosestDescriptor(CSeqdesc::e_Source);
+            if (closest_biosource) {
+                const CBioSource& src = closest_biosource->GetSource();
+                FOR_EACH_ORGMOD_ON_BIOSOURCE (omd_itr, src) {
+                    const COrgMod& omd = **omd_itr;
+                    if (omd.IsSetSubname() && omd.IsSetSubtype() && omd.GetSubtype() == COrgMod::eSubtype_metagenome_source) {
+                        hasMetaGenomeSource = true;
+                        break;
+                    }
+                }
+            }
+
             FOR_EACH_DESCRIPTOR_ON_BIOSEQ (it, seq) {
                 const CSeqdesc& desc = **it;
-                if (desc.Which() != CSeqdesc::e_User) continue;
-                if (desc.GetUser().IsSetType()) {
+                if (desc.Which() == CSeqdesc::e_User && desc.GetUser().IsSetType()) {
                     const CUser_object& usr = desc.GetUser();
                     const CObject_id& oi = usr.GetType();
                     if (oi.IsStr() && NStr::EqualCase(oi.GetStr(), "DBLink")) {
@@ -339,9 +351,15 @@ void CValidError_bioseqset::ValidateNucProtSet
                             generated += ".";
                         }
                         if (!NStr::EqualNocase(instantiated, generated) && !NStr::EqualNocase("MAG " + instantiated, generated)) {
-                            PostErr(eDiag_Warning, eErr_SEQ_DESCR_InconsistentProteinTitle,
-                                    "Instantiated protein title does not match automatically "
-                                    "generated title", seq);
+                            if (NStr::EqualNocase("MAG: " + instantiated, generated)) {
+                                // allow missing MAG with no other prefix
+                            } else if (NStr::EqualNocase("MAG " + instantiated, generated)) {
+                                // allow missing MAG followed by another prefix
+                            } else {
+                                PostErr(eDiag_Warning, eErr_SEQ_DESCR_InconsistentProteinTitle,
+                                        "Instantiated protein title does not match automatically "
+                                        "generated title", seq);
+                            }
                         }
                     }
                 }
