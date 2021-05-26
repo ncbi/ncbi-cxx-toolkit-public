@@ -149,9 +149,9 @@ extern NCBI_XCONNECT_EXPORT char* CONN_Description
 
 
 /** Get read ("event" == eIO_Read) or write ("event" == eIO_Write) position
- * within the connection.  Positions are advanced from 0 on, every successive
- * byte of data, and are only concerning I/O that has caused calling to the
- * actual CONNECTOR's "read" (i.e. pushbacks never considered, and peeks -- not
+ * within the connection.  Positions are advanced from 0 on, for every
+ * successive byte of data, and only consider I/O that has caused calling the
+ * actual CONNECTOR's "read" (i.e. pushbacks never counted, and peeks -- not
  * always) and "write" methods.  Special case:  eIO_Open as "event" causes to
  * clear *both* positions with 0, and to return 0.
  */
@@ -164,11 +164,20 @@ extern NCBI_XCONNECT_EXPORT TNCBI_BigCount CONN_GetPosition
 /** Specify timeout for the connection I/O, including "Connect" (aka "Open")
  * and "Close".  May be called at any time during the connection lifetime.
  *
+ * @param event
+ *   Can be one of eIO_Open, eIO_Read, eIO_ReadWrite, eIO_Write, and eIO_Close.
+ *   In case of eIO_ReadWrite, the timeout value updates both read and write
+ *   timeouts simultaneously, effectively equivalent to making this call twice
+ *   with eIO_Read and eIO_Write events, respectively.
+ *
  * @note If "timeout" is NULL (aka kInfiniteTimeout) then set the timeout to
  *       be infinite.
  *
  * @note If "timeout" is kDefaultTimeout then an underlying,
  *       CONNECTOR-specific value is used.
+ *
+ * @sa
+ *   CONN_GetTimeout
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status CONN_SetTimeout
 (CONN            conn,    /**< [in] connection handle */
@@ -178,9 +187,19 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_SetTimeout
 
 
 /** Retrieve current timeout, return NULL(kInfiniteTimeout) if it is infinite.
- * The returned pointer is guaranteed to point to a valid timeout structure,
- * or to be either NULL or kDefaultTimeout until next CONN_SetTimeout()
- * or CONN_Close().
+ *
+ * @param event
+ *   Can be one of eIO_Open, eIO_Read, eIO_Write, and eIO_Close.
+ *   In case of the event specified as eIO_ReadWrite, the current read timeout
+ *   gets actually returned with a warning logged.
+ *
+ * @return
+ *   The returned pointer is guaranteed to point to a valid timeout structure,
+ *   or to be either NULL or kDefaultTimeout until next CONN_SetTimeout()
+ *   or CONN_Close().
+ *
+ * @sa
+ *   CONN_SetTimeout
  */
 extern NCBI_XCONNECT_EXPORT const STimeout* CONN_GetTimeout
 (CONN      conn,  /**< [in] connection handle                   */
@@ -200,7 +219,7 @@ extern NCBI_XCONNECT_EXPORT const STimeout* CONN_GetTimeout
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Wait
 (CONN            conn,    /**< [in] connection handle                        */
- EIO_Event       event,   /**< [in] can only be either of eIO_Read, IO_Write */
+ EIO_Event       event,   /**< [in] can only be either of eIO_Read,eIO_Write */
  const STimeout* timeout  /**< [in] the maximal wait time                    */
  );
 
