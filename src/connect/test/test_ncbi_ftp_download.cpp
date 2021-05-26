@@ -55,13 +55,16 @@
 
 
 #define CONN_NCBI_FTP_HOST  "ftp-ext.ncbi.nlm.nih.gov"
+#define CONN_NCBI_FTP_USER  "ftp"
+#define CONN_NCBI_FTP_PASS  "-none@"
 
 
 USING_NCBI_SCOPE;
 
 
 static const char kDefaultTestURL[] =
-    "ftp://ftp:-none@" CONN_NCBI_FTP_HOST "/toolbox/ncbi_tools/ncbi.tar.gz";
+    "ftp://" CONN_NCBI_FTP_USER ":" CONN_NCBI_FTP_PASS "@" CONN_NCBI_FTP_HOST
+    "/toolbox/ncbi_tools/ncbi.tar.gz";
 
 
 static bool s_Signaled = false;
@@ -595,6 +598,8 @@ CTestFTPDownloadApp::CTestFTPDownloadApp(void)
     UnsetDiagPostFlag(eDPF_Location);
     UnsetDiagPostFlag(eDPF_LongFilename);
     SetDiagTraceAllFlags(SetDiagPostAllFlags(eDPF_Default));
+    DisableArgDescriptions(fDisableStdArgs);
+    HideStdArgs(-1/*everything*/);
 }
 
 
@@ -607,22 +612,28 @@ void CTestFTPDownloadApp::Init(void)
         } conn_initer;  /*NCBI_FAKE_WARNING*/
     }
 
-    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> args(new CArgDescriptions);
+    if (args->Exist ("xmlhelp")) {
+        args->Delete("xmlhelp");
+    }
 
-    arg_desc->AddOptionalPositional("url",
-                                    "URL to test",
-                                    CArgDescriptions::eString);
+    args->AddDefaultPositional("url",
+                               "URL to test",
+                               CArgDescriptions::eString,
+                               kDefaultTestURL);
 
-    arg_desc->AddOptionalPositional("throttle",
-                                    "Delay in msec",
-                                    CArgDescriptions::eString);
+    args->AddOptionalPositional("throttle",
+                                "Delay in msec",
+                                CArgDescriptions::eString);
 
-    arg_desc->AddOptionalPositional("offset",
-                                    "If set, a \"REST %position%\" will "
-                                    "be launched where this parameter "
-                                    "will be the value for %position%",
-                                    CArgDescriptions::eString);
-    SetupArgDescriptions(arg_desc.release());
+    args->AddOptionalPositional("offset",
+                                "If set, a \"REST %position%\" FTP command"
+                                " gets issued to the server, where this"
+                                " parameter is the value for %position%",
+                                CArgDescriptions::eString);
+    args->SetUsageContext(GetArguments().GetProgramBasename(),
+                          "FTP test download utility");
+    SetupArgDescriptions(args.release());
 }
 
 
@@ -672,9 +683,7 @@ int CTestFTPDownloadApp::Run(void)
 
     // Process command line parameters (up to 3)
     Uint8 offset = 0;
-    const char* url = args["url"].HasValue()
-        ? args["url"].AsString().c_str()
-        : kDefaultTestURL;
+    const char* url = args["url"].AsString().c_str();
     if (args["throttle"].HasValue()) {
         s_Throttle = NStr::StringToInt(args["throttle"].AsString());
     }
@@ -700,12 +709,15 @@ int CTestFTPDownloadApp::Run(void)
         if (NStr::strcasecmp(net_info->host, DEF_CONN_HOST) == 0) {
             strcpy(net_info->host, CONN_NCBI_FTP_HOST);
         }
+        net_info->scheme = eURL_Ftp;
     } else if (net_info->scheme != eURL_Ftp) {
         ERR_POST(Fatal << "URL scheme must be FTP (ftp://) if specified");
     }
-    if (!*net_info->user) {
-        ERR_POST(Warning << "Username not provided, defaulted to `ftp'");
-        strcpy(net_info->user, "ftp");
+    if (!net_info->user[0]) {
+        ERR_POST(Warning << "Username not provided,"
+                 " defaulted to `" CONN_NCBI_FTP_USER "'");
+        strcpy(net_info->user, CONN_NCBI_FTP_USER);
+        strcpy(net_info->pass, CONN_NCBI_FTP_PASS);
     }
 
     // Reassemble the URL from the connection parameters
