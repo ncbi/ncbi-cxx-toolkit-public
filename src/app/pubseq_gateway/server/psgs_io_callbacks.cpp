@@ -76,6 +76,7 @@ CPSGS_SocketIOCallback::CPSGS_SocketIOCallback(int  fd,
 
 CPSGS_SocketIOCallback::~CPSGS_SocketIOCallback()
 {
+    x_StopTimer();
     x_StopPolling();
 }
 
