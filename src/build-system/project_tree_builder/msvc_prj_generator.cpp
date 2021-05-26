@@ -1232,6 +1232,16 @@ void CMsvcProjectGenerator::GenerateMsbuild(
 #endif
 
 // ProjectLevelTagExceptTargetOrImportType
+    if (GetApp().m_Ide >= 1600)
+    {
+        tmp = GetApp().GetMetaMakefile().GetConfigurationOpt( "PreferredToolArchitecture", SConfigInfo());
+        if (tmp.empty()) {
+            tmp = "x64";
+        }
+        CRef<msbuild::CProject::C_ProjectLevelTagExceptTargetOrImportType::C_E> t(new msbuild::CProject::C_ProjectLevelTagExceptTargetOrImportType::C_E);
+        project.SetProjectLevelTagExceptTargetOrImportType().SetProjectLevelTagExceptTargetOrImportType().push_back(t);
+        __SET_PROPGROUP_ELEMENT( t, "PreferredToolArchitecture", tmp);
+    }
     {
         // project GUID
         CRef<msbuild::CProject::C_ProjectLevelTagExceptTargetOrImportType::C_E> t(new msbuild::CProject::C_ProjectLevelTagExceptTargetOrImportType::C_E);
