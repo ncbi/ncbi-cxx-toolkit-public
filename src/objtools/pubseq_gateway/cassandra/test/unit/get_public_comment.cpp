@@ -120,7 +120,7 @@ static auto error_function = [](CRequestStatus::ECode status, int code, EDiagSev
 TEST_F(CGetPublicCommentTest, BasicSuppressed) {
     CCassBlobTaskLoadBlob fetch_blob(
         m_Timeout, 0, m_Connection, m_KeyspaceName,
-        94088756, false,
+        130921029, false,
         error_function
     );
     blob_wait_function(fetch_blob);
@@ -141,8 +141,9 @@ TEST_F(CGetPublicCommentTest, BasicSuppressed) {
         {
             ++call_count;
             EXPECT_EQ(true, isFound);
-            EXPECT_EQ("This record was removed by RefSeq staff."
-                " Please contact info@ncbi.nlm.nih.gov for further details.", comment);
+            EXPECT_EQ("This RefSeq genome was suppressed because "
+                "updated RefSeq validation criteria identified problems with the assembly or annotation.",
+                comment);
         }
     );
     comment_wait_function(get_comment);

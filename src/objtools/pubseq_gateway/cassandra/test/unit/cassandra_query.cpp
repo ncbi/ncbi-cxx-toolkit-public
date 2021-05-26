@@ -106,7 +106,7 @@ TEST_F(CCassQueryTest, FieldGetMapValue) {
     query->SetSQL(
         "SELECT map_field FROM test_cassandra_driver.test_retrieval WHERE id = 'row_with_2_item_map'", 0);
     query->Query(CassConsistency::CASS_CONSISTENCY_LOCAL_QUORUM, false, false);
-    ASSERT_EQ(query->NextRow(), ar_dataready) << "Failed to find row for null map value test";
+    ASSERT_EQ(query->NextRow(), ar_dataready) << "Failed to find row for map value test";
     EXPECT_FALSE(query->FieldIsNull(0)) << "Not null cell is reported as null";
     EXPECT_NO_THROW(query->FieldGetMapValue(0, result));
     EXPECT_EQ(expected, result) << "FieldGetMapValue failed to return valid map value";
