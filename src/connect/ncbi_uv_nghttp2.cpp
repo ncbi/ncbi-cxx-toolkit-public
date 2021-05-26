@@ -618,7 +618,6 @@ SUvNgHttp2_TlsImpl::SUvNgHttp2_TlsImpl(const TAddrNCred& addr_n_cred, size_t rd_
     NCBI_UVNGHTTP2_TLS_TRACE(this << " created");
     m_WriteBuffer.reserve(wr_buf_size),
 
-    SOCK_SetupSSLEx(NcbiSetupTls);
     mbedtls_ssl_config_init(&m_Conf);
 
     auto c_rv = mbedtls_ssl_config_defaults(&m_Conf, MBEDTLS_SSL_IS_CLIENT, MBEDTLS_SSL_TRANSPORT_STREAM, MBEDTLS_SSL_PRESET_DEFAULT);
