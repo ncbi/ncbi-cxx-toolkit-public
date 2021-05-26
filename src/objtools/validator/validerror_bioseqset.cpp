@@ -351,9 +351,9 @@ void CValidError_bioseqset::ValidateNucProtSet
                             generated += ".";
                         }
                         if (!NStr::EqualNocase(instantiated, generated) && !NStr::EqualNocase("MAG " + instantiated, generated)) {
-                            if (NStr::EqualNocase("MAG: " + instantiated, generated)) {
+                            if (hasMetaGenomeSource && NStr::EqualNocase("MAG: " + instantiated, generated)) {
                                 // allow missing MAG with no other prefix
-                            } else if (NStr::EqualNocase("MAG " + instantiated, generated)) {
+                            } else if (hasMetaGenomeSource && NStr::EqualNocase("MAG " + instantiated, generated)) {
                                 // allow missing MAG followed by another prefix
                             } else {
                                 PostErr(eDiag_Warning, eErr_SEQ_DESCR_InconsistentProteinTitle,
