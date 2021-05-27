@@ -1227,7 +1227,7 @@ private:
 
 template<> inline const CNcbiDiag& CNcbiDiag::operator<< (const char* const& x) const
 {
-    if (!x) return operator<<("<NULL>");
+    if (!x) return operator<<("(nil)");
     return Put(&x, x);
 }
 
