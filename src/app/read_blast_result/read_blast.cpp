@@ -165,26 +165,34 @@ int CReadBlastApp::ReadBlast(const char *file, map<string, blastStr>& blastMap)
             char bigbuf[9900];  *bigbuf = '\0';
       
             IncreaseVerbosity();
-            while( (s=strstr(str, "Length = ")) == NULL)
+            CRegexp re_length_in_align("Length\\s*=\\s*(\\d+)");
+            // while( (s=strstr(str, "Length = ")) == NULL)
+            do
             {
-               strcat( bigbuf, str );
-               if(!fgets(str, MAXSTR, fpt))
-                 {
-                 NcbiCerr<< "CReadBlastApp::ReadBlast: ERROR: no next line in ("<<file<<") while parsing hits" << NcbiEndl;
-                 return 0;
-                 }
-               if((s=strstr(str,"gi|")) !=NULL)
-                 {
-                 gi=atoi(s+3);
-                 sbjGIs.push_back(gi);
-                 if(PrintDetails()) NcbiCerr<< "gi :" << gi << NcbiEndl;
-                 }
-            }         
+               
+               if ( !re_length_in_align.IsMatch(str) ) {
+                   strcat( bigbuf, str );
+                   if(!fgets(str, MAXSTR, fpt))
+                     {
+                     NcbiCerr<< "CReadBlastApp::ReadBlast: ERROR: no next line in ("<<file<<") while parsing hits" << NcbiEndl;
+                     return 0;
+                     }
+                   if((s=strstr(str,"gi|")) !=NULL)
+                     {
+                     gi=atoi(s+3);
+                     sbjGIs.push_back(gi);
+                     if(PrintDetails()) NcbiCerr<< "gi :" << gi << NcbiEndl;
+                     }
+               }
+               else {
+                   break;
+               }
+            } while(true);
             DecreaseVerbosity();
             blastMap[qName].hits[ihit].sbjGIs = sbjGIs;
 
             // sbjLen is read after "Length =" 
-            long sbjLen = strtol(s+8, &rest, 10);      //////////////////////
+            long sbjLen = NStr::StringToNumeric<long>(re_length_in_align.GetSub(str, 1)); // strtol(s+8, &rest, 10);      //////////////////////
             blastMap[qName].hits[ihit].sbjLen = sbjLen;
             if(PrintDetails()) NcbiCerr<< "sbjLen :" << sbjLen << NcbiEndl;
 
@@ -266,7 +274,8 @@ int CReadBlastApp::ReadBlast(const char *file, map<string, blastStr>& blastMap)
             blastMap[qName].hits[ihit].ppos = ppos;
 
 // Skip to the alignment 
-            while(strstr(str, "Query: ")== NULL) 
+            CRegexp re_query_in_align("^Query[: ]");
+            while(!re_query_in_align.IsMatch(str)) 
               {
               if(!fgets(str, MAXSTR, fpt))
                  {
@@ -293,7 +302,8 @@ int CReadBlastApp::ReadBlast(const char *file, map<string, blastStr>& blastMap)
                  }
             alignment+=str;
 
-            while(strstr(str, "Sbjct: ")== NULL) 
+            CRegexp re_subj_in_align("^Sbjct[: ]");
+            while(!re_subj_in_align.IsMatch(str)) 
               {
               if(!fgets(str, MAXSTR, fpt))
                  {
@@ -324,7 +334,7 @@ int CReadBlastApp::ReadBlast(const char *file, map<string, blastStr>& blastMap)
                  }
                alignment+=str;
                
-               if(strstr(str, "Query: ")) 
+               if( re_query_in_align.IsMatch(str)) 
                  {
                  ret = sscanf(str, "%s%ld%s%ld", label, &tmpstart, seqal, &q_end);
                  if(ret != 4) { printf("\nERROR line: %s", str); return 0;}
