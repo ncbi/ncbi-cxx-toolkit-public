@@ -309,7 +309,7 @@ public:
     ///   GetRWConfig
     const CNcbiRegistry& GetConfig(void) const;
     
-    /// @deprecated Please use const version of GetConfig() or protected GetRWConfig()
+    /// @deprecated Please use the const version of GetConfig() or protected GetRWConfig()
     //NCBI_DEPRECATED 
     CNcbiRegistry& GetConfig(void);
 
@@ -564,7 +564,7 @@ protected:
     virtual bool LoadConfig(CNcbiRegistry& reg, const string* conf);
 
     /// Get the application's cached configuration parameters, 
-    /// accessible to read-write for an application only.
+    /// accessible for read-write for an application's internal use only.
     /// @sa 
     ///   GetConfig
     CNcbiRegistry& GetRWConfig(void);

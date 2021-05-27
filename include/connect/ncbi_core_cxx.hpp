@@ -51,8 +51,8 @@ BEGIN_NCBI_SCOPE
 
 
 /// Convert a C++ Toolkit registry object to a REG registry.
-/// @note The C++ registries are CObjects, any we "own" will be deleted
-///       if and only if nothing else still holds a reference to them.
+/// @note The C++ registries are CObjects, so any we "own" will be deleted
+///       if and only if nothing else is still holding a reference to them.
 /// @param reg
 ///  A C++ toolkit registry, on top of which new REG registry is to be created
 /// @param pass_ownership
@@ -70,9 +70,8 @@ extern NCBI_XCONNECT_EXPORT REG     REG_cxx2c
 /// Convert a C++ Toolkit read-only registry object to a REG registry.
 /// @note The returned registry won't have a set method available, and any
 ///       attempt to set a parameter will fail.
-/// @note The C++ registries are CObjects, any we "own" will be deleted
-///       if and only if nothing else still holds a reference to them.
-/// attem0pe
+/// @note The C++ registries are CObjects, so any we "own" will be deleted
+///       if and only if nothing else is still holding a reference to them.
 /// @param reg
 ///  A C++ toolkit registry, on top of which new REG registry is to be created
 /// @param pass_ownership
@@ -117,27 +116,28 @@ enum EConnectInitFlag {
     eConnectInit_OwnNothing  = 0,  ///< Original ownership gets retained
     eConnectInit_OwnRegistry = 1,  ///< Registry ownership gets passed
     eConnectInit_OwnLock     = 2,  ///< Lock ownership gets passed
-    eConnectInit_NoSSL       = 4   ///< Do not init secure socket layer (SSL)
+    eConnectInit_NoSSL       = 4   ///< Do NOT init secure socket layer (SSL)
 };
 typedef unsigned int TConnectInitFlags;  ///< Bitwise OR of EConnectInitFlag
 
 
-/// Init [X]CONNECT library with the specified "reg" and "lock" (ownerhsip
+/// Init [X]CONNECT library with the specified "reg" and "lock" (ownership
 /// for either or both can be detailed in the "flag" parameter).
-/// @note MUST be called in MT applications to make CONNECT MT-safe, or
-///       CConnIniter must be used as a base-class.
+/// @warning MUST be called in MT applications to make CONNECT MT-safe, or
+///          alternatively, CConnIniter must be used as a base-class.
 /// @param reg
 ///  Registry to use, non-modifiable (none if NULL)
 /// @param lock
 ///  Lock to use (new lock will get created if NULL)
 /// @param flag
-///  Ownership control
+///  Ownership / initialization control
 /// @param ssl
-///  TLS provider to use for SSL (ignored if eConnectInit_NoSSL,
-///                               0 selects default)
+///  TLS provider to use for SSL (ignored if eConnectInit_NoSSL;
+///                               0 selects the default provider)
 /// @note LOG will get created out of CNcbiDiag automatically.
 /// @sa
-///  REG_cxx2c, LOG_cxx2c, MT_LOCK_cxx2c, CConnIniter, CNcbiApplication
+///  REG_cxx2c, LOG_cxx2c, MT_LOCK_cxx2c, NcbiSetupTls, SOCK_SetupSSL,
+///  CConnIniter, CNcbiApplication, CRWLock, CNcbiRegistry, CNcbiDiag
 extern NCBI_XCONNECT_EXPORT void CONNECT_Init
 (const IRWRegistry* reg  = 0,
  CRWLock*           lock = 0,
