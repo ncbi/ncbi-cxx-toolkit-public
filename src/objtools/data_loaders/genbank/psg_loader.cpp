@@ -158,12 +158,64 @@ CPSGDataLoader::TTSE_LockSet CPSGDataLoader::GetExternalAnnotRecordsNA(const CSe
 }
 
 
+namespace {
+    struct SBetterId
+    {
+        int GetScore(const CSeq_id_Handle& id1) const
+            {
+                if ( id1.IsGi() ) {
+                    return 100;
+                }
+                if ( !id1 ) {
+                    return -1;
+                }
+                CConstRef<CSeq_id> seq_id = id1.GetSeqId();
+                const CTextseq_id* text_id = seq_id->GetTextseq_Id();
+                if ( text_id ) {
+                    int score;
+                    if ( text_id->IsSetAccession() ) {
+                        if ( text_id->IsSetVersion() ) {
+                            score = 99;
+                        }
+                        else {
+                            score = 50;
+                        }
+                    }
+                    else {
+                        score = 0;
+                    }
+                    return score;
+                }
+                if ( seq_id->IsGeneral() ) {
+                    return 10;
+                }
+                if ( seq_id->IsLocal() ) {
+                    return 0;
+                }
+                return 1;
+            }
+        bool operator()(const CSeq_id_Handle& id1,
+                        const CSeq_id_Handle& id2) const
+            {
+                int score1 = GetScore(id1);
+                int score2 = GetScore(id2);
+                if ( score1 != score2 ) {
+                    return score1 > score2;
+                }
+                return id1 < id2;
+            }
+    };
+}
+
+
 CPSGDataLoader::TTSE_LockSet CPSGDataLoader::GetExternalAnnotRecordsNA(const CBioseq_Info& bioseq,
     const SAnnotSelector* sel,
     TProcessedNAs* processed_nas)
 {
     TTSE_LockSet ret;
-    ITERATE(CBioseq_Info::TId, it, bioseq.GetId()) {
+    TIds ids = bioseq.GetId();
+    sort(ids.begin(), ids.end(), SBetterId());
+    ITERATE ( TIds, it, ids ) {
         TTSE_LockSet ret2 = m_Impl->GetAnnotRecordsNA(GetDataSource(), *it, sel, processed_nas);
         if (!ret2.empty()) {
             ret.swap(ret2);
