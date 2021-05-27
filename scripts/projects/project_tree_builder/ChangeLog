@@ -374,3 +374,8 @@ Corrected getting SVN revision and SC version.
 May 26, 2021
 version 4.9.1, CXX-11931
 Added PreferredToolArchitecture setting.
+
+May 27, 2021
+version 4.9.2, CXX-11939
+Bug fix
+
