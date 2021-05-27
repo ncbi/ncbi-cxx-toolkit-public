@@ -560,6 +560,13 @@ struct SUvNgHttp2_TlsImpl : SUvNgHttp2_Tls
     vector<char>& GetWriteBuffer() override { return m_WriteBuffer; }
 
 private:
+    // Provides scope-restricted access to incoming TLS data
+    struct SIncomingData : pair<const char**, ssize_t*>
+    {
+        struct SReset { void operator()(first_type* p) const { *p = nullptr; } };
+        auto operator()(first_type b, second_type l) { first = b; second = l; return unique_ptr<first_type, SReset>(&first); }
+    };
+
     SUvNgHttp2_TlsImpl(const SUvNgHttp2_TlsImpl&) = delete;
     SUvNgHttp2_TlsImpl(SUvNgHttp2_TlsImpl&&) = delete;
 
@@ -592,7 +599,7 @@ private:
 
     vector<char> m_ReadBuffer;
     vector<char> m_WriteBuffer;
-    pair<const char**, ssize_t*> m_IncomingData;
+    SIncomingData m_IncomingData;
     TGetWriteBuf m_GetWriteBuf;
 
     mbedtls_ssl_context m_Ssl;
@@ -611,7 +618,6 @@ bool s_WantReadOrWrite(int rv)
 
 SUvNgHttp2_TlsImpl::SUvNgHttp2_TlsImpl(const TAddrNCred& addr_n_cred, size_t rd_buf_size, size_t wr_buf_size, TGetWriteBuf get_write_buf) :
     m_ReadBuffer(rd_buf_size),
-    m_IncomingData(nullptr, nullptr),
     m_GetWriteBuf(get_write_buf),
     m_Protocols({ "h2", nullptr })
 {
@@ -752,7 +758,7 @@ int SUvNgHttp2_TlsImpl::GetReady()
 
 int SUvNgHttp2_TlsImpl::Read(const char*& buf, ssize_t& nread)
 {
-    m_IncomingData = make_pair(&buf, &nread);
+    auto scope_guard = m_IncomingData(&buf, &nread);
 
     if (auto rv = Init()) return rv;
 
