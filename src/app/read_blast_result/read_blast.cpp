@@ -31,6 +31,7 @@
 */
 #include <ncbi_pch.hpp>
 #include <corelib/ncbimisc.hpp>
+#include <util/xregexp/regexp.hpp>
 #include "read_blast_result.hpp"
 #include <strstream>
 
@@ -120,15 +121,20 @@ int CReadBlastApp::ReadBlast(const char *file, map<string, blastStr>& blastMap)
 
             do // long protein names are wrapped by BLAST, need to skip the elongation
               {
-              if(!fgets(str, MAXSTR, fpt)) 
+              auto res = fgets(str, MAXSTR, fpt);
+              if(!res) // EOF
                 {
                 NcbiCerr<< "CReadBlastApp::ReadBlast: ERROR: no next line in ("<<file<<") while parsing long protein names" << NcbiEndl;
                 return 0;
                 }
-              s = strstr(str, "letters)");
-              } while (!s);
-            s = strstr(str, "(");
-            qLen = strtol(s+1, &rest, 10); ////////////////////
+              CRegexp re_length("Length=(\\d+)|\\((\\d+) letters\\)");
+              if(re_length.IsMatch(str)) {
+                  auto qLenStr = re_length.GetSub(str,1);
+                  if(qLenStr.empty()) qLenStr = re_length.GetSub(str,2);
+                  qLen = NStr::StringToNumeric<long>(qLenStr);
+                  break;
+              }
+            } while (true);
             blastMap[qName].qLen  = qLen;
             blastMap[qName].qName = qName;
             if(PrintDetails()) NcbiCerr<< "CReadBlastApp::ReadBlast: " 

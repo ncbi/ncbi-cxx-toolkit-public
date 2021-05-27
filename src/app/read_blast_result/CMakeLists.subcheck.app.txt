@@ -7,7 +7,7 @@ NCBI_begin_app(subcheck)
     overlaps missing copy_loc problems locations
     analyze fit_blast match shortcuts short_proteins
   )
-  NCBI_uses_toolkit_libraries(xobjutil)
+  NCBI_uses_toolkit_libraries(xobjutil xregexp)
   NCBI_project_watchers(badrazat)
 NCBI_end_app()
 
