@@ -1090,6 +1090,21 @@ CGencollIdMapper::x_BuildSeqMap(const CGC_Assembly& assm)
     }
 }
 
+
+bool 
+CGencollIdMapper::x_DoesSeqContainSyn(const objects::CGC_Sequence& Seq, const objects::CSeq_id& Id) const 
+{
+    ITERATE (CGC_Sequence::TSeq_id_synonyms, it, Seq.GetSeq_id_synonyms()) {
+        CTypeConstIterator<CSeq_id> syn_id_iter(**it);
+        for( ; syn_id_iter; ++syn_id_iter) {
+            if ( syn_id_iter->Equals(Id)) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 CConstRef<CSeq_id>
 CGencollIdMapper::x_GetIdFromSeqAndSpec(const CGC_Sequence& Seq,
                                         const SIdSpec& Spec
@@ -1544,6 +1559,12 @@ CGencollIdMapper::x_Map_Up(const CSeq_loc& SourceLoc,
 {
     if(m_UpMapper.IsNull()) {
         x_Init_SeqLocMappers();
+    }
+
+    if(x_DoesSeqContainSyn(Seq, *(SourceLoc.GetId()) )) {
+        CRef<CSeq_loc> Result(new CSeq_loc);
+        Result->Assign(SourceLoc);
+        return Result;
     }
 
     CRef<CSeq_loc> Result;

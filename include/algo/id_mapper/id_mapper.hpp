@@ -173,6 +173,8 @@ protected:
     void x_BuildSeqMap(const objects::CGC_AssemblyUnit& assm);
     void x_BuildSeqMap(const objects::CGC_Sequence& Seq, int Depth=1);
 
+    bool x_DoesSeqContainSyn(const objects::CGC_Sequence& Seq, const objects::CSeq_id& Id) const;
+
     CConstRef<objects::CSeq_id>
     x_GetIdFromSeqAndSpec(const objects::CGC_Sequence& Seq,
                           const SIdSpec& Spec
