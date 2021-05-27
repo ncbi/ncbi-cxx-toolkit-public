@@ -1225,6 +1225,11 @@ private:
     CNcbiDiag& operator= (const CNcbiDiag&);
 };
 
+template<> inline const CNcbiDiag& CNcbiDiag::operator<< (const char* const& x) const
+{
+    if (!x) return operator<<("<NULL>");
+    return Put(&x, x);
+}
 
 
 /////////////////////////////////////////////////////////////////////////////
