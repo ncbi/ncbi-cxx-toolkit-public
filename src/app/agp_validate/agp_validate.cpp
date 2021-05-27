@@ -336,8 +336,6 @@ int CAgpValidateApplication::Run(void)
 
   }
   if(m_ValidationType & VT_Acc) {
-    CONNECT_Init(&GetConfig()); // Setup registry, error log, MT-lock for CONNECT library
-
     m_AltValidator= new CAltValidator(m_ValidationType==VT_AccLenTaxid);
     m_AltValidator->Init();
     if( args["species"].HasValue() ) {
