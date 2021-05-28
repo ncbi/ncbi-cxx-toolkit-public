@@ -4336,6 +4336,35 @@ BOOST_AUTO_TEST_CASE(s_CUtf8)
         }
     }
 #endif
+    // CESU-8
+    {
+        string t1("be \xED\xA0\x81\xED\xB0\x80 and \xed\xa0\xb5\xed\xb1\x93 and \xed\xa0\xb5\xed\xb2\x93");
+        BOOST_CHECK(CUtf8::GuessEncoding(t1) == eEncoding_CESU8);
+        BOOST_CHECK(CUtf8::MatchEncoding(t1, eEncoding_UTF8));
+        string u1 = CUtf8::AsUTF8(t1, eEncoding_CESU8);
+        BOOST_CHECK(CUtf8::GuessEncoding(u1) == eEncoding_UTF8);
+        BOOST_CHECK(!CUtf8::MatchEncoding(u1, eEncoding_CESU8));
+
+#if defined(HAVE_WSTRING)
+        wstring        tws = CUtf8::AsBasicString<wchar_t>(t1);
+        wstring        uws = CUtf8::AsBasicString<wchar_t>(u1);
+        BOOST_CHECK( tws == uws);
+        string         uuw = CUtf8::AsUTF8(uws);
+        BOOST_CHECK( uuw == u1);
+#endif
+        TStringUCS2    t2s = CUtf8::AsBasicString<TCharUCS2>(t1);
+        TStringUCS2    u2s = CUtf8::AsBasicString<TCharUCS2>(u1);
+        BOOST_CHECK( t2s == u2s);
+        string         uu2 = CUtf8::AsUTF8(u2s);
+        BOOST_CHECK( uu2 == u1);
+
+        TStringUCS4    t4s = CUtf8::AsBasicString<TCharUCS4>(t1);
+        TStringUCS4    u4s = CUtf8::AsBasicString<TCharUCS4>(u1);
+        BOOST_CHECK( t4s == u4s);
+        string         uu4 = CUtf8::AsUTF8(u4s);
+        BOOST_CHECK( uu4 == u1);
+    }
+
 }
 
 
