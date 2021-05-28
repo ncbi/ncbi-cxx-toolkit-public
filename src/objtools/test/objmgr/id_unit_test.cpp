@@ -166,12 +166,15 @@ bool s_HaveID2(EIncludePubseqos2 include_pubseqos2 = eIncludePubseqos2)
         // non-ID2 based readers
         return false;
     }
-    if ( include_pubseqos2 == eExcludePubseqos2 &&
-         NStr::EndsWith(env, "pubseqos2", NStr::eNocase) ) {
-        // only exact ID2 requested
-        return false;
+    if ( NStr::EndsWith(env, "pubseqos2", NStr::eNocase) ) {
+        // only if pubseqos2 reader is allowed
+        return include_pubseqos2 == eIncludePubseqos2;
     }
-    return true;
+    if ( NStr::EndsWith(env, "id2", NStr::eNocase) ) {
+        // real id2 reader
+        return true;
+    }
+    return false;
 }
 
 
@@ -186,6 +189,45 @@ bool s_HaveID1(void)
         return false;
     }
     return NStr::EndsWith(env, "id1", NStr::eNocase);
+}
+
+
+bool s_HaveCache(void)
+{
+    const char* env = getenv("GENBANK_LOADER_METHOD");
+    if ( !env ) {
+        // assume default ID2
+        return false;
+    }
+    return NStr::StartsWith(env, "cache", NStr::eNocase);
+}
+
+
+bool s_HaveNA()
+{
+    // NA are available in PSG and ID2
+    return CGBDataLoader::IsUsingPSGLoader() || s_HaveID2();
+}
+
+
+bool s_HaveSplit()
+{
+    // split data are available in PSG and ID2
+    return CGBDataLoader::IsUsingPSGLoader() || s_HaveID2();
+}
+
+
+bool s_HaveMongoDBCDD()
+{
+    // MongoDB plugin is available in PSG and OSG
+    return CGBDataLoader::IsUsingPSGLoader() || (s_HaveID2(eExcludePubseqos2) && CId2Reader::GetVDB_CDD_Enabled());
+}
+
+
+bool s_HaveVDBWGS()
+{
+    // WGS VDB plugin is available in PSG and OSG
+    return CGBDataLoader::IsUsingPSGLoader() || s_HaveID2(eExcludePubseqos2);
 }
 
 
@@ -734,6 +776,7 @@ struct SInvertVDB_CDD {
 
     static bool IsPossible()
         {
+            // Only OSG can switch CDD source
             return !CGBDataLoader::IsUsingPSGLoader() && s_HaveID2(eExcludePubseqos2);
         }
 };
@@ -790,8 +833,8 @@ BOOST_AUTO_TEST_CASE(CheckExtCDD2onWGS)
 
 BOOST_AUTO_TEST_CASE(CheckExtCDDonPDB)
 {
-    if ( !(s_HaveID2(eExcludePubseqos2) && CId2Reader::GetVDB_CDD_Enabled()) && !CGBDataLoader::IsUsingPSGLoader() ) {
-        LOG_POST("Skipping ExtAnnot CDD on PDB sequence without ID2/PSG");
+    if ( !s_HaveMongoDBCDD() ) {
+        LOG_POST("Skipping ExtAnnot CDD on PDB sequence without OSG/PSG (MongoDB CDD)");
         return;
     }
     LOG_POST("Checking ExtAnnot CDD on PDB sequence");
@@ -885,7 +928,7 @@ BOOST_AUTO_TEST_CASE(CheckExtExon)
 
 BOOST_AUTO_TEST_CASE(CheckNAZoom)
 {
-    bool have_na = s_HaveID2();
+    bool have_na = s_HaveNA();
     LOG_POST("Checking NA Tracks");
     string id = "NC_000024.10";
     string na_acc = "NA000000271.4";
@@ -932,8 +975,8 @@ BOOST_AUTO_TEST_CASE(CheckNAZoom)
 
 BOOST_AUTO_TEST_CASE(CheckNAZoom10)
 {
-    if ( !s_HaveID2() ) {
-        LOG_POST("Skipping NA Graph Track test without ID2");
+    if ( !s_HaveNA() ) {
+        LOG_POST("Skipping NA Graph Track test without PSG/ID2");
         return;
     }
     LOG_POST("Checking NA Graph Track");
@@ -1513,7 +1556,7 @@ static void s_CheckSplitSeqData(CScope& scope, const string& seq_id, EInstType t
 
 BOOST_AUTO_TEST_CASE(CheckSplitSeqData)
 {
-    if ( !s_HaveID2() ) {
+    if ( !s_HaveSplit() ) {
         LOG_POST("Skipping check of split Seq-data access without ID2");
         return;
     }
@@ -1588,8 +1631,22 @@ BOOST_AUTO_TEST_CASE(MTCrash1)
 
 BOOST_AUTO_TEST_CASE(TestGetBlobById)
 {
-    LOG_POST("Testing CDataLoader::GetBlobById()");
     bool is_psg = CGBDataLoader::IsUsingPSGLoader();
+    if ( is_psg ) {
+        // test PSG
+    }
+    else {
+        if ( !s_HaveID2(eExcludePubseqos2) ) {
+            LOG_POST("Skipping CDataLoader::GetBlobById() test without OSG or PSG");
+            return;
+        }
+        if ( s_HaveCache() ) {
+            LOG_POST("Skipping CDataLoader::GetBlobById() with GenBank loader cache enabled");
+            return;
+        }
+        // test ID2
+    }    
+    LOG_POST("Testing CDataLoader::GetBlobById()");
     CRef<CObjectManager> om = CObjectManager::GetInstance();
     om->RevokeAllDataLoaders();
     CRef<CReader> reader;
@@ -1709,5 +1766,4 @@ NCBITEST_INIT_TREE()
     // GBLoader name test needs multiple PubSeqOS readers
     NCBITEST_DISABLE(TestGBLoaderName);
 #endif
-    NCBITEST_DISABLE(TestGetBlobById);
 }
