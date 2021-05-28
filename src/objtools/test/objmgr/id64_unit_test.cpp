@@ -150,12 +150,15 @@ bool s_HaveID2(EIncludePubseqos2 include_pubseqos2 = eIncludePubseqos2)
         // non-ID2 based readers
         return false;
     }
-    if ( include_pubseqos2 == eExcludePubseqos2 &&
-         NStr::EndsWith(env, "pubseqos2", NStr::eNocase) ) {
-        // only exact ID2 requested
-        return false;
+    if ( NStr::EndsWith(env, "pubseqos2", NStr::eNocase) ) {
+        // only if pubseqos2 reader is allowed
+        return include_pubseqos2 == eIncludePubseqos2;
     }
-    return true;
+    if ( NStr::EndsWith(env, "id2", NStr::eNocase) ) {
+        // real id2 reader
+        return true;
+    }
+    return false;
 }
 
 
@@ -170,6 +173,45 @@ bool s_HaveID1(void)
         return false;
     }
     return NStr::EndsWith(env, "id1", NStr::eNocase);
+}
+
+
+bool s_HaveCache(void)
+{
+    const char* env = getenv("GENBANK_LOADER_METHOD");
+    if ( !env ) {
+        // assume default ID2
+        return false;
+    }
+    return NStr::StartsWith(env, "cache", NStr::eNocase);
+}
+
+
+bool s_HaveNA()
+{
+    // NA are available in PSG and ID2
+    return CGBDataLoader::IsUsingPSGLoader() || s_HaveID2();
+}
+
+
+bool s_HaveSplit()
+{
+    // split data are available in PSG and ID2
+    return CGBDataLoader::IsUsingPSGLoader() || s_HaveID2();
+}
+
+
+bool s_HaveMongoDBCDD()
+{
+    // MongoDB plugin is available in PSG and OSG
+    return CGBDataLoader::IsUsingPSGLoader() || (s_HaveID2(eExcludePubseqos2) && CId2Reader::GetVDB_CDD_Enabled());
+}
+
+
+bool s_HaveVDBWGS()
+{
+    // WGS VDB plugin is available in PSG and OSG
+    return CGBDataLoader::IsUsingPSGLoader() || s_HaveID2(eExcludePubseqos2);
 }
 
 
@@ -751,6 +793,7 @@ struct SInvertVDB_CDD {
 
     static bool IsPossible()
         {
+            // Only OSG can switch CDD source
             return !CGBDataLoader::IsUsingPSGLoader() && s_HaveID2(eExcludePubseqos2);
         }
 };
@@ -779,7 +822,7 @@ BOOST_AUTO_TEST_CASE(CheckExtCDD2)
     s_CheckFeat(sel, "QTV22642.1");
 }
 
-#if 0
+
 BOOST_AUTO_TEST_CASE(CheckExtCDDonWGS)
 {
     LOG_POST("Checking ExtAnnot "<<s_GetVDB_CDD_Source()<<" CDD on WGS sequence");
@@ -807,8 +850,8 @@ BOOST_AUTO_TEST_CASE(CheckExtCDD2onWGS)
 
 BOOST_AUTO_TEST_CASE(CheckExtCDDonPDB)
 {
-    if ( !s_HaveID2(eExcludePubseqos2) && !CGBDataLoader::IsUsingPSGLoader() ) {
-        LOG_POST("Skipping ExtAnnot CDD on PDB sequence without ID2/PSG");
+    if ( !s_HaveMongoDBCDD() ) {
+        LOG_POST("Skipping ExtAnnot CDD on PDB sequence without OSG/PSG (MongoDB CDD)");
         return;
     }
     LOG_POST("Checking ExtAnnot CDD on PDB sequence");
@@ -818,7 +861,7 @@ BOOST_AUTO_TEST_CASE(CheckExtCDDonPDB)
     s_CheckFeat(sel, "pdb|4XNUA");
 }
 
-
+#if 0
 BOOST_AUTO_TEST_CASE(CheckExtMGC)
 {
     LOG_POST("Checking ExtAnnot MGC");
@@ -900,10 +943,9 @@ BOOST_AUTO_TEST_CASE(CheckExtExon)
 }
 #endif
 
-
 BOOST_AUTO_TEST_CASE(CheckNAZoom)
 {
-    bool have_na = s_HaveID2();
+    bool have_na = s_HaveNA();
     LOG_POST("Checking NA Tracks");
     string id = "NC_054141.5";
     string na_acc = "NA001000000.1";
@@ -950,8 +992,8 @@ BOOST_AUTO_TEST_CASE(CheckNAZoom)
 
 BOOST_AUTO_TEST_CASE(CheckNAZoom10)
 {
-    if ( !s_HaveID2() ) {
-        LOG_POST("Skipping NA Graph Track test without ID2");
+    if ( !s_HaveNA() ) {
+        LOG_POST("Skipping NA Graph Track test without PSG/ID2");
         return;
     }
     LOG_POST("Checking NA Graph Track");
@@ -971,241 +1013,6 @@ BOOST_AUTO_TEST_CASE(CheckNAZoom10)
     }
 }
 
-
-#if 0
-BOOST_AUTO_TEST_CASE(CheckSuppressedGene)
-{
-    LOG_POST("Checking features with suppressed gene");
-    SAnnotSelector sel;
-    sel.SetResolveAll().SetAdaptiveDepth();
-    auto scope = s_InitScope();
-    BOOST_CHECK_EQUAL(s_CheckFeat(scope, sel, "33347893", CRange<TSeqPos>(49354, 49354)), 8u);
-    sel.SetExcludeIfGeneIsSuppressed();
-    BOOST_CHECK_EQUAL(s_CheckFeat(scope, sel, "33347893", CRange<TSeqPos>(49354, 49354)), 6u);
-}
-
-
-static CRef<CBioseq> s_MakeTemporaryDelta(const CSeq_loc& loc, CScope& scope)
-
-{
-    CBioseq_Handle bsh = scope.GetBioseqHandle(loc);
-    CRef<CBioseq> seq(new CBioseq());
-    // TODO: Need to make thread-safe unique seq-id
-    seq->SetId().push_back(CRef<CSeq_id>(new CSeq_id("lcl|temporary_delta")));
-    seq->SetInst().Assign(bsh.GetInst());
-    seq->SetInst().ResetSeq_data();
-    seq->SetInst().SetRepr(CSeq_inst::eRepr_delta);
-    CRef<CDelta_seq> element(new CDelta_seq());
-    element->SetLoc().Assign(loc);
-    seq->SetInst().ResetExt();
-    seq->SetInst().SetExt().SetDelta().Set().push_back(element);
-    seq->SetInst().ResetLength();
-    return seq;
-}
- 
- 
-BOOST_AUTO_TEST_CASE(Test_DeltaSAnnot)
-{
-    LOG_POST("Checking DeltaSAnnot");
-    // set up objmgr with fetching
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CGBDataLoader::RegisterInObjectManager(*objmgr);
-    CScope scope(*objmgr);
-    scope.AddDefaults();
- 
-    CRef<CSeq_loc> loc(new CSeq_loc());
-    loc->SetInt().SetId().SetOther().SetAccession("NT_077402");
-    loc->SetInt().SetId().SetOther().SetVersion(3);
-    loc->SetInt().SetFrom(50000);
-    loc->SetInt().SetTo(100000);
- 
-    CRef<CBioseq> delta = s_MakeTemporaryDelta(*loc, scope);
- 
-    CBioseq_Handle delta_bsh = scope.AddBioseq(*delta);
-    //LOG_POST("Bioseq: "<<MSerial_AsnText<<*delta_bsh.GetCompleteBioseq());
- 
-    SAnnotSelector sel_cpy;
-    sel_cpy.SetResolveAll();
-    sel_cpy.SetAdaptiveDepth(true);
-    sel_cpy.ExcludeFeatSubtype(CSeqFeatData::eSubtype_variation);
-    sel_cpy.ExcludeFeatSubtype(CSeqFeatData::eSubtype_STS);
-    CFeat_CI it(delta_bsh, sel_cpy);
-    size_t num_feat = 0;
-    while (it) {
-        //LOG_POST("Feature: "<<MSerial_AsnText<<*it->GetSeq_feat());
-        ++num_feat;
-        CSeqFeatData::ESubtype subtype = it->GetData().GetSubtype();
-        BOOST_CHECK(subtype != CSeqFeatData::eSubtype_bad);
-        if (it->GetSeq_feat()->GetLocation().IsInt()) {
-            const CSeq_id& id = it->GetOriginalSeq_feat()->GetLocation().GetInt().GetId();
-            CBioseq_Handle local_bsh = scope.GetBioseqHandle(id);
-            ITERATE(CBioseq_Handle::TId, id_it, local_bsh.GetId()) {
-                string label;
-                id_it->GetSeqId()->GetLabel(&label);
-                TSeqPos start = it->GetLocation().GetStart(eExtreme_Biological);
-                TSeqPos stop = it->GetLocation().GetStop(eExtreme_Biological);
-                BOOST_CHECK(start != stop);
-            }
-            TSeqPos start = it->GetLocation().GetStart(eExtreme_Biological);
-            TSeqPos stop = it->GetLocation().GetStop(eExtreme_Biological);
-            BOOST_CHECK(start != stop);
-        }
-        ++it;
-    }
- 
-}
-
-
-BOOST_AUTO_TEST_CASE(Test_HUP)
-{
-    if (CGBDataLoader::IsUsingPSGLoader()) {
-        LOG_POST("Skipping HUP test with PSG data loader");
-        return;
-    }
-    bool authorized;
-    string user_name = CSystemInfo::GetUserName();
-    if ( user_name == "vasilche" ) {
-        authorized = true;
-    }
-    else if ( user_name == "coremake" ) {
-        authorized = false;
-    }
-    else {
-        LOG_POST("Skipping HUP access for unknown user");
-        return;
-    }
-    if ( authorized ) {
-        LOG_POST("Checking HUP access for authorized user");
-    }
-    else {
-        LOG_POST("Checking HUP access for unauthorized user");
-    }
-    
-    // set up objmgr with fetching
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    string gb_main = CGBDataLoader::RegisterInObjectManager(*objmgr).GetLoader()->GetName();
-    BOOST_REQUIRE_EQUAL(gb_main, "GBLOADER");
-    string gb_hup = CGBDataLoader::RegisterInObjectManager(*objmgr, CGBDataLoader::eIncludeHUP).GetLoader()->GetName();
-    BOOST_REQUIRE_EQUAL(gb_hup, "GBLOADER-HUP");
-
-    CSeq_id_Handle id_main = CSeq_id_Handle::GetHandle("NT_077402");
-    CSeq_id_Handle id_hup = CSeq_id_Handle::GetHandle("AY263392");
-    {{
-        CScope scope(*objmgr);
-        scope.AddDataLoader(gb_hup);
-        if ( authorized ) {
-            BOOST_CHECK(scope.GetBioseqHandle(id_hup));
-        }
-        else {
-            BOOST_CHECK(!scope.GetBioseqHandle(id_hup));
-        }
-        BOOST_CHECK(scope.GetBioseqHandle(id_main));
-    }}
-
-    {{
-        CScope scope(*objmgr);
-        scope.AddDefaults();
-        
-        BOOST_CHECK(!scope.GetBioseqHandle(id_hup));
-        scope.AddDataLoader(gb_hup);
-        if ( authorized ) {
-            BOOST_CHECK(scope.GetBioseqHandle(id_hup));
-        }
-        else {
-            BOOST_CHECK(!scope.GetBioseqHandle(id_hup));
-        }
-        BOOST_CHECK(scope.GetBioseqHandle(id_main));
-        scope.RemoveDataLoader(gb_hup);
-        BOOST_CHECK(!scope.GetBioseqHandle(id_hup));
-    }}
-    
-    objmgr->RevokeDataLoader(gb_hup);
-}
-
-
-BOOST_AUTO_TEST_CASE(TestHistory)
-{
-    LOG_POST("Checking CScope::ResetHistory()");
-    // set up objmgr with fetching
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CGBDataLoader::RegisterInObjectManager(*objmgr);
-    CScope scope(*objmgr);
-    scope.AddDefaults();
-    SAnnotSelector sel;
-    sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_variation);
-    for ( int t = 0; t < 2; ++t ) {
-        vector <CSeq_feat_Handle> h1;
-        {
-            auto seq_id = Ref(new CSeq_id("NM_002020"));
-            auto handle = scope.GetBioseqHandle(*seq_id);
-            CFeat_CI feat_it(handle, TSeqRange(1, 500), sel);
-            while (feat_it) {
-                h1.push_back(feat_it->GetSeq_feat_Handle());
-                ++feat_it;
-            }
-        }
-        for (auto&& h : h1) {
-            auto& annot = h.GetAnnot();
-            BOOST_CHECK(annot);
-            if ( annot ) {
-                CDataLoader::TBlobId blob_id = annot.GetTSE_Handle().GetBlobId();
-                cout << "BlobId: " << blob_id.ToString() << endl;
-            }
-        }
-        cout << "ResetHistory()" << endl;
-        scope.ResetHistory();
-        for (auto&& h : h1) {
-            auto& annot = h.GetAnnot();
-            BOOST_CHECK(annot);
-        }
-        cout << "ResetHistory(eRemoveIfLocked)" << endl;
-        scope.ResetHistory(scope.eRemoveIfLocked);
-        for (auto&& h : h1) {
-            auto& annot = h.GetAnnot();
-            BOOST_CHECK(!annot);
-        }
-    }
-}
-
-BOOST_AUTO_TEST_CASE(TestGBLoaderName)
-{
-    LOG_POST("Checking CGBDataLoader user-defined name");
-    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-    CGBLoaderParams params;
-    params.SetLoaderName("GBLOADER-user");
-    string name0 = CGBDataLoader::RegisterInObjectManager(*objmgr).GetLoader()->GetName();
-    BOOST_CHECK_EQUAL(name0, "GBLOADER");
-    string name1 = CGBDataLoader::RegisterInObjectManager(*objmgr, params).GetLoader()->GetName();
-    BOOST_CHECK_EQUAL(name1, "GBLOADER-user");
-    objmgr->RevokeDataLoader("GBLOADER");
-    objmgr->RevokeDataLoader("GBLOADER-user");
-}
-
-BOOST_AUTO_TEST_CASE(CheckExtGetAllTSEs)
-{
-    LOG_POST("Checking CScope::GetAllTSEs() with external annotations");
-    SAnnotSelector sel(CSeqFeatData::eSubtype_cdregion);
-    sel.SetResolveAll().SetAdaptiveDepth();
-    sel.AddNamedAnnots("CDD");
-    CRef<CScope> scope = s_InitScope();
-    CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetHandle("AAC73113.1"));
-    BOOST_CHECK(bh);
-    BOOST_CHECK(!CFeat_CI(bh, sel));
-    CScope::TTSE_Handles tses;
-    scope->GetAllTSEs(tses, CScope::eAllTSEs);
-    BOOST_CHECK(tses.size() > 1);
-    size_t size = 0;
-    for ( auto& tse : tses ) {
-        size += CFeat_CI(tse.GetTopLevelEntry(), sel).GetSize();
-    }
-    BOOST_CHECK(size == 0);
-    sel.SetFeatSubtype(CSeqFeatData::eSubtype_region);
-    for ( auto& tse : tses ) {
-        size += CFeat_CI(tse.GetTopLevelEntry(), sel).GetSize();
-    }
-    BOOST_CHECK(size > 0);
-}
-#endif
 
 BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr)
 {
@@ -1336,7 +1143,7 @@ BOOST_AUTO_TEST_CASE(CheckWGSScaffold)
 
 BOOST_AUTO_TEST_CASE(CheckWGSProt1)
 {
-    if ( !CGBDataLoader::IsUsingPSGLoader() && !s_HaveID2(eExcludePubseqos2) ) {
+    if ( !s_HaveVDBWGS() ) {
         LOG_POST("Skipping VDB WGS nuc-prot set test without PSG/OSG");
         return;
     }
@@ -1382,7 +1189,7 @@ BOOST_AUTO_TEST_CASE(CheckWGSProt1)
 
 BOOST_AUTO_TEST_CASE(CheckWGSProt2)
 {
-    if ( !CGBDataLoader::IsUsingPSGLoader() && !s_HaveID2(eExcludePubseqos2) ) {
+    if ( !s_HaveVDBWGS() ) {
         LOG_POST("Skipping VDB WGS nuc-prot set test without PSG/OSG");
         return;
     }
@@ -1426,173 +1233,6 @@ BOOST_AUTO_TEST_CASE(CheckWGSProt2)
     BOOST_CHECK_EQUAL(data.size(), len);
 }
 
-#if 0
-BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr4)
-{
-    LOG_POST("Checking WGS master sequence descriptors 4+9");
-    CRef<CScope> scope = s_InitScope();
-    CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetHandle("CAAD010000001.1"));
-    BOOST_REQUIRE(bh);
-    int desc_mask = 0;
-    map<string, int> user_count;
-    int comment_count = 0;
-    int pub_count = 0;
-    for ( CSeqdesc_CI it(bh); it; ++it ) {
-        desc_mask |= 1<<it->Which();
-        switch ( it->Which() ) {
-        case CSeqdesc::e_Comment:
-            ++comment_count;
-            break;
-        case CSeqdesc::e_Pub:
-            ++pub_count;
-            break;
-        case CSeqdesc::e_User:
-            ++user_count[it->GetUser().GetType().GetStr()];
-            break;
-        default:
-            break;
-        }
-    }
-    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Title));
-    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Molinfo));
-    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Embl));
-    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Source));
-    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Create_date));
-    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Update_date));
-    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Pub));
-    BOOST_CHECK_EQUAL(pub_count, 2);
-    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_User));
-    BOOST_CHECK_EQUAL(user_count.size(), 1u);
-    BOOST_CHECK_EQUAL(user_count["DBLink"], 1);
-}
-
-
-BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr5)
-{
-    LOG_POST("Checking WGS master sequence descriptors NZ_4+9");
-    CRef<CScope> scope = s_InitScope();
-    CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetHandle("NZ_CAVJ010000001.1"));
-    BOOST_REQUIRE(bh);
-    int desc_mask = 0;
-    map<string, int> user_count;
-    int comment_count = 0;
-    int pub_count = 0;
-    for ( CSeqdesc_CI it(bh); it; ++it ) {
-        desc_mask |= 1<<it->Which();
-        switch ( it->Which() ) {
-        case CSeqdesc::e_Comment:
-            ++comment_count;
-            break;
-        case CSeqdesc::e_Pub:
-            ++pub_count;
-            break;
-        case CSeqdesc::e_User:
-            ++user_count[it->GetUser().GetType().GetStr()];
-            break;
-        default:
-            break;
-        }
-    }
-    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Source));
-    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Molinfo));
-    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Pub));
-    BOOST_CHECK_EQUAL(pub_count, 3);
-    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Comment));
-    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Embl));
-    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Create_date));
-    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Update_date));
-    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_User));
-    BOOST_CHECK_EQUAL(user_count.size(), 4u);
-    BOOST_CHECK_EQUAL(user_count["DBLink"], 1);
-    BOOST_CHECK_EQUAL(user_count["StructuredComment"], 2);
-    BOOST_CHECK_EQUAL(user_count["RefGeneTracking"], 1);
-    BOOST_CHECK_EQUAL(user_count["FeatureFetchPolicy"], 1);
-}
-
-
-BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr6)
-{
-    LOG_POST("Checking WGS master sequence descriptors NZ_6+9");
-    CRef<CScope> scope = s_InitScope();
-    CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetHandle("NZ_CAACXP010000001.1"));
-    BOOST_REQUIRE(bh);
-    int desc_mask = 0;
-    map<string, int> user_count;
-    int comment_count = 0;
-    int pub_count = 0;
-    for ( CSeqdesc_CI it(bh); it; ++it ) {
-        desc_mask |= 1<<it->Which();
-        switch ( it->Which() ) {
-        case CSeqdesc::e_Comment:
-            ++comment_count;
-            break;
-        case CSeqdesc::e_Pub:
-            ++pub_count;
-            break;
-        case CSeqdesc::e_User:
-            ++user_count[it->GetUser().GetType().GetStr()];
-            break;
-        default:
-            break;
-        }
-    }
-    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Source));
-    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Molinfo));
-    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Pub));
-    BOOST_CHECK_EQUAL(pub_count, 1);
-    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Comment));
-    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Embl));
-    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Create_date));
-    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Update_date));
-    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_User));
-    BOOST_CHECK_EQUAL(user_count.size(), 4u);
-    BOOST_CHECK_EQUAL(user_count["DBLink"], 1);
-    BOOST_CHECK_EQUAL(user_count["StructuredComment"], 1);
-    BOOST_CHECK_EQUAL(user_count["RefGeneTracking"], 1);
-    BOOST_CHECK_EQUAL(user_count["FeatureFetchPolicy"], 1);
-}
-
-
-BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr7)
-{
-    LOG_POST("Checking WGS master sequence descriptors: Unverified");
-    CRef<CScope> scope = s_InitScope();
-    CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetHandle("AVKQ01000001"));
-    BOOST_REQUIRE(bh);
-    int desc_mask = 0;
-    map<string, int> user_count;
-    int comment_count = 0;
-    int pub_count = 0;
-    for ( CSeqdesc_CI it(bh); it; ++it ) {
-        desc_mask |= 1<<it->Which();
-        switch ( it->Which() ) {
-        case CSeqdesc::e_Comment:
-            ++comment_count;
-            break;
-        case CSeqdesc::e_Pub:
-            ++pub_count;
-            break;
-        case CSeqdesc::e_User:
-            ++user_count[it->GetUser().GetType().GetStr()];
-            break;
-        default:
-            break;
-        }
-    }
-    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Source));
-    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Molinfo));
-    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Pub));
-    BOOST_CHECK_EQUAL(pub_count, 1);
-    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Comment));
-    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Create_date));
-    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Update_date));
-    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_User));
-    BOOST_CHECK_EQUAL(user_count.size(), 3u);
-    BOOST_CHECK_EQUAL(user_count["DBLink"], 1);
-    BOOST_CHECK_EQUAL(user_count["StructuredComment"], 1);
-    BOOST_CHECK_EQUAL(user_count["Unverified"], 1);
-}
-#endif
 
 enum EInstType {
     eInst_ext, // inst.ext is set, inst.seq-data is not set
@@ -1622,7 +1262,7 @@ static void s_CheckSplitSeqData(CScope& scope, const string& seq_id, EInstType t
 
 BOOST_AUTO_TEST_CASE(CheckSplitSeqData)
 {
-    if ( !s_HaveID2() ) {
+    if ( !s_HaveSplit() ) {
         LOG_POST("Skipping check of split Seq-data access without ID2");
         return;
     }
@@ -1645,7 +1285,7 @@ size_t s_CountObjects(const Root& root)
 
 BOOST_AUTO_TEST_CASE(CheckSplitNucProtSet)
 {
-    if ( !s_HaveID2() ) {
+    if ( !s_HaveSplit() ) {
         LOG_POST("Skipping check of split nuc-prot set without ID2");
         return;
     }
@@ -1661,69 +1301,24 @@ BOOST_AUTO_TEST_CASE(CheckSplitNucProtSet)
 }
 
 
-#if 0
-#if defined(RUN_MT_TESTS) && defined(NCBI_THREADS)
-BOOST_AUTO_TEST_CASE(MTCrash1)
-{
-    CRef<CScope> scope = CSimpleOM::NewScope();
-    SAnnotSelector sel;
-    sel
-        // consider overlaps by total range...
-        .SetOverlapTotalRange()
-        // resolve all segments...
-        .SetResolveAll()
-        .SetAdaptiveDepth(true)
-        .SetResolveAll()
-        ;
-    sel.SetFeatType(CSeqFeatData::e_Gene)
-        .IncludeFeatType(CSeqFeatData::e_Rna)
-        .IncludeFeatType(CSeqFeatData::e_Cdregion);
-    
-    vector<string> accs;
-    for (int i = 1; i < 6; ++i) {
-        CNcbiOstrstream ss;
-        ss << "NC_" << std::setw(6) << std::setfill('0') << i;
-        accs.push_back(CNcbiOstrstreamToString(ss));
-    }
-    for (int c = 0; c < 5; ++c) {
-        //                srand(time(0));
-        //                random_shuffle(accs.begin(), accs.end());
-        for (const auto& acc : accs) {
-            auto seq_id = Ref(new CSeq_id(acc));
-            int bioseq_len = 0;
-            {
-                auto bsh = scope->GetBioseqHandle(*seq_id);
-                bioseq_len = bsh.GetBioseqLength();
-            }
-            int start = 0;
-            int chunk_size = max<int>(100000, bioseq_len / 8);
-            vector<future<bool>> res;
-            while (start < bioseq_len - 1) {
-                int stop = min(start + chunk_size, bioseq_len - 1);
-                res.emplace_back(async(launch::async, [&]()->bool {
-                    auto bsh = scope->GetBioseqHandle(*seq_id);
-                    TSeqRange range(start, stop);
-                    CFeat_CI feat_it(bsh, range, sel);
-                    for (;  feat_it;  ++feat_it) {
-                    }
-                    return true;
-                        }));
-                start = stop + 1;
-            }
-            bool all_is_good = all_of(res.begin(), res.end(), [](future<bool>& f) { return f.get(); });
-            BOOST_CHECK(all_is_good);
-            cout << acc << ": passed" << endl;
-        }
-        cout << "============================" << endl;
-    }
-}
-#endif
-
-
 BOOST_AUTO_TEST_CASE(TestGetBlobById)
 {
-    LOG_POST("Testing CDataLoader::GetBlobById()");
     bool is_psg = CGBDataLoader::IsUsingPSGLoader();
+    if ( is_psg ) {
+        // test PSG
+    }
+    else {
+        if ( !s_HaveID2(eExcludePubseqos2) ) {
+            LOG_POST("Skipping CDataLoader::GetBlobById() test without OSG or PSG");
+            return;
+        }
+        if ( s_HaveCache() ) {
+            LOG_POST("Skipping CDataLoader::GetBlobById() with GenBank loader cache enabled");
+            return;
+        }
+        // test ID2
+    }    
+    LOG_POST("Testing CDataLoader::GetBlobById()");
     CRef<CObjectManager> om = CObjectManager::GetInstance();
     om->RevokeAllDataLoaders();
     CRef<CReader> reader;
@@ -1753,7 +1348,7 @@ BOOST_AUTO_TEST_CASE(TestGetBlobById)
             LOG_POST("Re-loading entries");
         }
         else if ( t == 2 ) {
-            LOG_POST("Re-loading entries with errors");
+            LOG_POST("Re-loading entries with errors, exceptions are expected");
             if ( is_psg ) {
 #ifdef HAVE_PSG_LOADER
                 CPSGDataLoader_Impl::SetGetBlobByIdShouldFail(true);
@@ -1806,7 +1401,7 @@ BOOST_AUTO_TEST_CASE(TestGetBlobById)
     }
     */
 }
-#endif
+
 
 NCBITEST_INIT_CMDLINE(arg_descrs)
 {
@@ -1831,7 +1426,9 @@ NCBITEST_INIT_TREE()
     }
 
     NCBITEST_DISABLE(CheckAll);
-    NCBITEST_DISABLE(CheckExtCDD2);
+    NCBITEST_DISABLE(CheckExtCDDonWGS); // TODO
+    NCBITEST_DISABLE(CheckExtCDD2onWGS); // TODO
+    NCBITEST_DISABLE(CheckExtCDDonPDB); // TODO
     /*
     NCBITEST_DISABLE(CheckExtHPRD);
     NCBITEST_DISABLE(CheckExtMGC);
