@@ -116,7 +116,7 @@ struct SPsgBlobInfo
     int blob_state;
     Int8 last_modified;
 
-    int GetBlobVersion() const { return last_modified/60000; /* ms to minutes */ }
+    int GetBlobVersion() const { return int(last_modified/60000); /* ms to minutes */ }
 
     bool IsSplit() const { return !id2_info.empty(); }
 
