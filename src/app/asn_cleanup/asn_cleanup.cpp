@@ -1191,7 +1191,7 @@ CObjectIStream* CCleanupApp::x_OpenIStream(const CArgs& args, const string& file
 
     // make sure of the underlying input stream. -i must be given on the command line
     // then the input comes from a file.
-    CNcbiIstream* pInputStream = new CNcbiIfstream(filename, ios::binary);
+    unique_ptr<CNcbiIstream> pInputStream(make_unique<CNcbiIfstream>(filename, ios::binary));
 
     // autodetect
     if (pInputStream) {
@@ -1200,11 +1200,33 @@ CObjectIStream* CCleanupApp::x_OpenIStream(const CArgs& args, const string& file
         fh.AddPreferredFormat(CFormatGuess::eTextASN);
         fh.AddPreferredFormat(CFormatGuess::eBinaryASN);
         fh.AddPreferredFormat(CFormatGuess::eXml);
+        fh.AddPreferredFormat(CFormatGuess::eZip);
+        fh.AddPreferredFormat(CFormatGuess::eGZip);
         fh.DisableAllNonpreferred();
 
         CFormatGuess::EFormat inFormat;
         CFileContentInfo contentInfo;
         inFormat = fg.GuessFormatAndContent(contentInfo);
+
+        if (serial == eSerial_None) {
+            switch (inFormat) {
+            default:
+            case CFormatGuess::eTextASN:
+                serial = eSerial_AsnText;
+                break;
+            case CFormatGuess::eBinaryASN:
+                serial = eSerial_AsnBinary;
+                break;
+            case CFormatGuess::eXml:
+                serial = eSerial_Xml;
+                break;
+            case CFormatGuess::eZip:
+            case CFormatGuess::eGZip:
+                cerr << "Error: Compressed files no longer supported." << endl;
+                return nullptr;
+            }
+        }
+
         const string& genbankType = contentInfo.mInfoGenbank.mObjectType;
         if (genbankType == "Seq-entry") {
             asn_type = EAsnType::eSeqEntry;
@@ -1217,21 +1239,6 @@ CObjectIStream* CCleanupApp::x_OpenIStream(const CArgs& args, const string& file
         } else {
             asn_type = EAsnType::eSeqSubmit; // ?
         }
-
-        if (serial == eSerial_None) {
-            switch (inFormat) {
-                default:
-                case CFormatGuess::eTextASN:
-                    serial = eSerial_AsnText;
-                    break;
-                case CFormatGuess::eBinaryASN:
-                    serial = eSerial_AsnBinary;
-                    break;
-                case CFormatGuess::eXml:
-                    serial = eSerial_Xml;
-                    break;
-            }
-        }
     }
 
     // if -c was specified then wrap the input stream into a gzip decompressor before
@@ -1241,7 +1248,7 @@ CObjectIStream* CCleanupApp::x_OpenIStream(const CArgs& args, const string& file
         cerr << "Error: Compressed files no longer supported" << endl;
     }
     else {
-        pI = CObjectIStream::Open( serial, *pInputStream, eTakeOwnership );
+        pI = CObjectIStream::Open( serial, *pInputStream.release(), eTakeOwnership );
     }
 
     if ( pI ) {
