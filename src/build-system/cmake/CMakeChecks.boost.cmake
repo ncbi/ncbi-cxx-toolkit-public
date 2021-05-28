@@ -15,8 +15,9 @@ if(EXISTS "${NCBI_ThirdParty_Boost}")
     set(_foo_CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH})
     find_package(Boost ${NCBI_ThirdParty_Boost_VERSION} EXACT
         OPTIONAL_COMPONENTS
-        unit_test_framework system thread filesystem iostreams
+        system thread filesystem iostreams
 #        coroutine program_options prg_exec_monitor test_exec_monitor
+#        unit_test_framework
         context chrono date_time regex serialization timer
     )
     set(CMAKE_PREFIX_PATH ${_foo_CMAKE_PREFIX_PATH})
@@ -26,8 +27,9 @@ if(NOT Boost_FOUND)
     unset(Boost_USE_STATIC_RUNTIME)
     unset(BOOST_ROOT)
     find_package(Boost OPTIONAL_COMPONENTS
-        unit_test_framework system thread filesystem iostreams
+        system thread filesystem iostreams
 #        coroutine program_options prg_exec_monitor test_exec_monitor
+#        unit_test_framework
         context chrono date_time regex serialization timer
     )
 endif()
