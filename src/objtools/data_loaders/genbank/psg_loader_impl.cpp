@@ -2070,115 +2070,64 @@ s_CreateNAChunk(const CPSG_NamedAnnotInfo& psg_annot_info,
 {
     pair<CRef<CTSE_Chunk_Info>, string> ret;
     CRef<CTSE_Chunk_Info> chunk(new CTSE_Chunk_Info(kDelayedMain_ChunkId));
-    auto id2_annot_info = psg_annot_info.GetId2AnnotInfoList();
-    const char* source_type = "";
     unsigned main_count = 0;
     unsigned zoom_count = 0;
-    if ( !id2_annot_info.empty() ) {
-        // detailed annot info
-        set<string> names;
-        for ( auto annot_info_iter : id2_annot_info ) {
-            const CID2S_Seq_annot_Info& annot_info = *annot_info_iter;
-            // create special external annotations blob
-            CAnnotName name(annot_info.GetName());
-            if ( name.IsNamed() && !ExtractZoomLevel(name.GetName(), 0, 0) ) {
-                //setter.GetTSE_LoadLock()->SetName(name);
-                names.insert(name.GetName());
-                ++main_count;
-            }
-            else {
-                ++zoom_count;
-            }
+    // detailed annot info
+    set<string> names;
+    for ( auto& annot_info_ref : psg_annot_info.GetId2AnnotInfoList() ) {
+        const CID2S_Seq_annot_Info& annot_info = *annot_info_ref;
+        // create special external annotations blob
+        CAnnotName name(annot_info.GetName());
+        if ( name.IsNamed() && !ExtractZoomLevel(name.GetName(), 0, 0) ) {
+            //setter.GetTSE_LoadLock()->SetName(name);
+            names.insert(name.GetName());
+            ++main_count;
+        }
+        else {
+            ++zoom_count;
+        }
             
-            vector<SAnnotTypeSelector> types;
-            if ( annot_info.IsSetAlign() ) {
-                types.push_back(SAnnotTypeSelector(CSeq_annot::C_Data::e_Align));
-            }
-            if ( annot_info.IsSetGraph() ) {
-                types.push_back(SAnnotTypeSelector(CSeq_annot::C_Data::e_Graph));
-            }
-            if ( annot_info.IsSetFeat() ) {
-                for ( auto feat_type_info_iter : annot_info.GetFeat() ) {
-                    const CID2S_Feat_type_Info& finfo = *feat_type_info_iter;
-                    int feat_type = finfo.GetType();
-                    if ( feat_type == 0 ) {
+        vector<SAnnotTypeSelector> types;
+        if ( annot_info.IsSetAlign() ) {
+            types.push_back(SAnnotTypeSelector(CSeq_annot::C_Data::e_Align));
+        }
+        if ( annot_info.IsSetGraph() ) {
+            types.push_back(SAnnotTypeSelector(CSeq_annot::C_Data::e_Graph));
+        }
+        if ( annot_info.IsSetFeat() ) {
+            for ( auto feat_type_info_iter : annot_info.GetFeat() ) {
+                const CID2S_Feat_type_Info& finfo = *feat_type_info_iter;
+                int feat_type = finfo.GetType();
+                if ( feat_type == 0 ) {
+                    types.push_back(SAnnotTypeSelector
+                                    (CSeq_annot::C_Data::e_Seq_table));
+                }
+                else if ( !finfo.IsSetSubtypes() ) {
+                    types.push_back(SAnnotTypeSelector
+                                    (CSeqFeatData::E_Choice(feat_type)));
+                }
+                else {
+                    for ( auto feat_subtype : finfo.GetSubtypes() ) {
                         types.push_back(SAnnotTypeSelector
-                                        (CSeq_annot::C_Data::e_Seq_table));
-                    }
-                    else if ( !finfo.IsSetSubtypes() ) {
-                        types.push_back(SAnnotTypeSelector
-                                        (CSeqFeatData::E_Choice(feat_type)));
-                    }
-                    else {
-                        for ( auto feat_subtype : finfo.GetSubtypes() ) {
-                            types.push_back(SAnnotTypeSelector
-                                            (CSeqFeatData::ESubtype(feat_subtype)));
-                        }
+                                        (CSeqFeatData::ESubtype(feat_subtype)));
                     }
                 }
             }
-            
-            CTSE_Chunk_Info::TLocationSet loc;
-            CSplitParser::x_ParseLocation(loc, annot_info.GetSeq_loc());
-            
-            ITERATE ( vector<SAnnotTypeSelector>, it, types ) {
-                chunk->x_AddAnnotType(name, *it, loc);
-            }
         }
-        if ( names.size() == 1 ) {
-            ret.second = *names.begin();
+            
+        CTSE_Chunk_Info::TLocationSet loc;
+        CSplitParser::x_ParseLocation(loc, annot_info.GetSeq_loc());
+            
+        ITERATE ( vector<SAnnotTypeSelector>, it, types ) {
+            chunk->x_AddAnnotType(name, *it, loc);
         }
     }
-    else {
-        // old style annot info
-        source_type = " old";
-        CSeq_id_Handle id = PsgIdToHandle(psg_annot_info.GetAnnotatedId());
-        CSeq_id_Handle id2;
-        if ( bioseq_info &&
-             (bioseq_info->IncludedInfo() & CPSG_Request_Resolve::fGi) &&
-             id.IsAccVer() ) {
-            // register on GI too
-            id2 = CSeq_id_Handle::GetGiHandle(bioseq_info->GetGi());
-        }
-        CRange<TSeqPos> range = psg_annot_info.GetRange();
-        if ( !id ) {
-            return ret;
-        }
-        // add main annot types
-        string psg_annot_name = psg_annot_info.GetName();
-        {{
-            // add main annot types
-            main_count = 1;
-            CAnnotName name = psg_annot_name;
-            for ( auto& i : psg_annot_info.GetAnnotInfoList() ) {
-                SAnnotTypeSelector type(i.annot_type);
-                if ( i.annot_type == CSeq_annot::C_Data::e_Ftable ) {
-                    type.SetFeatType(CSeqFeatData::E_Choice(i.feat_type));
-                    if ( i.feat_subtype != 0 ) {
-                        type.SetFeatSubtype(CSeqFeatData::ESubtype(i.feat_subtype));
-                    }
-                }
-                chunk->x_AddAnnotType(name, type, id, range);
-                if ( id2 ) {
-                    chunk->x_AddAnnotType(name, type, id2, range);
-                }
-            }
-        }}
-        // add zoom graphs
-        for ( auto z : psg_annot_info.GetZoomLevels() ) {
-            ++zoom_count;
-            CAnnotName name = CombineWithZoomLevel(psg_annot_name, z);
-            SAnnotTypeSelector type(CSeq_annot::C_Data::e_Graph);
-            chunk->x_AddAnnotType(name, type, id, range);
-            if ( id2 ) {
-                chunk->x_AddAnnotType(name, type, id2, range);
-            }
-        }
-        ret.second = psg_annot_name;
+    if ( names.size() == 1 ) {
+        ret.second = *names.begin();
     }
     if ( s_GetDebugLevel() >= 5 ) {
         LOG_POST(Info<<"PSG loader: TSE "<<psg_annot_info.GetBlobId().GetId()<<
-                 source_type<<" annots: "<<ret.second<<" "<<main_count<<"+"<<zoom_count);
+                 " annots: "<<ret.second<<" "<<main_count<<"+"<<zoom_count);
     }
     ret.first = chunk;
     return ret;
