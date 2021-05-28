@@ -6678,8 +6678,8 @@ EEncoding CUtf8::GuessEncoding(const CTempString& src)
     SIZE_TYPE more = 0;
     CTempString::const_iterator i = src.begin();
     CTempString::const_iterator end = src.end();
-    bool cp1252, iso1, ascii, utf8;
-    for (cp1252 = iso1 = ascii = utf8 = true; i != end; ++i) {
+    bool cp1252, iso1, ascii, utf8, cesu8;
+    for (cp1252 = iso1 = ascii = utf8 = true, cesu8=false; i != end; ++i) {
         Uint1 ch = *i;
         bool skip = false;
         if (more != 0) {
@@ -6710,6 +6710,14 @@ EEncoding CUtf8::GuessEncoding(const CTempString& src)
             if (!skip && utf8 && !x_EvalFirst(ch, more)) {
                 utf8 = false;
             }
+            if (utf8 && !cesu8 && ch == 0xED && (end - i) > 5) {
+                uint8_t c1 = *(i+1);
+                uint8_t c3 = *(i+3);
+                uint8_t c4 = *(i+4);
+                if ( ((c1 & 0xA0) == 0xA0) && (c3 == (uint8_t)0xED) && ((c4 & 0xB0) == 0xB0) ) {
+                    cesu8 = true;
+                }
+            }
         }
     }
     if (more != 0) {
@@ -6718,7 +6726,7 @@ EEncoding CUtf8::GuessEncoding(const CTempString& src)
     if (ascii) {
         return eEncoding_Ascii;
     } else if (utf8) {
-        return eEncoding_UTF8;
+        return cesu8 ? eEncoding_CESU8 : eEncoding_UTF8;
     } else if (cp1252) {
         return iso1 ? eEncoding_ISO8859_1 : eEncoding_Windows_1252;
     }
@@ -6738,6 +6746,9 @@ bool CUtf8::MatchEncoding(const CTempString& src, EEncoding encoding)
     case eEncoding_Ascii:
         matches = true;
         break;
+    case eEncoding_CESU8:
+        matches = (encoding == enc_src || encoding == eEncoding_UTF8);
+        break;
     case eEncoding_UTF8:
     case eEncoding_Windows_1252:
         matches = (encoding == enc_src);
@@ -6753,6 +6764,7 @@ string  CUtf8::EncodingToString(EEncoding encoding)
 {
     switch (encoding) {
     case eEncoding_UTF8:         break;
+    case eEncoding_CESU8:        return "CESU-8";
     case eEncoding_Ascii:        return "US-ASCII";
     case eEncoding_ISO8859_1:    return "ISO-8859-1";
     case eEncoding_Windows_1252: return "windows-1252";
@@ -6790,6 +6802,13 @@ EEncoding CUtf8::StringToEncoding(const CTempString& str)
             return eEncoding_ISO8859_1;
         }
     }
+    const char* cesu[] = {
+    "CESU-8","csCESU8","csCESU-8",NULL};
+    for (i=0; cesu[i]; ++i) {
+        if (NStr::CompareNocase(str,iso8859_1[i])==0) {
+            return eEncoding_CESU8;
+        }
+    }
     return eEncoding_Unknown;
 }
 
@@ -6809,6 +6828,7 @@ TUnicodeSymbol CUtf8::CharToSymbol(char c, EEncoding encoding)
     {
     case eEncoding_Unknown:
     case eEncoding_UTF8:
+    case eEncoding_CESU8:
         NCBI_THROW2(CStringException, eBadArgs,
                     "Unacceptable character encoding", 0);
     case eEncoding_Ascii:
@@ -6828,7 +6848,7 @@ TUnicodeSymbol CUtf8::CharToSymbol(char c, EEncoding encoding)
 
 char CUtf8::SymbolToChar(TUnicodeSymbol cp, EEncoding encoding)
 {
-    if( encoding == eEncoding_UTF8 || encoding == eEncoding_Unknown) {
+    if( encoding == eEncoding_UTF8 || encoding == eEncoding_CESU8 || encoding == eEncoding_Unknown) {
         NCBI_THROW2(CStringException, eBadArgs,
                     "Unacceptable character encoding", 0);
     }
@@ -6954,6 +6974,10 @@ string CUtf8::AsSingleByteString(const CTempString& str,
     if( encoding == eEncoding_UTF8) {
         return str;
     }
+    if( encoding == eEncoding_CESU8) {
+        NCBI_THROW2(CStringException, eConvert,
+                    "Conversion into CESU-8 encoding is not supported", 0);
+    }
     return x_AsSingleByteString(str, SEncEncoder(encoding), substitute_on_error);
 }
 
@@ -7017,6 +7041,29 @@ CStringUTF8& CUtf8::x_Append( CStringUTF8& self, const CTempString& src,
     }
     if (encoding == eEncoding_UTF8 || encoding == eEncoding_Ascii) {
         self.append(src);
+        return self;
+    }
+    if (encoding == eEncoding_CESU8) {
+        self.reserve(max(self.capacity(),self.length()+src.length()));
+        const char* i = src.data();
+        const char* end = i + src.length();
+        for (; i != end; ++i) {
+            Uint1 ch = *i;
+            if (ch == 0xED && (end - i) > 5) {
+                uint8_t c1 = *(i+1);
+                uint8_t c3 = *(i+3);
+                uint8_t c4 = *(i+4);
+                if ( ((c1 & 0xA0) == 0xA0) && (c3 == (uint8_t)0xED) && ((c4 & 0xB0) == 0xB0) ) {
+                    TStringUCS2 u2s = CUtf8::AsBasicString<TCharUCS2>(CTempString(i,6), 0);
+                    TUnicodeSymbol uch;
+                    CUtf8::x_TCharToUnicodeSymbol(uch, u2s.data());
+                    CUtf8::AppendAsUTF8(self, &uch, 1);
+                    i += 5;
+                    continue;
+                }
+            }
+            self.append(1, ch);
+        }
         return self;
     }
 

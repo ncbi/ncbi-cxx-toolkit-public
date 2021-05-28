@@ -204,7 +204,8 @@ enum EEncoding {
     ///< Toolkit, the ISO 8859-1 character set includes
     ///< symbols 0x00 through 0xFF except 0x80 through
     ///< 0x9F.
-    eEncoding_Windows_1252
+    eEncoding_Windows_1252,
+    eEncoding_CESU8
 };
 #else
 // Temporary safeguard to protect against implicit conversion of EEncoding
@@ -216,13 +217,19 @@ enum class EEncoding {
     UTF8,         ///< Do not use this directly!  It will go away eventually!
     Ascii,        ///< Do not use this directly!  It will go away eventually!
     ISO8859_1,    ///< Do not use this directly!  It will go away eventually!
-    Windows_1252  ///< Do not use this directly!  It will go away eventually!
+    Windows_1252, ///< Do not use this directly!  It will go away eventually!
+    // CESU-8 spec  https://www.unicode.org/reports/tr26/tr26-4.html
+    // It is not intended nor recommended for open information exchange.
+    // but since it may appear in incoming data, we want to be able to detect it
+    // and convert into 'normal' UTF-8
+    CESU8
 };
 #define eEncoding_Unknown      EEncoding::Unknown
 #define eEncoding_UTF8         EEncoding::UTF8
 #define eEncoding_Ascii        EEncoding::Ascii
 #define eEncoding_ISO8859_1    EEncoding::ISO8859_1
 #define eEncoding_Windows_1252 EEncoding::Windows_1252
+#define eEncoding_CESU8        EEncoding::CESU8
 #endif
 
 
@@ -3847,7 +3854,7 @@ inline CNcbiOstream& operator<< (CNcbiOstream& os, const TStringUCS2& str)
 ///   Can convert data to and from the following encodings:
 ///      ISO 8859-1 (Latin1)
 ///      Microsoft Windows code page 1252
-///      UCS-2, UCS-4 (no surrogates)
+///      UCS-2, UCS-4
 
 class NCBI_XNCBI_EXPORT CUtf8
 {
@@ -4335,6 +4342,8 @@ private:
 #if defined(HAVE_WSTRING)
     static CStringUTF8& x_Append(CStringUTF8& u8str, const CTempString& src, const locale& lcl);
 #endif
+    template <typename TChar>
+    static bool x_TCharToUnicodeSymbol(TUnicodeSymbol& u, const TChar* src);
     template <typename TChar>
     static CStringUTF8& x_Append(CStringUTF8& u8str, const TChar* src, SIZE_TYPE tchar_count);
 
@@ -5615,7 +5624,19 @@ CUtf8::x_AsBasicString(const CTempString& str,
     CTempString::const_iterator to  = str.end();
     for (; src != to; ++src) {
         TUnicodeSymbol ch = Decode(src);
+        if (sizeof(TChar) > 2 && ch >= 0xD800 && ch <= 0xDBFF) {
+            TUnicodeSymbol ch2 = Decode(++src);
+            ch = (ch - 0xD800) * 0x400 + (ch2 - 0xDC00) + 0x10000;
+        }
         if (ch > max_char) {
+            if (sizeof(TChar) == 2) {
+                ch -= 0x10000;
+                TChar hi = ch / 0x400 + 0xD800;
+                TChar lo = ch % 0x400 + 0xDC00;
+                result.append(1, (TChar)hi);
+                result.append(1, (TChar)lo);
+                continue;
+            }
             if (substitute_on_error) {
                 result.append(substitute_on_error);
                 continue;
@@ -5630,6 +5651,18 @@ CUtf8::x_AsBasicString(const CTempString& str,
     return result;
 }
 
+template <typename TChar> bool
+CUtf8::x_TCharToUnicodeSymbol(TUnicodeSymbol& ch, const TChar* src)
+{
+    if (    *src >= 0xD800 &&     *src <= 0xDBFF &&
+        *(src+1) >= 0xDC00 && *(src+1) <= 0xDFFF && sizeof(TChar) == 2) {
+        ch = (*(src) - 0xD800) * 0x400 + (*(src+1) - 0xDC00) + 0x10000;
+        return true;
+    }
+    ch = *(src);
+    return false;
+}
+
 template <typename TChar> CStringUTF8&
 CUtf8::x_Append(CStringUTF8& u8str, const TChar* src, SIZE_TYPE to)
 {
@@ -5639,7 +5672,12 @@ CUtf8::x_Append(CStringUTF8& u8str, const TChar* src, SIZE_TYPE to)
 
     for (pos=0, srcBuf=src;
             (to == NPOS) ? (*srcBuf != 0) : (pos<to); ++pos, ++srcBuf) {
-        needed += x_BytesNeeded( *srcBuf );
+        TUnicodeSymbol ch;
+        if (x_TCharToUnicodeSymbol(ch, srcBuf)) {
+            ++pos;
+            ++srcBuf;
+        }
+        needed += x_BytesNeeded( ch );
     }
     if ( !needed ) {
         return u8str;
@@ -5647,7 +5685,12 @@ CUtf8::x_Append(CStringUTF8& u8str, const TChar* src, SIZE_TYPE to)
     u8str.reserve(max(u8str.capacity(),u8str.length()+needed+1));
     for (pos=0, srcBuf=src;
             (to == NPOS) ? (*srcBuf != 0) : (pos<to); ++pos, ++srcBuf) {
-        x_AppendChar( u8str, *srcBuf );
+        TUnicodeSymbol ch;
+        if (x_TCharToUnicodeSymbol(ch, srcBuf)) {
+            ++pos;
+            ++srcBuf;
+        }
+        x_AppendChar( u8str, ch );
     }
     return u8str;
 }
