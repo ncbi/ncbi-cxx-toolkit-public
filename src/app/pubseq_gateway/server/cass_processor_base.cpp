@@ -88,7 +88,7 @@ bool CPSGS_CassProcessorBase::AreAllFinishedRead(void) const
     for (const auto &  details: m_FetchDetails) {
         if (details) {
             ++started_count;
-            if (!details->Cancelled()) {
+            if (!details->Canceled()) {
                 if (!details->ReadFinished()) {
                     return false;
                 }

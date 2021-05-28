@@ -117,7 +117,7 @@ public:
         m_OutputIsReady(true),
         m_OutputFinished(false),
         m_Postponed(false),
-        m_Cancelled(false),
+        m_Canceled(false),
         m_State(eReplyInitialized),
         m_HttpProto(proto),
         m_HttpConn(http_conn),
@@ -149,7 +149,7 @@ public:
         m_OutputIsReady = false;
         m_OutputFinished = false;
         m_Postponed = false;
-        m_Cancelled = false;
+        m_Canceled = false;
         m_State = eReplyInitialized;
         m_HttpProto = nullptr;
         m_HttpConn = nullptr;
@@ -449,7 +449,7 @@ private:
 
         switch (m_State) {
             case eReplyInitialized:
-                if (!m_Cancelled) {
+                if (!m_Canceled) {
                     x_SetContentType();
                     x_SetCdUid();
                     m_State = eReplyStarted;
@@ -468,9 +468,9 @@ private:
                 break;
         }
 
-        if (m_Cancelled) {
+        if (m_Canceled) {
             if (!m_OutputFinished && m_OutputIsReady)
-                x_SendCancelled();
+                x_SendCanceled();
         } else {
             m_OutputIsReady = false;
             h2o_send(m_Req, vec, count,
@@ -494,21 +494,21 @@ private:
         high_level_reply.Flush();
     }
 
-    void x_SendCancelled(void)
+    void x_SendCanceled(void)
     {
-        if (m_Cancelled && m_OutputIsReady && !m_OutputFinished) {
+        if (m_Canceled && m_OutputIsReady && !m_OutputFinished) {
             x_SendPsg503("Request has been cancelled", ePSGS_RequestCancelled);
         }
     }
 
     void x_DoCancel(void)
     {
-        m_Cancelled = true;
+        m_Canceled = true;
         if (m_HttpConn->IsClosed())
             m_OutputFinished = true;
 
         if (!m_OutputFinished && m_OutputIsReady)
-            x_SendCancelled();
+            x_SendCanceled();
         for (auto req: m_PendingReqs)
             req->ConnectionCancel();
     }
@@ -632,7 +632,7 @@ private:
     bool                            m_OutputIsReady;
     bool                            m_OutputFinished;
     bool                            m_Postponed;
-    bool                            m_Cancelled;
+    bool                            m_Canceled;
     EReplyState                     m_State;
     CHttpProto<P> *                 m_HttpProto;
     CHttpConnection<P> *            m_HttpConn;

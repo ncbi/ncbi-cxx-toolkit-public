@@ -42,8 +42,8 @@ const char *  CPubseqGatewayException::GetErrCodeString(void) const
     switch (GetErrCode()) {
         case eRequestAlreadyStarted:
             return "eRequestAlreadyStarted";
-        case eRequestCancelled:
-            return "eRequestCancelled";
+        case eRequestCanceled:
+            return "eRequestCanceled";
         case eRequestGeneratorAlreadyAssigned:
             return "eRequestGeneratorAlreadyAssigned";
         case eReplyAlreadyStarted:

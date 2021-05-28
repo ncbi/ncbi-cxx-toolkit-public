@@ -43,7 +43,7 @@ class CPubseqGatewayException : public CException
 public:
     enum EErrCode {
         eRequestAlreadyStarted,
-        eRequestCancelled,
+        eRequestCanceled,
         eRequestGeneratorAlreadyAssigned,
         eReplyAlreadyStarted,
         eOutputNotInReadyState,

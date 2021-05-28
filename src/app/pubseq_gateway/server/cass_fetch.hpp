@@ -57,7 +57,7 @@ public:
     CCassFetch() :
         m_FinishedRead(false),
         m_FetchType(ePSGS_UnknownFetch),
-        m_Cancelled(false),
+        m_Canceled(false),
         m_AutoBlobSkipping(false),
         m_ExcludeBlobCacheUpdated(false)
     {}
@@ -67,7 +67,7 @@ public:
                const SCass_BlobId &  blob_id) :
         m_FinishedRead(false),
         m_FetchType(ePSGS_UnknownFetch),
-        m_Cancelled(false),
+        m_Canceled(false),
         m_ClientId(client_id),
         m_AutoBlobSkipping(auto_blob_skipping),
         m_BlobId(blob_id),
@@ -93,14 +93,14 @@ public:
     bool ReadFinished(void) const
     { return m_FinishedRead; }
 
-    bool Cancelled(void) const
-    { return m_Cancelled; }
+    bool Canceled(void) const
+    { return m_Canceled; }
 
     void Cancel(void)
     {
         if (m_Loader) {
-            if (!m_Cancelled) {
-                m_Cancelled = true;
+            if (!m_Canceled) {
+                m_Canceled = true;
                 m_Loader->Cancel();
             }
         }
@@ -150,7 +150,7 @@ protected:
     // to be send. Thus this member is required.
     EPSGS_DbFetchType               m_FetchType;
 
-    bool                            m_Cancelled;
+    bool                            m_Canceled;
 
     // These fields are only for the blob fetches IsBlobFetches() == true
     string                          m_ClientId;

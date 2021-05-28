@@ -186,7 +186,7 @@ void CPSGS_OSGAnnot::NotifyOSGCallEnd()
     if ( m_ApplyCDDFix ) {
         if ( !m_CDDReceived &&
              m_RequestTime.Elapsed() > GetConnectionPool().GetCDDRetryTimeout() ) {
-            NCBI_THROW(CPubseqGatewayException, eRequestCancelled, "no CDD due to OSG timeout");
+            NCBI_THROW(CPubseqGatewayException, eRequestCanceled, "no CDD due to OSG timeout");
         }
     }
 }
