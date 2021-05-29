@@ -1094,7 +1094,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CEMBP\ts\tCentre of Excellence in Marine Biology\t\t\t",
 "CEMML\ts\tCenter for Environmental Management of Military Lands Plant Collection\t\t\t",
 "CEN\ts\tGenetic Resources and Biotechnology (CENARGEN), EMBRAPA\t\t\t",
-"CENA<BRZ>\ts\tCentro de Energia Nuclear na Agricultura, Universidade de Sao Paulo\t\t\t",
+"CENA<BRZ>\tc\tCentro de Energia Nuclear na Agricultura, Universidade de Sao Paulo\t\t\t",
 "CENA<NIC>\ts\tCentro Nacional de Proteccion Vegetal\t\t\t",
 "CENACUMI\tc\tCentro Nacional de Cultivos Microbianos (National Center For Microbial Cultures)\t\t\t",
 "CENG\ts\tCentro Experimental de Nueva Guinea\t\t\t",
