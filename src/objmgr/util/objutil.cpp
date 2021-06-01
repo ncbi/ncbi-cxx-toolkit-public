@@ -1660,7 +1660,7 @@ NCBI_XOBJEDIT_EXPORT const char* strLinkBaseGeneOntology =
 NCBI_XOBJEDIT_EXPORT const char* strLinkBaseGeneOntologyRef =
     "http://www.geneontology.org/cgi-bin/references.cgi#GO_REF:"; // not government site
 NCBI_XOBJEDIT_EXPORT const char* strLinkBaseUSPTO =
-    "http://patft.uspto.gov/netacgi/nph-Parser?patentnumber=";
+    "https://patft.uspto.gov/netacgi/nph-Parser?patentnumber=";
 NCBI_XOBJEDIT_EXPORT const char* strLinkBaseUniProt =
     "https://www.uniprot.org/uniprot/";
 
