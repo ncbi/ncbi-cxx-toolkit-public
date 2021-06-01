@@ -7054,10 +7054,7 @@ CStringUTF8& CUtf8::x_Append( CStringUTF8& self, const CTempString& src,
                 uint8_t c3 = *(i+3);
                 uint8_t c4 = *(i+4);
                 if ( ((c1 & 0xA0) == 0xA0) && (c3 == (uint8_t)0xED) && ((c4 & 0xB0) == 0xB0) ) {
-                    TStringUCS2 u2s = CUtf8::AsBasicString<TCharUCS2>(CTempString(i,6), 0);
-                    TUnicodeSymbol uch;
-                    CUtf8::x_TCharToUnicodeSymbol(uch, u2s.data());
-                    CUtf8::AppendAsUTF8(self, &uch, 1);
+                    CUtf8::AppendAsUTF8(self, CUtf8::AsBasicString<TCharUCS2>(CTempString(i,6), 0));
                     i += 5;
                     continue;
                 }
