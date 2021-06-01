@@ -743,32 +743,8 @@ public:
     /// Name of the annotation
     const string& GetName() const { return m_Name; }
 
-    /// Annotated bio-id
-    CPSG_BioId GetAnnotatedId() const;
-
-    /// Range where the feature(s) from this NA appear on the bio-sequence
-    CRange<TSeqPos> GetRange() const;
-
     /// Coordinates of the blob that contains the NA data
     CPSG_BlobId GetBlobId() const;
-
-    /// Available zoom levels
-    using TZoomLevel  = unsigned int;
-    using TZoomLevels = vector<TZoomLevel>;
-    TZoomLevels GetZoomLevels() const;
-
-    /// 
-    struct SAnnotInfo
-    {
-        using TAnnotType = objects::CSeq_annot::C_Data::E_Choice;
-
-        TAnnotType annot_type;
-        int        feat_type;
-        int        feat_subtype;
-    };
-
-    using TAnnotInfoList = list<SAnnotInfo>;
-    TAnnotInfoList GetAnnotInfoList() const;
 
     /// Base64 encoded asn.1 of ID2-Seq-annot-Info
     string GetId2AnnotInfo() const;
