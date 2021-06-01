@@ -81,7 +81,7 @@
 #include <serial/objostrxml.hpp>
 #include <misc/xmlwrapp/xmlwrapp.hpp>
 #include <util/compress/stream_util.hpp>
-#include <util/format_guess.hpp>
+#include <objtools/readers/format_guess_ex.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -117,7 +117,7 @@ private:
     void Setup(const CArgs& args);
     void x_AliasLogFile();
 
-    unique_ptr<CObjectIStream> OpenFile(const string& fname);
+    unique_ptr<CObjectIStream> OpenFile(const string& fname, string& asn_type);
 
     CConstRef<CValidError> ProcessCatenated(void);
     CConstRef<CValidError> ProcessSeqEntry(CSeq_entry& se);
@@ -131,7 +131,7 @@ private:
     CConstRef<CValidError> ProcessBioseq(void);
     CConstRef<CValidError> ProcessSeqDesc(void);
 
-    CConstRef<CValidError> ValidateInput (void);
+    CConstRef<CValidError> ValidateInput(string asn_type);
     void ValidateOneDirectory(string dir_name, bool recurse);
     void ValidateOneFile(const string& fname);
     void ProcessBSSReleaseFile(const CArgs& args);
@@ -358,7 +358,7 @@ void CAsnvalApp::Init(void)
 }
 
 
-CConstRef<CValidError> CAsnvalApp::ValidateInput (void)
+CConstRef<CValidError> CAsnvalApp::ValidateInput(string asn_type)
 {
     // Process file based on its content
     // Unless otherwise specifien we assume the file in hand is
@@ -367,7 +367,8 @@ CConstRef<CValidError> CAsnvalApp::ValidateInput (void)
     // at a time.
     CConstRef<CValidError> eval;
     // ASN.1 Type (a Automatic, z Any, e Seq-entry, b Bioseq, s Bioseq-set, m Seq-submit, t Batch Bioseq-set, u Batch Seq-submit",
-    string header = m_In->ReadFileHeader();
+    m_In->ReadFileHeader();
+    string header = asn_type;
     if (header.empty() && !m_obj_type.empty())
     {
         switch (m_obj_type[0])
@@ -454,8 +455,9 @@ void CAsnvalApp::ValidateOneFile(const string& fname)
     catch (CException) {
     }
 
-    m_In = OpenFile(fname);
-    if (m_In.get() == 0) {
+    string asn_type;
+    m_In = OpenFile(fname, asn_type);
+    if (!m_In) {
         PrintValidError(ReportReadFailure(nullptr), args);
         if (close_error_stream) {
             DestroyOutputStreams();
@@ -464,18 +466,16 @@ void CAsnvalApp::ValidateOneFile(const string& fname)
         LOG_POST_XX(Corelib_App, 1, "FAILURE: Unable to open invalid ASN.1 file " + fname);
     } else {
         try {
-            if ( NStr::Equal(args["a"].AsString(), "t")) {          // Bioseq-set release file
-                // Open File 
+            if (asn_type == "Bioseq-set" || m_obj_type == "t") {    // Bioseq-set release file
                 ProcessBSSReleaseFile(args);
-            } else if ( NStr::Equal(args["a"].AsString(), "u")) {   // Seq-submit release file
-                // Open File 
+            } else if (asn_type == "Seq-submit" || m_obj_type == "u") { // Seq-submit release file
                 ProcessSSMReleaseFile(args);
             } else {
                 size_t num_validated = 0;
                 while (true) {
                    CStopWatch sw(CStopWatch::eStart);
                    try {
-                        CConstRef<CValidError> eval = ValidateInput();
+                        CConstRef<CValidError> eval = ValidateInput(asn_type);
 
                         if (eval) {
                             PrintValidError(eval, args);
@@ -1165,18 +1165,23 @@ void CAsnvalApp::Setup(const CArgs& args)
 }
 
 
-unique_ptr<CObjectIStream> OpenUncompressedStream(const string& fname)
+unique_ptr<CObjectIStream> CAsnvalApp::OpenFile(const string& fname, string& asn_type)
 {
-    ENcbiOwnership own = fname.empty() ? eNoOwnership :eTakeOwnership;
+    ENcbiOwnership own = eNoOwnership;
+    unique_ptr<CNcbiIstream> hold_stream;
+    CNcbiIstream* InputStream = &NcbiCin;
 
-    unique_ptr<CNcbiIstream> hold_stream(
-         fname.empty()? 0: new CNcbiIfstream (fname.c_str(), ios::binary));
-
-    CNcbiIstream* InputStream = fname.empty() ? &cin : hold_stream.get();
+    if (!fname.empty()) {
+        own = eTakeOwnership;
+        hold_stream = make_unique<CNcbiIfstream>(fname, ios::binary);
+        InputStream = hold_stream.get();
+    }
 
     CCompressStream::EMethod method;
-    
-    CFormatGuess::EFormat format = CFormatGuess::Format(*InputStream);
+
+    CFormatGuessEx FG(*InputStream);
+    CFileContentInfo contentInfo;
+    CFormatGuess::EFormat format = FG.GuessFormatAndContent(contentInfo);
     switch (format)
     {
         case CFormatGuess::eGZip:  method = CCompressStream::eGZipFile;  break;
@@ -1191,7 +1196,8 @@ unique_ptr<CObjectIStream> OpenUncompressedStream(const string& fname)
         hold_stream.reset(decompress);
         InputStream = hold_stream.get();
         own = eTakeOwnership;
-        format = CFormatGuess::Format(*InputStream);
+        CFormatGuessEx fg(*InputStream);
+        format = fg.GuessFormatAndContent(contentInfo);
     }
 
     unique_ptr<CObjectIStream> objectStream;
@@ -1199,6 +1205,7 @@ unique_ptr<CObjectIStream> OpenUncompressedStream(const string& fname)
     {
         case CFormatGuess::eBinaryASN:
         case CFormatGuess::eTextASN:
+            asn_type = contentInfo.mInfoGenbank.mObjectType;
             objectStream.reset(CObjectIStream::Open(format==CFormatGuess::eBinaryASN ? eSerial_AsnBinary : eSerial_AsnText, *InputStream, own));
             hold_stream.release();
             break;
@@ -1208,11 +1215,6 @@ unique_ptr<CObjectIStream> OpenUncompressedStream(const string& fname)
     return objectStream;
 }
 
-
-unique_ptr<CObjectIStream> CAsnvalApp::OpenFile(const string& fname)
-{
-    return OpenUncompressedStream(fname);
-}
 
 void CAsnvalApp::PrintValidError
 (CConstRef<CValidError> errors, 
