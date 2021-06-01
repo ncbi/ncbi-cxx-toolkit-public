@@ -199,7 +199,7 @@ private:
 class CPSG_ChunkId : public CPSG_DataId
 {
 public:
-    CPSG_ChunkId(Uint8 id2_chunk, string id2_info)
+    CPSG_ChunkId(int id2_chunk, string id2_info)
         : m_Id2Chunk(id2_chunk),
           m_Id2Info(move(id2_info))
     {}
@@ -208,13 +208,13 @@ public:
     string Repr() const override;
 
     /// Get ID2 chunk number
-    Uint8 GetId2Chunk() const { return m_Id2Chunk; }
+    int GetId2Chunk() const { return m_Id2Chunk; }
 
     /// Get ID2 info
     const string& GetId2Info() const { return m_Id2Info; }
 
 private:
-    Uint8 m_Id2Chunk;
+    int m_Id2Chunk;
     string m_Id2Info;
 };
 

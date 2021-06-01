@@ -1585,13 +1585,13 @@ CPSG_BlobId SRequestBuilder::GetBlobId(const CJson_ConstObject& input)
 
 CPSG_ChunkId SRequestBuilder::GetChunkId(const CArgs& input)
 {
-    return { static_cast<Uint8>(input["ID2_CHUNK"].AsInt8()), input["ID2_INFO"].AsString() };
+    return { input["ID2_CHUNK"].AsInteger(), input["ID2_INFO"].AsString() };
 }
 
 CPSG_ChunkId SRequestBuilder::GetChunkId(const CJson_ConstObject& input)
 {
     auto array = input["chunk_id"].GetArray();
-    return { array[0].GetValue().GetUint8(), array[1].GetValue().GetString() };
+    return { static_cast<int>(array[0].GetValue().GetInt4()), array[1].GetValue().GetString() };
 }
 
 vector<string> SRequestBuilder::GetNamedAnnots(const CJson_ConstObject& input)

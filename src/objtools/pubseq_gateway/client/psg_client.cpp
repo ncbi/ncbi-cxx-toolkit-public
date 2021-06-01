@@ -204,7 +204,7 @@ unique_ptr<CPSG_DataId> s_GetDataId(const SPSG_Args& args)
         const auto& blob_id = args.GetValue("blob_id");
 
         if (blob_id.empty()) {
-            auto id2_chunk = NStr::StringToNumeric<Uint8>(args.GetValue("id2_chunk"));
+            auto id2_chunk = NStr::StringToNumeric<int>(args.GetValue("id2_chunk"));
             return unique_ptr<CPSG_DataId>(new CPSG_ChunkId(id2_chunk, args.GetValue("id2_info")));
         }
 
