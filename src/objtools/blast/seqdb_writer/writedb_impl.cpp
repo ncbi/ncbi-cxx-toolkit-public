@@ -919,7 +919,9 @@ void CWriteDB_Impl::x_CookIds()
         const list< CRef<CSeq_id> > & ids = (**iter).GetSeqid();
         // m_Ids.insert(m_Ids.end(), ids.begin(), ids.end());
         // Spelled out for WorkShop. :-/
-        m_Ids.reserve(m_Ids.size() + ids.size());
+        // ID-6757 : STL containers have efficient internal memory maintenance,
+        // the following line is, on the contrary, very inefficient. 
+        // m_Ids.reserve(m_Ids.size() + ids.size());
         ITERATE (list<CRef<CSeq_id> >, it, ids) {
             m_Ids.push_back(*it);
         }
