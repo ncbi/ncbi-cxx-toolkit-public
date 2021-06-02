@@ -1495,7 +1495,10 @@ void CTbl2AsnApp::ProcessAnnotFile(const string& pathname, CScope& scope)
         return;
     }
 
-    m_reader->LoadAnnot(scope, pathname);
+    //m_reader->LoadAnnot(scope, pathname);
+    CMultiReader::TAnnots annots;
+    m_reader->LoadAnnots(pathname, annots);
+    m_reader->AddAnnots(annots, scope);
 }
 
 /////////////////////////////////////////////////////////////////////////////

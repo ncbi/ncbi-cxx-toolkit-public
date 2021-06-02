@@ -931,6 +931,7 @@ CRef<CSerialObject> CMultiReader::ReadNextEntry()
         return CRef<CSerialObject>();
 }
 
+/*
 CRef<CSeq_entry> CMultiReader::xReadGFF3(CNcbiIstream& instream)
 {
     int flags = 0;
@@ -947,6 +948,24 @@ CRef<CSeq_entry> CMultiReader::xReadGFF3(CNcbiIstream& instream)
     mAtSequenceData = reader.AtSequenceData();
     x_PostProcessAnnot(*entry, reader.SequenceSize());
     return entry;
+}
+*/
+
+CMultiReader::TAnnots CMultiReader::xReadGFF3(CNcbiIstream& instream)
+{
+    int flags = 0;
+    flags |= CGff3Reader::fGenbankMode;
+    flags |= CGff3Reader::fRetainLocusIds;
+    flags |= CGff3Reader::fGeneXrefs;
+    flags |= CGff3Reader::fAllIdsAsLocal;
+
+    CGff3Reader reader(flags, m_AnnotName, m_AnnotTitle);
+    CStreamLineReader lr(instream);
+    TAnnots annots;
+    reader.ReadSeqAnnots(annots, lr, m_context.m_logger);
+    mAtSequenceData = reader.AtSequenceData();
+    x_PostProcessAnnots(annots, reader.SequenceSize());
+    return annots;
 }
 
 CRef<CSeq_entry> CMultiReader::xReadGFF3_NoPostProcessing(CNcbiIstream& instream)
@@ -967,13 +986,16 @@ CRef<CSeq_entry> CMultiReader::xReadGFF3_NoPostProcessing(CNcbiIstream& instream
     return entry;
 }
 
+
 void CMultiReader::x_PostProcessAnnot(CSeq_entry& entry, unsigned int sequenceSize)
+{
+    x_PostProcessAnnots(entry.SetAnnot(), sequenceSize);
+}
+
+void CMultiReader::x_PostProcessAnnots(TAnnots& annots, unsigned int sequenceSize)
 {
     unsigned int startingLocusTagNumber = 1;
     unsigned int startingFeatureId = 1;
-
-    auto& annots = entry.SetAnnot();
-
     for (auto it = annots.begin(); it != annots.end(); ++it) {
 
         edit::CFeatTableEdit fte(
@@ -997,6 +1019,9 @@ void CMultiReader::x_PostProcessAnnot(CSeq_entry& entry, unsigned int sequenceSi
         startingFeatureId = fte.PendingFeatureId();
     }
 }
+
+
+
 
 unique_ptr<CObjectIStream> CMultiReader::xCreateASNStream(const string& filename)
 {
@@ -1046,15 +1071,17 @@ CMultiReader::~CMultiReader()
 class CAnnotationLoader
 {
 public:
-    bool Init(CRef<CSeq_entry> entry)
-    {
-        if (entry && entry->IsSetAnnot())
-        {
-           m_entry = entry;
-           m_annot_iteator = m_entry->SetAnnot().begin();
-           return m_annot_iteator != m_entry->SetAnnot().end();
+    using TAnnots = CMultiReader::TAnnots;
+
+
+    bool Init(const TAnnots& annots) {
+        if (annots.empty()) {
+            return false;
         }
-        return false;
+
+        m_Annots = annots;
+        m_annot_iterator = m_Annots.begin();
+        return true;
     }
 
     bool Init(const string& seqid_prefix, unique_ptr<istream>& instream, ILineErrorListener* logger)
@@ -1068,11 +1095,11 @@ public:
 
     CRef<CSeq_annot> GetNextAnnot()
     {
-        if (m_entry)
+        if (!m_Annots.empty())
         {
-            if (m_annot_iteator != m_entry->SetAnnot().end())
+            if (m_annot_iterator != m_Annots.end())
             {
-                return *m_annot_iteator++;
+                return *m_annot_iterator++;
             }
         }
         else
@@ -1096,9 +1123,10 @@ public:
         }
         return CRef<CSeq_annot>();
     }
+
 private:
-    CRef<CSeq_entry> m_entry;
-    CBioseq::TAnnot::iterator m_annot_iteator;
+    TAnnots m_Annots;
+    TAnnots::iterator m_annot_iterator;
     string m_seqid_prefix;
     CRef<ILineReader> m_line_reader;
     ILineErrorListener* m_logger;
@@ -1141,7 +1169,7 @@ bool CMultiReader::xGetAnnotLoader(CAnnotationLoader& loader, const string& file
         LOG_POST("Recognized annotation format: " << CFormatGuess::GetFormatName(uFormat));
     }
 
-    CRef<CSeq_entry> entry;
+    TAnnots annots;
     switch (uFormat)
     {
     case CFormatGuess::eFiveColFeatureTable:
@@ -1153,35 +1181,43 @@ bool CMultiReader::xGetAnnotLoader(CAnnotationLoader& loader, const string& file
     }
     break;
     case CFormatGuess::eTextASN:
-        {
+    {
         auto obj_stream = xCreateASNStream(uFormat, in);
         CRef<CSerialObject> obj = xReadASN1Text(*obj_stream);
         CRef<CSeq_submit> unused;
-        GetSeqEntry(entry, unused, obj);
-        }
+        CRef<CSeq_entry> pEntry;
+        GetSeqEntry(pEntry, unused, obj);
+        if (pEntry && pEntry->IsSetAnnot()) {
+            annots = pEntry->GetAnnot();
+        }    
+    }
         break;
     case CFormatGuess::eGff2:
     case CFormatGuess::eGff3:
-        entry = xReadGFF3(*in);
-        //x_PostProcessAnnot(*entry, this.);
+        annots = xReadGFF3(*in);
         break;
     case CFormatGuess::eGtf:
     case CFormatGuess::eGffAugustus:
-        entry = xReadGTF(*in);
+        annots = xReadGTF(*in);
         break;
     case CFormatGuess::eFlatFileGenbank:
     case CFormatGuess::eFlatFileEna:
     case CFormatGuess::eFlatFileUniProt:
         in.reset();
-        entry = xReadFlatfile(uFormat, filename);
+    {
+        auto pEntry = xReadFlatfile(uFormat, filename);
+        if (pEntry && pEntry->IsSetAnnot()) {
+            annots = pEntry->GetAnnot();
+        }
+    }
         break;
     default:
         NCBI_THROW2(CObjReaderParseException, eFormat,
             "Annotation file format not recognized. Run format validator on your annotation file", 1);
     }
-    if (entry)
-    {
-        loader.Init(entry);
+    
+    if (!annots.empty()) {
+        loader.Init(annots);
         return true;
     }
     return false;
@@ -1215,6 +1251,30 @@ bool CMultiReader::LoadAnnot(CScope& scope, const string& filename)
     }
     return true;
 }
+
+
+bool CMultiReader::LoadAnnots(const string& filename, list<CRef<CSeq_annot>>& annots)
+{   
+    CAnnotationLoader annot_loader;
+    if (!xGetAnnotLoader(annot_loader, filename)) {
+        return false;
+    }
+
+    CRef<CSeq_annot> pAnnot;
+    while ((pAnnot = annot_loader.GetNextAnnot()).NotEmpty()) {
+        annots.push_back(pAnnot);
+    }
+    return true;
+}
+
+
+void CMultiReader::AddAnnots(const list<CRef<CSeq_annot>>& annots, CScope& scope) 
+{
+    for (auto pAnnot : annots) {
+        xFixupAnnot(scope, pAnnot);
+    }
+}
+
 
 bool CMultiReader::xFixupAnnot(CScope& scope, CRef<CSeq_annot>& annot_it)
 {
@@ -1322,7 +1382,7 @@ bool CMultiReader::xFixupAnnot(CScope& scope, CRef<CSeq_annot>& annot_it)
     return true;
 }
 
-CRef<CSeq_entry> CMultiReader::xReadGTF(CNcbiIstream& instream)
+CMultiReader::TAnnots CMultiReader::xReadGTF(CNcbiIstream& instream)
 {
     int flags = 0;
     flags |= CGtfReader::fGenbankMode;
@@ -1331,13 +1391,12 @@ CRef<CSeq_entry> CMultiReader::xReadGTF(CNcbiIstream& instream)
 
     CGtfReader reader(flags, m_AnnotName, m_AnnotTitle);
     CStreamLineReader lr(instream);
-    CRef<CSeq_entry> entry(new CSeq_entry);
-    entry->SetSeq();
-    reader.ReadSeqAnnots(entry->SetAnnot(), lr, m_context.m_logger);
+    TAnnots annots;
+    reader.ReadSeqAnnots(annots, lr, m_context.m_logger);
 
-    x_PostProcessAnnot(*entry);
+    x_PostProcessAnnots(annots);
 
-    return entry;
+    return annots;
 }
 
 CRef<CSeq_entry> CMultiReader::xReadFlatfile(CFormatGuess::EFormat format, const string& filename)

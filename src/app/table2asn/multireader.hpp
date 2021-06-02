@@ -25,6 +25,8 @@ class CAnnotationLoader;
 union CFileContentInfo;
 struct CFileContentInfoGenbank;
 
+USING_SCOPE(objects);
+
 //  ============================================================================
 class CMultiReader
 //  ============================================================================
@@ -32,6 +34,8 @@ class CMultiReader
 public:
     CMultiReader(CTable2AsnContext& context);
     ~CMultiReader();
+
+    using TAnnots = list<CRef<CSeq_annot>>;
 
     CFormatGuess::EFormat OpenFile(const string& filename, CRef<CSerialObject>& input_sequence);
     CRef<CSerialObject> ReadNextEntry();
@@ -43,6 +47,8 @@ public:
     void ApplyDescriptors(objects::CSeq_entry & obj, const objects::CSeq_descr & source);
     bool LoadAnnot(objects::CScope& scope, const string& filename);
     bool ApplyAnnotFromSequences(objects::CScope& scope);
+    bool LoadAnnots(const string& filename, TAnnots& annots);
+    void AddAnnots(const TAnnots& annots, CScope& scope);
 
     static
     void GetSeqEntry(CRef<objects::CSeq_entry>& entry, CRef<objects::CSeq_submit>& submit, CRef<CSerialObject> obj);
@@ -57,11 +63,12 @@ private:
     CRef<CSerialObject> xApplyTemplate(CRef<CSerialObject> obj, bool merge_template_descriptors);
     CRef<CSerialObject> xReadASN1Text(CObjectIStream& pObjIstrm);
     CRef<CSerialObject> xReadASN1Binary(CObjectIStream& pObjIstrm, const CFileContentInfoGenbank& content_info);
-    CRef<objects::CSeq_entry> xReadGFF3(CNcbiIstream& instream);
+    TAnnots xReadGFF3(CNcbiIstream& instream);
     CRef<objects::CSeq_entry> xReadGFF3_NoPostProcessing(CNcbiIstream& instream);
-    CRef<objects::CSeq_entry> xReadGTF(CNcbiIstream& instream);
+    TAnnots xReadGTF(CNcbiIstream& instream);
     CRef<objects::CSeq_entry> xReadFlatfile(CFormatGuess::EFormat format, const string& filename);
     void x_PostProcessAnnot(objects::CSeq_entry& entry, unsigned int sequenceSize =0);
+    void x_PostProcessAnnots(TAnnots& annots, unsigned int sequenceSize=0);
     bool xGetAnnotLoader(CAnnotationLoader& loader, const string& filename);
     bool xFixupAnnot(objects::CScope&, CRef<objects::CSeq_annot>&);
 
