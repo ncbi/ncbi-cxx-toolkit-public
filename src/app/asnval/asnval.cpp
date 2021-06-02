@@ -466,9 +466,9 @@ void CAsnvalApp::ValidateOneFile(const string& fname)
         LOG_POST_XX(Corelib_App, 1, "FAILURE: Unable to open invalid ASN.1 file " + fname);
     } else {
         try {
-            if (asn_type == "Bioseq-set" || m_obj_type == "t") {    // Bioseq-set release file
+            if (/*asn_type == "Bioseq-set" ||*/ m_obj_type == "t") {    // Bioseq-set release file
                 ProcessBSSReleaseFile(args);
-            } else if (asn_type == "Seq-submit" || m_obj_type == "u") { // Seq-submit release file
+            } else if (/*asn_type == "Seq-submit" ||*/ m_obj_type == "u") { // Seq-submit release file
                 ProcessSSMReleaseFile(args);
             } else {
                 size_t num_validated = 0;
