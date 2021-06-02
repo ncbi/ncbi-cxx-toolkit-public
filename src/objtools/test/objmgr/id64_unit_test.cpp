@@ -215,6 +215,13 @@ bool s_HaveVDBWGS()
 }
 
 
+bool s_HaveVDBSNP()
+{
+    // VDB SNP plugin is available in PSG and OSG
+    return CGBDataLoader::IsUsingPSGLoader() || s_HaveID2(eExcludePubseqos2);
+}
+
+
 bool s_RelaxGpipeCheck(void)
 {
     return true;
@@ -766,6 +773,51 @@ BOOST_AUTO_TEST_CASE(CheckExtSNPGraph)
     s_CheckGraph(sel, "NC_000001.10", CRange<TSeqPos>(249200000, 249210000));
 }
 #endif
+
+
+BOOST_AUTO_TEST_CASE(CheckExtSNPNAGraph5000)
+{
+    if ( !s_HaveVDBSNP() ) {
+        LOG_POST("Skipping ExtAnnot SNP NA graph @@5000 without PSG/OSG");
+        return;
+    }
+    LOG_POST("Checking ExtAnnot SNP NA graph @@5000");
+    SAnnotSelector sel(CSeq_annot::C_Data::e_Graph);
+    sel.SetResolveAll().SetAdaptiveDepth();
+    sel.IncludeNamedAnnotAccession("NA000306983.1#1@@5000");
+    sel.AddNamedAnnots("NA000306983.1#1@@5000");
+    s_CheckGraph(sel, "CM029356.1", CRange<TSeqPos>::GetWhole());
+}
+
+
+BOOST_AUTO_TEST_CASE(CheckExtSNPNAGraph100)
+{
+    if ( !s_HaveVDBSNP() ) {
+        LOG_POST("Skipping ExtAnnot SNP NA graph @@100 without PSG/OSG");
+        return;
+    }
+    LOG_POST("Checking ExtAnnot SNP NA graph @@100");
+    SAnnotSelector sel(CSeq_annot::C_Data::e_Graph);
+    sel.SetResolveAll().SetAdaptiveDepth();
+    sel.IncludeNamedAnnotAccession("NA000306983.1#1@@100");
+    sel.AddNamedAnnots("NA000306983.1#1@@100");
+    s_CheckGraph(sel, "2500000194", CRange<TSeqPos>::GetWhole());
+}
+
+
+BOOST_AUTO_TEST_CASE(CheckExtSNPNA)
+{
+    if ( !s_HaveVDBSNP() ) {
+        LOG_POST("Skipping ExtAnnot SNP NA without PSG/OSG");
+        return;
+    }
+    LOG_POST("Checking ExtAnnot SNP NA");
+    SAnnotSelector sel(CSeq_annot::C_Data::e_Graph);
+    sel.SetResolveAll().SetAdaptiveDepth();
+    sel.IncludeNamedAnnotAccession("NA000306983.1#1");
+    sel.AddNamedAnnots("NA000306983.1#1");
+    s_CheckFeat(sel, "CM029356", CRange<TSeqPos>::GetWhole());
+}
 
 
 static string s_GetVDB_CDD_Source()
