@@ -1460,6 +1460,7 @@ test_stat_ext needs $(XCONNEXT)
 test_stat_ext needs dbapi
 test_stat_ext needs ncbi_xdbapi_ftds
 test_stat_ext needs xconnect
+test_stat_ext needs xregexp
 test_stat_ext needs xutil
 tiff needs $(Z_LIB)
 tiff needs3party $(JPEG_LIBS)
