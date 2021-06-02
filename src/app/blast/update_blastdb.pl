@@ -221,16 +221,17 @@ sub showall_from_metadata_file_1_1
     foreach my $db (sort @$metadata) {
         next if ($$db{version} ne BLASTDB_METADATA_VERSION);
         my $gb_total = sprintf("%.4f", $$db{'bytes-total'} * 1e-9);
-        my $last_updated = $$db{'last-updated'} =~ s/T.*//r;
+        my $last_updated = $$db{'last-updated'};
         if ($opt_showall =~ /tsv/i) {
             printf("%s\t%s\t%9.4f\t%s\n", $$db{dbname}, $$db{description}, 
-                $$gb_total, $last_updated);
+                $gb_total, $last_updated);
         } elsif ($opt_showall =~ /pretty/i) {
             if ($print_header) {
                 printf("%-60s %-120s %-11s %15s\n", "BLASTDB", 
                     "DESCRIPTION", "SIZE (GB)", "LAST_UPDATED");
                 $print_header = 0;
             }
+            $last_updated = $$db{'last-updated'} =~ s/T.*//r;
             printf("%-60s %-120s %9.4f %15s\n", $$db{dbname}, $$db{description}, 
                 $gb_total, $last_updated);
         } else {
