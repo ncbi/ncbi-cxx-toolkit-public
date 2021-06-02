@@ -1509,12 +1509,25 @@ CAsnSubCacheCreateApplication::x_EliminateIdsAlreadyInCache(TIndexMapById& index
         }
 
         m_RecordsInSubCache += ids_found.size();
+        CRef<CScope> scope;
+        if (m_IdType != sequence::eGetId_HandleDefault) {
+            scope.Reset(new CScope(*CObjectManager::GetInstance()));
+            scope->AddDefaults();
+        }
         ITERATE (vector<TIndexRef>, iter, ids_found) {
             /// We already have this blob in the sub-cache; invalidate index data, so
             /// it won't be copied; it still needs to be included in output
             *(*iter)->second = m_BlankIndexData;
-            if (m_cached_seq_ids.count((*iter)->first.m_Idh)) {
-                m_output_seq_ids.insert((*iter)->first.m_Idh);
+            CSeq_id_Handle idh = (*iter)->first.m_Idh,
+                    output_idh = idh;
+            if (m_cached_seq_ids.count(idh)) {
+                if (m_IdType != sequence::eGetId_HandleDefault) {
+                    output_idh = sequence::GetId(idh, *scope, m_IdType);
+                    if (!output_idh) {
+                        output_idh = idh;
+                    }
+                }
+                m_output_seq_ids.insert(output_idh);
             }
             index_map.erase(*iter);
         }
