@@ -1471,6 +1471,10 @@ NCBITEST_INIT_TREE()
     auto app = CNcbiApplication::Instance();
     const CArgs& args = app->GetArgs();
     if ( args["psg"] ) {
+#if !defined(HAVE_PSG_LOADER)
+        LOG_POST("Skipping -psg tests without PSG loader");
+        exit(0);
+#endif
         app->GetConfig().Set("genbank", "loader_psg", "1");
     }
     if ( args["id2-service"] ) {
