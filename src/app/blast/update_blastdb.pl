@@ -61,6 +61,9 @@ use constant GCP_BUCKET => "blast-db";
 use constant BLASTDB_MANIFEST => "blastdb-manifest.json";
 use constant BLASTDB_MANIFEST_VERSION => "1.0";
 
+use constant BLASTDB_METADATA => "blastdb-metadata-1-1.json";
+use constant BLASTDB_METADATA_VERSION => "1.1";
+
 # Process command line options
 my $opt_verbose = 1;
 my $opt_quiet = 0;
@@ -170,8 +173,13 @@ sub validate_metadata_file
     my $json = shift;
     my $url = shift;
     my $metadata = decode_json($json);
-    unless (exists($$metadata{version}) and ($$metadata{version} eq BLASTDB_MANIFEST_VERSION)) {
-        print STDERR "ERROR: Invalid version in manifest file $url, please report to blast-help\@ncbi.nlm.nih.gov\n";
+    if (ref($metadata) eq 'HASH') {
+        unless (exists($$metadata{version}) and ($$metadata{version} eq BLASTDB_MANIFEST_VERSION)) {
+            print STDERR "ERROR: Invalid version in manifest file $url, please report to blast-help\@ncbi.nlm.nih.gov\n";
+            exit(EXIT_FAILURE);
+        }
+    } elsif (not ref($metadata) eq 'ARRAY') {
+        print STDERR "ERROR: Invalid metadata format in $url, please report to blast-help\@ncbi.nlm.nih.gov\n";
         exit(EXIT_FAILURE);
     }
 }
@@ -198,6 +206,35 @@ sub showall_from_metadata_file
                 $$metadata{$db}{size}, $$metadata{$db}{last_updated});
         } else {
             print "$db\n";
+        }
+    }
+}
+
+# Display metadata from version 1.1 of BLASTDB metadata files
+sub showall_from_metadata_file_1_1
+{
+    my $json = shift;
+    my $url = shift;
+    &validate_metadata_file($json, $url);
+    my $metadata = decode_json($json);
+    my $print_header = 1;
+    foreach my $db (sort @$metadata) {
+        next if ($$db{version} ne BLASTDB_METADATA_VERSION);
+        my $gb_total = sprintf("%.4f", $$db{'bytes-total'} * 1e-9);
+        my $last_updated = $$db{'last-updated'} =~ s/T.*//r;
+        if ($opt_showall =~ /tsv/i) {
+            printf("%s\t%s\t%9.4f\t%s\n", $$db{dbname}, $$db{description}, 
+                $$gb_total, $last_updated);
+        } elsif ($opt_showall =~ /pretty/i) {
+            if ($print_header) {
+                printf("%-60s %-120s %-11s %15s\n", "BLASTDB", 
+                    "DESCRIPTION", "SIZE (GB)", "LAST_UPDATED");
+                $print_header = 0;
+            }
+            printf("%-60s %-120s %9.4f %15s\n", $$db{dbname}, $$db{description}, 
+                $gb_total, $last_updated);
+        } else {
+            print "$$db{dbname}\n";
         }
     }
 }
@@ -276,7 +313,11 @@ if ($location ne "NCBI") {
         unless (length($json)) {
             print "$_\n" foreach (sort(&get_available_databases($ftp->ls())));
         } else {
-            &showall_from_metadata_file($json, $url)
+            if (ref($json) eq 'HASH') {
+                &showall_from_metadata_file($json, $url)
+            } else {
+                &showall_from_metadata_file_1_1($json, $url)
+            }
         }
     } else {
         my @files = sort(&get_files_to_download());
@@ -557,7 +598,7 @@ sub get_blastdb_metadata
     my $latest_dir = shift;
     my $url = GCS_URL . "/" . GCP_BUCKET . "/$latest_dir/" . BLASTDB_MANIFEST;
     $url = AWS_URL . "/" . AWS_BUCKET . "/$latest_dir/" . BLASTDB_MANIFEST if ($source eq "AWS");
-    $url = 'ftp://' . NCBI_FTP . "/blast/db/" . BLASTDB_MANIFEST if ($source eq 'NCBI');
+    $url = 'ftp://' . NCBI_FTP . "/blast/db/" . BLASTDB_METADATA if ($source eq 'NCBI');
     my $cmd = "curl -sf $url";
     print "$cmd\n" if DEBUG;
     chomp(my $retval = `$cmd`);
