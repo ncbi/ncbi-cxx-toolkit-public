@@ -777,10 +777,6 @@ BOOST_AUTO_TEST_CASE(CheckExtSNPGraph)
 
 BOOST_AUTO_TEST_CASE(CheckExtSNPNAGraph5000)
 {
-    if ( !s_HaveVDBSNP() ) {
-        LOG_POST("Skipping ExtAnnot SNP NA graph @@5000 without PSG/OSG");
-        return;
-    }
     LOG_POST("Checking ExtAnnot SNP NA graph @@5000");
     SAnnotSelector sel(CSeq_annot::C_Data::e_Graph);
     sel.SetResolveAll().SetAdaptiveDepth();
@@ -792,10 +788,6 @@ BOOST_AUTO_TEST_CASE(CheckExtSNPNAGraph5000)
 
 BOOST_AUTO_TEST_CASE(CheckExtSNPNAGraph100)
 {
-    if ( !s_HaveVDBSNP() ) {
-        LOG_POST("Skipping ExtAnnot SNP NA graph @@100 without PSG/OSG");
-        return;
-    }
     LOG_POST("Checking ExtAnnot SNP NA graph @@100");
     SAnnotSelector sel(CSeq_annot::C_Data::e_Graph);
     sel.SetResolveAll().SetAdaptiveDepth();
@@ -807,10 +799,6 @@ BOOST_AUTO_TEST_CASE(CheckExtSNPNAGraph100)
 
 BOOST_AUTO_TEST_CASE(CheckExtSNPNA)
 {
-    if ( !s_HaveVDBSNP() ) {
-        LOG_POST("Skipping ExtAnnot SNP NA without PSG/OSG");
-        return;
-    }
     LOG_POST("Checking ExtAnnot SNP NA");
     SAnnotSelector sel(CSeq_annot::C_Data::e_Graph);
     sel.SetResolveAll().SetAdaptiveDepth();
@@ -862,10 +850,6 @@ BOOST_AUTO_TEST_CASE(CheckExtCDD)
 
 BOOST_AUTO_TEST_CASE(CheckExtCDD2)
 {
-    if ( !SInvertVDB_CDD::IsPossible() ) {
-        LOG_POST("Skipping ExtAnnot second CDD without OSG ID2");
-        return;
-    }
     SInvertVDB_CDD invert;
     LOG_POST("Checking ExtAnnot "<<s_GetVDB_CDD_Source()<<" CDD");
     SAnnotSelector sel(CSeqFeatData::eSubtype_region);
@@ -887,10 +871,6 @@ BOOST_AUTO_TEST_CASE(CheckExtCDDonWGS)
 
 BOOST_AUTO_TEST_CASE(CheckExtCDD2onWGS)
 {
-    if ( !SInvertVDB_CDD::IsPossible() ) {
-        LOG_POST("Skipping ExtAnnot second CDD on WGS sequence without OSG ID2");
-        return;
-    }
     SInvertVDB_CDD invert;
     LOG_POST("Checking ExtAnnot "<<s_GetVDB_CDD_Source()<<" CDD on WGS sequence");
     SAnnotSelector sel(CSeqFeatData::eSubtype_region);
@@ -902,10 +882,6 @@ BOOST_AUTO_TEST_CASE(CheckExtCDD2onWGS)
 
 BOOST_AUTO_TEST_CASE(CheckExtCDDonPDB)
 {
-    if ( !s_HaveMongoDBCDD() ) {
-        LOG_POST("Skipping ExtAnnot CDD on PDB sequence without OSG/PSG (MongoDB CDD)");
-        return;
-    }
     LOG_POST("Checking ExtAnnot CDD on PDB sequence");
     SAnnotSelector sel(CSeqFeatData::eSubtype_region);
     sel.SetResolveAll().SetAdaptiveDepth();
@@ -936,10 +912,6 @@ BOOST_AUTO_TEST_CASE(CheckExtHPRD)
 
 BOOST_AUTO_TEST_CASE(CheckExtSTS)
 { 	 
-    if (CGBDataLoader::IsUsingPSGLoader()) {
-        LOG_POST("Skipping ExtAnnot STS test with PSG data loader");
-        return;
-    }
     LOG_POST("Checking ExtAnnot STS"); 	 
     SAnnotSelector sel(CSeqFeatData::eSubtype_STS); 	 
     sel.SetResolveAll().SetAdaptiveDepth(); 	 
@@ -1044,10 +1016,6 @@ BOOST_AUTO_TEST_CASE(CheckNAZoom)
 
 BOOST_AUTO_TEST_CASE(CheckNAZoom10)
 {
-    if ( !s_HaveNA() ) {
-        LOG_POST("Skipping NA Graph Track test without PSG/ID2");
-        return;
-    }
     LOG_POST("Checking NA Graph Track");
     string id = "NC_054141.5";
     string na_acc = "NA001000000.1";
@@ -1195,10 +1163,6 @@ BOOST_AUTO_TEST_CASE(CheckWGSScaffold)
 
 BOOST_AUTO_TEST_CASE(CheckWGSProt1)
 {
-    if ( !s_HaveVDBWGS() ) {
-        LOG_POST("Skipping VDB WGS nuc-prot set test without PSG/OSG");
-        return;
-    }
     LOG_POST("Checking VDB WGS nuc-prot set by GI");
     CRef<CScope> scope = s_InitScope();
     CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetGiHandle(2500000217));
@@ -1241,10 +1205,6 @@ BOOST_AUTO_TEST_CASE(CheckWGSProt1)
 
 BOOST_AUTO_TEST_CASE(CheckWGSProt2)
 {
-    if ( !s_HaveVDBWGS() ) {
-        LOG_POST("Skipping VDB WGS nuc-prot set test without PSG/OSG");
-        return;
-    }
     LOG_POST("Checking VDB WGS nuc-prot set by acc");
     CRef<CScope> scope = s_InitScope();
     CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetHandle("KAG5512581"));
@@ -1314,10 +1274,6 @@ static void s_CheckSplitSeqData(CScope& scope, const string& seq_id, EInstType t
 
 BOOST_AUTO_TEST_CASE(CheckSplitSeqData)
 {
-    if ( !s_HaveSplit() ) {
-        LOG_POST("Skipping check of split Seq-data access without ID2");
-        return;
-    }
     LOG_POST("Checking split Seq-data access");
     CRef<CScope> scope = s_InitScope();
     s_CheckSplitSeqData(*scope, "CM029356", eInst_ext);
@@ -1337,10 +1293,6 @@ size_t s_CountObjects(const Root& root)
 
 BOOST_AUTO_TEST_CASE(CheckSplitNucProtSet)
 {
-    if ( !s_HaveSplit() ) {
-        LOG_POST("Skipping check of split nuc-prot set without ID2");
-        return;
-    }
     LOG_POST("Checking split nuc-prot set");
     CRef<CScope> scope = s_InitScope();
     CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetHandle("CP071864"));
@@ -1473,7 +1425,8 @@ NCBITEST_INIT_TREE()
     if ( args["psg"] ) {
 #if !defined(HAVE_PSG_LOADER)
         LOG_POST("Skipping -psg tests without PSG loader");
-        exit(0);
+        NcbiTestSetGlobalDisabled();
+        return;
 #endif
         app->GetConfig().Set("genbank", "loader_psg", "1");
     }
@@ -1485,6 +1438,37 @@ NCBITEST_INIT_TREE()
     NCBITEST_DISABLE(CheckExtCDDonWGS); // TODO
     NCBITEST_DISABLE(CheckExtCDD2onWGS); // TODO
     NCBITEST_DISABLE(CheckExtCDDonPDB); // TODO
+
+    if ( !SInvertVDB_CDD::IsPossible() ) {
+        NCBITEST_DISABLE(CheckExtCDD2);
+        NCBITEST_DISABLE(CheckExtCDD2onWGS);
+    }
+    if ( !s_HaveMongoDBCDD() ) {
+        NCBITEST_DISABLE(CheckExtCDDonPDB);
+    }
+    if (CGBDataLoader::IsUsingPSGLoader()) {
+        //NCBITEST_DISABLE(CheckExtSTS);
+    }
+    if ( !s_HaveNA() ) {
+        NCBITEST_DISABLE(CheckNAZoom10);
+    }
+    if ( !s_HaveSplit() ) {
+        NCBITEST_DISABLE(CheckSplitSeqData);
+        NCBITEST_DISABLE(CheckSplitNucProtSet);
+    }
+    if ( !s_HaveVDBSNP() ) {
+        NCBITEST_DISABLE(CheckExtSNPNAGraph5000);
+        NCBITEST_DISABLE(CheckExtSNPNAGraph100);
+        NCBITEST_DISABLE(CheckExtSNPNA);
+    }
+    if ( !s_HaveVDBWGS() ) {
+        NCBITEST_DISABLE(CheckWGSProt1);
+        NCBITEST_DISABLE(CheckWGSProt2);
+    }
+    if ( !CGBDataLoader::IsUsingPSGLoader() &&
+         (!s_HaveID2(eExcludePubseqos2) || s_HaveCache()) ) {
+        NCBITEST_DISABLE(TestGetBlobById);
+    }    
     /*
     NCBITEST_DISABLE(CheckExtHPRD);
     NCBITEST_DISABLE(CheckExtMGC);

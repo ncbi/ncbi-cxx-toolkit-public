@@ -793,10 +793,6 @@ BOOST_AUTO_TEST_CASE(CheckExtCDD)
 
 BOOST_AUTO_TEST_CASE(CheckExtCDD2)
 {
-    if ( !SInvertVDB_CDD::IsPossible() ) {
-        LOG_POST("Skipping ExtAnnot second CDD without ID2");
-        return;
-    }
     SInvertVDB_CDD invert;
     LOG_POST("Checking ExtAnnot "<<s_GetVDB_CDD_Source()<<" CDD");
     SAnnotSelector sel(CSeqFeatData::eSubtype_region);
@@ -818,10 +814,6 @@ BOOST_AUTO_TEST_CASE(CheckExtCDDonWGS)
 
 BOOST_AUTO_TEST_CASE(CheckExtCDD2onWGS)
 {
-    if ( !SInvertVDB_CDD::IsPossible() ) {
-        LOG_POST("Skipping ExtAnnot second CDD on WGS sequence without OSG ID2");
-        return;
-    }
     SInvertVDB_CDD invert;
     LOG_POST("Checking ExtAnnot "<<s_GetVDB_CDD_Source()<<" CDD on WGS sequence");
     SAnnotSelector sel(CSeqFeatData::eSubtype_region);
@@ -833,10 +825,6 @@ BOOST_AUTO_TEST_CASE(CheckExtCDD2onWGS)
 
 BOOST_AUTO_TEST_CASE(CheckExtCDDonPDB)
 {
-    if ( !s_HaveMongoDBCDD() ) {
-        LOG_POST("Skipping ExtAnnot CDD on PDB sequence without OSG/PSG (MongoDB CDD)");
-        return;
-    }
     LOG_POST("Checking ExtAnnot CDD on PDB sequence");
     SAnnotSelector sel(CSeqFeatData::eSubtype_region);
     sel.SetResolveAll().SetAdaptiveDepth();
@@ -867,10 +855,6 @@ BOOST_AUTO_TEST_CASE(CheckExtHPRD)
 
 BOOST_AUTO_TEST_CASE(CheckExtSTS)
 { 	 
-    if (CGBDataLoader::IsUsingPSGLoader()) {
-        LOG_POST("Skipping ExtAnnot STS test with PSG data loader");
-        return;
-    }
     LOG_POST("Checking ExtAnnot STS"); 	 
     SAnnotSelector sel(CSeqFeatData::eSubtype_STS); 	 
     sel.SetResolveAll().SetAdaptiveDepth(); 	 
@@ -975,10 +959,6 @@ BOOST_AUTO_TEST_CASE(CheckNAZoom)
 
 BOOST_AUTO_TEST_CASE(CheckNAZoom10)
 {
-    if ( !s_HaveNA() ) {
-        LOG_POST("Skipping NA Graph Track test without PSG/ID2");
-        return;
-    }
     LOG_POST("Checking NA Graph Track");
     string id = "NC_000022.11";
     string na_acc = "NA000000270.4";
@@ -1082,10 +1062,6 @@ BOOST_AUTO_TEST_CASE(Test_DeltaSAnnot)
 
 BOOST_AUTO_TEST_CASE(Test_HUP)
 {
-    if (CGBDataLoader::IsUsingPSGLoader()) {
-        LOG_POST("Skipping HUP test with PSG data loader");
-        return;
-    }
     bool authorized;
     string user_name = CSystemInfo::GetUserName();
     if ( user_name == "vasilche" ) {
@@ -1556,10 +1532,6 @@ static void s_CheckSplitSeqData(CScope& scope, const string& seq_id, EInstType t
 
 BOOST_AUTO_TEST_CASE(CheckSplitSeqData)
 {
-    if ( !s_HaveSplit() ) {
-        LOG_POST("Skipping check of split Seq-data access without ID2");
-        return;
-    }
     LOG_POST("Checking split Seq-data access");
     CRef<CScope> scope = s_InitScope();
     s_CheckSplitSeqData(*scope, "NC_000001.11", eInst_ext);
@@ -1616,7 +1588,7 @@ BOOST_AUTO_TEST_CASE(MTCrash1)
                     for (;  feat_it;  ++feat_it) {
                     }
                     return true;
-                        }));
+                }));
                 start = stop + 1;
             }
             bool all_is_good = all_of(res.begin(), res.end(), [](future<bool>& f) { return f.get(); });
@@ -1749,7 +1721,8 @@ NCBITEST_INIT_TREE()
     if ( args["psg"] ) {
 #if !defined(HAVE_PSG_LOADER)
         LOG_POST("Skipping -psg tests without PSG loader");
-        exit(0);
+        NcbiTestSetGlobalDisabled();
+        return;
 #endif
         app->GetConfig().Set("genbank", "loader_psg", "1");
     }
@@ -1764,10 +1737,41 @@ NCBITEST_INIT_TREE()
     NCBITEST_DISABLE(CheckExtTRNAEdit);
     NCBITEST_DISABLE(CheckExtMicroRNA);
     NCBITEST_DISABLE(CheckExtExon);
+
+    if ( !SInvertVDB_CDD::IsPossible() ) {
+        NCBITEST_DISABLE(CheckExtCDD2);
+        NCBITEST_DISABLE(CheckExtCDD2onWGS);
+    }
+    if ( !s_HaveMongoDBCDD() ) {
+        NCBITEST_DISABLE(CheckExtCDDonPDB);
+    }
+    if (CGBDataLoader::IsUsingPSGLoader()) {
+        NCBITEST_DISABLE(CheckExtSTS);
+    }
+    if ( !s_HaveNA() ) {
+        NCBITEST_DISABLE(CheckNAZoom10);
+    }
+    if ( !s_HaveSplit() ) {
+        NCBITEST_DISABLE(CheckSplitSeqData);
+    }
+    if ( !CGBDataLoader::IsUsingPSGLoader() &&
+         (!s_HaveID2(eExcludePubseqos2) || s_HaveCache()) ) {
+        NCBITEST_DISABLE(TestGetBlobById);
+    }    
 #if !defined(HAVE_PUBSEQ_OS) || (defined(NCBI_THREADS) && !defined(HAVE_SYBASE_REENTRANT))
     // HUP test needs multiple PubSeqOS readers
     NCBITEST_DISABLE(Test_HUP);
     // GBLoader name test needs multiple PubSeqOS readers
     NCBITEST_DISABLE(TestGBLoaderName);
+#else
+    if (CGBDataLoader::IsUsingPSGLoader()) {
+        NCBITEST_DISABLE(Test_HUP);
+    }
+    else {
+        string user_name = CSystemInfo::GetUserName();
+        if ( user_name != "vasilche" && user_name != "coremake" ) {
+            NCBITEST_DISABLE(Test_HUP);
+        }
+    }
 #endif
 }
