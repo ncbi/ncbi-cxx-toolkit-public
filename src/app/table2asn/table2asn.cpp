@@ -85,12 +85,12 @@
 #include <objtools/format/flat_file_generator.hpp>
 #include <objtools/logging/listener.hpp>
 
+#include "table2asn.hpp"
+
 #include <common/test_assert.h>  /* This header must go last */
 
 using namespace ncbi;
 using namespace objects;
-
-#define USE_SCOPE
 
 namespace
 {
@@ -105,6 +105,7 @@ static void s_FailOnBadInput(const string& specifics, IObjtoolsListener& listene
     throw CMissingInputException();
 }
 
+BEGIN_NCBI_SCOPE
 
 class CTable2AsnLogger: public CMessageListenerLenient
 {
@@ -144,55 +145,6 @@ public:
     }
 
 };
-
-class CTbl2AsnApp : public CNcbiApplication
-{
-public:
-    CTbl2AsnApp();
-
-    void Init() override;
-    int Run() override;
-    int DryRun() override
-    {
-        return Run();
-    }
-
-private:
-
-    static const CDataLoadersUtil::TLoaders default_loaders = CDataLoadersUtil::fGenbank | CDataLoadersUtil::fVDB | CDataLoadersUtil::fGenbankOffByDefault | CDataLoadersUtil::fSRA;
-    void Setup(const CArgs& args);
-
-    void ProcessOneFile(bool isAlignment=false);
-    void ProcessOneFile(CRef<CSerialObject>& result);
-    void ProcessOneEntry(CFormatGuess::EFormat inputFormat,
-            CRef<CSerialObject> obj, CRef<CSerialObject>& result);
-    bool ProcessOneDirectory(const CDir& directory, const CMask& mask, bool recurse);
-    void ProcessAlignmentFile();
-    void ProcessSecretFiles1Phase(bool readModsFromTitle, CSeq_entry& result);
-    void ProcessSecretFiles2Phase(CSeq_entry& result);
-    void ProcessQVLFile(const string& pathname, CSeq_entry& result);
-    void ProcessDSCFile(const string& pathname, CSeq_entry& result);
-    void ProcessCMTFile(const string& pathname, CSeq_entry& result, bool byrows);
-    void ProcessPEPFile(const string& pathname, CSeq_entry& result);
-    void ProcessRNAFile(const string& pathname, CSeq_entry& result);
-    void ProcessPRTFile(const string& pathname, CSeq_entry& result);
-    void ProcessAnnotFile(const string& pathname, CScope& scope);
-    void x_SetAlnArgs(CArgDescriptions& arg_desc);
-
-
-    CRef<CScope> GetScope();
-
-    unique_ptr<CMultiReader> m_reader;
-    CRef<CSeq_entry> m_replacement_proteins;
-    CRef<CSeq_entry> m_possible_proteins;
-    CRef<CTable2AsnValidator> m_validator;
-    CRef<CTable2AsnLogger> m_logger;
-    unique_ptr<CForeignContaminationScreenReportReader> m_fcs_reader;
-    CTable2AsnContext    m_context;
-
-    static const Int8 TBL2ASN_MAX_ALLOWED_FASTA_SIZE = INT8_C(0x7FFFFFFF);
-};
-
 
 CTbl2AsnApp::CTbl2AsnApp()
 {
@@ -842,7 +794,7 @@ int CTbl2AsnApp::Run()
                 }
             }
 
-            ProcessOneFile();
+            ProcessOneFile(false);
         }
         else
         if (args["indir"])
@@ -1135,50 +1087,31 @@ void CTbl2AsnApp::ProcessOneFile(bool isAlignment)
     }
 
     CNcbiOstream* output(nullptr);
+    unique_ptr<CNcbiOfstream> holder;
     CFile local_file;
 
     try
     {
+        if (!output)
+            output = m_context.m_output;
+
+        if (!output) {
+            local_file = m_context.GenerateOutputFilename(m_context.m_asn1_suffix);
+            holder.reset(new CNcbiOfstream(local_file.GetPath()));
+            output = holder.get();
+        }
         //m_context.ReleaseOutputs();
         if (isAlignment) {
-            ProcessAlignmentFile();
+            ProcessAlignmentFile(output);
         }
         else {
-            CRef<CSerialObject> input_obj;
-            CFormatGuess::EFormat format = m_reader->OpenFile(m_context.m_current_file, input_obj);
-            do
-            {
-                m_context.m_scope->ResetDataAndHistory();
-                CRef<CSerialObject> result;
-                ProcessOneEntry(format, input_obj, result);
 
-                if (!IsDryRun() && result.NotEmpty())
-                {
-                    const CSerialObject* to_write = result;
-                    if (m_context.m_save_bioseq_set)
-                    {
-                        if (result->GetThisTypeInfo()->IsType(CSeq_entry::GetTypeInfo()))
-                        {
-                            const CSeq_entry* se = static_cast<const CSeq_entry*>(result.GetPointer());
-                            if (se->IsSet())
-                                to_write = &se->GetSet();
-                        }
-                    }
+#if 1
+            ProcessOneFile(output);
+#else
+            ProcessHugeFile(output);
+#endif
 
-
-                    if (!output) {
-                        if (m_context.m_output) {
-                            output = m_context.m_output;
-                        }
-                        else  {
-                            local_file = m_context.GenerateOutputFilename(m_context.m_asn1_suffix);
-                            output = new CNcbiOfstream(local_file.GetPath());
-                        }
-                    }
-                    m_reader->WriteObject(*to_write, *output);
-                }
-                input_obj = m_reader->ReadNextEntry();
-            } while (input_obj.NotEmpty());
         } // !isAlignment
 
         if (!log_name.GetPath().empty())
@@ -1195,19 +1128,44 @@ void CTbl2AsnApp::ProcessOneFile(bool isAlignment)
 
         if (!m_context.m_output)
         {
-            if (output) {
-                delete output;
-            }
+            holder.reset();
             local_file.Remove();
         }
-        output = nullptr;
 
         throw;
     }
 }
 
+void CTbl2AsnApp::ProcessOneFile(CNcbiOstream* output)
+{
+    CRef<CSerialObject> input_obj;
+    CFormatGuess::EFormat format = m_reader->OpenFile(m_context.m_current_file, input_obj);
+    do
+    {
+        m_context.m_scope->ResetDataAndHistory();
+        CRef<CSerialObject> result;
+        ProcessOneEntry(format, input_obj, result);
 
-void CTbl2AsnApp::ProcessAlignmentFile()
+        if (!IsDryRun() && result.NotEmpty())
+        {
+            const CSerialObject* to_write = result;
+            if (m_context.m_save_bioseq_set)
+            {
+                if (result->GetThisTypeInfo()->IsType(CSeq_entry::GetTypeInfo()))
+                {
+                    const CSeq_entry* se = static_cast<const CSeq_entry*>(result.GetPointer());
+                    if (se->IsSet())
+                        to_write = &se->GetSet();
+                }
+            }
+
+            m_reader->WriteObject(*to_write, *output);
+        }
+        input_obj = m_reader->ReadNextEntry();
+    } while (input_obj.NotEmpty());
+}
+
+void CTbl2AsnApp::ProcessAlignmentFile(CNcbiOstream* output)
 {
     const string& filename = m_context.m_current_file;
     unique_ptr<CNcbiIstream> pIstream(new CNcbiIfstream(filename));
@@ -1225,36 +1183,18 @@ void CTbl2AsnApp::ProcessAlignmentFile()
         return;
     }
 
-    CNcbiOstream* pOstream = nullptr;
-    unique_ptr<CNcbiOstream> pLocalOstream;
-    CFile localFile;
 
-    try {
-        if (m_context.m_output) {
-            pOstream = m_context.m_output;
-        }
-        else {
-            localFile = m_context.GenerateOutputFilename(m_context.m_asn1_suffix);
-            pLocalOstream.reset(new CNcbiOfstream(localFile.GetPath()));
-            pOstream = pLocalOstream.get();
-        }
+    if (m_context.m_save_bioseq_set &&
+        pResult->GetThisTypeInfo()->IsType(CSeq_entry::GetTypeInfo())) {
 
-        if (m_context.m_save_bioseq_set &&
-            pResult->GetThisTypeInfo()->IsType(CSeq_entry::GetTypeInfo())) {
-
-            const CSeq_entry* pTempEntry
-                = static_cast<const CSeq_entry*>(pResult.GetPointer());
-            if (pTempEntry->IsSet()) {
-                m_reader->WriteObject(pTempEntry->GetSet(), *pOstream);
-                return;
-            }
+        const CSeq_entry* pTempEntry
+            = static_cast<const CSeq_entry*>(pResult.GetPointer());
+        if (pTempEntry->IsSet()) {
+            m_reader->WriteObject(pTempEntry->GetSet(), *output);
+            return;
         }
-        m_reader->WriteObject(*pResult, *pOstream);
     }
-    catch (...) {
-        localFile.Remove();
-        throw;
-    }
+    m_reader->WriteObject(*pResult, *output);
 }
 
 
@@ -1281,7 +1221,7 @@ bool CTbl2AsnApp::ProcessOneDirectory(const CDir& directory, const CMask& mask, 
             if (mask.Match(it->GetPath()))
             {
                 m_context.m_current_file = it->GetPath();
-                ProcessOneFile();
+                ProcessOneFile(false);
                 if (m_context.m_output_filename.empty()) {
                     m_context.ClearOstream(".gbf");
                     m_context.ClearOstream(".val");
@@ -1500,6 +1440,8 @@ void CTbl2AsnApp::ProcessAnnotFile(const string& pathname, CScope& scope)
     m_reader->LoadAnnots(pathname, annots);
     m_reader->AddAnnots(annots, scope);
 }
+
+END_NCBI_SCOPE
 
 /////////////////////////////////////////////////////////////////////////////
 //  MAIN
