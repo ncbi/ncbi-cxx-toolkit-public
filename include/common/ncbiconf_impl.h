@@ -112,6 +112,8 @@
 // Likewise, generically.
 #ifdef __cplusplus
 #  define NCBI_HAS_ATTRIBUTE(x) NCBI_HAS_CPP_ATTRIBUTE(x)
+#elif defined(__clang__)
+#  define NCBI_HAS_ATTRIBUTE(x) 0
 #else
 #  define NCBI_HAS_ATTRIBUTE(x) NCBI_HAS_C_ATTRIBUTE(x)
 #endif
@@ -121,9 +123,21 @@
 // unscoped attributes and for hypothetical attributes scoped by std::
 // or stdN::.
 #ifdef __cplusplus
-#  define NCBI_HAS_STD_ATTRIBUTE(x) (NCBI_HAS_CPP_ATTRIBUTE(x) >= 200809L)
+#  ifdef __clang__
+#    define NCBI_HAS_STD_ATTRIBUTE(x) \
+    (NCBI_HAS_CPP_ATTRIBUTE(x) >= 200809L  \
+     &&  NCBI_HAS_CPP_ATTRIBUTE(x) <= __cplusplus)
+#  else
+#    define NCBI_HAS_STD_ATTRIBUTE(x) (NCBI_HAS_CPP_ATTRIBUTE(x) >= 200809L)
+#  endif
 #else
-#  define NCBI_HAS_STD_ATTRIBUTE(x) (NCBI_HAS_C_ATTRIBUTE(x) >= 201904L)
+#  ifdef __clang__
+#    define NCBI_HAS_STD_ATTRIBUTE(x) \
+    (NCBI_HAS_CPP_ATTRIBUTE(x) >= 201904L  \
+     &&  NCBI_HAS_C_ATTRIBUTE(x) <= __STDC_VERSION__)
+#  else
+#    define NCBI_HAS_STD_ATTRIBUTE(x) (NCBI_HAS_C_ATTRIBUTE(x) >= 201904L)
+#  endif
 #endif
 
 // Allow safely checking for GCC(ish)/IBM __attribute__ support.
