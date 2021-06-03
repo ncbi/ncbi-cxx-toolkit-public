@@ -229,7 +229,7 @@ main(int argc, char **argv)
                                 for (j = 0;  j <= srclen;  ++j) {
                                         widesrc[j] = src[j];
                                 }
-                                src = widesrc;
+                                src = (char *) widesrc;
                                 srclen *= sizeof(*widesrc);
                         }
 			break;
