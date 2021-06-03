@@ -56,8 +56,8 @@ struct CFileContentInfoGenbank
         mObjectType("unknown") 
     {};
 
-    string mObjectType;
     TTypeInfo mTypeInfo;
+    string mObjectType;
 };
 
 //  ============================================================================
