@@ -89,15 +89,44 @@
 /* New/nonstandard keywords and attributes
  */
 
-#if defined(__cplusplus)  &&  defined(__has_cpp_attribute) \
-    &&  ( !defined(NCBI_COMPILER_GCC)  ||  NCBI_COMPILER_VERSION >= 600)
-// Spurn modern standard [[...]] syntax under GCC 5.x, which overstates
-// its support for it.  (No great loss, since our wrapper macros can
-// readily substitute equivalent legacy __attribute__ syntax.)
+// Check whether the argument names a C++ attribute supported in some
+// fashion.  NB: For *unscoped* attributes, a nonzero value may merely
+// indicate support for legacy __attribute__ syntax; please use
+// NCBI_HAS_STD_ATTRIBUTE to test whether C++11-style [[...]]  syntax
+// works in such cases.  This macro is good as is for attributes with
+// implementation-specific scopes like gnu:: or clang::, and either
+// should work for hypothetical attributes scoped by std:: or stdN::.
+#if defined(__cplusplus)  &&  defined(__has_cpp_attribute)
 #  define NCBI_HAS_CPP_ATTRIBUTE(x) __has_cpp_attribute(x)
 #else
 #  define NCBI_HAS_CPP_ATTRIBUTE(x) 0
 #endif
+
+// Likewise, for C attributes.
+#if !defined(__cplusplus)  &&  defined(__has_c_attribute)
+#  define NCBI_HAS_C_ATTRIBUTE(x) __has_c_attribute(x)
+#else
+#  define NCBI_HAS_C_ATTRIBUTE(x) 0
+#endif
+
+// Likewise, generically.
+#ifdef __cplusplus
+#  define NCBI_HAS_ATTRIBUTE(x) NCBI_HAS_CPP_ATTRIBUTE(x)
+#else
+#  define NCBI_HAS_ATTRIBUTE(x) NCBI_HAS_C_ATTRIBUTE(x)
+#endif
+
+// Check whether the argument names a supported *standard* attribute
+// specifiable via C++11/C23-style [[...]] syntax.  Valid only for
+// unscoped attributes and for hypothetical attributes scoped by std::
+// or stdN::.
+#ifdef __cplusplus
+#  define NCBI_HAS_STD_ATTRIBUTE(x) (NCBI_HAS_CPP_ATTRIBUTE(x) >= 200809L)
+#else
+#  define NCBI_HAS_STD_ATTRIBUTE(x) (NCBI_HAS_C_ATTRIBUTE(x) >= 201904L)
+#endif
+
+// Allow safely checking for GCC(ish)/IBM __attribute__ support.
 #ifndef __has_attribute
 #  define __has_attribute(x) 0
 #endif
@@ -128,7 +157,7 @@
 #  define NCBI_LEGACY_DEPRECATED_0
 #  define NCBI_LEGACY_DEPRECATED_1(msg)
 #endif
-#if NCBI_HAS_CPP_ATTRIBUTE(deprecated)  || \
+#if NCBI_HAS_STD_ATTRIBUTE(deprecated)  || \
   (defined(__cplusplus)  &&  defined(NCBI_COMPILER_MSVC))
 #  define NCBI_STD_DEPRECATED_0          [[deprecated]]
 #  define NCBI_STD_DEPRECATED_1(message) [[deprecated(message)]]
@@ -163,7 +192,7 @@
 #endif
 
 #ifndef NCBI_NORETURN
-#  if NCBI_HAS_CPP_ATTRIBUTE(noreturn)
+#  if NCBI_HAS_STD_ATTRIBUTE(noreturn)
 #    define NCBI_NORETURN [[noreturn]]
 #  elif __has_attribute(noreturn)
 #    define NCBI_NORETURN __attribute__((__noreturn__))
@@ -177,8 +206,12 @@
 #ifdef NCBI_WARN_UNUSED_RESULT
 #  undef NCBI_WARN_UNUSED_RESULT
 #endif
-#if NCBI_HAS_CPP_ATTRIBUTE(nodiscard)
+#if NCBI_HAS_STD_ATTRIBUTE(nodiscard)
 #  define NCBI_WARN_UNUSED_RESULT [[nodiscard]]
+#elif NCBI_HAS_ATTRIBUTE(gnu::warn_unused_result)
+#  define NCBI_WARN_UNUSED_RESULT [[gnu::warn_unused_result]]
+#elif NCBI_HAS_ATTRIBUTE(clang::warn_unused_result)
+#  define NCBI_WARN_UNUSED_RESULT [[clang::warn_unused_result]]
 #elif __has_attribute(warn_unused_result)
 #  define NCBI_WARN_UNUSED_RESULT __attribute__((warn_unused_result))
 #elif defined(NCBI_COMPILER_MSVC)
@@ -187,12 +220,11 @@
 #  define NCBI_WARN_UNUSED_RESULT
 #endif
     
-#if NCBI_HAS_CPP_ATTRIBUTE(fallthrough)  &&  \
-    (!defined(__clang__)  ||  (__clang_major__ > 7 && __cplusplus >= 201703L))
+#if NCBI_HAS_STD_ATTRIBUTE(fallthrough)
 #  define NCBI_FALLTHROUGH [[fallthrough]]
-#elif NCBI_HAS_CPP_ATTRIBUTE(gcc::fallthrough)
-#  define NCBI_FALLTHROUGH [[gcc::fallthrough]]
-#elif NCBI_HAS_CPP_ATTRIBUTE(clang::fallthrough)
+#elif NCBI_HAS_ATTRIBUTE(gnu::fallthrough)
+#  define NCBI_FALLTHROUGH [[gnu::fallthrough]]
+#elif NCBI_HAS_ATTRIBUTE(clang::fallthrough)
 #  define NCBI_FALLTHROUGH [[clang::fallthrough]]
 #elif __has_attribute(fallthrough)
 #  define NCBI_FALLTHROUGH __attribute__ ((fallthrough))
@@ -203,8 +235,10 @@
 #ifdef NCBI_PACKED
 #  undef NCBI_PACKED
 #endif
-#if NCBI_HAS_CPP_ATTRIBUTE(packed)
+#if 0 // NCBI_HAS_STD_ATTRIBUTE(packed) -- speculative
 #  define NCBI_PACKED [[packed]]
+#elif NCBI_HAS_ATTRIBUTE(gnu::packed)
+#  define NCBI_PACKED [[gnu::packed]]
 #elif __has_attribute(packed)
 #  define NCBI_PACKED __attribute__((packed))
 #else
@@ -225,19 +259,15 @@
 #endif
 
 #ifndef NCBI_UNUSED
-#  if NCBI_HAS_CPP_ATTRIBUTE(maybe_unused)
+#  if NCBI_HAS_STD_ATTRIBUTE(maybe_unused)
 #    define NCBI_UNUSED [[maybe_unused]]
-#  elif NCBI_HAS_CPP_ATTRIBUTE(gnu::unused)
+#  elif NCBI_HAS_ATTRIBUTE(gnu::unused)
 #    define NCBI_UNUSED [[gnu::unused]]
 #  elif __has_attribute(unused)
 #    define NCBI_UNUSED __attribute__((unused))
 #  else
 #    define NCBI_UNUSED
 #  endif
-#endif
-
-#ifndef NCBI_WARN_UNUSED_RESULT
-#  define NCBI_WARN_UNUSED_RESULT
 #endif
 
 #if defined(__SSE4_2__)  ||  defined(__AVX__)
