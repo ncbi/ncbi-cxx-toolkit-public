@@ -127,6 +127,9 @@ test(int final_rows, int no_rows)
 
 	run_command(cmd, "create table #tmp1 (i int not null)");
 
+#ifdef strcat
+#  undef strcat
+#endif
 #define strcat(s, k) do { \
             memcpy(s##_end, k, sizeof(k)); \
             s##_end += sizeof(k) - 1; \
