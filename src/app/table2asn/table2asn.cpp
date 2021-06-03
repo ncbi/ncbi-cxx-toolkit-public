@@ -1329,7 +1329,7 @@ void CTbl2AsnApp::ProcessSecretFiles1Phase(bool readModsFromTitle, CSeq_entry& r
     else
     {
         for (auto suffix : {".gbf", ".tbl", ".gff", ".gff3", ".gff2", ".gtf"}) {
-            LoadAnnots(name + ".suffix");
+            LoadAnnots(name + suffix);
         }
         /*
         ProcessAnnotFile(name + ".gbf", scope);
