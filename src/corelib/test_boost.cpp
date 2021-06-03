@@ -313,6 +313,10 @@ public:
 
     /// Method called when some check fails during execution of unit
     virtual void test_unit_aborted(but::test_unit const& tu);
+
+#if BOOST_VERSION >= 105900
+    virtual void assertion_result(but::assertion_result ar);
+#endif
     virtual void assertion_result(bool passed);
 };
 
@@ -1899,6 +1903,15 @@ CNcbiTestsObserver::test_unit_aborted(but::test_unit const& tu)
 {
     s_GetTestApp().SetTestErrored((but::test_case*)&tu);
 }
+
+#if BOOST_VERSION >= 105900
+void CNcbiTestsObserver::assertion_result(but::assertion_result ar)
+{
+    if (ar == but::AR_FAILED) {
+        assertion_result(false);
+    }
+}
+#endif
 
 void
 CNcbiTestsObserver::assertion_result(bool passed)
