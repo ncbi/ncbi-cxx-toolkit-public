@@ -90,7 +90,7 @@ struct ATTR_PACKED SFileChunkMapRec
 {
     Uint2 map_idx;         // index of this map in higher level map, if that exists
     Uint1 map_depth;       // map depth; it can be tree of maps
-    SNCDataCoord ATTR_ALIGNED_8 down_coords[1];  // coords of lower levels
+    SNCDataCoord down_coords[1] ATTR_ALIGNED_8;  // coords of lower levels
 };
 
 // Data-type records (kDataSignature)

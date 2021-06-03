@@ -36,16 +36,12 @@
 #include <util/simple_buffer.hpp>
 
 
-#if NCBI_HAS_CPP_ATTRIBUTE(packed)
-# define ATTR_PACKED    [[packed]]
-#elif __has_attribute(packed)
-# define ATTR_PACKED    __attribute__ ((packed))
-#else
-# define ATTR_PACKED
-#endif
+#define ATTR_PACKED NCBI_PACKED
 
-#if NCBI_HAS_CPP_ATTRIBUTE(aligned)
+#if 0 // NCBI_HAS_STD_ATTRIBUTE(aligned) -- speculative
 # define ATTR_ALIGNED_8 [[aligned(8)]]
+#elif NCBI_HAS_ATTRIBUTE(gnu::aligned)
+# define ATTR_ALIGNED_8 [[gnu::aligned(8)]]
 #elif __has_attribute(aligned)
 # define ATTR_ALIGNED_8 __attribute__ ((aligned(8)))
 #else

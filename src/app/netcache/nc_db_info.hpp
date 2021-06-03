@@ -187,7 +187,7 @@ struct SNCChunkMapInfo
 {
     Uint4   map_counter;
     Uint2   map_idx;
-    SNCDataCoord ATTR_ALIGNED_8 coords[1];
+    SNCDataCoord coords[1] ATTR_ALIGNED_8;
 };
 
 struct SNCChunkMaps
