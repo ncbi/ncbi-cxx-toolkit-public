@@ -19,6 +19,12 @@ else()
 endif()
 
 ##############################################################################
+set(NCBI_GENERATESRC_ASNTOOL   ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_BUILD}/CMakeFiles/generate_sources.asntool)
+if (EXISTS ${NCBI_GENERATESRC_ASNTOOL})
+    file(REMOVE ${NCBI_GENERATESRC_ASNTOOL})
+endif()
+
+##############################################################################
 function(NCBI_generate_by_asntool)
     cmake_parse_arguments(PARSE_ARGV 0 ASNTOOL "LOCAL" "DATASPEC;BASENAME;HEADER" "EXTERNAL;GENFLAGS")
 
@@ -62,6 +68,13 @@ function(NCBI_generate_by_asntool)
             COMMENT "Generate C object loader from ${_dataspec}"
             DEPENDS ${_specpath}
         )
+
+        string(REPLACE ";" " " _externals "${_externals}")
+        string(REPLACE ";" " " ASNTOOL_GENFLAGS "${ASNTOOL_GENFLAGS}")
+        file(APPEND ${NCBI_GENERATESRC_ASNTOOL} "cd ${NCBI_CURRENT_SOURCE_DIR}\n")
+        file(APPEND ${NCBI_GENERATESRC_ASNTOOL} "${CMAKE_COMMAND} -E copy_if_different ${_specpath} ${NCBI_CURRENT_SOURCE_DIR}\n")
+        file(APPEND ${NCBI_GENERATESRC_ASNTOOL} "${NCBI_ASNTOOL} -w 100 -m ${_dataspec} -o ${_header}\n")
+        file(APPEND ${NCBI_GENERATESRC_ASNTOOL} "${NCBI_ASNTOOL} -w 100 -G -m ${_dataspec} -B ${_basename} ${_externals} -K ${_header} ${ASNTOOL_GENFLAGS}\n")
     else()
         add_custom_command(
             OUTPUT  ${NCBI_CURRENT_SOURCE_DIR}/${_basename}.c ${_inc_dir}/${_basename}.h ${_inc_dir}/${_header}
@@ -75,6 +88,16 @@ function(NCBI_generate_by_asntool)
             COMMENT "Generate C object loader from ${_dataspec}"
             DEPENDS ${_specpath}
         )
+
+        string(REPLACE ";" " " _externals "${_externals}")
+        string(REPLACE ";" " " ASNTOOL_GENFLAGS "${ASNTOOL_GENFLAGS}")
+        file(APPEND ${NCBI_GENERATESRC_ASNTOOL} "cd ${NCBI_CURRENT_SOURCE_DIR}\n")
+        file(APPEND ${NCBI_GENERATESRC_ASNTOOL} "${CMAKE_COMMAND} -E make_directory ${_inc_dir}\n")
+        file(APPEND ${NCBI_GENERATESRC_ASNTOOL} "${CMAKE_COMMAND} -E copy_if_different ${_specpath} ${NCBI_CURRENT_SOURCE_DIR}\n")
+        file(APPEND ${NCBI_GENERATESRC_ASNTOOL} "${NCBI_ASNTOOL} -w 100 -m ${_dataspec} -o ${_inc_dir}/${_header}\n")
+        file(APPEND ${NCBI_GENERATESRC_ASNTOOL} "${NCBI_ASNTOOL} -w 100 -G -m ${_dataspec} -B ${_basename} ${_externals} -K ${_header} ${ASNTOOL_GENFLAGS}\n")
+        file(APPEND ${NCBI_GENERATESRC_ASNTOOL} "${CMAKE_COMMAND} -E copy_if_different ${_basename}.h ${_inc_dir}\n")
+        file(APPEND ${NCBI_GENERATESRC_ASNTOOL} "${CMAKE_COMMAND} -E remove -f ${_basename}.h\n")
     endif()
 endfunction()
 
