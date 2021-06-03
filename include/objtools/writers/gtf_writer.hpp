@@ -116,7 +116,8 @@ protected:
         const CMappedFeat&) override;
 
     static std::string xGenericGeneId(
-        const CMappedFeat&);
+        const CMappedFeat&,
+        CGffFeatureContext& );
     static std::string xGenericTranscriptId(
         const CMappedFeat&);
 

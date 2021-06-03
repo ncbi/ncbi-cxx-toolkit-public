@@ -900,16 +900,35 @@ bool CGtfWriter::xAssignFeatureAttributeNote(
 
 //  ----------------------------------------------------------------------------
 string CGtfWriter::xGenericGeneId(
-    const CMappedFeat& mf)
+    const CMappedFeat& mf,
+    CGffFeatureContext& context)
 //  ----------------------------------------------------------------------------
 {
+    static map<CMappedFeat, string> mapFeatToGeneId;
     static unsigned int uId = 1;
-    string strGeneId = string( "unassigned_gene_" ) +
-        NStr::UIntToString(uId);
-    if (mf.GetData().GetSubtype() == CSeq_feat::TData::eSubtype_gene) {
-        uId++;
+
+    auto featIt = mapFeatToGeneId.find(mf);
+    if (featIt != mapFeatToGeneId.end()) {
+        return featIt->second;
     }
-    return strGeneId;
+
+    auto parent = context.FeatTree().GetParent(mf);
+    featIt = mapFeatToGeneId.find(parent);
+    if (featIt != mapFeatToGeneId.end()) {
+        return featIt->second;
+    }
+
+    auto children = context.FeatTree().GetChildren(mf);
+    for (auto child: children) {
+        featIt = mapFeatToGeneId.find(child);
+        if (featIt != mapFeatToGeneId.end()) {
+            return featIt->second;
+        }
+    }
+
+    string geneId = string( "unassigned_gene_" ) + NStr::UIntToString(uId++);
+    mapFeatToGeneId[mf] = geneId;
+    return geneId;
 }
 
 //  ----------------------------------------------------------------------------
@@ -1069,7 +1088,12 @@ bool CGtfWriter::xAssignFeatureAttributeGeneId(
     }
     if (!geneFeat) {
         const auto& geneIdQual = mf.GetNamedQual("gene_id");
-        record.SetGeneId(geneIdQual); // empty most times but still best effort
+        if (!geneIdQual.empty()) {
+            record.SetGeneId(geneIdQual); // empty most times but still best effort
+            return true;
+        }
+        auto geneId = xGenericGeneId(mf, fc);
+        record.SetGeneId(geneId);
         return true;
     }
 
@@ -1100,7 +1124,7 @@ bool CGtfWriter::xAssignFeatureAttributeGeneId(
         geneId = geneRef.GetSyn().front();
     }
     if (geneId.empty()) {
-        geneId = xGenericGeneId(mf);
+        geneId = xGenericGeneId(mf, fc);
         //we know the ID is going to be unique if we get it this way
         // not point in further checking
         usedGeneIds.push_back(geneId);
