@@ -1531,13 +1531,13 @@ tds_convert_real(const TDS_REAL* src, int desttype, CONV_RESULT * cr)
 		return sizeof(TDS_USMALLINT);
 		break;
 	case SYBINT4:
-		if (!IS_INT(the_value))
+		if (!IS_INT((double)the_value))
 			return TDS_CONVERT_OVERFLOW;
 		cr->i = (TDS_INT) the_value;
 		return sizeof(TDS_INT);
 		break;
 	case SYBUINT4:
-		if (!IS_UINT(the_value))
+		if (!IS_UINT((double)the_value))
 			return TDS_CONVERT_OVERFLOW;
 		cr->ui = (TDS_UINT) the_value;
 		return sizeof(TDS_UINT);
