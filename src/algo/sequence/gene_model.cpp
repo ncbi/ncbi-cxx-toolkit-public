@@ -3878,6 +3878,7 @@ x_AddSelectMarkup(const CSeq_align &align,
                   const CSeq_id &genomic_acc,
                   CSeq_feat& rna_feat, CSeq_feat* cds_feat)
 {
+    bool need_location_check = !(m_flags & fSkipLocationCheck);
     e_MatchType match_found = eNone;
     string ensembl_match_rna, ensembl_match_cds;
     vector<string> keywords;
@@ -3907,7 +3908,8 @@ x_AddSelectMarkup(const CSeq_align &align,
             NStr::TruncateSpacesInPlace(ensembl_match_rna);
             NStr::TruncateSpacesInPlace(ensembl_match_cds);
         } else if (desc->IsUser() && desc->GetUser().GetType().IsStr() &&
-                   desc->GetUser().GetType().GetStr() == "RefGeneTracking")
+                   desc->GetUser().GetType().GetStr() == "RefGeneTracking" &&
+                   need_location_check)
         {
             if (desc->GetUser().HasField("EnsemblLocation")) {
                 match_found = x_CheckMatch(align, genomic_acc,
@@ -3921,7 +3923,8 @@ x_AddSelectMarkup(const CSeq_align &align,
         }
     }
 
-    if (match_found >= eOverlap && !keywords.empty()) {
+    if ((match_found >= eOverlap || !need_location_check) && !keywords.empty())
+    {
         /// Found overlap; add uql to features
         x_AddKeywordQuals(rna_feat, keywords);
         if (cds_feat) {
