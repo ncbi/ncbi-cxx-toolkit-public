@@ -102,11 +102,11 @@ class CValXMLStream;
 class CAsnvalApp : public CNcbiApplication, CReadClassMemberHook
 {
 public:
-    CAsnvalApp(void);
-    ~CAsnvalApp(void);
+    CAsnvalApp();
+    ~CAsnvalApp();
 
-    virtual void Init(void);
-    virtual int  Run (void);
+    void Init() override;
+    int Run() override;
 
     // CReadClassMemberHook override
     void ReadClassMember(CObjectIStream& in,
@@ -119,17 +119,17 @@ private:
 
     unique_ptr<CObjectIStream> OpenFile(const string& fname, string& asn_type);
 
-    CConstRef<CValidError> ProcessCatenated(void);
+    CConstRef<CValidError> ProcessCatenated();
     CConstRef<CValidError> ProcessSeqEntry(CSeq_entry& se);
-    CConstRef<CValidError> ProcessSeqEntry(void);
-    CConstRef<CValidError> ProcessSeqSubmit(void);
-    CConstRef<CValidError> ProcessSeqAnnot(void);
-    CConstRef<CValidError> ProcessSeqFeat(void);
-    CConstRef<CValidError> ProcessBioSource(void);
-    CConstRef<CValidError> ProcessPubdesc(void);
-    CConstRef<CValidError> ProcessBioseqset(void);
-    CConstRef<CValidError> ProcessBioseq(void);
-    CConstRef<CValidError> ProcessSeqDesc(void);
+    CConstRef<CValidError> ProcessSeqEntry();
+    CConstRef<CValidError> ProcessSeqSubmit();
+    CConstRef<CValidError> ProcessSeqAnnot();
+    CConstRef<CValidError> ProcessSeqFeat();
+    CConstRef<CValidError> ProcessBioSource();
+    CConstRef<CValidError> ProcessPubdesc();
+    CConstRef<CValidError> ProcessBioseqset();
+    CConstRef<CValidError> ProcessBioseq();
+    CConstRef<CValidError> ProcessSeqDesc();
 
     CConstRef<CValidError> ValidateInput(string asn_type);
     void ValidateOneDirectory(string dir_name, bool recurse);
@@ -140,19 +140,19 @@ private:
     void ConstructOutputStreams();
     void DestroyOutputStreams();
 
-    CRef<CSeq_feat> ReadSeqFeat(void);
-    CRef<CBioSource> ReadBioSource(void);
-    CRef<CPubdesc> ReadPubdesc(void);
+    CRef<CSeq_feat> ReadSeqFeat();
+    CRef<CBioSource> ReadBioSource();
+    CRef<CPubdesc> ReadPubdesc();
 
     /// @param p_exception
     ///   Pointer to the exception with more info on the read failure or nullptr if not available
     /// @return
     ///   The error(s) to add to describe the read failure
-    CRef<CValidError> ReportReadFailure(const CException *p_exception);
+    CRef<CValidError> ReportReadFailure(const CException* p_exception);
 
-    CRef<CScope> BuildScope(void);
+    CRef<CScope> BuildScope();
 
-    void PrintValidError(CConstRef<CValidError> errors, 
+    void PrintValidError(CConstRef<CValidError> errors,
         const CArgs& args);
 
     enum EVerbosity {
@@ -196,7 +196,7 @@ private:
 #endif
 };
 
-class CValXMLStream: public CObjectOStreamXml
+class CValXMLStream : public CObjectOStreamXml
 {
 public:
     CValXMLStream(CNcbiOstream& out, EOwnership deleteOut) : CObjectOStreamXml(out, deleteOut){};
@@ -205,25 +205,24 @@ public:
 
 
 // constructor
-CAsnvalApp::CAsnvalApp(void) :
-    m_ObjMgr(0), m_Options(0), m_Continue(false), m_OnlyAnnots(false),
-    m_Quiet(false), m_Longest(0), m_CurrentId(""), m_LongestId(""), m_NumFiles(0),
+CAsnvalApp::CAsnvalApp() :
+    m_ObjMgr(), m_Options(0), m_Continue(false), m_OnlyAnnots(false),
+    m_Quiet(false), m_Longest(0.0), m_CurrentId(), m_LongestId(), m_NumFiles(0),
     m_NumRecords(0), m_Level(0), m_Reported(0), m_verbosity(eVerbosity_min),
-    m_ValidErrorStream(0)
+    m_ValidErrorStream(nullptr)
 {
-    const CVersionInfo vers (3, NCBI_SC_VERSION_PROXY, NCBI_TEAMCITY_BUILD_NUMBER_PROXY);
-    SetVersion (vers);
+    const CVersionInfo vers(3, NCBI_SC_VERSION_PROXY, NCBI_TEAMCITY_BUILD_NUMBER_PROXY);
+    SetVersion(vers);
 }
 
 
 // destructor
-CAsnvalApp::~CAsnvalApp (void)
-
+CAsnvalApp::~CAsnvalApp()
 {
 }
 
 
-void CAsnvalApp::x_AliasLogFile(void)
+void CAsnvalApp::x_AliasLogFile()
 {
     const CArgs& args = GetArgs();
     Setup(args);
@@ -242,7 +241,7 @@ void CAsnvalApp::x_AliasLogFile(void)
 }
 
 
-void CAsnvalApp::Init(void)
+void CAsnvalApp::Init()
 {
     // Prepare command line descriptions
 
@@ -299,7 +298,7 @@ void CAsnvalApp::Init(void)
         "E", "String", "Only Error Code to Show",
         CArgDescriptions::eString);
 
-    arg_desc->AddDefaultKey("a", "a", 
+    arg_desc->AddDefaultKey("a", "a",
                             "ASN.1 Type\n\
 \ta Automatic\n\
 \tc Catenated\n\
@@ -326,7 +325,7 @@ void CAsnvalApp::Init(void)
         "L", "OutFile", "Log File",
         CArgDescriptions::eOutputFile);
 
-    arg_desc->AddDefaultKey("v", "Verbosity", 
+    arg_desc->AddDefaultKey("v", "Verbosity",
                             "Verbosity\n"
                             "\t1 Standard Report\n"
                             "\t2 Accession / Severity / Code(space delimited)\n"
@@ -433,11 +432,11 @@ void CAsnvalApp::ValidateOneFile(const string& fname)
     try {
         if (!m_ValidErrorStream) {
             string path;
-            if (fname.empty())  {
+            if (fname.empty()) {
                 path = "stdin.val";
             } else {
                 size_t pos = NStr::Find(fname, ".", NStr::eNocase, NStr::eReverseSearch);
-                if (pos != string::npos)
+                if (pos != NPOS)
                     path = fname.substr(0, pos);
                 else
                     path = fname;
@@ -445,7 +444,7 @@ void CAsnvalApp::ValidateOneFile(const string& fname)
                 path.append(".val");
             }
 
-            local_stream.reset(new CNcbiOfstream(path.c_str()));
+            local_stream.reset(new CNcbiOfstream(path));
             m_ValidErrorStream = local_stream.get();
 
             ConstructOutputStreams();
@@ -473,23 +472,22 @@ void CAsnvalApp::ValidateOneFile(const string& fname)
             } else {
                 size_t num_validated = 0;
                 while (true) {
-                   CStopWatch sw(CStopWatch::eStart);
-                   try {
+                    CStopWatch sw(CStopWatch::eStart);
+                    try {
                         CConstRef<CValidError> eval = ValidateInput(asn_type);
-
                         if (eval) {
                             PrintValidError(eval, args);
                         }
                         num_validated++;
                     }
-                    catch (const CException &e) {
+                    catch (const CException& e) {
                         if (num_validated == 0) {
                             throw(e);
                         }
                         else {
                             break;
                         }
-                    }                    
+                    }
                     double elapsed = sw.Elapsed();
                     if (elapsed > m_Longest) {
                         m_Longest = elapsed;
@@ -497,12 +495,12 @@ void CAsnvalApp::ValidateOneFile(const string& fname)
                     }
                 }
             }
-        } catch (const CException &e) {
+        } catch (const CException& e) {
             string errstr = e.GetMsg();
             errstr = NStr::Replace(errstr, "\n", " * ");
             errstr = NStr::Replace(errstr, " *   ", " * ");
             CRef<CValidError> eval(new CValidError());
-            if (NStr::StartsWith (errstr, "duplicate Bioseq id", NStr::eNocase)) {
+            if (NStr::StartsWith(errstr, "duplicate Bioseq id", NStr::eNocase)) {
                 eval->AddValidErrItem(eDiag_Critical, eErr_GENERIC_DuplicateIDs, errstr);
                 PrintValidError(eval, args);
                 // ERR_POST(e);
@@ -536,22 +534,22 @@ void CAsnvalApp::ValidateOneDirectory(string dir_name, bool recurse)
     }
     string mask = "*" + suffix;
 
-    CDir::TEntries files (dir.GetEntries(mask, CDir::eFile));
-    ITERATE(CDir::TEntries, ii, files) {
-        string fname = (*ii)->GetName();
-        if ((*ii)->IsFile() &&
-            (!args["f"] || NStr::Find (fname, args["f"].AsString()) != string::npos)) {
-            string fname = CDirEntry::MakePath(dir_name, (*ii)->GetName());
-            ValidateOneFile (fname);
+    CDir::TEntries files(dir.GetEntries(mask, CDir::eFile));
+    for (CDir::TEntry ii : files) {
+        string fname = ii->GetName();
+        if (ii->IsFile() &&
+            (!args["f"] || NStr::Find (fname, args["f"].AsString()) != NPOS)) {
+            string fname = CDirEntry::MakePath(dir_name, fname);
+            ValidateOneFile(fname);
         }
     }
     if (recurse) {
         CDir::TEntries subdirs (dir.GetEntries("", CDir::eDir));
-        ITERATE(CDir::TEntries, ii, subdirs) {
-            string subdir = (*ii)->GetName();
-            if ((*ii)->IsDir() && !NStr::Equal(subdir, ".") && !NStr::Equal(subdir, "..")) {
-                string subname = CDirEntry::MakePath(dir_name, (*ii)->GetName());
-                ValidateOneDirectory (subname, recurse);
+        for (CDir::TEntry ii : subdirs) {
+            string subdir = ii->GetName();
+            if (ii->IsDir() && !NStr::Equal(subdir, ".") && !NStr::Equal(subdir, "..")) {
+                string subname = CDirEntry::MakePath(dir_name, subdir);
+                ValidateOneDirectory(subname, recurse);
             }
         }
     }
@@ -559,7 +557,7 @@ void CAsnvalApp::ValidateOneDirectory(string dir_name, bool recurse)
 //LCOV_EXCL_STOP
 
 
-int CAsnvalApp::Run(void)
+int CAsnvalApp::Run()
 {
     const CArgs& args = GetArgs();
     Setup(args);
@@ -573,7 +571,7 @@ int CAsnvalApp::Run(void)
     if (args["D"]) {
         string lat_lon_path = args["D"].AsString();
         if (! lat_lon_path.empty()) {
-            SetEnvironment ( "NCBI_LAT_LON_DATA_PATH", lat_lon_path );
+            SetEnvironment( "NCBI_LAT_LON_DATA_PATH", lat_lon_path );
         }
     }
 
@@ -600,26 +598,26 @@ int CAsnvalApp::Run(void)
 
     if (args["b"] && m_obj_type == "a")
     {
-        NCBI_THROW(CException, eUnknown, "Specific argument -a must be used along with -b flags" );
+        NCBI_THROW(CException, eUnknown, "Specific argument -a must be used along with -b flags");
     }
 
-    bool execption_caught = false;
+    bool exception_caught = false;
     try {
         ConstructOutputStreams();
 
-        if ( args["p"] ) {
-            ValidateOneDirectory (args["p"].AsString(), args["u"]);
+        if (args["p"]) {
+            ValidateOneDirectory(args["p"].AsString(), args["u"]);
         } else if (args["i"]) {
-            ValidateOneFile (args["i"].AsString());
+            ValidateOneFile(args["i"].AsString());
         } else {
             ValidateOneFile("");
         }
     } catch (CException& e) {
         ERR_POST(Error << e);
-        execption_caught = true;
+        exception_caught = true;
     }
     if (m_NumFiles == 0) {
-       ERR_POST("No matching files found");
+        ERR_POST("No matching files found");
     }
 
     time_t stop_time = time(NULL);
@@ -631,7 +629,7 @@ int CAsnvalApp::Run(void)
 
     DestroyOutputStreams();
 
-    if (m_Reported > 0  ||  execption_caught) {
+    if (m_Reported > 0 || exception_caught) {
         return 1;
     } else {
         return 0;
@@ -639,7 +637,7 @@ int CAsnvalApp::Run(void)
 }
 
 
-CRef<CScope> CAsnvalApp::BuildScope (void)
+CRef<CScope> CAsnvalApp::BuildScope()
 {
     CRef<CScope> scope(new CScope (*m_ObjMgr));
     scope->AddDefaults();
@@ -679,8 +677,8 @@ void CAsnvalApp::ReadClassMember
                 }
 
                 if (m_DoCleanup) {
-                    m_Cleanup.SetScope (scope);
-                    m_Cleanup.BasicCleanup (*se);
+                    m_Cleanup.SetScope(scope);
+                    m_Cleanup.BasicCleanup(*se);
                 }
 
                 if ( m_OnlyAnnots ) {
@@ -736,7 +734,7 @@ void CAsnvalApp::ProcessBSSReleaseFile
     CObjectTypeInfo set_type = CType<CBioseq_set>();
     set_type.FindMember("seq-set").SetLocalReadHook(*m_In, this);
 
-    // Read the CBioseq_set, it will call the hook object each time we 
+    // Read the CBioseq_set, it will call the hook object each time we
     // encounter a Seq-entry
     try {
         *m_In >> *seqset;
@@ -756,7 +754,7 @@ void CAsnvalApp::ProcessSSMReleaseFile
     CObjectTypeInfo set_type = CType<CSeq_submit>();
     (*(*(*set_type.FindMember("data")).GetPointedType().FindVariant("entrys")).GetElementType().GetPointedType().FindVariant("set")).FindMember("seq-set").SetLocalReadHook(*m_In, this);
 
-    // Read the CSeq_submit, it will call the hook object each time we 
+    // Read the CSeq_submit, it will call the hook object each time we
     // encounter a Seq-entry
     try {
         *m_In >> *seqset;
@@ -767,16 +765,16 @@ void CAsnvalApp::ProcessSSMReleaseFile
     }
 }
 
-CRef<CValidError> CAsnvalApp::ReportReadFailure(const CException *p_exception)
+CRef<CValidError> CAsnvalApp::ReportReadFailure(const CException* p_exception)
 {
     CRef<CValidError> errors(new CValidError());
-    
+
     CNcbiOstrstream os;
     os << "Unable to read invalid ASN.1";
-    
-    const CSerialException *p_serial_exception = dynamic_cast<const CSerialException*>(p_exception);
+
+    const CSerialException* p_serial_exception = dynamic_cast<const CSerialException*>(p_exception);
     if( p_serial_exception ) {
-        if( m_In.get() ) {
+        if( m_In ) {
             os << ": " << m_In->GetPosition();
         }
         if( p_serial_exception->GetErrCode() == CSerialException::eEOF ) {
@@ -788,7 +786,7 @@ CRef<CValidError> CAsnvalApp::ReportReadFailure(const CException *p_exception)
             os << ": " + p_exception->ReportAll(0);
         }
     }
-    
+
     string errstr = CNcbiOstrstreamToString(os);
     // newlines don't play well with XML
     errstr = NStr::Replace(errstr, "\n", " * ");
@@ -799,7 +797,7 @@ CRef<CValidError> CAsnvalApp::ReportReadFailure(const CException *p_exception)
 }
 
 
-CConstRef<CValidError> CAsnvalApp::ProcessCatenated(void)
+CConstRef<CValidError> CAsnvalApp::ProcessCatenated()
 {
     try {
         while (true) {
@@ -850,7 +848,7 @@ CConstRef<CValidError> CAsnvalApp::ProcessCatenated(void)
     return CConstRef<CValidError>();
 }
 
-CConstRef<CValidError> CAsnvalApp::ProcessBioseq(void)
+CConstRef<CValidError> CAsnvalApp::ProcessBioseq()
 {
     // Get seq-entry to validate
     CRef<CSeq_entry> se(new CSeq_entry);
@@ -868,7 +866,7 @@ CConstRef<CValidError> CAsnvalApp::ProcessBioseq(void)
     return ProcessSeqEntry(*se);
 }
 
-CConstRef<CValidError> CAsnvalApp::ProcessBioseqset(void)
+CConstRef<CValidError> CAsnvalApp::ProcessBioseqset()
 {
     // Get seq-entry to validate
     CRef<CSeq_entry> se(new CSeq_entry);
@@ -887,13 +885,13 @@ CConstRef<CValidError> CAsnvalApp::ProcessBioseqset(void)
 }
 
 
-CConstRef<CValidError> CAsnvalApp::ProcessSeqEntry(void)
+CConstRef<CValidError> CAsnvalApp::ProcessSeqEntry()
 {
     // Get seq-entry to validate
     CRef<CSeq_entry> se(new CSeq_entry);
 
     try {
-        m_In->Read(ObjectInfo(*se), CObjectIStream::eNoFileHeader);    
+        m_In->Read(ObjectInfo(*se), CObjectIStream::eNoFileHeader);
     }
     catch (const CException& e) {
         ERR_POST(Error << e);
@@ -905,9 +903,9 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqEntry(void)
         return ProcessSeqEntry(*se);
     }
     catch (const CObjMgrException& om_ex)
-    {        
+    {
         if (om_ex.GetErrCode() == CObjMgrException::eAddDataError)
-          se->ReassignConflictingIds();
+            se->ReassignConflictingIds();
     }
     // try again
     return ProcessSeqEntry(*se);
@@ -918,9 +916,9 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqEntry(CSeq_entry& se)
     // Validate Seq-entry
     CValidator validator(*m_ObjMgr);
     CRef<CScope> scope = BuildScope();
-    if (m_DoCleanup) {        
-        m_Cleanup.SetScope (scope);
-        m_Cleanup.BasicCleanup (se);
+    if (m_DoCleanup) {
+        m_Cleanup.SetScope(scope);
+        m_Cleanup.BasicCleanup(se);
     }
     CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(se);
     CBioseq_CI bi(seh);
@@ -949,7 +947,7 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqEntry(CSeq_entry& se)
     }
 
 
-CRef<CSeq_feat> CAsnvalApp::ReadSeqFeat(void)
+CRef<CSeq_feat> CAsnvalApp::ReadSeqFeat()
 {
     CRef<CSeq_feat> feat(new CSeq_feat);
 
@@ -964,14 +962,14 @@ CRef<CSeq_feat> CAsnvalApp::ReadSeqFeat(void)
 }
 
 
-CConstRef<CValidError> CAsnvalApp::ProcessSeqFeat(void)
+CConstRef<CValidError> CAsnvalApp::ProcessSeqFeat()
 {
     CRef<CSeq_feat> feat(ReadSeqFeat());
 
     CRef<CScope> scope = BuildScope();
     if (m_DoCleanup) {
-        m_Cleanup.SetScope (scope);
-        m_Cleanup.BasicCleanup (*feat);
+        m_Cleanup.SetScope(scope);
+        m_Cleanup.BasicCleanup(*feat);
     }
 
     CValidator validator(*m_ObjMgr);
@@ -981,7 +979,7 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqFeat(void)
 }
 
 
-CRef<CBioSource> CAsnvalApp::ReadBioSource(void)
+CRef<CBioSource> CAsnvalApp::ReadBioSource()
 {
     CRef<CBioSource> src(new CBioSource);
 
@@ -996,7 +994,7 @@ CRef<CBioSource> CAsnvalApp::ReadBioSource(void)
 }
 
 
-CConstRef<CValidError> CAsnvalApp::ProcessBioSource(void)
+CConstRef<CValidError> CAsnvalApp::ProcessBioSource()
 {
     CRef<CBioSource> src(ReadBioSource());
 
@@ -1008,7 +1006,7 @@ CConstRef<CValidError> CAsnvalApp::ProcessBioSource(void)
 }
 
 
-CRef<CPubdesc> CAsnvalApp::ReadPubdesc(void)
+CRef<CPubdesc> CAsnvalApp::ReadPubdesc()
 {
     CRef<CPubdesc> pd(new CPubdesc());
 
@@ -1023,7 +1021,7 @@ CRef<CPubdesc> CAsnvalApp::ReadPubdesc(void)
 }
 
 
-CConstRef<CValidError> CAsnvalApp::ProcessPubdesc(void)
+CConstRef<CValidError> CAsnvalApp::ProcessPubdesc()
 {
     CRef<CPubdesc> pd(ReadPubdesc());
 
@@ -1036,7 +1034,7 @@ CConstRef<CValidError> CAsnvalApp::ProcessPubdesc(void)
 
 
 
-CConstRef<CValidError> CAsnvalApp::ProcessSeqSubmit(void)
+CConstRef<CValidError> CAsnvalApp::ProcessSeqSubmit()
 {
     CRef<CSeq_submit> ss(new CSeq_submit);
 
@@ -1058,8 +1056,8 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqSubmit(void)
         }
     }
     if (m_DoCleanup) {
-        m_Cleanup.SetScope (scope);
-        m_Cleanup.BasicCleanup (*ss);
+        m_Cleanup.SetScope(scope);
+        m_Cleanup.BasicCleanup(*ss);
     }
 
     CConstRef<CValidError> eval = validator.Validate(*ss, scope, m_Options);
@@ -1068,7 +1066,7 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqSubmit(void)
 }
 
 
-CConstRef<CValidError> CAsnvalApp::ProcessSeqAnnot(void)
+CConstRef<CValidError> CAsnvalApp::ProcessSeqAnnot()
 {
     CRef<CSeq_annot> sa(new CSeq_annot);
 
@@ -1085,8 +1083,8 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqAnnot(void)
     CValidator validator(*m_ObjMgr);
     CRef<CScope> scope = BuildScope();
     if (m_DoCleanup) {
-        m_Cleanup.SetScope (scope);
-        m_Cleanup.BasicCleanup (*sa);
+        m_Cleanup.SetScope(scope);
+        m_Cleanup.BasicCleanup(*sa);
     }
     CSeq_annot_Handle sah = scope->AddSeq_annot(*sa);
     CConstRef<CValidError> eval = validator.Validate(sah, m_Options);
@@ -1094,7 +1092,7 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqAnnot(void)
     return eval;
 }
 
-static CRef<objects::CSeq_entry> s_BuildGoodSeq(void)
+static CRef<objects::CSeq_entry> s_BuildGoodSeq()
 {
     CRef<objects::CSeq_entry> entry(new objects::CSeq_entry());
     entry->SetSeq().SetInst().SetMol(objects::CSeq_inst::eMol_dna);
@@ -1103,11 +1101,11 @@ static CRef<objects::CSeq_entry> s_BuildGoodSeq(void)
     entry->SetSeq().SetInst().SetLength(60);
 
     CRef<objects::CSeq_id> id(new objects::CSeq_id());
-    id->SetLocal().SetStr ("good");
+    id->SetLocal().SetStr("good");
     entry->SetSeq().SetId().push_back(id);
 
     CRef<objects::CSeqdesc> mdesc(new objects::CSeqdesc());
-    mdesc->SetMolinfo().SetBiomol(objects::CMolInfo::eBiomol_genomic);    
+    mdesc->SetMolinfo().SetBiomol(objects::CMolInfo::eBiomol_genomic);
     entry->SetSeq().SetDescr().Set().push_back(mdesc);
 
     /*
@@ -1118,7 +1116,7 @@ static CRef<objects::CSeq_entry> s_BuildGoodSeq(void)
     return entry;
 }
 
-CConstRef<CValidError> CAsnvalApp::ProcessSeqDesc(void)
+CConstRef<CValidError> CAsnvalApp::ProcessSeqDesc()
 {
     CRef<CSeqdesc> sd(new CSeqdesc);
 
@@ -1217,7 +1215,7 @@ unique_ptr<CObjectIStream> CAsnvalApp::OpenFile(const string& fname, string& asn
 
 
 void CAsnvalApp::PrintValidError
-(CConstRef<CValidError> errors, 
+(CConstRef<CValidError> errors,
  const CArgs& args)
 {
     if ( errors->TotalSize() == 0 ) {
@@ -1297,13 +1295,13 @@ void CAsnvalApp::PrintValidErrItem(const CValidErrItem& item)
         string msg = NStr::XmlEncode(item.GetMsg());
         if (item.IsSetFeatureId()) {
             os << "  <message severity=\"" << s_GetSeverityLabel(item.GetSeverity())
-                << "\" seq-id=\"" << item.GetAccnver() 
+                << "\" seq-id=\"" << item.GetAccnver()
                 << "\" feat-id=\"" << item.GetFeatureId()
                 << "\" code=\"" << item.GetErrGroup() << "_" << item.GetErrCode()
                 << "\">" << msg << "</message>" << endl;
         } else {
             os << "  <message severity=\"" << s_GetSeverityLabel(item.GetSeverity())
-                << "\" seq-id=\"" << item.GetAccnver() 
+                << "\" seq-id=\"" << item.GetAccnver()
                 << "\" code=\"" << item.GetErrGroup() << "_" << item.GetErrCode()
                 << "\">" << msg << "</message>" << endl;
         }
@@ -1316,7 +1314,7 @@ void CAsnvalApp::PrintValidErrItem(const CValidErrItem& item)
 void CValXMLStream::Print(const CValidErrItem& item)
 {
 #if 0
-    TTypeInfo info = item.GetThisTypeInfo();    
+    TTypeInfo info = item.GetThisTypeInfo();
     WriteObject(&item, info);
 #else
     m_Output.PutString("  <message severity=\"");
@@ -1381,13 +1379,13 @@ void CAsnvalApp::ConstructOutputStreams()
 void CAsnvalApp::DestroyOutputStreams()
 {
 #ifdef USE_XMLWRAPP_LIBS
-    if (m_ostr_xml.get())
+    if (m_ostr_xml)
     {
         m_ostr_xml.reset();
         *m_ValidErrorStream << "</asnvalidate>" << endl;
     }
 #endif
-    m_ValidErrorStream = 0;
+    m_ValidErrorStream = nullptr;
 }
 
 
