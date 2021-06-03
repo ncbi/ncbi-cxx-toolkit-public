@@ -383,6 +383,7 @@ if(NCBI_COMPONENT_GRPC_FOUND)
     set(NCBI_COMPONENT_GRPC_DEFINES _WIN32_WINNT=0x0600)
 endif()
 endif()
+set(NCBI_COMPONENT_GRPC_FOUND NO)
 
 ##############################################################################
 # XALAN
