@@ -1331,14 +1331,6 @@ void CTbl2AsnApp::ProcessSecretFiles1Phase(bool readModsFromTitle, CSeq_entry& r
         for (auto suffix : {".gbf", ".tbl", ".gff", ".gff3", ".gff2", ".gtf"}) {
             LoadAnnots(name + suffix);
         }
-        /*
-        ProcessAnnotFile(name + ".gbf", scope);
-        ProcessAnnotFile(name + ".tbl", scope);
-        ProcessAnnotFile(name + ".gff", scope);
-        ProcessAnnotFile(name + ".gff3", scope);
-        ProcessAnnotFile(name + ".gff2", scope);
-        ProcessAnnotFile(name + ".gtf", scope);
-        */
     }
 
     AddAnnots(scope);
@@ -1423,31 +1415,6 @@ void CTbl2AsnApp::ProcessPRTFile(const string& pathname, CSeq_entry& entry)
 
     m_possible_proteins = prts.ReadProtein(*reader);
 }
-
-void CTbl2AsnApp::ProcessAnnotFile(const string& pathname, CScope& scope)
-{
-    CFile file(pathname);
-
-    if (!file.Exists()) return;
-
-    if (file.IsIdentical(m_context.m_current_file)) {
-        LOG_POST("Ignorning annotation " << pathname << " because it was already used as input source");
-        return;
-    }
-
-    if (file.GetLength() == 0) {
-        m_logger->PutError(*unique_ptr<CLineError>(
-            CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Warning, "", 0,
-            "Empty file: " + pathname)));
-        return;
-    }
-
-    //m_reader->LoadAnnot(scope, pathname);
-    CMultiReader::TAnnots annots;
-    m_reader->LoadAnnots(pathname, annots);
-    m_reader->AddAnnots(annots, scope);
-}
-
 
 void CTbl2AsnApp::LoadAnnots(const string& pathname)
 {

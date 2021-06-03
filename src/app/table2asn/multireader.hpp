@@ -63,11 +63,9 @@ private:
     CRef<CSerialObject> xApplyTemplate(CRef<CSerialObject> obj, bool merge_template_descriptors);
     CRef<CSerialObject> xReadASN1Text(CObjectIStream& pObjIstrm);
     CRef<CSerialObject> xReadASN1Binary(CObjectIStream& pObjIstrm, const CFileContentInfoGenbank& content_info);
-    TAnnots xReadGFF3(CNcbiIstream& instream);
-    CRef<objects::CSeq_entry> xReadGFF3_NoPostProcessing(CNcbiIstream& instream);
+    TAnnots xReadGFF3(CNcbiIstream& instream, bool post_process=true);
     TAnnots xReadGTF(CNcbiIstream& instream);
     CRef<objects::CSeq_entry> xReadFlatfile(CFormatGuess::EFormat format, const string& filename);
-    void x_PostProcessAnnot(objects::CSeq_entry& entry, unsigned int sequenceSize =0);
     void x_PostProcessAnnots(TAnnots& annots, unsigned int sequenceSize=0);
     bool xGetAnnotLoader(CAnnotationLoader& loader, const string& filename);
     bool xFixupAnnot(objects::CScope&, CRef<objects::CSeq_annot>&);
@@ -85,7 +83,7 @@ private:
     CTable2AsnContext& m_context;
     unique_ptr<CObjectIStream> m_obj_stream;
     bool mAtSequenceData;
-    CRef<objects::CSeq_entry> m_featuresFromSequenceFile;
+    TAnnots m_featuresFromSequenceFile;
 };
 
 END_NCBI_SCOPE

@@ -81,7 +81,6 @@ private:
     void ProcessPEPFile(const string& pathname, CSeq_entry& result);
     void ProcessRNAFile(const string& pathname, CSeq_entry& result);
     void ProcessPRTFile(const string& pathname, CSeq_entry& result);
-    void ProcessAnnotFile(const string& pathname, CScope& scope);
     void LoadAnnots(const string& pathname);
     void AddAnnots(CScope& scope);
 

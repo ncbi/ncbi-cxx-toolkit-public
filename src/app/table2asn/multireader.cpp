@@ -835,7 +835,8 @@ CFormatGuess::EFormat CMultiReader::OpenFile(const string& filename, CRef<CSeria
             {
             LOG_POST("Recognized input file as format: " << CFormatGuess::GetFormatName(format));
             unique_ptr<istream> in(new CNcbiIfstream(filename));
-            m_featuresFromSequenceFile = xReadGFF3_NoPostProcessing(*in);
+            bool post_process = false;
+            m_featuresFromSequenceFile = xReadGFF3(*in, post_process);
             if (!AtSeqenceData()) {
                 NCBI_THROW2(CObjReaderParseException, eFormat,
                     "Specified GFF3 file does not include any sequence data", 0);
@@ -931,27 +932,7 @@ CRef<CSerialObject> CMultiReader::ReadNextEntry()
         return CRef<CSerialObject>();
 }
 
-/*
-CRef<CSeq_entry> CMultiReader::xReadGFF3(CNcbiIstream& instream)
-{
-    int flags = 0;
-    flags |= CGff3Reader::fGenbankMode;
-    flags |= CGff3Reader::fRetainLocusIds;
-    flags |= CGff3Reader::fGeneXrefs;
-    flags |= CGff3Reader::fAllIdsAsLocal;
-
-    CGff3Reader reader(flags, m_AnnotName, m_AnnotTitle);
-    CStreamLineReader lr(instream);
-    CRef<CSeq_entry> entry(new CSeq_entry);
-    entry->SetSeq();
-    reader.ReadSeqAnnots(entry->SetAnnot(), lr, m_context.m_logger);
-    mAtSequenceData = reader.AtSequenceData();
-    x_PostProcessAnnot(*entry, reader.SequenceSize());
-    return entry;
-}
-*/
-
-CMultiReader::TAnnots CMultiReader::xReadGFF3(CNcbiIstream& instream)
+CMultiReader::TAnnots CMultiReader::xReadGFF3(CNcbiIstream& instream, bool post_process)
 {
     int flags = 0;
     flags |= CGff3Reader::fGenbankMode;
@@ -964,33 +945,12 @@ CMultiReader::TAnnots CMultiReader::xReadGFF3(CNcbiIstream& instream)
     TAnnots annots;
     reader.ReadSeqAnnots(annots, lr, m_context.m_logger);
     mAtSequenceData = reader.AtSequenceData();
-    x_PostProcessAnnots(annots, reader.SequenceSize());
+    if (post_process) {
+        x_PostProcessAnnots(annots, reader.SequenceSize());
+    }
     return annots;
 }
 
-CRef<CSeq_entry> CMultiReader::xReadGFF3_NoPostProcessing(CNcbiIstream& instream)
-{
-    int flags = 0;
-    flags |= CGff3Reader::fGenbankMode;
-    flags |= CGff3Reader::fRetainLocusIds;
-    flags |= CGff3Reader::fGeneXrefs;
-    flags |= CGff3Reader::fAllIdsAsLocal;
-
-    CGff3Reader reader(flags, m_AnnotName, m_AnnotTitle);
-    CStreamLineReader lr(instream);
-    CRef<CSeq_entry> entry(new CSeq_entry);
-    entry->SetSeq();
-    reader.ReadSeqAnnots(entry->SetAnnot(), lr, m_context.m_logger);
-    mAtSequenceData = reader.AtSequenceData();
-
-    return entry;
-}
-
-
-void CMultiReader::x_PostProcessAnnot(CSeq_entry& entry, unsigned int sequenceSize)
-{
-    x_PostProcessAnnots(entry.SetAnnot(), sequenceSize);
-}
 
 void CMultiReader::x_PostProcessAnnots(TAnnots& annots, unsigned int sequenceSize)
 {
@@ -1225,14 +1185,13 @@ bool CMultiReader::xGetAnnotLoader(CAnnotationLoader& loader, const string& file
 
 bool CMultiReader::ApplyAnnotFromSequences(CScope& scope)
 {
-    if (m_featuresFromSequenceFile.Empty())
+    if (m_featuresFromSequenceFile.empty())
         return false;
-    x_PostProcessAnnot(*m_featuresFromSequenceFile);
 
-    for (auto& rec: m_featuresFromSequenceFile->SetSeq().SetAnnot())
-    {
-        xFixupAnnot(scope, rec);
-    }
+    x_PostProcessAnnots(m_featuresFromSequenceFile);
+
+    AddAnnots(m_featuresFromSequenceFile, scope);
+
     return true;
 }
 
