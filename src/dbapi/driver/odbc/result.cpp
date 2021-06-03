@@ -565,6 +565,8 @@ CDB_Object* CODBC_RowResult::x_LoadItem(I_Result::EGetItem policy, CDB_Object* i
                     // TODO - try to distinguish specific types?
                     *((CDB_BigDateTime*) item_buf) = t;
                     break;
+                default:
+                    _TROUBLE;
                 }
             }
             break;
@@ -880,6 +882,7 @@ CDB_Object* CODBC_RowResult::x_MakeItem()
             case eDB_SmallDateTime: return new CDB_SmallDateTime(t);
             case eDB_DateTime:      return new CDB_DateTime(t);
             case eDB_BigDateTime:   return new CDB_BigDateTime(t);
+            default:                _TROUBLE;
             }
         }
     }
