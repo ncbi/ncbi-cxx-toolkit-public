@@ -82,11 +82,14 @@ private:
     void ProcessRNAFile(const string& pathname, CSeq_entry& result);
     void ProcessPRTFile(const string& pathname, CSeq_entry& result);
     void ProcessAnnotFile(const string& pathname, CScope& scope);
+    void LoadAnnots(const string& pathname);
+    void AddAnnots(CScope& scope);
+
     void x_SetAlnArgs(CArgDescriptions& arg_desc);
-
-
     CRef<CScope> GetScope();
 
+
+    CMultiReader::TAnnots m_Annots;
     unique_ptr<CMultiReader> m_reader;
     CRef<CSeq_entry> m_replacement_proteins;
     CRef<CSeq_entry> m_possible_proteins;
