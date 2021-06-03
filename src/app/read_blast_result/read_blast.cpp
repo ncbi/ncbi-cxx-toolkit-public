@@ -41,7 +41,7 @@ int CReadBlastApp::ReadBlast(const char *file, map<string, blastStr>& blastMap)
 {
 #define         MAXSTR    322
 
-    char *s, *rest;
+    char *s; // , *rest;
     static char str[MAXSTR+1];
     if(PrintDetails()) NcbiCerr<<"ReadBlast()" << NcbiEndl;
 
