@@ -55,6 +55,10 @@ public:
     );
     virtual ~CGvfWriteRecord();
 
+    virtual bool AssignAttributes(
+        const CMappedFeat&,
+        unsigned int =0);
+
 protected:
     virtual string StrAttributes() const;
 
@@ -63,9 +67,6 @@ protected:
     virtual bool x_AssignType(
         const CMappedFeat&,
         unsigned int =0 );
-    virtual bool x_AssignAttributes(
-        const CMappedFeat&,
-        unsigned int =0);
     virtual bool x_AssignAttributeID(
         const CMappedFeat& );
     virtual bool x_AssignAttributeParent(

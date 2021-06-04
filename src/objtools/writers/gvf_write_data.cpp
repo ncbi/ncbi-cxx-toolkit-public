@@ -184,7 +184,7 @@ bool CGvfWriteRecord::x_AssignType(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGvfWriteRecord::x_AssignAttributes(
+bool CGvfWriteRecord::AssignAttributes(
     const CMappedFeat& mapped_feat,
     unsigned int )
 //  ----------------------------------------------------------------------------

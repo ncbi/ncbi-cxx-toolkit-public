@@ -60,6 +60,8 @@ public:
         const CSeq_annot& ) override;
 
 protected:
+    virtual bool x_WriteSeqAnnotHandle(
+        CSeq_annot_Handle ) override;
 
     virtual bool xWriteFeature(
         CFeat_CI) override;
@@ -74,6 +76,11 @@ protected:
     virtual bool xWriteFeatureVariationRef(
         CGffFeatureContext&,
         const CMappedFeat& );
+
+    bool xAssignFeatureAttributes(
+        CGffFeatureRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&) override;
 };
 
 END_objects_SCOPE

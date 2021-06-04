@@ -181,12 +181,12 @@ bool CGvfWriter::xWriteFeatureVariationRef(
             "Processing terminated by user");
     }
 
-    CRef<CGvfWriteRecord> pRecord( new CGvfWriteRecord( fc ) );
+    CRef<CGvfWriteRecord> pRecord( new CGvfWriteRecord(fc));
 
     if (!xAssignFeature(*pRecord, fc, mf)) {
         return false;
     }
-    if ( ! pRecord->AssignFromAsn( mf ) ) {
+    if (!pRecord->AssignAttributes(mf)) {
         return false;
     }
     return xWriteRecord(*pRecord);
@@ -208,5 +208,66 @@ bool CGvfWriter::xWriteRecord(
     m_Os << pRecord.StrAttributes() << '\n';
     return true;
 }
+
+//  ----------------------------------------------------------------------------
+bool CGvfWriter::x_WriteSeqAnnotHandle(
+    CSeq_annot_Handle sah )
+//  ----------------------------------------------------------------------------
+{
+    CConstRef<CSeq_annot> pAnnot = sah.GetCompleteSeq_annot();
+
+    SAnnotSelector sel = SetAnnotSelector();
+    CFeat_CI feat_iter(sah, sel);
+    CGffFeatureContext fc(feat_iter, CBioseq_Handle(), sah);
+
+    for (/*0*/; feat_iter; ++feat_iter) {
+        if (!xWriteFeature(fc,*feat_iter)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+
+//  ----------------------------------------------------------------------------
+bool CGvfWriter::xAssignFeatureAttributes(
+    CGffFeatureRecord& rec,
+    CGffFeatureContext&,
+    const CMappedFeat& mf )
+//  ----------------------------------------------------------------------------
+{
+    //FIX_ME
+    CGvfWriteRecord& record = dynamic_cast<CGvfWriteRecord&>(rec);
+    static set<string> gff3_attributes =
+    {"ID", "Name", "Alias", "Parent", "Target", "Gap", "Derives_from",
+     "Note", "Dbxref", "Ontology_term", "Is_circular"};
+
+    const CSeq_feat::TQual& quals = mf.GetQual();
+    for (const auto& qual: quals) {
+        if (!qual->IsSetQual()  ||  !qual->IsSetVal()) {
+            continue;
+        }
+        string key = qual->GetQual();
+        const string& value = qual->GetVal();
+        if (key == "SO_type") { // RW-469
+            continue;
+        }
+        if (key == "ID") {
+            record.SetAttribute("ID", value);
+            continue;
+        }
+        if (key == "Parent") {
+            record.SetAttribute("Parent", value);
+            continue;
+        }
+        if (isupper(key.front()) &&
+            gff3_attributes.find(key) == gff3_attributes.end()) {
+            NStr::ToLower(key);
+        }
+        record.SetAttribute(key, value);
+    }
+    return true;
+}
+
 
 END_NCBI_SCOPE
