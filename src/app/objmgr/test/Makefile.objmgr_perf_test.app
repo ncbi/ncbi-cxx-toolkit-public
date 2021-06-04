@@ -17,8 +17,8 @@ LIBS = $(GENBANK_THIRD_PARTY_LIBS) $(FTDS_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(
 
 
 CHECK_COPY = perf_ids1_acc perf_ids1_gi perf_ids2_acc perf_ids2_gi perf_ids3_acc perf_ids3_gi
-CHECK_TIMEOUT = 300
-CHECK_REQUIRES = -MSWin
+CHECK_TIMEOUT = 400
+CHECK_REQUIRES = in-house-resources -MSWin
 
 
 CHECK_CMD = objmgr_perf_test -ids perf_ids1_acc -threads 0 -loader gb
