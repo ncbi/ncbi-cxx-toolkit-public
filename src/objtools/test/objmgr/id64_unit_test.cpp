@@ -1420,6 +1420,11 @@ NCBITEST_INIT_CMDLINE(arg_descrs)
 
 NCBITEST_INIT_TREE()
 {
+#ifdef NCBI_INT4_GI
+    LOG_POST("Skipping all tests without 64-bit GIs enabled");
+    NcbiTestSetGlobalDisabled();
+    return;
+#endif
     auto app = CNcbiApplication::Instance();
     const CArgs& args = app->GetArgs();
     if ( args["psg"] ) {

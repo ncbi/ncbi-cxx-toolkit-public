@@ -2,7 +2,7 @@
 # $Id$
 #################################
 
-REQUIRES = dbapi FreeTDS Boost.Test.Included
+REQUIRES = dbapi FreeTDS Boost.Test.Included -Int4GI
 
 APP = id64_unit_test
 SRC = id64_unit_test
