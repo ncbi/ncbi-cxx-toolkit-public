@@ -493,3 +493,12 @@ BOOST_AUTO_TEST_CASE(CheckGI64VDBNAZoom100)
         BOOST_CHECK(CGraph_CI(*scope, *loc, sel));
     }
 }
+
+
+NCBITEST_INIT_TREE()
+{
+#ifdef NCBI_INT4_GI
+    NCBITEST_DISABLE(CheckGI64VDBNAZoom)
+    NCBITEST_DISABLE(CheckGI64VDBNAZoom100);
+#endif
+}
