@@ -37,7 +37,7 @@ public:
 
     using TAnnots = list<CRef<CSeq_annot>>;
 
-    CFormatGuess::EFormat OpenFile(const string& filename, CRef<CSerialObject>& input_sequence);
+    CFormatGuess::EFormat OpenFile(const string& filename, CRef<CSerialObject>& input_sequence, TAnnots& annots);
     CRef<CSerialObject> ReadNextEntry();
     void WriteObject(const CSerialObject&, ostream&);
     void LoadTemplate(CTable2AsnContext& context, const string& ifname);
@@ -46,7 +46,6 @@ public:
     void MergeDescriptors(objects::CSeq_descr & dest, const objects::CSeqdesc & source);
     void ApplyDescriptors(objects::CSeq_entry & obj, const objects::CSeq_descr & source);
     bool LoadAnnot(objects::CScope& scope, const string& filename);
-    bool ApplyAnnotFromSequences(objects::CScope& scope);
     bool LoadAnnots(const string& filename, TAnnots& annots);
     void AddAnnots(const TAnnots& annots, CScope& scope);
 
@@ -83,7 +82,6 @@ private:
     CTable2AsnContext& m_context;
     unique_ptr<CObjectIStream> m_obj_stream;
     bool mAtSequenceData;
-    TAnnots m_featuresFromSequenceFile;
 };
 
 END_NCBI_SCOPE

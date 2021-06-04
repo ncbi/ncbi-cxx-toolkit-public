@@ -1139,7 +1139,11 @@ void CTbl2AsnApp::ProcessOneFile(bool isAlignment)
 void CTbl2AsnApp::ProcessOneFile(CNcbiOstream* output)
 {
     CRef<CSerialObject> input_obj;
-    CFormatGuess::EFormat format = m_reader->OpenFile(m_context.m_current_file, input_obj);
+    CMultiReader::TAnnots annots;
+    CFormatGuess::EFormat format = m_reader->OpenFile(m_context.m_current_file, input_obj, annots);
+    if (!annots.empty()) {
+        m_Annots.splice(m_Annots.end(), annots);
+    }
     do
     {
         m_context.m_scope->ResetDataAndHistory();
@@ -1320,7 +1324,7 @@ void CTbl2AsnApp::ProcessSecretFiles1Phase(bool readModsFromTitle, CSeq_entry& r
     CScope scope(*m_context.m_ObjMgr);
     scope.AddTopLevelSeqEntry(result);
 
-    m_reader->ApplyAnnotFromSequences(scope);
+    //m_reader->ApplyAnnotFromSequences(scope);
 
     if (!m_context.m_single_annot_file.empty())
     {

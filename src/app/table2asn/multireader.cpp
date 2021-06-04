@@ -812,7 +812,7 @@ namespace
     }
 }
 
-CFormatGuess::EFormat CMultiReader::OpenFile(const string& filename, CRef<CSerialObject>& input_sequence)
+CFormatGuess::EFormat CMultiReader::OpenFile(const string& filename, CRef<CSerialObject>& input_sequence, TAnnots& annots)
 {
     CFormatGuess::EFormat format;
     CFileContentInfo content_info;
@@ -836,15 +836,15 @@ CFormatGuess::EFormat CMultiReader::OpenFile(const string& filename, CRef<CSeria
             LOG_POST("Recognized input file as format: " << CFormatGuess::GetFormatName(format));
             unique_ptr<istream> in(new CNcbiIfstream(filename));
             bool post_process = false;
-            m_featuresFromSequenceFile = xReadGFF3(*in, post_process);
+            annots = xReadGFF3(*in, post_process);
             if (!AtSeqenceData()) {
                 NCBI_THROW2(CObjReaderParseException, eFormat,
                     "Specified GFF3 file does not include any sequence data", 0);
             }
+            x_PostProcessAnnots(annots);
             m_iFlags = 0;
             m_iFlags |= CFastaReader::fNoUserObjs;
             input_sequence = xReadFasta(*in);
-            //std::cerr << MSerial_AsnText << MSerial_VerifyNo << *obj;
             }
             break;
         default: // RW-616 - Assume FASTA
@@ -1183,17 +1183,6 @@ bool CMultiReader::xGetAnnotLoader(CAnnotationLoader& loader, const string& file
     return false;
 }
 
-bool CMultiReader::ApplyAnnotFromSequences(CScope& scope)
-{
-    if (m_featuresFromSequenceFile.empty())
-        return false;
-
-    x_PostProcessAnnots(m_featuresFromSequenceFile);
-
-    AddAnnots(m_featuresFromSequenceFile, scope);
-
-    return true;
-}
 
 bool CMultiReader::LoadAnnot(CScope& scope, const string& filename)
 {
