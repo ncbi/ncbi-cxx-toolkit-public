@@ -110,7 +110,7 @@ public:
 
     // CReadClassMemberHook override
     void ReadClassMember(CObjectIStream& in,
-        const CObjectInfo::CMemberIterator& member);
+        const CObjectInfo::CMemberIterator& member) override;
 
 private:
 
@@ -134,8 +134,8 @@ private:
     CConstRef<CValidError> ValidateInput(string asn_type);
     void ValidateOneDirectory(string dir_name, bool recurse);
     void ValidateOneFile(const string& fname);
-    void ProcessBSSReleaseFile(const CArgs& args);
-    void ProcessSSMReleaseFile(const CArgs& args);
+    void ProcessBSSReleaseFile();
+    void ProcessSSMReleaseFile();
 
     void ConstructOutputStreams();
     void DestroyOutputStreams();
@@ -189,6 +189,7 @@ private:
 
     EVerbosity m_verbosity;
     string     m_obj_type;
+    bool m_batch = false;
 
     CNcbiOstream* m_ValidErrorStream;
 #ifdef USE_XMLWRAPP_LIBS
@@ -302,13 +303,10 @@ void CAsnvalApp::Init()
                             "ASN.1 Type\n\
 \ta Automatic\n\
 \tc Catenated\n\
-\tz Any\n\
 \te Seq-entry\n\
 \tb Bioseq\n\
 \ts Bioseq-set\n\
 \tm Seq-submit\n\
-\tt Batch Bioseq-set\n\
-\tu Batch Seq-submit\n\
 \td Seq-desc",
                             CArgDescriptions::eString,
                             "a");
@@ -336,6 +334,7 @@ void CAsnvalApp::Init()
     arg_desc->SetConstraint("v", v_constraint);
 
     arg_desc->AddFlag("cleanup", "Perform BasicCleanup before validating (to match C Toolkit)");
+    arg_desc->AddFlag("batch", "Produce release files");
 
     arg_desc->AddOptionalKey(
         "D", "String", "Path to lat_lon country data files",
@@ -365,7 +364,7 @@ CConstRef<CValidError> CAsnvalApp::ValidateInput(string asn_type)
     // Release file (batch processing) where we process each Seq-entry
     // at a time.
     CConstRef<CValidError> eval;
-    // ASN.1 Type (a Automatic, z Any, e Seq-entry, b Bioseq, s Bioseq-set, m Seq-submit, t Batch Bioseq-set, u Batch Seq-submit",
+    // ASN.1 Type (a Automatic, e Seq-entry, b Bioseq, s Bioseq-set, m Seq-submit",
     m_In->ReadFileHeader();
     string header = asn_type;
     if (header.empty() && !m_obj_type.empty())
@@ -465,10 +464,14 @@ void CAsnvalApp::ValidateOneFile(const string& fname)
         LOG_POST_XX(Corelib_App, 1, "FAILURE: Unable to open invalid ASN.1 file " + fname);
     } else {
         try {
-            if (/*asn_type == "Bioseq-set" ||*/ m_obj_type == "t") {    // Bioseq-set release file
-                ProcessBSSReleaseFile(args);
-            } else if (/*asn_type == "Seq-submit" ||*/ m_obj_type == "u") { // Seq-submit release file
-                ProcessSSMReleaseFile(args);
+            if (m_batch) {
+                if (asn_type == "Bioseq-set" ) {
+                    ProcessBSSReleaseFile();
+                } else if (asn_type == "Seq-submit") {
+                    ProcessSSMReleaseFile();
+                } else {
+                    LOG_POST_XX(Corelib_App, 1, "FAILURE: Record is neither a Seq-submit nor Bioseq-set; do not use -batch to process.");
+                }
             } else {
                 size_t num_validated = 0;
                 while (true) {
@@ -544,7 +547,7 @@ void CAsnvalApp::ValidateOneDirectory(string dir_name, bool recurse)
         }
     }
     if (recurse) {
-        CDir::TEntries subdirs (dir.GetEntries("", CDir::eDir));
+        CDir::TEntries subdirs(dir.GetEntries("", CDir::eDir));
         for (CDir::TEntry ii : subdirs) {
             string subdir = ii->GetName();
             if (ii->IsDir() && !NStr::Equal(subdir, ".") && !NStr::Equal(subdir, "..")) {
@@ -583,7 +586,9 @@ int CAsnvalApp::Run()
 
     m_DoCleanup = args["cleanup"] && args["cleanup"].AsBoolean();
     m_verbosity = static_cast<EVerbosity>(args["v"].AsInteger());
-
+    if (args["batch"]) {
+        m_batch = true;
+    }
 
     m_Quiet = args["quiet"] && args["quiet"].AsBoolean();
 
@@ -595,6 +600,11 @@ int CAsnvalApp::Run()
     m_Reported = 0;
 
     m_obj_type = args["a"].AsString();
+
+    if (m_obj_type == "t" || m_obj_type == "u") {
+        m_batch = true;
+        cerr << "Warning: -a t and -a u are deprecated; use -batch instead." << endl;
+    }
 
     if (args["b"] && m_obj_type == "a")
     {
@@ -639,7 +649,7 @@ int CAsnvalApp::Run()
 
 CRef<CScope> CAsnvalApp::BuildScope()
 {
-    CRef<CScope> scope(new CScope (*m_ObjMgr));
+    CRef<CScope> scope(new CScope(*m_ObjMgr));
     scope->AddDefaults();
 
     return scope;
@@ -699,7 +709,7 @@ void CAsnvalApp::ReadClassMember
                     if (elapsed > m_Longest) {
                         m_Longest = elapsed;
                         m_LongestId = m_CurrentId;
-                   }
+                    }
                     //if (m_ValidErrorStream) {
                     //    *m_ValidErrorStream << "Elapsed = " << sw.Elapsed() << endl;
                     //}
@@ -725,8 +735,7 @@ void CAsnvalApp::ReadClassMember
 }
 
 
-void CAsnvalApp::ProcessBSSReleaseFile
-(const CArgs& args)
+void CAsnvalApp::ProcessBSSReleaseFile()
 {
     CRef<CBioseq_set> seqset(new CBioseq_set);
 
@@ -745,8 +754,7 @@ void CAsnvalApp::ProcessBSSReleaseFile
     }
 }
 
-void CAsnvalApp::ProcessSSMReleaseFile
-(const CArgs& args)
+void CAsnvalApp::ProcessSSMReleaseFile()
 {
     CRef<CSeq_submit> seqset(new CSeq_submit);
 
@@ -826,7 +834,7 @@ CConstRef<CValidError> CAsnvalApp::ProcessCatenated()
             }
             catch (const CObjMgrException& om_ex) {
                 if (om_ex.GetErrCode() == CObjMgrException::eAddDataError)
-                  se->ReassignConflictingIds();
+                    se->ReassignConflictingIds();
                 CConstRef<CValidError> eval = ProcessSeqEntry(*se);
                 if ( eval ) {
                     PrintValidError(eval, GetArgs());
