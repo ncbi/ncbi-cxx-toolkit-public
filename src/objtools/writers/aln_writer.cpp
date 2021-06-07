@@ -105,54 +105,6 @@ bool CAlnWriter::WriteAlign(
 }
 //  ----------------------------------------------------------------------------
 
-bool s_TryFindRange(const CObject_id& local_id,
-        CRef<CSeq_id>& seq_id,
-        CRange<TSeqPos>& range)
-{
-    if (!local_id.IsStr()) {
-        return false;
-    }
-
-    string id_string = local_id.GetStr();
-    string true_id;
-    string range_string;
-
-    if (!NStr::SplitInTwo(id_string, ":", true_id, range_string)) {
-        true_id = id_string;
-        range_string = "";
-    }
-
-    string start_pos, end_pos;
-    if (!range_string.empty()) {
-        if (!NStr::SplitInTwo(range_string, "-", start_pos, end_pos)) {
-            start_pos = end_pos = "";
-        }
-    }
-
-
-    try {
-        if (!start_pos.empty()  &&  !end_pos.empty()) {
-            TSeqPos start_index = NStr::StringToNumeric<TSeqPos>(start_pos);
-            TSeqPos end_index = NStr::StringToNumeric<TSeqPos>(end_pos);
-            range.SetFrom(start_index);
-            range.SetTo(end_index);
-        }
-        else {
-            range.SetFrom(CRange<TSeqPos>::GetPositionMin());
-            range.SetToOpen(CRange<TSeqPos>::GetPositionMax());
-        }
-        list<CRef<CSeq_id>> id_list;
-        CSeq_id::ParseIDs(id_list, true_id);
-        seq_id = id_list.front();
-    }
-    catch (...) {
-        return false;
-    }
-    return true;
-}
-
-// -----------------------------------------------------------------------------
-
 void CAlnWriter::ProcessSeqId(const CSeq_id& id, CBioseq_Handle& bsh, CRange<TSeqPos>& range)
 {
     if (m_pScope) {
@@ -160,24 +112,6 @@ void CAlnWriter::ProcessSeqId(const CSeq_id& id, CBioseq_Handle& bsh, CRange<TSe
         bsh = m_pScope->GetBioseqHandle(id);
         range.SetFrom(CRange<TSeqPos>::GetPositionMin());
         range.SetToOpen(CRange<TSeqPos>::GetPositionMax());
-/*
-        if (false  &&  id.IsLocal()  &&  id.GetLocal().IsStr()) {
-            CRef<CSeq_id> pTrueId;
-            if (s_TryFindRange(id.GetLocal(), pTrueId, range)) {
-                bsh = m_pScope->GetBioseqHandle(*pTrueId);
-            }
-            else {
-                bsh = m_pScope->GetBioseqHandle(id);
-            }
-
-        }
-        else
-        {
-            bsh = m_pScope->GetBioseqHandle(id);
-            range.SetFrom(CRange<TSeqPos>::GetPositionMin());
-            range.SetToOpen(CRange<TSeqPos>::GetPositionMax());
-        }
-        */
     }
 }
 

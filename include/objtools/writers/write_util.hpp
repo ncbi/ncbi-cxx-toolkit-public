@@ -125,9 +125,6 @@ public:
     static bool IsSequenceCircular(
         CBioseq_Handle );
 
-    static bool IsNucProtSet(
-        CSeq_entry_Handle );
-
     static string UrlEncode(
         const string& );
 

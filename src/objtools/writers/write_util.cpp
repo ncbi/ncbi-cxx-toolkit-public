@@ -661,15 +661,6 @@ bool CWriteUtil::GetBestId(
 }
 
 //  ----------------------------------------------------------------------------
-bool CWriteUtil::IsNucProtSet(
-    CSeq_entry_Handle seh)
-//  ----------------------------------------------------------------------------
-{
-    return (seh.IsSet()  &&  seh.GetSet().IsSetClass()  &&
-        seh.GetSet().GetClass() == CBioseq_set::eClass_nuc_prot);
-}
-
-//  ----------------------------------------------------------------------------
 bool CWriteUtil::GetQualifier(
     CMappedFeat mf,
     const string& key,

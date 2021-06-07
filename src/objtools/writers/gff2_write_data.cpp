@@ -81,39 +81,6 @@ CGffWriteRecord::~CGffWriteRecord()
 {
 };
 
-/*//  ----------------------------------------------------------------------------
-string CGffWriteRecord::StrAttributes() const
-//  ----------------------------------------------------------------------------
-{
-    string strAttributes;
-    strAttributes.reserve(256);
-    CGffWriteRecord::TAttributes attrs;
-    attrs.insert( Attributes().begin(), Attributes().end() );
-    CGffWriteRecord::TAttrIt it;
-
-    for ( it = attrs.begin(); it != attrs.end(); ++it ) {
-        string strKey = it->first;
-
-        if ( ! strAttributes.empty() ) {
-            strAttributes += "; ";
-        }
-        strAttributes += strKey;
-        strAttributes += "=";
-//        strAttributes += " ";
-
-        bool quote = NeedsQuoting(it->second.front());
-        if ( quote )
-            strAttributes += '\"';
-        strAttributes += it->second.front();
-        if ( quote )
-            strAttributes += '\"';
-    }
-    if ( strAttributes.empty() ) {
-        strAttributes = ".";
-    }
-    return strAttributes;
-}*/
-
 //  ----------------------------------------------------------------------------
 void CGffWriteRecord::x_StrAttributesAppendValue(
     const string& strKey,
@@ -134,7 +101,7 @@ void CGffWriteRecord::x_StrAttributesAppendValue(
             strValue += multivalue_separator;
         }
         string strTag = CWriteUtil::UrlEncode( *pTag );
-        if (NeedsQuoting(strTag)) {
+        if (CWriteUtil::NeedsQuoting(strTag)) {
             strTag = string("\"") + strTag + string("\"");
         }
         strValue += strTag;
@@ -148,61 +115,6 @@ void CGffWriteRecord::x_StrAttributesAppendValue(
     strAttributes += strValue;
 
     attrs.erase(it);
-}
-
-//  ----------------------------------------------------------------------------
-bool CGffWriteRecord::CorrectLocation(
-    const CGffWriteRecord& parent,
-    const CSeq_interval& interval,
-    unsigned int seqLength )
-//  ----------------------------------------------------------------------------
-{
-    if ( interval.CanGetFrom() ) {
-        mSeqStart = interval.GetFrom();
-    }
-    if (interval.IsPartialStart(eExtreme_Biological)) {
-        DropAttributes("start_range");
-        string min = NStr::IntToString(mSeqStart + 1);
-        SetAttribute("start_range", string(".,") + min);
-    }
-    if ( interval.CanGetTo() ) {
-        mSeqStop = interval.GetTo();
-    }
-    if (interval.IsPartialStop(eExtreme_Biological)) {
-        DropAttributes("end_range");
-        string max = NStr::IntToString(mSeqStop + 1);
-        SetAttribute("end_range", max + string(",."));
-    }
-    if ( interval.IsSetStrand() ) {
-        SetStrand(interval.GetStrand());
-    }
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
-bool CGffWriteRecord::CorrectPhase(
-    int iPhase )
-//  ----------------------------------------------------------------------------
-{
-    if (mPhase.empty()) {
-        return false;
-    }
-    mPhase = NStr::NumericToString((3+iPhase) % 3);
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
-bool CGffWriteRecord::AssignSequenceNumber(
-    unsigned int uSequenceNumber,
-    const string& strPrefix )
-//  ----------------------------------------------------------------------------
-{
-    vector<string> ids;
-    if (!GetAttributes("ID", ids)) {
-        return false;
-    }
-    ids.at(0) += string( "|" ) + strPrefix + NStr::UIntToString( uSequenceNumber );
-    return false;
 }
 
 //  ----------------------------------------------------------------------------

@@ -66,28 +66,13 @@ public:
     //
     //  Input/output:
     //
-    virtual bool CorrectLocation(
-        const CGffWriteRecord&,
-        const CSeq_interval&,
-        unsigned int );
-
     bool CorrectType(
         const string& strType ) {
         mType = strType;
         return true;
     };
 
-    bool CorrectPhase(
-        int );
-
-    bool AssignSequenceNumber(
-        unsigned int,
-        const string& = "" );
-
     virtual string StrStructibutes() const { return ""; };
-
-    virtual bool NeedsQuoting(
-        const string& str) const {return CWriteUtil::NeedsQuoting(str);};
 
 protected:
     virtual void x_StrAttributesAppendValue(
