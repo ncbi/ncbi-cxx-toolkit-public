@@ -2093,6 +2093,8 @@ void CBioseqIndex::x_InitFeats (CSeq_loc* slpp)
                 feat_it = CFeat_CI(*m_Scope, *slpp, sel_cpy);
             }
 
+            CConstRef<CSeq_loc> prev_loc;
+
             // iterate features on Bioseq
             for (; feat_it; ++feat_it) {
                 const CMappedFeat mf = *feat_it;
@@ -2115,7 +2117,29 @@ void CBioseqIndex::x_InitFeats (CSeq_loc* slpp)
                 }
 
                 CRef<CFeatureIndex> sfx(new CFeatureIndex(hdl, mf, feat_loc, *this));
-                m_SfxList.push_back(sfx);
+
+                CSeqFeatData::E_Choice type = sfx->GetType();
+                CSeqFeatData::ESubtype subtype = sfx->GetSubtype();
+
+                // For RW-1215, accession JB818822, insert instantiated gap feature before preceding misc_feature with the same location
+
+                bool gapIsSame = false;
+                if ( subtype == CSeqFeatData::eSubtype_gap && prev_loc && !m_SfxList.empty() ) {
+                    if ( feat_loc->GetStart(eExtreme_Positional) == prev_loc->GetStart(eExtreme_Positional) &&
+                        feat_loc->GetStop(eExtreme_Positional) == prev_loc->GetStop(eExtreme_Positional) ) {
+                        gapIsSame = true;
+                    }
+                }
+
+                if ( gapIsSame ) {
+                    m_SfxList.insert(m_SfxList.end() - 1, sfx);
+                } else {
+                    m_SfxList.push_back(sfx);
+                }
+
+                prev_loc = feat_loc;
+
+                // end of RW-1215 changes
 
                 ft->AddFeature(mf);
 
@@ -2123,9 +2147,6 @@ void CBioseqIndex::x_InitFeats (CSeq_loc* slpp)
                 m_FeatIndexMap[mf] = sfx;
 
                 // set specific flags for various feature types
-                CSeqFeatData::E_Choice type = sfx->GetType();
-                CSeqFeatData::ESubtype subtype = sfx->GetSubtype();
-
                 if (type == CSeqFeatData::e_Biosrc) {
                     m_HasSource = true;
                     if (! m_BioSource) {
