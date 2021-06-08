@@ -4533,9 +4533,9 @@ no_usr_lib="s,-L$usr_lib ,,g; s,-L/usr/lib/$multiarch ,,g"
 
 : ${with_libunwind:=no}
 NCBI_CHECK_THIRD_PARTY_LIB_EX(libunwind, LIBUNWIND, unwind,
- [AC_LANG_PROGRAM([@%:@include <unwind.h>
+ [AC_LANG_PROGRAM([@%:@include <libunwind.h>
                    @%:@include <stdlib.h>],
-      [[_Unwind_Trace_Fn f; _Unwind_Backtrace(f, NULL);]])])
+      [[void *buffer; unw_backtrace(&buffer, 9);]])])
 LIBS="$LIBUNWIND_LIBS $LIBS"
 orig_LIBS="$LIBUNWIND_LIBS $orig_LIBS"
 

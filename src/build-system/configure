@@ -16925,12 +16925,12 @@ else
        LIBS="$LIBUNWIND_LIBS  $orig_LIBS"
        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-#include <unwind.h>
+#include <libunwind.h>
                    #include <stdlib.h>
 int
 main ()
 {
-_Unwind_Trace_Fn f; _Unwind_Backtrace(f, NULL);
+void *buffer; unw_backtrace(&buffer, 9);
   ;
   return 0;
 }
