@@ -803,7 +803,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Close(SOCK sock);
  *  On MS-Windows closing a SOCK whose OS handle has been used elsewhere
  *  (e.g. in SOCK_CreateOnTop()) may render the OS handle unresponsive, so
  *  always make sure to close the current SOCK first (assuming
- *  fSOCK_KeepOnClose), and only then use the extracted handle to buil
+ *  fSOCK_KeepOnClose), and only then use the extracted handle to build
  *  another socket.
  * @param sock
  *  [in]  handle of the socket to close
