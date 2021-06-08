@@ -83,35 +83,6 @@ string s_MakeGffDbtag(
 }
 
 //  ----------------------------------------------------------------------------
-CConstRef<CUser_object> s_GetUserObjectByType(
-    const CUser_object& uo,
-    const string& strType )
-//  ----------------------------------------------------------------------------
-{
-    if ( uo.IsSetType() && uo.GetType().IsStr() &&
-            uo.GetType().GetStr() == strType ) {
-        return CConstRef<CUser_object>( &uo );
-    }
-    const CUser_object::TData& fields = uo.GetData();
-    for ( CUser_object::TData::const_iterator it = fields.begin();
-            it != fields.end();
-            ++it ) {
-        const CUser_field& field = **it;
-        if ( field.IsSetData() ) {
-            const CUser_field::TData& data = field.GetData();
-            if ( data.Which() == CUser_field::TData::e_Object ) {
-                CConstRef<CUser_object> recur = s_GetUserObjectByType(
-                    data.GetObject(), strType );
-                if ( recur ) {
-                    return recur;
-                }
-            }
-        }
-    }
-    return CConstRef<CUser_object>();
-}
-
-//  ----------------------------------------------------------------------------
 CGff3WriteRecordFeature::CGff3WriteRecordFeature(
     CGffFeatureContext& fc,
     const string& id )

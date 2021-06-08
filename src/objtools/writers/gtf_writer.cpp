@@ -93,7 +93,7 @@ private:
 };
 map<string, int> CGtfIdGenerator::mLastSuffixes;
 
-//  ----------------------------------------------------------------------------
+/*//  ----------------------------------------------------------------------------
 CConstRef<CUser_object> sGetUserObjectByType(
     const CUser_object& uo,
     const string& strType )
@@ -120,10 +120,10 @@ CConstRef<CUser_object> sGetUserObjectByType(
         }
     }
     return CConstRef<CUser_object>();
-}
+}*/
 
 //  ----------------------------------------------------------------------------
-CConstRef<CUser_object> sGetUserObjectByType(
+/*CConstRef<CUser_object> sGetUserObjectByType(
     const list<CRef<CUser_object > >& uos,
     const string& strType)
     //  ----------------------------------------------------------------------------
@@ -138,7 +138,7 @@ CConstRef<CUser_object> sGetUserObjectByType(
         }
     }
     return CConstRef<CUser_object>();
-}
+}*/
 
 //  ----------------------------------------------------------------------------
 CGtfWriter::CGtfWriter(
@@ -772,7 +772,7 @@ bool CGtfWriter::xAssignFeatureMethod(
     }
 
     if (mf.IsSetExt()) {
-        CConstRef<CUser_object> model_evidence = sGetUserObjectByType(
+        CConstRef<CUser_object> model_evidence = CWriteUtil::GetUserObjectByType(
             mf.GetExt(), "ModelEvidence");
         if (model_evidence) {
             string strMethod;
@@ -785,7 +785,7 @@ bool CGtfWriter::xAssignFeatureMethod(
     }
 
     if (mf.IsSetExts()) {
-        CConstRef<CUser_object> model_evidence = sGetUserObjectByType(
+        CConstRef<CUser_object> model_evidence = CWriteUtil::GetUserObjectByType(
             mf.GetExts(), "ModelEvidence");
         if (model_evidence) {
             string strMethod;
