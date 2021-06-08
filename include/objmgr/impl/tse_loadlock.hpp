@@ -48,7 +48,6 @@ class NCBI_XOBJMGR_EXPORT CTSE_LoadLock
 {
 public:
     CTSE_LoadLock(void)
-        : m_LoadLockOwner(false)
         {
         }
     ~CTSE_LoadLock(void)
@@ -57,7 +56,6 @@ public:
         }
 
     CTSE_LoadLock(const CTSE_LoadLock& lock)
-        : m_LoadLockOwner(false)
         {
             *this = lock;
         }
@@ -99,7 +97,7 @@ protected:
 private:
     CRef<CTSE_Info>     m_Info;
     mutable CRef<CDataSource>   m_DataSource;
-    bool                m_LoadLockOwner;
+    TThreadSystemID     m_LoadLockOwner;
     CRef<CObject>       m_LoadLock;
 };
 
