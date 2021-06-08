@@ -6326,7 +6326,7 @@ SCS	s	Swift Current Research and Development Centre (Agriculture and Agri-Food C
 SCSC	s	Saint Cloud State University			
 SCSFRI	s	South China Sea Fisheries Research Institute			
 SCSG	s	South China Sea Institute of Oceanology, Academia Sinica			
-SCSIO	s	South China Sea Institute of Oceanology, Academia Sinica	SCSG		
+SCSIO	c	South China Sea Institute of Oceanology, Academia Sinica	SCSG		
 SCSM	s	South Carolina State Museum			
 SCT	s	Friend's School			
 SCTCC	c	Sichuan Type Culture Collection			

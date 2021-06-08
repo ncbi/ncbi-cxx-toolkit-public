@@ -6359,7 +6359,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "SCSC\ts\tSaint Cloud State University\t\t\t",
 "SCSFRI\ts\tSouth China Sea Fisheries Research Institute\t\t\t",
 "SCSG\ts\tSouth China Sea Institute of Oceanology, Academia Sinica\t\t\t",
-"SCSIO\ts\tSouth China Sea Institute of Oceanology, Academia Sinica\tSCSG\t\t",
+"SCSIO\tc\tSouth China Sea Institute of Oceanology, Academia Sinica\tSCSG\t\t",
 "SCSM\ts\tSouth Carolina State Museum\t\t\t",
 "SCT\ts\tFriend's School\t\t\t",
 "SCTCC\tc\tSichuan Type Culture Collection\t\t\t",
