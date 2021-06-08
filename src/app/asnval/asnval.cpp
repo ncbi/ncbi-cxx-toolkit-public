@@ -465,7 +465,7 @@ void CAsnvalApp::ValidateOneFile(const string& fname)
     } else {
         try {
             if (m_batch) {
-                if (asn_type == "Bioseq-set" ) {
+                if (asn_type == "Bioseq-set") {
                     ProcessBSSReleaseFile();
                 } else if (asn_type == "Seq-submit") {
                     ProcessSSMReleaseFile();
@@ -541,9 +541,9 @@ void CAsnvalApp::ValidateOneDirectory(string dir_name, bool recurse)
     for (CDir::TEntry ii : files) {
         string fname = ii->GetName();
         if (ii->IsFile() &&
-            (!args["f"] || NStr::Find (fname, args["f"].AsString()) != NPOS)) {
-            string fname = CDirEntry::MakePath(dir_name, fname);
-            ValidateOneFile(fname);
+            (!args["f"] || NStr::Find(fname, args["f"].AsString()) != NPOS)) {
+            string fpath = CDirEntry::MakePath(dir_name, fname);
+            ValidateOneFile(fpath);
         }
     }
     if (recurse) {
