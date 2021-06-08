@@ -132,7 +132,7 @@ typedef enum {
 typedef enum {
     eIO_Success = 0,    /**< everything is fine, no error occurred           */
     eIO_Timeout,        /**< timeout expired before any I/O succeeded        */
-    eIO_Reserved,       /**< reserved status code -- do not use!             */
+    eIO_Reserved,       /**< reserved status code -- DO NOT USE!             */
     eIO_Interrupt,      /**< signal arrival prevented any I/O to succeed     */
     eIO_InvalidArg,     /**< bad argument / parameter value(s) supplied      */
     eIO_NotSupported,   /**< operation is not supported or is not available  */

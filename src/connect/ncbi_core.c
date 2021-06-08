@@ -380,7 +380,8 @@ extern LOG LOG_Delete(LOG lg)
         lg->count--;
         lg->magic++;
 
-        lg->lock = MT_LOCK_Delete(lg->lock);
+        MT_LOCK_Delete(lg->lock);
+        lg->lock = 0;
         free(lg);
     }
     return 0;
@@ -402,7 +403,6 @@ extern void LOG_WriteInternal
             lg->handler(lg->data, mess);
 
         LOG_UNLOCK;
-
     }
 
     if (mess->dynamic  &&  mess->message)
@@ -555,7 +555,8 @@ extern REG REG_Delete(REG rg)
         rg->count--;
         rg->magic++;
 
-        rg->lock = MT_LOCK_Delete(rg->lock);
+        MT_LOCK_Delete(rg->lock);
+        rg->lock = 0;
         free(rg);
     }
     return 0;
