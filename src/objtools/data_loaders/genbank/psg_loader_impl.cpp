@@ -1066,7 +1066,7 @@ CTSE_Lock CPSGDataLoader_Impl::GetBlobById(CDataSource* data_source, const CPsgB
     CTSE_LoadLock load_lock;
     {{
         CDataLoader::TBlobId dl_blob_id = CDataLoader::TBlobId(&blob_id);
-        CTSE_LoadLock load_lock = data_source->GetTSE_LoadLockIfLoaded(dl_blob_id);
+        load_lock = data_source->GetTSE_LoadLockIfLoaded(dl_blob_id);
         if ( load_lock && load_lock.IsLoaded() ) {
             _TRACE("GetBlobById() already loaded " << blob_id.ToPsgId());
             return load_lock;
@@ -1111,34 +1111,33 @@ public:
         CDataSource* data_source,
         CPSGDataLoader_Impl& loader,
         bool lock_asap = false,
-        CTSE_LoadLock* load_lock = nullptr)
+        CTSE_LoadLock* load_lock_ptr = nullptr)
         : CPSG_Task(reply, group),
         m_Id(idh),
         m_DataSource(data_source),
         m_Loader(loader),
-        m_LockASAP(lock_asap)  
+        m_LockASAP(lock_asap),
+        m_LoadLockPtr(load_lock_ptr)
     {
-        if ( load_lock ) {
-            m_LoadLock = *load_lock;
-        }
     }
 
     ~CPSG_Blob_Task(void) override {}
 
     struct SAutoReleaseLock {
-        SAutoReleaseLock(CTSE_LoadLock& lock)
-            : m_WasLocked(lock), m_Lock(lock)
+        SAutoReleaseLock(CTSE_LoadLock*& lock_ptr)
+            : m_LockPtr(lock_ptr)
             {
+                if ( !m_LockPtr ) {
+                    m_LockPtr = &m_LocalLock;
+                }
             }
         ~SAutoReleaseLock()
             {
-                if ( !m_WasLocked ) {
-                    m_Lock.Reset();
-                }
+                m_LockPtr = 0;
             }
 
-        bool m_WasLocked;
-        CTSE_LoadLock& m_Lock;
+        CTSE_LoadLock m_LocalLock;
+        CTSE_LoadLock*& m_LockPtr;
     };
 
     typedef pair<shared_ptr<CPSG_BlobInfo>, shared_ptr<CPSG_BlobData>> TBlobSlot;
@@ -1154,7 +1153,12 @@ public:
     const TBlobSlot* GetChunkSlot(const string& id2_info, TChunkId chunk_id) const;
     const TBlobSlot* GetBlobSlot(const CPSG_DataId& id) const;
     TBlobSlot* SetBlobSlot(const CPSG_DataId& id);
-    void GetLoadLock();
+    CTSE_LoadLock& GetLoadLock() const
+        {
+            _ASSERT(m_LoadLockPtr);
+            return *m_LoadLockPtr;
+        }
+    void ObtainLoadLock();
     bool GotBlobData(const string& psg_blob_id) const;
     CPSGDataLoader_Impl::SReplyResult WaitForSkipped(void);
 
@@ -1190,7 +1194,7 @@ private:
     CDataSource* m_DataSource;
     CPSGDataLoader_Impl& m_Loader;
     bool m_LockASAP;
-    CTSE_LoadLock m_LoadLock;
+    CTSE_LoadLock* m_LoadLockPtr;
     TTSEBlobMap m_TSEBlobMap;
     TChunkBlobMap m_ChunkBlobMap;
     map<string, CDataLoader::TBlobId> m_BlobIdMap;
@@ -1290,13 +1294,13 @@ bool CPSG_Blob_Task::GotBlobData(const string& psg_blob_id) const
 }
 
 
-void CPSG_Blob_Task::GetLoadLock()
+void CPSG_Blob_Task::ObtainLoadLock()
 {
     if ( !m_LockASAP ) {
         // load lock is not requested
         return;
     }
-    if ( m_LoadLock ) {
+    if ( GetLoadLock() ) {
         // load lock already obtained
         return;
     }
@@ -1308,20 +1312,20 @@ void CPSG_Blob_Task::GetLoadLock()
         return;
     }
     if ( s_GetDebugLevel() >= 6 ) {
-        LOG_POST("GetLoadLock("<<m_ReplyResult.blob_id<<"): getting load lock");
+        LOG_POST("ObtainLoadLock("<<m_ReplyResult.blob_id<<"): getting load lock");
     }
-    m_LoadLock = m_DataSource->GetTSE_LoadLock(GetDLBlobId(m_ReplyResult.blob_id));
+    GetLoadLock() = m_DataSource->GetTSE_LoadLock(GetDLBlobId(m_ReplyResult.blob_id));
     if ( s_GetDebugLevel() >= 6 ) {
-        LOG_POST("GetLoadLock("<<m_ReplyResult.blob_id<<"): obtained load lock");
+        LOG_POST("ObtainLoadLock("<<m_ReplyResult.blob_id<<"): obtained load lock");
     }
 }
 
-    
+
 void CPSG_Blob_Task::DoExecute(void)
 {
     _TRACE("CPSG_Blob_Task::DoExecute()");
     if (!CheckReplyStatus()) return;
-    SAutoReleaseLock lock_guard(m_LoadLock);
+    SAutoReleaseLock lock_guard(m_LoadLockPtr);
     ReadReply();
     if (m_Status == eFailed) return;
     if (m_Skipped) {
@@ -1384,8 +1388,8 @@ void CPSG_Blob_Task::DoExecute(void)
     }
     CDataLoader::TBlobId dl_blob_id = GetDLBlobId(m_ReplyResult.blob_id);
     CTSE_LoadLock load_lock;
-    if ( m_LoadLock && m_LoadLock->GetBlobId() == dl_blob_id ) {
-        load_lock = m_LoadLock;
+    if ( GetLoadLock() && GetLoadLock()->GetBlobId() == dl_blob_id ) {
+        load_lock = GetLoadLock();
     }
     else {
         load_lock = m_DataSource->GetTSE_LoadLock(dl_blob_id);
@@ -1480,7 +1484,7 @@ void CPSG_Blob_Task::ProcessReplyItem(shared_ptr<CPSG_ReplyItem> item)
         // Only one bioseq-info is allowed per reply.
         shared_ptr<CPSG_BioseqInfo> bioseq_info = static_pointer_cast<CPSG_BioseqInfo>(item);
         m_ReplyResult.blob_id = bioseq_info->GetBlobId().GetId();
-        GetLoadLock();
+        ObtainLoadLock();
         m_Loader.m_BioseqCache->Add(*bioseq_info, m_Id);
         break;
     }
@@ -1490,7 +1494,7 @@ void CPSG_Blob_Task::ProcessReplyItem(shared_ptr<CPSG_ReplyItem> item)
         _TRACE("Blob info: "<<blob_info->GetId()->Repr());
         if ( auto slot = SetBlobSlot(*blob_info->GetId()) ) {
             slot->first = blob_info;
-            GetLoadLock();
+            ObtainLoadLock();
         }
         break;
     }
@@ -1500,7 +1504,7 @@ void CPSG_Blob_Task::ProcessReplyItem(shared_ptr<CPSG_ReplyItem> item)
         _TRACE("Blob data: "<<data->GetId()->Repr());
         if ( auto slot = SetBlobSlot(*data->GetId()) ) {
             slot->second = data;
-            GetLoadLock();
+            ObtainLoadLock();
         }
         break;
     }
@@ -1587,9 +1591,9 @@ void CPSGDataLoader_Impl::GetBlobs(CDataSource* data_source, TTSE_LockSets& tse_
         _ASSERT(task);
         guards.push_back(make_shared<CPSG_Task_Guard>(*task));
         if (task->GetStatus() == CThreadPool_Task::eFailed) {
-            _TRACE("Failed to get blob for " << task->m_Id.AsString());
+            _TRACE("Failed to get blob for " << task->m_Id);
             group.CancelAll();
-            NCBI_THROW(CLoaderException, eLoaderFailed, "failed to load blobs");
+            NCBI_THROW(CLoaderException, eLoaderFailed, "failed to load blobs for "+task->m_Id.AsString());
         }
         if (task->m_Skipped) {
             skipped_tasks.push_back(task);
