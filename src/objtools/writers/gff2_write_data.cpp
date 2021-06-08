@@ -117,8 +117,20 @@ void CGffWriteRecord::x_StrAttributesAppendValue(
     attrs.erase(it);
 }
 
+
 //  ----------------------------------------------------------------------------
-bool CGtfFeatureRecord::AssignFromAsn(
+bool CGffWriteRecord::x_AssignAttributes(
+    const CMappedFeat& mapped_feat,
+    unsigned int )
+//  ----------------------------------------------------------------------------
+{
+    cerr << "FIXME: CGffWriteRecord::x_AssignAttributes" << endl;
+    return true;
+}
+
+
+//  ----------------------------------------------------------------------------
+bool CGffWriteRecord::AssignFromAsn(
     const CMappedFeat& mapped_feature,
     unsigned int flags )
 //  ----------------------------------------------------------------------------
@@ -129,15 +141,6 @@ bool CGtfFeatureRecord::AssignFromAsn(
     return true;
 }
 
-//  ----------------------------------------------------------------------------
-bool CGtfFeatureRecord::x_AssignAttributes(
-    const CMappedFeat& mapped_feat,
-    unsigned int )
-//  ----------------------------------------------------------------------------
-{
-    cerr << "FIXME: CGffWriteRecord::x_AssignAttributes" << endl;
-    return true;
-}
 
 END_objects_SCOPE
 END_NCBI_SCOPE

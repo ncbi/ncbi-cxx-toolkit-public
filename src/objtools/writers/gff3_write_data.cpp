@@ -87,7 +87,7 @@ CGff3WriteRecordFeature::CGff3WriteRecordFeature(
     CGffFeatureContext& fc,
     const string& id )
 //  ----------------------------------------------------------------------------
-    : CGtfFeatureRecord(fc, id)
+    : CGffWriteRecord(fc, id)
 {
 };
 
@@ -95,7 +95,7 @@ CGff3WriteRecordFeature::CGff3WriteRecordFeature(
 CGff3WriteRecordFeature::CGff3WriteRecordFeature(
     const CGff3WriteRecordFeature& other )
 //  ----------------------------------------------------------------------------
-    : CGtfFeatureRecord( other )
+    : CGffWriteRecord( other )
 {
 };
 
@@ -111,7 +111,7 @@ bool CGff3WriteRecordFeature::AssignFromAsnLinear(
     unsigned int flags )
 //  ----------------------------------------------------------------------------
 {
-    return CGtfFeatureRecord::AssignFromAsn(mf, flags);
+    return CGffWriteRecord::AssignFromAsn(mf, flags);
 }
 
 //  ----------------------------------------------------------------------------
@@ -126,7 +126,7 @@ bool CGff3WriteRecordFeature::AssignFromAsn(
 
     CBioseq_Handle bsh = m_fc.BioseqHandle();
     if (!CWriteUtil::IsSequenceCircular(bsh)) {
-        return CGtfFeatureRecord::AssignFromAsn(mf, flags);
+        return CGffWriteRecord::AssignFromAsn(mf, flags);
     }
 
     //  intervals wrapping around the origin extend beyond the sequence length
@@ -135,7 +135,7 @@ bool CGff3WriteRecordFeature::AssignFromAsn(
     unsigned int len = bsh.GetInst().GetLength();
     list< CRef< CSeq_interval > >& sublocs = m_pLoc->SetPacked_int().Set();
     if (sublocs.size() < 2) {
-        return CGtfFeatureRecord::AssignFromAsn(mf, flags);
+        return CGffWriteRecord::AssignFromAsn(mf, flags);
     }
 
     list< CRef< CSeq_interval > >::iterator it, it_ceil=sublocs.end(),
@@ -160,7 +160,7 @@ bool CGff3WriteRecordFeature::AssignFromAsn(
         sublocs.erase(it_floor);
     }
 
-    return CGtfFeatureRecord::AssignFromAsn(mf, flags);
+    return CGffWriteRecord::AssignFromAsn(mf, flags);
 };
 
 //  ----------------------------------------------------------------------------

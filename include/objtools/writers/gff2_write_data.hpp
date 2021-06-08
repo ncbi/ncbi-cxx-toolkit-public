@@ -72,9 +72,17 @@ public:
         return true;
     };
 
+    virtual bool AssignFromAsn(
+        const CMappedFeat&,
+        unsigned int =0);
+
     virtual string StrStructibutes() const { return ""; };
 
 protected:
+    virtual bool x_AssignAttributes(
+        const CMappedFeat&,
+        unsigned int =0);
+
     virtual void x_StrAttributesAppendValue(
         const string&,
         const string&,
@@ -87,27 +95,8 @@ protected:
     static const char* ATTR_SEPARATOR;
 };
 
-//  ============================================================================
-class CGtfFeatureRecord
-//  ============================================================================
-    : public CGffWriteRecord
-{
-public:
-    CGtfFeatureRecord(
-        CGffFeatureContext& fc,
-        const string& id="" ): CGffWriteRecord(fc, id){};
-
-    virtual bool AssignFromAsn(
-        const CMappedFeat&,
-        unsigned int =0);
-
-protected:
-    virtual bool x_AssignAttributes(
-        const CMappedFeat&,
-        unsigned int =0);
-};
-
-using CGffWriteRecordFeature = CGtfFeatureRecord;
+using CGffWriteRecordFeature = CGffWriteRecord;
+using CGtfFeatureRecord = CGffWriteRecord;
 
 END_objects_SCOPE
 END_NCBI_SCOPE
