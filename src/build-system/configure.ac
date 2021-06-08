@@ -754,7 +754,7 @@ for x_arg in "$@" ; do
       | --with-libssh2=* | --with-cassandra=* | --with-nghttp2=* \
       | --with-h2o=* | --with-influxdb=* | --with-libxlsxwriter=* \
       | --with-protobuf=* | --with-grpc=* | --with-msgsl=* | --with-aws-sdk=* \
-      | --with-hiredis=* )
+      | --with-hiredis=* | --with-librdkafka=* | --with-cppkafka=* )
       # Confirm that the specified directory exists and is readable.
       dir=`echo $x_arg | sed -e 's/^[[^=]]*=//'`
       case "$x_arg" in
