@@ -219,11 +219,12 @@ static int/*bool*/ xx_LoadLocalIPs(CONN conn, const char* source)
         if (n < SizeOf(s_LocalIP))
             s_LocalIP[n].type = eIPRange_None;
         n -= 2;  /* compensate for auto-added localnet(s) */
-        CORE_LOGF(eLOG_Trace, ("%s: Done loading local IP specs, %u line%s,"
-                               " %u entr%s (%u domain%s)", source,
-                               lineno, &"s"[lineno == 1],
-                               (unsigned int) n, n == 1 ? "y" : "ies",
-                               domain, &"s"[domain == 1]));
+        CORE_LOGF(eLOG_Trace,
+                  ("%s: Done loading local IP specs, %u line%s,"
+                   " %u entr%s (%u domain%s)", source,
+                   lineno, &"s"[lineno == 1],
+                   (unsigned int) n, n == 1 ? "y" : "ies",
+                   domain, &"s"[domain == 1]));
         return 1/*true*/;
     }
     return 0/*false*/;
@@ -232,15 +233,17 @@ static int/*bool*/ xx_LoadLocalIPs(CONN conn, const char* source)
 
 static int/*bool*/ x_LoadLocalIPs(CONNECTOR c, const char* source)
 {
-    CONN conn;
     int/*bool*/ loaded = 0/*false*/;
-    CORE_LOGF(eLOG_Trace,
-              ("Loading local IP specs from \"%s\"", source));
-    if (c  &&  CONN_Create(c, &conn) == eIO_Success) {
-        loaded = xx_LoadLocalIPs(conn, source);
-        CONN_Close(conn);
-    } else if (c  &&  c->destroy)
-        c->destroy(c);
+    if (c) {
+        CONN conn;
+        CORE_LOGF(eLOG_Trace,
+                  ("Loading local IP specs from \"%s\"", source));
+        if (CONN_Create(c, &conn) == eIO_Success) {
+            loaded = xx_LoadLocalIPs(conn, source);
+            CONN_Close(conn);
+        } else if (c->destroy)
+            c->destroy(c);
+    }
     return loaded;
 }
 
@@ -264,8 +267,8 @@ static void s_LoadLocalIPs(void)
             else if (strcasecmp(file, DEF_CONN_LOCAL_IPS_DISABLE) == 0)
                 break;
             errno = 0;
-            if (NcbiSys_access(file, R_OK) == 0  &&
-                x_LoadLocalIPs(FILE_CreateConnector(file, 0), file)) {
+            if (NcbiSys_access(file, R_OK) == 0
+                &&  x_LoadLocalIPs(FILE_CreateConnector(file, 0), file)) {
                 return;
             }
             if (errno == ENOENT  &&  file != buf) {
@@ -287,12 +290,12 @@ static void s_LoadLocalIPs(void)
         else
             n = 0;
         /* Build a pass-thru HTTP connector here to save on a dispatcher hit */
-        if (n  &&  ConnNetInfo_SetupStandardArgs(net_info, net_info->svc)  &&
-            x_LoadLocalIPs(HTTP_CreateConnector(net_info,
-                                                "User-Agent: ncbi_localip",
-                                                fHTTP_NoAutoRetry |
-                                                fHTTP_SuppressMessages),
-                           net_info->svc)) {
+        if (n  &&  ConnNetInfo_SetupStandardArgs(net_info, net_info->svc)
+            &&  x_LoadLocalIPs(HTTP_CreateConnector(net_info,
+                                                    "User-Agent: ncbi_localip",
+                                                    fHTTP_NoAutoRetry |
+                                                    fHTTP_SuppressMessages),
+                               net_info->svc)) {
             ConnNetInfo_Destroy(net_info);
             return;
         }
