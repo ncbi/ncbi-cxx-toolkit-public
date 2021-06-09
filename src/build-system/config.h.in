@@ -410,6 +410,9 @@
    the standard libraries. */
 #undef HAVE_LIBICONV
 
+/* Define to 1 if libjaegertracing is available. */
+#undef HAVE_LIBJAEGER
+
 /* Define to 1 if libjpeg is available. */
 #undef HAVE_LIBJPEG
 
@@ -465,6 +468,9 @@
 /* Define to 1 if libssl is available. */
 #undef HAVE_LIBOPENSSL
 
+/* Define to 1 if libopentracing is available. */
+#undef HAVE_LIBOPENTRACING
+
 /* Define to 1 if you have libOSMesa. */
 #undef HAVE_LIBOSMESA
 
@@ -518,6 +524,9 @@
 /* Define to 1 if SYBASE DBLib is available. */
 #undef HAVE_LIBSYBDB
 
+/* Define to 1 if libthrift$THRIFT_SFX is available. */
+#undef HAVE_LIBTHRIFT
+
 /* Define to 1 if libtiff is available. */
 #undef HAVE_LIBTIFF
 
@@ -541,6 +550,9 @@
 
 /* Define to 1 if libxslt is available. */
 #undef HAVE_LIBXSLT
+
+/* Define to 1 if libyaml-cpp is available. */
+#undef HAVE_LIBYAML_CPP
 
 /* Define to 1 if libz is available. */
 #undef HAVE_LIBZ
