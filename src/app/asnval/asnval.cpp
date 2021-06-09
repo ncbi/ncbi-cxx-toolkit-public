@@ -309,10 +309,13 @@ void CAsnvalApp::Init()
 \tm Seq-submit\n\
 \td Seq-desc",
                             CArgDescriptions::eString,
-                            "a");
+                            "",
+                            CArgDescriptions::fHidden);
 
-    arg_desc->AddFlag("b", "Input is in binary format");
-    arg_desc->AddFlag("c", "Batch File is Compressed");
+    arg_desc->AddFlag("b", "Input is in binary format; obsolete",
+        CArgDescriptions::eFlagHasValueIfSet, CArgDescriptions::fHidden);
+    arg_desc->AddFlag("c", "Batch File is Compressed; obsolete",
+        CArgDescriptions::eFlagHasValueIfSet, CArgDescriptions::fHidden);
 
     arg_desc->AddFlag("quiet", "Do not log progress");
 
@@ -364,53 +367,30 @@ CConstRef<CValidError> CAsnvalApp::ValidateInput(string asn_type)
     // Release file (batch processing) where we process each Seq-entry
     // at a time.
     CConstRef<CValidError> eval;
-    // ASN.1 Type (a Automatic, e Seq-entry, b Bioseq, s Bioseq-set, m Seq-submit",
-    m_In->ReadFileHeader();
-    string header = asn_type;
-    if (header.empty() && !m_obj_type.empty())
-    {
-        switch (m_obj_type[0])
-        {
-        case 'e':
-            header = "Seq-entry";
-            break;
-        case 'm':
-            header = "Seq-submit";
-            break;
-        case 's':
-            header = "Bioseq-set";
-            break;
-        case 'b':
-            header = "Bioseq";
-            break;
-        case 'd':
-            header = "Seqdesc";
-            break;
-        }
-    }
+    string header = m_In->ReadFileHeader();
 
-    if (!m_obj_type.empty() && m_obj_type[0] == 'c') {
+    if (m_obj_type == "c") {
         eval = ProcessCatenated();
-    } else if (header == "Seq-submit" ) {           // Seq-submit
+    } else if (asn_type == "Seq-submit") {          // Seq-submit
         eval = ProcessSeqSubmit();
-    } else if ( header == "Seq-entry" ) {           // Seq-entry
+    } else if (asn_type == "Seq-entry") {           // Seq-entry
         eval = ProcessSeqEntry();
-    } else if ( header == "Seq-annot" ) {           // Seq-annot
+    } else if ( asn_type == "Seq-annot") {          // Seq-annot
         eval = ProcessSeqAnnot();
-    } else if (header == "Seq-feat" ) {             // Seq-feat
+    } else if (asn_type == "Seq-feat") {            // Seq-feat
         eval = ProcessSeqFeat();
-    } else if (header == "BioSource" ) {            // BioSource
+    } else if (asn_type == "BioSource") {           // BioSource
         eval = ProcessBioSource();
-    } else if (header == "Pubdesc" ) {              // Pubdesc
+    } else if (asn_type == "Pubdesc") {             // Pubdesc
         eval = ProcessPubdesc();
-    } else if (header == "Bioseq-set" ) {           // Bioseq-set
+    } else if (asn_type == "Bioseq-set") {          // Bioseq-set
         eval = ProcessBioseqset();
-    } else if (header == "Bioseq" ) {               // Bioseq
+    } else if (asn_type == "Bioseq") {              // Bioseq
         eval = ProcessBioseq();
-    } else if (header == "Seqdesc" ) {             // Seq-desc
+    } else if (asn_type == "Seqdesc") {             // Seq-desc
         eval = ProcessSeqDesc();
     } else {
-        NCBI_THROW(CException, eUnknown, "Unhandled type " + header);
+        NCBI_THROW(CException, eUnknown, "Unhandled type " + asn_type);
     }
 
     return eval;
@@ -601,14 +581,18 @@ int CAsnvalApp::Run()
 
     m_obj_type = args["a"].AsString();
 
-    if (m_obj_type == "t" || m_obj_type == "u") {
-        m_batch = true;
-        cerr << "Warning: -a t and -a u are deprecated; use -batch instead." << endl;
+    if (!m_obj_type.empty()) {
+        if (m_obj_type == "t" || m_obj_type == "u") {
+            m_batch = true;
+            cerr << "Warning: -a t and -a u are deprecated; use -batch instead." << endl;
+        } else if (m_obj_type != "c") {
+            // -a c still in use
+            cerr << "Warning: -a is deprecated; ASN.1 type is now autodetected." << endl;
+        }
     }
 
-    if (args["b"] && m_obj_type == "a")
-    {
-        NCBI_THROW(CException, eUnknown, "Specific argument -a must be used along with -b flags");
+    if (args["b"]) {
+        cerr << "Warning: -b is deprecated; do not use" << endl;
     }
 
     bool exception_caught = false;
