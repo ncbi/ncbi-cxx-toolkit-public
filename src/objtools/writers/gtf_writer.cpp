@@ -93,53 +93,6 @@ private:
 };
 map<string, int> CGtfIdGenerator::mLastSuffixes;
 
-/*//  ----------------------------------------------------------------------------
-CConstRef<CUser_object> sGetUserObjectByType(
-    const CUser_object& uo,
-    const string& strType )
-    //  ----------------------------------------------------------------------------
-{
-    if ( uo.IsSetType() && uo.GetType().IsStr() &&
-        uo.GetType().GetStr() == strType ) {
-        return CConstRef<CUser_object>( &uo );
-    }
-    const CUser_object::TData& fields = uo.GetData();
-    for ( CUser_object::TData::const_iterator it = fields.begin();
-        it != fields.end();
-        ++it ) {
-        const CUser_field& field = **it;
-        if ( field.IsSetData() ) {
-            const CUser_field::TData& data = field.GetData();
-            if ( data.Which() == CUser_field::TData::e_Object ) {
-                CConstRef<CUser_object> recur = sGetUserObjectByType(
-                    data.GetObject(), strType );
-                if ( recur ) {
-                    return recur;
-                }
-            }
-        }
-    }
-    return CConstRef<CUser_object>();
-}*/
-
-//  ----------------------------------------------------------------------------
-/*CConstRef<CUser_object> sGetUserObjectByType(
-    const list<CRef<CUser_object > >& uos,
-    const string& strType)
-    //  ----------------------------------------------------------------------------
-{
-    CConstRef<CUser_object> pResult;
-    typedef list<CRef<CUser_object > >::const_iterator CIT;
-    for (CIT cit=uos.begin(); cit != uos.end(); ++cit) {
-        const CUser_object& uo = **cit;
-        pResult = sGetUserObjectByType(uo, strType);
-        if (pResult) {
-            return pResult;
-        }
-    }
-    return CConstRef<CUser_object>();
-}*/
-
 //  ----------------------------------------------------------------------------
 CGtfWriter::CGtfWriter(
     CScope&scope,

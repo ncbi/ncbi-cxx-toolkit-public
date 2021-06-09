@@ -782,10 +782,10 @@ bool CGff3Writer::xWriteAlignDenseg(
         CRef<CGffAlignRecord> pSource(new CGffAlignRecord(alignId));
         const CSeq_id& targetId = alnMap.GetSeqId(sourceRow);
         CBioseq_Handle targetH = m_pScope->GetBioseqHandle(targetId);
-        if (!xAssignAlignmentScores(*pSource, align)) {
+        if (!xAssignAlignmentDenseg(*pSource, alnMap, sourceRow)) {
             return false;
         }
-        if (!xAssignAlignmentDenseg(*pSource, alnMap, sourceRow)) {
+        if (!xAssignAlignmentScores(*pSource, align)) {
             return false;
         }
         return xWriteRecord(*pSource);
