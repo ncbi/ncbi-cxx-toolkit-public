@@ -439,13 +439,107 @@ BOOST_AUTO_TEST_CASE(CheckExtSNPEditChangeId)
 }
 
 
+BOOST_AUTO_TEST_CASE(GBImplicitNA64)
+{
+    CRef<CScope> scope = s_MakeScope0();
+    string na_acc = "NA000306983.1#1";
+    string seq_id = "2500000194";
+    TSeqPos range_from = 0;
+    TSeqPos range_to = 100000;
+    size_t snp_count = 1;
+    
+    CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetHandle(seq_id));
+    BOOST_REQUIRE(bh);
+
+    s_TestNA("GBImplicitNA 1", eFromGB, na_acc, bh, range_from, range_to, snp_count);
+}
+
+
+BOOST_AUTO_TEST_CASE(GBImplicitSNP64)
+{
+    CRef<CScope> scope = s_MakeScope0();
+    string seq_id = "2500000194";
+    TSeqPos range_from = 0;
+    TSeqPos range_to = 100000;
+    size_t snp_count = 1;
+    
+    string seq_id2 = "CM029356.1";
+    TSeqPos range_from2 = 0;
+    TSeqPos range_to2 = 100000;
+    size_t snp_count2 = 1;
+    
+    CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetHandle(seq_id));
+    BOOST_REQUIRE(bh);
+    CBioseq_Handle bh2 = scope->GetBioseqHandle(CSeq_id_Handle::GetHandle(seq_id2));
+    BOOST_REQUIRE(bh2);
+
+    s_TestPTIS("GBImplicitSNP 1", eFromGB, bh, range_from, range_to, snp_count);
+    s_TestPTIS("GBImplicitSNP 2", eFromGB, bh2, range_from2, range_to2, snp_count2);
+}
+
+
+BOOST_AUTO_TEST_CASE(SNPExplicitNA64)
+{
+    string na_acc = "NA000306983.1#1";
+    string na_acc2 = "NA000306983.1#3";
+    CRef<CScope> scope = s_MakeScope(na_acc);
+    string seq_id = "2500000194";
+    TSeqPos range_from = 0;
+    TSeqPos range_to = 100000;
+    size_t snp_count = 1;
+    
+    CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetHandle(seq_id));
+    BOOST_REQUIRE(bh);
+
+    s_TestNA("SNPExplicitNA 1", eFromSNP, na_acc, bh, range_from, range_to, snp_count);
+    s_TestNoNA("SNPExplicitNA 2", na_acc2, bh, range_from, range_to);
+}
+
+
+BOOST_AUTO_TEST_CASE(SNPImplicitNA64)
+{
+    CRef<CScope> scope = s_MakeScope();
+    string na_acc = "NA000306983.1#1";
+    string na_acc2 = "NA000306983.1#3";
+    string seq_id = "2500000194";
+    TSeqPos range_from = 0;
+    TSeqPos range_to = 100000;
+    size_t snp_count = 1;
+    
+    CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetHandle(seq_id));
+    BOOST_REQUIRE(bh);
+
+    s_TestNA("SNPImplicitNA 1", eFromSNP, na_acc, bh, range_from, range_to, snp_count);
+    s_TestNoNA("SNPImplicitNA 2", na_acc2, bh, range_from, range_to);
+}
+
+
+BOOST_AUTO_TEST_CASE(SNPImplicitSNP64)
+{
+    CRef<CScope> scope = s_MakeScope();
+    string seq_id = "2500000194";
+    TSeqPos range_from = 0;
+    TSeqPos range_to = 100000;
+    size_t snp_count = 1;
+    
+    CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetHandle(seq_id));
+    BOOST_REQUIRE(bh);
+
+    s_TestPTIS("SNPImplicitSNP 1", eFromSNP, bh, range_from, range_to, snp_count);
+}
+
+
 NCBITEST_INIT_TREE()
 {
-    if ( CGBDataLoader::IsUsingPSGLoader() ) {
-        NCBITEST_DISABLE(GBImplicitNA);
-        NCBITEST_DISABLE(GBImplicitSNP);
-    }
     if ( !CSNPDataLoader::IsUsingPTIS() ) {
         NCBITEST_DISABLE(SNPImplicitSNP);
+        NCBITEST_DISABLE(SNPImplicitSNP64);
     }
+#ifdef NCBI_INT4_GI
+    NCBITEST_DISABLE(GBImplicitNA64)
+    NCBITEST_DISABLE(GBImplicitSNP64)
+    NCBITEST_DISABLE(SNPExplicitNA64)
+    NCBITEST_DISABLE(SNPImplicitNA64)
+    NCBITEST_DISABLE(SNPImplicitSNP64)
+#endif
 }
