@@ -29788,15 +29788,17 @@ if test "$with_avro" != no; then
       yes | '' ) ;;
       *        ) AVRO_PATH=$with_avro ;;
    esac
-   for d in "$AVRO_PATH/${compiler_vpfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}" \
-            "$AVRO_PATH/${compiler_pfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}" \
-            "$AVRO_PATH/${compiler_vpfx}${DEBUG_SFX}${mt_sfx}" \
-            "$AVRO_PATH/${compiler_pfx}${DEBUG_SFX}${mt_sfx}"; do
-      if test -d "$d"; then
-         AVRO_PATH=$d
-         break
-      fi
-   done
+   AVRO_ARCH_PATH=$AVRO_PATH
+for d in "$AVRO_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+         "$AVRO_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+         "$AVRO_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx" \
+         "$AVRO_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx"; do
+   if test -d "$d"; then
+      AVRO_ARCH_PATH=$d
+      break
+   fi
+done
+   AVRO_PATH=$AVRO_ARCH_PATH
    if test -d "$AVRO_PATH"; then
       ncbi_fix_dir_tmp=`if cd $AVRO_PATH; then { PWD=; unset PWD;}; /bin/pwd; fi`
  case "$ncbi_fix_dir_tmp" in
@@ -30393,15 +30395,17 @@ if test "$with_mongodb3" != no; then
       yes | '' ) ;;
       *        ) MONGODB3_PATH=$with_mongodb3 ;;
    esac
-   for d in "$MONGODB3_PATH/${compiler_vpfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}" \
-            "$MONGODB3_PATH/${compiler_pfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}" \
-            "$MONGODB3_PATH/${compiler_vpfx}${DEBUG_SFX}${mt_sfx}" \
-            "$MONGODB3_PATH/${compiler_pfx}${DEBUG_SFX}${mt_sfx}"; do
-      if test -d "$d"; then
-         MONGODB3_PATH=$d
-         break
-      fi
-   done
+   MONGODB3_ARCH_PATH=$MONGODB3_PATH
+for d in "$MONGODB3_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+         "$MONGODB3_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+         "$MONGODB3_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx" \
+         "$MONGODB3_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx"; do
+   if test -d "$d"; then
+      MONGODB3_ARCH_PATH=$d
+      break
+   fi
+done
+   MONGODB3_PATH=$MONGODB3_ARCH_PATH
    if test -d "$MONGODB3_PATH"; then
       ncbi_fix_dir_tmp=`if cd $MONGODB3_PATH; then { PWD=; unset PWD;}; /bin/pwd; fi`
  case "$ncbi_fix_dir_tmp" in
@@ -30607,15 +30611,17 @@ if test "$with_leveldb" != no; then
       yes | '' ) ;;
       *        ) LEVELDB_PATH=$with_leveldb ;;
    esac
-   for d in "$LEVELDB_PATH/${compiler_vpfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}" \
-            "$LEVELDB_PATH/${compiler_pfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}" \
-            "$LEVELDB_PATH/${compiler_vpfx}${DEBUG_SFX}${mt_sfx}" \
-            "$LEVELDB_PATH/${compiler_pfx}${DEBUG_SFX}${mt_sfx}"; do
-      if test -d "$d"; then
-         LEVELDB_PATH=$d
-         break
-      fi
-   done
+   LEVELDB_ARCH_PATH=$LEVELDB_PATH
+for d in "$LEVELDB_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+         "$LEVELDB_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+         "$LEVELDB_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx" \
+         "$LEVELDB_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx"; do
+   if test -d "$d"; then
+      LEVELDB_ARCH_PATH=$d
+      break
+   fi
+done
+   LEVELDB_PATH=$LEVELDB_ARCH_PATH
    if test -d "$LEVELDB_PATH"; then
       ncbi_fix_dir_tmp=`if cd $LEVELDB_PATH; then { PWD=; unset PWD;}; /bin/pwd; fi`
  case "$ncbi_fix_dir_tmp" in
@@ -30790,14 +30796,18 @@ if test -d "$GMOCK_PATH"; then
          ;;
     /*) GMOCK_PATH=$ncbi_fix_dir_tmp ;;
  esac
-   for d in "$GMOCK_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx/lib" \
-            "$GMOCK_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx/lib" \
-            "$GMOCK_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx/lib" \
-            "$GMOCK_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx/lib" \
-            "$GMOCK_PATH/lib$bit64_sfx" "$GMOCK_PATH/lib"; do
-      if test -d "$d"; then
-         GMOCK_LIBDIR=$d
-         ncbi_fix_dir_tmp=`if cd $GMOCK_LIBDIR; then { PWD=; unset PWD;}; /bin/pwd; fi`
+   GMOCK_ARCH_PATH=$GMOCK_PATH
+for d in "$GMOCK_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+         "$GMOCK_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+         "$GMOCK_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx" \
+         "$GMOCK_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx"; do
+   if test -d "$d"; then
+      GMOCK_ARCH_PATH=$d
+      break
+   fi
+done
+   GMOCK_LIBDIR=$GMOCK_ARCH_PATH/lib
+   ncbi_fix_dir_tmp=`if cd $GMOCK_LIBDIR; then { PWD=; unset PWD;}; /bin/pwd; fi`
  case "$ncbi_fix_dir_tmp" in
     /.*) ncbi_fix_dir_tmp2=`cd $GMOCK_LIBDIR && $smart_pwd 2>/dev/null`
          if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
@@ -30811,9 +30821,6 @@ if test -d "$GMOCK_PATH"; then
          ;;
     /*) GMOCK_LIBDIR=$ncbi_fix_dir_tmp ;;
  esac
-         break
-      fi
-   done
 fi
 ncbi_rp_L_flags=
  ncbi_rp_L_sep=$CONF_f_libpath
@@ -31768,6 +31775,17 @@ case "$with_cassandra" in
    *             ) CASSANDRA_PATH=$with_cassandra ;;
 esac
 if test -d "$CASSANDRA_PATH"; then
+   CASSANDRA_ARCH_PATH=$CASSANDRA_PATH
+for d in "$CASSANDRA_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+         "$CASSANDRA_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+         "$CASSANDRA_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx" \
+         "$CASSANDRA_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx"; do
+   if test -d "$d"; then
+      CASSANDRA_ARCH_PATH=$d
+      break
+   fi
+done
+   CASSANDRA_PATH=$CASSANDRA_ARCH_PATH
    ncbi_fix_dir_tmp=`if cd $CASSANDRA_PATH; then { PWD=; unset PWD;}; /bin/pwd; fi`
  case "$ncbi_fix_dir_tmp" in
     /.*) ncbi_fix_dir_tmp2=`cd $CASSANDRA_PATH && $smart_pwd 2>/dev/null`
@@ -31782,29 +31800,6 @@ if test -d "$CASSANDRA_PATH"; then
          ;;
     /*) CASSANDRA_PATH=$ncbi_fix_dir_tmp ;;
  esac
-   for d in "$CASSANDRA_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
-            "$CASSANDRA_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
-            "$CASSANDRA_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx" \
-            "$CASSANDRA_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx"; do
-      if test -d "$d"; then
-         CASSANDRA_PATH=$d
-         ncbi_fix_dir_tmp=`if cd $CASSANDRA_PATH; then { PWD=; unset PWD;}; /bin/pwd; fi`
- case "$ncbi_fix_dir_tmp" in
-    /.*) ncbi_fix_dir_tmp2=`cd $CASSANDRA_PATH && $smart_pwd 2>/dev/null`
-         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
-            CASSANDRA_PATH=$ncbi_fix_dir_tmp2
-         else
-            case "$CASSANDRA_PATH" in
-               /*) ;;
-               * ) CASSANDRA_PATH=$ncbi_fix_dir_tmp ;;
-            esac
-         fi
-         ;;
-    /*) CASSANDRA_PATH=$ncbi_fix_dir_tmp ;;
- esac
-         break
-      fi
-   done
 fi
 if test "$with_cassandra" != "no"; then
     case "$CASSANDRA_PATH:$with_cassandra" in
@@ -31962,13 +31957,18 @@ if test -d "$NGHTTP2_PATH"; then
          ;;
     /*) NGHTTP2_PATH=$ncbi_fix_dir_tmp ;;
  esac
-   for d in "$NGHTTP2_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
-            "$NGHTTP2_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
-            "$NGHTTP2_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx" \
-            "$NGHTTP2_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx"; do
-      if test -d "$d/lib"; then
-         NGHTTP2_LIBDIR=$d/lib
-         ncbi_fix_dir_tmp=`if cd $NGHTTP2_LIBDIR; then { PWD=; unset PWD;}; /bin/pwd; fi`
+   NGHTTP2_ARCH_PATH=$NGHTTP2_PATH
+for d in "$NGHTTP2_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+         "$NGHTTP2_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+         "$NGHTTP2_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx" \
+         "$NGHTTP2_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx"; do
+   if test -d "$d"; then
+      NGHTTP2_ARCH_PATH=$d
+      break
+   fi
+done
+   NGHTTP2_LIBDIR=$NGHTTP2_ARCH_PATH/lib
+   ncbi_fix_dir_tmp=`if cd $NGHTTP2_LIBDIR; then { PWD=; unset PWD;}; /bin/pwd; fi`
  case "$ncbi_fix_dir_tmp" in
     /.*) ncbi_fix_dir_tmp2=`cd $NGHTTP2_LIBDIR && $smart_pwd 2>/dev/null`
          if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
@@ -31982,9 +31982,6 @@ if test -d "$NGHTTP2_PATH"; then
          ;;
     /*) NGHTTP2_LIBDIR=$ncbi_fix_dir_tmp ;;
  esac
-         break
-      fi
-   done
 fi
 ncbi_rp_L_flags=
  ncbi_rp_L_sep=$CONF_f_libpath
@@ -32161,6 +32158,17 @@ case "$with_h2o" in
    *             ) H2O_PATH=$with_h2o ;;
 esac
 if test -d "$H2O_PATH"; then
+   H2O_ARCH_PATH=$H2O_PATH
+for d in "$H2O_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+         "$H2O_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+         "$H2O_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx" \
+         "$H2O_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx"; do
+   if test -d "$d"; then
+      H2O_ARCH_PATH=$d
+      break
+   fi
+done
+   H2O_PATH=$H2O_ARCH_PATH
    ncbi_fix_dir_tmp=`if cd $H2O_PATH; then { PWD=; unset PWD;}; /bin/pwd; fi`
  case "$ncbi_fix_dir_tmp" in
     /.*) ncbi_fix_dir_tmp2=`cd $H2O_PATH && $smart_pwd 2>/dev/null`
@@ -32175,29 +32183,6 @@ if test -d "$H2O_PATH"; then
          ;;
     /*) H2O_PATH=$ncbi_fix_dir_tmp ;;
  esac
-   for d in "$H2O_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
-            "$H2O_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
-            "$H2O_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx" \
-            "$H2O_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx"; do
-      if test -d "$d"; then
-         H2O_PATH=$d
-         ncbi_fix_dir_tmp=`if cd $H2O_PATH; then { PWD=; unset PWD;}; /bin/pwd; fi`
- case "$ncbi_fix_dir_tmp" in
-    /.*) ncbi_fix_dir_tmp2=`cd $H2O_PATH && $smart_pwd 2>/dev/null`
-         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
-            H2O_PATH=$ncbi_fix_dir_tmp2
-         else
-            case "$H2O_PATH" in
-               /*) ;;
-               * ) H2O_PATH=$ncbi_fix_dir_tmp ;;
-            esac
-         fi
-         ;;
-    /*) H2O_PATH=$ncbi_fix_dir_tmp ;;
- esac
-         break
-      fi
-   done
 fi
 if test "$with_h2o" != "no"; then
     case "$H2O_PATH:$with_h2o" in
@@ -33109,6 +33094,17 @@ case "$with_aws_sdk" in
    *             ) AWS_SDK_PATH=$with_aws_sdk ;;
 esac
 if test -d "$AWS_SDK_PATH"; then
+   AWS_SDK_ARCH_PATH=$AWS_SDK_PATH
+for d in "$AWS_SDK_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+         "$AWS_SDK_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+         "$AWS_SDK_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx" \
+         "$AWS_SDK_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx"; do
+   if test -d "$d"; then
+      AWS_SDK_ARCH_PATH=$d
+      break
+   fi
+done
+   AWS_SDK_PATH=$AWS_SDK_ARCH_PATH
    ncbi_fix_dir_tmp=`if cd $AWS_SDK_PATH; then { PWD=; unset PWD;}; /bin/pwd; fi`
  case "$ncbi_fix_dir_tmp" in
     /.*) ncbi_fix_dir_tmp2=`cd $AWS_SDK_PATH && $smart_pwd 2>/dev/null`
@@ -33123,29 +33119,6 @@ if test -d "$AWS_SDK_PATH"; then
          ;;
     /*) AWS_SDK_PATH=$ncbi_fix_dir_tmp ;;
  esac
-   for d in "$AWS_SDK_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
-            "$AWS_SDK_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
-            "$AWS_SDK_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx" \
-            "$AWS_SDK_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx"; do
-      if test -d "$d"; then
-         AWS_SDK_PATH=$d
-         ncbi_fix_dir_tmp=`if cd $AWS_SDK_PATH; then { PWD=; unset PWD;}; /bin/pwd; fi`
- case "$ncbi_fix_dir_tmp" in
-    /.*) ncbi_fix_dir_tmp2=`cd $AWS_SDK_PATH && $smart_pwd 2>/dev/null`
-         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
-            AWS_SDK_PATH=$ncbi_fix_dir_tmp2
-         else
-            case "$AWS_SDK_PATH" in
-               /*) ;;
-               * ) AWS_SDK_PATH=$ncbi_fix_dir_tmp ;;
-            esac
-         fi
-         ;;
-    /*) AWS_SDK_PATH=$ncbi_fix_dir_tmp ;;
- esac
-         break
-      fi
-   done
 fi
 AWS_SDK_LDEP=
 AWS_SDK_STATIC_LDEP=
@@ -33624,6 +33597,17 @@ case "$with_librdkafka" in
    *             ) LIBRDKAFKA_PATH=$with_librdkafka ;;
 esac
 if test -d "$LIBRDKAFKA_PATH"; then
+   LIBRDKAFKA_ARCH_PATH=$LIBRDKAFKA_PATH
+for d in "$LIBRDKAFKA_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+         "$LIBRDKAFKA_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+         "$LIBRDKAFKA_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx" \
+         "$LIBRDKAFKA_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx"; do
+   if test -d "$d"; then
+      LIBRDKAFKA_ARCH_PATH=$d
+      break
+   fi
+done
+   LIBRDKAFKA_PATH=$LIBRDKAFKA_ARCH_PATH
    ncbi_fix_dir_tmp=`if cd $LIBRDKAFKA_PATH; then { PWD=; unset PWD;}; /bin/pwd; fi`
  case "$ncbi_fix_dir_tmp" in
     /.*) ncbi_fix_dir_tmp2=`cd $LIBRDKAFKA_PATH && $smart_pwd 2>/dev/null`
@@ -33638,29 +33622,6 @@ if test -d "$LIBRDKAFKA_PATH"; then
          ;;
     /*) LIBRDKAFKA_PATH=$ncbi_fix_dir_tmp ;;
  esac
-   for d in "$LIBRDKAFKA_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
-            "$LIBRDKAFKA_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
-            "$LIBRDKAFKA_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx" \
-            "$LIBRDKAFKA_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx"; do
-      if test -d "$d"; then
-         LIBRDKAFKA_PATH=$d
-         ncbi_fix_dir_tmp=`if cd $LIBRDKAFKA_PATH; then { PWD=; unset PWD;}; /bin/pwd; fi`
- case "$ncbi_fix_dir_tmp" in
-    /.*) ncbi_fix_dir_tmp2=`cd $LIBRDKAFKA_PATH && $smart_pwd 2>/dev/null`
-         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
-            LIBRDKAFKA_PATH=$ncbi_fix_dir_tmp2
-         else
-            case "$LIBRDKAFKA_PATH" in
-               /*) ;;
-               * ) LIBRDKAFKA_PATH=$ncbi_fix_dir_tmp ;;
-            esac
-         fi
-         ;;
-    /*) LIBRDKAFKA_PATH=$ncbi_fix_dir_tmp ;;
- esac
-         break
-      fi
-   done
 fi
 
 if test "$with_librdkafka" != "no"; then
@@ -33804,6 +33765,17 @@ case "$with_cppkafka" in
    *             ) CPPKAFKA_PATH=$with_cppkafka ;;
 esac
 if test -d "$CPPKAFKA_PATH"; then
+   CPPKAFKA_ARCH_PATH=$CPPKAFKA_PATH
+for d in "$CPPKAFKA_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+         "$CPPKAFKA_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+         "$CPPKAFKA_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx" \
+         "$CPPKAFKA_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx"; do
+   if test -d "$d"; then
+      CPPKAFKA_ARCH_PATH=$d
+      break
+   fi
+done
+   CPPKAFKA_PATH=$CPPKAFKA_ARCH_PATH
    ncbi_fix_dir_tmp=`if cd $CPPKAFKA_PATH; then { PWD=; unset PWD;}; /bin/pwd; fi`
  case "$ncbi_fix_dir_tmp" in
     /.*) ncbi_fix_dir_tmp2=`cd $CPPKAFKA_PATH && $smart_pwd 2>/dev/null`
@@ -33818,29 +33790,6 @@ if test -d "$CPPKAFKA_PATH"; then
          ;;
     /*) CPPKAFKA_PATH=$ncbi_fix_dir_tmp ;;
  esac
-   for d in "$CPPKAFKA_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
-            "$CPPKAFKA_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
-            "$CPPKAFKA_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx" \
-            "$CPPKAFKA_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx"; do
-      if test -d "$d"; then
-         CPPKAFKA_PATH=$d
-         ncbi_fix_dir_tmp=`if cd $CPPKAFKA_PATH; then { PWD=; unset PWD;}; /bin/pwd; fi`
- case "$ncbi_fix_dir_tmp" in
-    /.*) ncbi_fix_dir_tmp2=`cd $CPPKAFKA_PATH && $smart_pwd 2>/dev/null`
-         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
-            CPPKAFKA_PATH=$ncbi_fix_dir_tmp2
-         else
-            case "$CPPKAFKA_PATH" in
-               /*) ;;
-               * ) CPPKAFKA_PATH=$ncbi_fix_dir_tmp ;;
-            esac
-         fi
-         ;;
-    /*) CPPKAFKA_PATH=$ncbi_fix_dir_tmp ;;
- esac
-         break
-      fi
-   done
 fi
 
 if test "$with_cppkafka" != "no"; then

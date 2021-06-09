@@ -55,6 +55,19 @@ AC_DEFUN(NCBI_FIX_DIR,
  esac])
 
 
+AC_DEFUN(NCBI_FIND_ARCH_PATH,
+[[$1]_ARCH_PATH=$[$1]_PATH
+for d in "$[$1]_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+         "$[$1]_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+         "$[$1]_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx" \
+         "$[$1]_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx"; do
+   if test -d "$d"; then
+      [$1]_ARCH_PATH=$d
+      break
+   fi
+done])
+
+
 # Keep track of (un)available features, packages, and projects.
 AC_DEFUN(NCBI_FEAT_EX,
          [m4_append_uniq([NCBI_ALL_]$1, $2, [ ])dnl

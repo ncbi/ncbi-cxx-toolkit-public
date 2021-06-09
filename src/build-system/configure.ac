@@ -7922,15 +7922,8 @@ if test "$with_avro" != no; then
       yes | '' ) ;;
       *        ) AVRO_PATH=$with_avro ;;
    esac
-   for d in "$AVRO_PATH/${compiler_vpfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}" \
-            "$AVRO_PATH/${compiler_pfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}" \
-            "$AVRO_PATH/${compiler_vpfx}${DEBUG_SFX}${mt_sfx}" \
-            "$AVRO_PATH/${compiler_pfx}${DEBUG_SFX}${mt_sfx}"; do
-      if test -d "$d"; then
-         AVRO_PATH=$d
-         break
-      fi
-   done
+   NCBI_FIND_ARCH_PATH(AVRO)
+   AVRO_PATH=$AVRO_ARCH_PATH
    if test -d "$AVRO_PATH"; then
       NCBI_FIX_DIR(AVRO_PATH)
    fi
@@ -8024,15 +8017,8 @@ if test "$with_mongodb3" != no; then
       yes | '' ) ;;
       *        ) MONGODB3_PATH=$with_mongodb3 ;;
    esac
-   for d in "$MONGODB3_PATH/${compiler_vpfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}" \
-            "$MONGODB3_PATH/${compiler_pfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}" \
-            "$MONGODB3_PATH/${compiler_vpfx}${DEBUG_SFX}${mt_sfx}" \
-            "$MONGODB3_PATH/${compiler_pfx}${DEBUG_SFX}${mt_sfx}"; do
-      if test -d "$d"; then
-         MONGODB3_PATH=$d
-         break
-      fi
-   done
+   NCBI_FIND_ARCH_PATH(MONGODB3)
+   MONGODB3_PATH=$MONGODB3_ARCH_PATH
    if test -d "$MONGODB3_PATH"; then
       NCBI_FIX_DIR(MONGODB3_PATH)
    fi
@@ -8074,15 +8060,8 @@ if test "$with_leveldb" != no; then
       yes | '' ) ;;
       *        ) LEVELDB_PATH=$with_leveldb ;;
    esac
-   for d in "$LEVELDB_PATH/${compiler_vpfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}" \
-            "$LEVELDB_PATH/${compiler_pfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}" \
-            "$LEVELDB_PATH/${compiler_vpfx}${DEBUG_SFX}${mt_sfx}" \
-            "$LEVELDB_PATH/${compiler_pfx}${DEBUG_SFX}${mt_sfx}"; do
-      if test -d "$d"; then
-         LEVELDB_PATH=$d
-         break
-      fi
-   done
+   NCBI_FIND_ARCH_PATH(LEVELDB)
+   LEVELDB_PATH=$LEVELDB_ARCH_PATH
    if test -d "$LEVELDB_PATH"; then
       NCBI_FIX_DIR(LEVELDB_PATH)
    fi
@@ -8105,17 +8084,9 @@ case "$with_gmock" in
 esac
 if test -d "$GMOCK_PATH"; then
    NCBI_FIX_DIR(GMOCK_PATH)
-   for d in "$GMOCK_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx/lib" \
-            "$GMOCK_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx/lib" \
-            "$GMOCK_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx/lib" \
-            "$GMOCK_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx/lib" \
-            "$GMOCK_PATH/lib$bit64_sfx" "$GMOCK_PATH/lib"; do
-      if test -d "$d"; then
-         GMOCK_LIBDIR=$d
-         NCBI_FIX_DIR(GMOCK_LIBDIR)
-         break
-      fi
-   done
+   NCBI_FIND_ARCH_PATH(GMOCK)
+   GMOCK_LIBDIR=$GMOCK_ARCH_PATH/lib
+   NCBI_FIX_DIR(GMOCK_LIBDIR)
 fi
 NCBI_RPATHIFY(GMOCK_LIBPATH, $GMOCK_LIBDIR)
 NCBI_CHECK_THIRD_PARTY_LIB(gmock,
@@ -8257,17 +8228,9 @@ case "$with_cassandra" in
    *             ) CASSANDRA_PATH=$with_cassandra ;;
 esac
 if test -d "$CASSANDRA_PATH"; then
+   NCBI_FIND_ARCH_PATH(CASSANDRA)
+   CASSANDRA_PATH=$CASSANDRA_ARCH_PATH
    NCBI_FIX_DIR(CASSANDRA_PATH)
-   for d in "$CASSANDRA_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
-            "$CASSANDRA_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
-            "$CASSANDRA_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx" \
-            "$CASSANDRA_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx"; do
-      if test -d "$d"; then
-         CASSANDRA_PATH=$d
-         NCBI_FIX_DIR(CASSANDRA_PATH)
-         break
-      fi
-   done
 fi
 NCBI_CHECK_THIRD_PARTY_LIB(cassandra,
    [AC_LANG_PROGRAM([[@%:@include <cassandra.h>]],
@@ -8287,16 +8250,9 @@ case "$with_nghttp2" in
 esac
 if test -d "$NGHTTP2_PATH"; then
    NCBI_FIX_DIR(NGHTTP2_PATH)
-   for d in "$NGHTTP2_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
-            "$NGHTTP2_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
-            "$NGHTTP2_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx" \
-            "$NGHTTP2_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx"; do
-      if test -d "$d/lib"; then
-         NGHTTP2_LIBDIR=$d/lib
-         NCBI_FIX_DIR(NGHTTP2_LIBDIR)
-         break
-      fi
-   done
+   NCBI_FIND_ARCH_PATH(NGHTTP2)
+   NGHTTP2_LIBDIR=$NGHTTP2_ARCH_PATH/lib
+   NCBI_FIX_DIR(NGHTTP2_LIBDIR)
 fi
 NCBI_RPATHIFY(NGHTTP2_LIBPATH, $NGHTTP2_LIBDIR)
 NCBI_CHECK_THIRD_PARTY_LIB(nghttp2,
@@ -8318,17 +8274,9 @@ case "$with_h2o" in
    *             ) H2O_PATH=$with_h2o ;;
 esac
 if test -d "$H2O_PATH"; then
+   NCBI_FIND_ARCH_PATH(H2O)
+   H2O_PATH=$H2O_ARCH_PATH
    NCBI_FIX_DIR(H2O_PATH)
-   for d in "$H2O_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
-            "$H2O_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
-            "$H2O_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx" \
-            "$H2O_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx"; do
-      if test -d "$d"; then
-         H2O_PATH=$d
-         NCBI_FIX_DIR(H2O_PATH)
-         break
-      fi
-   done
 fi
 NCBI_CHECK_THIRD_PARTY_LIB(h2o,
    [AC_LANG_PROGRAM([[@%:@include <h2o.h>>]],
@@ -8538,17 +8486,9 @@ case "$with_aws_sdk" in
    *             ) AWS_SDK_PATH=$with_aws_sdk ;;
 esac
 if test -d "$AWS_SDK_PATH"; then
+   NCBI_FIND_ARCH_PATH(AWS_SDK)
+   AWS_SDK_PATH=$AWS_SDK_ARCH_PATH
    NCBI_FIX_DIR(AWS_SDK_PATH)
-   for d in "$AWS_SDK_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
-            "$AWS_SDK_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
-            "$AWS_SDK_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx" \
-            "$AWS_SDK_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx"; do
-      if test -d "$d"; then
-         AWS_SDK_PATH=$d
-         NCBI_FIX_DIR(AWS_SDK_PATH)
-         break
-      fi
-   done
 fi
 AWS_SDK_LDEP=
 AWS_SDK_STATIC_LDEP=
@@ -8626,17 +8566,9 @@ case "$with_librdkafka" in
    *             ) LIBRDKAFKA_PATH=$with_librdkafka ;;
 esac
 if test -d "$LIBRDKAFKA_PATH"; then
+   NCBI_FIND_ARCH_PATH(LIBRDKAFKA)
+   LIBRDKAFKA_PATH=$LIBRDKAFKA_ARCH_PATH
    NCBI_FIX_DIR(LIBRDKAFKA_PATH)
-   for d in "$LIBRDKAFKA_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
-            "$LIBRDKAFKA_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
-            "$LIBRDKAFKA_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx" \
-            "$LIBRDKAFKA_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx"; do
-      if test -d "$d"; then
-         LIBRDKAFKA_PATH=$d
-         NCBI_FIX_DIR(LIBRDKAFKA_PATH)
-         break
-      fi
-   done
 fi
 
 NCBI_CHECK_THIRD_PARTY_LIB_EX(librdkafka, LIBRDKAFKA, rdkafka,
@@ -8654,17 +8586,9 @@ case "$with_cppkafka" in
    *             ) CPPKAFKA_PATH=$with_cppkafka ;;
 esac
 if test -d "$CPPKAFKA_PATH"; then
+   NCBI_FIND_ARCH_PATH(CPPKAFKA)
+   CPPKAFKA_PATH=$CPPKAFKA_ARCH_PATH
    NCBI_FIX_DIR(CPPKAFKA_PATH)
-   for d in "$CPPKAFKA_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
-            "$CPPKAFKA_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
-            "$CPPKAFKA_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx" \
-            "$CPPKAFKA_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx"; do
-      if test -d "$d"; then
-         CPPKAFKA_PATH=$d
-         NCBI_FIX_DIR(CPPKAFKA_PATH)
-         break
-      fi
-   done
 fi
 
 NCBI_CHECK_THIRD_PARTY_LIB(cppkafka,
