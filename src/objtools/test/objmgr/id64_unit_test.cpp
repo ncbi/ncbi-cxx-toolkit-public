@@ -1412,9 +1412,9 @@ NCBITEST_INIT_CMDLINE(arg_descrs)
     arg_descrs->AddFlag("psg",
         "Update all test cases to current reader code (dangerous).",
         true );
-    arg_descrs->AddOptionalKey("id2-service", "ID2Service",
-                               "Service name for ID2 connection.",
-                               CArgDescriptions::eString);
+    arg_descrs->AddDefaultKey("id2-service", "ID2Service",
+                              "Service name for ID2 connection.",
+                              CArgDescriptions::eString, "ID2_SNP2");
 }
 
 
