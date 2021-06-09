@@ -513,7 +513,7 @@ BOOST_AUTO_TEST_CASE(CheckAll)
     }
 }
 
-#if 0
+
 BOOST_AUTO_TEST_CASE(CheckExtSNP)
 {
     LOG_POST("Checking ExtAnnot SNP");
@@ -521,10 +521,21 @@ BOOST_AUTO_TEST_CASE(CheckExtSNP)
     sel.SetResolveAll().SetAdaptiveDepth();
     sel.IncludeNamedAnnotAccession("SNP");
     sel.AddNamedAnnots("SNP");
-    s_CheckFeat(sel, "NC_000001.10", CRange<TSeqPos>(249200000, 249210000));
+    s_CheckFeat(sel, "2500000194", CRange<TSeqPos>::GetWhole());
 }
 
 
+BOOST_AUTO_TEST_CASE(CheckExtSNPGraph)
+{
+    LOG_POST("Checking ExtAnnot SNP graph");
+    SAnnotSelector sel(CSeq_annot::C_Data::e_Graph);
+    sel.SetResolveAll().SetAdaptiveDepth();
+    sel.IncludeNamedAnnotAccession("SNP");
+    sel.AddNamedAnnots("SNP");
+    s_CheckGraph(sel, "2500000194", CRange<TSeqPos>::GetWhole());
+}
+
+#if 0
 BOOST_AUTO_TEST_CASE(CheckExtSNPEdit)
 {
     LOG_POST("Checking ExtAnnot SNP for edited sequence");
@@ -760,17 +771,6 @@ BOOST_AUTO_TEST_CASE(CheckExtSNP_User_field)
 
     s_CheckFeatData<CUser_field>
         (sel, "NC_000001.10", CRange<TSeqPos>(249200000, 249210000));
-}
-
-
-BOOST_AUTO_TEST_CASE(CheckExtSNPGraph)
-{
-    LOG_POST("Checking ExtAnnot SNP graph");
-    SAnnotSelector sel(CSeq_annot::C_Data::e_Graph);
-    sel.SetResolveAll().SetAdaptiveDepth();
-    sel.IncludeNamedAnnotAccession("SNP");
-    sel.AddNamedAnnots("SNP");
-    s_CheckGraph(sel, "NC_000001.10", CRange<TSeqPos>(249200000, 249210000));
 }
 #endif
 
@@ -1462,6 +1462,8 @@ NCBITEST_INIT_TREE()
         NCBITEST_DISABLE(CheckSplitNucProtSet);
     }
     if ( !s_HaveVDBSNP() ) {
+        NCBITEST_DISABLE(CheckExtSNP);
+        NCBITEST_DISABLE(CheckExtSNPGraph);
         NCBITEST_DISABLE(CheckExtSNPNAGraph5000);
         NCBITEST_DISABLE(CheckExtSNPNAGraph100);
         NCBITEST_DISABLE(CheckExtSNPNA);
