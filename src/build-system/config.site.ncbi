@@ -65,6 +65,7 @@ try_local() {
         test -d "$d/include/hiredis"       &&  : ${HIREDIS_PATH=$d}
         test -x "$d/bin/icu-config"        &&  : ${ICU_PATH=$d}
         test -f "$d/include/influxdb.hpp"  &&  : ${INFLUXDB_PATH=$d}
+        test -d "$d/include/jaegertracing" &&  : ${JAEGER_PATH=$d}
         test -f "$d/include/jpeglib.h"     &&  : ${JPEG_PATH=$d}
         test -x "$d/bin/krb5-config"       &&  : ${KRB5_PATH=$d}
         test -d "$d/include/leveldb"       &&  : ${LEVELDB_PATH=$d}
@@ -87,18 +88,22 @@ try_local() {
         test -d "$d/include/nettle"        &&  : ${NETTLE_PATH=$d}
         test -d "$d/include/nghttp2"       &&  : ${NGHTTP2_PATH=$d}
         test -d "$d/include/ngs-bam"       &&  : ${NGS_PATH=$d}
+        test -f "$d/include/nlohmann/json.hpp" && : ${NLOHMANN_JSON_PATH=$d}
         test -d "$d/include/GL"            &&  : ${OPENGL_PATH=$d}
+        test -d "$d/include/opentracing"   &&  : ${OPENTRACING_PATH=$d}
         test -d "$d/include/OB"            &&  : ${ORBACUS_PATH=$d}
         test -f "$d/include/png.h"         &&  : ${PNG_PATH=$d}
         test -x "$d/bin/sablot-config"     &&  : ${SABLOT_PATH=$d}
         test -f "$d/include/SgmlParser.h"  &&  : ${SP_PATH=$d}
         test -f "$d/include/sqlite3.h"     &&  : ${SQLITE3_PATH=$d}
+        test -d "$d/include/thrift"        &&  : ${THRIFT_PATH=$d}
         test -f "$d/include/tiff.h"        &&  : ${TIFF_PATH=$d}
         test -f "$d/include/gif_lib.h"     &&  : ${UNGIF_PATH=$d}
         test -f "$d/include/sra/sradb.h"   &&  : ${VDB_PATH=$d}
         test -x "$d/bin/wx-config"         &&  : ${WXWIDGETS_PATH=$d}
         test -d "$d/include/xalanc"        &&  : ${XALAN_PATH=$d}
         test -d "$d/include/xercesc"       &&  : ${XERCES_PATH=$d}
+        test -d "$d/include/yaml-cpp"      &&  : ${YAML_CPP_PATH=$d}
         test -d "$d/include/zorba"         &&  : ${ZORBA_PATH=$d}
         test -f "$d/include/zstd.h"        &&  : ${ZSTD_PATH=$d}
     done
@@ -226,6 +231,8 @@ esac
 
 : ${INFLUXDB_PATH=$NCBI/influxdb-cpp-0.0.20190416-31fe75d}
 
+: ${JAEGER_PATH=$NCBI/jaeger-client-cpp-0.7.0}
+
 : ${LEVELDB_PATH=$NCBI/leveldb-1.21}
 
 : ${LIBRDKAFKA_PATH=$NCBI/librdkafka-1.5.0}
@@ -278,12 +285,16 @@ esac
 
 : ${NGS_PATH=/net/snowman/vol/projects/trace_software/ngs/ngs-versions/2.11.0}
 
+: ${NLOHMANN_JSON_PATH=$NCBI/nlohmann-json-3.9.1}
+
 # : ${ODBC_PATH:="/opt/machine/merant"}
 
 case "$ncbi_platform" in
     *MAC ) ;;
     * ) : ${OPENGL_PATH=$NCBI/Mesa-7.0.2-ncbi2} ;;
 esac
+
+: ${OPENTRACING_PATH=$NCBI/opentracing-cpp-1.6.0}
 
 case "$ncbi_platform" in
     Linux64    ) : ${ORBACUS_PATH=$NCBI/corba-4.2.0/GCC401-Release64MT}      ;;
@@ -329,6 +340,8 @@ local_sybase_root="/export/home/sybase/clients"
 
 : ${TCHECK_FALLBACK=/opt/intel/itt/bin/32e:/usr/local/intel/itt-3.1/tcheck/bin/32e}
 
+: ${THRIFT_PATH=$NCBI/thrift-0.11.0}
+
 net_vdb_base=/net/snowman/vol/projects/trace_software/vdb/vdb-versions
 local_vdb_base=/opt/ncbi/64/trace_software/vdb/vdb-versions
 case "$ncbi_platform" in
@@ -360,6 +373,8 @@ esac
 : ${XALAN_PATH=$NCBI/xalan-1.11}
 
 : ${XERCES_PATH=$NCBI/xerces-3.1.2}
+
+: ${YAML_CPP_PATH=$NCBI/yaml-cpp-0.6.3}
 
 # : ${ZORBA_PATH=$NCBI/zorba-2.2.0}
 

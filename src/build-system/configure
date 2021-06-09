@@ -666,6 +666,11 @@ PERL_INCLUDE
 UNLESS_PUBSEQOS
 ncbi_xreader_pubseqos2
 ncbi_xreader_pubseqos
+JAEGER_STATIC_LIBS
+OPENTRACING_STATIC_LIBS
+YAML_CPP_STATIC_LIBS
+NLOHMANN_JSON_INCLUDE
+THRIFT_STATIC_LIBS
 CPPKAFKA_STATIC_LIBS
 LIBRDKAFKA_STATIC_LIBS
 APACHE_ARROW_STATIC_LIBS
@@ -916,6 +921,14 @@ srcdir
 top_srcdir
 build_root
 signature
+JAEGER_LIBS
+JAEGER_INCLUDE
+OPENTRACING_LIBS
+OPENTRACING_INCLUDE
+YAML_CPP_LIBS
+YAML_CPP_INCLUDE
+THRIFT_LIBS
+THRIFT_INCLUDE
 CPPKAFKA_LIBS
 CPPKAFKA_INCLUDE
 LIBRDKAFKA_LIBS
@@ -1331,6 +1344,11 @@ with_hiredis
 with_apache_arrow
 with_librdkafka
 with_cppkafka
+with_thrift
+with_nlohmann_json
+with_yaml_cpp
+with_opentracing
+with_jaeger
 with_3psw
 with_local_lbsm
 with_ncbi_crypt
@@ -1911,6 +1929,7 @@ mongodb mongodb3 leveldb gmock lapack lmdb \
 libuv libssh2 cassandra nghttp2 h2o influxdb \
 libxlsxwriter protobuf grpc msgsl aws-sdk hiredis \
 apache-arrow librdkafka cppkafka \
+thrift nlohmann-json yaml-cpp opentracing jaeger \
 3psw local-lbsm ncbi-crypt connext \
 serial objects dbapi app ctools gui algo internal gbench"
 
@@ -1985,7 +2004,9 @@ for x_arg in "$@" ; do
       | --with-libssh2=* | --with-cassandra=* | --with-nghttp2=* \
       | --with-h2o=* | --with-influxdb=* | --with-libxlsxwriter=* \
       | --with-protobuf=* | --with-grpc=* | --with-msgsl=* | --with-aws-sdk=* \
-      | --with-hiredis=* | --with-librdkafka=* | --with-cppkafka=* )
+      | --with-hiredis=* | --with-librdkafka=* | --with-cppkafka=* \
+      | --with-thrift=* | --with-nlohmann-json=* | --with-yaml-cpp=* \
+      | --with-opentracing=* | --with-jaeger=* )
       # Confirm that the specified directory exists and is readable.
       dir=`echo $x_arg | sed -e 's/^[^=]*=//'`
       case "$x_arg" in
@@ -2350,6 +2371,16 @@ Optional Packages:
  --without-librdkafka    do not use librdkafka
  --with-cppkafka=DIR     use cppkafka installation in DIR
  --without-cppkafka      do not use cppkafka
+ --with-thrift=DIR       use Apache Thrift installation in DIR
+ --without-thrift        do not use Apache Thrift
+ --with-nlohmann-json=DIR use JSON for Modern C++ installation in DIR
+ --without-nlohmann-json do not use JSON for Modern C++
+ --with-yaml-cpp=DIR     use yaml-cpp installation in DIR
+ --without-yaml-cpp      do not use yaml-cpp
+ --with-opentracing=DIR  use OpenTracing installation in DIR
+ --without-opentracing   do not use OpenTracing
+ --with-jaeger=DIR       use Jaeger Tracing installation in DIR
+ --without-jaeger        do not use Jaeger tracing
  --with-3psw=std:netopt  favor standard (system) builds of the above pkgs.
  --without-3psw          do not use any of the above packages
  --without-local-lbsm    turn off support for IPC with locally running LBSMD
@@ -3988,6 +4019,31 @@ case "$with_3psw" in
             as_fn_error $? "incompatible options: --with-cppkafka but --without-3psw"
          else
             with_cppkafka=no
+         fi
+        if test "${with_thrift-no}" != "no"; then
+            as_fn_error $? "incompatible options: --with-thrift but --without-3psw"
+         else
+            with_thrift=no
+         fi
+        if test "${with_nlohmann-json-no}" != "no"; then
+            as_fn_error $? "incompatible options: --with-nlohmann-json but --without-3psw"
+         else
+            with_nlohmann-json=no
+         fi
+        if test "${with_yaml-cpp-no}" != "no"; then
+            as_fn_error $? "incompatible options: --with-yaml-cpp but --without-3psw"
+         else
+            with_yaml-cpp=no
+         fi
+        if test "${with_opentracing-no}" != "no"; then
+            as_fn_error $? "incompatible options: --with-opentracing but --without-3psw"
+         else
+            with_opentracing=no
+         fi
+        if test "${with_jaeger-no}" != "no"; then
+            as_fn_error $? "incompatible options: --with-jaeger but --without-3psw"
+         else
+            with_jaeger=no
          fi
 
       { NCBI=; unset NCBI;}
@@ -5779,6 +5835,66 @@ fi
 # Check whether --with-cppkafka was given.
 if test "${with_cppkafka+set}" = set; then :
   withval=$with_cppkafka;
+fi
+
+
+# Check whether --with-thrift was given.
+if test "${with_thrift+set}" = set; then :
+  withval=$with_thrift;
+fi
+
+
+# Check whether --with-thrift was given.
+if test "${with_thrift+set}" = set; then :
+  withval=$with_thrift;
+fi
+
+
+# Check whether --with-nlohmann-json was given.
+if test "${with_nlohmann_json+set}" = set; then :
+  withval=$with_nlohmann_json;
+fi
+
+
+# Check whether --with-nlohmann-json was given.
+if test "${with_nlohmann_json+set}" = set; then :
+  withval=$with_nlohmann_json;
+fi
+
+
+# Check whether --with-yaml-cpp was given.
+if test "${with_yaml_cpp+set}" = set; then :
+  withval=$with_yaml_cpp;
+fi
+
+
+# Check whether --with-yaml-cpp was given.
+if test "${with_yaml_cpp+set}" = set; then :
+  withval=$with_yaml_cpp;
+fi
+
+
+# Check whether --with-opentracing was given.
+if test "${with_opentracing+set}" = set; then :
+  withval=$with_opentracing;
+fi
+
+
+# Check whether --with-opentracing was given.
+if test "${with_opentracing+set}" = set; then :
+  withval=$with_opentracing;
+fi
+
+
+# Check whether --with-jaeger was given.
+if test "${with_jaeger+set}" = set; then :
+  withval=$with_jaeger;
+fi
+
+
+# Check whether --with-jaeger was given.
+if test "${with_jaeger+set}" = set; then :
+  withval=$with_jaeger;
 fi
 
 
@@ -33928,6 +34044,759 @@ else
    CPPKAFKA_STATIC_LIBS=$CPPKAFKA_LIBS
 fi
 
+
+case "$with_thrift" in
+   yes | no | '' ) ;;
+   *             ) THRIFT_PATH=$with_thrift ;;
+esac
+if test -d "$THRIFT_PATH"; then
+   THRIFT_ARCH_PATH=$THRIFT_PATH
+for d in "$THRIFT_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+         "$THRIFT_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+         "$THRIFT_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx" \
+         "$THRIFT_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx"; do
+   if test -d "$d"; then
+      THRIFT_ARCH_PATH=$d
+      break
+   fi
+done
+   THRIFT_PATH=$THRIFT_ARCH_PATH
+   ncbi_fix_dir_tmp=`if cd $THRIFT_PATH; then { PWD=; unset PWD;}; /bin/pwd; fi`
+ case "$ncbi_fix_dir_tmp" in
+    /.*) ncbi_fix_dir_tmp2=`cd $THRIFT_PATH && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
+            THRIFT_PATH=$ncbi_fix_dir_tmp2
+         else
+            case "$THRIFT_PATH" in
+               /*) ;;
+               * ) THRIFT_PATH=$ncbi_fix_dir_tmp ;;
+            esac
+         fi
+         ;;
+    /*) THRIFT_PATH=$ncbi_fix_dir_tmp ;;
+ esac
+fi
+
+if test -n "$D_SFX"; then
+   if ls $THRIFT_PATH/lib*/libthrift$D_SFX.* >/dev/null 2>&1; then
+      THRIFT_SFX=$D_SFX
+   else
+      for ext in .a .so .dylib; do
+         path=`$CXX -B$THRIFT_PATH/ -print-file-name=libthrift$D_SFX.$ext \
+               2>/dev/null`
+         case "$path" in
+            */* ) THRIFT_SFX=$D_SFX; break ;;
+         esac
+      done
+   fi
+fi
+if test "$with_thrift" != "no"; then
+    case "$THRIFT_PATH:$with_thrift" in
+       *:yes | *: | $with_thrift* ) ;;
+       * ) THRIFT_PATH=$with_thrift ;;
+    esac
+    if test "$THRIFT_PATH" != /usr -a -d "$THRIFT_PATH"; then
+       in_path=" in $THRIFT_PATH"
+       if test -z "$THRIFT_INCLUDE" -a -d "$THRIFT_PATH/include"; then
+          THRIFT_INCLUDE="-I$THRIFT_PATH/include"
+       fi
+       if test -n "$THRIFT_LIBPATH"; then
+          :
+       elif test -d "$THRIFT_PATH/lib${bit64_sfx}"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $THRIFT_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    THRIFT_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $THRIFT_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    THRIFT_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       elif test -d "$THRIFT_PATH/lib"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $THRIFT_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    THRIFT_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $THRIFT_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    THRIFT_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       fi
+       THRIFT_LIBS="$THRIFT_LIBPATH -lthrift$THRIFT_SFX "
+    else
+       THRIFT_INCLUDE=""
+       THRIFT_LIBS="-lthrift$THRIFT_SFX "
+       in_path=
+    fi
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for libthrift$THRIFT_SFX$in_path" >&5
+$as_echo_n "checking for libthrift$THRIFT_SFX$in_path... " >&6; }
+if ${ncbi_cv_lib_thrift+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  CPPFLAGS=" $THRIFT_INCLUDE $orig_CPPFLAGS"
+       LIBS="$THRIFT_LIBS $OPENSSL_LIBS $orig_LIBS"
+       cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <thrift/TApplicationException.h>
+int
+main ()
+{
+apache::thrift::TApplicationException().read(nullptr);
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  ncbi_cv_lib_thrift=yes
+else
+  ncbi_cv_lib_thrift=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ncbi_cv_lib_thrift" >&5
+$as_echo "$ncbi_cv_lib_thrift" >&6; }
+    if test "$ncbi_cv_lib_thrift" = "no"; then
+       if test "${with_thrift:=no}" != no; then
+       as_fn_error $? "--with-thrift explicitly specified, but no usable version found." "$LINENO" 5
+    fi
+    fi
+ fi
+ if test "$with_thrift" = "no"; then
+    THRIFT_PATH="No_THRIFT"
+    THRIFT_INCLUDE=
+    THRIFT_LIBS=
+ else
+              WithPackages="$WithPackages${WithPackagesSep}THRIFT"; WithPackagesSep=" "
+    THRIFT_INCLUDE=" $THRIFT_INCLUDE"
+
+$as_echo "#define HAVE_LIBTHRIFT 1" >>confdefs.h
+
+ fi
+
+
+
+if test "$with_thrift" != no -a \
+   \( -f "$THRIFT_PATH/lib/libthrift${THRIFT_SFX}_static.a" \
+   -o -f "$THRIFT_PATH/lib/libthrift_static$THRIFT_SFX.a" \); then
+   if test -f "$THRIFT_PATH/lib/libthrift${THRIFT_SFX}_static.a"; then
+      THRIFT_STATIC_LIBS="-L$THRIFT_PATH/lib -lthrift${THRIFT_SFX}_static"
+   else
+      THRIFT_STATIC_LIBS="-L$THRIFT_PATH/lib -lthrift_static$THRIFT_SFX"
+   fi
+fi
+
+
+case "$with_nlohmann_json" in
+   yes | no | '' ) ;;
+   *             ) NLOHMANN_JSON_PATH=$with_nlohmann_json ;;
+esac
+if test "$with_nlohmann_json" != no; then
+   in_nlohmann_json=
+   if test -d "$NLOHMANN_JSON_PATH"; then
+      ncbi_fix_dir_tmp=`if cd $NLOHMANN_JSON_PATH; then { PWD=; unset PWD;}; /bin/pwd; fi`
+ case "$ncbi_fix_dir_tmp" in
+    /.*) ncbi_fix_dir_tmp2=`cd $NLOHMANN_JSON_PATH && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
+            NLOHMANN_JSON_PATH=$ncbi_fix_dir_tmp2
+         else
+            case "$NLOHMANN_JSON_PATH" in
+               /*) ;;
+               * ) NLOHMANN_JSON_PATH=$ncbi_fix_dir_tmp ;;
+            esac
+         fi
+         ;;
+    /*) NLOHMANN_JSON_PATH=$ncbi_fix_dir_tmp ;;
+ esac
+      in_nlohmann_json=" in $NLOHMANN_JSON_PATH"
+   fi
+   NLOHMANN_JSON_INCLUDE=-I$NLOHMANN_JSON_PATH/include
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for JSON for Modern C++$in_nlohmann_json" >&5
+$as_echo_n "checking for JSON for Modern C++$in_nlohmann_json... " >&6; }
+if ${ncbi_cv_lib_nlohmann_json+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  CPPFLAGS="$NLOHMANN_JSON_INCLUDE $orig_CPPFLAGS"
+       cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <nlohmann/json.hpp>
+int
+main ()
+{
+nlohmann::json j; j["foo"] = "bar";
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"; then :
+  ncbi_cv_lib_nlohmann_json=yes
+else
+  ncbi_cv_lib_nlohmann_json=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ncbi_cv_lib_nlohmann_json" >&5
+$as_echo "$ncbi_cv_lib_nlohmann_json" >&6; }
+    if test "$ncbi_cv_lib_nlohmann_json" = yes; then
+                 WithPackages="$WithPackages${WithPackagesSep}NLohmann_JSON"; WithPackagesSep=" "
+    else
+       if test "${with_nlohmann_json:=no}" != no; then
+       as_fn_error $? "--with-nlohmann-json explicitly specified, but no usable version found." "$LINENO" 5
+    fi
+       NLOHMANN_JSON_INCLUDE=
+    fi
+fi
+
+
+case "$with_yaml_cpp" in
+   yes | no | '' ) ;;
+   *             ) YAML_CPP_PATH=$with_yaml_cpp ;;
+esac
+if test -d "$YAML_CPP_PATH"; then
+   YAML_CPP_ARCH_PATH=$YAML_CPP_PATH
+for d in "$YAML_CPP_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+         "$YAML_CPP_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+         "$YAML_CPP_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx" \
+         "$YAML_CPP_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx"; do
+   if test -d "$d"; then
+      YAML_CPP_ARCH_PATH=$d
+      break
+   fi
+done
+   YAML_CPP_PATH=$YAML_CPP_ARCH_PATH
+   ncbi_fix_dir_tmp=`if cd $YAML_CPP_PATH; then { PWD=; unset PWD;}; /bin/pwd; fi`
+ case "$ncbi_fix_dir_tmp" in
+    /.*) ncbi_fix_dir_tmp2=`cd $YAML_CPP_PATH && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
+            YAML_CPP_PATH=$ncbi_fix_dir_tmp2
+         else
+            case "$YAML_CPP_PATH" in
+               /*) ;;
+               * ) YAML_CPP_PATH=$ncbi_fix_dir_tmp ;;
+            esac
+         fi
+         ;;
+    /*) YAML_CPP_PATH=$ncbi_fix_dir_tmp ;;
+ esac
+fi
+if test "$with_yaml_cpp" != "no"; then
+    case "$YAML_CPP_PATH:$with_yaml_cpp" in
+       *:yes | *: | $with_yaml_cpp* ) ;;
+       * ) YAML_CPP_PATH=$with_yaml_cpp ;;
+    esac
+    if test "$YAML_CPP_PATH" != /usr -a -d "$YAML_CPP_PATH"; then
+       in_path=" in $YAML_CPP_PATH"
+       if test -z "$YAML_CPP_INCLUDE" -a -d "$YAML_CPP_PATH/include"; then
+          YAML_CPP_INCLUDE="-I$YAML_CPP_PATH/include"
+       fi
+       if test -n "$YAML_CPP_LIBPATH"; then
+          :
+       elif test -d "$YAML_CPP_PATH/lib${bit64_sfx}"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $YAML_CPP_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    YAML_CPP_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $YAML_CPP_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    YAML_CPP_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       elif test -d "$YAML_CPP_PATH/lib"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $YAML_CPP_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    YAML_CPP_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $YAML_CPP_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    YAML_CPP_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       fi
+       YAML_CPP_LIBS="$YAML_CPP_LIBPATH -lyaml-cpp "
+    else
+       YAML_CPP_INCLUDE=""
+       YAML_CPP_LIBS="-lyaml-cpp "
+       in_path=
+    fi
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for libyaml-cpp$in_path" >&5
+$as_echo_n "checking for libyaml-cpp$in_path... " >&6; }
+if ${ncbi_cv_lib_yaml_cpp+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  CPPFLAGS=" $YAML_CPP_INCLUDE $orig_CPPFLAGS"
+       LIBS="$YAML_CPP_LIBS  $orig_LIBS"
+       cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <yaml-cpp/yaml.h>
+int
+main ()
+{
+YAML::Node n; YAML::Dump(n);
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  ncbi_cv_lib_yaml_cpp=yes
+else
+  ncbi_cv_lib_yaml_cpp=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ncbi_cv_lib_yaml_cpp" >&5
+$as_echo "$ncbi_cv_lib_yaml_cpp" >&6; }
+    if test "$ncbi_cv_lib_yaml_cpp" = "no"; then
+       if test "${with_yaml_cpp:=no}" != no; then
+       as_fn_error $? "--with-yaml_cpp explicitly specified, but no usable version found." "$LINENO" 5
+    fi
+    fi
+ fi
+ if test "$with_yaml_cpp" = "no"; then
+    YAML_CPP_PATH="No_YAML_CPP"
+    YAML_CPP_INCLUDE=
+    YAML_CPP_LIBS=
+ else
+              WithPackages="$WithPackages${WithPackagesSep}YAML_CPP"; WithPackagesSep=" "
+    YAML_CPP_INCLUDE=" $YAML_CPP_INCLUDE"
+
+$as_echo "#define HAVE_LIBYAML_CPP 1" >>confdefs.h
+
+ fi
+
+
+
+if test "$with_yaml_cpp" != no -a -f "$YAML_CPP_PATH/lib/libyaml-cpp-static.a"
+then
+   YAML_CPP_STATIC_LIBS="-L$YAML_CPP_PATH/lib -lyaml-cpp-static"
+fi
+
+
+case "$with_opentracing" in
+   yes | no | '' ) ;;
+   *             ) OPENTRACING_PATH=$with_opentracing ;;
+esac
+if test -d "$OPENTRACING_PATH"; then
+   OPENTRACING_ARCH_PATH=$OPENTRACING_PATH
+for d in "$OPENTRACING_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+         "$OPENTRACING_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+         "$OPENTRACING_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx" \
+         "$OPENTRACING_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx"; do
+   if test -d "$d"; then
+      OPENTRACING_ARCH_PATH=$d
+      break
+   fi
+done
+   OPENTRACING_PATH=$OPENTRACING_ARCH_PATH
+   ncbi_fix_dir_tmp=`if cd $OPENTRACING_PATH; then { PWD=; unset PWD;}; /bin/pwd; fi`
+ case "$ncbi_fix_dir_tmp" in
+    /.*) ncbi_fix_dir_tmp2=`cd $OPENTRACING_PATH && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
+            OPENTRACING_PATH=$ncbi_fix_dir_tmp2
+         else
+            case "$OPENTRACING_PATH" in
+               /*) ;;
+               * ) OPENTRACING_PATH=$ncbi_fix_dir_tmp ;;
+            esac
+         fi
+         ;;
+    /*) OPENTRACING_PATH=$ncbi_fix_dir_tmp ;;
+ esac
+fi
+if test "$with_opentracing" != "no"; then
+    case "$OPENTRACING_PATH:$with_opentracing" in
+       *:yes | *: | $with_opentracing* ) ;;
+       * ) OPENTRACING_PATH=$with_opentracing ;;
+    esac
+    if test "$OPENTRACING_PATH" != /usr -a -d "$OPENTRACING_PATH"; then
+       in_path=" in $OPENTRACING_PATH"
+       if test -z "$OPENTRACING_INCLUDE" -a -d "$OPENTRACING_PATH/include"; then
+          OPENTRACING_INCLUDE="-I$OPENTRACING_PATH/include"
+       fi
+       if test -n "$OPENTRACING_LIBPATH"; then
+          :
+       elif test -d "$OPENTRACING_PATH/lib${bit64_sfx}"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $OPENTRACING_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    OPENTRACING_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $OPENTRACING_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    OPENTRACING_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       elif test -d "$OPENTRACING_PATH/lib"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $OPENTRACING_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    OPENTRACING_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $OPENTRACING_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    OPENTRACING_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       fi
+       OPENTRACING_LIBS="$OPENTRACING_LIBPATH -lopentracing "
+    else
+       OPENTRACING_INCLUDE=""
+       OPENTRACING_LIBS="-lopentracing "
+       in_path=
+    fi
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for libopentracing$in_path" >&5
+$as_echo_n "checking for libopentracing$in_path... " >&6; }
+if ${ncbi_cv_lib_opentracing+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  CPPFLAGS=" $OPENTRACING_INCLUDE $orig_CPPFLAGS"
+       LIBS="$OPENTRACING_LIBS  $orig_LIBS"
+       cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <opentracing/tracer_factory.h>
+int
+main ()
+{
+opentracing::tracer_factory_error_category();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  ncbi_cv_lib_opentracing=yes
+else
+  ncbi_cv_lib_opentracing=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ncbi_cv_lib_opentracing" >&5
+$as_echo "$ncbi_cv_lib_opentracing" >&6; }
+    if test "$ncbi_cv_lib_opentracing" = "no"; then
+       if test "${with_opentracing:=no}" != no; then
+       as_fn_error $? "--with-opentracing explicitly specified, but no usable version found." "$LINENO" 5
+    fi
+    fi
+ fi
+ if test "$with_opentracing" = "no"; then
+    OPENTRACING_PATH="No_OPENTRACING"
+    OPENTRACING_INCLUDE=
+    OPENTRACING_LIBS=
+ else
+              WithPackages="$WithPackages${WithPackagesSep}OPENTRACING"; WithPackagesSep=" "
+    OPENTRACING_INCLUDE=" $OPENTRACING_INCLUDE"
+
+$as_echo "#define HAVE_LIBOPENTRACING 1" >>confdefs.h
+
+ fi
+
+
+
+if test "$with_opentracing" != no \
+   -a -f "$OPENTRACING_PATH/lib/libopentracing-static.a"; then
+   OPENTRACING_STATIC_LIBS="-L$OPENTRACING_PATH/lib -lopentracing-static"
+fi
+
+
+case "$with_jaeger" in
+   yes | no | '' ) ;;
+   *             ) JAEGER_PATH=$with_jaeger ;;
+esac
+if test -d "$JAEGER_PATH"; then
+   JAEGER_ARCH_PATH=$JAEGER_PATH
+for d in "$JAEGER_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+         "$JAEGER_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+         "$JAEGER_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx" \
+         "$JAEGER_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx"; do
+   if test -d "$d"; then
+      JAEGER_ARCH_PATH=$d
+      break
+   fi
+done
+   JAEGER_PATH=$JAEGER_ARCH_PATH
+   ncbi_fix_dir_tmp=`if cd $JAEGER_PATH; then { PWD=; unset PWD;}; /bin/pwd; fi`
+ case "$ncbi_fix_dir_tmp" in
+    /.*) ncbi_fix_dir_tmp2=`cd $JAEGER_PATH && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
+            JAEGER_PATH=$ncbi_fix_dir_tmp2
+         else
+            case "$JAEGER_PATH" in
+               /*) ;;
+               * ) JAEGER_PATH=$ncbi_fix_dir_tmp ;;
+            esac
+         fi
+         ;;
+    /*) JAEGER_PATH=$ncbi_fix_dir_tmp ;;
+ esac
+fi
+if test -d $JAEGER_PATH/lib${bit64_sfx}; then
+   JAEGER_LIBDIR=$JAEGER_PATH/lib${bit64_sfx}
+else
+   JAEGER_LIBDIR=$JAEGER_PATH/lib
+fi
+if test "$with_jaeger" != "no"; then
+    case "$JAEGER_PATH:$with_jaeger" in
+       *:yes | *: | $with_jaeger* ) ;;
+       * ) JAEGER_PATH=$with_jaeger ;;
+    esac
+    if test "$JAEGER_PATH" != /usr -a -d "$JAEGER_PATH"; then
+       in_path=" in $JAEGER_PATH"
+       if test -z "$JAEGER_INCLUDE" -a -d "$JAEGER_PATH/include"; then
+          JAEGER_INCLUDE="-I$JAEGER_PATH/include"
+       fi
+       if test -n "$JAEGER_LIBPATH"; then
+          :
+       elif test -d "$JAEGER_PATH/lib${bit64_sfx}"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $JAEGER_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    JAEGER_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $JAEGER_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    JAEGER_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       elif test -d "$JAEGER_PATH/lib"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $JAEGER_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    JAEGER_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $JAEGER_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    JAEGER_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       fi
+       JAEGER_LIBS="$JAEGER_LIBPATH -ljaegertracing $OPENTRACING_LIBS $YAML_CPP_LIBS $THRIFT_LIBS"
+    else
+       JAEGER_INCLUDE=""
+       JAEGER_LIBS="-ljaegertracing $OPENTRACING_LIBS $YAML_CPP_LIBS $THRIFT_LIBS"
+       in_path=
+    fi
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for libjaegertracing$in_path" >&5
+$as_echo_n "checking for libjaegertracing$in_path... " >&6; }
+if ${ncbi_cv_lib_jaeger+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  CPPFLAGS="$OPENTRACING_INCLUDE $YAML_CPP_INCLUDE $NLOHMANN_JSON_INCLUDE $THRIFT_INCLUDE $JAEGER_INCLUDE $orig_CPPFLAGS"
+       LIBS="$JAEGER_LIBS $OPENSSL_LIBS $orig_LIBS"
+       cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <jaegertracing/Tracer.h>
+int
+main ()
+{
+jaegertracing::SelfRef(nullptr);
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  ncbi_cv_lib_jaeger=yes
+else
+  ncbi_cv_lib_jaeger=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ncbi_cv_lib_jaeger" >&5
+$as_echo "$ncbi_cv_lib_jaeger" >&6; }
+    if test "$ncbi_cv_lib_jaeger" = "no"; then
+       if test "${with_jaeger:=no}" != no; then
+       as_fn_error $? "--with-jaeger explicitly specified, but no usable version found." "$LINENO" 5
+    fi
+    fi
+ fi
+ if test "$with_jaeger" = "no"; then
+    JAEGER_PATH="No_JAEGER"
+    JAEGER_INCLUDE=
+    JAEGER_LIBS=
+ else
+              WithPackages="$WithPackages${WithPackagesSep}JAEGER"; WithPackagesSep=" "
+    JAEGER_INCLUDE="$OPENTRACING_INCLUDE $YAML_CPP_INCLUDE $NLOHMANN_JSON_INCLUDE $THRIFT_INCLUDE $JAEGER_INCLUDE"
+
+$as_echo "#define HAVE_LIBJAEGER 1" >>confdefs.h
+
+ fi
+
+
+
+if test "$with_jaeger" != no \
+   -a -f "$JAEGER_PATH/lib/libjaegertracing-static.a"; then
+   JAEGER_STATIC_LIBS="-L$JAEGER_PATH/lib -ljaegertracing-static"
+   JAEGER_STATIC_LIBS="$JAEGER_STATIC_LIBS $OPENTRACING_STATIC_LIBS"
+   JAEGER_STATIC_LIBS="$JAEGER_STATIC_LIBS $YAML_CPP_STATIC_LIBS"
+   JAEGER_STATIC_LIBS="$JAEGER_STATIC_LIBS $THRIFT_STATIC_LIBS"
+fi
+
+
 ### Restore original compiler/linker flags
 LIBS="$orig_LIBS"
 CPPFLAGS="$orig_CPPFLAGS"
@@ -34351,7 +35220,7 @@ for x in ChaosMonkey Int4GI Int8GI StrictGI PSGLoader BM64 GCC KCC ICC AppleClan
           ;;
       esac
    done
-  for x in UUID FUSE Iconv LIBUNWIND LIBDW BACKWARD_CPP Z LocalZ BZ2 LocalBZ2 LZO ZSTD PCRE LocalPCRE MBEDTLS GMP GCRYPT NETTLE GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON25 PYTHON26 PYTHON27 PYTHON3 PERL Boost.Chrono Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Serialization Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB NGS OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF GIF UNGIF XPM GL2PS FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal SASL2 MONGODB MONGODB3 LEVELDB GMOCK LAPACK LMDB LocalLMDB LIBUV LIBSSH2 CASSANDRA NGHTTP2 H2O INFLUXDB LIBXLSXWRITER PROTOBUF GRPC MSGSL AWS_SDK HIREDIS APACHE_ARROW LIBRDKAFKA CPPKAFKA; do
+  for x in UUID FUSE Iconv LIBUNWIND LIBDW BACKWARD_CPP Z LocalZ BZ2 LocalBZ2 LZO ZSTD PCRE LocalPCRE MBEDTLS GMP GCRYPT NETTLE GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON25 PYTHON26 PYTHON27 PYTHON3 PERL Boost.Chrono Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Serialization Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB NGS OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF GIF UNGIF XPM GL2PS FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal SASL2 MONGODB MONGODB3 LEVELDB GMOCK LAPACK LMDB LocalLMDB LIBUV LIBSSH2 CASSANDRA NGHTTP2 H2O INFLUXDB LIBXLSXWRITER PROTOBUF GRPC MSGSL AWS_SDK HIREDIS APACHE_ARROW LIBRDKAFKA CPPKAFKA THRIFT NLohmann_JSON YAML_CPP OPENTRACING JAEGER; do
       case " $WithPackages " in
          *" $x "*) ;;
          *) WithoutPackages="$WithoutPackages$WithoutPackagesSep$x"
@@ -34445,6 +35314,11 @@ c_ncbi_runpath=`echo "$ncbi_runpath" | sed -e 's:\\$\\$:\\$:g'`
 
 
 #AC_SUBST(real_srcdir)
+
+
+
+
+
 
 
 

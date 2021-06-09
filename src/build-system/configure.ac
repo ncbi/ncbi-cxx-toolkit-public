@@ -86,7 +86,8 @@ case "$with_3psw" in
                      mongodb, mongodb3, leveldb, gmock, lapack,
                      libuv, libssh2, cassandra, nghttp2, h2o, influxdb,
                      libxlsxwriter, protobuf, grpc, msgsl, hiredis,
-                     librdkafka, cppkafka],
+                     librdkafka, cppkafka, thrift, nlohmann-json, yaml-cpp,
+                     opentracing, jaeger],
         [if test "${[with_]X-no}" != "no"; then
             AC_MSG_ERROR([incompatible options: --with-]X[ but --without-3psw])
          else
@@ -608,6 +609,26 @@ AC_ARG_WITH(cppkafka,
    [ --with-cppkafka=DIR     use cppkafka installation in DIR])
 AC_ARG_WITH(cppkafka,
    [ --without-cppkafka      do not use cppkafka])
+AC_ARG_WITH(thrift,
+   [ --with-thrift=DIR       use Apache Thrift installation in DIR])
+AC_ARG_WITH(thrift,
+   [ --without-thrift        do not use Apache Thrift])
+AC_ARG_WITH(nlohmann-json,
+   [ --with-nlohmann-json=DIR use JSON for Modern C++ installation in DIR])
+AC_ARG_WITH(nlohmann-json,
+   [ --without-nlohmann-json do not use JSON for Modern C++])
+AC_ARG_WITH(yaml-cpp,
+   [ --with-yaml-cpp=DIR     use yaml-cpp installation in DIR])
+AC_ARG_WITH(yaml-cpp,
+   [ --without-yaml-cpp      do not use yaml-cpp])
+AC_ARG_WITH(opentracing,
+   [ --with-opentracing=DIR  use OpenTracing installation in DIR])
+AC_ARG_WITH(opentracing,
+   [ --without-opentracing   do not use OpenTracing])
+AC_ARG_WITH(jaeger,
+   [ --with-jaeger=DIR       use Jaeger Tracing installation in DIR])
+AC_ARG_WITH(jaeger,
+   [ --without-jaeger        do not use Jaeger tracing])
 AC_ARG_WITH(3psw,
    [ --with-3psw=std:netopt  favor standard (system) builds of the above pkgs.])
 AC_ARG_WITH(3psw,
@@ -678,6 +699,7 @@ mongodb mongodb3 leveldb gmock lapack lmdb \
 libuv libssh2 cassandra nghttp2 h2o influxdb \
 libxlsxwriter protobuf grpc msgsl aws-sdk hiredis \
 apache-arrow librdkafka cppkafka \
+thrift nlohmann-json yaml-cpp opentracing jaeger \
 3psw local-lbsm ncbi-crypt connext \
 serial objects dbapi app ctools gui algo internal gbench"
 
@@ -754,7 +776,9 @@ for x_arg in "$@" ; do
       | --with-libssh2=* | --with-cassandra=* | --with-nghttp2=* \
       | --with-h2o=* | --with-influxdb=* | --with-libxlsxwriter=* \
       | --with-protobuf=* | --with-grpc=* | --with-msgsl=* | --with-aws-sdk=* \
-      | --with-hiredis=* | --with-librdkafka=* | --with-cppkafka=* )
+      | --with-hiredis=* | --with-librdkafka=* | --with-cppkafka=* \
+      | --with-thrift=* | --with-nlohmann-json=* | --with-yaml-cpp=* \
+      | --with-opentracing=* | --with-jaeger=* )
       # Confirm that the specified directory exists and is readable.
       dir=`echo $x_arg | sed -e 's/^[[^=]]*=//'`
       case "$x_arg" in
@@ -8602,6 +8626,136 @@ else
    CPPKAFKA_STATIC_LIBS=$CPPKAFKA_LIBS
 fi
 
+
+case "$with_thrift" in
+   yes | no | '' ) ;;
+   *             ) THRIFT_PATH=$with_thrift ;;
+esac
+if test -d "$THRIFT_PATH"; then
+   NCBI_FIND_ARCH_PATH(THRIFT)
+   THRIFT_PATH=$THRIFT_ARCH_PATH
+   NCBI_FIX_DIR(THRIFT_PATH)
+fi
+
+if test -n "$D_SFX"; then
+   if ls $THRIFT_PATH/lib*/libthrift$D_SFX.* >/dev/null 2>&1; then
+      THRIFT_SFX=$D_SFX
+   else
+      for ext in .a .so .dylib; do
+         path=`$CXX -B$THRIFT_PATH/ -print-file-name=libthrift$D_SFX.$ext \
+               2>/dev/null`
+         case "$path" in
+            */* ) THRIFT_SFX=$D_SFX; break ;;
+         esac
+      done
+   fi
+fi
+NCBI_CHECK_THIRD_PARTY_LIB_EX(thrift, THRIFT, [thrift$THRIFT_SFX],
+  [AC_LANG_PROGRAM([[@%:@include <thrift/TApplicationException.h>]],
+      [[apache::thrift::TApplicationException().read(nullptr);]])],
+  [], [$OPENSSL_LIBS])
+if test "$with_thrift" != no -a \
+   \( -f "$THRIFT_PATH/lib/libthrift${THRIFT_SFX}_static.a" \
+   -o -f "$THRIFT_PATH/lib/libthrift_static$THRIFT_SFX.a" \); then
+   if test -f "$THRIFT_PATH/lib/libthrift${THRIFT_SFX}_static.a"; then
+      THRIFT_STATIC_LIBS="-L$THRIFT_PATH/lib -lthrift${THRIFT_SFX}_static"
+   else
+      THRIFT_STATIC_LIBS="-L$THRIFT_PATH/lib -lthrift_static$THRIFT_SFX"
+   fi
+fi
+
+
+case "$with_nlohmann_json" in
+   yes | no | '' ) ;;
+   *             ) NLOHMANN_JSON_PATH=$with_nlohmann_json ;;
+esac
+if test "$with_nlohmann_json" != no; then
+   in_nlohmann_json=
+   if test -d "$NLOHMANN_JSON_PATH"; then
+      NCBI_FIX_DIR(NLOHMANN_JSON_PATH)
+      in_nlohmann_json=" in $NLOHMANN_JSON_PATH"
+   fi
+   NLOHMANN_JSON_INCLUDE=-I$NLOHMANN_JSON_PATH/include
+   AC_CACHE_CHECK([for JSON for Modern C++$in_nlohmann_json],
+      ncbi_cv_lib_nlohmann_json,
+      [CPPFLAGS="$NLOHMANN_JSON_INCLUDE $orig_CPPFLAGS"
+       AC_COMPILE_IFELSE(
+          [AC_LANG_PROGRAM([[@%:@include <nlohmann/json.hpp>]],
+                           [[nlohmann::json j; j["foo"] = "bar";]])],
+          [ncbi_cv_lib_nlohmann_json=yes], [ncbi_cv_lib_nlohmann_json=no])])
+    if test "$ncbi_cv_lib_nlohmann_json" = yes; then
+       NCBI_PACKAGE(NLohmann_JSON)
+    else
+       NCBI_MISSING_PACKAGE(nlohmann-json)
+       NLOHMANN_JSON_INCLUDE=
+    fi
+fi
+
+
+case "$with_yaml_cpp" in
+   yes | no | '' ) ;;
+   *             ) YAML_CPP_PATH=$with_yaml_cpp ;;
+esac
+if test -d "$YAML_CPP_PATH"; then
+   NCBI_FIND_ARCH_PATH(YAML_CPP)
+   YAML_CPP_PATH=$YAML_CPP_ARCH_PATH
+   NCBI_FIX_DIR(YAML_CPP_PATH)
+fi
+NCBI_CHECK_THIRD_PARTY_LIB_EX(yaml_cpp, YAML_CPP, yaml-cpp,
+  [AC_LANG_PROGRAM([[@%:@include <yaml-cpp/yaml.h>]],
+      [[YAML::Node n; YAML::Dump(n);]])])
+if test "$with_yaml_cpp" != no -a -f "$YAML_CPP_PATH/lib/libyaml-cpp-static.a"
+then
+   YAML_CPP_STATIC_LIBS="-L$YAML_CPP_PATH/lib -lyaml-cpp-static"
+fi
+
+
+case "$with_opentracing" in
+   yes | no | '' ) ;;
+   *             ) OPENTRACING_PATH=$with_opentracing ;;
+esac
+if test -d "$OPENTRACING_PATH"; then
+   NCBI_FIND_ARCH_PATH(OPENTRACING)
+   OPENTRACING_PATH=$OPENTRACING_ARCH_PATH
+   NCBI_FIX_DIR(OPENTRACING_PATH)
+fi
+NCBI_CHECK_THIRD_PARTY_LIB(opentracing,
+  [AC_LANG_PROGRAM([[@%:@include <opentracing/tracer_factory.h>]],
+      [[opentracing::tracer_factory_error_category();]])])
+if test "$with_opentracing" != no \
+   -a -f "$OPENTRACING_PATH/lib/libopentracing-static.a"; then
+   OPENTRACING_STATIC_LIBS="-L$OPENTRACING_PATH/lib -lopentracing-static"
+fi
+
+
+case "$with_jaeger" in
+   yes | no | '' ) ;;
+   *             ) JAEGER_PATH=$with_jaeger ;;
+esac
+if test -d "$JAEGER_PATH"; then
+   NCBI_FIND_ARCH_PATH(JAEGER)
+   JAEGER_PATH=$JAEGER_ARCH_PATH
+   NCBI_FIX_DIR(JAEGER_PATH)
+fi
+if test -d $JAEGER_PATH/lib${bit64_sfx}; then
+   JAEGER_LIBDIR=$JAEGER_PATH/lib${bit64_sfx}
+else
+   JAEGER_LIBDIR=$JAEGER_PATH/lib
+fi
+NCBI_CHECK_THIRD_PARTY_LIB_EX(jaeger, JAEGER, jaegertracing,
+  [AC_LANG_PROGRAM([[@%:@include <jaegertracing/Tracer.h>]],
+      [[jaegertracing::SelfRef(nullptr);]])],
+  [$OPENTRACING_LIBS $YAML_CPP_LIBS $THRIFT_LIBS], [$OPENSSL_LIBS],
+  [$OPENTRACING_INCLUDE $YAML_CPP_INCLUDE $NLOHMANN_JSON_INCLUDE $THRIFT_INCLUDE])
+if test "$with_jaeger" != no \
+   -a -f "$JAEGER_PATH/lib/libjaegertracing-static.a"; then
+   JAEGER_STATIC_LIBS="-L$JAEGER_PATH/lib -ljaegertracing-static"
+   JAEGER_STATIC_LIBS="$JAEGER_STATIC_LIBS $OPENTRACING_STATIC_LIBS"
+   JAEGER_STATIC_LIBS="$JAEGER_STATIC_LIBS $YAML_CPP_STATIC_LIBS"
+   JAEGER_STATIC_LIBS="$JAEGER_STATIC_LIBS $THRIFT_STATIC_LIBS"
+fi
+
+
 ### Restore original compiler/linker flags
 LIBS="$orig_LIBS"
 CPPFLAGS="$orig_CPPFLAGS"
@@ -9363,6 +9517,11 @@ AC_SUBST(HIREDIS_STATIC_LIBS)
 AC_SUBST(APACHE_ARROW_STATIC_LIBS)
 AC_SUBST(LIBRDKAFKA_STATIC_LIBS)
 AC_SUBST(CPPKAFKA_STATIC_LIBS)
+AC_SUBST(THRIFT_STATIC_LIBS)
+AC_SUBST(NLOHMANN_JSON_INCLUDE)
+AC_SUBST(YAML_CPP_STATIC_LIBS)
+AC_SUBST(OPENTRACING_STATIC_LIBS)
+AC_SUBST(JAEGER_STATIC_LIBS)
 AC_SUBST(ncbi_xreader_pubseqos)
 AC_SUBST(ncbi_xreader_pubseqos2)
 AC_SUBST(UNLESS_PUBSEQOS)
