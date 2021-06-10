@@ -1,7 +1,7 @@
 # $Id$
 #################################
 
-WATCHERS = thiessen
+WATCHERS = lanczyck
 
 SRC = thrdalgs thrdatd thrdbwfi thrdcpal thrdcpll thrdcprl \
 	thrdcxei thrddgri thrdrsmp thrdsal0 thrdsalr \

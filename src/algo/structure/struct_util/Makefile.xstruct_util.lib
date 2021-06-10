@@ -4,7 +4,7 @@
 # Build library "xstruct_util"
 #################################
 
-WATCHERS = thiessen lanczyck 
+WATCHERS = lanczyck 
 
 REQUIRES = objects
 LIB = xstruct_util

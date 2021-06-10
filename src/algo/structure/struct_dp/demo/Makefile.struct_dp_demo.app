@@ -4,7 +4,7 @@
 # Build application "struct_dp_demo"
 #################################
 
-WATCHERS = thiessen
+WATCHERS = lanczyck
 
 APP = struct_dp_demo
 

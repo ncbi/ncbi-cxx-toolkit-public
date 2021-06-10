@@ -4,7 +4,7 @@
 # Build library "xstruct_dp"
 #################################
 
-WATCHERS = thiessen
+WATCHERS = lanczyck
 
 SRC = block_align
 
