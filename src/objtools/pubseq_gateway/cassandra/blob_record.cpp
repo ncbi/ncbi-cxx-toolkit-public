@@ -364,6 +364,15 @@ string CBlobRecord::GetUserName() const
 }
 
 
+bool CBlobRecord::IsConfidential() const
+{
+   if (m_HupDate == 0)
+      return false;
+
+   return (m_HupDate > CCurrentTime().GetTimeT());
+}
+
+
 const CBlobRecord::TBlobChunk& CBlobRecord::GetChunk(size_t index) const
 {
     if (index >= m_BlobChunks.size()) {

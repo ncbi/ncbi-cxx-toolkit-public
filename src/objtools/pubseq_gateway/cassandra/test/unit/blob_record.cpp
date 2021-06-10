@@ -34,6 +34,7 @@
 #include <ncbi_pch.hpp>
 
 #include <objtools/pubseq_gateway/impl/cassandra/blob_record.hpp>
+#include <corelib/ncbitime.hpp>
 
 #include <gtest/gtest.h>
 
@@ -71,6 +72,27 @@ namespace {
             b.AppendBlobChunk({'e', 'f', 'g', 'z'});
             EXPECT_FALSE(a.IsDataEqual(b));
             EXPECT_FALSE(b.IsDataEqual(a));
+        }
+        {
+            CBlobRecord a;
+            CBlobRecord::TTimestamp tm(CCurrentTime().GetTimeT()+1000);
+            a.SetHupDate(tm);
+            EXPECT_TRUE(a.IsConfidential());
+            tm = tm - 1000;
+            a.SetHupDate(tm);
+            EXPECT_FALSE(a.IsConfidential());
+        }
+    }
+
+    TEST(BlobRecordTest, BlobProperties) {
+        {
+            CBlobRecord a;
+            CBlobRecord::TTimestamp tm(CCurrentTime().GetTimeT()+1000);
+            a.SetHupDate(tm);
+            EXPECT_TRUE(a.IsConfidential());
+            tm = tm - 1000;
+            a.SetHupDate(tm);
+            EXPECT_FALSE(a.IsConfidential());
         }
     }
 }  // namespace

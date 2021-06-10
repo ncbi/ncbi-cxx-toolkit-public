@@ -128,6 +128,8 @@ class CBlobRecord {
     bool IsDataEqual(CBlobRecord const & blob) const;
 
     string ToString() const;
+    // Records are confidential if HUP date is in the future
+    bool IsConfidential() const;
 
  private:
     CBlobRecord& SetFlag(bool set_flag, EBlobFlags flag_value);
