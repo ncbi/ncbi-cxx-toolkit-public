@@ -1203,6 +1203,7 @@ CSeq_align_Mapper_Base::x_ConvertSegment(TSegments::iterator& seg_it,
         seg.m_Rows[row].m_Start = kInvalidSeqPos;
         seg.m_Rows[row].m_Id = rmap.begin()->second->m_Dst_id_Handle;
         seg.m_Rows[row].SetMapped();
+        x_InvalidateScores(&seg);
         return seg.m_Rows[row].m_Id;
     }
     if (start <= stop) {
