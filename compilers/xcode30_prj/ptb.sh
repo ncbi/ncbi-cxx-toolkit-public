@@ -35,6 +35,9 @@
 # ===========================================================================
 
 DEFPTB_LOCATION="/net/snowman/vol/export2/win-coremake/App/Ncbi/cppcore/ptb"
+if [ ! -d $DEFPTB_LOCATION -a -d /Volumes/win-coremake ]; then
+    DEFPTB_LOCATION="/Volumes/win-coremake/App/Ncbi/cppcore/ptb"
+fi
 IDE="30"
 PTB_EXTRA=""
 ptbname="project_tree_builder"

@@ -33,6 +33,9 @@
 # ===========================================================================
 
 DEFDT_LOCATION="/net/snowman/vol/export2/win-coremake/App/Ncbi/cppcore/datatool"
+if [ ! -d $DEFDT_LOCATION -a -d /Volumes/win-coremake ]; then
+    DEFDT_LOCATION="/Volumes/win-coremake/App/Ncbi/cppcore/datatool"
+fi
 
 for v in "$DATATOOL_PATH" "$TREE_ROOT" "$BUILD_TREE_ROOT"; do
   if test "$v" = ""; then
