@@ -81,11 +81,6 @@ objects::CUser_object* CStructuredCommentsReader::_AddStructuredComment(objects:
 {
     if (name.compare("StructuredCommentPrefix") == 0)
         user_obj = 0; // reset user obj so to create a new one
-    else
-    {
-        //if (user_obj == 0)
-        //    user_obj = FindStructuredComment(cmt.m_descs);
-    }
 
     if (user_obj == 0)
     {
@@ -96,7 +91,7 @@ objects::CUser_object* CStructuredCommentsReader::_AddStructuredComment(objects:
         cmt.m_descs.push_back(user_desc);
     }
     user_obj->AddField(name, value);
-    // create next user object
+    // signal to create next user object
     if (name.compare("StructuredCommentSuffix") == 0)
         return 0;
     else
@@ -135,4 +130,3 @@ void CStructuredCommentsReader::_LoadHeaderLine(ILineReader& reader, vector<stri
 }
 
 END_NCBI_SCOPE
-

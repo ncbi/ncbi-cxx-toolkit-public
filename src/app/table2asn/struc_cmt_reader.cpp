@@ -55,33 +55,52 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
-CTable2AsnStructuredCommentsReader::CTable2AsnStructuredCommentsReader(ILineErrorListener* logger) : CStructuredCommentsReader(logger)
+CTable2AsnStructuredCommentsReader::CTable2AsnStructuredCommentsReader(const std::string& filename, ILineErrorListener* logger)
+    : CStructuredCommentsReader(logger)
 {
+    CRef<ILineReader> reader{ILineReader::New(filename)};
+    m_vertical = IsVertical(*reader);
+    if (m_vertical) {
+        LoadComments(*reader, m_comments, CSeq_id::fParse_AnyLocal);
+        for (CStructComment& comment : m_comments) {
+            _CheckStructuredCommentsSuffix(comment);
+        }
+    } else {
+        m_comments.push_back({});
+        LoadCommentsByRow(*reader, m_comments.front());
+        _CheckStructuredCommentsSuffix(m_comments.front());
+    }
 }
 
 CTable2AsnStructuredCommentsReader::~CTable2AsnStructuredCommentsReader()
 {
 }
 
-void CTable2AsnStructuredCommentsReader::ProcessCommentsFileByCols(ILineReader& reader, CSeq_entry& entry)
+void CTable2AsnStructuredCommentsReader::ProcessComments(CSeq_entry& entry) const
 {
-    list<CStructComment> comments;
-    LoadComments(reader, comments, CSeq_id::fParse_AnyLocal);
-    for (CStructComment& comment : comments) {
-        _CheckStructuredCommentsSuffix(comment);
-        _AddStructuredComments(entry, comment);
+    if (m_vertical) {
+        VisitAllSeqDesc(entry, true, [this](CBioseq* bioseq, CSeq_descr& descr)
+        {
+            if (bioseq && !bioseq->IsNa())
+                return;
+
+            _AddStructuredComments(descr, m_comments.front());
+        });
+    } else {
+        for (const CStructComment& comment : m_comments) {
+            _AddStructuredComments(entry, comment);
+        }
     }
 }
 
-void CTable2AsnStructuredCommentsReader::AddStructuredComments(CSeq_descr& descr, const CStructComment& comments)
+void CTable2AsnStructuredCommentsReader::_AddStructuredComments(CSeq_descr& descr, const CStructComment& comments)
 {
     for (const auto& new_desc : comments.m_descs)
     {
         bool append_desc = true;
 
         const string& index = CStructComment::GetPrefix(*new_desc);
-        if (index.empty())
-            continue;
+        //if (index.empty()) continue;
 
         for (auto& desc : descr.Set()) // push to create setdescr
         {
@@ -90,8 +109,7 @@ void CTable2AsnStructuredCommentsReader::AddStructuredComments(CSeq_descr& descr
             auto& user = desc->SetUser();
 
             const string& other = CStructComment::GetPrefix(*desc);
-            if (other.empty())
-                continue;
+            //if (other.empty()) continue;
 
             if (NStr::Equal(other, index))
             {
@@ -134,10 +152,9 @@ void CTable2AsnStructuredCommentsReader::_AddStructuredComments(CSeq_entry& entr
                 return;
         }
 
-        CTable2AsnStructuredCommentsReader::AddStructuredComments(bioseq.SetDescr(), comments);
+        _AddStructuredComments(bioseq.SetDescr(), comments);
     });
 }
-
 
 void CTable2AsnStructuredCommentsReader::_CheckStructuredCommentsSuffix(CStructComment& comments)
 {
@@ -162,30 +179,19 @@ void CTable2AsnStructuredCommentsReader::_CheckStructuredCommentsSuffix(CStructC
     }
 }
 
-
-void CTable2AsnStructuredCommentsReader::ProcessCommentsFileByRows(ILineReader& reader, CSeq_entry& entry)
-{
-    CStructComment comments;
-    LoadCommentsByRow(reader, comments);
-    _CheckStructuredCommentsSuffix(comments);
-    VisitAllSeqDesc(entry, true, [comments](CBioseq* bioseq, CSeq_descr& descr)
-    {
-        if (bioseq && !bioseq->IsNa())
-            return;
-
-        CTable2AsnStructuredCommentsReader::AddStructuredComments(descr, comments);
-    });
-}
-
 bool CTable2AsnStructuredCommentsReader::IsVertical(ILineReader& reader)
 {
     CTempString line;
     reader.ReadLine();
+    bool vert = false;
     if (!reader.AtEOF())
-      line = reader.GetCurrentLine();
-
-    bool vert = NStr::StartsWith(line, "StructuredCommentPrefix");
-    reader.UngetLine();
+    {
+        line = reader.GetCurrentLine();
+        vector<CTempString> values;
+        NStr::Split(line, "\t", values);
+        vert = values.size()>2;
+        reader.UngetLine();
+    }
     return vert;
 }
 

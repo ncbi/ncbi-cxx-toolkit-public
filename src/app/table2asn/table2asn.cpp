@@ -1312,11 +1312,10 @@ void CTbl2AsnApp::ProcessSecretFiles1Phase(bool readModsFromTitle, CSeq_entry& r
 
     ProcessQVLFile(name + ".qvl", result);
     ProcessDSCFile(name + ".dsc", result);
-    //if (!m_context.m_flipped_struc_cmt)
-    {
-        ProcessCMTFile(name + ".cmt", result, false);
-        ProcessCMTFile(m_context.m_single_structure_cmt, result, false);
-    }
+
+    //ProcessCMTFile(name + ".cmt", result, false);
+    //ProcessCMTFile(m_context.m_single_structure_cmt, result, false);
+
     ProcessPEPFile(name + ".pep", result);
     ProcessRNAFile(name + ".rna", result);
     ProcessPRTFile(name + ".prt", result);
@@ -1349,11 +1348,8 @@ void CTbl2AsnApp::ProcessSecretFiles2Phase(CSeq_entry& result)
 
     string name = dir + base;
 
-    //if (m_context.m_flipped_struc_cmt)
-    {
-        ProcessCMTFile(name + ".cmt", result, true);
-        ProcessCMTFile(m_context.m_single_structure_cmt, result, true);
-    }
+    ProcessCMTFile(name + ".cmt", result, true);
+    ProcessCMTFile(m_context.m_single_structure_cmt, result, true);
 }
 
 
@@ -1378,16 +1374,10 @@ void CTbl2AsnApp::ProcessCMTFile(const string& pathname, CSeq_entry& result, boo
     CFile file(pathname);
     if (!file.Exists() || file.GetLength() == 0) return;
 
-    CRef<ILineReader> reader(ILineReader::New(pathname));
+    CTable2AsnStructuredCommentsReader cmt_reader(pathname, m_logger);
 
-    CTable2AsnStructuredCommentsReader cmt_reader(m_logger);
-    if (cmt_reader.IsVertical(*reader) && byrows==false)
-        return;
+    cmt_reader.ProcessComments(result);
 
-    if (byrows)
-        cmt_reader.ProcessCommentsFileByRows(*reader, result);
-    else
-        cmt_reader.ProcessCommentsFileByCols(*reader, result);
 }
 
 void CTbl2AsnApp::ProcessPEPFile(const string& pathname, CSeq_entry& entry)
