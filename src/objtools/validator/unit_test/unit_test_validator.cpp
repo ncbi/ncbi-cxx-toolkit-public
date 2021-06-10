@@ -7911,6 +7911,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadSpecificHost)
     TestSpecificHostNoError("Turtle");
     TestSpecificHostNoError("mallard duck");
     TestSpecificHostNoError("Guinea pig");
+    TestSpecificHostNoError("sea urchin"); // RW-1365
 }
 
 BOOST_AUTO_TEST_CASE(Test_Validity_SpecificHost)
