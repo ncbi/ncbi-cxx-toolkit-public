@@ -8,6 +8,6 @@ NCBI_begin_lib(xstruct_thread)
   )
   NCBI_disable_pch()
   NCBI_uses_toolkit_libraries(xutil)
-  NCBI_project_watchers(thiessen)
+  NCBI_project_watchers(lanczyck)
 NCBI_end_lib()
 

@@ -6,6 +6,6 @@ NCBI_begin_lib(xstruct_util)
     su_pssm su_sequence_set
   )
   NCBI_uses_toolkit_libraries(xblast xstruct_dp)
-  NCBI_project_watchers(thiessen lanczyck)
+  NCBI_project_watchers(lanczyck)
 NCBI_end_lib()
 
