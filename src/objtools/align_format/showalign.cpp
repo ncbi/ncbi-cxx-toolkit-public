@@ -4141,9 +4141,10 @@ void CDisplaySeqalign::x_PrepareDynamicFeatureInfo(SAlnInfo* aln_vec_info)
 			if(range.GetFrom() > range.GetTo()){
 				aln_vec_info->actual_range.Set(range.GetTo(), range.GetFrom());
 			}
-            string id_str;
-            subject_seqid.GetLabel(&id_str, CSeq_id::eBoth);
+            string id_str;            
             const CBioseq_Handle& subject_handle=m_AV->GetBioseqHandle(1);
+            CRef<CSeq_id> wid = FindBestChoice(subject_handle.GetBioseqCore()->GetId(),CSeq_id::WorstRank);            
+            wid->GetLabel(&id_str, CSeq_id::eBoth);            
             aln_vec_info->subject_gi = FindGi(subject_handle.GetBioseqCore()->GetId());
             aln_vec_info->feat_list  =  m_DynamicFeature->GetFeatInfo(id_str, aln_vec_info->actual_range, aln_vec_info->feat5, aln_vec_info->feat3, 2);
         }
