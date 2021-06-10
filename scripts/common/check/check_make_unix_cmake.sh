@@ -342,6 +342,8 @@ export NCBI_CHECK_TIMEOUT_DEFAULT=$NCBI_CHECK_TIMEOUT_DEFAULT
 if test -z "\$NCBI_TEST_DATA"; then
     if [ \$cygwin = true ]; then
        NCBI_TEST_DATA=//snowman/win-coremake/Scripts/test_data
+    elif test -d /Volumes/ncbiapdata/test_data; then
+       NCBI_TEST_DATA=/Volumes/ncbiapdata/test_data
     else
        NCBI_TEST_DATA=/am/ncbiapdata/test_data
     fi

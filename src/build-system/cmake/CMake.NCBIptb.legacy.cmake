@@ -13,7 +13,11 @@
 # asntool app
 if (NOT WIN32)
     set(NCBI_ASNTOOL $ENV{NCBI}/bin/asntool)
-    set(NCBI_ASNDIR  /am/ncbiapdata/asn)
+    if (IS_DIRECTORY "/am/ncbiapdata/asn")
+        set(NCBI_ASNDIR /am/ncbiapdata/asn)
+    else()
+        set(NCBI_ASNDIR /Volumes/ncbiapdata/asn)
+    endif()
 else()
     set(NCBI_ASNTOOL //snowman/win-coremake/Lib/Ncbi/C_Toolkit/vs2017.64/c.current/bin/asntool.exe)
 endif()

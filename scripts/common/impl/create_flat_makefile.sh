@@ -11,6 +11,9 @@
 solution="Makefile.flat"
 logfile="Flat.configuration_log"
 relroot="/net/snowman/vol/export2/win-coremake/App/Ncbi/cppcore"
+if [ \! -d $relroot -a -d /Volumes/win-coremake ]; then
+    relroot=/Volumes/win-coremake/App/Ncbi/cppcore
+fi
 
 ptbname="project_tree_builder"
 # release path to project_tree_builder

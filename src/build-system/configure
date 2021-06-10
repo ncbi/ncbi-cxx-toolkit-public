@@ -12041,7 +12041,7 @@ else
   ;;
   *)
   as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-as_dummy="/am/ncbiapdata/bin:$PATH"
+as_dummy="/am/ncbiapdata/bin:/Volumes/ncbiapdata/bin:$PATH"
 for as_dir in $as_dummy
 do
   IFS=$as_save_IFS
@@ -15951,7 +15951,7 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether in-house NCBI resources are available" >&5
 $as_echo_n "checking whether in-house NCBI resources are available... " >&6; }
 if test -n "$orig_NCBI" -a -f "$orig_NCBI/.ncbirc" \
-    -a -d /am/ncbiapdata/test_data; \
+    -a \( -d /am/ncbiapdata/test_data -o -d /Volumes/ncbiapdata/test_data \)
 then
              WithFeatures="$WithFeatures${WithFeaturesSep}in-house-resources"; WithFeaturesSep=" "
    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5

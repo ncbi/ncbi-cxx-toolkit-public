@@ -2836,7 +2836,8 @@ if test -n "$LDD"; then
 fi
 
 AC_PATH_PROG(UUIDGEN, uuidgen)
-AC_PATH_PROG(CD_REPORTER, cd_reporter, [], [/am/ncbiapdata/bin:$PATH])
+AC_PATH_PROG(CD_REPORTER, cd_reporter, [],
+   [/am/ncbiapdata/bin:/Volumes/ncbiapdata/bin:$PATH])
 
 #### Check if "${build_root}" is defined;  provide a default one
 if test -n "${with_build_root}" ; then
@@ -4347,7 +4348,7 @@ fi
 
 AC_MSG_CHECKING([whether in-house NCBI resources are available])
 if test -n "$orig_NCBI" -a -f "$orig_NCBI/.ncbirc" \
-    -a -d /am/ncbiapdata/test_data; \
+    -a \( -d /am/ncbiapdata/test_data -o -d /Volumes/ncbiapdata/test_data \)
 then
    NCBI_FEATURE(in-house-resources)
    AC_MSG_RESULT(yes)

@@ -3,11 +3,17 @@
 #
 
 base="${1:-./testdata}"
+case "$base" in
+    NCBI_TEST_DATA/* )
+	. ncbi_test_data
+	base=$NCBI_TEST_DATA/${base#*/}
+	;;
+esac
 if test ! -d $base; then
     echo "Error -- test data dir not found: $base"
     exit 1
 fi
-if test -d "$1"; then
+if test -n "$1"; then
     shift
 fi
 

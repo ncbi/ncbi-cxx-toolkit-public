@@ -33,6 +33,7 @@
 
 #include <ncbi_pch.hpp>
 #include "../ncbi_priv.h"
+#include <common/test_data_path.h>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbistr.hpp>
 #include <corelib/rwstream.hpp>
@@ -54,8 +55,12 @@ BEGIN_NCBI_SCOPE
 static string s_GetHttpToken(void)
 {
     const char* credfile = getenv("TEST_NCBI_HTTP_UPLOAD_TOKEN");
-    if (!credfile)
-        credfile = "/am/ncbiapdata/test_data/http/test_ncbi_http_upload_token";
+    string path;
+    if (!credfile) {
+        path = NCBI_GetTestDataPath();
+        path += "/http/test_ncbi_http_upload_token";
+        credfile = path.c_str();
+    }
     ifstream ifs(credfile);
     if (!ifs)
         return kEmptyStr;

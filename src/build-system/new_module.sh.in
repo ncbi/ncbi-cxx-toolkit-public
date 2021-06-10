@@ -179,6 +179,9 @@ elif test -x "$NCBI_DATATOOL_PATH/datatool"; then
 else # elif test -n "$NCBI"; then
     ncbi_platform=`COMMON_DetectPlatform`
     inst_root=/net/snowman/vol/export2/win-coremake/App/Ncbi/cppcore/datatool
+    if [ ! -d $inst_root -a -d /Volumes/win-coremake ]; then
+        inst_root=/Volumes/win-coremake/App/Ncbi/cppcore/datatool
+    fi
     version=`cat $top_srcdir/src/build-system/datatool_version.txt`
     if "$inst_root/$ncbi_platform/$version/datatool" -version >/dev/null 2>&1; \
     then

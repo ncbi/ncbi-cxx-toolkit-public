@@ -33,6 +33,7 @@
 #include <ncbi_pch.hpp>
 #include "../ncbi_ansi_ext.h"
 #include "../ncbi_priv.h"               /* CORE logging facilities */
+#include <common/test_data_path.h>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbi_process.hpp>
 #include <connect/ncbi_conn_stream.hpp>
@@ -71,7 +72,9 @@ static bool s_GetFtpCreds(string& user, string& pass)
 {
     user.clear();
     pass.clear();
-    ifstream ifs("/am/ncbiapdata/test_data/ftp/test_ncbi_ftp_upload");
+    string path = NCBI_GetTestDataPath();
+    path += "/ftp/test_ncbi_ftp_upload";
+    ifstream ifs(path.c_str());
     if (ifs) {
         string src;
         ifs >> src;

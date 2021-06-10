@@ -38,6 +38,9 @@
 
 #include <stdlib.h>
 #include <string.h>
+#ifdef NCBI_OS_DARWIN
+#  include <sys/stat.h>
+#endif
 
 /// Get the directory where test data is stored at NCBI.
 /// The location is hard coded, but can be changed using
@@ -73,6 +76,13 @@ static const char* NCBI_GetTestDataPath(void)
         "/am/ncbiapdata/test_data/"
 #endif
         ;
+#ifdef NCBI_OS_DARWIN
+    struct stat st;
+    if (stat(s_NcbiTestDataPath, &st) != 0
+        &&  stat("/Volumes/ncbiapdata/test_data/", &st) == 0) {
+        s_NcbiTestDataPath = "/Volumes/ncbiapdata/test_data/";
+    }
+#endif
     return s_NcbiTestDataPath;
 }
 

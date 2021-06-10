@@ -2,7 +2,8 @@
 # $Id$
 #
 
-base="${1:-/am/ncbiapdata/test_data/feat_tree}"
+. ncbi_test_data
+base="${1:-$NCBI_TEST_DATA/feat_tree}"
 if test ! -d $base; then
     echo "Error -- test data dir not found: $base"
     exit 1

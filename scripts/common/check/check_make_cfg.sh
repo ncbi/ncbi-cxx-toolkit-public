@@ -320,6 +320,13 @@ fi
 if test -z "\$NCBI_TEST_DATA"; then
     case `uname -s` in
        CYGWIN* ) NCBI_TEST_DATA=//snowman/win-coremake/Scripts/test_data ;;
+       Darwin )
+           if test -d /am/ncbiapdata/test_data; then
+               NCBI_TEST_DATA=/am/ncbiapdata/test_data
+           else
+               NCBI_TEST_DATA=/Volumes/ncbiapdata/test_data
+           fi
+           ;;
        *)        NCBI_TEST_DATA=/am/ncbiapdata/test_data ;;
     esac
     export NCBI_TEST_DATA

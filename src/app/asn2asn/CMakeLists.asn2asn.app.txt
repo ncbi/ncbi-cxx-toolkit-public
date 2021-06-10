@@ -4,12 +4,13 @@ NCBI_begin_app(asn2asn)
   NCBI_sources(asn2asn)
   NCBI_uses_toolkit_libraries(ncbi_xdbapi_ftds submit xcompress)
 
-  NCBI_set_test_requires(unix -Cygwin in-house-resources)
-  NCBI_set_test_assets(asn2asn.sh ../../serial/datatool/testdata)
+  NCBI_set_test_requires(in-house-resources)
+  NCBI_set_test_assets(
+    asn2asn.sh ../../serial/datatool/testdata ../../check/ncbi_test_data)
   NCBI_set_test_timeout(600)
 
   NCBI_add_test(asn2asn.sh)
-  NCBI_add_test(asn2asn.sh /am/ncbiapdata/test_data/objects)
+  NCBI_add_test(asn2asn.sh NCBI_TEST_DATA/objects)
 
   NCBI_project_watchers(gouriano)
 

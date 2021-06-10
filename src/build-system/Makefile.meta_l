@@ -42,7 +42,12 @@ else
 endif
 
 ifeq "$(srcdir)" "."
-  PTB_ROOT      = /net/snowman/vol/export2/win-coremake/App/Ncbi/cppcore/ptb
+  ifneq "" "$(wildcard /net/snowman/vol/export2/win-coremake)"
+     WIN_COREMAKE = /net/snowman/vol/export2/win-coremake
+  else
+     WIN_COREMAKE = /Volumes/win-coremake
+  endif
+  PTB_ROOT      = $(WIN_COREMAKE)/App/Ncbi/cppcore/ptb
   BOOTSTRAP_PTB = $(build_root)/bin/project_tree_builder
   ifeq "$(PREBUILT_PTB_EXE)" "bootstrap"
     RELEASE_PTB =
