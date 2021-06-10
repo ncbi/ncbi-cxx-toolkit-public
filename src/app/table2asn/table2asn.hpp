@@ -46,7 +46,6 @@ class CSerialObject;
 class CTable2AsnLogger;
 class CMultiReader;
 class CTable2AsnValidator;
-class CForeignContaminationScreenReportReader;
 class CMask;
 
 class CTbl2AsnApp : public CNcbiApplication
@@ -75,26 +74,33 @@ private:
     void ProcessAlignmentFile(CNcbiOstream* output);
     void ProcessSecretFiles1Phase(bool readModsFromTitle, CSeq_entry& result);
     void ProcessSecretFiles2Phase(CSeq_entry& result);
-    void ProcessQVLFile(const string& pathname, CSeq_entry& result);
     void ProcessDSCFile(const string& pathname, CSeq_entry& result);
-    void ProcessCMTFile(const string& pathname, CSeq_entry& result, bool byrows);
-    void ProcessPEPFile(const string& pathname, CSeq_entry& result);
-    void ProcessRNAFile(const string& pathname, CSeq_entry& result);
-    void ProcessPRTFile(const string& pathname, CSeq_entry& result);
-    void LoadAnnots(const string& pathname);
+    void ProcessCMTFiles(CSeq_entry& result);
+    void LoadPEPFile(const string& pathname);
+    void LoadRNAFile(const string& pathname);
+    void LoadPRTFile(const string& pathname);
+    void LoadAdditionalFiles();
+    void LoadCMTFile(const string& pathname, unique_ptr<CTable2AsnStructuredCommentsReader>& comments);
+    void LoadAnnots(const string& pathname, CMultiReader::TAnnots& annots);
     void AddAnnots(CScope& scope);
 
     void x_SetAlnArgs(CArgDescriptions& arg_desc);
     CRef<CScope> GetScope();
 
+    struct TAdditionalFiles
+    {
+        unique_ptr<CTable2AsnStructuredCommentsReader> m_struct_comments;
+        CMultiReader::TAnnots m_Annots;
+        CRef<CSeq_entry> m_replacement_proteins;
+        CRef<CSeq_entry> m_possible_proteins;
+    };
 
-    CMultiReader::TAnnots m_Annots;
+    TAdditionalFiles m_global_files;
+    unique_ptr<TAdditionalFiles> m_secret_files;
+
     unique_ptr<CMultiReader> m_reader;
-    CRef<CSeq_entry> m_replacement_proteins;
-    CRef<CSeq_entry> m_possible_proteins;
     CRef<CTable2AsnValidator> m_validator;
     CRef<CTable2AsnLogger> m_logger;
-    unique_ptr<CForeignContaminationScreenReportReader> m_fcs_reader;
     CTable2AsnContext    m_context;
 
     static const Int8 TBL2ASN_MAX_ALLOWED_FASTA_SIZE = INT8_C(0x7FFFFFFF);

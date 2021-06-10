@@ -925,10 +925,6 @@ void CTbl2AsnApp::ProcessOneEntry(
 
     bool avoid_submit_block = false;
 
-    if (m_fcs_reader)
-    {
-        m_fcs_reader->PostProcess(*entry);
-    }
     entry->Parentize();
 
     if (m_context.m_SetIDFromFile)
@@ -968,7 +964,7 @@ void CTbl2AsnApp::ProcessOneEntry(
         VisitAllBioseqs(*entry, CTable2AsnContext::UpdateTaxonFromTable);
     }
 
-    fr.m_replacement_protein = m_replacement_proteins;
+    fr.m_replacement_protein = m_secret_files->m_replacement_proteins;
     fr.MergeCDSFeatures(*entry);
 
     entry->Parentize();
@@ -976,8 +972,8 @@ void CTbl2AsnApp::ProcessOneEntry(
 
     m_context.CorrectCollectionDates(*entry);
 
-    if (m_possible_proteins.NotEmpty())
-        fr.AddProteins(*m_possible_proteins, *entry);
+    if (m_secret_files->m_possible_proteins.NotEmpty())
+        fr.AddProteins(*m_secret_files->m_possible_proteins, *entry);
 
     if (m_context.m_HandleAsSet)
     {
@@ -1101,6 +1097,9 @@ void CTbl2AsnApp::ProcessOneFile(bool isAlignment)
             output = holder.get();
         }
         //m_context.ReleaseOutputs();
+
+        LoadAdditionalFiles();
+
         if (isAlignment) {
             ProcessAlignmentFile(output);
         }
@@ -1142,7 +1141,8 @@ void CTbl2AsnApp::ProcessOneFile(CNcbiOstream* output)
     CMultiReader::TAnnots annots;
     CFormatGuess::EFormat format = m_reader->OpenFile(m_context.m_current_file, input_obj, annots);
     if (!annots.empty()) {
-        m_Annots.splice(m_Annots.end(), annots);
+       m_secret_files->m_Annots.splice(m_secret_files->m_Annots.end(), annots);
+       annots.clear();
     }
     do
     {
@@ -1310,53 +1310,17 @@ void CTbl2AsnApp::ProcessSecretFiles1Phase(bool readModsFromTitle, CSeq_entry& r
         m_logger,
         result);
 
-    ProcessQVLFile(name + ".qvl", result);
     ProcessDSCFile(name + ".dsc", result);
-
-    //ProcessCMTFile(name + ".cmt", result, false);
-    //ProcessCMTFile(m_context.m_single_structure_cmt, result, false);
-
-    ProcessPEPFile(name + ".pep", result);
-    ProcessRNAFile(name + ".rna", result);
-    ProcessPRTFile(name + ".prt", result);
 
     CScope scope(*m_context.m_ObjMgr);
     scope.AddTopLevelSeqEntry(result);
-
-    //m_reader->ApplyAnnotFromSequences(scope);
-
-    if (!m_context.m_single_annot_file.empty())
-    {
-        LoadAnnots(m_context.m_single_annot_file);
-    }
-    else
-    {
-        for (auto suffix : {".gbf", ".tbl", ".gff", ".gff3", ".gff2", ".gtf"}) {
-            LoadAnnots(name + suffix);
-        }
-    }
 
     AddAnnots(scope);
 }
 
 void CTbl2AsnApp::ProcessSecretFiles2Phase(CSeq_entry& result)
 {
-    string dir;
-    string base;
-    string ext;
-    CDirEntry::SplitPath(m_context.m_current_file, &dir, &base, &ext);
-
-    string name = dir + base;
-
-    ProcessCMTFile(name + ".cmt", result, true);
-    ProcessCMTFile(m_context.m_single_structure_cmt, result, true);
-}
-
-
-void CTbl2AsnApp::ProcessQVLFile(const string& pathname, CSeq_entry& result)
-{
-    CFile file(pathname);
-    if (!file.Exists() || file.GetLength() == 0) return;
+    ProcessCMTFiles(result);
 }
 
 void CTbl2AsnApp::ProcessDSCFile(const string& pathname, CSeq_entry& result)
@@ -1369,18 +1333,15 @@ void CTbl2AsnApp::ProcessDSCFile(const string& pathname, CSeq_entry& result)
     m_reader->ApplyDescriptors(result, *descr);
 }
 
-void CTbl2AsnApp::ProcessCMTFile(const string& pathname, CSeq_entry& result, bool byrows)
+void CTbl2AsnApp::ProcessCMTFiles(CSeq_entry& result)
 {
-    CFile file(pathname);
-    if (!file.Exists() || file.GetLength() == 0) return;
-
-    CTable2AsnStructuredCommentsReader cmt_reader(pathname, m_logger);
-
-    cmt_reader.ProcessComments(result);
-
+    if (m_global_files.m_struct_comments)
+        m_global_files.m_struct_comments->ProcessComments(result);
+    if (m_secret_files && m_secret_files->m_struct_comments)
+        m_secret_files->m_struct_comments->ProcessComments(result);
 }
 
-void CTbl2AsnApp::ProcessPEPFile(const string& pathname, CSeq_entry& entry)
+void CTbl2AsnApp::LoadPEPFile(const string& pathname)
 {
     CFile file(pathname);
     if (!file.Exists() || file.GetLength() == 0) return;
@@ -1389,16 +1350,16 @@ void CTbl2AsnApp::ProcessPEPFile(const string& pathname, CSeq_entry& entry)
 
     CFeatureTableReader peps(m_context);
 
-    m_replacement_proteins = peps.ReadProtein(*reader);
+    m_secret_files->m_replacement_proteins = peps.ReadProtein(*reader);
 }
 
-void CTbl2AsnApp::ProcessRNAFile(const string& pathname, CSeq_entry& entry)
+void CTbl2AsnApp::LoadRNAFile(const string& pathname)
 {
     CFile file(pathname);
     if (!file.Exists() || file.GetLength() == 0) return;
 }
 
-void CTbl2AsnApp::ProcessPRTFile(const string& pathname, CSeq_entry& entry)
+void CTbl2AsnApp::LoadPRTFile(const string& pathname)
 {
     CFile file(pathname);
     if (!file.Exists() || file.GetLength() == 0) return;
@@ -1407,10 +1368,10 @@ void CTbl2AsnApp::ProcessPRTFile(const string& pathname, CSeq_entry& entry)
 
     CFeatureTableReader prts(m_context);
 
-    m_possible_proteins = prts.ReadProtein(*reader);
+    m_secret_files->m_possible_proteins = prts.ReadProtein(*reader);
 }
 
-void CTbl2AsnApp::LoadAnnots(const string& pathname)
+void CTbl2AsnApp::LoadAnnots(const string& pathname, CMultiReader::TAnnots& annots)
 {
     CFile file(pathname);
 
@@ -1428,12 +1389,57 @@ void CTbl2AsnApp::LoadAnnots(const string& pathname)
         return;
     }
 
-    m_reader->LoadAnnots(pathname, m_Annots);
+    m_reader->LoadAnnots(pathname, annots);
 }
 
 void CTbl2AsnApp::AddAnnots(CScope& scope)
 {
-    m_reader->AddAnnots(m_Annots, scope);
+    m_reader->AddAnnots(m_global_files.m_Annots, scope);
+    if (m_secret_files)
+        m_reader->AddAnnots(m_secret_files->m_Annots, scope);
+}
+
+void CTbl2AsnApp::LoadCMTFile(const string& pathname, unique_ptr<CTable2AsnStructuredCommentsReader>& comments)
+{
+    if (!comments)
+    {
+        CFile file(pathname);
+        if (file.Exists() && file.GetLength())
+        {
+            comments.reset(new CTable2AsnStructuredCommentsReader(pathname, m_logger));
+        }
+    }
+}
+
+void CTbl2AsnApp::LoadAdditionalFiles()
+{
+    string dir;
+    string base;
+    string ext;
+    CDirEntry::SplitPath(m_context.m_current_file, &dir, &base, &ext);
+
+    string name = dir + base;
+
+    // always reset secret file
+    m_secret_files.reset(new TAdditionalFiles);
+
+    LoadPEPFile(name + ".pep");
+    LoadRNAFile(name + ".rna");
+    LoadPRTFile(name + ".prt");
+
+    LoadCMTFile(m_context.m_single_structure_cmt, m_global_files.m_struct_comments);
+    LoadCMTFile(name + ".cmt", m_secret_files->m_struct_comments);
+
+    if (!m_context.m_single_annot_file.empty() && m_global_files.m_Annots.empty())
+    { // load only once
+        LoadAnnots(m_context.m_single_annot_file, m_global_files.m_Annots);
+    }
+    else
+    {
+        for (auto suffix : {".gbf", ".tbl", ".gff", ".gff3", ".gff2", ".gtf"}) {
+            LoadAnnots(name + suffix, m_secret_files->m_Annots);
+        }
+    }
 }
 
 END_NCBI_SCOPE
