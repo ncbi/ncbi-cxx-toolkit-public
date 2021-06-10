@@ -877,6 +877,7 @@ int CNcbiApplicationAPI::AppMain
 
     // Check command line for presence special arguments
     // "-logfile", "-conffile", "-version"
+    const char* conf_arg = nullptr;
     if (!m_DisableArgDesc && argc > 1  &&  argv) {
         const char** v = new const char*[argc];
         v[0] = argv[0];
@@ -901,14 +902,14 @@ int CNcbiApplicationAPI::AppMain
                 }
                 v[real_arg_index++] = argv[i - 1];
                 v[real_arg_index++] = argv[i];
-                conf = argv[i];
+                conf_arg = argv[i];
 
             }
             else if (NStr::StartsWith(argv[i], s_ArgCfgFile)) {
                 v[real_arg_index++] = argv[i];
                 const char* a = argv[i] + strlen(s_ArgCfgFile);
                 if (*a == '=') {
-                    conf = ++a;
+                    conf_arg = ++a;
                 }
 
                 // Version
@@ -953,6 +954,14 @@ int CNcbiApplicationAPI::AppMain
         } else {
             argc = real_arg_index;
             argv = v;
+        }
+        if (conf_arg) {
+            if (CFile(conf_arg).Exists()) {
+                conf = conf_arg;
+            }
+            else {
+                ERR_POST_X(23, Critical << "Registry file \"" << conf_arg << "\" not found");
+            }
         }
     }
 
