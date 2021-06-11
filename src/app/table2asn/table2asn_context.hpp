@@ -147,9 +147,7 @@ public:
     bool   m_binary_asn1_output { false };
     NDiscrepancy::EGroup m_discrepancy_group{ NDiscrepancy::eOncaller };
 
-    CRef<objects::CSeq_descr> m_descriptors;
     unique_ptr<objects::edit::CRemoteUpdater> m_remote_updater;
-    unique_ptr<CMemorySrcFileMap> mp_named_src_map;
 
     objects::CFixSuspectProductName m_suspect_rules;
 

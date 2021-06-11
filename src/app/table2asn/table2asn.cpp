@@ -739,7 +739,7 @@ int CTbl2AsnApp::Run()
     {
         if (args["D"])
         {
-            m_reader->LoadDescriptors(args["D"].AsString(), m_context.m_descriptors);
+            m_reader->LoadDescriptors(args["D"].AsString(), m_global_files.m_descriptors);
         }
     }
     catch (const CException&)
@@ -832,9 +832,9 @@ int CTbl2AsnApp::Run()
 
         // RW-927
         if (m_context.m_verbose &&
-            m_context.mp_named_src_map &&
-            !m_context.mp_named_src_map->Empty()) {
-            m_context.mp_named_src_map->ReportUnusedIds();
+            m_global_files.mp_src_qual_map &&
+            !m_global_files.mp_src_qual_map->Empty()) {
+            m_global_files.mp_src_qual_map->ReportUnusedIds();
         }
 
         if (m_validator->TotalErrors() > 0)
@@ -940,11 +940,6 @@ void CTbl2AsnApp::ProcessOneEntry(
         m_context.m_suspect_rules.SetupOutput(f);
     }
     m_context.ApplyFileTracks(*entry);
-
-    if (m_context.m_descriptors.NotNull())
-        m_reader->ApplyDescriptors(*entry, *m_context.m_descriptors);
-
-    // m_reader->ApplyAdditionalProperties(*entry);
 
     const bool readModsFromTitle =
         inputFormat == CFormatGuess::eFasta ||
@@ -1274,35 +1269,14 @@ void CTbl2AsnApp::Setup(const CArgs& args)
 */
 void CTbl2AsnApp::ProcessSecretFiles1Phase(bool readModsFromTitle, CSeq_entry& result)
 {
-    string dir;
-    string base;
-    string ext;
-    CDirEntry::SplitPath(m_context.m_current_file, &dir, &base, &ext);
-    string name = dir + base;
-
-    const auto& namedSrcFile = m_context.m_single_source_qual_file;
-    if (!NStr::IsBlank(namedSrcFile)) {
-        if (!m_context.mp_named_src_map) {
-            m_context.mp_named_src_map.reset(new CMemorySrcFileMap(m_logger));
-        }
-        m_context.mp_named_src_map->MapFile(namedSrcFile, m_context.m_allow_accession);
-    }
-
-    unique_ptr<CMemorySrcFileMap> pDefaultSrcFileMap;
-    const string defaultSrcFile = name + ".src";
-    if (!NStr::IsBlank(defaultSrcFile) && CFile(defaultSrcFile).Exists()) {
-        pDefaultSrcFileMap.reset(new CMemorySrcFileMap(m_logger));
-        pDefaultSrcFileMap->MapFile(defaultSrcFile, m_context.m_allow_accession);
-    }
-
     auto modMergePolicy =
         m_context.m_accumulate_mods ?
         CModHandler::eAppendPreserve :
         CModHandler::ePreserve;
 
     g_ApplyMods(
-        m_context.mp_named_src_map.get(),
-        pDefaultSrcFileMap.get(),
+        m_global_files.mp_src_qual_map.get(),
+        m_secret_files->mp_src_qual_map.get(),
         m_context.mCommandLineMods,
         readModsFromTitle,
         m_context.m_verbose,
@@ -1310,7 +1284,11 @@ void CTbl2AsnApp::ProcessSecretFiles1Phase(bool readModsFromTitle, CSeq_entry& r
         m_logger,
         result);
 
-    ProcessDSCFile(name + ".dsc", result);
+    if (m_global_files.m_descriptors)
+        m_reader->ApplyDescriptors(result, *m_global_files.m_descriptors);
+
+    if (m_secret_files->m_descriptors)
+        m_reader->ApplyDescriptors(result, *m_secret_files->m_descriptors);
 
     CScope scope(*m_context.m_ObjMgr);
     scope.AddTopLevelSeqEntry(result);
@@ -1323,14 +1301,12 @@ void CTbl2AsnApp::ProcessSecretFiles2Phase(CSeq_entry& result)
     ProcessCMTFiles(result);
 }
 
-void CTbl2AsnApp::ProcessDSCFile(const string& pathname, CSeq_entry& result)
+void CTbl2AsnApp::LoadDSCFile(const string& pathname)
 {
     CFile file(pathname);
     if (!file.Exists() || file.GetLength() == 0) return;
 
-    CRef<CSeq_descr> descr;
-    m_reader->LoadDescriptors(pathname, descr);
-    m_reader->ApplyDescriptors(result, *descr);
+    m_reader->LoadDescriptors(pathname, m_secret_files->m_descriptors);
 }
 
 void CTbl2AsnApp::ProcessCMTFiles(CSeq_entry& result)
@@ -1422,6 +1398,20 @@ void CTbl2AsnApp::LoadAdditionalFiles()
 
     // always reset secret file
     m_secret_files.reset(new TAdditionalFiles);
+
+    const auto& namedSrcFile = m_context.m_single_source_qual_file;
+    if (!NStr::IsBlank(namedSrcFile) && !m_global_files.mp_src_qual_map)
+    {
+        m_global_files.mp_src_qual_map.reset(new CMemorySrcFileMap(m_logger));
+        m_global_files.mp_src_qual_map->MapFile(namedSrcFile, m_context.m_allow_accession);
+    }
+
+    const string defaultSrcFile = name + ".src";
+    if (CFile(defaultSrcFile).Exists())
+    {
+        m_secret_files->mp_src_qual_map.reset(new CMemorySrcFileMap(m_logger));
+        m_secret_files->mp_src_qual_map->MapFile(defaultSrcFile, m_context.m_allow_accession);
+    }
 
     LoadPEPFile(name + ".pep");
     LoadRNAFile(name + ".rna");

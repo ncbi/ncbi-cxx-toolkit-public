@@ -74,11 +74,11 @@ private:
     void ProcessAlignmentFile(CNcbiOstream* output);
     void ProcessSecretFiles1Phase(bool readModsFromTitle, CSeq_entry& result);
     void ProcessSecretFiles2Phase(CSeq_entry& result);
-    void ProcessDSCFile(const string& pathname, CSeq_entry& result);
     void ProcessCMTFiles(CSeq_entry& result);
     void LoadPEPFile(const string& pathname);
     void LoadRNAFile(const string& pathname);
     void LoadPRTFile(const string& pathname);
+    void LoadDSCFile(const string& pathname);
     void LoadAdditionalFiles();
     void LoadCMTFile(const string& pathname, unique_ptr<CTable2AsnStructuredCommentsReader>& comments);
     void LoadAnnots(const string& pathname, CMultiReader::TAnnots& annots);
@@ -93,6 +93,8 @@ private:
         CMultiReader::TAnnots m_Annots;
         CRef<CSeq_entry> m_replacement_proteins;
         CRef<CSeq_entry> m_possible_proteins;
+        CRef<CSeq_descr> m_descriptors;
+        unique_ptr<CMemorySrcFileMap> mp_src_qual_map;
     };
 
     TAdditionalFiles m_global_files;
