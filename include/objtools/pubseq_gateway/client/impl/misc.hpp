@@ -40,25 +40,19 @@
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbi_param.hpp>
 
+#include <connect/impl/connect_misc.hpp>
+
 BEGIN_NCBI_SCOPE
 
-template <class TBase>
-struct SPSG_CV_Base : TBase
-{
-    mutex& GetMutex() { return TBase::m_Mutex; }
-};
-
 template <>
-struct SPSG_CV_Base<void>
+struct SThreadSafe<void>
 {
-    mutex& GetMutex() { return m_Mutex; }
-
-private:
+protected:
     mutex m_Mutex;
 };
 
-template <typename TBase = void>
-struct SPSG_CV : SPSG_CV_Base<TBase>
+template <typename TType = void>
+struct SPSG_CV : SThreadSafe<TType>
 {
 public:
     void NotifyOne() volatile { GetThis().x_NotifyOne(); }
@@ -115,7 +109,7 @@ private:
     template <class... TArgs>
     bool x_Wait(TArgs&&... args)
     {
-        unique_lock<mutex> lock(SPSG_CV_Base<TBase>::GetMutex());
+        unique_lock<mutex> lock(SThreadSafe<TType>::m_Mutex);
         auto p = [&](){ return m_Signal > 0; };
 
         if (!x_CvWait(lock, p, forward<TArgs>(args)...)) return false;
@@ -138,7 +132,7 @@ private:
 
     void x_Signal()
     {
-        lock_guard<mutex> lock(SPSG_CV_Base<TBase>::GetMutex());
+        lock_guard<mutex> lock(SThreadSafe<TType>::m_Mutex);
         m_Signal++;
     }
 

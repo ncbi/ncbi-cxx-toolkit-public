@@ -283,7 +283,7 @@ struct SPSG_Reply
 
     struct SItem
     {
-        using TTS = SPSG_CV<SThreadSafe<SItem>>;
+        using TTS = SPSG_CV<SItem>;
 
         vector<SPSG_Chunk> chunks;
         SPSG_Args args;
