@@ -80,9 +80,10 @@ private:
     {
         constexpr auto kWait = chrono::milliseconds(100);
         const auto until = deadline.IsInfinite() ? clock::time_point::max() : x_GetTP(deadline);
-        const auto max = clock::now() + kWait;
 
         do {
+            const auto max = clock::now() + kWait;
+
             if (until < max) {
                 return x_Wait(until);
             }
@@ -110,24 +111,22 @@ private:
     bool x_Wait(TArgs&&... args)
     {
         unique_lock<mutex> lock(SThreadSafe<TType>::m_Mutex);
-        auto p = [&](){ return m_Signal > 0; };
 
-        if (!x_CvWait(lock, p, forward<TArgs>(args)...)) return false;
+        if (!x_CvWait(lock, forward<TArgs>(args)...)) return false;
 
         m_Signal--;
         return true;
     }
 
-    template <class TL, class TP, class TT>
-    bool x_CvWait(TL& l, TP p, const TT& t)
+    bool x_CvWait(unique_lock<mutex>& l, const clock::time_point& t)
     {
-        return m_CV.wait_until(l, t, p);
+        return m_CV.wait_until(l, t, [&](){ return m_Signal > 0; });
     }
 
-    template <class TL, class TP>
-    bool x_CvWait(TL& l, TP p)
+    bool x_CvWait(unique_lock<mutex>& l)
     {
-        m_CV.wait(l, p); return true;
+        m_CV.wait(l, [&](){ return m_Signal > 0; });
+        return true;
     }
 
     void x_Signal()
