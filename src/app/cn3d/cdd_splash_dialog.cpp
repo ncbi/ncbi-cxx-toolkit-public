@@ -153,8 +153,10 @@ CDDSplashDialog::CDDSplashDialog(StructureWindow *cn3dFrame,
                 for (e=(*a)->GetEvidence().begin(); e!=ee; ++e) {
                     if ((*e)->IsComment())
                         *tDescr << "  comment: " << (*e)->GetComment().c_str() << '\n';
-                    else if ((*e)->IsReference() && (*e)->GetReference().IsPmid())
-                        *tDescr << "  PubMed " << (*e)->GetReference().GetPmid().Get() << '\n';
+                    else if ((*e)->IsReference() && (*e)->GetReference().IsPmid()) {
+                        string pmid_str = NStr::NumericToString((*e)->GetReference().GetPmid().Get());
+                        *tDescr << "  PubMed " << pmid_str << '\n';
+                    }
                     else if ((*e)->IsBsannot()) {
                         *tDescr << "  structure:";
                         if ((*e)->GetBsannot().GetFeatures().size() > 0 &&

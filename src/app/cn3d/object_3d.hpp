@@ -41,6 +41,7 @@
 #include "structure_base.hpp"
 #include "vector_math.hpp"
 
+USING_NCBI_SCOPE;
 
 BEGIN_SCOPE(Cn3D)
 
@@ -48,6 +49,7 @@ class Object3D : public StructureBase
 {
 public:
     static const int VALUE_NOT_SET;
+    static const TGi GI_NOT_SET;
     int moleculeID, fromResidueID, toResidueID;
 
 protected:

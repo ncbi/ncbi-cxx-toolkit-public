@@ -327,7 +327,7 @@ int TaxonomyTree::GetTaxIDForSequence(const Sequence *seq)
     string err = "no gi or source info";
 
     // try to get "official" tax info from gi
-    if (seq->identifier->gi != MoleculeIdentifier::VALUE_NOT_SET) {
+    if (seq->identifier->gi != MoleculeIdentifier::GI_NOT_SET) {
         if (!taxonomyServer.GetTaxId4GI(seq->identifier->gi, taxid)) {
             taxid = 0;
             err = taxonomyServer.GetLastError();

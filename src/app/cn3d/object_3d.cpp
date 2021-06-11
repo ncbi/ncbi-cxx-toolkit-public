@@ -54,6 +54,7 @@ USING_SCOPE(objects);
 BEGIN_SCOPE(Cn3D)
 
 const int Object3D::VALUE_NOT_SET = -1;
+const TGi Object3D::GI_NOT_SET = -1;
 
 Object3D::Object3D(StructureBase *parent, const CResidue_pntrs& residues) :
     StructureBase(parent),
