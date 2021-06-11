@@ -897,8 +897,6 @@ void SPSG_IoImpl::OnQueue(uv_async_t* handle)
                         return;
                     }
 
-                    space->NotifyOne();
-
                     // All existing sessions are full
                     if (session == server_sessions.end()) {
                         server_sessions.emplace_back(server, queue, handle->loop);
@@ -1194,7 +1192,7 @@ SPSG_IoCoordinator::SPSG_IoCoordinator(CServiceDiscovery service) :
 {
     for (unsigned i = 0; i < TPSG_NumIo::GetDefault(); i++) {
         // This timing cannot be changed without changes in SPSG_IoSession::CheckRequestExpiration
-        m_Io.emplace_back(new SPSG_Thread<SPSG_IoImpl>(m_Barrier, milli::den, milli::den, &m_Space, m_Servers));
+        m_Io.emplace_back(new SPSG_Thread<SPSG_IoImpl>(m_Barrier, milli::den, milli::den, m_Servers));
     }
 
     m_Barrier.Wait();
@@ -1225,8 +1223,10 @@ bool SPSG_IoCoordinator::AddRequest(shared_ptr<SPSG_Request> req, const atomic_b
             idx = (idx + 1) % m_Io.size();
         }
         while (idx != first);
+
+        this_thread::yield();
     }
-    while (m_Space.WaitUntil(stopped, deadline));
+    while (!deadline.IsExpired() && !stopped);
 
     return false;
 }

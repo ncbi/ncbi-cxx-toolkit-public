@@ -42,19 +42,14 @@
 
 BEGIN_NCBI_SCOPE
 
-template <int ITERS, class TBase>
+template <class TBase>
 struct SPSG_CV_Base : TBase
 {
     mutex& GetMutex() { return TBase::m_Mutex; }
 };
 
-template <int ITERS>
-struct SPSG_CV_Base<ITERS, void>
-{
-};
-
 template <>
-struct SPSG_CV_Base<0, void>
+struct SPSG_CV_Base<void>
 {
     mutex& GetMutex() { return m_Mutex; }
 
@@ -62,52 +57,15 @@ private:
     mutex m_Mutex;
 };
 
-template <int ITERS, typename TBase = void>
-struct SPSG_CV : SPSG_CV_Base<ITERS, TBase>
+template <typename TBase = void>
+struct SPSG_CV : SPSG_CV_Base<TBase>
 {
 private:
-    template <int I, typename NA = void>
     struct SImpl
-    {
-        SImpl(SPSG_CV_Base<I, TBase>&) {}
-
-        void NotifyOne() {}
-        void NotifyAll() {}
-
-        bool WaitUntil(const CDeadline& deadline)
-        {
-            return x_WaitUntil() || !deadline.IsExpired();
-        }
-
-        template <typename T = bool>
-        bool WaitUntil(const volatile atomic<T>& a, const CDeadline& deadline, T v = false, bool rv = false)
-        {
-            return x_WaitUntil() || (a != v ? rv : !deadline.IsExpired());
-        }
-
-    private:
-        bool x_WaitUntil()
-        {
-            constexpr auto kWait = chrono::microseconds(10);
-            this_thread::sleep_for(kWait);
-
-            if (m_I-- > 0) {
-                return true;
-            }
-
-            m_I += I;
-            return false;
-        }
-
-        int m_I = I;
-    };
-
-    template <typename NA>
-    struct SImpl<0, NA>
     {
         using clock = chrono::system_clock;
 
-        SImpl(SPSG_CV_Base<0, TBase>& base) : m_Base(base), m_Signal(0) {}
+        SImpl(SPSG_CV_Base<TBase>& base) : m_Base(base), m_Signal(0) {}
 
         void NotifyOne() { x_Signal(); m_CV.notify_one(); }
         void NotifyAll() { x_Signal(); m_CV.notify_all(); }
@@ -179,7 +137,7 @@ private:
             m_Signal++;
         }
 
-        SPSG_CV_Base<ITERS, TBase>& m_Base;
+        SPSG_CV_Base<TBase>& m_Base;
         condition_variable m_CV;
         int m_Signal;
     };
@@ -197,7 +155,7 @@ public:
     }
 
 private:
-    using TImpl = SImpl<ITERS>;
+    using TImpl = SImpl;
 
     TImpl& GetImpl() volatile { return const_cast<TImpl&>(m_Impl); }
 
@@ -310,7 +268,7 @@ struct CPSG_WaitingStack : private CPSG_Stack<TValue>
     bool Empty() const { return m_Stopped && CPSG_Stack<TValue>::Empty(); }
 
 private:
-    SPSG_CV<0> m_CV;
+    SPSG_CV<> m_CV;
     atomic_bool m_Stopped;
 };
 

@@ -250,7 +250,7 @@ struct SPSG_Reply
             eError,
         };
 
-        SPSG_CV<0> change;
+        SPSG_CV<> change;
 
         SState() : m_State(eInProgress), m_Returned(false), m_Empty(true) {}
 
@@ -283,7 +283,7 @@ struct SPSG_Reply
 
     struct SItem
     {
-        using TTS = SPSG_CV<0, SThreadSafe<SItem>>;
+        using TTS = SPSG_CV<SThreadSafe<SItem>>;
 
         vector<SPSG_Chunk> chunks;
         SPSG_Args args;
@@ -606,13 +606,9 @@ private:
 
 struct SPSG_IoImpl
 {
-    using TSpaceCV = SPSG_CV<1000>;
-
     SPSG_AsyncQueue queue;
-    TSpaceCV* space;
 
-    SPSG_IoImpl(TSpaceCV* s, SPSG_Servers::TTS& servers) :
-        space(s),
+    SPSG_IoImpl(SPSG_Servers::TTS& servers) :
         m_Servers(servers),
         m_Random(piecewise_construct, {}, forward_as_tuple(random_device()()))
     {}
@@ -697,7 +693,6 @@ struct SPSG_IoCoordinator
 
 private:
     SUv_Barrier m_Barrier;
-    SPSG_IoImpl::TSpaceCV m_Space;
     SPSG_Servers::TTS m_Servers;
     SPSG_Thread<SPSG_DiscoveryImpl> m_Discovery;
     vector<unique_ptr<SPSG_Thread<SPSG_IoImpl>>> m_Io;
