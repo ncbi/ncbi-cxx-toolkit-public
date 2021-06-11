@@ -23,9 +23,10 @@ class CTable2AsnContext;
 class CSerialObject;
 class CAnnotationLoader;
 
-class CFastaReaderEx : public objects::CFastaReader {
+class CFastaReaderEx : public objects::CFastaReader 
+{
 public:
-    CFastaReaderEx(CTable2AsnContext& context, ILineReader& reader, TFlags flags);
+    CFastaReaderEx(CTable2AsnContext& context, std::istream& instream, TFlags flags);
     void AssignMolType(objects::ILineErrorListener * pMessageListener) override;
     void AssembleSeq(objects::ILineErrorListener * pMessageListener) override;
     virtual CRef<objects::CSeq_entry> ReadDeltaFasta(objects::ILineErrorListener * pMessageListener);

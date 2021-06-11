@@ -35,30 +35,16 @@
 
 #include "fasta_ex.hpp"
 
-//#include <objects/seqloc/Seq_id.hpp>
-//#include <objects/seqloc/Seq_loc.hpp>
-//#include <objects/seq/Seq_annot.hpp>
 #include <objects/seqset/Seq_entry.hpp>
-//#include <objects/seqfeat/Variation_ref.hpp>
 
 #include <objects/seq/Seq_descr.hpp>
-//#include <objects/seqfeat/Org_ref.hpp>
-//#include <objects/seqfeat/OrgName.hpp>
 #include <objects/submit/Seq_submit.hpp>
-//#include <objects/submit/Submit_block.hpp>
-//#include <objects/pub/Pub.hpp>
-//#include <objects/pub/Pub_equiv.hpp>
-//#include <objects/biblio/Cit_sub.hpp>
-//#include <objects/seq/Pubdesc.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/general/Date.hpp>
-//#include <objects/biblio/Cit_sub.hpp>
 
 #include "table2asn_context.hpp"
-//#include "src_quals.hpp"
-
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -66,8 +52,8 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 
-CFastaReaderEx::CFastaReaderEx(CTable2AsnContext& context, ILineReader& reader, TFlags flags) :
-    CFastaReader(reader, flags), m_context(context),
+CFastaReaderEx::CFastaReaderEx(CTable2AsnContext& context, std::istream& instream, TFlags flags) :
+    CFastaReader(instream, flags), m_context(context),
     m_gap_editor((CSeq_gap::EType)m_context.m_gap_type,
             m_context.m_DefaultEvidence,
             m_context.m_GapsizeToEvidence,

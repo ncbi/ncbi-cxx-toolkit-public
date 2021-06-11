@@ -356,8 +356,7 @@ CMultiReader::xReadFasta(CNcbiIstream& instream)
     m_iFlags |= CFastaReader::fAssumeNuc
              |  CFastaReader::fForceType;
 
-    CStreamLineReader lr( instream );
-    unique_ptr<CFastaReaderEx> pReader(new CFastaReaderEx(m_context, lr, m_iFlags));
+    unique_ptr<CFastaReaderEx> pReader(new CFastaReaderEx(m_context, instream, m_iFlags));
     if (!pReader) {
         NCBI_THROW2(CObjReaderParseException, eFormat,
             "File format not supported", 0);
