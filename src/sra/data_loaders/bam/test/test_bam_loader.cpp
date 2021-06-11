@@ -1532,9 +1532,87 @@ BOOST_AUTO_TEST_CASE(CheckBAMUserAgent)
 }
 #endif
 
+BOOST_AUTO_TEST_CASE(FetchSeq1GI64)
+{
+    LOG_POST("Checking BAM retrieval by high GI (>2^31)");
+    CBAMDataLoader::SetPileupGraphsParamDefault(true);
+
+    CRef<CObjectManager> om = sx_GetOM();
+
+    CBAMDataLoader::SLoaderParams params;
+    string bam_name = sx_GetPath("test.2500000002.bam", "bam");
+    params.m_BamFiles.push_back(CBAMDataLoader::SBamFileName(bam_name));
+    
+    string id = "NC_054141.5";
+    TSeqPos from = 100000, to = 200000;
+    size_t align_count = 23;
+    size_t graph_count = 1;
+    size_t pileup_graph_count = 6;
+
+    string loader_name =
+        CBAMDataLoader::RegisterInObjectManager(*om, params,
+                                                CObjectManager::eDefault)
+        .GetLoader()->GetName();
+    sx_ReportBamLoaderName(loader_name);
+    string gbloader_name =
+        CGBDataLoader::RegisterInObjectManager(*om).GetLoader()->GetName();
+    CScope scope(*om);
+    scope.AddDefaults();
+
+    CRef<CSeq_id> seqid(new CSeq_id(id));
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*seqid);
+    CRef<CSeq_loc> loc(new CSeq_loc);
+    loc->SetInt().SetId(*seqid);
+    loc->SetInt().SetFrom(from);
+    loc->SetInt().SetTo(to);
+    string annot_name = CDirEntry(bam_name).GetBase();
+    sx_CheckNames(scope, *loc, annot_name, true);
+    string pileup_name = annot_name+PILEUP_NAME_SUFFIX;
+    sx_CheckNames(scope, *loc, pileup_name, true);
+    if ( 1 ) {
+        SAnnotSelector sel;
+        sel.AddNamedAnnots(annot_name);
+        CAlign_CI it(scope, *loc, sel);
+        if ( it ) {
+            cout << "Align count: "<<it.GetSize()<<endl;
+            if ( it.GetAnnot().IsNamed() ) {
+                cout << "Annot name: " << it.GetAnnot().GetName()<<endl;
+            }
+        }
+        BOOST_CHECK_EQUAL(align_count, it.GetSize());
+    }
+    if ( 1 ) {
+        SAnnotSelector sel;
+        sel.AddNamedAnnots(annot_name);
+        CGraph_CI it(scope, *loc, sel);
+        if ( it ) {
+            cout << "Graph count: "<<it.GetSize()<<endl;
+            if ( it.GetAnnot().IsNamed() ) {
+                cout << "Annot name: " << it.GetAnnot().GetName()<<endl;
+            }
+        }
+        BOOST_CHECK_EQUAL(graph_count, it.GetSize());
+    }
+    if ( 1 ) {
+        SAnnotSelector sel;
+        sel.AddNamedAnnots(pileup_name);
+        CGraph_CI it(scope, *loc, sel);
+        if ( it ) {
+            cout << "Pileup graph count: "<<it.GetSize()<<endl;
+            if ( it.GetAnnot().IsNamed() ) {
+                cout << "Annot name: " << it.GetAnnot().GetName()<<endl;
+            }
+        }
+        BOOST_CHECK_EQUAL(pileup_graph_count, it.GetSize());
+    }
+}
+
 NCBITEST_INIT_TREE()
 {
 #ifdef NCBI_THREADS
     NCBITEST_DISABLE(CheckBAMUserAgent); // fails with current VDB library 2.10.9
+#endif
+#ifdef NCBI_INT4_GI
+    NCBITEST_DISABLE(FetchSeq1GI64);
 #endif
 }
