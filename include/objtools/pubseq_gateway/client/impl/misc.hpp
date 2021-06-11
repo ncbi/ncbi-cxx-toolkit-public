@@ -61,22 +61,19 @@ template <typename TBase = void>
 struct SPSG_CV : SPSG_CV_Base<TBase>
 {
 private:
-    struct SImpl
-    {
         using clock = chrono::system_clock;
 
-        SImpl(SPSG_CV_Base<TBase>& base) : m_Base(base), m_Signal(0) {}
 
-        void NotifyOne() { x_Signal(); m_CV.notify_one(); }
-        void NotifyAll() { x_Signal(); m_CV.notify_all(); }
+        void x_NotifyOne() { x_Signal(); m_CV.notify_one(); }
+        void x_NotifyAll() { x_Signal(); m_CV.notify_all(); }
 
-        bool WaitUntil(const CDeadline& deadline)
+        bool x_WaitUntil(const CDeadline& deadline)
         {
             return deadline.IsInfinite() ? x_Wait() : x_Wait(x_GetTP(deadline));
         }
 
         template <typename T = bool>
-        bool WaitUntil(const volatile atomic<T>& a, const CDeadline& deadline, T v = false, bool rv = false)
+        bool x_WaitUntil(const volatile atomic<T>& a, const CDeadline& deadline, T v = false, bool rv = false)
         {
             constexpr auto kWait = chrono::milliseconds(100);
             const auto until = deadline.IsInfinite() ? clock::time_point::max() : x_GetTP(deadline);
@@ -110,7 +107,7 @@ private:
         template <class... TArgs>
         bool x_Wait(TArgs&&... args)
         {
-            unique_lock<mutex> lock(m_Base.GetMutex());
+            unique_lock<mutex> lock(SPSG_CV_Base<TBase>::GetMutex());
             auto p = [&](){ return m_Signal > 0; };
 
             if (!x_CvWait(lock, p, forward<TArgs>(args)...)) return false;
@@ -133,33 +130,28 @@ private:
 
         void x_Signal()
         {
-            lock_guard<mutex> lock(m_Base.GetMutex());
+            lock_guard<mutex> lock(SPSG_CV_Base<TBase>::GetMutex());
             m_Signal++;
         }
 
-        SPSG_CV_Base<TBase>& m_Base;
         condition_variable m_CV;
-        int m_Signal;
-    };
+        int m_Signal = 0;
 
 public:
-    SPSG_CV() : m_Impl(*this) {}
 
-    void NotifyOne() volatile { GetImpl().NotifyOne(); }
-    void NotifyAll() volatile { GetImpl().NotifyAll(); }
+    void NotifyOne() volatile { GetThis().x_NotifyOne(); }
+    void NotifyAll() volatile { GetThis().x_NotifyAll(); }
 
     template <class... TArgs>
     bool WaitUntil(TArgs&&... args) volatile
     {
-        return GetImpl().WaitUntil(forward<TArgs>(args)...);
+        return GetThis().x_WaitUntil(forward<TArgs>(args)...);
     }
 
 private:
-    using TImpl = SImpl;
 
-    TImpl& GetImpl() volatile { return const_cast<TImpl&>(m_Impl); }
+    SPSG_CV& GetThis() volatile { return const_cast<SPSG_CV&>(*this); }
 
-    TImpl m_Impl;
 };
 
 template <class TValue>
