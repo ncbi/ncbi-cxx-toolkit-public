@@ -66,14 +66,24 @@ void CMaskWriterFasta::Print( objects::CBioseq_Handle& bsh,
 
             if( imask != mask.end() && i >= imask->first ) {
                 if( i <= imask->second ) 
-                    letter = tolower((unsigned char) letter);
+                	if(m_HardMasking) {
+                		letter = 'N';
+                	}
+                	else {
+                		letter = tolower((unsigned char) letter);
+                	}
                 else
                 {
                     ++imask;
 
-                    if(    imask != mask.end() 
+                    if(imask != mask.end()
                         && i >= imask->first && i <= imask->second )
-                        letter = tolower((unsigned char) letter);
+                    	if(m_HardMasking) {
+                    		letter = 'N';
+                    	}
+                    	else {
+                    		letter = tolower((unsigned char) letter);
+                    	}
                 }
             }
 

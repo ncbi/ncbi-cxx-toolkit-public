@@ -107,6 +107,8 @@ void CDustMaskApplication::Init(void)
                              CArgDescriptions::eString, *kOutputFormats );
     arg_desc->AddFlag      ( "parse_seqids",
                              "Parse Seq-ids in FASTA input", true );
+    arg_desc->AddFlag      ( "hard_masking",
+                             "Use hard masking for fasta outfmt", true );
     CArgAllow_Strings* strings_allowed = new CArgAllow_Strings();
     for (size_t i = 0; i < kNumOutputFormats; i++) {
         strings_allowed->Allow(kOutputFormats[i]);
@@ -124,6 +126,10 @@ CDustMaskApplication::x_GetWriter()
     const string& format(args[kOutputFormat].AsString());
     CMaskWriter* retval = NULL;
 
+    if (args["hard_masking"].AsBoolean() && (format != "fasta")) {
+        throw runtime_error("Hard masking can only be applied for fasta output");
+    }
+
     if (format == "interval") {
         CNcbiOstream& output = args[kOutput].AsOutputFile();
         retval = new CMaskWriterInt(output);
@@ -132,7 +138,8 @@ CDustMaskApplication::x_GetWriter()
         retval = new CMaskWriterTabular(output);
     } else if (format == "fasta") {
         CNcbiOstream& output = args[kOutput].AsOutputFile();
-        retval = new CMaskWriterFasta(output);
+        bool hard_masking = args["hard_masking"].AsBoolean();
+        retval = new CMaskWriterFasta(output, hard_masking);
     } else if (NStr::StartsWith(format, "seqloc_asn1_binary")) {
         CNcbiOstream& output = args[kOutput].AsOutputFile(CArgValue::fBinary);
         retval = new CMaskWriterSeqLoc(output, format);

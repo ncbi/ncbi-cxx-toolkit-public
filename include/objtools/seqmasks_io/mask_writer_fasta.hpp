@@ -55,8 +55,8 @@ public:
      **              base class instance.
      **
      **/
-    CMaskWriterFasta( CNcbiOstream & arg_os ) 
-        : CMaskWriter( arg_os ) {}
+    CMaskWriterFasta( CNcbiOstream & arg_os, bool hard_masking = false)
+        : m_HardMasking(hard_masking), CMaskWriter( arg_os ) {}
 
     /**
      **\brief Object destructor.
@@ -75,6 +75,8 @@ public:
     virtual void Print( objects::CBioseq_Handle& bsh,
                         const TMaskList & mask,
                         bool parsed_id = false );
+private:
+    bool m_HardMasking;
 };
 
 END_NCBI_SCOPE
