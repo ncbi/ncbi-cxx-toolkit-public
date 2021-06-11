@@ -170,8 +170,8 @@ static CDB_Object* s_GetItem(I_Result::EGetItem policy,
     }
 
     long   int_val = 0;
-    Int8   int8_val;
-    double double_val;
+    Int8   int8_val = 0;
+    double double_val = 0.0;
 
     switch ( data_type ) {
     case eDB_Bit:
@@ -179,10 +179,13 @@ static CDB_Object* s_GetItem(I_Result::EGetItem policy,
     case eDB_SmallInt:
     case eDB_Int:
         int_val = NStr::StringToLong(d_ptr);
+        int8_val = int_val;
+        double_val = int_val;
         break;
 
     case eDB_BigInt:
         int8_val = NStr::StringToLong(d_ptr);
+        double_val = int8_val;
         break;
 
     case eDB_Float:
