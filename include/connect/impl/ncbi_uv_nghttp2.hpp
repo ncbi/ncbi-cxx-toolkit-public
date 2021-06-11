@@ -113,10 +113,7 @@ struct SUv_Handle : protected THandle
 
 private:
     SUv_Handle(const SUv_Handle&) = delete;
-    SUv_Handle(SUv_Handle&&) = delete;
-
     SUv_Handle& operator=(const SUv_Handle&) = delete;
-    SUv_Handle& operator=(SUv_Handle&&) = delete;
 
     uv_close_cb m_Cb;
 };
@@ -153,6 +150,9 @@ struct NCBI_XXCONNECT2_EXPORT SUv_Connect
     int operator()(uv_tcp_t* handle, uv_connect_cb cb);
 
 private:
+    SUv_Connect(const SUv_Connect&) = delete;
+    SUv_Connect& operator=(const SUv_Connect&) = delete;
+
     struct sockaddr_in m_Address;
     uv_connect_t m_Request;
 };
@@ -293,6 +293,9 @@ struct NCBI_XXCONNECT2_EXPORT SUv_Barrier
     }
 
 private:
+    SUv_Barrier(const SUv_Barrier&) = delete;
+    SUv_Barrier& operator=(const SUv_Barrier&) = delete;
+
     uv_barrier_t m_Barrier;
 };
 
@@ -320,6 +323,10 @@ struct NCBI_XXCONNECT2_EXPORT SUv_Loop : uv_loop_t
             ERR_POST("uv_loop_close failed " << SUvNgHttp2_Error::LibuvStr(rc));
         }
     }
+
+private:
+    SUv_Loop(const SUv_Loop&) = delete;
+    SUv_Loop& operator=(const SUv_Loop&) = delete;
 };
 
 template <uint8_t DEFAULT>
