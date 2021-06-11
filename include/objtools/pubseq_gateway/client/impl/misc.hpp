@@ -60,85 +60,7 @@ private:
 template <typename TBase = void>
 struct SPSG_CV : SPSG_CV_Base<TBase>
 {
-private:
-        using clock = chrono::system_clock;
-
-
-        void x_NotifyOne() { x_Signal(); m_CV.notify_one(); }
-        void x_NotifyAll() { x_Signal(); m_CV.notify_all(); }
-
-        bool x_WaitUntil(const CDeadline& deadline)
-        {
-            return deadline.IsInfinite() ? x_Wait() : x_Wait(x_GetTP(deadline));
-        }
-
-        template <typename T = bool>
-        bool x_WaitUntil(const volatile atomic<T>& a, const CDeadline& deadline, T v = false, bool rv = false)
-        {
-            constexpr auto kWait = chrono::milliseconds(100);
-            const auto until = deadline.IsInfinite() ? clock::time_point::max() : x_GetTP(deadline);
-            const auto max = clock::now() + kWait;
-
-            do {
-                if (until < max) {
-                    return x_Wait(until);
-                }
-
-                if (x_Wait(max)) {
-                    return true;
-                }
-            }
-            while (a == v);
-
-            return rv;
-        }
-
-    private:
-        static clock::time_point x_GetTP(const CDeadline& d)
-        {
-            time_t seconds;
-            unsigned int nanoseconds;
-
-            d.GetExpirationTime(&seconds, &nanoseconds);
-            const auto ns = chrono::duration_cast<clock::duration>(chrono::nanoseconds(nanoseconds));
-            return clock::from_time_t(seconds) + ns;
-        }
-
-        template <class... TArgs>
-        bool x_Wait(TArgs&&... args)
-        {
-            unique_lock<mutex> lock(SPSG_CV_Base<TBase>::GetMutex());
-            auto p = [&](){ return m_Signal > 0; };
-
-            if (!x_CvWait(lock, p, forward<TArgs>(args)...)) return false;
-
-            m_Signal--;
-            return true;
-        }
-
-        template <class TL, class TP, class TT>
-        bool x_CvWait(TL& l, TP p, const TT& t)
-        {
-            return m_CV.wait_until(l, t, p);
-        }
-
-        template <class TL, class TP>
-        bool x_CvWait(TL& l, TP p)
-        {
-            m_CV.wait(l, p); return true;
-        }
-
-        void x_Signal()
-        {
-            lock_guard<mutex> lock(SPSG_CV_Base<TBase>::GetMutex());
-            m_Signal++;
-        }
-
-        condition_variable m_CV;
-        int m_Signal = 0;
-
 public:
-
     void NotifyOne() volatile { GetThis().x_NotifyOne(); }
     void NotifyAll() volatile { GetThis().x_NotifyAll(); }
 
@@ -149,9 +71,81 @@ public:
     }
 
 private:
+    using clock = chrono::system_clock;
+
+    void x_NotifyOne() { x_Signal(); m_CV.notify_one(); }
+    void x_NotifyAll() { x_Signal(); m_CV.notify_all(); }
+
+    bool x_WaitUntil(const CDeadline& deadline)
+    {
+        return deadline.IsInfinite() ? x_Wait() : x_Wait(x_GetTP(deadline));
+    }
+
+    template <typename T = bool>
+    bool x_WaitUntil(const volatile atomic<T>& a, const CDeadline& deadline, T v = false, bool rv = false)
+    {
+        constexpr auto kWait = chrono::milliseconds(100);
+        const auto until = deadline.IsInfinite() ? clock::time_point::max() : x_GetTP(deadline);
+        const auto max = clock::now() + kWait;
+
+        do {
+            if (until < max) {
+                return x_Wait(until);
+            }
+
+            if (x_Wait(max)) {
+                return true;
+            }
+        }
+        while (a == v);
+
+        return rv;
+    }
+
+    static clock::time_point x_GetTP(const CDeadline& d)
+    {
+        time_t seconds;
+        unsigned int nanoseconds;
+
+        d.GetExpirationTime(&seconds, &nanoseconds);
+        const auto ns = chrono::duration_cast<clock::duration>(chrono::nanoseconds(nanoseconds));
+        return clock::from_time_t(seconds) + ns;
+    }
+
+    template <class... TArgs>
+    bool x_Wait(TArgs&&... args)
+    {
+        unique_lock<mutex> lock(SPSG_CV_Base<TBase>::GetMutex());
+        auto p = [&](){ return m_Signal > 0; };
+
+        if (!x_CvWait(lock, p, forward<TArgs>(args)...)) return false;
+
+        m_Signal--;
+        return true;
+    }
+
+    template <class TL, class TP, class TT>
+    bool x_CvWait(TL& l, TP p, const TT& t)
+    {
+        return m_CV.wait_until(l, t, p);
+    }
+
+    template <class TL, class TP>
+    bool x_CvWait(TL& l, TP p)
+    {
+        m_CV.wait(l, p); return true;
+    }
+
+    void x_Signal()
+    {
+        lock_guard<mutex> lock(SPSG_CV_Base<TBase>::GetMutex());
+        m_Signal++;
+    }
 
     SPSG_CV& GetThis() volatile { return const_cast<SPSG_CV&>(*this); }
 
+    condition_variable m_CV;
+    int m_Signal = 0;
 };
 
 template <class TValue>
