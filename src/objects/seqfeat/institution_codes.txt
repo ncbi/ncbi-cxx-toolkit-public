@@ -956,6 +956,7 @@ CCBAS	c	Culture Collection of Basidiomycetes
 CCBAU	c	Culture Collection, Beijing Agricultural University			
 CCC	c	Culture Collection of Clavicipitaceae			
 CCC<IND>	c	Cyanobacterial Culture Collection, National Centre for Conservation and Utilisation of Blue Green Algae			
+CCC<IRA>	c	Cyanobacteria Culture Collection (CCC) at the Science and Research Branch, Islamic Azad University, Teheran			
 CCCC	s	Carthage College			
 CCCIEB	c	Culture Collections of Microorgansisms of Center of Genetic Engineering and Biotechnology			
 CCCM	c	Canadian Center for the Culture of Microorganisms			

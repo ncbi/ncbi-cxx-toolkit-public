@@ -989,6 +989,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CCBAU\tc\tCulture Collection, Beijing Agricultural University\t\t\t",
 "CCC\tc\tCulture Collection of Clavicipitaceae\t\t\t",
 "CCC<IND>\tc\tCyanobacterial Culture Collection, National Centre for Conservation and Utilisation of Blue Green Algae\t\t\t",
+"CCC<IRA>\tc\tCyanobacteria Culture Collection (CCC) at the Science and Research Branch, Islamic Azad University, Teheran\t\t\t",
 "CCCC\ts\tCarthage College\t\t\t",
 "CCCIEB\tc\tCulture Collections of Microorgansisms of Center of Genetic Engineering and Biotechnology\t\t\t",
 "CCCM\tc\tCanadian Center for the Culture of Microorganisms\t\t\t",
