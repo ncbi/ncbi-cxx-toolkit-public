@@ -139,6 +139,7 @@ if test -n "$NCBI_AUTOMATED_BUILD"; then
          vs2013 ) signature="VS_2013"   ;;
          vs2015 ) signature="VS_2015"   ;;
          vs2017 ) signature="VS_2017"   ;;
+         vs2019 ) signature="VS_2019"   ;;
       esac
       signature="$signature-${x_cfg}"
       case "$x_cfg" in
