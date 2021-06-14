@@ -44,7 +44,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 //  ----------------------------------------------------------------------------
 class CGvfWriteRecord
 //  ----------------------------------------------------------------------------
-    : public CGff3WriteRecordFeature
+    : public CGffWriteRecord
 {
 public:
     CGvfWriteRecord(

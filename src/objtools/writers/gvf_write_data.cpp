@@ -70,7 +70,7 @@ string CGvfWriteRecord::s_UniqueId()
 CGvfWriteRecord::CGvfWriteRecord(
     CGffFeatureContext& fc )
 //  ----------------------------------------------------------------------------
-    : CGff3WriteRecordFeature( fc )
+    : CGffWriteRecord( fc )
 {
 };
 
@@ -78,7 +78,7 @@ CGvfWriteRecord::CGvfWriteRecord(
 CGvfWriteRecord::CGvfWriteRecord(
     const CGff3WriteRecordFeature& other )
 //  ----------------------------------------------------------------------------
-    : CGff3WriteRecordFeature( other )
+    : CGffWriteRecord( other )
 {
 };
 
