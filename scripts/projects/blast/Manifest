@@ -30,7 +30,7 @@ COPY: $srcdir/src/app/blast/get_species_taxids.sh $installdir/bin
 POSTBUILD: $srcdir/scripts/projects/blast/post_build/make_installers.py -v $version $platform $installdir "$tarball" $bindir
 
 # N.B.: This allows customization of configure script in prepare_release output
-DEFAULT_CONFIGURE_FLAGS: --without-debug --with-strip --with-openmp --with-mt --without-vdb --without-gnutls --without-gcrypt --with-build-root=$srcdir/ReleaseMT
+DEFAULT_CONFIGURE_FLAGS: --without-debug --with-strip --with-openmp --with-mt --without-vdb --without-gnutls --without-gcrypt --with-build-root=$srcdir/ReleaseMT --with-experimental=Int8GI
 
 # Each line describes a single configuration
 # The format is as follows:
