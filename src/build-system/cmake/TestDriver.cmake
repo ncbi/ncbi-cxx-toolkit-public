@@ -161,7 +161,7 @@ endif()
 
 if(WIN32)
     set(ENV{NCBI_TEST_DATA_PATH} "//snowman/win-coremake/Scripts/test_data")
-elif(IS_DIRECTORY "/Volumes/ncbiapdata/test_data")
+elseif(IS_DIRECTORY "/Volumes/ncbiapdata/test_data")
     set(ENV{NCBI_TEST_DATA_PATH} "/Volumes/ncbiapdata/test_data")
 else()
     set(ENV{NCBI_TEST_DATA_PATH} "/am/ncbiapdata/test_data")
