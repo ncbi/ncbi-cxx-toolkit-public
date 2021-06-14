@@ -185,7 +185,7 @@ Seq-align ::= {
   }
 }
 
--- Dense-seg - scores are dropped (global and one segment): original
+-- Dense-seg - scores are dropped: original
 Seq-align ::= {
   type partial,
   score {
@@ -217,7 +217,7 @@ Seq-align ::= {
     }
   }
 }
--- Dense-seg - scores are dropped (global and one segment): expected
+-- Dense-seg - scores are dropped: expected
 Seq-align ::= {
   type partial,
   segs denseg {
@@ -238,6 +238,61 @@ Seq-align ::= {
     lens {
       10,
       5,
+      10
+    }
+  }
+}
+
+-- Dense-seg - unmapped segment, scores are dropped: original
+Seq-align ::= {
+  type partial,
+  score {
+    {
+      value int 1
+    }
+  },
+  segs denseg {
+    dim 2,
+    numseg 2,
+    ids {
+      gi 4,
+      gi 3
+    },
+    starts {
+      20,
+      120,
+      30,
+      130
+    },
+    lens {
+      10,
+      10
+    },
+    scores {
+      {
+        value int 2
+      }
+    }
+  }
+}
+-- Dense-seg - unmapped segment, scores are dropped: expected
+Seq-align ::= {
+  type partial,
+  segs denseg {
+    dim 2,
+    numseg 2,
+    ids {
+      gi 5,
+      gi 3
+    },
+    starts {
+      -1,
+      120,
+      30,
+      130
+    },
+    lens {
+      10,
       10
     }
   }
@@ -354,7 +409,7 @@ Seq-align ::= {
   }
 }
 
--- Std-seg - scores are dropped (global and one segment): original
+-- Std-seg - partial mapping, scores are dropped: original
 Seq-align ::= {
   type partial,
   score {
@@ -405,7 +460,7 @@ Seq-align ::= {
     }
   }
 }
--- Std-seg - scores are dropped (global and one segment): expected
+-- Std-seg - partial mapping, scores are dropped: expected
 Seq-align ::= {
   type partial,
   segs std {
@@ -443,6 +498,88 @@ Seq-align ::= {
         }
       }
     },
+    {
+      dim 2,
+      ids {
+        gi 5,
+        gi 3
+      },
+      loc {
+        int {
+          from 30,
+          to 39,
+          id gi 5
+        },
+        int {
+          from 130,
+          to 139,
+          id gi 3
+        }
+      },
+      scores {
+        {
+          value int 3
+        }
+      }
+    }
+  }
+}
+
+-- Std-seg - unmapped segment, scores are dropped: original
+Seq-align ::= {
+  type partial,
+  score {
+    {
+      value int 1
+    }
+  },
+  segs std {
+    {
+      dim 2,
+      loc {
+        int {
+          from 20,
+          to 29,
+          id gi 4
+        },
+        int {
+          from 120,
+          to 129,
+          id gi 3
+        }
+      },
+      scores {
+        {
+          value int 2
+        }
+      }
+    },
+    {
+      dim 2,
+      loc {
+        int {
+          from 30,
+          to 39,
+          id gi 4
+        },
+        int {
+          from 130,
+          to 139,
+          id gi 3
+        }
+      },
+      scores {
+        {
+          value int 3
+        }
+      }
+    }
+  }
+}
+-- Std-seg - unmapped segment, scores are dropped: expected
+Seq-align ::= {
+  type partial,
+  segs std {
     {
       dim 2,
       ids {
@@ -537,7 +674,7 @@ Seq-align ::= {
   }
 }
 
--- Packed-seg - scores are dropped (global and one segment): original
+-- Packed-seg - partial mapping, scores are dropped: original
 Seq-align ::= {
   type partial,
   score {
@@ -570,7 +707,7 @@ Seq-align ::= {
     }
   }
 }
--- Packed-seg - scores are dropped (global and one segment): expected
+-- Packed-seg - partial mapping, scores are dropped: expected
 Seq-align ::= {
   type partial,
   segs packed {
@@ -594,5 +731,312 @@ Seq-align ::= {
       5,
       10
     }
+  }
+}
+
+-- Packed-seg - unmapped segment, scores are dropped: original
+Seq-align ::= {
+  type partial,
+  score {
+    {
+      value int 1
+    }
+  },
+  segs packed {
+    dim 2,
+    numseg 2,
+    ids {
+      gi 4,
+      gi 3
+    },
+    starts {
+      20,
+      120,
+      30,
+      130
+    },
+    present '01010101'H,
+    lens {
+      10,
+      10
+    },
+    scores {
+      {
+        value int 2
+      }
+    }
+  }
+}
+-- Packed-seg - unmapped segment, scores are dropped: expected
+Seq-align ::= {
+  type partial,
+  segs packed {
+    dim 2,
+    numseg 2,
+    ids {
+      gi 5,
+      gi 3
+    },
+    starts {
+      4294967295,
+      120,
+      30,
+      130
+    },
+    present '00010101'H,
+    lens {
+      10,
+      10
+    }
+  }
+}
+
+-- Spliced-seg, scores are preserved: original
+Seq-align ::= {
+  type global,
+  dim 2,
+  score {
+    {
+      value int 1
+    }
+  },
+  segs spliced {
+    product-id gi 4,
+    genomic-id gi 3,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 10,
+        product-end nucpos 19,
+        genomic-start 110,
+        genomic-end 119,
+        parts {
+          match 10
+        },
+        scores {
+          {
+            value int 2
+          }
+        }
+      },
+      {
+        product-start nucpos 30,
+        product-end nucpos 39,
+        genomic-start 130,
+        genomic-end 139,
+        parts {
+          match 10
+        },
+        scores {
+          {
+            value int 3
+          }
+        }
+      }
+    },
+    product-length 20
+  }
+}
+-- Spliced-seg, scores are preserved: expected
+Seq-align ::= {
+  type global,
+  dim 2,
+  score {
+    {
+      value int 1
+    }
+  },
+  segs spliced {
+    product-id gi 5,
+    genomic-id gi 3,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 10,
+        product-end nucpos 19,
+        genomic-start 110,
+        genomic-end 119,
+        parts {
+          match 10
+        },
+        scores {
+          {
+            value int 2
+          }
+        }
+      },
+      {
+        product-start nucpos 30,
+        product-end nucpos 39,
+        genomic-start 130,
+        genomic-end 139,
+        parts {
+          match 10
+        },
+        scores {
+          {
+            value int 3
+          }
+        }
+      }
+    },
+    product-length 20
+  }
+}
+
+-- Spliced-seg, partial mapping, scores are dropped: original
+Seq-align ::= {
+  type global,
+  dim 2,
+  score {
+    {
+      value int 1
+    }
+  },
+  segs spliced {
+    product-id gi 4,
+    genomic-id gi 3,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 10,
+        product-end nucpos 24,
+        genomic-start 110,
+        genomic-end 124,
+        parts {
+          match 15
+        },
+        scores {
+          {
+            value int 2
+          }
+        }
+      },
+      {
+        product-start nucpos 30,
+        product-end nucpos 39,
+        genomic-start 130,
+        genomic-end 139,
+        parts {
+          match 10
+        },
+        scores {
+          {
+            value int 3
+          }
+        }
+      }
+    },
+    product-length 20
+  }
+}
+-- Spliced-seg, partial mapping, scores are dropped: expected
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 5,
+    genomic-id gi 3,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 10,
+        product-end nucpos 19,
+        genomic-start 110,
+        genomic-end 119,
+        parts {
+          match 10
+        }
+      },
+      {
+        product-start nucpos 30,
+        product-end nucpos 39,
+        genomic-start 130,
+        genomic-end 139,
+        parts {
+          match 10
+        },
+        scores {
+          {
+            value int 3
+          }
+        }
+      }
+    },
+    product-length 20
+  }
+}
+
+-- Spliced-seg, unmapped segment, scores are dropped: original
+Seq-align ::= {
+  type global,
+  dim 2,
+  score {
+    {
+      value int 1
+    }
+  },
+  segs spliced {
+    product-id gi 4,
+    genomic-id gi 3,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 20,
+        product-end nucpos 29,
+        genomic-start 110,
+        genomic-end 124,
+        parts {
+          match 10
+        },
+        scores {
+          {
+            value int 2
+          }
+        }
+      },
+      {
+        product-start nucpos 30,
+        product-end nucpos 39,
+        genomic-start 130,
+        genomic-end 139,
+        parts {
+          match 10
+        },
+        scores {
+          {
+            value int 3
+          }
+        }
+      }
+    },
+    product-length 20
+  }
+}
+-- Spliced-seg, unmapped segment, scores are dropped: expected
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 5,
+    genomic-id gi 3,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 30,
+        product-end nucpos 39,
+        genomic-start 130,
+        genomic-end 139,
+        parts {
+          match 10
+        },
+        scores {
+          {
+            value int 3
+          }
+        }
+      }
+    },
+    product-length 20
   }
 }

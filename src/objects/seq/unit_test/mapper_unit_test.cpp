@@ -632,17 +632,31 @@ void TestMapping_Scores()
     unique_ptr<CSeq_loc_Mapper_Base> mapper(CreateMapperFromSeq_locs(in));
     cout << "  Dense-diag - scores are preserved" << endl;
     TestMappingSeq_align(*mapper, in);
+    // NOTE: Can not test score dropping in dense-diag since the mapped dense-diag
+    // would contain gaps which are not supported by this alignment type.
     cout << "  Dense-seg, scores are preserved" << endl;
     TestMappingSeq_align(*mapper, in);
-    cout << "  Dense-seg - scores are dropped (global and one segment)" << endl;
+    cout << "  Dense-seg - partial mapping, scores are dropped" << endl;
+    TestMappingSeq_align(*mapper, in);
+    cout << "  Dense-seg - unmapped segment, scores are dropped" << endl;
     TestMappingSeq_align(*mapper, in);
     cout << "  Std-seg, scores are preserved" << endl;
     TestMappingSeq_align(*mapper, in);
-    cout << "  Std-seg - scores are dropped (global and one segment)" << endl;
+    cout << "  Std-seg - partial mapping, scores are dropped" << endl;
+    TestMappingSeq_align(*mapper, in);
+    cout << "  Std-seg - unmapped segment, scores are dropped" << endl;
     TestMappingSeq_align(*mapper, in);
     cout << "  Packed-seg, scores are preserved" << endl;
     TestMappingSeq_align(*mapper, in);
-    cout << "  Packed-seg - scores are dropped (global and one segment)" << endl;
+    cout << "  Packed-seg - partial mapping, scores are dropped" << endl;
+    TestMappingSeq_align(*mapper, in);
+    cout << "  Packed-seg - unmapped segment, scores are dropped" << endl;
+    TestMappingSeq_align(*mapper, in);
+    cout << "  Spliced-seg, scores are preserved" << endl;
+    TestMappingSeq_align(*mapper, in);
+    cout << "  Spliced-seg, partial mapping, scores are dropped" << endl;
+    TestMappingSeq_align(*mapper, in);
+    cout << "  Spliced-seg, unmapped segment, scores are dropped" << endl;
     TestMappingSeq_align(*mapper, in);
 }
 
