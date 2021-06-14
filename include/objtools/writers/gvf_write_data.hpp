@@ -50,9 +50,7 @@ public:
     CGvfWriteRecord(
         CGffFeatureContext&
     );
-    CGvfWriteRecord(
-        const CGff3WriteRecordFeature&
-    );
+
     virtual ~CGvfWriteRecord();
 
     virtual bool AssignAttributes(
