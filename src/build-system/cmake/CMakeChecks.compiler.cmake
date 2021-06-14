@@ -195,6 +195,9 @@ if (WIN32)
 		set(NCBI_DEFAULT_USEPCH OFF)
     endif()
 
+    if(SSE IN_LIST NCBI_PTBCFG_PROJECT_FEATURES
+        add_compile_options("/arch:AVX2")
+    endif()
     add_definitions(-D_CRT_SECURE_NO_WARNINGS=1 -D_UNICODE)
     if(BUILD_SHARED_LIBS)
         add_definitions(-DNCBI_DLL_BUILD)
