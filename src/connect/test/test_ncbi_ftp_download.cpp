@@ -139,6 +139,7 @@ public:
 
     void   Mark(Uint8 size, double time)     { m_Monitor.Mark(size, time); }
     double GetRate(void)               const { return m_Monitor.GetRate(); }
+    double GetPace(void)               const { return m_Monitor.GetPace(); }
     double GetETA (void)               const { return m_Monitor.GetETA();  }
 
     void                  Append(const CTar::TFile* current = 0);
@@ -193,11 +194,11 @@ double CDownloadCallbackData::GetElapsed(bool update)
 
 void CDownloadCallbackData::Append(const CTar::TFile* current)
 {
-    if (m_Current.first.empty()) {
+    if (!m_Current.first.empty()) {
+        m_Filelist.push_back(m_Current);
+    } else {
         // first time
         _ASSERT(m_Filelist.empty());
-    } else {
-        m_Filelist.push_back(m_Current);
     }
     m_Current = current ? *current : pair<string, Uint8>(kEmptyStr, 0);
 }
@@ -326,8 +327,9 @@ size_t CNullProcessor::Run(void)
         filesize += m_Stream->gcount();
     } while (*m_Stream);
 
-    if (s_Signaled)
+    if (s_Signaled) {
         return 0;
+    }
     CTar::TFile file = make_pair(m_Dlcbdata->GetFilename(), filesize);
     m_Dlcbdata->Append(&file);
     return 1;
@@ -503,14 +505,20 @@ static EIO_Status x_ConnectionCallback(CONN           conn,
             os << "Downloaded " << NStr::UInt8ToString(pos)
                << '/' << NStr::UInt8ToString(size)
                << " (" << NcbiFixed << NcbiSetprecision(2) << percent << "%)"
-                  " in " << NcbiFixed << NcbiSetprecision(1) << time << 's';
+                  " in " << NcbiFixed
+               << NcbiSetprecision(type == eCONN_OnClose ? 2 : 1)
+               << time << 's';
         } else {
             os << "Downloaded " << NStr::UInt8ToString(pos)
                << "/unknown"
-                  " in " << NcbiFixed << NcbiSetprecision(1) << time << 's';
+                  " in " << NcbiFixed
+               << NcbiSetprecision(type == eCONN_OnClose ? 2 : 1)
+               << time << 's';
         }
         dlcbdata->Mark(pos, time);
-        double rate = dlcbdata->GetRate();
+        double rate = (type == eCONN_OnClose
+                       ? dlcbdata->GetPace()
+                       : dlcbdata->GetRate());
         os << " (" << NcbiFixed << NcbiSetprecision(2)
            << rate / 1024.0 << "KiB/s)";
         double eta = dlcbdata->GetETA();
@@ -605,7 +613,7 @@ CTestFTPDownloadApp::CTestFTPDownloadApp(void)
 
 void CTestFTPDownloadApp::Init(void)
 {
-    // Init the library explicitly (this sets up the registry)
+    // Explicitly init the library explicitly (this also sets up the registry)
     {
         class CInPlaceConnIniter : protected CConnIniter
         {
@@ -641,7 +649,7 @@ static void s_FTPStat(iostream& ftp)
 {
     // Print out some server info
     if (!(ftp << "STAT" << NcbiFlush)) {
-        ERR_POST(Fatal << "Cannot connect to ftp server");
+        ERR_POST(Fatal << "Cannot connect to FTP server");
     }
     string status;
     do {
