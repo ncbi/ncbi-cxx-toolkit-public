@@ -831,6 +831,40 @@ CFlatFileConfig::TCustom x_GetCustom(const CArgs& args)
 {
     CFlatFileConfig::TCustom custom = (unsigned)args["custom"].AsInteger();
 
+    if (args["show-flags"]) {
+
+        typedef pair<CFlatFileConfig::ECustom, const char*> TFlagDescr;
+        static const TFlagDescr kDescrTable[] = {
+#define DOFLG(mnem) TFlagDescr(CFlatFileConfig::f##mnem, "CFlatFileConfig::f" #mnem)
+            DOFLG(HideProteinID),
+            DOFLG(HideGI),
+            DOFLG(LongLocusNames),
+            DOFLG(ExpandGaps),
+            DOFLG(ShowSNPFeatures),
+            DOFLG(ShowCDDFeatures),
+            DOFLG(DisableAnnotRefs),
+            DOFLG(UseSeqEntryIndexer),
+            DOFLG(UseAutoDef),
+            DOFLG(IgnoreExistingTitle),
+            DOFLG(GeneRNACDSFeatures),
+            DOFLG(ShowFtablePeptides),
+            DOFLG(DisableReferenceCache),
+            DOFLG(ShowDeflineModifiers),
+            DOFLG(DoNotUseAutoDef),
+#undef DOFLG
+        };
+        static const size_t kArraySize = ArraySize(kDescrTable);
+        for (size_t i = 0; i < kArraySize; ++i) {
+            if (custom & kDescrTable[i].first) {
+                LOG_POST(Error << "custom: "
+                         << std::left << setw(38) << kDescrTable[i].second
+                         << " = "
+                         << std::right << setw(10) << kDescrTable[i].first
+                        );
+            }
+        }
+    }
+
     return custom;
 }
 
