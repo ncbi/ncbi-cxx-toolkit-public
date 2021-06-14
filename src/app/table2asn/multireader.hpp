@@ -47,7 +47,7 @@ public:
     void ApplyDescriptors(objects::CSeq_entry & obj, const objects::CSeq_descr & source);
     bool LoadAnnot(objects::CScope& scope, const string& filename);
     bool LoadAnnots(const string& filename, TAnnots& annots);
-    void AddAnnots(const TAnnots& annots, CScope& scope);
+    void AddAnnots(TAnnots& annots, CScope& scope);
 
     static
     void GetSeqEntry(CRef<objects::CSeq_entry>& entry, CRef<objects::CSeq_submit>& submit, CRef<CSerialObject> obj);

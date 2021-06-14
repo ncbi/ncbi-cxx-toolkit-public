@@ -1148,7 +1148,7 @@ bool CMultiReader::xGetAnnotLoader(CAnnotationLoader& loader, const string& file
         GetSeqEntry(pEntry, unused, obj);
         if (pEntry && pEntry->IsSetAnnot()) {
             annots = pEntry->GetAnnot();
-        }    
+        }
     }
         break;
     case CFormatGuess::eGff2:
@@ -1174,7 +1174,7 @@ bool CMultiReader::xGetAnnotLoader(CAnnotationLoader& loader, const string& file
         NCBI_THROW2(CObjReaderParseException, eFormat,
             "Annotation file format not recognized. Run format validator on your annotation file", 1);
     }
-    
+
     if (!annots.empty()) {
         loader.Init(annots);
         return true;
@@ -1201,7 +1201,7 @@ bool CMultiReader::LoadAnnot(CScope& scope, const string& filename)
 
 
 bool CMultiReader::LoadAnnots(const string& filename, list<CRef<CSeq_annot>>& annots)
-{   
+{
     CAnnotationLoader annot_loader;
     if (!xGetAnnotLoader(annot_loader, filename)) {
         return false;
@@ -1215,10 +1215,11 @@ bool CMultiReader::LoadAnnots(const string& filename, list<CRef<CSeq_annot>>& an
 }
 
 
-void CMultiReader::AddAnnots(const list<CRef<CSeq_annot>>& annots, CScope& scope) 
+void CMultiReader::AddAnnots(list<CRef<CSeq_annot>>& annots, CScope& scope)
 {
-    for (auto pAnnot : annots) {
-        xFixupAnnot(scope, pAnnot);
+    for (auto& pAnnot : annots) {
+        if (pAnnot)
+            xFixupAnnot(scope, pAnnot);
     }
 }
 
@@ -1312,6 +1313,7 @@ bool CMultiReader::xFixupAnnot(CScope& scope, CRef<CSeq_annot>& annot_it)
             objects::edit::CFeatTableEdit featEdit(*existing);
             featEdit.MergeFeatures(annot_it->SetData().SetFtable());
         }
+        annot_it.Reset();
     }
 #ifdef _DEBUG
     else

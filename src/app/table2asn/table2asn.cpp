@@ -948,8 +948,6 @@ void CTbl2AsnApp::ProcessOneEntry(
             readModsFromTitle,
             *entry);
 
-    CFeatureTableReader fr(m_context);
-
     if (m_context.m_RemoteTaxonomyLookup)
     {
         m_context.m_remote_updater->UpdateOrgFromTaxon(*entry);
@@ -959,20 +957,20 @@ void CTbl2AsnApp::ProcessOneEntry(
         VisitAllBioseqs(*entry, CTable2AsnContext::UpdateTaxonFromTable);
     }
 
-    fr.m_replacement_protein = m_secret_files->m_replacement_proteins;
-    fr.MergeCDSFeatures(*entry);
+    m_secret_files->m_feature_table_reader->m_replacement_protein = m_secret_files->m_replacement_proteins;
+    m_secret_files->m_feature_table_reader->MergeCDSFeatures(*entry);
 
     entry->Parentize();
-    fr.MoveProteinSpecificFeats(*entry);
+    m_secret_files->m_feature_table_reader->MoveProteinSpecificFeats(*entry);
 
     m_context.CorrectCollectionDates(*entry);
 
     if (m_secret_files->m_possible_proteins.NotEmpty())
-        fr.AddProteins(*m_secret_files->m_possible_proteins, *entry);
+        m_secret_files->m_feature_table_reader->AddProteins(*m_secret_files->m_possible_proteins, *entry);
 
     if (m_context.m_HandleAsSet)
     {
-        fr.ConvertNucSetToSet(entry);
+        m_secret_files->m_feature_table_reader->ConvertNucSetToSet(entry);
     }
 
     if ((inputFormat == CFormatGuess::eTextASN) ||
@@ -993,7 +991,7 @@ void CTbl2AsnApp::ProcessOneEntry(
         result = m_context.CreateSubmitFromTemplate(entry, submit);
 
 
-    fr.MakeGapsFromFeatures(*entry);
+    m_secret_files->m_feature_table_reader->MakeGapsFromFeatures(*entry);
 
 
     if (m_context.m_delay_genprodset)
@@ -1026,8 +1024,7 @@ void CTbl2AsnApp::ProcessOneEntry(
     // make asn.1 look nicier
     edit::SortSeqDescr(*entry);
 
-    CFeatureTableReader ftr(m_context);
-    ftr.ChangeDeltaProteinToRawProtein(*entry);
+    m_secret_files->m_feature_table_reader->ChangeDeltaProteinToRawProtein(*entry);
 
     if (!IsDryRun())
     {
@@ -1061,7 +1058,6 @@ void CTbl2AsnApp::ProcessOneEntry(
         }
     }
 }
-
 
 void CTbl2AsnApp::ProcessOneFile(bool isAlignment)
 {
@@ -1105,6 +1101,7 @@ void CTbl2AsnApp::ProcessOneFile(bool isAlignment)
 #else
             ProcessHugeFile(output);
 #endif
+            ReportUnusedSourceQuals();
 
         } // !isAlignment
 
@@ -1324,9 +1321,7 @@ void CTbl2AsnApp::LoadPEPFile(const string& pathname)
 
     CRef<ILineReader> reader(ILineReader::New(pathname));
 
-    CFeatureTableReader peps(m_context);
-
-    m_secret_files->m_replacement_proteins = peps.ReadProtein(*reader);
+    m_secret_files->m_replacement_proteins = m_secret_files->m_feature_table_reader->ReadProtein(*reader);
 }
 
 void CTbl2AsnApp::LoadRNAFile(const string& pathname)
@@ -1342,9 +1337,7 @@ void CTbl2AsnApp::LoadPRTFile(const string& pathname)
 
     CRef<ILineReader> reader(ILineReader::New(pathname));
 
-    CFeatureTableReader prts(m_context);
-
-    m_secret_files->m_possible_proteins = prts.ReadProtein(*reader);
+    m_secret_files->m_possible_proteins = m_secret_files->m_feature_table_reader->ReadProtein(*reader);
 }
 
 void CTbl2AsnApp::LoadAnnots(const string& pathname, CMultiReader::TAnnots& annots)
@@ -1398,6 +1391,7 @@ void CTbl2AsnApp::LoadAdditionalFiles()
 
     // always reset secret file
     m_secret_files.reset(new TAdditionalFiles);
+    m_secret_files->m_feature_table_reader.reset(new CFeatureTableReader(m_context));
 
     const auto& namedSrcFile = m_context.m_single_source_qual_file;
     if (!NStr::IsBlank(namedSrcFile) && !m_global_files.mp_src_qual_map)
@@ -1430,6 +1424,12 @@ void CTbl2AsnApp::LoadAdditionalFiles()
             LoadAnnots(name + suffix, m_secret_files->m_Annots);
         }
     }
+}
+
+void CTbl2AsnApp::ReportUnusedSourceQuals()
+{
+    if (m_context.m_verbose && m_secret_files && m_secret_files->mp_src_qual_map)
+        m_secret_files->mp_src_qual_map->ReportUnusedIds();
 }
 
 END_NCBI_SCOPE

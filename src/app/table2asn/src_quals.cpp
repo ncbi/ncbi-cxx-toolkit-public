@@ -824,10 +824,9 @@ void g_ApplyMods(
     VisitAllBioseqs(entry, applyMods);
 
     if (isVerbose && pDefaultSrcFileMap) {
-        pDefaultSrcFileMap->ReportUnusedIds();
+        //pDefaultSrcFileMap->ReportUnusedIds();
     }
 }
 
 
 END_NCBI_SCOPE
-

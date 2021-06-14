@@ -870,8 +870,8 @@ CRef<CSeq_entry> CFeatureTableReader::_TranslateProtein(const CBioseq& bioseq, C
 
 void CFeatureTableReader::MergeCDSFeatures(CSeq_entry& entry)
 {
-    m_local_id_counter = 0;
-    FindMaximumId(entry, ++m_local_id_counter);
+    if (m_local_id_counter == 0)
+        FindMaximumId(entry, ++m_local_id_counter);
     _MergeCDSFeatures_impl(entry);
 }
 
@@ -1058,6 +1058,7 @@ void CFeatureTableReader::_MoveCdRegions(CSeq_entry_Handle entry_h,
                 CRef<CSeq_entry> protein = _TranslateProtein(bioseq, *feature); // Also updates gene and mrna
                 if (protein.NotEmpty())
                 {
+                    //std::cerr << MSerial_AsnText << *protein;
                     entry_h.GetEditHandle().SetSet().GetEditHandle().AttachEntry(*protein);
                     // move the cdregion into protein and step iterator to next
                     set_ftable.push_back(feature);
@@ -2095,4 +2096,3 @@ void CFeatureTableReader::MoveProteinSpecificFeats(CSeq_entry& entry)
 
 
 END_NCBI_SCOPE
-

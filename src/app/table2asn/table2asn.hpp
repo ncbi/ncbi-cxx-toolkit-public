@@ -47,6 +47,9 @@ class CTable2AsnLogger;
 class CMultiReader;
 class CTable2AsnValidator;
 class CMask;
+class CTable2AsnStructuredCommentsReader;
+class CHugeAsnReader;
+class CFeatureTableReader;
 
 class CTbl2AsnApp : public CNcbiApplication
 {
@@ -68,10 +71,11 @@ private:
     void ProcessOneFile(bool isAlignment);
     void ProcessOneFile(CNcbiOstream* output);
     void ProcessHugeFile(CNcbiOstream* output);
-    void ProcessOneEntry(CFormatGuess::EFormat inputFormat,
-            CRef<CSerialObject> obj, CRef<CSerialObject>& result);
+    void ProcessOneEntry(CFormatGuess::EFormat inputFormat, CRef<CSerialObject> obj, CRef<CSerialObject>& result);
+    void ProcessSingleEntry(CFormatGuess::EFormat inputFormat, CRef<CSeq_entry>& entry);
     bool ProcessOneDirectory(const CDir& directory, const CMask& mask, bool recurse);
     void ProcessAlignmentFile(CNcbiOstream* output);
+    void ReportUnusedSourceQuals();
     void ProcessSecretFiles1Phase(bool readModsFromTitle, CSeq_entry& result);
     void ProcessSecretFiles2Phase(CSeq_entry& result);
     void ProcessCMTFiles(CSeq_entry& result);
@@ -81,8 +85,10 @@ private:
     void LoadDSCFile(const string& pathname);
     void LoadAdditionalFiles();
     void LoadCMTFile(const string& pathname, unique_ptr<CTable2AsnStructuredCommentsReader>& comments);
-    void LoadAnnots(const string& pathname, CMultiReader::TAnnots& annots);
+    void LoadAnnots(const string& pathname, list<CRef<CSeq_annot>>& annots);
     void AddAnnots(CScope& scope);
+
+    void xProcessHugeEntries();
 
     void x_SetAlnArgs(CArgDescriptions& arg_desc);
     CRef<CScope> GetScope();
@@ -90,11 +96,12 @@ private:
     struct TAdditionalFiles
     {
         unique_ptr<CTable2AsnStructuredCommentsReader> m_struct_comments;
-        CMultiReader::TAnnots m_Annots;
+        list<CRef<CSeq_annot>> m_Annots;
         CRef<CSeq_entry> m_replacement_proteins;
         CRef<CSeq_entry> m_possible_proteins;
         CRef<CSeq_descr> m_descriptors;
         unique_ptr<CMemorySrcFileMap> mp_src_qual_map;
+        unique_ptr<CFeatureTableReader> m_feature_table_reader;
     };
 
     TAdditionalFiles m_global_files;

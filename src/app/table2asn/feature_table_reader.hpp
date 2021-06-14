@@ -30,32 +30,33 @@ class CTable2AsnContext;
 class CFeatureTableReader
 {
 public:
-   CFeatureTableReader(CTable2AsnContext& context);
-   ~CFeatureTableReader();
+    CFeatureTableReader(CTable2AsnContext& context);
+    ~CFeatureTableReader();
 
-   void ConvertNucSetToSet(CRef<objects::CSeq_entry>& entry) const;
-   // MergeCDSFeatures looks for cdregion features in the feature tables
-//    in sequence annotations and creates protein sequences based on them
-//    as well as converting the sequence or a seq-set into nuc-prot-set
-   void MergeCDSFeatures(objects::CSeq_entry& obj);
-   // This method reads 5 column table and attaches these features
-//    to corresponding sequences
-// This method requires certain postprocessing of plain features added
-   void FindOpenReadingFrame(objects::CSeq_entry& entry) const;
-   CRef<objects::CSeq_entry> ReadProtein(ILineReader& line_reader);
-   void AddProteins(const objects::CSeq_entry& possible_proteins, objects::CSeq_entry& entry);
-   CRef<objects::CSeq_entry> m_replacement_protein;
+    int m_local_id_counter = 0;
+    void ConvertNucSetToSet(CRef<objects::CSeq_entry>& entry) const;
+    // MergeCDSFeatures looks for cdregion features in the feature tables
+    //    in sequence annotations and creates protein sequences based on them
+    //    as well as converting the sequence or a seq-set into nuc-prot-set
+    void MergeCDSFeatures(objects::CSeq_entry& obj);
+    // This method reads 5 column table and attaches these features
+    //    to corresponding sequences
+    // This method requires certain postprocessing of plain features added
+    void FindOpenReadingFrame(objects::CSeq_entry& entry) const;
+    CRef<objects::CSeq_entry> ReadProtein(ILineReader& line_reader);
+    void AddProteins(const objects::CSeq_entry& possible_proteins, objects::CSeq_entry& entry);
+    CRef<objects::CSeq_entry> m_replacement_protein;
 
-   void MoveRegionsToProteins(objects::CSeq_entry& entry);
-   void MoveProteinSpecificFeats(objects::CSeq_entry& entry);
+    void MoveRegionsToProteins(objects::CSeq_entry& entry);
+    void MoveProteinSpecificFeats(objects::CSeq_entry& entry);
 
-   void MakeGapsFromFeatures(objects::CSeq_entry_Handle seh);
-   void MakeGapsFromFeatures(objects::CSeq_entry& entry);
-   void MakeGapsFromFeatures(objects::CBioseq& bioseq);
-   CRef<objects::CDelta_seq> MakeGap(objects::CBioseq& bioseq, const objects::CSeq_feat& feature_gap);
-   static
-   void RemoveEmptyFtable(objects::CBioseq& bioseq);
-   void ChangeDeltaProteinToRawProtein(objects::CSeq_entry& entry);
+    void MakeGapsFromFeatures(objects::CSeq_entry_Handle seh);
+    void MakeGapsFromFeatures(objects::CSeq_entry& entry);
+    void MakeGapsFromFeatures(objects::CBioseq& bioseq);
+    CRef<objects::CDelta_seq> MakeGap(objects::CBioseq& bioseq, const objects::CSeq_feat& feature_gap);
+    static
+    void RemoveEmptyFtable(objects::CBioseq& bioseq);
+    void ChangeDeltaProteinToRawProtein(objects::CSeq_entry& entry);
 
 private:
     bool _CheckIfNeedConversion(const objects::CSeq_entry& entry) const;
@@ -67,7 +68,6 @@ private:
        objects::CSeq_feat& cd_feature);
 
     typedef map<string, CRef<objects::CSeq_feat>> TFeatMap;
-    int m_local_id_counter;
     CRef<objects::feature::CFeatTree> m_Feat_Tree;
     CRef<objects::CBioseq> m_bioseq;
     CRef<objects::CScope> m_scope;
