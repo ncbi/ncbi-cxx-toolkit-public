@@ -285,10 +285,12 @@ static void s_LoadLocalIPs(void)
                 break;
         }
         net_info = ConnNetInfo_Create(DEF_CONN_LOCAL_IPS);
-        if (net_info)
-            n = strcasecmp(net_info->svc, DEF_CONN_LOCAL_IPS_DISABLE) ? 1 : 0;
-        else
+        if (!net_info)
             n = 0;
+        else if (strcasecmp(net_info->svc, DEF_CONN_LOCAL_IPS) == 0)
+            n = 1;
+        else
+            n = strcasecmp(net_info->svc, DEF_CONN_LOCAL_IPS_DISABLE) ? 2 : 0;
         /* Build a pass-thru HTTP connector here to save on a dispatcher hit */
         if (n  &&  ConnNetInfo_SetupStandardArgs(net_info, net_info->svc)
             &&  x_LoadLocalIPs(HTTP_CreateConnector(net_info,
@@ -300,7 +302,7 @@ static void s_LoadLocalIPs(void)
             return;
         }
         ConnNetInfo_Destroy(net_info);
-        if (net_info) {
+        if (net_info  &&  n < 2) {
 #  ifdef NCBI_OS_LINUX
             level = n ? eLOG_Trace   : eLOG_Note;
 #  else
