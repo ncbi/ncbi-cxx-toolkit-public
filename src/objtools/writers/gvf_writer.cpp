@@ -193,6 +193,30 @@ bool CGvfWriter::xWriteFeatureVariationRef(
 }
 
 //  ----------------------------------------------------------------------------
+bool CGvfWriter::xAssignFeatureType(
+    CGffFeatureRecord& record,
+    CGffFeatureContext& fc,
+    const CMappedFeat& mf )
+    //  ----------------------------------------------------------------------------
+{
+    auto& gvfRecord = dynamic_cast<CGvfWriteRecord&>(record);
+    gvfRecord.AssignType(mf);
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGvfWriter::xAssignFeatureMethod(
+    CGffFeatureRecord& record,
+    CGffFeatureContext& fc,
+    const CMappedFeat& mf )
+    //  ----------------------------------------------------------------------------
+{
+    auto& gvfRecord = dynamic_cast<CGvfWriteRecord&>(record);
+    gvfRecord.AssignSource(mf);
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
 bool CGvfWriter::xWriteRecord(
     const CGffBaseRecord& pRecord )
 //  ----------------------------------------------------------------------------

@@ -36,7 +36,7 @@
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/util/feature.hpp>
-#include <objtools/writers/gff3_write_data.hpp>
+#include <objtools/writers/gff2_write_data.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
@@ -56,15 +56,15 @@ public:
     virtual bool AssignAttributes(
         const CMappedFeat&,
         unsigned int =0);
+    virtual bool AssignSource(
+        const CMappedFeat& );
+    virtual bool AssignType(
+        const CMappedFeat&,
+        unsigned int =0 );
 
 protected:
     virtual string StrAttributes() const;
 
-    virtual bool x_AssignSource(
-        const CMappedFeat& );
-    virtual bool x_AssignType(
-        const CMappedFeat&,
-        unsigned int =0 );
     virtual bool x_AssignAttributeID(
         const CMappedFeat& );
     virtual bool x_AssignAttributeParent(

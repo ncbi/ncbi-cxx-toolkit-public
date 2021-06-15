@@ -80,7 +80,7 @@ CGvfWriteRecord::~CGvfWriteRecord()
 };
 
 //  ----------------------------------------------------------------------------
-bool CGvfWriteRecord::x_AssignSource(
+bool CGvfWriteRecord::AssignSource(
     const CMappedFeat& mapped_feat )
 //  ----------------------------------------------------------------------------
 {
@@ -109,7 +109,7 @@ bool CGvfWriteRecord::x_AssignSource(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGvfWriteRecord::x_AssignType(
+bool CGvfWriteRecord::AssignType(
     const CMappedFeat& mapped_feat,
     unsigned int )
 //  ----------------------------------------------------------------------------

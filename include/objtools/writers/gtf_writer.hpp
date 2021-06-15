@@ -38,7 +38,7 @@
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seq/Annotdesc.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
-#include <objtools/writers/gff3_write_data.hpp>
+#include <objtools/writers/gff2_write_data.hpp>
 #include <objtools/writers/gff_writer.hpp>
 #include <objmgr/util/feature.hpp>
 

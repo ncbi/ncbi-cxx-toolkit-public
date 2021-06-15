@@ -34,7 +34,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <objtools/writers/gff3_writer.hpp>
-#include <objtools/writers/gff3_write_data.hpp>
+#include <objtools/writers/gff2_write_data.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
@@ -78,6 +78,16 @@ protected:
         const CMappedFeat& );
 
     bool xAssignFeatureAttributes(
+        CGffFeatureRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&) override;
+
+    virtual bool xAssignFeatureType(
+        CGffFeatureRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&) override;
+
+    virtual bool xAssignFeatureMethod(
         CGffFeatureRecord&,
         CGffFeatureContext&,
         const CMappedFeat&) override;
