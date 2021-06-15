@@ -1491,7 +1491,7 @@ size_t CTL_CursorResultExpl::ReadItem(void* buffer, size_t buffer_size,
         break;
     }
     default:
-        break;
+        return 0;
     }
 
     size_t copied = max_size - m_ReadBytes;

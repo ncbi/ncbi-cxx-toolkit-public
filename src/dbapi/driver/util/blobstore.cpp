@@ -833,12 +833,9 @@ ostream* CBlobStoreBase::OpenForWrite(const string& blob_id,
 {
     CDB_Connection* con = GetConn();
 
-    CSimpleBlobStore* sbs = new CSimpleBlobStore(m_Table,
-                                                 m_KeyColName,
-                                                 m_NumColName,
-                                                 m_BlobColumn,
-                                                 m_Flags,
-                                                 table_hint);
+    unique_ptr<CSimpleBlobStore> sbs
+        (new CSimpleBlobStore(m_Table, m_KeyColName, m_NumColName,
+                              m_BlobColumn, m_Flags, table_hint));
     sbs->SetKey(blob_id);
     // CBlobLoader* bload= new CBlobLoader(my_context, server_name, user_name, passwd, &sbs);
     if(sbs->Init(con)) {
@@ -849,7 +846,8 @@ ostream* CBlobStoreBase::OpenForWrite(const string& blob_id,
         if (ReleaseConn(0)) {
             bwflags |= CBlobWriter::fOwnCon;
         }
-        CBlobWriter* bWriter = new CBlobWriter(con, sbs, m_Limit, bwflags);
+        CBlobWriter* bWriter = new CBlobWriter(con, sbs.release(), m_Limit,
+                                               bwflags);
         unique_ptr<CWStream> oStream(new CWStream(bWriter, 0, 0,  CRWStreambuf::fOwnWriter));
         unique_ptr<CCompressionStreamProcessor> zProc;
 

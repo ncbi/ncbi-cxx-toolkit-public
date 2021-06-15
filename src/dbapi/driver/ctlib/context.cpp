@@ -1292,10 +1292,14 @@ CS_RETCODE CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context,
             message.context.Reset(&ctl_conn->GetDbgInfo());
             params = ctl_conn->GetLastParams();
             rows_in_batch = ctl_conn->GetRowsInCurrentBatch();
-        } else
+        } else if (ctl_ctx != nullptr) {
             handlers = &ctl_ctx->GetCtxHandlerStack();
-        if (handlers->HandleMessage(msg->severity, msg->msgnumber, msg->msgstring))
+        }
+        if (handlers != nullptr
+            &&  handlers->HandleMessage(msg->severity, msg->msgnumber,
+                                        msg->msgstring)) {
             return CS_SUCCEED;
+        }
 
         // In case of timeout ...
         /* Experimental. Based on C-Toolkit and code developed by Eugene

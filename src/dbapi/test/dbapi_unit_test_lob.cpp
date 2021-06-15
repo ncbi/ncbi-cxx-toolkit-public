@@ -1065,6 +1065,11 @@ BOOST_AUTO_TEST_CASE(Test_LOB_Multiple_LowLevel)
                         // rs->GetItem(obj_lob, I_Result::eAssignLOB);
 
                         BOOST_CHECK(obj_lob);
+                        // Full BOOST_REQUIRE would have been overkill, but
+                        // we should still skip the rest of this iteration.
+                        if (obj_lob == nullptr) {
+                            continue;
+                        }
 
                         rs->GetItem(obj_lob, I_Result::eAssignLOB);
 
