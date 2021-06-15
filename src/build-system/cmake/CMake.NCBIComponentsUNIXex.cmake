@@ -85,6 +85,12 @@ set(NCBI_ThirdParty_GMP           ${NCBI_TOOLS_ROOT}/gmp-6.0.0a CACHE PATH "GMP 
 set(NCBI_ThirdParty_NETTLE        ${NCBI_TOOLS_ROOT}/nettle-3.1.1 CACHE PATH "NETTLE root")
 set(NCBI_ThirdParty_GNUTLS        ${NCBI_TOOLS_ROOT}/gnutls-3.4.0 CACHE PATH "GNUTLS root")
 
+set(NCBI_ThirdParty_THRIFT        ${NCBI_TOOLS_ROOT}/thrift-0.11.0 CACHE PATH "THRIFT root")
+set(NCBI_ThirdParty_NLohmann_JSON ${NCBI_TOOLS_ROOT}/nlohmann-json-3.9.1 CACHE PATH "NLohmann_JSON root")
+set(NCBI_ThirdParty_YAML_CPP      ${NCBI_TOOLS_ROOT}/yaml-cpp-0.6.3 CACHE PATH "YAML_CPP root")
+set(NCBI_ThirdParty_OPENTRACING   ${NCBI_TOOLS_ROOT}/opentracing-cpp-1.6.0 CACHE PATH "OPENTRACING root")
+set(NCBI_ThirdParty_JAEGER        ${NCBI_TOOLS_ROOT}/jaeger-client-cpp-0.7.0 CACHE PATH "JAEGER root")
+
 #############################################################################
 #############################################################################
 
@@ -675,3 +681,27 @@ else()
     set(NCBI_COMPONENT_GNUTLS_FOUND NO)
     message("DISABLED GNUTLS")
 endif()
+
+#############################################################################
+# THRIFT
+if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+    NCBI_define_Xcomponent(NAME THRIFT LIB thriftd)
+else()
+    NCBI_define_Xcomponent(NAME THRIFT LIB thrift)
+endif()
+
+#############################################################################
+# NLohmann_JSON
+NCBI_define_Xcomponent(NAME NLohmann_JSON)
+
+#############################################################################
+# YAML_CPP
+NCBI_define_Xcomponent(NAME YAML_CPP LIB yaml-cpp)
+
+#############################################################################
+# OPENTRACING
+NCBI_define_Xcomponent(NAME OPENTRACING LIB opentracing)
+
+#############################################################################
+# JAEGER
+NCBI_define_Xcomponent(NAME JAEGER LIB jaegertracing ADD_COMPONENT NLohmann_JSON)

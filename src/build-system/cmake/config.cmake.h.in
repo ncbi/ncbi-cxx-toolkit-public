@@ -909,6 +909,9 @@
    the standard libraries. */
 #cmakedefine HAVE_LIBICONV 1
 
+/* Define to 1 if libjaegertracing is available. */
+#cmakedefine HAVE_LIBJAEGER 1
+
 /* Define to 1 if libjpeg is available. */
 #cmakedefine HAVE_LIBJPEG 1
 
@@ -939,6 +942,9 @@
 
 /* Define to 1 if libssl is available. */
 #cmakedefine HAVE_LIBOPENSSL 1
+
+/* Define to 1 if libopentracing is available. */
+#cmakedefine HAVE_LIBOPENTRACING 1
 
 /* Define to 1 if you have libOSMesa. */
 #cmakedefine HAVE_LIBOSMESA 1
@@ -981,6 +987,9 @@
 /* Define to 1 if SYBASE DBLib is available. */
 #define HAVE_LIBSYBDB 1
 
+/* Define to 1 if libthrift$THRIFT_SFX is available. */
+#cmakedefine HAVE_LIBTHRIFT 1
+
 /* Define to 1 if libtiff is available. */
 #cmakedefine HAVE_LIBTIFF 1
 
@@ -995,6 +1004,9 @@
 
 /* Define to 1 if libxslt is available. */
 #cmakedefine HAVE_LIBXSLT 1
+
+/* Define to 1 if libyaml-cpp is available. */
+#cmakedefine HAVE_LIBYAML_CPP 1
 
 /* Define to 1 if libz is available. */
 #cmakedefine HAVE_LIBZ 1
