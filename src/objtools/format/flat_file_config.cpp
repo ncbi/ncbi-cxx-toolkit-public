@@ -539,56 +539,60 @@ void CFlatFileConfig::AddArgumentDescriptions(CArgDescriptions& args)
          arg_desc->SetConstraint("policy",
                                  &(*new CArgAllow_Strings, "adaptive", "internal", "external", "exhaustive", "ftp", "web"));
 
+#define DENT "  "
          // flags (default: 0)
-         arg_desc->AddDefaultKey("flags", "Flags",
-                                 "Flags controlling flat file output.  The value is the bitwise OR (logical addition) of:\n"
-                                 "         1 - show HTML report\n"
-                                 "         2 - show contig features\n"
-                                 "         4 - show contig sources\n"
-                                 "         8 - show far translations\n"
-                                 "        16 - show translations if there are no products\n"
-                                 "        32 - always translate CDS\n"
-                                 "        64 - show only near features\n"
-                                 "       128 - show far features on segs\n"
-                                 "       256 - copy CDS feature from cDNA\n"
-                                 "       512 - copy gene to cDNA\n"
-                                 "      1024 - show contig in master\n"
-                                 "      2048 - hide imported features\n"
-                                 "      4096 - hide remote imported features\n"
-                                 "      8192 - hide SNP features\n"
-                                 "     16384 - hide exon features\n"
-                                 "     32768 - hide intron features\n"
-                                 "     65536 - hide misc features\n"
-                                 "    131072 - hide CDS product features\n"
-                                 "    262144 - hide CDD features\n"
-                                 "    542288 - show transcript sequence\n"
-                                 "   1048576 - show peptides\n"
-                                 "   2097152 - hide GeneRIFs\n"
-                                 "   4194304 - show only GeneRIFs\n"
-                                 "   8388608 - show only the latest GeneRIFs\n"
-                                 "  16777216 - show contig and sequence\n"
-                                 "  33554432 - hide source features\n"
-                                 "  67108864 - show feature table references\n"
-                                 " 134217728 - use the old feature sort order\n"
-                                 " 268435456 - hide gap features\n"
-                                 " 536870912 - do not translate the CDS\n"
-                                 "1073741824 - show javascript sequence spans",
+         arg_desc->AddDefaultKey("flags", "COMMA_SEPARATED_FLAGS_LIST",
+                                 "Flags controlling flat file output.\n"
+                                 "The value is the bitwise OR (logical addition) of:\n"
+         DENT "DoHTML                    (1) - show HTML report\n"
+         DENT "ShowContigFeatures        (2) - show contig features\n"
+         DENT "ShowContigSources         (4) - show contig sources\n"
+         DENT "ShowFarTranslations       (8) - show far translations\n"
+         DENT "TranslateIfNoProduct     (16) - show translations if there are no products\n"
+         DENT "AlwaysTranslateCDS       (32) - always translate CDS\n"
+         DENT "OnlyNearFeatures         (64) - show only near features\n"
+         DENT "FavorFarFeatures        (128) - show far features on segs\n"
+         DENT "CopyCDSFromCDNA         (256) - copy CDS feature from cDNA\n"
+         DENT "CopyGeneToCDNA          (512) - copy gene to cDNA\n"
+         DENT "ShowContigInMaster     (1024) - show contig in master\n"
+         DENT "HideImpFeatures        (2048) - hide imported features\n"
+         DENT "HideRemoteImpFeatures  (4096) - hide remote imported features\n"
+         DENT "HideSNPFeatures        (8192) - hide SNP features\n"
+         DENT "HideExonFeatures      (16384) - hide exon features\n"
+         DENT "HideIntronFeatures    (32768) - hide intron features\n"
+         DENT "HideMiscFeatures      (65536) - hide misc features\n"
+         DENT "HideCDSProdFeatures  (131072) - hide CDS product features\n"
+         DENT "HideCDDFeatures      (262144) - hide CDD features\n"
+         DENT "ShowTranscript       (542288) - show transcript sequence\n"
+         DENT "ShowPeptides        (1048576) - show peptides\n"
+         DENT "HideGeneRIFs        (2097152) - hide GeneRIFs\n"
+         DENT "OnlyGeneRIFs        (4194304) - show only GeneRIFs\n"
+         DENT "LatestGeneRIFs      (8388608) - show only the latest GeneRIFs\n"
+         DENT "ShowContigAndSeq   (16777216) - show contig and sequence\n"
+         DENT "HideSourceFeatures (33554432) - hide source features\n"
+         DENT "ShowFtableRefs     (67108864) - show feature table references\n"
+         DENT "OldFeaturesOrder  (134217728) - use the old feature sort order\n"
+         DENT "HideGapFeatures   (268435456) - hide gap features\n"
+         DENT "NeverTranslateCDS (536870912) - do not translate the CDS\n"
+         DENT "ShowSeqSpans     (1073741824) - show javascript sequence spans",
 
-                                 CArgDescriptions::eInteger, "0");
+                                 CArgDescriptions::eString, "");
 
          // custom (default: 0)
-         arg_desc->AddDefaultKey("custom", "Custom",
-                                 "Custom flat file output bits.  The value is the bitwise OR (logical addition) of:\n"
-                                 "         1 - hide protein_id and transcript_id\n"
-                                 "         2 - hide GI number\n"
-                                 "         4 - allow long locus lines\n"
-                                 "        64 - show SNP features\n"
-                                 "       128 - show CDD features\n"
-                                 "      1024 - disable annot references\n"
-                                 "      2048 - use SeqEntryIndexer\n"
-                                 "     16384 - only Gene, RNA, and CDS features",
+         arg_desc->AddDefaultKey("custom", "COMMA_SEPARATED_FLAGS_LIST",
+                                 "Custom flat file output bits.\n"
+                                 "The value is the bitwise OR (logical addition) of:\n"
+         DENT "HideProteinID             (1) - hide protein_id and transcript_id\n"
+         DENT "HideGI                    (2) - hide GI number\n"
+         DENT "LongLocusNames            (4) - allow long locus lines\n"
+         DENT "ShowSNPFeatures          (64) - show SNP features\n"
+         DENT "ShowCDDFeatures         (128) - show CDD features\n"
+         DENT "DisableAnnotRefs       (1024) - disable annot references\n"
+         DENT "UseSeqEntryIndexer     (2048) - use SeqEntryIndexer\n"
+         DENT "GeneRNACDSFeatures    (16384) - only Gene, RNA, and CDS features",
 
-                                 CArgDescriptions::eInteger, "0");
+                                 CArgDescriptions::eString, "");
+#undef DENT
 
          arg_desc->AddOptionalKey("showblocks", "COMMA_SEPARATED_BLOCK_LIST", 
              "Use this to only show certain parts of the flatfile (e.g. '-showblocks locus,defline').  "
@@ -767,7 +771,65 @@ CFlatFileConfig::EPolicy x_GetPolicy(const CArgs& args)
 static
 CFlatFileConfig::TFlags x_GetFlags(const CArgs& args)
 {
-    CFlatFileConfig::TFlags flags = (unsigned)args["flags"].AsInteger();
+    CFlatFileConfig::TFlags flags = 0;
+    string sFlags = args["flags"].AsString();
+    if (!sFlags.empty()) {
+        vector<string> vFlags;
+        NStr::Split(sFlags, ",", vFlags, NStr::fSplit_Tokenize);
+        for (const string& sFlag : vFlags) {
+            if (isdigit(sFlag[0])) {
+                try {
+                    unsigned n = NStr::StringToUInt(sFlag);
+                    flags |= n;
+                } catch (const CStringException&) {
+                    throw;
+                }
+            } else {
+                static const map<string, CFlatFileConfig::EFlags> mnemonics {
+#define DOFLG(mnem) { #mnem, CFlatFileConfig::f##mnem }
+                    DOFLG(DoHTML),
+                    DOFLG(ShowContigFeatures),
+                    DOFLG(ShowContigSources),
+                    DOFLG(ShowFarTranslations),
+                    DOFLG(TranslateIfNoProduct),
+                    DOFLG(AlwaysTranslateCDS),
+                    DOFLG(OnlyNearFeatures),
+                    DOFLG(FavorFarFeatures),
+                    DOFLG(CopyCDSFromCDNA),
+                    DOFLG(CopyGeneToCDNA),
+                    DOFLG(ShowContigInMaster),
+                    DOFLG(HideImpFeatures),
+                    DOFLG(HideRemoteImpFeatures),
+                    DOFLG(HideSNPFeatures),
+                    DOFLG(HideExonFeatures),
+                    DOFLG(HideIntronFeatures),
+                    DOFLG(HideMiscFeatures),
+                    DOFLG(HideCDSProdFeatures),
+                    DOFLG(HideCDDFeatures),
+                    DOFLG(ShowTranscript),
+                    DOFLG(ShowPeptides),
+                    DOFLG(HideGeneRIFs),
+                    DOFLG(OnlyGeneRIFs),
+                    DOFLG(LatestGeneRIFs),
+                    DOFLG(ShowContigAndSeq),
+                    DOFLG(HideSourceFeatures),
+                    DOFLG(ShowFtableRefs),
+                    DOFLG(OldFeaturesOrder),
+                    DOFLG(HideGapFeatures),
+                    DOFLG(NeverTranslateCDS),
+                    DOFLG(ShowSeqSpans),
+#undef DOFLG
+                };
+
+                auto it = mnemonics.find(sFlag);
+                if (it != mnemonics.cend()) {
+                    flags |= it->second;
+                } else {
+                    cerr << "Error: Unrecognized flag: " << sFlag << endl;
+                }
+            }
+        }
+    }
 
     if (args["html"]) {
         flags |= CFlatFileConfig::fDoHTML;
@@ -829,7 +891,49 @@ CFlatFileConfig::TFlags x_GetFlags(const CArgs& args)
 static
 CFlatFileConfig::TCustom x_GetCustom(const CArgs& args)
 {
-    CFlatFileConfig::TCustom custom = (unsigned)args["custom"].AsInteger();
+    CFlatFileConfig::TCustom custom = 0;
+    string sCustom = args["custom"].AsString();
+    if (!sCustom.empty()) {
+        vector<string> vFlags;
+        NStr::Split(sCustom, ",", vFlags, NStr::fSplit_Tokenize);
+        for (const string& sFlag : vFlags) {
+            if (isdigit(sFlag[0])) {
+                try {
+                    unsigned n = NStr::StringToUInt(sFlag);
+                    custom |= n;
+                } catch (const CStringException&) {
+                    throw;
+                }
+            } else {
+                static const map<string, CFlatFileConfig::ECustom> mnemonics {
+#define DOFLG(mnem) { #mnem, CFlatFileConfig::f##mnem }
+                    DOFLG(HideProteinID),
+                    DOFLG(HideGI),
+                    DOFLG(LongLocusNames),
+                    DOFLG(ExpandGaps),
+                    DOFLG(ShowSNPFeatures),
+                    DOFLG(ShowCDDFeatures),
+                    DOFLG(DisableAnnotRefs),
+                    DOFLG(UseSeqEntryIndexer),
+                    DOFLG(UseAutoDef),
+                    DOFLG(IgnoreExistingTitle),
+                    DOFLG(GeneRNACDSFeatures),
+                    DOFLG(ShowFtablePeptides),
+                    DOFLG(DisableReferenceCache),
+                    DOFLG(ShowDeflineModifiers),
+                    DOFLG(DoNotUseAutoDef),
+#undef DOFLG
+                };
+
+                auto it = mnemonics.find(sFlag);
+                if (it != mnemonics.cend()) {
+                    custom |= it->second;
+                } else {
+                    cerr << "Error: Unrecognized flag: " << sFlag << endl;
+                }
+            }
+        }
+    }
 
     if (args["show-flags"]) {
 
