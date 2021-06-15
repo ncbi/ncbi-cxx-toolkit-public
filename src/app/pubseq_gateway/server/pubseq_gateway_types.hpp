@@ -32,10 +32,17 @@
  *
  */
 
+#include <string>
+using namespace std;
+
 // Processor priority
 // The higher the value the higher the priority is
 typedef int     TProcessorPriority;
 const int       kUnknownPriority = -1;
+
+
+// For the future extensions
+typedef string  TAuthToken;
 
 
 // Error codes for the PSG protocol messages
@@ -77,7 +84,9 @@ enum EPSGS_PubseqGatewayErrorCode {
     ePSGS_HealthError,          //
 
     ePSGS_TooManyRequests,
-    ePSGS_RequestCancelled
+    ePSGS_RequestCancelled,
+
+    ePSGS_BlobRetrievalIsNotAuthorized
 };
 
 

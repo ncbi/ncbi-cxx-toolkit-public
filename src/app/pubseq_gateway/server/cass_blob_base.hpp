@@ -134,6 +134,10 @@ private:
         ePSGS_NotInCache
     };
 
+    enum EPSGS_BlobOp {
+        ePSGS_RetrieveBlobData
+    };
+
     EPSGS_BlobCacheCheckResult
     x_CheckExcludeBlobCache(CCassBlobFetch *  fetch_details);
     void x_OnBlobPropNotFound(CCassBlobFetch *  fetch_details);
@@ -142,6 +146,10 @@ private:
     int64_t  x_GetId2ChunkNumber(CCassBlobFetch *  fetch_details);
     void x_PrepareBlobPropData(CCassBlobFetch *  fetch_details,
                                CBlobRecord const &  blob);
+    bool x_IsAuthorized(EPSGS_BlobOp  blob_op,
+                        const SCass_BlobId &  blob_id,
+                        const CBlobRecord &  blob,
+                        const TAuthToken &  auth_token);
     void x_PrepareBlobPropCompletion(CCassBlobFetch *  fetch_details);
     void x_PrepareBlobData(CCassBlobFetch *  fetch_details,
                            const unsigned char *  chunk_data,

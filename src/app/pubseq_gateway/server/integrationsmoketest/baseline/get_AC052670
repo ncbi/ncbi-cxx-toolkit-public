@@ -5,9 +5,7 @@
         "id": "4.1891974"
         "id": "4.1891974",
         "id": "4.1891974",
-        "id": "4.1891974",
         "id": "gb|AC052670.1|",
-        "last_modified": 1012100668803
         "last_modified": 1012100668803
         "last_modified": 1012100668803
         "type": 5
@@ -28,11 +26,10 @@
     "hup_release_date": "",
     "id": {
     "id": {
-    "id": {
     "id2_info": "",
     "is_dead": false,
     "is_suppressed": false,
-    "is_withdrawn": true,
+    "is_withdrawn": false,
     "length": 956,
     "molecule_type": "dna",
     "n_chunks": 1
@@ -42,16 +39,13 @@
     "reply": "BioseqInfo",
     "reply": "BlobData",
     "reply": "BlobInfo",
-    "reply": "PublicComment",
     "seq_state": 10,
     "size": 2556,
     "state": 10,
     "storage_size": 1078,
     "tax_id": 184922,
-    "text": "This record was removed at the submitter's request. Please contact info@ncbi.nlm.nih.gov for further details."
     "username": "smartsvc",
     ],
-    },
     },
     },
     },
@@ -61,8 +55,6 @@
 {
 {
 {
-{
 }
-},
 },
 },

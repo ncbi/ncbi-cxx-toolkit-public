@@ -92,7 +92,23 @@ CPSGS_CassBlobBase::OnGetBlobProp(TBlobPropsCB  blob_props_cb,
         if (m_LastModified == -1)
             m_LastModified = blob.GetModified();
 
+        // Blob may be withdrawn or confidential
         x_PrepareBlobPropData(fetch_details, blob);
+        bool    is_authorized = x_IsAuthorized(ePSGS_RetrieveBlobData,
+                                               fetch_details->GetBlobId(), blob, "");
+        if (!is_authorized) {
+            x_PrepareBlobPropCompletion(fetch_details);
+
+            // Need to send 403 - forbidden
+            x_PrepareBlobMessage(fetch_details, "Blob retrieval is not authorized",
+                                 CRequestStatus::e403_Forbidden,
+                                 ePSGS_BlobRetrievalIsNotAuthorized,
+                                 eDiag_Error);
+            x_PrepareBlobCompletion(fetch_details);
+
+            SetFinished(fetch_details);
+            return;
+        }
 
         if (m_NeedToParseId2Info) {
             if (!blob.GetId2Info().empty()) {
@@ -887,6 +903,40 @@ CPSGS_CassBlobBase::x_GetId2ChunkNumber(CCassBlobFetch *  fetch_details)
 
     // Calculate the id2_chunk
     return blob_key - orig_blob_info + m_Id2Info->GetChunks() + 1;
+}
+
+
+bool
+CPSGS_CassBlobBase::x_IsAuthorized(EPSGS_BlobOp  blob_op,
+                                   const SCass_BlobId &  blob_id,
+                                   const CBlobRecord &  blob,
+                                   const TAuthToken &  auth_token)
+{
+    // Future extension: at the moment there is only one blob operation and
+    // there are no authorization tokens. Later they may come to play
+
+    // By some reasons the function deals not only with the authorization but
+    // with withdrawal and blob publication date (confidentiality)
+
+    if (blob.IsConfidential()) {
+        if (m_Request->NeedTrace()) {
+            m_Reply->SendTrace(
+                "Blob " + blob_id.ToString() + " is not authorized "
+                "because it is confidential", m_Request->GetStartTimestamp());
+        }
+        return false;
+    }
+
+    if (blob.GetFlag(EBlobFlags::eWithdrawn)) {
+        if (m_Request->NeedTrace()) {
+            m_Reply->SendTrace(
+                "Blob " + blob_id.ToString() + " is not authorized "
+                "because it is withdrawn", m_Request->GetStartTimestamp());
+        }
+        return false;
+    }
+
+    return true;
 }
 
 
