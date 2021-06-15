@@ -39,6 +39,7 @@
 #include <functional>
 #include <objects/mla/Error_val.hpp>
 #include <objtools/edit/edit_error.hpp>
+#include <mutex>
 
 BEGIN_NCBI_SCOPE
 
@@ -84,53 +85,54 @@ class NCBI_XOBJEDIT_EXPORT CRemoteUpdater
 {
 public:
 
-   using FLogger = function<void(const string&)>;
+    using FLogger = function<void(const string&)>;
 
-   // With this constructor, an exception is thrown
-   // if the updater cannot retrieve a publication for a PMID.
-   CRemoteUpdater(bool enable_caching = true);
-   // With this constructor, failure to retrieve
-   // a publication for a PMID is logged with the supplied message listener.
-   // If no message listener is supplied, an exception is thrown.
-   CRemoteUpdater(IObjtoolsListener* pMessageListener);
-   ~CRemoteUpdater();
+    // With this constructor, an exception is thrown
+    // if the updater cannot retrieve a publication for a PMID.
+    NCBI_DEPRECATED CRemoteUpdater(bool enable_caching = true);
+    // With this constructor, failure to retrieve
+    // a publication for a PMID is logged with the supplied message listener.
+    // If no message listener is supplied, an exception is thrown.
+    CRemoteUpdater(IObjtoolsListener* pMessageListener);
+    CRemoteUpdater(FLogger logger);
+    ~CRemoteUpdater();
 
-   void UpdatePubReferences(CSerialObject& obj);
-   void UpdatePubReferences(CSeq_entry_EditHandle& obj);
-   void SetMaxMlaAttempts(int max);
-
-   NCBI_DEPRECATED void UpdateOrgFromTaxon(FLogger /*f_logger*/, CSeq_entry& entry);
-   NCBI_DEPRECATED void UpdateOrgFromTaxon(FLogger f_logger, CSeq_entry_EditHandle& obj);
-   NCBI_DEPRECATED void UpdateOrgFromTaxon(FLogger f_logger, CSeqdesc& obj);
-
-   void UpdateOrgFromTaxon(CSeq_entry& entry);
-   void UpdateOrgFromTaxon(CSeqdesc& desc);
+    void UpdatePubReferences(CSerialObject& obj);
+    void UpdatePubReferences(CSeq_entry_EditHandle& obj);
+    void SetMaxMlaAttempts(int max);
 
 
-   void ClearCache();
-   static void ConvertToStandardAuthors(CAuth_list& auth_list);
-   static void PostProcessPubs(CSeq_entry_EditHandle& obj);
-   static void PostProcessPubs(CSeq_entry& obj);
-   static void PostProcessPubs(CPubdesc& pubdesc);
+    // These methods are deprecated, please use CRemoteUpdater constructor to specify logger
+    NCBI_DEPRECATED void UpdateOrgFromTaxon(FLogger f_logger, CSeq_entry& entry);
+    NCBI_DEPRECATED void UpdateOrgFromTaxon(FLogger f_logger, CSeq_entry_EditHandle& obj);
+    NCBI_DEPRECATED void UpdateOrgFromTaxon(FLogger f_logger, CSeqdesc& obj);
 
-   void SetMLAClient(CMLAClient& mlaClient);
-   // Use either shared singleton or individual instances
-   static CRemoteUpdater& GetInstance();
+    void UpdateOrgFromTaxon(CSeq_entry& entry);
+    void UpdateOrgFromTaxon(CSeqdesc& desc);
+
+    void ClearCache();
+    static void ConvertToStandardAuthors(CAuth_list& auth_list);
+    static void PostProcessPubs(CSeq_entry_EditHandle& obj);
+    static void PostProcessPubs(CSeq_entry& obj);
+    static void PostProcessPubs(CPubdesc& pubdesc);
+
+    void SetMLAClient(CMLAClient& mlaClient);
+    // Use either shared singleton or individual instances
+    NCBI_DEPRECATED static CRemoteUpdater& GetInstance();
 
 private:
-   void xUpdatePubReferences(CSeq_entry& entry);
-   void xUpdatePubReferences(CSeq_descr& descr);
-   NCBI_DEPRECATED void xUpdateOrgTaxname(FLogger f_logger, COrg_ref& org);
-   void xUpdateOrgTaxname(COrg_ref& org);
-   bool xUpdatePubPMID(list<CRef<CPub>>& pubs, TEntrezId id);
+    void xUpdatePubReferences(CSeq_entry& entry);
+    void xUpdatePubReferences(CSeq_descr& descr);
+    void xUpdateOrgTaxname(COrg_ref& org, FLogger logger);
+    bool xUpdatePubPMID(list<CRef<CPub>>& pubs, TEntrezId id);
 
-   IObjtoolsListener* m_pMessageListener=nullptr;
-   CRef<CMLAClient>  m_mlaClient;
-   unique_ptr<CCachedTaxon3_impl>  m_taxClient;
-   bool m_enable_caching=true;
-   CMutex m_Mutex;
-   DECLARE_CLASS_STATIC_MUTEX(m_static_mutex);
-   int m_MaxMlaAttempts=3;
+    IObjtoolsListener* m_pMessageListener = nullptr;
+    FLogger m_logger = nullptr; // wrapper for compatibility between IObjtoolsListener and old FLogger
+    CRef<CMLAClient>  m_mlaClient;
+    unique_ptr<CCachedTaxon3_impl>  m_taxClient;
+
+    std::mutex m_Mutex;
+    int m_MaxMlaAttempts=3;
 };
 
 END_SCOPE(edit)

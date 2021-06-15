@@ -66,8 +66,6 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 BEGIN_SCOPE(edit)
 
-DEFINE_CLASS_STATIC_MUTEX(CRemoteUpdater::m_static_mutex);
-
 namespace
 {
 
@@ -114,7 +112,7 @@ CRef<CPub> s_GetPubFrompmid(CMLAClient& mlaClient, TEntrezId id, int maxAttempts
                 continue;
             }
 
-            CNcbiOstrstream oss;
+            std::ostringstream oss;
             oss << "Failed to retrieve publication for PMID "
                 << id
                 << ". ";
@@ -123,7 +121,7 @@ CRef<CPub> s_GetPubFrompmid(CMLAClient& mlaClient, TEntrezId id, int maxAttempts
             }
             oss << "CMLAClient : "
                 << errorVal;
-            string msg = CNcbiOstrstreamToString(oss);
+            string msg = oss.str();
             if (pMessageListener) {
                 pMessageListener->PutMessage(CRemoteUpdaterMessage(msg, errorVal));
                 break;
@@ -137,6 +135,99 @@ CRef<CPub> s_GetPubFrompmid(CMLAClient& mlaClient, TEntrezId id, int maxAttempts
 }
 
 }// end anonymous namespace
+
+class CCachedTaxon3_impl
+{
+public:
+    typedef map<string, CRef<CT3Reply> > CCachedReplyMap;
+
+    void Init()
+    {
+        if (m_taxon.get() == 0)
+        {
+            m_taxon.reset(new CTaxon3);
+            m_taxon->Init();
+            m_cache.reset(new CCachedReplyMap);
+        }
+    }
+
+    void ClearCache()
+    {
+        if (m_cache.get() != 0)
+        {
+            m_cache->clear();
+        }
+    }
+
+    CRef<COrg_ref> GetOrg(const COrg_ref& org, CRemoteUpdater::FLogger f_logger)
+    {
+        CRef<COrg_ref> result;
+        CRef<CT3Reply> reply = GetOrgReply(org, f_logger);
+        if (reply->IsData() && reply->SetData().IsSetOrg())
+        {
+            result.Reset(&reply->SetData().SetOrg());
+        }
+        return result;
+    }
+
+    CRef<CT3Reply> GetOrgReply(const COrg_ref& in_org, CRemoteUpdater::FLogger f_logger)
+    {
+        std::ostringstream os;
+        os << MSerial_AsnText << in_org;
+        CRef<CT3Reply>& reply = (*m_cache)[os.str()];
+        if (reply.Empty())
+        {
+            CTaxon3_request request;
+
+            CRef<CT3Request> rq(new CT3Request);
+            CRef<COrg_ref> org(new COrg_ref);
+            org->Assign(in_org);
+            rq->SetOrg(*org);
+
+            request.SetRequest().push_back(rq);
+            CRef<CTaxon3_reply> result = m_taxon->SendRequest (request);
+            reply = *result->SetReply().begin();
+            if (reply->IsError() && f_logger)
+            {
+                const string& error_message =
+                "Taxon update: " +
+                    (in_org.IsSetTaxname() ? in_org.GetTaxname() : NStr::NumericToString(in_org.GetTaxId())) + ": " +
+                    reply->GetError().GetMessage();
+
+                f_logger(error_message);
+            }
+            else
+            if (reply->IsData() && reply->SetData().IsSetOrg())
+            {
+                reply->SetData().SetOrg().ResetSyn();
+                // next will reset 'attrib = specified'
+                reply->SetData().SetOrg().SetOrgname().SetFormalNameFlag(false);
+            }
+        }
+        else
+        {
+#ifdef _DEBUG
+            //cerr << "Using cache for:" << os.str() << endl;
+#endif
+        }
+        return reply;
+    }
+
+    CRef<CTaxon3_reply> SendOrgRefList(const vector< CRef<COrg_ref> >& query, CRemoteUpdater::FLogger logger)
+    {
+        CRef<CTaxon3_reply> result(new CTaxon3_reply);
+
+        for(auto& it: query)
+        {
+            result->SetReply().push_back(GetOrgReply(*it, logger));
+        }
+
+        return result;
+    }
+protected:
+    unique_ptr<CTaxon3> m_taxon;
+    unique_ptr<CCachedReplyMap> m_cache;
+};
 
 bool CRemoteUpdater::xUpdatePubPMID(list<CRef<CPub>>& arr, TEntrezId id)
 {
@@ -166,150 +257,22 @@ void CRemoteUpdater::SetMaxMlaAttempts(int maxAttempts)
     m_MaxMlaAttempts = maxAttempts;
 }
 
-
-class CCachedTaxon3_impl
+void CRemoteUpdater::UpdateOrgFromTaxon(FLogger logger, CSeqdesc& desc)
 {
-public:
-    typedef map<string, CRef<CT3Reply> > CCachedReplyMap;
-
-    void Init()
+    if (desc.IsOrg())
     {
-        if (m_taxon.get() == 0)
-        {
-            m_taxon.reset(new CTaxon3);
-            m_taxon->Init();
-            m_cache.reset(new CCachedReplyMap);
-        }
-    }
-
-    void ClearCache()
-    {
-        if (m_cache.get() != 0)
-        {
-            m_cache->clear();
-        }
-    }
-
-    CRef<COrg_ref> GetOrg(const COrg_ref& org, IObjtoolsListener* pMessageListener=nullptr)
-    {
-        CRef<COrg_ref> result;
-        CRef<CT3Reply> reply = GetOrgReply(org);
-        if (reply->IsError() && pMessageListener)
-        {
-            const string& error_message =
-                "Taxon update: " +
-                (org.IsSetTaxname() ? org.GetTaxname() : NStr::NumericToString(org.GetTaxId())) + ": " +
-                reply->GetError().GetMessage();
-
-            pMessageListener->PutMessage(
-                    CObjEditMessage(error_message, eDiag_Error));
-        }
-        else
-        if (reply->IsData() && reply->SetData().IsSetOrg())
-        {
-            result.Reset(&reply->SetData().SetOrg());
-        }
-        return result;
-    }
-
-
-    CRef<COrg_ref> GetOrg(const COrg_ref& org, CRemoteUpdater::FLogger f_logger)
-    {
-        CRef<COrg_ref> result;
-        CRef<CT3Reply> reply = GetOrgReply(org);
-        if (reply->IsError() && f_logger)
-        {
-            const string& error_message =
-                "Taxon update: " +
-                (org.IsSetTaxname() ? org.GetTaxname() : NStr::NumericToString(org.GetTaxId())) + ": " +
-                reply->GetError().GetMessage();
-            f_logger(error_message);
-        }
-        else
-        if (reply->IsData() && reply->SetData().IsSetOrg())
-        {
-            result.Reset(&reply->SetData().SetOrg());
-        }
-        return result;
-    }
-
-    CRef<CT3Reply> GetOrgReply(const COrg_ref& in_org)
-    {
-
-#if 0
-        string id;
-        NStr::IntToString(id, in_org.GetTaxId());
-        if (in_org.IsSetTaxname())
-            id += in_org.GetTaxname();
-        CRef<CT3Reply>& reply = (*m_cache)[id];
-#else
-        CNcbiStrstream os;
-        os << MSerial_AsnText << in_org;
-        CRef<CT3Reply>& reply = (*m_cache)[os.str()];
-#endif
-        if (reply.Empty())
-        {
-            CTaxon3_request request;
-
-            CRef<CT3Request> rq(new CT3Request);
-            CRef<COrg_ref> org(new COrg_ref);
-            org->Assign(in_org);
-            rq->SetOrg(*org);
-
-            request.SetRequest().push_back(rq);
-            CRef<CTaxon3_reply> result = m_taxon->SendRequest (request);
-            reply = *result->SetReply().begin();
-            if (reply->IsData() && reply->SetData().IsSetOrg())
-            {
-                reply->SetData().SetOrg().ResetSyn();
-            }
-
-        }
-        else
-        {
-#ifdef _DEBUG
-            //cerr << "Using cache for:" << os.str() << endl;
-#endif
-        }
-        return reply;
-    }
-
-    CRef<CTaxon3_reply> SendOrgRefList(const vector< CRef<COrg_ref> >& query, bool use_cache)
-    {
-        if (!use_cache)
-            return m_taxon->SendOrgRefList(query);
-
-        CRef<CTaxon3_reply> result(new CTaxon3_reply);
-
-        ITERATE (vector<CRef< COrg_ref> >, it, query)
-        {
-            result->SetReply().push_back(GetOrgReply(**it));
-        }
-
-        return result;
-    }
-protected:
-    unique_ptr<CTaxon3> m_taxon;
-    unique_ptr<CCachedReplyMap> m_cache;
-};
-
-void CRemoteUpdater::UpdateOrgFromTaxon(FLogger logger, CSeqdesc& obj)
-{
-    if (obj.IsOrg())
-    {
-        xUpdateOrgTaxname(logger, obj.SetOrg());
+        xUpdateOrgTaxname(desc.SetOrg(), logger);
     }
     else
-    if (obj.IsSource() && obj.GetSource().IsSetOrg())
+    if (desc.IsSource() && desc.GetSource().IsSetOrg())
     {
-        xUpdateOrgTaxname(logger, obj.SetSource().SetOrg());
+        xUpdateOrgTaxname(desc.SetSource().SetOrg(), logger);
     }
 }
 
-void CRemoteUpdater::xUpdateOrgTaxname(FLogger logger, COrg_ref& org)
-{ // remove after the deprecated UpdateOrgFromTaxon(FLogger, CSeqdes&)
-  // has been removed.
-    CMutexGuard guard(m_Mutex);
+void CRemoteUpdater::xUpdateOrgTaxname(COrg_ref& org, FLogger logger)
+{ // logger parameter is deprecated and should be removed soon
+    std::lock_guard<std::mutex> guard(m_Mutex);
 
     TTaxId taxid = org.GetTaxId();
     if (taxid == ZERO_TAX_ID && !org.IsSetTaxname())
@@ -330,55 +293,32 @@ void CRemoteUpdater::xUpdateOrgTaxname(FLogger logger, COrg_ref& org)
 
 void CRemoteUpdater::UpdateOrgFromTaxon(CSeqdesc& desc)
 {
-    if (desc.IsOrg())
-    {
-        xUpdateOrgTaxname(desc.SetOrg());
-    }
-    else
-    if (desc.IsSource() && desc.GetSource().IsSetOrg())
-    {
-        xUpdateOrgTaxname(desc.SetSource().SetOrg());
-    }
+    UpdateOrgFromTaxon(m_logger, desc);
 }
-
-
-void CRemoteUpdater::xUpdateOrgTaxname(COrg_ref& org)
-{
-    CMutexGuard guard(m_Mutex);
-
-    TTaxId taxid = org.GetTaxId();
-    if (taxid == ZERO_TAX_ID && !org.IsSetTaxname())
-        return;
-
-    if (m_taxClient.get() == 0)
-    {
-        m_taxClient.reset(new CCachedTaxon3_impl);
-        m_taxClient->Init();
-    }
-
-    CRef<COrg_ref> new_org = m_taxClient->GetOrg(org, m_pMessageListener);
-    if (new_org.NotEmpty())
-    {
-        org.Assign(*new_org);
-    }
-}
-
 
 CRemoteUpdater& CRemoteUpdater::GetInstance()
 {
-    CMutexGuard guard(m_static_mutex);
-    static CRemoteUpdater instance;
+    static CRemoteUpdater instance{(IObjtoolsListener*)nullptr};
     return instance;
+}
+
+CRemoteUpdater::CRemoteUpdater(FLogger logger): m_logger{logger}
+{
 }
 
 CRemoteUpdater::CRemoteUpdater(IObjtoolsListener* pMessageListener) :
     m_pMessageListener(pMessageListener)
 {
+    if (m_pMessageListener)
+    {
+        m_logger = [this](const string& error_message)
+        {
+            m_pMessageListener->PutMessage(CObjEditMessage(error_message, eDiag_Error));
+        };
+    }
 }
 
-
-CRemoteUpdater::CRemoteUpdater(bool enable_caching)
-    :m_enable_caching(enable_caching)
+CRemoteUpdater::CRemoteUpdater(bool)
 {
 }
 
@@ -388,7 +328,7 @@ CRemoteUpdater::~CRemoteUpdater()
 
 void CRemoteUpdater::ClearCache()
 {
-    CMutexGuard guard(m_Mutex);
+    std::lock_guard<std::mutex> guard(m_Mutex);
 
     if (m_taxClient.get() != 0)
     {
@@ -415,9 +355,9 @@ void CRemoteUpdater::UpdatePubReferences(CSerialObject& obj)
     if (obj.GetThisTypeInfo()->IsType(CSeq_submit::GetTypeInfo()))
     {
         CSeq_submit* submit = (CSeq_submit*)(&obj);
-        NON_CONST_ITERATE(CSeq_submit::TData::TEntrys, it, submit->SetData().SetEntrys())
+        for (auto& it : submit->SetData().SetEntrys())
         {
-            xUpdatePubReferences(**it);
+            xUpdatePubReferences(*it);
         }
     }
     else
@@ -440,9 +380,9 @@ void CRemoteUpdater::xUpdatePubReferences(CSeq_entry& entry)
 {
     if (entry.IsSet())
     {
-        NON_CONST_ITERATE(CBioseq_set::TSeq_set, it2, entry.SetSet().SetSeq_set())
+        for(auto& it: entry.SetSet().SetSeq_set())
         {
-            xUpdatePubReferences(**it2);
+            xUpdatePubReferences(*it);
         }
     }
 
@@ -452,11 +392,9 @@ void CRemoteUpdater::xUpdatePubReferences(CSeq_entry& entry)
     xUpdatePubReferences(entry.SetDescr());
 }
 
-
-
 void CRemoteUpdater::xUpdatePubReferences(CSeq_descr& seq_descr)
 {
-    CMutexGuard guard(m_Mutex);
+    std::lock_guard<std::mutex> guard(m_Mutex);
 
     for (auto pDesc : seq_descr.Set()) {
         if (!pDesc->IsPub() || !pDesc->GetPub().IsSetPub()) {
@@ -502,19 +440,19 @@ namespace
     {
         if (entry.IsSet())
         {
-            NON_CONST_ITERATE(CSeq_entry::TSet::TSeq_set, it, entry.SetSet().SetSeq_set())
+            for (auto& it: entry.SetSet().SetSeq_set())
             {
-                _UpdateOrgFromTaxon(**it, m);
+                _UpdateOrgFromTaxon(*it, m);
             }
         }
 
         if (!entry.IsSetDescr())
             return;
 
-        NON_CONST_ITERATE(CSeq_descr::Tdata, it, entry.SetDescr().Set())
+        for(auto& it: entry.SetDescr().Set())
         {
-            CRef<CSeqdesc>* owner = &*it;
-            CSeqdesc& desc = **owner;
+            CRef<CSeqdesc>& owner = it;
+            CSeqdesc& desc = *owner;
             CRef<COrg_ref> org_ref;
             if (desc.IsOrg())
             {
@@ -528,34 +466,34 @@ namespace
             if (org_ref)
             {
                 string id;
-                CNcbiStrstream os;
+                std::ostringstream os;
                 os << MSerial_AsnText << *org_ref;
                 id = os.str();
                 TOwner& v = m[id];
-                v.owner.insert(owner);
+                v.owner.insert(&owner);
                 v.org_ref = org_ref;
             }
         }
     }
 
-    void xUpdate(TOwnerSet& owner, COrg_ref& org_ref)
+    void xUpdate(TOwnerSet& owners, COrg_ref& org_ref)
     {
-        NON_CONST_ITERATE(TOwnerSet, owner_it, owner)
+        for (auto& owner_it: owners)
         {
-            if ((**owner_it)->IsOrg())
+            if ((*owner_it)->IsOrg())
             {
-                (**owner_it)->SetOrg(org_ref);
+                (*owner_it)->SetOrg(org_ref);
             }
             else
-                if ((**owner_it)->IsSource())
+                if ((*owner_it)->IsSource())
                 {
-                    (**owner_it)->SetSource().SetOrg(org_ref);
+                    (*owner_it)->SetSource().SetOrg(org_ref);
                 }
         }
     }
 }
 
-void CRemoteUpdater::UpdateOrgFromTaxon(CSeq_entry& entry)
+void CRemoteUpdater::UpdateOrgFromTaxon(FLogger logger, CSeq_entry& entry)
 {
     TOrgMap org_to_update;
 
@@ -563,14 +501,19 @@ void CRemoteUpdater::UpdateOrgFromTaxon(CSeq_entry& entry)
     if (org_to_update.empty())
         return;
 
-    CTaxon3 taxon;
-    taxon.Init();
+    std::lock_guard<std::mutex> guard(m_Mutex);
 
-    NON_CONST_ITERATE(TOrgMap, it, org_to_update)
+    if (m_taxClient.get() == 0)
+    {
+        m_taxClient.reset(new CCachedTaxon3_impl);
+        m_taxClient->Init();
+    }
+
+    for (auto& it: org_to_update)
     {
         vector<CRef<COrg_ref> > reflist;
-        reflist.push_back(it->second.org_ref);
-        CRef<CTaxon3_reply> reply = taxon.SendOrgRefList(reflist);
+        reflist.push_back(it.second.org_ref);
+        CRef<CTaxon3_reply> reply = m_taxClient->SendOrgRefList(reflist, logger);
 
         if (reply.NotNull())
         {
@@ -578,21 +521,16 @@ void CRemoteUpdater::UpdateOrgFromTaxon(CSeq_entry& entry)
             {
                 if ((*reply_it)->IsData() && (*reply_it)->SetData().IsSetOrg())
                 {
-                    (*reply_it)->SetData().SetOrg().ResetSyn();
-                    (*reply_it)->SetData().SetOrg().SetOrgname().SetFormalNameFlag(false);
-
-                    xUpdate(it->second.owner, (*reply_it)->SetData().SetOrg());
+                    xUpdate(it.second.owner, (*reply_it)->SetData().SetOrg());
                 }
             }
         }
     }
 }
 
-void CRemoteUpdater::UpdateOrgFromTaxon(FLogger /*logger*/, CSeq_entry& entry)
+void CRemoteUpdater::UpdateOrgFromTaxon(CSeq_entry& entry)
 {
-    // this method is deprecated.
-    // until we remove it, it simply calls the non-deprecated method
-    UpdateOrgFromTaxon(entry);
+    UpdateOrgFromTaxon(m_logger, entry);
 }
 
 void CRemoteUpdater::UpdateOrgFromTaxon(FLogger logger, CSeq_entry_EditHandle& obj)
@@ -605,7 +543,6 @@ void CRemoteUpdater::UpdateOrgFromTaxon(FLogger logger, CSeq_entry_EditHandle& o
         }
     }
 }
-
 
 
 namespace
