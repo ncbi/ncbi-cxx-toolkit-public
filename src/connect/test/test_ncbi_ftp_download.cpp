@@ -527,8 +527,9 @@ static EIO_Status x_ConnectionCallback(CONN           conn,
                << (eta > 24 * 3600.0
                    ? CTimeSpan(eta).AsString("d") + "+ day(s)"
                    : CTimeSpan(eta).AsString("h:m:s"));
-        } else
+        } else {
             os << "              ";
+        }
         string line = CNcbiOstrstreamToString(os);
         streamsize linelen = (streamsize) line.size();
         NcbiCout.flush();
@@ -544,8 +545,9 @@ static EIO_Status x_ConnectionCallback(CONN           conn,
         _ASSERT(status == eIO_Success);
     } else if (s_Signaled) {
         NcbiCerr << NcbiEndl << "Canceled" << NcbiEndl;
-        if (status == eIO_Success)
+        if (status == eIO_Success) {
             status  = eIO_Interrupt;
+        }
     } else if (status == eIO_Timeout) {
         NcbiCerr << NcbiEndl << "Timed out in "
                  << NcbiFixed << NcbiSetprecision(1)
@@ -664,7 +666,7 @@ static void s_FTPStat(iostream& ftp)
             continue;
         }
         if (status.empty()) {
-            status  = "Server status:\n\t" + line;
+            status  = "FTP server status:\n\t" + line;
         } else {
             status += "\n\t";
             status += line;
@@ -766,7 +768,7 @@ int CTestFTPDownloadApp::Run(void)
                         &ftpcb, net_info->timeout);
 
     s_FTPStat(ftp);
-    _ASSERT(!CONN_GetPosition(ftp.GetCONN(), eIO_Open));  // NB: clears pos
+    _VERIFY(!CONN_GetPosition(ftp.GetCONN(), eIO_Open));  // NB: clears pos
 
     // Look at the file extension and figure out what stream processors to use
     TProcessor proc = fProcessor_Null;
