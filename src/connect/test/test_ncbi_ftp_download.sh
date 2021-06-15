@@ -23,9 +23,9 @@ rm -f $log
 trap 'echo "`date`."' 0 1 2 3 15
 
 if [ "`echo $FEATURES | grep -c -E '(^| )connext( |$)'`" != "1" ]; then
-  n=3
-else
   n=4
+else
+  n=5
 fi
 
 case "`expr '(' $$ / 10 ')' '%' $n`" in
@@ -39,6 +39,9 @@ case "`expr '(' $$ / 10 ')' '%' $n`" in
     url='ftp://ftp.freebsd.org/'
     ;;
   3)
+    url='ftp://ftp.hp.com/pub/ls-gFLR.txt.xz'
+    ;;
+  4)
     url='ftp://ftp-ext.ncbi.nlm.nih.gov/'
     ;;
 esac
