@@ -706,12 +706,12 @@ CDB_Object* CTL_RowResult::GetItemInternal(
     case CS_BIGTIME_TYPE:
 #  endif
     {
-        CDB_BigDateTime* bdt = static_cast<CDB_BigDateTime*>(item_buf);
         CTime t;
         my_ct_get_data(cmd, item_no, buffer, (CS_INT) sizeof(buffer), &outlen,
                        is_null);
 
         ENSURE_ITEM();
+        CDB_BigDateTime* bdt = static_cast<CDB_BigDateTime*>(item_buf);
 
         if ( !is_null ) {
             CS_DATEREC dr = { 0 };
@@ -1371,6 +1371,7 @@ size_t CTL_CursorResultExpl::ReadItem(void* buffer, size_t buffer_size,
         return 0;
 
 
+    CS_DATEREC   daterec = { 0 };
     CS_DATETIME  datetime;
     CS_DATETIME4 datetime4;
     CS_NUMERIC   numeric;
@@ -1430,6 +1431,18 @@ size_t CTL_CursorResultExpl::ReadItem(void* buffer, size_t buffer_size,
         data = &datetime;
         break;
     }
+#ifdef CS_BIGDATETIME_TYPE
+    case eDB_BigDateTime: {
+        CDB_BigDateTime* dt_field = static_cast<CDB_BigDateTime*>(field);
+        CS_CONTEXT* ctx = m_Connect->GetCTLibContext().CTLIB_GetContext();
+        CHECK_DRIVER_ERROR(cs_dt_crack(ctx, CS_BIGDATETIME_TYPE, buffer,
+                                       &daterec) != CS_SUCCEED,
+                           "Failed to unpack big date/time", 230023);
+        max_size = sizeof(daterec);
+        data = &daterec;
+        break;
+    }
+#endif
     case eDB_SmallDateTime: {
         CDB_SmallDateTime* dt_field = static_cast<CDB_SmallDateTime*>(field);
         datetime4.days = dt_field->GetDays();
