@@ -377,47 +377,6 @@ string CGffIdGenerator::xExtractFeatureLocation(
     return locationId;
 }
 
-//  ----------------------------------------------------------------------------
-string CGffIdGenerator::xExtractLocalId(
-    const CMappedFeat& mf)
-//  ----------------------------------------------------------------------------
-{
-    ostringstream idStream;
-    if (mf.IsSetId()) {
-        auto& id = mf.GetId();
-        if (id.IsLocal()) {
-            id.GetLocal().AsString(idStream);
-            return idStream.str();
-        }
-    }
-    if (mf.IsSetIds()) {
-        for (auto id: mf.GetIds()) {
-            if (id->IsLocal()) {
-                id->GetLocal().AsString(idStream);
-                return idStream.str();
-            }
-        }
-    }
-    return "";
-}
-
-//  ------------------------------------------------------------------------------
-string CGffIdGenerator::xExtractTrackingId(
-    const CMappedFeat& mf)
-//  ------------------------------------------------------------------------------
-{
-    CConstRef< CUser_object > cfob = mf.GetOriginalFeature().FindExt(
-        "CombinedFeatureUserObjects");
-    if (!cfob) {
-        return "";
-    }
-    if (!cfob->HasField("TrackingId")) {
-        return "";
-    }
-    auto trackingNumber = cfob->GetField("TrackingId").GetInt();
-    return NStr::NumericToString(trackingNumber);
-}
-
 //  ------------------------------------------------------------------------------
 string CGffIdGenerator::xExtractFarAccession(
     const CMappedFeat& mf)

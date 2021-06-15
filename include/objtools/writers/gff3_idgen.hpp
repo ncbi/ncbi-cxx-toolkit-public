@@ -93,12 +93,6 @@ protected:
     std::string xExtractGeneLocusTagOrLocus(
         const CMappedFeat&);
 
-    std::string xExtractLocalId(
-        const CMappedFeat&);
-
-    std::string xExtractTrackingId(
-        const CMappedFeat&);
-
     std::string xExtractFarAccession(
         const CMappedFeat&);
 
