@@ -3262,10 +3262,10 @@ tds_put_param_as_string(TDSSOCKET * tds, TDSPARAMINFO * params, int n)
 		/* TODO this can be a waste of memory... */
 		converted = 1;
 		src = (TDS_CHAR*) tds_convert_string(tds, curcol->char_conv, src, src_len, &output_size);
-		src_len = (int) output_size;
 		if (!src)
 			/* conversion error, exit with an error */
 			return TDS_FAIL;
+                src_len = (int) output_size;
 	}
 
 	/* we could try to use only tds_convert but is not good in all cases */

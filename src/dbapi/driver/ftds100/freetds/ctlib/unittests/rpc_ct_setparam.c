@@ -400,6 +400,7 @@ int i, j;
 
 			outdatafmt = (CS_DATAFMT *) malloc(num_cols * sizeof(CS_DATAFMT));
 			if (outdatafmt == NULL) {
+                                free(coldata);
 				fprintf(stderr, "malloc outdatafmt failed \n");
 				return 1;
 			}
@@ -408,7 +409,7 @@ int i, j;
 				ret = ct_describe(cmd, (i + 1), &outdatafmt[i]);
 				if (ret != CS_SUCCEED) {
 					fprintf(stderr, "ct_describe failed \n");
-					return 1;
+					break;
 				}
 
 				outdatafmt[i].maxlength = ex_display_dlen(&outdatafmt[i]) + 1;
@@ -419,14 +420,15 @@ int i, j;
 				coldata[i].value[0] = 0;
 				if (coldata[i].value == NULL) {
 					fprintf(stderr, "malloc coldata.value failed \n");
-					return 1;
+					break;
 				}
 
 				ret = ct_bind(cmd, (i + 1), &outdatafmt[i], coldata[i].value, &coldata[i].valuelen,
 					      & coldata[i].indicator);
 				if (ret != CS_SUCCEED) {
+                                        free(coldata[i].value);
 					fprintf(stderr, "ct_bind failed \n");
-					return 1;
+					break;
 				}
 			}
 			if (ret != CS_SUCCEED) {
