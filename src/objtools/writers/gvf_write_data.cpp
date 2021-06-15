@@ -46,7 +46,6 @@
 #include <objects/seqfeat/Variation_ref.hpp>
 #include <objects/seqfeat/Variation_inst.hpp>
 
-#include <objtools/writers/gff3_write_data.hpp>
 #include <objtools/writers/gvf_write_data.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
 #include <objmgr/mapped_feat.hpp>

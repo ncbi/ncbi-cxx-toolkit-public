@@ -53,6 +53,7 @@
 #include <objtools/writers/gff3_write_data.hpp>
 #include <objtools/writers/genbank_id_resolve.hpp>
 
+/*
 BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
@@ -106,13 +107,13 @@ CGff3WriteRecordFeature::~CGff3WriteRecordFeature()
 };
 
 //  ----------------------------------------------------------------------------
-bool CGff3WriteRecordFeature::AssignFromAsnLinear(
-    const CMappedFeat& mf,
-    unsigned int flags )
+//bool CGff3WriteRecordFeature::AssignFromAsnLinear(
+//    const CMappedFeat& mf,
+//    unsigned int flags )
 //  ----------------------------------------------------------------------------
-{
-    return CGffWriteRecord::AssignFromAsn(mf, flags);
-}
+//{
+//    return CGffWriteRecord::AssignFromAsn(mf, flags);
+//}
 
 //  ----------------------------------------------------------------------------
 bool CGff3WriteRecordFeature::AssignFromAsn(
@@ -163,6 +164,7 @@ bool CGff3WriteRecordFeature::AssignFromAsn(
     return CGffWriteRecord::AssignFromAsn(mf, flags);
 };
 
+/*
 //  ----------------------------------------------------------------------------
 string CGff3WriteRecordFeature::StrAttributes() const
 //  ----------------------------------------------------------------------------
@@ -193,7 +195,7 @@ string CGff3WriteRecordFeature::StrAttributes() const
         strAttributes = ".";
     }
     return strAttributes;
-}
+}*/
 
 //  ----------------------------------------------------------------------------
 void CGff3WriteRecordFeature::x_StrAttributesAppendValueGff3(
@@ -232,6 +234,6 @@ void CGff3WriteRecordFeature::ForceAttributeID(
     DropAttributes("ID");
     SetAttribute("ID", strId);
 }
-
+*/
 END_objects_SCOPE
 END_NCBI_SCOPE

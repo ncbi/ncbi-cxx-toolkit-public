@@ -49,7 +49,6 @@
 #include <objmgr/util/feature_edit.hpp>
 
 #include <objtools/writers/write_util.hpp>
-#include <objtools/writers/gff3_write_data.hpp>
 #include <objtools/writers/gff_writer.hpp>
 #include <objtools/writers/genbank_id_resolve.hpp>
 
