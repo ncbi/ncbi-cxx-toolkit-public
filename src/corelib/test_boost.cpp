@@ -521,6 +521,8 @@ public:
     /// @sa GetConfig, GetRWConfig
     CNcbiRegistry& GetTestRWConfig(void);
 
+    ostream& GetFreeformReportStream(void) const;
+
 private:
     typedef list<TNcbiTestUserFunction> TUserFuncsList;
 
@@ -1839,6 +1841,16 @@ CNcbiTestApplication::GetTestRWConfig(void)
     return GetRWConfig();
 }
 
+inline ostream&
+CNcbiTestApplication::GetFreeformReportStream(void) const
+{
+    if (m_ReportOut.good()) {
+        return NcbiCerr;
+    } else {
+        return but::results_reporter::get_stream();
+    }
+}
+
 void
 CNcbiTestsCollector::visit(but::test_case const& test)
 {
@@ -2232,6 +2244,8 @@ main(int argc, char* argv[])
     int result_code = boost::exit_success;
     bool made_report = false;
 
+    std::ostream* ostr = &NcbiCerr;
+
     BOOST_TEST_I_TRY {
 #if BOOST_VERSION >= 106000
         std::vector<char*> boost_args(1, argv[0]), ncbi_args;
@@ -2258,12 +2272,13 @@ main(int argc, char* argv[])
 
         ncbi::s_GetTestApp().InitTestsBeforeRun();
 
+        ostr = &ncbi::s_GetTestApp().GetFreeformReportStream();
 #if BOOST_VERSION >= 105900
         if( RTCFG(bool, WAIT_FOR_DEBUGGER, wait_for_debugger) ) {
-            results_reporter::get_stream() << "Press any key to continue..." << std::endl;
+            *ostr << "Press any key to continue..." << std::endl;
 
             std::getchar();
-            results_reporter::get_stream() << "Continuing..." << std::endl;
+            *ostr << "Continuing..." << std::endl;
         }
         framework::finalize_setup_phase();
         output_format list_cont = RTCFG(output_format, LIST_CONTENT, list_content);
@@ -2282,10 +2297,10 @@ main(int argc, char* argv[])
         if( RTCFG(bool, LIST_LABELS, list_labels) ) {
             ut_detail::labels_collector collector;
             traverse_test_tree( framework::master_test_suite().p_id, collector, true );
-            results_reporter::get_stream() << "Available labels:\n  ";
+            *ostr << "Available labels:\n  ";
             std::copy( collector.labels().begin(), collector.labels().end(), 
-                       std::ostream_iterator<std::string>( results_reporter::get_stream(), "\n  " ) );
-            results_reporter::get_stream() << "\n";
+                       std::ostream_iterator<std::string>( *ostr, "\n  " ) );
+            *ostr << "\n";
             return boost::exit_success;
         }
 #else
@@ -2341,19 +2356,21 @@ main(int argc, char* argv[])
     }
 #endif
     BOOST_TEST_I_CATCH( framework::internal_error, ex ) {
-        results_reporter::get_stream() << "Boost.Test framework internal error: " << ex.what() << std::endl;
+        *ostr << "Boost.Test framework internal error: " << ex.what()
+              << std::endl;
         result_code = boost::exit_exception_failure;
     }
     BOOST_TEST_I_CATCH( framework::setup_error, ex ) {
-        results_reporter::get_stream() << "Test setup error: " << ex.what() << std::endl;
+        *ostr << "Test setup error: " << ex.what() << std::endl;
         result_code = boost::exit_exception_failure;
     }
     BOOST_TEST_I_CATCH( std::exception, ex ) {
-        results_reporter::get_stream() << "Test framework error: " << ex.what() << std::endl;
+        *ostr << "Test framework error: " << ex.what() << std::endl;
         result_code = boost::exit_exception_failure;
     }
     BOOST_TEST_I_CATCHALL() {
-        results_reporter::get_stream() << "Boost.Test framework internal error: unknown reason" << std::endl;
+        *ostr << "Boost.Test framework internal error: unknown reason"
+              << std::endl;
         result_code = boost::exit_exception_failure;
     }
     // Report results now if an exception precluded doing so earlier.
