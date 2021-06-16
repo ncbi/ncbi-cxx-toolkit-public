@@ -223,9 +223,10 @@ public:
         return m_RequestDispatcher.SignalStartProcessing(processor);
     }
 
-    void SignalFinishProcessing(IPSGS_Processor *  processor)
+    void SignalFinishProcessing(IPSGS_Processor *  processor,
+                                CPSGS_Dispatcher::EPSGS_SignalSource  signal_source)
     {
-        m_RequestDispatcher.SignalFinishProcessing(processor);
+        m_RequestDispatcher.SignalFinishProcessing(processor, signal_source);
     }
 
     void SignalConnectionCanceled(IPSGS_Processor *  processor)

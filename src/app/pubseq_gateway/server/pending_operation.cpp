@@ -154,7 +154,7 @@ void CPendingOperation::Peek(bool  need_wait)
         // - destroy the processors group which will free all the
         //   allocated memory
         CPubseqGatewayApp::GetInstance()->SignalFinishProcessing(
-                                                            m_Processor.get());
+                        m_Processor.get(), CPSGS_Dispatcher::ePSGS_Fromework);
     }
 }
 

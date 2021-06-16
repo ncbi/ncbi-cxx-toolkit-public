@@ -185,7 +185,8 @@ CPSGS_Dispatcher::SignalStartProcessing(IPSGS_Processor *  processor)
 }
 
 
-void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor)
+void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
+                                              EPSGS_SignalSource  source)
 {
     // It needs to check if all the processors finished.
     // If so then the best finish status is used, sent to the client and the
@@ -194,25 +195,33 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor)
     bool                            all_procs_finished = true;
     size_t                          request_id = processor->GetRequest()->GetRequestId();
     IPSGS_Processor::EPSGS_Status   best_status = processor->GetStatus();
+    bool                            need_trace = processor->GetRequest()->NeedTrace();
 
     m_GroupsLock.lock();
-
-    if (processor->GetRequest()->NeedTrace()) {
-        // Trace sending is under a lock intentionally: to avoid changes in the
-        // sequence of processing the signal due to a race when tracing is
-        // switched on.
-        // In a normal operation the tracing is switched off anyway.
-        processor->GetReply()->SendTrace(
-            "Processor: " + processor->GetName() + " (priority: " +
-            to_string(processor->GetPriority()) +
-            ") signalled finish with status " +
-            IPSGS_Processor::StatusToString(processor->GetStatus()),
-            processor->GetRequest()->GetStartTimestamp());
-    }
 
     auto    procs = m_ProcessorGroups.find(request_id);
     if (procs == m_ProcessorGroups.end()) {
         // The processors group does not exist any more
+        // Basically this should never happened
+        m_GroupsLock.unlock();
+        return;
+    }
+
+    if (best_status == IPSGS_Processor::ePSGS_InProgress) {
+        // Call by mistake? The processor reports status as in progress and
+        // there is a call to report that it finished
+        if (need_trace) {
+            processor->GetReply()->SendTrace(
+                "Dispatcher received signal (from " +
+                CPSGS_Dispatcher::SignalSourceToString(source) +
+                ") that the processor " + processor->GetName() +
+                " (priority: " + to_string(processor->GetPriority()) +
+                ") finished while the reported status is " +
+                IPSGS_Processor::StatusToString(processor->GetStatus()) +
+                ". Ignore this call and continue.",
+                processor->GetRequest()->GetStartTimestamp());
+        }
+
         m_GroupsLock.unlock();
         return;
     }
@@ -220,8 +229,22 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor)
     for (auto &  proc: procs->second) {
         if (proc.m_Processor == processor) {
             if (proc.m_DispatchStatus == ePSGS_Up) {
+                // That's the first time there is an information about how the
+                // processor finished
                 proc.m_DispatchStatus = ePSGS_Finished;
                 proc.m_FinishStatus = processor->GetStatus();
+
+                if (need_trace) {
+                    processor->GetReply()->SendTrace(
+                        "Dispatcher received signal (from " +
+                        CPSGS_Dispatcher::SignalSourceToString(source) +
+                        ") that the processor " + processor->GetName() +
+                        " (priority: " + to_string(processor->GetPriority()) +
+                        ") finished with status status " +
+                        IPSGS_Processor::StatusToString(processor->GetStatus()),
+                        processor->GetRequest()->GetStartTimestamp());
+                }
+
                 continue;
             }
 
@@ -229,6 +252,20 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor)
             // it is not the first time call. However it is possible that
             // during the first time the output was not ready so the final PSG
             // chunk has not been sent. Thus we should continue as usual.
+
+            if (need_trace && source == CPSGS_Dispatcher::ePSGS_Processor) {
+                processor->GetReply()->SendTrace(
+                    "Dispatcher received signal (from " +
+                    CPSGS_Dispatcher::SignalSourceToString(source) +
+                    ") that the processor " + processor->GetName() +
+                    " (priority: " + to_string(processor->GetPriority()) +
+                    ") finished with status status " +
+                    IPSGS_Processor::StatusToString(processor->GetStatus()) +
+                    " when the dispatcher already knows that the "
+                    "processor finished (registered status: " +
+                    IPSGS_Processor::StatusToString(proc.m_FinishStatus) + ")",
+                    processor->GetRequest()->GetStartTimestamp());
+            }
         }
 
         switch (proc.m_DispatchStatus) {
@@ -262,10 +299,11 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor)
 
         auto    reply = processor->GetReply();
         if (!reply->IsFinished() && reply->IsOutputReady()) {
-            if (processor->GetRequest()->NeedTrace()) {
+            if (need_trace) {
                 reply->SendTrace(
-                    "Request processing finished; final status: " +
-                    to_string(request_status),
+                    "Dispatcher: request processing finished; final status: " +
+                    to_string(request_status) +
+                    ". The processors group will be deleted.",
                     processor->GetRequest()->GetStartTimestamp());
             }
 

@@ -66,7 +66,8 @@ IPSGS_Processor::SignalStartProcessing(void)
 void IPSGS_Processor::SignalFinishProcessing(void)
 {
     if (!m_FinishSignalled) {
-        CPubseqGatewayApp::GetInstance()->SignalFinishProcessing(this);
+        CPubseqGatewayApp::GetInstance()->SignalFinishProcessing(
+                                this, CPSGS_Dispatcher::ePSGS_Processor);
         m_FinishSignalled = true;
     }
 }

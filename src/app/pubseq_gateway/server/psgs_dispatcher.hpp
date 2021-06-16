@@ -44,6 +44,24 @@
 class CPSGS_Dispatcher
 {
 public:
+    // The information that a processor has finished may come from a processor
+    // itself or from the framework.
+    enum EPSGS_SignalSource {
+        ePSGS_Processor,
+        ePSGS_Fromework
+    };
+
+    static string  SignalSourceToString(EPSGS_SignalSource  source)
+    {
+        switch (source) {
+            case ePSGS_Processor: return "processor";
+            case ePSGS_Fromework: return "framework";
+            default:              break;
+        }
+        return "unknown";
+    }
+
+public:
     CPSGS_Dispatcher()
     {}
 
@@ -61,7 +79,8 @@ public:
 
     /// The processor signals that it finished one way or another; including
     /// when a processor is canceled.
-    void SignalFinishProcessing(IPSGS_Processor *  processor);
+    void SignalFinishProcessing(IPSGS_Processor *  processor,
+                                EPSGS_SignalSource  source);
 
     /// An http connection can be canceled so this method will be invoked for
     /// such a case
