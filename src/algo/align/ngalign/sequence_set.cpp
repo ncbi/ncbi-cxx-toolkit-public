@@ -94,25 +94,6 @@ void CBlastDbSet::SetPositiveGiList(const vector<TGi>& GiList)
 }
 
 
-#ifdef NCBI_INT8_GI
-void CBlastDbSet::SetNegativeGiList(const vector<int>& GiList)
-{
-    m_NegativeGiList.Reset(new CInputGiList);
-    ITERATE(vector<int>, GiIter, GiList) {
-        m_NegativeGiList->AppendGi(GI_FROM(int, *GiIter));
-    }
-}
-
-
-void CBlastDbSet::SetPositiveGiList(const vector<int>& GiList)
-{
-    m_PositiveGiList.Reset(new CInputGiList);
-    ITERATE(vector<int>, GiIter, GiList) {
-        m_PositiveGiList->AppendGi(GI_FROM(int, *GiIter));
-    }
-}
-#endif
-
 CRef<IQueryFactory>
 CBlastDbSet::CreateQueryFactory(CScope& Scope,
                                 const CBlastOptionsHandle& BlastOpts)
@@ -202,30 +183,6 @@ void CSeqIdListSet::GetGiList(vector<TGi>& GiList, CScope& Scope,
         }
     }
 }
-
-
-#ifdef NCBI_INT8_GI
-void CSeqIdListSet::GetGiList(vector<int>& GiList, CScope& Scope,
-                            const CAlignResultsSet& Alignments, int Threshold)
-{
-    ITERATE(list<CRef<CSeq_id> >, IdIter, m_SeqIdList) {
-
-        if(Alignments.QueryExists(**IdIter)) {
-            CConstRef<CQuerySet> QuerySet = Alignments.GetQuerySet(**IdIter);
-            int BestRank = QuerySet->GetBestRank();
-            if(BestRank != -1 && BestRank <= Threshold) {
-                continue;
-            }
-        }
-
-        TGi Gi;
-        Gi = sequence::GetGiForId(**IdIter, Scope);
-        if(Gi != ZERO_GI && Gi != INVALID_GI) {
-            GiList.push_back(GI_TO(int, Gi));
-        }
-    }
-}
-#endif
 
 
 CRef<CSeq_loc> s_GetMaskLoc(const CSeq_id& Id,
@@ -565,36 +522,6 @@ void CSeqLocListSet::GetGiList(vector<TGi>& GiList, CScope& Scope,
     }
 }
 
-
-#ifdef NCBI_INT8_GI
-void CSeqLocListSet::GetGiList(vector<int>& GiList, CScope& Scope,
-                            const CAlignResultsSet& Alignments, int Threshold)
-{
-    ITERATE(list<CRef<CSeq_loc> >, LocIter, m_SeqLocList) {
-
-        const CSeq_id* Id = (*LocIter)->GetId();
-
-        if(Id == NULL)
-            continue;
-
-        if(Alignments.QueryExists(*Id)) {
-            CConstRef<CQuerySet> QuerySet = Alignments.GetQuerySet(*Id);
-            int BestRank = QuerySet->GetBestRank();
-            if(BestRank != -1 && BestRank <= Threshold) {
-                continue;
-            }
-        }
-
-        TGi Gi = INVALID_GI;
-        try {
-            Gi = sequence::GetGiForId(*Id, Scope);
-        } catch(...) { Gi = INVALID_GI; }
-        if(Gi != ZERO_GI && Gi != INVALID_GI) {
-            GiList.push_back(GI_TO(int, Gi));
-        }
-    }
-}
-#endif
 
 CRef<IQueryFactory>
 CSeqLocListSet::CreateQueryFactory(CScope& Scope,

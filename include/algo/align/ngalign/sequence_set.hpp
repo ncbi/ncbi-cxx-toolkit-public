@@ -88,11 +88,6 @@ public:
     void SetNegativeGiList(const vector<TGi>& GiList);
     void SetPositiveGiList(const vector<TGi>& GiList);
 
-#ifdef NCBI_INT8_GI
-    void SetNegativeGiList(const vector<int>& GiList);
-    void SetPositiveGiList(const vector<int>& GiList);
-#endif
-
     CRef<blast::IQueryFactory> CreateQueryFactory(
             objects::CScope& Scope,
             const blast::CBlastOptionsHandle& BlastOpts);
@@ -123,10 +118,6 @@ public:
 
     void GetGiList(vector<TGi>& GiList, objects::CScope& Scope,
                    const CAlignResultsSet& Alignments, int Threshold);
-#ifdef NCBI_INT8_GI
-    void GetGiList(vector<int>& GiList, objects::CScope& Scope,
-                   const CAlignResultsSet& Alignments, int Threshold);
-#endif
 
     CRef<blast::IQueryFactory> CreateQueryFactory(
             objects::CScope& Scope, const blast::CBlastOptionsHandle& BlastOpts);
@@ -153,10 +144,6 @@ public:
     void GetGiList(vector<TGi>& GiList, objects::CScope& Scope,
                    const CAlignResultsSet& Alignments, int Threshold);
 
-#ifdef NCBI_INT8_GI
-    void GetGiList(vector<int>& GiList, objects::CScope& Scope,
-                   const CAlignResultsSet& Alignments, int Threshold);
-#endif
 
     CRef<blast::IQueryFactory> CreateQueryFactory(
             objects::CScope& Scope, const blast::CBlastOptionsHandle& BlastOpts);
