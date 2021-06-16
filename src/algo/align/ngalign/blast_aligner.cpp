@@ -231,7 +231,7 @@ TAlignResultsRef CBlastAligner::GenerateAlignments(CScope& Scope,
         dynamic_cast<CBlastDbSet*>(SubjectSet) ) {
         CSeqIdListSet* SeqIdListQuerySet = dynamic_cast<CSeqIdListSet*>(QuerySet);
         CBlastDbSet* BlastSubjectSet = dynamic_cast<CBlastDbSet*>(SubjectSet);
-        vector<TGiList> GiList;
+        vector<TGi> GiList;
         SeqIdListQuerySet->GetGiList(GiList, Scope, *AccumResults, m_Threshold);
         BlastSubjectSet->SetNegativeGiList(GiList);
     }
