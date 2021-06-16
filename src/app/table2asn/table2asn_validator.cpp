@@ -97,7 +97,7 @@ void CTable2AsnValidator::Cleanup(CRef<CSeq_submit> submit, CSeq_entry_Handle& h
         CCleanup::AddLowQualityException(h_entry);
     }
 
-    if (flags.find('T') != string::npos) {
+    if (flags.find('T') != string::npos && !m_context->m_use_huge_files) {
         validator::CTaxValidationAndCleanup tval;
         tval.DoTaxonomyUpdate(h_entry, true);
     }
@@ -299,4 +299,3 @@ void CTable2AsnValidator::UpdateECNumbers(CSeq_entry& entry)
 }
 
 END_NCBI_SCOPE
-

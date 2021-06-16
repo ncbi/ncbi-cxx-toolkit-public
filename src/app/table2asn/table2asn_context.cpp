@@ -381,8 +381,10 @@ bool CTable2AsnContext::IsDBLink(const CSeqdesc& desc)
         return false;
 }
 
-void CTable2AsnContext::x_MergeSeqDescr(CSeq_descr& dest, const CSeq_descr& src, bool only_set) const
+void CTable2AsnContext::x_MergeSeqDescr(CSeq_entry& entry, const CSeq_descr& src, bool only_set) const
 {
+    auto& dest = entry.SetDescr();
+
     for (auto src_desc: src.Get())
     {
         CRef<CSeqdesc> new_desc;
@@ -438,6 +440,13 @@ void CTable2AsnContext::x_MergeSeqDescr(CSeq_descr& dest, const CSeq_descr& src,
         }
         new_desc->Assign(*src_desc);
     }
+    if (dest.Set().empty())
+    {
+        if (entry.IsSeq())
+            entry.SetSeq().ResetDescr();
+        else
+            entry.SetSet().ResetDescr();
+    }
 }
 
 void CTable2AsnContext::MergeWithTemplate(CSeq_entry& entry) const
@@ -450,7 +459,7 @@ void CTable2AsnContext::MergeWithTemplate(CSeq_entry& entry) const
 
     if (entry.IsSet())// && entry.GetSet().IsSetClass())
     {
-        x_MergeSeqDescr(entry.SetDescr(), m_entry_template->GetDescr(), true);
+        x_MergeSeqDescr(entry, m_entry_template->GetDescr(), true);
 
         CSeq_entry_Base::TSet::TSeq_set& data = entry.SetSet().SetSeq_set();
         NON_CONST_ITERATE(CSeq_entry_Base::TSet::TSeq_set, it, data)
@@ -462,8 +471,8 @@ void CTable2AsnContext::MergeWithTemplate(CSeq_entry& entry) const
     if (entry.IsSeq())
     {
         if (!entry.GetParentEntry())
-           x_MergeSeqDescr(entry.SetDescr(), m_entry_template->GetDescr(), true);
-        x_MergeSeqDescr(entry.SetDescr(), m_entry_template->GetDescr(), false);
+           x_MergeSeqDescr(entry, m_entry_template->GetDescr(), true);
+        x_MergeSeqDescr(entry, m_entry_template->GetDescr(), false);
     }
 }
 

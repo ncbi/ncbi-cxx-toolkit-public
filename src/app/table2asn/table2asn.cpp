@@ -379,6 +379,8 @@ int CTbl2AsnApp::Run()
 
     Setup(args);
 
+    m_context.m_use_huge_files = GetConfig().GetBool("table2asn", "UseHugeFiles", false);
+
     m_context.m_split_log_files = args["split-logs"].AsBoolean();
     if (m_context.m_split_log_files && args["logfile"])
     {
@@ -1059,10 +1061,150 @@ void CTbl2AsnApp::ProcessOneEntry(
     }
 }
 
+void CTbl2AsnApp::ProcessSingleEntry(CFormatGuess::EFormat inputFormat, CRef<CSeq_entry>& entry)
+{
+    CRef<CSeq_submit> submit;
+
+    //m_reader->GetSeqEntry(entry, submit, obj);
+
+    //bool avoid_submit_block = false;
+
+    entry->Parentize();
+
+    if (m_context.m_SetIDFromFile)
+    {
+        m_context.SetSeqId(*entry);
+    }
+
+    m_context.ApplyAccession(*entry);
+
+    m_context.ApplyFileTracks(*entry);
+
+    const bool readModsFromTitle =
+        inputFormat == CFormatGuess::eFasta ||
+        inputFormat == CFormatGuess::eAlignment;
+    ProcessSecretFiles1Phase(
+            readModsFromTitle,
+            *entry);
+
+    if (m_context.m_RemoteTaxonomyLookup)
+    {
+        m_context.m_remote_updater->UpdateOrgFromTaxon(*entry);
+    }
+    else
+    {
+        VisitAllBioseqs(*entry, CTable2AsnContext::UpdateTaxonFromTable);
+    }
+
+    m_secret_files->m_feature_table_reader->m_replacement_protein = m_secret_files->m_replacement_proteins;
+    m_secret_files->m_feature_table_reader->MergeCDSFeatures(*entry);
+
+    entry->Parentize();
+    m_secret_files->m_feature_table_reader->MoveProteinSpecificFeats(*entry);
+
+    m_context.CorrectCollectionDates(*entry);
+
+    if (m_secret_files->m_possible_proteins.NotEmpty())
+        m_secret_files->m_feature_table_reader->AddProteins(*m_secret_files->m_possible_proteins, *entry);
+
+    if (m_context.m_HandleAsSet)
+    {
+        //fr.ConvertNucSetToSet(entry);
+    }
+
+    if ((inputFormat == CFormatGuess::eTextASN) ||
+        (inputFormat == CFormatGuess::eBinaryASN))
+    {
+        // if create-date exists apply update date
+        m_context.ApplyCreateUpdateDates(*entry);
+    }
+
+    m_context.ApplyComments(*entry);
+    ProcessSecretFiles2Phase(*entry);
+
+#if 0
+    // this methods do not remove entry nor change it. But create 'result' object which either
+    // equal to 'entry' or contain reference to 'entry'.
+    if (avoid_submit_block)
+        result = m_context.CreateSeqEntryFromTemplate(entry);
+    else
+        result = m_context.CreateSubmitFromTemplate(entry, submit);
+#endif
+
+    m_secret_files->m_feature_table_reader->MakeGapsFromFeatures(*entry);
+
+
+    if (m_context.m_delay_genprodset)
+    {
+        VisitAllFeatures(*entry, [this](CSeq_feat& feature){m_context.RenameProteinIdsQuals(feature); });
+    }
+    else
+    {
+        VisitAllFeatures(*entry, [this](CSeq_feat& feature){m_context.RemoveProteinIdsQuals(feature); });
+    }
+
+    CSeq_entry_Handle seh = m_context.m_scope->AddTopLevelSeqEntry(*entry);
+    CCleanup::ConvertPubFeatsToPubDescs(seh);
+
+    if (m_context.m_RemotePubLookup)
+    {
+        m_context.m_remote_updater->UpdatePubReferences(*entry);
+    }
+    if (m_context.m_postprocess_pubs)
+    {
+        m_context.m_remote_updater->PostProcessPubs(*entry);
+    }
+
+    if (m_context.m_cleanup.find('-') == string::npos)
+    {
+       m_validator->Cleanup(submit, seh, m_context.m_cleanup);
+    }
+
+    // make asn.1 look nicier
+    edit::SortSeqDescr(*entry);
+
+    m_secret_files->m_feature_table_reader->ChangeDeltaProteinToRawProtein(*entry);
+
+    if (!IsDryRun())
+    {
+        m_validator->UpdateECNumbers(*entry);
+
+        if (!m_context.m_validate.empty())
+        {
+            m_validator->Validate(submit, entry, m_context.m_validate);
+        }
+
+        if (m_context.m_run_discrepancy)
+        {
+            if(m_context.m_split_discrepancy)
+                m_validator->ReportDiscrepancy(*entry, m_context.m_eukaryote, m_context.m_disc_lineage);
+            else
+                m_validator->CollectDiscrepancies(*entry, m_context.m_eukaryote, m_context.m_disc_lineage);
+        }
+
+        if (m_context.m_make_flatfile)
+        {
+            CFlatFileGenerator ffgenerator(
+                    CFlatFileConfig::eFormat_GenBank,
+                    CFlatFileConfig::eMode_Entrez);
+
+            auto& ostream = m_context.GetOstream(".gbf");
+
+            if (submit.Empty())
+                ffgenerator.Generate(seh, ostream);
+            else
+                ffgenerator.Generate(*submit, *m_context.m_scope, ostream);
+        }
+    }
+
+}
+
 void CTbl2AsnApp::ProcessOneFile(bool isAlignment)
 {
     if (m_context.m_split_log_files)
         m_context.m_logger->ClearAll();
+
+    m_context.m_scope->ResetDataAndHistory();
 
     CFile log_name;
     if (!IsDryRun() && m_context.m_split_log_files)
@@ -1089,6 +1231,12 @@ void CTbl2AsnApp::ProcessOneFile(bool isAlignment)
         }
         //m_context.ReleaseOutputs();
 
+        if (!IsDryRun())
+        {
+            std::function<CNcbiOstream&()> f = [this]()->CNcbiOstream& { return m_context.GetOstream(".fixedproducts"); };
+            m_context.m_suspect_rules.SetupOutput(f);
+        }
+
         LoadAdditionalFiles();
 
         if (isAlignment) {
@@ -1096,11 +1244,13 @@ void CTbl2AsnApp::ProcessOneFile(bool isAlignment)
         }
         else {
 
-#if 1
-            ProcessOneFile(output);
-#else
-            ProcessHugeFile(output);
+#if 0
+            if (m_context.m_use_huge_files)
+                ProcessHugeFile(output);
+            else
 #endif
+                ProcessOneFile(output);
+
             ReportUnusedSourceQuals();
 
         } // !isAlignment
@@ -1138,7 +1288,6 @@ void CTbl2AsnApp::ProcessOneFile(CNcbiOstream* output)
     }
     do
     {
-        m_context.m_scope->ResetDataAndHistory();
         CRef<CSerialObject> result;
         ProcessOneEntry(format, input_obj, result);
 
@@ -1410,6 +1559,7 @@ void CTbl2AsnApp::LoadAdditionalFiles()
     LoadPEPFile(name + ".pep");
     LoadRNAFile(name + ".rna");
     LoadPRTFile(name + ".prt");
+    LoadDSCFile(name + ".dsc");
 
     LoadCMTFile(m_context.m_single_structure_cmt, m_global_files.m_struct_comments);
     LoadCMTFile(name + ".cmt", m_secret_files->m_struct_comments);
@@ -1447,11 +1597,24 @@ int main(int argc, const char* argv[])
     if (argc==2 && argv && argv[1] && strchr(argv[1], ' '))
     {
         NStr::Split(argv[1], " ", split_args);
+
+        auto it = split_args.begin();
+        while (it != split_args.end())
+        {
+            auto next = it; ++next;
+            if (next != split_args.end() && it->front() == '"' && it->back() != '"')
+            {
+                it->append(" "); it->append(*next);
+                next = split_args.erase(next);
+            } else it = next;
+        }
         argc = 1 + split_args.size();
         new_argv.reserve(argc);
         new_argv.push_back(argv[0]);
         for (const string& s : split_args)
+        {
             new_argv.push_back(s.c_str());
+        }
 
         argv = new_argv.data();
     }

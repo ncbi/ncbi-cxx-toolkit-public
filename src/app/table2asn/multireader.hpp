@@ -48,6 +48,7 @@ public:
     bool LoadAnnot(objects::CScope& scope, const string& filename);
     bool LoadAnnots(const string& filename, TAnnots& annots);
     void AddAnnots(TAnnots& annots, CScope& scope);
+    void LoadGFF3Fasta(istream& in, TAnnots& annots);
 
     static
     void GetSeqEntry(CRef<objects::CSeq_entry>& entry, CRef<objects::CSeq_submit>& submit, CRef<CSerialObject> obj);

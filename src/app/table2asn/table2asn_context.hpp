@@ -145,6 +145,9 @@ public:
     bool   m_split_discrepancy{ false };
     bool   m_accumulate_mods{ false };
     bool   m_binary_asn1_output { false };
+    bool   m_use_huge_files { false };
+
+
     NDiscrepancy::EGroup m_discrepancy_group{ NDiscrepancy::eOncaller };
 
     unique_ptr<objects::edit::CRemoteUpdater> m_remote_updater;
@@ -210,7 +213,7 @@ public:
     static void UpdateTaxonFromTable(objects::CBioseq& bioseq);
 
 private:
-    void x_MergeSeqDescr(objects::CSeq_descr& dest, const objects::CSeq_descr& src, bool only_set) const;
+    void x_MergeSeqDescr(objects::CSeq_entry& dest, const objects::CSeq_descr& src, bool only_set) const;
     static void x_ApplyAccession(CTable2AsnContext& context, objects::CBioseq& bioseq);
     map<string, pair<string, unique_ptr<CNcbiOstream>>> m_outputs;
 };

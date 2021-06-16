@@ -550,33 +550,6 @@ void CMultiReader::LoadDescriptors(const string& ifname, CRef<CSeq_descr> & out_
 
 void CMultiReader::LoadTemplate(CTable2AsnContext& context, const string& ifname)
 {
-#if 0
-    // check if the location doesn't exist, and see if we can
-    // consider it some kind of sequence identifier
-    if( ! CDirEntry(ifname).IsFile() ) {
-        // see if this is blatantly not a sequence identifier
-        if( ! CRegexpUtil(sTemplateLocation).Exists("^[A-Za-z0-9_|]+(\\.[0-9]+)?$") ) {
-            throw runtime_error("This is not a valid sequence identifier: " + sTemplateLocation);
-        }
-
-        // try to load from genbank
-        CGBDataLoader::RegisterInObjectManager(*CObjectManager::GetInstance());
-        CRef<CScope> pScope(new CScope(*CObjectManager::GetInstance()));
-        pScope->AddDefaults();
-
-        CRef<CSeq_id> pTemplateId( new CSeq_id(sTemplateLocation) );
-        CBioseq_Handle bsh = pScope->GetBioseqHandle( *pTemplateId );
-
-        if ( ! bsh ) {
-            throw runtime_error("Invalid sequence identifier: " + sTemplateLocation);
-        }
-        CSeq_entry_Handle entry_h = bsh.GetParentEntry();
-
-        context.m_entry_template->Assign( *entry_h.GetCompleteSeq_entry() );
-        return;
-    }
-#endif
-
     unique_ptr<CObjectIStream> pObjIstrm = xCreateASNStream(ifname);
 
     // guess object type
@@ -811,6 +784,19 @@ namespace
     }
 }
 
+void CMultiReader::LoadGFF3Fasta(istream& in, TAnnots& annots)
+{
+    LOG_POST("Recognized input file as format: " << CFormatGuess::GetFormatName(CFormatGuess::eGff3));
+
+    bool post_process = false;
+    annots = xReadGFF3(in, post_process);
+    if (!AtSeqenceData()) {
+        NCBI_THROW2(CObjReaderParseException, eFormat,
+            "Specified GFF3 file does not include any sequence data", 0);
+    }
+    x_PostProcessAnnots(annots);
+}
+
 CFormatGuess::EFormat CMultiReader::OpenFile(const string& filename, CRef<CSerialObject>& input_sequence, TAnnots& annots)
 {
     CFormatGuess::EFormat format;
@@ -832,15 +818,8 @@ CFormatGuess::EFormat CMultiReader::OpenFile(const string& filename, CRef<CSeria
             break;
         case CFormatGuess::eGff3:
             {
-            LOG_POST("Recognized input file as format: " << CFormatGuess::GetFormatName(format));
             unique_ptr<istream> in(new CNcbiIfstream(filename));
-            bool post_process = false;
-            annots = xReadGFF3(*in, post_process);
-            if (!AtSeqenceData()) {
-                NCBI_THROW2(CObjReaderParseException, eFormat,
-                    "Specified GFF3 file does not include any sequence data", 0);
-            }
-            x_PostProcessAnnots(annots);
+            LoadGFF3Fasta(*in, annots);
             m_iFlags = 0;
             m_iFlags |= CFastaReader::fNoUserObjs;
             input_sequence = xReadFasta(*in);
@@ -1318,7 +1297,7 @@ bool CMultiReader::xFixupAnnot(CScope& scope, CRef<CSeq_annot>& annot_it)
 #ifdef _DEBUG
     else
     {
-        cerr << MSerial_AsnText << "Found unmatched annot: " << *annot_id << endl;
+        //cerr << MSerial_AsnText << "Found unmatched annot: " << *annot_id << endl;
     }
     if (false)
     {
