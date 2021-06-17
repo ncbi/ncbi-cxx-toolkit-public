@@ -1870,7 +1870,7 @@ const SSERV_VTable* SERV_LBOS_Open(SERV_ITER           iter,
     assert(iter->name  &&  *iter->name);
     serv_name = iter->name; /* we may modify name with dbaf */
 
-    CORE_LOG(eLOG_Error, "LBOS is deprecated, consider using LBSMD instead.");
+    CORE_LOG(eLOG_Critical, "LBOS is deprecated, consider using LBSMD instead.");
 
     if (!s_TurnOn()) {
         return NULL;
